@@ -22,7 +22,7 @@ Cache. L2 request rate tells you how data intensive your code is or how many
 data accesses you have on average per instruction.  The L2 miss rate gives a
 measure how often it was necessary to get cache lines from memory. And finally
 L2 miss ratio tells you how many of your memory references required a cache line
-to be loaded from a higher level.  While the# data cache miss rate might be
+to be loaded from a higher level.  While the data cache miss rate might be
 given by your algorithm you should try to get data cache miss ratio as low as
 possible by increasing your cache reuse.  This group is inspired from the
 whitepaper -Basic Performance Measurements for AMD Athlon 64, AMD Opteron and

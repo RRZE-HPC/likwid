@@ -45,7 +45,7 @@
 #include <bitUtil.h>
 //#include <strUtil.h>
 #include <configuration.h>
-#include <topology_cavtx2.h>
+#include <topology_static.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -1354,6 +1354,27 @@ standard_init:
                                 default:
                                     break;
                             }
+                        case FUJITSU_ARM:
+                            switch(cpuid_info.part) {
+                                case FUJITSU_A64FX:
+                                    cachePool = (CacheLevel*) malloc(2 * sizeof(CacheLevel));
+                                    for(int i=0;i < 2; i++)
+                                    {
+                                        cachePool[i].level = a64fx_caches[i].level;
+                                        cachePool[i].size = a64fx_caches[i].size;
+                                        cachePool[i].lineSize = a64fx_caches[i].lineSize;
+                                        cachePool[i].threads = a64fx_caches[i].threads;
+                                        cachePool[i].inclusive = a64fx_caches[i].inclusive;
+                                        cachePool[i].sets = a64fx_caches[i].sets;
+                                        cachePool[i].associativity = a64fx_caches[i].associativity;
+                                    }
+                                    cpuid_topology.cacheLevels = cachePool;
+                                    cpuid_topology.numCacheLevels = 2;
+                                    break;
+                                default:
+                                    break;
+                            }
+                            break;
                         default:
                             break;
                     }

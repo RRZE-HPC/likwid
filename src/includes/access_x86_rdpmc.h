@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  topology_hwloc.h
+ *      Filename:  access_x86_rdpmc.h
  *
- *      Description:  Header File of topology backend using the hwloc library
+ *      Description:  Header file of rdpmc module to bypass costly msr or accessdaemon
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -11,7 +11,7 @@
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2020 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,29 +27,15 @@
  *
  * =======================================================================================
  */
-#ifndef TOPOLOGY_HWLOC_H
-#define TOPOLOGY_HWLOC_H
+#ifndef ACCESS_X86_RDPMC_H
+#define ACCESS_X86_RDPMC_H
 
-#include <hwloc.h>
-#include <sched.h>
+#include <types.h>
 
-#ifdef USE_INTERNAL_HWLOC
-#define HWLOC_PREFIX likwid_
-#else
-#define HWLOC_PREFIX
-#endif
-#define LIKWID_HWLOC_MUNGE_NAME(a, b) LIKWID_HWLOC_MUNGE_NAME2(a, b)
-#define LIKWID_HWLOC_MUNGE_NAME2(a, b) a ## b
-#define LIKWID_HWLOC_NAME(name) LIKWID_HWLOC_MUNGE_NAME(HWLOC_PREFIX, hwloc_ ## name)
+int access_x86_rdpmc_init(const int cpu_id);
+void access_x86_rdpmc_finalize(const int cpu_id);
+int access_x86_rdpmc_read(const int cpu, uint32_t reg, uint64_t *data);
+int access_x86_rdpmc_write(const int cpu, uint32_t reg, uint64_t data);
+int access_x86_rdpmc_check(PciDeviceIndex dev, int cpu_id);
 
-extern hwloc_topology_t hwloc_topology;
-
-int likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t obj, hwloc_obj_type_t type, int* index, uint32_t **list);
-
-void hwloc_init_cpuInfo(cpu_set_t cpuSet);
-void hwloc_init_cpuFeatures(void);
-void hwloc_init_nodeTopology(cpu_set_t cpuSet);
-void hwloc_init_cacheTopology(void);
-void hwloc_close(void);
-
-#endif /* TOPOLOGY_HWLOC_H */
+#endif /* ACCESS_X86_RDPMC_H */

@@ -174,7 +174,7 @@ if ($fileType eq 'topology') {
                 if (not $header) {
                     @cpus = split(',',$1);
                     foreach (@cpus) {
-                        s/Core //g;
+                        s/HWThread //g;
                         s/[ ]//g;
                     }
                     $header = 1;
@@ -193,7 +193,7 @@ if ($fileType eq 'topology') {
                 print OUTFILE '</event>'.$NL;
             }
         } elsif ($region eq 'metric') {
-            if ((!/Metric,Core/) and (!/TABLE/)) {
+            if ((!/Metric,HWThread/) and (!/TABLE/)) {
                 @col = split(',',$_);
                 print OUTFILE '<metric>'.$NL;
                 my $name = "";

@@ -145,6 +145,7 @@ print_stats = false
 execString = nil
 outfile = nil
 outfile_orig = nil
+outprefix = ""
 forceOverwrite = 0
 gotC = false
 markerFolder = "/tmp"
@@ -157,6 +158,8 @@ end
 perfflags = nil
 perfpid = nil
 nan2value = '-'
+cputopo = nil
+cpuinfo = nil
 
 
 ---------------------------
@@ -167,56 +170,68 @@ gpu_event_string_list = {}
 nvMarkerFile = string.format("%s/likwid_gpu_%d.txt", markerFolder, likwid.getpid())
 gotG = false
 gpugroups = {}
+gputopo = nil
 ---------------------------
 
 likwid.catchSignal()
 
-if #arg == 0 then
-    usage()
-    os.exit(0)
+local function perfctr_exit(exitcode)
+    if likwid.access(nvMarkerFile, "e") == 0 then
+        os.remove(nvMarkerFile)
+    end
+    if likwid.access(markerFile, "e") == 0 then
+        os.remove(markerFile)
+    end
+    if cputopo then
+        likwid.putTopology()
+        cputopo = nil
+        cpuinfo = nil
+    end
+    if gputopo then
+        likwid.putGpuTopology()
+        gputopo = nil
+    end
+    if config then
+        likwid.putConfiguration()
+        config = nil
+    end
+    os.exit(exitcode)
 end
 
-for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "G:", "W:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats", "execpid", "perfflags:", "perfpid:", "Z", "gpugroup:"}) do
+if #arg == 0 then
+    usage()
+    perfctr_exit(0)
+end
+
+for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "G:", "W:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats", "execpid", "perfflags:", "perfpid:", "Z", "gpugroup:", "outprefix:"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
             print_stderr(string.format("Argument %s to option -%s starts with invalid character -.", arg, opt))
             print_stderr("Did you forget an argument to an option?")
-            os.exit(1)
+            perfctr_exit(1)
         end
     end
     if opt == "h" or opt == "help" then
         usage()
-        if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-            os.remove(outfile..".tmp")
-        end
-        os.exit(0)
+        perfctr_exit(0)
     elseif opt == "v" or opt == "version" then
         version()
-        if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-            os.remove(outfile..".tmp")
-        end
-        os.exit(0)
+        perfctr_exit(0)
     elseif opt == "V" or opt == "verbose" then
         if arg ~= nil and tonumber(arg) ~= nil then
             verbose = tonumber(arg)
             likwid.setVerbosity(verbose)
         else
             print_stderr("Option requires an argument")
-            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-                os.remove(outfile..".tmp")
-            end
-            os.exit(1)
+            perfctr_exit(1)
         end
     elseif (opt == "c") then
         if arg ~= nil then
             num_cpus, cpulist = likwid.cpustr_to_cpulist(arg)
         else
             print_stderr("Option requires an argument")
-            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-                os.remove(outfile..".tmp")
-            end
-            os.exit(1)
+            perfctr_exit(1)
         end
         gotC = true
     elseif (opt == "C") then
@@ -224,10 +239,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
             num_cpus, cpulist = likwid.cpustr_to_cpulist(arg)
         else
             print_stderr("Option requires an argument")
-            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-                os.remove(outfile..".tmp")
-            end
-            os.exit(1)
+            perfctr_exit(1)
         end
         pin_cpus = true
         gotC = true
@@ -243,15 +255,14 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         perfflags = arg
     elseif (opt == "perfpid") then
         perfpid = arg
+    elseif (opt == "outprefix") then
+        outprefix = arg
     elseif (opt == "E") then
         if arg ~= nil then
             print_event = arg
         else
             print_stderr("Option requires an argument")
-            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-                os.remove(outfile..".tmp")
-            end
-            os.exit(1)
+            perfctr_exit(1)
         end
     elseif opt == "f" or opt == "force" then
         forceOverwrite = 1
@@ -280,10 +291,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         end
         if (access_mode < 0 and access_mode > 1) then
             print_stdout("Access mode must be 0 for direct access and 1 for access daemon")
-            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-                os.remove(outfile..".tmp")
-            end
-            os.exit(1)
+            perfctr_exit(1)
         end
     elseif opt == "i" or opt == "info" then
         print_info = true
@@ -297,10 +305,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
             duration = likwid.parse_time(arg)
         else
             print_stderr("Option requires an argument")
-            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-                os.remove(outfile..".tmp")
-            end
-            os.exit(1)
+            perfctr_exit(1)
         end
     elseif (opt == "t") then
         use_timeline = true
@@ -308,20 +313,14 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
             duration = likwid.parse_time(arg)
         else
             print_stderr("Option requires an argument")
-            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-                os.remove(outfile..".tmp")
-            end
-            os.exit(1)
+            perfctr_exit(1)
         end
     elseif (opt == "T") then
         if arg ~= nil and arg:match("%d+%a?s") then
             duration = likwid.parse_time(arg)
         else
             print_stderr("Option requires an argument")
-            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-                os.remove(outfile..".tmp")
-            end
-            os.exit(1)
+            perfctr_exit(1)
         end
     elseif opt == "o" or opt == "output" then
         local suffix = ""
@@ -336,7 +335,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         outfile = outfile:gsub("%%p", likwid.getpid())
         outfile = outfile:gsub("%%j", likwid.getjid())
         outfile = outfile:gsub("%%r", likwid.getMPIrank())
-        io.output(outfile..".tmp")
+        io.output(outfile)
         print = function(...) for k,v in pairs({...}) do io.write(v .. "\n") end end
     elseif (opt == "O") then
         use_csv = true
@@ -348,10 +347,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
             num_gpus, gpulist = likwid.gpustr_to_gpulist(arg)
         else
             print_stderr("Option requires an argument")
-            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-                os.remove(outfile..".tmp")
-            end
-            os.exit(1)
+            perfctr_exit(1)
         end
         gotG = true
     elseif gpusSupported and (opt == "W" or opt == "gpugroup") then
@@ -359,24 +355,15 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
             table.insert(gpu_event_string_list, arg)
         else
             print_stderr("Option requires an argument")
-            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-                os.remove(outfile..".tmp")
-            end
-            os.exit(1)
+            perfctr_exit(1)
         end
 ---------------------------
     elseif opt == "?" then
         print_stderr("Invalid commandline option -"..arg)
-        if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-            os.remove(outfile..".tmp")
-        end
-        os.exit(1)
+        perfctr_exit(1)
     elseif opt == "!" then
         print_stderr("Option requires an argument")
-        if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
-            os.remove(outfile..".tmp")
-        end
-        os.exit(1)
+        perfctr_exit(1)
     end
 end
 local execList = {}
@@ -388,7 +375,6 @@ io.stdout:setvbuf("no")
 cpuinfo = likwid.getCpuInfo()
 cputopo = likwid.getCpuTopology()
 ---------------------------
-gputopo = nil
 if gpusSupported then
     gputopo = likwid.getGpuTopology()
 end
@@ -417,10 +403,7 @@ elseif num_cpus == 0 and
        not print_group_help and
        not print_info then
     print_stderr("CPUs given on commandline are not valid in current environment, maybe it's limited by a cpuset.")
-    if outfile and likwid.access(outfile..".tmp", "e") == 0 then
-        os.remove(outfile..".tmp")
-    end
-    os.exit(1)
+    perfctr_exit(1)
 end
 
 ---------------------------
@@ -447,10 +430,7 @@ if num_cpus > 0 then
         for j, cpu2 in pairs(cpulist) do
             if i ~= j and cpu1 == cpu2 then
                 print_stderr("List of CPUs is not unique, got two times CPU " .. tostring(cpu1))
-                if outfile and likwid.access(outfile..".tmp", "e") == 0 then
-                    os.remove(outfile..".tmp")
-                end
-                os.exit(1)
+                perfctr_exit(1)
             end
         end
     end
@@ -462,10 +442,7 @@ if gpusSupported and gputopo and num_gpus > 0 then
         for j, gpu2 in pairs(gpulist) do
             if i ~= j and gpu1 == gpu2 then
                 print_stderr("List of GPUs is not unique, got two times GPU " .. tostring(gpu1))
-                if outfile and likwid.access(outfile..".tmp", "e") == 0 then
-                    os.remove(outfile..".tmp")
-                end
-                os.exit(1)
+                perfctr_exit(1)
             end
         end
     end
@@ -519,7 +496,7 @@ if print_events == true then
         end
     end
 ---------------------------
-    os.exit(0)
+    perfctr_exit(0)
 end
 
 if print_event ~= nil then
@@ -601,7 +578,7 @@ if print_event ~= nil then
     end
     likwid.putTopology()
     likwid.putConfiguration()
-    os.exit(0)
+    perfctr_exit(0)
 end
 
 avail_groups = likwid.getGroups()
@@ -641,21 +618,19 @@ if print_groups == true then
             print_stdout(string.format("No groups defined for %s",gputopo["devices"][1]["name"]))
         end
     end
-    likwid.putTopology()
-    likwid.putConfiguration()
-    os.exit(0)
+    perfctr_exit(0)
 end
 
 if print_group_help == true then
     if #event_string_list == 0 then
         print_stdout("Group(s) must be given on commandline to get group help")
-        os.exit(1)
+        perfctr_exit(1)
     end
     for i,event_string in pairs(event_string_list) do
         local s,e = event_string:find(":")
         if s ~= nil then
             print_stdout("Given string is no group")
-            os.exit(1)
+            perfctr_exit(1)
         end
         for i,g in pairs(avail_groups) do
             if event_string == g["Name"] then
@@ -664,17 +639,13 @@ if print_group_help == true then
             end
         end
     end
-    likwid.putTopology()
-    likwid.putConfiguration()
-    os.exit(0)
+    perfctr_exit(0)
 end
 
 if #event_string_list == 0 and #gpu_event_string_list == 0 and not print_info then
     print_stderr("Option(s) -g <string> or -W <string> must be given on commandline")
     usage()
-    likwid.putTopology()
-    likwid.putConfiguration()
-    os.exit(1)
+    perfctr_exit(1)
 end
 
 if (cpuinfo["clock"] > 0) then
@@ -716,27 +687,19 @@ if print_info or verbose > 0 then
     print_stdout(likwid.hline)
     if print_info then
         likwid.printSupportedCPUs()
-        likwid.putTopology()
-        likwid.putConfiguration()
-        os.exit(0)
+        perfctr_exit(0)
     end
 end
 
 if use_marker == true and use_timeline == true then
     print_stderr("Cannot run Marker API and Timeline mode simultaneously")
-    likwid.putTopology()
-    likwid.putConfiguration()
-    os.exit(0)
+    perfctr_exit(0)
 elseif use_marker == true and use_stethoscope == true then
     print_stderr("Cannot run Marker API and Stethoscope mode simultaneously")
-    likwid.putTopology()
-    likwid.putConfiguration()
-    os.exit(0)
+    perfctr_exit(0)
 elseif use_timeline == true and use_stethoscope == true then
     print_stderr("Cannot run Timeline and Stethoscope mode simultaneously")
-    likwid.putTopology()
-    likwid.putConfiguration()
-    os.exit(0)
+    perfctr_exit(0)
 end
 
 if use_stethoscope == false and use_timeline == false and use_marker == false then
@@ -746,21 +709,19 @@ end
 if use_wrapper and likwid.tablelength(arg)-2 == 0 and print_info == false then
     print_stderr("No Executable can be found on commandline")
     usage()
-    likwid.putTopology()
-    likwid.putConfiguration()
-    os.exit(0)
+    perfctr_exit(0)
 end
 
 if use_marker then
     if likwid.access(markerFile, "rw") ~= -1 then
         print_stderr(string.format("ERROR: MarkerAPI file %s not accessible. Maybe a remaining file of another user.", markerFile))
         print_stderr(string.format("Please purge all MarkerAPI files from %s.", markerFolder))
-        os.exit(1)
+        perfctr_exit(1)
     end
     if gpusSupported and #gpulist and likwid.access(nvMarkerFile, "rw") ~= -1 then
         print_stderr(string.format("ERROR: GPUMarkerAPI file %s not accessible. Maybe a remaining file of another user.", nvMarkerFile))
         print_stderr(string.format("Please purge all GPUMarkerAPI files from %s.", markerFolder))
-        os.exit(1)
+        perfctr_exit(1)
     end
     if not pin_cpus and #cpulist > 0 and #event_string_list > 0 then
         print_stderr("Warning: The Marker API requires the application to run on the selected CPUs.")
@@ -861,23 +822,18 @@ end]]
 if #event_string_list > 0 then
     if set_access_modes then
         if likwid.setAccessClientMode(access_mode) ~= 0 then
-            likwid.putTopology()
-            likwid.putConfiguration()
-            os.exit(1)
+            perfctr_exit(1)
         end
     end
 
     if likwid.init(num_cpus, cpulist) < 0 then
-        likwid.putTopology()
-        likwid.putConfiguration()
-        os.exit(1)
+        perfctr_exit(1)
     end
 end
 ---------------------------
 if gpusSupported and #gpu_event_string_list > 0 then
     if likwid.nvInit(num_gpus, gpulist) < 0 then
-        likwid.putGpuTopology()
-        os.exit(1)
+        perfctr_exit(1)
     end
 end
 ---------------------------
@@ -923,10 +879,7 @@ if #execList > 0 then
 end
 if not pid and #execList > 0 then
     print_stderr(string.format("Failed to execute command: %s", table.concat(execList," ")))
-    likwid.putTopology()
-    likwid.putNumaInfo()
-    likwid.putConfiguration()
-    os.exit(1)
+    perfctr_exit(1)
 elseif #execList > 0 then
     likwid.sendSignal(pid, 19)
 end
@@ -946,7 +899,7 @@ for i, event_string in pairs(event_string_list) do
         local gid = likwid.addEventSet(event_string)
         if gid < 0 then
             likwid.finalize()
-            os.exit(1)
+            perfctr_exit(1)
         end
         table.insert(group_ids, gid)
     end
@@ -956,10 +909,8 @@ if gpusSupported then
         if event_string:len() > 0 then
             local gid = likwid.nvAddEventSet(event_string)
             if gid < 0 then
-                likwid.putGpuTopology()
-                likwid.putConfiguration()
                 likwid.nvFinalize()
-                os.exit(1)
+                perfctr_exit(1)
             end
             table.insert(gpugroups, gid)
         end
@@ -968,7 +919,7 @@ end
 if #group_ids == 0 and not (#gpu_event_string_list > 0 and use_marker) then
     print_stderr("ERROR: No valid eventset given on commandline. Exiting...")
     likwid.finalize()
-    os.exit(1)
+    perfctr_exit(1)
 end
 
 if #event_string_list > 0 then
@@ -976,7 +927,7 @@ if #event_string_list > 0 then
     ret = likwid.setupCounters(activeGroup)
     if ret < 0 then
         likwid.killProgram(pid)
-        os.exit(1)
+        perfctr_exit(1)
     end
     if outfile == nil then
         print_stdout(likwid.hline)
@@ -1002,7 +953,7 @@ if #event_string_list > 0 then
         local delim = "|"
         local word_delim = ": "
         if outfile_orig ~= nil then
-            io.output(outfile_orig)
+            io.output(outfile)
             delim = timeline_delim
             word_delim = timeline_delim
         end
@@ -1010,7 +961,7 @@ if #event_string_list > 0 then
         for i, cpu in pairs(cpulist) do
             table.insert(clist, tostring(cpu))
         end
-        print("# HWThreads"..word_delim..table.concat(clist, delim))
+        print(outprefix.."# HWThreads"..word_delim..table.concat(clist, delim))
         for i, gid in pairs(group_ids) do
             local strlist = {"GID"}
             if likwid.getNumberOfMetrics(gid) == 0 then
@@ -1028,7 +979,7 @@ if #event_string_list > 0 then
                     table.insert(strlist, likwid.getNameOfMetric(gid, m))
                 end
             end
-            print("# "..table.concat(strlist, delim))
+            print(outprefix.."# "..table.concat(strlist, delim))
         end
     end
 end
@@ -1054,7 +1005,7 @@ if use_wrapper or use_timeline then
     local ret = likwid.startCounters()
     if ret < 0 then
         print_stderr(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
-        os.exit(1)
+        perfctr_exit(1)
     end
 
     likwid.sendSignal(pid, 18)
@@ -1103,9 +1054,9 @@ if use_wrapper or use_timeline then
                 end
             end
             if not outfile then
-                print_stderr(table.concat(outList, timeline_delim))
+                print_stderr(outprefix..table.concat(outList, timeline_delim))
             else
-                print(table.concat(outList, timeline_delim))
+                print(outprefix..table.concat(outList, timeline_delim))
                 io.flush()
             end
             groupTime[activeGroup] = time
@@ -1132,7 +1083,7 @@ elseif use_stethoscope then
     local ret = likwid.startCounters()
     if ret < 0 then
         print_stderr(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
-        os.exit(1)
+        perfctr_exit(1)
     end
     likwid.sleep(duration)
 elseif use_marker then
@@ -1145,7 +1096,7 @@ if not use_marker then
     if ret < 0 then
         print_stderr(string.format("Error stopping counters for thread %d.",ret * (-1)))
         likwid.finalize()
-        os.exit(exitvalue)
+        perfctr_exit(exitvalue)
     end
 end
 io.stdout:flush()
@@ -1196,46 +1147,37 @@ elseif use_timeline == false then
     likwid.printOutput(results, metrics, cpulist, nil, print_stats)
 end
 
-if outfile then
+if outfile and not use_timeline then
     local suffix = ""
     if string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$") then
         suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
     end
     local command = "<INSTALLED_PREFIX>/share/likwid/filter/" .. suffix
-    local tmpfile = outfile..".tmp"
-    if suffix == "" then
-        os.rename(tmpfile, outfile)
-    elseif suffix ~= "txt" and suffix ~= "csv" and not likwid.access(command,"x") then
-        print_stderr("Cannot find filter script, save output in CSV format to file "..outfile)
-        os.rename(tmpfile, outfile)
-    else
-        if suffix ~= "txt" and suffix ~= "csv" then
-            command = command .." ".. tmpfile .. " perfctr"
-            local f = assert(io.popen(command), "r")
+    if suffix:len() > 0 then
+        if likwid.access(command, "x") == 0 then
+            local tmpfile = outfile..".tmp"
+            os.rename(outfile, tmpfile)
+            local cmd = command .." ".. tmpfile .. " perfctr"
+            local f = assert(io.popen(cmd), "r")
             if f ~= nil then
                 local o = f:read("*a")
                 if o:len() > 0 then
-                    print_stderr(string.format("Failed to executed filter script %s.",command))
-                else
-                    os.rename(outfile.."."..suffix, outfile)
-                    if not likwid.access(tmpfile, "e") then
-                        os.remove(tmpfile)
+                    print_stderr(string.format("Failed to executed filter script %s. Output file %s in CSV format.", command, outfile))
+                    if likwid.access(tmpfile, "e") == 0 then
+                        os.rename(tmpfile, outfile)
                     end
                 end
-            else
-                print_stderr("Failed to call filter script, save output in CSV format to file "..outfile)
-                os.rename(tmpfile, outfile)
+            end
+            if likwid.access(tmpfile, "e") == 0 then
                 os.remove(tmpfile)
             end
+        elseif likwid.access(command, "e") == 0 then
+            print_stderr(string.format("Filter script %s not executable. Output file %s in CSV format.", command, outfile))
         else
-            os.rename(tmpfile, outfile)
-            os.remove(tmpfile)
+            print_stderr(string.format("Filter script %s not available. Output file %s in CSV format.", command, outfile))
         end
     end
 end
 
---if gpusSupported and #gpu_event_string_list > 0 then
---    likwid.gpuFinalize()
---end
 likwid.finalize()
-os.exit(exitvalue)
+perfctr_exit(exitvalue)
