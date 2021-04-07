@@ -1026,7 +1026,7 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
     local affinity = likwid.getAffinityInfo()
     local domainlist = {}
     local newexprs = {}
-    domainname, count, threads = nperdomain:match("[E]*[:]*([NSCM]*):(%d+)[:]*(%d*)")
+    domainname, count, threads = nperdomain:match("[E]*[:]*([NSCMD]*):(%d+)[:]*(%d*)")
     count = math.tointeger(count)
     threads = math.tointeger(threads)
     if threads == nil then threads = 1 end
@@ -2077,7 +2077,7 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
             os.exit(1)
         end
     elseif opt == "nperdomain" then
-        local domain, count, threads = arg:match("([NSCM]):(%d+)[:]*(%d*)")
+        local domain, count, threads = arg:match("([NSCMD]):(%d+)[:]*(%d*)")
         if domain == nil or count == nil then
             print_stderr("Invalid option to -nperdomain")
             os.exit(1)
@@ -2309,7 +2309,7 @@ else
             end
         end
     end
-    domainname, count, threads, distance = nperdomain:match("[E]*[:]*([NSCM]*):(%d+)[:]*(%d*)[:]*(%d*)")
+    domainname, count, threads, distance = nperdomain:match("[E]*[:]*([NSCMD]*):(%d+)[:]*(%d*)[:]*(%d*)")
     if math.tointeger(threads) == nil then
         if tpp > 1 then
             nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp, dist)

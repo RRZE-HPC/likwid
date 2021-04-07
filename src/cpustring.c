@@ -875,7 +875,8 @@ cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
         else if ((bstrchrp(strlist->entry[i], 'N', 0) == 0) ||
                  (bstrchrp(strlist->entry[i], 'S', 0) == 0) ||
                  (bstrchrp(strlist->entry[i], 'C', 0) == 0) ||
-                 (bstrchrp(strlist->entry[i], 'M', 0) == 0))
+                 (bstrchrp(strlist->entry[i], 'M', 0) == 0) ||
+                 (bstrchrp(strlist->entry[i], 'D', 0) == 0))
         {
             if (bstrchrp(strlist->entry[i], ':', 0) != BSTR_ERR)
             {

@@ -69,12 +69,40 @@ int skl_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     event++;
     return 0;
 }
+
+int has_uncore_lock(int cpu_id)
+{
+    if (IS_SKYLAKE_CLIENT(cpuid_info.model) &&
+        socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
+    {
+        return 1;
+    }
+    else if (cpuid_info.model == SKYLAKEX)
+    {
+        if (cpuid_topology.numSockets == cpuid_topology.numDies)
+        {
+            if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
+            {
+                return 1;
+            }
+        }
+        else
+        {
+            if (die_lock[affinity_thread2die_lookup[cpu_id]] == cpu_id)
+            {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
 int perfmon_init_skylake(int cpu_id)
 {
     int ret = 0;
 
     lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &die_lock[affinity_thread2die_lookup[cpu_id]], cpu_id);
 
     uint64_t misc_enable = 0x0;
     ret = HPMread(cpu_id, MSR_DEV, MSR_IA32_MISC_ENABLE, &misc_enable);
@@ -246,7 +274,7 @@ int skl_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint64_t flags = 0x0ULL;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
+    if (!has_uncore_lock(cpu_id))
     {
         return 0;
     }
@@ -286,7 +314,7 @@ int skl_uboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
     event++;
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
+    if (!has_uncore_lock(cpu_id))
     {
         return 0;
     }
@@ -304,7 +332,7 @@ int skl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint64_t flags = 0x0ULL;
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
+    if (!has_uncore_lock(cpu_id))
     {
         return 0;
     }
@@ -351,7 +379,7 @@ int skx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int opc_match = 0;
     int match1 = 0;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
+    if (!has_uncore_lock(cpu_id))
     {
         return 0;
     }
@@ -456,7 +484,7 @@ int skx_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
+    if (!has_uncore_lock(cpu_id))
     {
         return 0;
     }
@@ -502,7 +530,7 @@ int skx_mboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
     event++;
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
+    if (!has_uncore_lock(cpu_id))
     {
         return 0;
     }
@@ -528,7 +556,7 @@ int skx_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t filter = box_map[counter_map[index].type].filterRegister1;
     int clean_filter = 1;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
+    if (!has_uncore_lock(cpu_id))
     {
         return 0;
     }
@@ -598,7 +626,7 @@ int skx_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
+    if (!has_uncore_lock(cpu_id))
     {
         return 0;
     }
@@ -653,7 +681,7 @@ int skx_uncorebox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
+    if (!has_uncore_lock(cpu_id))
     {
         return 0;
     }
@@ -699,7 +727,7 @@ int skx_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
+    if (!has_uncore_lock(cpu_id))
     {
         return 0;
     }
@@ -785,10 +813,7 @@ int perfmon_setupCounterThread_skylake(
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
-        haveLock = 1;
-    }
+    haveLock = has_uncore_lock(cpu_id);
 
     if (MEASURE_CORE(eventSet))
     {
@@ -968,10 +993,7 @@ int perfmon_startCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet
     uint64_t tmp = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
-        haveLock = 1;
-    }
+    haveLock = has_uncore_lock(cpu_id);
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -1205,10 +1227,7 @@ int skl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
     PciDeviceIndex dev = counter_map[index].device;
     uint64_t counter1 = counter_map[index].counterRegister;
     event++;
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
-    {
-        return 0;
-    }
+    int haveLock = has_uncore_lock(cpu_id);
 
     CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, counter1, &result));
     VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST result, READ_REG_1);
@@ -1281,10 +1300,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
-        haveLock = 1;
-    }
+    haveLock = has_uncore_lock(cpu_id);
 
     if (MEASURE_CORE(eventSet))
     {
@@ -1344,7 +1360,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case THERMAL:
                     CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
                     break;
-                
+
                 case VOLTAGE:
                     CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
                     break;
@@ -1517,10 +1533,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
-        haveLock = 1;
-    }
+    haveLock = has_uncore_lock(cpu_id);
 
     if (MEASURE_CORE(eventSet))
     {
@@ -1585,7 +1598,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                     CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
                     eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
                     break;
-                
+
                 case VOLTAGE:
                     CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
                     eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
@@ -1748,10 +1761,7 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
     uint64_t ovf_values_uncore = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
-        haveLock = 1;
-    }
+    haveLock = has_uncore_lock(cpu_id);
     if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
     {
         haveTileLock = 1;

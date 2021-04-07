@@ -837,6 +837,9 @@ lua_likwid_getCpuTopology(lua_State* L)
         lua_pushstring(L,"apicId");
         lua_pushinteger(L, (lua_Integer)(cputopo->threadPool[i].apicId));
         lua_settable(L,-3);
+        lua_pushstring(L,"dieId");
+        lua_pushinteger(L, (lua_Integer)(cputopo->threadPool[i].dieId));
+        lua_settable(L,-3);
         lua_pushstring(L,"inCpuSet");
         lua_pushinteger(L, (lua_Integer)(cputopo->threadPool[i].inCpuSet));
         lua_settable(L,-3);

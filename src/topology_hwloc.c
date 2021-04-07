@@ -372,6 +372,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     int maxNumLogicalProcsPerCore = 0;
     int maxNumCores = 0;
     int maxNumSockets = 0;
+    int maxNumDies = 0;
     int maxNumCoresPerSocket = 0;
     hwloc_obj_t obj = NULL;
     int poolsize = 0;
@@ -401,6 +402,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
         hwThreadPool[i].threadId = -1;
         hwThreadPool[i].coreId = -1;
         hwThreadPool[i].packageId = -1;
+        hwThreadPool[i].dieId = -1;
         hwThreadPool[i].inCpuSet = 0;
     }
 
@@ -410,8 +412,11 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     {
         socket_type = HWLOC_OBJ_NODE;
     }
-    maxNumSockets = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, socket_type);
-    obj = LIKWID_HWLOC_NAME(get_obj_by_type)(hwloc_topology, socket_type, 0);
+
+    maxNumSockets = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, socket_type);
+    maxNumDies = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_DIE);
+    obj = likwid_hwloc_get_obj_by_type(hwloc_topology, socket_type, 0);
+
     if (obj)
     {
         maxNumCoresPerSocket = likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology, obj, HWLOC_OBJ_CORE, NULL, NULL);
@@ -503,6 +508,32 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             }
         }
 #endif
+        if (maxNumSockets < maxNumDies)
+        {
+        while (obj->type != HWLOC_OBJ_DIE) {
+            obj = obj->parent;
+            if (!obj)
+            {
+                skip = 1;
+                break;
+            }
+        }
+        if (skip)
+        {
+            hwThreadPool[id].dieId = 0;
+            continue;
+        }
+	if (obj->type == HWLOC_OBJ_DIE)
+        {
+            hwThreadPool[id].dieId = obj->os_index;
+        }
+        else
+        {
+	    hwThreadPool[id].dieId = 0;
+        }
+        } else {
+            hwThreadPool[id].dieId = 0;
+        }
         while (obj->type != socket_type) {
             obj = obj->parent;
             if (!obj)
@@ -528,10 +559,11 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
 #else
         hwThreadPool[id].packageId = obj->os_index;
 #endif
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Socket %d inCpuSet %d,
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Die %d Socket %d inCpuSet %d,
                             hwThreadPool[id].apicId,
                             hwThreadPool[id].threadId,
                             hwThreadPool[id].coreId,
+                            hwThreadPool[id].dieId,
                             hwThreadPool[id].packageId,
                             hwThreadPool[id].inCpuSet)
     }
@@ -569,6 +601,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     cpuid_topology.numThreadsPerCore = maxNumLogicalProcsPerCore;
     cpuid_topology.numCoresPerSocket = maxNumCoresPerSocket;
     cpuid_topology.numSockets = maxNumSockets;
+    cpuid_topology.numDies = maxNumDies;
     return;
 }
 
