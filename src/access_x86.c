@@ -46,6 +46,7 @@
 #include <access_x86_msr.h>
 #include <access_x86_pci.h>
 #include <access_x86_clientmem.h>
+#include <access_x86_mmio.h>
 #include <affinity.h>
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -59,6 +60,10 @@ access_x86_init(int cpu_id)
         if (cpuid_info.supportUncore)
         {
             ret = access_x86_pci_init(affinity_thread2socket_lookup[cpu_id]);
+            if (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+            {
+                ret = access_x86_mmio_init(affinity_thread2socket_lookup[cpu_id]);
+            }
         }
         else if (cpuid_info.supportClientmem)
         {
@@ -80,10 +85,24 @@ access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *da
     }
     else
     {
-        if (cpuid_info.supportUncore && access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]))
+        if (cpuid_info.supportUncore)
         {
-            err = access_x86_pci_read(dev, affinity_thread2socket_lookup[cpu_id], reg, &tmp);
-            *data = tmp;
+            if (dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1)
+            {
+                if (access_x86_mmio_check(dev, affinity_thread2socket_lookup[cpu_id]))
+                {
+                    err = access_x86_mmio_read(dev, affinity_thread2socket_lookup[cpu_id], reg, &tmp);
+                    *data = tmp;
+                }
+            }
+            else
+            {
+                if (access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]))
+                {
+                    err = access_x86_pci_read(dev, affinity_thread2socket_lookup[cpu_id], reg, &tmp);
+                    *data = tmp;
+                }
+            }
         }
         else if (cpuid_info.supportClientmem &&
                  dev == PCI_IMC_DEVICE_0_CH_0 &&
@@ -106,9 +125,22 @@ access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t da
     }
     else
     {
-        if (cpuid_info.supportUncore && access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]))
+        if (cpuid_info.supportUncore)
         {
-            err = access_x86_pci_write(dev, affinity_thread2socket_lookup[cpu_id], reg, data);
+            if (dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1)
+            {
+                if (access_x86_mmio_check(dev, affinity_thread2socket_lookup[cpu_id]))
+                {
+                    err = access_x86_mmio_write(dev, affinity_thread2socket_lookup[cpu_id], reg, data);
+                }
+            }
+            else
+            {
+                if (access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]))
+                {
+                    err = access_x86_pci_write(dev, affinity_thread2socket_lookup[cpu_id], reg, data);
+                }
+            }
         }
         else if (cpuid_info.supportClientmem &&
                  dev == PCI_IMC_DEVICE_0_CH_0 &&
@@ -127,6 +159,10 @@ access_x86_finalize(int cpu_id)
     if (cpuid_info.supportUncore)
     {
         access_x86_pci_finalize(affinity_thread2socket_lookup[cpu_id]);
+        if (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+        {
+            access_x86_mmio_finalize(affinity_thread2socket_lookup[cpu_id]);
+        }
     }
     if (cpuid_info.supportClientmem)
     {
@@ -145,7 +181,14 @@ access_x86_check(PciDeviceIndex dev, int cpu_id)
     {
         if (cpuid_info.supportUncore)
         {
-            return access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]);
+            if (dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1)
+            {
+                return access_x86_mmio_check(dev, affinity_thread2socket_lookup[cpu_id]);
+            }
+            else
+            {
+                return access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]);
+            }
         }
         else if (cpuid_info.supportClientmem && dev == PCI_IMC_DEVICE_0_CH_0)
         {
