@@ -915,6 +915,7 @@ topology_setName(void)
 
                 case ICELAKEX1:
                 case ICELAKEX2:
+                    cpuid_info.supportUncore = 1;
                     cpuid_info.name = icelakesp_str;
                     cpuid_info.short_name = short_icelakesp;
                     break;
