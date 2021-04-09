@@ -53,6 +53,9 @@ LIBS      += -ldl
 ifeq ($(LUA_INTERNAL),false)
 LIBS      += -l$(LUA_LIB_NAME)
 endif
+ifeq ($(USE_INTERNAL_HWLOC),false)
+LIBS      += -l$(HWLOC_LIB_NAME)
+endif
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
@@ -262,7 +265,7 @@ $(TARGET_GOTCHA_LIB):
 	@echo "===>  ENTER  $(GOTCHA_FOLDER)"
 	$(Q)$(MAKE) --no-print-directory -C $(GOTCHA_FOLDER) $(MAKECMDGOALS)
 
-ifeq ($(USE_HWLOC_INTERNAL),true)
+ifeq ($(USE_INTERNAL_HWLOC),true)
 $(TARGET_HWLOC_LIB):
 	@echo "===>  ENTER  $(HWLOC_FOLDER)"
 	$(Q)$(MAKE) --no-print-directory -C $(HWLOC_FOLDER) $(MAKECMDGOALS)
