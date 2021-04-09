@@ -2598,6 +2598,10 @@ int main(void)
                 //testDevice = 0x80862f30;
                 pci_devices_daemon = skylakeX_pci_devices;
             }
+            else if (model == ICELAKEX1 || model == ICELAKEX2)
+            {
+                pci_devices_daemon = icelakeX_pci_devices;
+            }
             else if ((model == XEON_PHI_KNL) ||
                      (model == XEON_PHI_KML))
             {
