@@ -1152,7 +1152,7 @@ perfmon_init_maps(void)
                     counter_map = icelakeX_counter_map;
                     box_map = icelakeX_box_map;
                     perfmon_numCounters = perfmon_numCountersIcelakeX;
-                    translate_types = default_translate_types;
+                    translate_types = icelakeX_translate_types;
                     archRegisterTypeNames = registerTypeNamesIcelakeX;
                     break;
 
