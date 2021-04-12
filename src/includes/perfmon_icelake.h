@@ -851,10 +851,12 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
             switch (type)
             {
                 case FIXED:
+                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_FIXED);
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     flags |= (1ULL<<(index+32));  /* enable fixed counter */
                     break;
                 case PMC:
+                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_PMC);
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     flags |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));  /* enable counter */
                     break;
@@ -890,13 +892,14 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                     {
                         if ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2))
                         {
+                            VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_MBOX);
                             CHECK_MMIO_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                         }
                         else if (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2)
                         {
                             CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
                             eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
-                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST tmp, READ_MBOX)
+                            VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST eventSet->events[i].threadCounter[thread_id].startData, READ_MBOX);
                         }
                     }
                     break;
@@ -905,7 +908,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
                         eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST tmp, READ_MBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST eventSet->events[i].threadCounter[thread_id].startData, READ_MBOX);
                     }
                     break;
                 case BBOX0:
@@ -914,7 +917,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                 case BBOX3:
                     if (haveLock)
                     {
-                        VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, CLEAR_BBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_BBOX);
                         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     }
                     break;
@@ -923,7 +926,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                 case SBOX2:
                     if (haveLock)
                     {
-                        VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, CLEAR_SBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_SBOX);
                         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     }
                     break;
@@ -932,28 +935,28 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                 case QBOX2:
                     if (haveLock)
                     {
-                        VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, CLEAR_QBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_QBOX);
                         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     }
                     break;
                 case UBOXFIX:
                     if (haveLock)
                     {
-                        VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, CLEAR_UBOXFIX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_UBOXFIX);
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     }
                     break;
                 case UBOX:
                     if (haveLock)
                     {
-                        VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, CLEAR_UBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_UBOX);
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     }
                     break;
                 case WBOX:
                     if (haveLock)
                     {
-                        VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, CLEAR_WBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_WBOX);
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     }
                     break;
@@ -961,9 +964,9 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                     if (haveLock)
                     {
                         tmp = 0x0ULL;
-                        VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, START_WBOXFIX)
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
                         eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST eventSet->events[i].threadCounter[thread_id].startData, START_WBOXFIX);
                     }
                     break;
                 case EUBOX0:
@@ -974,7 +977,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                 case EUBOX5:
                     if (haveLock)
                     {
-                        VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, CLEAR_IIO)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_IIO);
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     }
                     break;
@@ -986,7 +989,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                 case PBOX5:
                     if (haveLock)
                     {
-                        VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, CLEAR_PBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_PBOX);
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     }
                     break;
@@ -1006,7 +1009,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
                         eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
-                        VERBOSEPRINTREG(cpu_id, counter1, eventSet->events[i].threadCounter[thread_id].startData, READ_IIOPORT)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST eventSet->events[i].threadCounter[thread_id].startData, READ_IIOPORT);
                     }
                     break;
                 case IBOX0:
@@ -1017,7 +1020,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                 case IBOX5:
                     if (haveLock)
                     {
-                        VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, CLEAR_IBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_IBOX);
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     }
                     break;
@@ -1063,7 +1066,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                 case CBOX39:
                     if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
                     {
-                        VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, CLEAR_CBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_CBOX);
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     }
                     break;
@@ -1293,15 +1296,18 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
 
                 case THERMAL:
                     CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
+                    VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, counter1, LLU_CAST counter_result, STOP_THERMAL);
                     break;
 
                 case VOLTAGE:
                     CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
+                    VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, counter1, LLU_CAST counter_result, STOP_VOLTAGE);
                     break;
 
                 case METRICS:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                     counter_result= field64(counter_result, getCounterTypeOffset(index)*box_map[type].regWidth, box_map[type].regWidth);
+                    VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, counter1, LLU_CAST counter_result, STOP_METRICS);
                     break;
                 case MBOX0:
                 case MBOX1:
@@ -1322,11 +1328,13 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                         {
                             CHECK_MMIO_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
                             counter_result = field64(counter_result, 0, box_map[type].regWidth);
+                            VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_MBOX);
                         }
                         else if ((cpuid_info.model == ICELAKE1) || (cpuid_info.model == ICELAKE2))
                         {
                             CHECK_MSR_READ_ERROR(HPMread(cpu_id, PCI_IMC_DEVICE_0_CH_0, counter1, &counter_result));
                             counter_result = field64(counter_result, 0, box_map[type].regWidth);
+                            VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_MBOX);
                         }
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
@@ -1344,6 +1352,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                             VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_CLIENTMEM)
                             eventSet->events[i].threadCounter[thread_id].overflows++;
                         }
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_MBOX);
                     }
                     break;
                 case UBOXFIX:
@@ -1351,6 +1360,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                         ICX_CHECK_UNCORE_OVERFLOW(box_map[type].ovflOffset);
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_UBOXFIX);
                     }
                     break;
                 case UBOX:
@@ -1358,6 +1368,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                         ICX_CHECK_UNCORE_OVERFLOW(box_map[type].ovflOffset);
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_UBOX);
                     }
                     break;
                 case EUBOX0:
@@ -1371,7 +1382,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                         icx_uncore_read(cpu_id, index, event, current, overflows,
                                     FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_CBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_IIO);
                     }
                     break;
                 case EUBOX0FIX:
@@ -1390,7 +1401,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
                         counter_result = field64(tmp, 0, box_map[type].regWidth);
-                        VERBOSEPRINTREG(cpu_id, counter1, counter_result, READ_IIOPORT)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_IIOPORT);
                     }
                     break;
                 case IBOX0:
@@ -1404,7 +1415,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                         icx_uncore_read(cpu_id, index, event, current, overflows,
                                     FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_IBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_IBOX);
                     }
                     break;
                 case WBOX:
@@ -1413,7 +1424,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                         icx_uncore_read(cpu_id, index, event, current, overflows,
                                     FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_WBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_WBOX);
                     }
                     break;
                 case WBOX0FIX:
@@ -1463,12 +1474,12 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                 case CBOX37:
                 case CBOX38:
                 case CBOX39:
-                    if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+                    if (haveLock)
                     {
                         icx_uncore_read(cpu_id, index, event, current, overflows, 
                                         FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_CBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_CBOX);
                     }
                     break;
                 case BBOX0:
@@ -1480,7 +1491,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                         icx_uncore_read(cpu_id, index, event, current, overflows, 
                                         FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_BBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_BBOX);
                     }
                     break;
                 case SBOX0:
@@ -1491,7 +1502,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                         icx_uncore_read(cpu_id, index, event, current, overflows, 
                                         FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_SBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_SBOX);
                     }
                     break;
                 case QBOX0:
@@ -1502,7 +1513,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                         icx_uncore_read(cpu_id, index, event, current, overflows, 
                                         FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_QBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_QBOX);
                     }
                     break;
                 case PBOX:
@@ -1516,7 +1527,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                         icx_uncore_read(cpu_id, index, event, current, overflows, 
                                         FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_QBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_PBOX);
                     }
                     break;
                 default:
@@ -1609,15 +1620,18 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                 case THERMAL:
                     CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
                     eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+                    VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, counter1, LLU_CAST counter_result, READ_THERMAL);
                     break;
 
                 case VOLTAGE:
                     CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
+                    VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, counter1, LLU_CAST counter_result, READ_VOLTAGE);
                     break;
 
                 case METRICS:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                     counter_result= field64(counter_result, getCounterTypeOffset(index)*box_map[type].regWidth, box_map[type].regWidth);
+                    VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, counter1, LLU_CAST counter_result, READ_METRICS);
                     break;
 
                 case UBOXFIX:
@@ -1625,6 +1639,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                         ICX_CHECK_UNCORE_OVERFLOW(box_map[type].ovflOffset);
+                        VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, counter1, LLU_CAST counter_result, READ_UBOXFIX);
                     }
                     break;
                 case UBOX:
@@ -1632,6 +1647,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                         ICX_CHECK_UNCORE_OVERFLOW(box_map[type].ovflOffset);
+                        VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, counter1, LLU_CAST counter_result, READ_UBOX);
                     }
                     break;
                 case MBOX0:
@@ -1653,17 +1669,17 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                         {
                             CHECK_MMIO_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
                             counter_result = field64(counter_result, 0, box_map[type].regWidth);
-                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
+                            VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_MBOX);
                         }
                         else if ((cpuid_info.model == ICELAKE1) && (cpuid_info.model == ICELAKE2))
                         {
                             CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
                             counter_result = field64(counter_result, 0, box_map[type].regWidth);
-                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX);
+                            VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_MBOX);
                         }
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
-                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_CLIENTMEM)
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_MEM)
                             eventSet->events[i].threadCounter[thread_id].overflows++;
                         }
                     }
@@ -1672,7 +1688,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2))
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX);
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_MBOX);
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
                             VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_CLIENTMEM)
@@ -1690,7 +1706,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         icx_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_IIO)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_IIO);
                     }
                     break;
                 case EUBOX0FIX:
@@ -1709,7 +1725,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
                         counter_result = field64(tmp, 0, box_map[type].regWidth);
-                        VERBOSEPRINTREG(cpu_id, counter1, counter_result, READ_IIOPORT)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_IIOPORT);
                     }
                     break;
                 case IBOX0:
@@ -1722,7 +1738,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         icx_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_IBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_IBOX);
                     }
                     break;
                 case WBOX:
@@ -1730,7 +1746,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         icx_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_WBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_WBOX);
                     }
                     break;
                 case WBOX0FIX:
@@ -1785,7 +1801,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         icx_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_CBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_CBOX);
                     }
                     break;
                 case BBOX0:
@@ -1796,7 +1812,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         icx_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_BBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_BBOX);
                     }
                     break;
                 case SBOX0:
@@ -1806,7 +1822,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         icx_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_SBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_SBOX);
                     }
                     break;
                 case QBOX0:
@@ -1816,7 +1832,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         icx_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_QBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_QBOX);
                     }
                     break;
                 case PBOX:
@@ -1829,7 +1845,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     {
                         icx_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_PBOX)
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_PBOX);
                     }
                     break;
                 default:
