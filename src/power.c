@@ -131,6 +131,7 @@ power_init(int cpuId)
                 case TIGERLAKE2:
                 case ICELAKE1:
                 case ICELAKE2:
+                case ROCKETLAKE:
                 case ICELAKEX1:
                 case ICELAKEX2:
                     power_info.hasRAPL = 1;
