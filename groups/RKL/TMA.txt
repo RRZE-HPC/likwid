@@ -7,8 +7,8 @@ FIXC2 CPU_CLK_UNHALTED_REF
 FIXC3 TOPDOWN_SLOTS
 TMA0 RETIRING
 TMA1 BAD_SPECULATION
-PMC2 FRONTEND_BOUND
-PMC3 BACKEND_BOUND
+TMA2 FRONTEND_BOUND
+TMA3 BACKEND_BOUND
 
 METRICS
 Runtime (RDTSC) [s] time
@@ -17,18 +17,18 @@ Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 IPC FIXC0/FIXC1
 Total Slots FIXC3
-Front End [%] TMA2/FIXC3*100
-Speculation [%] TMA1/FIXC3*100
-Retiring [%] TMA1/FIXC3*100
-Back End [%] TMA3/FIXC3*100
+Front End [%] TMA2*100
+Speculation [%] TMA1*100
+Retiring [%] TMA0*100
+Back End [%] TMA3*100
 
 LONG
 Formulas:
 Total Slots = TOPDOWN_SLOTS
-Front End [%] = FRONTEND_BOUND/TOPDOWN_SLOTS*100
-Speculation [%] = BAD_SPECULATION/TOPDOWN_SLOTS100
-Retiring [%] = RETIRING/TOPDOWN_SLOTS*100
-Back End [%] = BACKEND_BOUND/TOPDOWN_SLOTS*100
+Front End [%] = FRONTEND_BOUND*100
+Speculation [%] = BAD_SPECULATION*100
+Retiring [%] = RETIRING*100
+Back End [%] = BACKEND_BOUND*100
 --
 This performance group measures possible scheduling slots to determine percentage of time spent in
 front end, back end, retiring and speculation. These metrics are published and
