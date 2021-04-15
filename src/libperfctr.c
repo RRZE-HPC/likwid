@@ -353,7 +353,7 @@ likwid_markerRegisterRegion(const char* regionTag)
     }
     LikwidThreadResults* results = NULL;
     int cpu_id = sched_getcpu();
-    Map_t m = GET_THREAD_MAP(activeGroup, cpu_id);
+    Map_t m = GET_THREAD_MAP(groupSet->activeGroup, cpu_id);
 
     if (get_smap_by_key(m, (char*)regionTag, (void**)&results) < 0)
     {
@@ -364,15 +364,16 @@ likwid_markerRegisterRegion(const char* regionTag)
             results->time = 0.0;
             results->count = 0;
             results->cpuID = cpu_id;
+            results->groupID = (int)groupSet->activeGroup;
             results->state = MARKER_STATE_NEW;
             for (int i=0; i< NUM_PMC; i++)
             {
                 results->PMcounters[i] = 0.0;
                 results->StartPMcounters[i] = 0.0;
             }
-            add_smap(m, (char*)regionTag, results);
-            mgroups->groups[(activeGroup)].threads[cpus2threads[(cpu_id)]].last = (off_t)regionTag;
-            mgroups->groups[(activeGroup)].threads[cpus2threads[(cpu_id)]].last_res = results;
+            int idx = add_smap(m, (char*)regionTag, results);
+            mgroups->groups[(groupSet->activeGroup)].threads[cpus2threads[(cpu_id)]].last = (off_t)regionTag;
+            mgroups->groups[(groupSet->activeGroup)].threads[cpus2threads[(cpu_id)]].last_res = results;
         }
     }
     else
@@ -393,11 +394,11 @@ likwid_markerStartRegion(const char* regionTag)
     LikwidThreadResults* results = NULL;
     int cpu_id = sched_getcpu();
     int thread_id = cpus2threads[cpu_id];
-    Map_t m = GET_THREAD_MAP(activeGroup, cpu_id);
-    off_t lastTag = GET_THREAD_LAST(activeGroup, cpu_id);
+    Map_t m = GET_THREAD_MAP(groupSet->activeGroup, cpu_id);
+    off_t lastTag = GET_THREAD_LAST(groupSet->activeGroup, cpu_id);
     if (lastTag == (off_t)regionTag)
     {
-        results = GET_THREAD_LASTRES(activeGroup, cpu_id);
+        results = GET_THREAD_LASTRES(groupSet->activeGroup, cpu_id);
     }
     else
     {
@@ -419,7 +420,7 @@ likwid_markerStartRegion(const char* regionTag)
     perfmon_readCountersCpu(cpu_id);
     timer_stop(&start);
     //printf("MARKER START %f\n", timer_print(&start));
-    for(int i = 0; i < perfmon_getNumberOfEvents(activeGroup); i++)
+    for(int i = 0; i < perfmon_getNumberOfEvents(groupSet->activeGroup); i++)
     {
         if (groupSet->groups[groupSet->activeGroup].events[i].type != NOTYPE)
         {
@@ -439,8 +440,8 @@ likwid_markerStartRegion(const char* regionTag)
         }
     }
     results->state = MARKER_STATE_START;
-    mgroups->groups[(activeGroup)].threads[cpus2threads[(cpu_id)]].last = (off_t)regionTag;
-    mgroups->groups[(activeGroup)].threads[cpus2threads[(cpu_id)]].last_res = results;
+    mgroups->groups[(groupSet->activeGroup)].threads[cpus2threads[(cpu_id)]].last = (off_t)regionTag;
+    mgroups->groups[(groupSet->activeGroup)].threads[cpus2threads[(cpu_id)]].last_res = results;
     timer_start(&(results->startTime));
     return 0;
 }
@@ -459,11 +460,11 @@ likwid_markerStopRegion(const char* regionTag)
     LikwidThreadResults* results = NULL;
     int cpu_id = sched_getcpu();
     int thread_id = cpus2threads[cpu_id];
-    Map_t m = GET_THREAD_MAP(activeGroup, cpu_id);
-    off_t lastTag = GET_THREAD_LAST(activeGroup, cpu_id);
+    Map_t m = GET_THREAD_MAP(groupSet->activeGroup, cpu_id);
+    off_t lastTag = GET_THREAD_LAST(groupSet->activeGroup, cpu_id);
     if (lastTag == (off_t)regionTag)
     {
-        results = GET_THREAD_LASTRES(activeGroup, cpu_id);
+        results = GET_THREAD_LASTRES(groupSet->activeGroup, cpu_id);
     }
     else
     {
@@ -491,7 +492,7 @@ likwid_markerStopRegion(const char* regionTag)
     perfmon_readCountersCpu(cpu_id);
     timer_stop(&stop);
     //printf("MARKER STOP %f\n", timer_print(&stop));
-    for(int i = 0; i < perfmon_getNumberOfEvents(activeGroup); i++)
+    for(int i = 0; i < perfmon_getNumberOfEvents(groupSet->activeGroup); i++)
     {
         if (groupSet->groups[groupSet->activeGroup].events[i].type != NOTYPE)
         {
@@ -515,8 +516,8 @@ likwid_markerStopRegion(const char* regionTag)
             results->PMcounters[i] = NAN;
         }
     }
-    mgroups->groups[(activeGroup)].threads[cpus2threads[(cpu_id)]].last = (off_t)regionTag;
-    mgroups->groups[(activeGroup)].threads[cpus2threads[(cpu_id)]].last_res = results;
+    mgroups->groups[(groupSet->activeGroup)].threads[cpus2threads[(cpu_id)]].last = (off_t)regionTag;
+    mgroups->groups[(groupSet->activeGroup)].threads[cpus2threads[(cpu_id)]].last_res = results;
     results->state = MARKER_STATE_STOP;
     return 0;
 }
@@ -526,6 +527,7 @@ likwid_markerClose(void)
 {
     FILE *file = NULL;
     LikwidResults* results = NULL;
+    LikwidThreadResults* tresults = NULL;
     char* markerfile = NULL;
     int* validRegions = NULL;
 
@@ -565,10 +567,10 @@ likwid_markerClose(void)
             Map_t m = GET_THREAD_MAP(j, threads2Cpu[i]);
             for (int k = 0; k < numberOfRegions; k++)
             {
-                LikwidThreadResults* results = NULL;
-                if (get_smap_by_idx(m, k, (void**)&results) == 0)
+                LikwidThreadResults* tresults = NULL;
+                if (get_smap_by_idx(m, k, (void**)&tresults) == 0)
                 {
-                    validRegions[(j*numberOfGroups) + k] += results->count;
+                    validRegions[(j*numberOfGroups) + k] += tresults->count;
                 }
                 else
                 {
@@ -600,10 +602,10 @@ likwid_markerClose(void)
         {
             continue;
         }
-        Map_t m = GET_THREAD_MAP(0, threads2Cpu[0]);
-        if (get_smap_by_idx(m, i, (void**)&results) == 0)
+        Map_t m = GET_THREAD_MAP(groups[0], threads2Cpu[0]);
+        if (get_smap_by_idx(m, i, (void**)&tresults) == 0)
         {
-            bstring tmp = bformat("%d:%s-%d\n", newRegionID, bdata(results->tag), results->groupID);
+            bstring tmp = bformat("%d:%s-%d\n", newRegionID, bdata(tresults->label), (int)tresults->groupID);
             bconcat(out, tmp);
             bdestroy(tmp);
             newRegionID++;
@@ -618,7 +620,7 @@ likwid_markerClose(void)
             for (int k = 0; k < numberOfThreads; k++)
             {
                 Map_t m = GET_THREAD_MAP(j, threads2Cpu[k]);
-                LikwidThreadResults* tresults = NULL;
+                //LikwidThreadResults* tresults = NULL;
                 if (get_smap_by_idx(m, k, (void**)&tresults) == 0)
                 {
                     if (tresults->count == 0)
@@ -673,7 +675,7 @@ likwid_markerResetRegion(const char* regionTag)
     LikwidThreadResults* results = NULL;
     int cpu_id = sched_getcpu();
     int thread_id = cpus2threads[cpu_id];
-    Map_t m = GET_THREAD_MAP(activeGroup, cpu_id);
+    Map_t m = GET_THREAD_MAP(groupSet->activeGroup, cpu_id);
     if (get_smap_by_key(m, (char*)regionTag, (void**)&results) < 0)
     {
         fprintf(stderr, "WARN: Resetting an unknown region '%s'\n", regionTag);
@@ -717,14 +719,14 @@ likwid_markerNextGroup(void)
         return;
     }
 
-    int new_activeGroup = (activeGroup + 1);
+    int new_activeGroup = (groupSet->activeGroup + 1);
     if (new_activeGroup >= numberOfGroups)
         new_activeGroup = 0;
 
-    if (new_activeGroup != activeGroup)
+    if (new_activeGroup != groupSet->activeGroup)
     {
         perfmon_stopCounters();
-        perfmon_setupCounters(activeGroup);
+        perfmon_setupCounters(new_activeGroup);
         perfmon_startCounters();
         activeGroup = new_activeGroup;
     }
@@ -753,7 +755,7 @@ likwid_markerGetRegion(
     LikwidThreadResults* results = NULL;
     int cpu_id = sched_getcpu();
     int thread_id = cpus2threads[cpu_id];
-    Map_t m = GET_THREAD_MAP(activeGroup, cpu_id);
+    Map_t m = GET_THREAD_MAP(groupSet->activeGroup, cpu_id);
     if (get_smap_by_key(m, (char*)regionTag, (void**)&results) < 0)
     {
         fprintf(stderr, "WARN: Getting data for an unknown region '%s'\n", regionTag);
