@@ -1276,7 +1276,20 @@ topology_init(void)
     {
 standard_init:
         CPU_ZERO(&cpuSet);
-        sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
+        if (getenv("LIKWID_IGNORE_CPUSET") == NULL)
+        {
+            sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
+        }
+        else
+        {
+            for (int i = 0; i < sysconf(_SC_NPROCESSORS_CONF); i++)
+            {
+                if (likwid_cpu_online(i))
+                {
+                    CPU_SET(i, &cpuSet);
+                }
+            }
+        }
         if (cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF))
         {
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
@@ -1389,7 +1402,20 @@ standard_init:
     else
     {
         CPU_ZERO(&cpuSet);
-        sched_getaffinity(0, sizeof(cpu_set_t), &cpuSet);
+        if (getenv("LIKWID_IGNORE_CPUSET") == NULL)
+        {
+            sched_getaffinity(0, sizeof(cpu_set_t), &cpuSet);
+        }
+        else
+        {
+            for (int i = 0; i < sysconf(_SC_NPROCESSORS_CONF); i++)
+            {
+                if (likwid_cpu_online(i))
+                {
+                    CPU_SET(i, &cpuSet);
+                }
+            }
+        }
         DEBUG_PRINT(DEBUGLEV_INFO, Reading topology information from %s, config.topologyCfgFileName);
         ret = readTopologyFile(config.topologyCfgFileName, cpuSet);
         if (ret < 0)
