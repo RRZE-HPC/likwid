@@ -14,7 +14,7 @@ BuildRequires: gcc-gfortran
 BuildRequires: lua-devel
 %endif
 %if %{fedora} >= 23
-BuildRequires: perl-Text-Balanced
+BuildRequires: perl-Text-Balanced perl-File-Copy
 %endif
 %endif
 
