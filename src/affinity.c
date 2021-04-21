@@ -424,35 +424,15 @@ affinity_init()
         return;
     }
     offset = 0;
-    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
-    {
-        if (cpuid_topology.threadPool[i].inCpuSet)
-        {
-            domains[0].processorList[offset] = cpuid_topology.threadPool[i].apicId;
-            offset++;
-        }
-    }
-    domains[0].numberOfProcessors = offset;
-    offset = 0;
-    /*if (numberOfSocketDomains > 1)
-    {
-        for (int i=0; i<numberOfSocketDomains; i++)
-        {
-          tmp = treeFillNextEntries(cpuid_topology.topologyTree,
-                                    domains[0].processorList, offset,
-                                    i, 0,
-                                    cpuid_topology.numCoresPerSocket, numberOfProcessorsPerSocket);
-          offset += tmp;
-        }
-    }
-    else
+    for (int i=0; i<MAX(numberOfSocketDomains, 1); i++)
     {
         tmp = treeFillNextEntries(cpuid_topology.topologyTree,
-                                  domains[0].processorList, 0,
-                                  0, 0,
-                                  domains[0].numberOfCores, domains[0].numberOfProcessors);
-        domains[0].numberOfProcessors = tmp;
-    }*/
+                                  domains[0].processorList, offset,
+                                  i, 0,
+                                  cpuid_topology.numCoresPerSocket, numberOfProcessorsPerSocket);
+        offset += tmp;
+    }
+    domains[0].numberOfProcessors = offset;
 
     /* Socket domains */
     currentDomain = 1;
