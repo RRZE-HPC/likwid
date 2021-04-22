@@ -67,6 +67,8 @@
 #define PCM_CLIENT_IMC_PP1_TEMP (0x5980)
 #define PCM_CLIENT_IMC_MMAP_SIZE (0x6000)
 
+#define ICX_IMC_NUM_DEVICES 4
+#define ICX_IMC_NUM_CHANNELS 2
 #define ICX_IMC_DEVICE 0x3451
 #define ICX_IMC_MMIO_BASE_OFFSET 0xd0
 #define ICX_IMC_MMIO_BASE_MASK 0x1FFFFFFF
@@ -82,6 +84,9 @@
 */
 #define ICX_IMC_MMIO_CHN_OFFSET 0x22800
 #define ICX_IMC_MMIO_CHN_STRIDE 0x4000//0x8000
+
+#define ICX_IMC_MMIO_FREERUN_OFFSET 0x2290
+
 /* IMC MMIO size*/
 #define ICX_IMC_MMIO_SIZE 0x4000
 
@@ -106,6 +111,7 @@ typedef struct {
     off_t channel_offset;
     off_t channel_stride;
     off_t mmap_size;
+    off_t freerun_offset;
 } MMIOConfig;
 
 static MMIOConfig mmio_icelakeX = {
@@ -113,15 +119,16 @@ static MMIOConfig mmio_icelakeX = {
     .base_offset = ICX_IMC_MMIO_BASE_OFFSET,
     .base_mask = ICX_IMC_MMIO_BASE_MASK,
     .base_shift = ICX_IMC_MMIO_BASE_SHIFT,
-    .device_count = 4,
+    .device_count = ICX_IMC_NUM_DEVICES,
     .device_offset = ICX_IMC_MMIO_MEM0_OFFSET,
     .device_stride = ICX_IMC_MMIO_MEM_STRIDE,
     .device_mask = ICX_IMC_MMIO_MEM_MASK,
     .device_shift = ICX_IMC_MMIO_MEM_SHIFT,
-    .channel_count = 2,
+    .channel_count = ICX_IMC_NUM_CHANNELS,
     .channel_offset = ICX_IMC_MMIO_CHN_OFFSET,
     .channel_stride = ICX_IMC_MMIO_CHN_STRIDE,
     .mmap_size = ICX_IMC_MMIO_SIZE,
+    .freerun_offset = ICX_IMC_MMIO_FREERUN_OFFSET,
 };
 
 
@@ -138,6 +145,8 @@ typedef struct {
     uint64_t base_addr;
     int num_boxes;
     MMIOBoxHandle* boxes;
+    int num_freerun;
+    MMIOBoxHandle* freerun;
 } MMIOSocketBoxes;
 
 typedef struct {
@@ -278,6 +287,93 @@ mmio_fillBox(MMIOConfig* config, uint32_t pci_bus, int imc_idx, MMIOBoxHandle* h
     return 0;
 }
 
+static int
+mmio_fillFreerunBox(MMIOConfig* config, uint32_t pci_bus, int imc_idx, MMIOBoxHandle* handle)
+{
+    //uint32_t pci_bus = get_pci_bus_of_socket(pkg_id);
+    uint32_t pci_dev = 0;
+    
+    uint32_t tmp = 0;
+    off_t addr = 0;
+    off_t mem_offset = 0;
+
+    if (!mmio_validDevice(pci_bus, config->deviceId))
+    {
+        return -1;
+    }
+    
+    bstring bdevmem = bformat("/sys/bus/pci/devices/0000:%.2x:00.1/config", pci_bus);
+
+    int pcihandle = open(bdata(bdevmem), O_RDONLY);
+    if (pcihandle < 0)
+    {
+        ERROR_PRINT(Cannot get start address: failed to open %s, bdata(bdevmem));
+        bdestroy(bdevmem);
+        return -1;
+    }
+    int ret = pread(pcihandle, &tmp, sizeof(uint32_t), config->base_offset);
+    if (ret < 0 || ret != sizeof(uint32_t))
+    {
+        ERROR_PRINT(Cannot get start address: read failed);
+        close(pcihandle);
+        bdestroy(bdevmem);
+        return -1;
+    }
+    if (!tmp)
+    {
+        ERROR_PRINT(Cannot get address: MMIO base is zero);
+        close(pcihandle);
+        bdestroy(bdevmem);
+        return -1;
+    }
+    addr = (tmp & config->base_mask) << config->base_shift;
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d BASE 0x%lX = (0x%lX & 0x%lX) << %d, imc_idx, addr, tmp, config->base_mask, config->base_shift);
+    tmp = 0;
+    mem_offset = config->device_offset + (imc_idx / config->channel_count) * config->device_stride;
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d offset 0x%X, imc_idx, mem_offset);
+    ret = pread(pcihandle, &tmp, sizeof(uint32_t), mem_offset);
+    if (ret < 0)
+    {
+        ERROR_PRINT(Cannot get start address of device: read failed);
+        close(pcihandle);
+        bdestroy(bdevmem);
+        return -1;
+    }
+    addr |= (tmp & config->device_mask) << config->device_shift;
+    addr += config->freerun_offset;
+
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d IMC_OFF 0x%lX (0x%lX & 0x%lX) << %d, imc_idx, addr, tmp, config->device_mask, config->device_shift);
+
+    close(pcihandle);
+
+    pcihandle = open("/dev/mem", O_RDWR);
+    if (pcihandle < 0)
+    {
+        ERROR_PRINT(Cannot get mmap address: failed to open /dev/mem);
+        bdestroy(bdevmem);
+        return -1;
+    }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d MMAP 0x%llX, imc_idx, addr);
+
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, MMap size 0x%x addr %lld (0x%llX), ICX_IMC_MMIO_SIZE, addr & (~(4096 - 1)), addr & (~(4096 - 1)));
+    void* maddr = mmap(NULL, config->channel_count*ICX_IMC_MMIO_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, addr & (~(4096 - 1)));
+    if (maddr == MAP_FAILED)
+    {
+        ERROR_PRINT(Cannot get start address of device: mmap failed);
+        bdestroy(bdevmem);
+        close(pcihandle);
+        return -1;
+    }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d MMAP %p ADDR %lX, imc_idx, maddr, addr);
+    handle->mmap_addr = maddr;
+    handle->addr = addr;
+    handle->fd = pcihandle;
+    handle->reg_offset = addr - (addr & (~(4096 - 1)));
+
+    bdestroy(bdevmem);
+
+    return 0;
+}
 
 static uint32_t get_pci_bus_of_socket(int socket)
 {
@@ -333,28 +429,68 @@ access_x86_mmio_init(const int socket)
             mmio_config = NULL;
             return -1;
         }
-
+        memset(mmio_sockets, 0, num_mmio_sockets * sizeof(MMIOSocketBoxes));
+    }
+    if (mmio_sockets && socket >= 0 && socket < num_mmio_sockets)
+    {
         MMIOSocketBoxes* sbox = &mmio_sockets[socket];
-        sbox->pci_bus = get_pci_bus_of_socket(socket);
-        
-        int num_devs = mmio_config->device_count * mmio_config->channel_count;
-        sbox->boxes = malloc(num_devs * sizeof(MMIOBoxHandle));
+        if (sbox->pci_bus == 0)
+        {
+            sbox->pci_bus = get_pci_bus_of_socket(socket);
+        }
+
+        /* General units, one per iMC channel */
         if (!sbox->boxes)
         {
-            ERROR_PRINT(Failed to malloc space for socket boxes);
-            num_mmio_sockets = 0;
-            free(mmio_sockets);
-            mmio_sockets = NULL;
-            mmio_config = NULL;
-            return -1;
+            int num_devs = mmio_config->device_count * mmio_config->channel_count;
+            sbox->boxes = malloc(num_devs * sizeof(MMIOBoxHandle));
+            if (!sbox->boxes)
+            {
+                ERROR_PRINT(Failed to malloc space for socket boxes);
+                num_mmio_sockets = 0;
+                free(mmio_sockets);
+                mmio_sockets = NULL;
+                mmio_config = NULL;
+                return -1;
+            }
+            sbox->num_boxes = num_devs;
         }
-        sbox->num_boxes = num_devs;
+
+        /* Free-running counter units, one per iMC device */
+        if (!sbox->freerun)
+        {
+            int num_devs = mmio_config->device_count;
+            sbox->freerun = malloc(num_devs * sizeof(MMIOBoxHandle));
+            if (!sbox->freerun)
+            {
+                ERROR_PRINT(Failed to malloc space for freerun boxes);
+                free(sbox->boxes);
+                sbox->boxes = 0;
+                sbox->num_boxes = 0;
+                sbox->pci_bus = 0;
+                num_mmio_sockets = 0;
+                free(mmio_sockets);
+                mmio_sockets = NULL;
+                mmio_config = NULL;
+                return -1;
+            }
+            sbox->num_freerun = num_devs;
+        }
 
         for (i = 0; i < sbox->num_boxes; i++)
         {
             MMIOBoxHandle* handle = &sbox->boxes[i];
 
             int ret = mmio_fillBox(mmio_config, sbox->pci_bus, i, handle);
+            if (ret < 0)
+                return ret;
+        }
+
+        for (i = 0; i < sbox->num_freerun; i++)
+        {
+            MMIOBoxHandle* handle = &sbox->freerun[i];
+
+            int ret = mmio_fillFreerunBox(mmio_config, sbox->pci_bus, i, handle);
             if (ret < 0)
                 return ret;
         }
@@ -371,7 +507,7 @@ access_x86_mmio_finalize(const int socket)
     if (access_mmio_initialized)
     {
         MMIOSocketBoxes* sbox = &mmio_sockets[socket];
-        for (i = 0; i < mmio_config->device_count; i++)
+        for (i = 0; i < mmio_config->device_count*mmio_config->channel_count; i++)
         {
             MMIOBoxHandle* handle = &sbox->boxes[i];
             if (handle->fd >= 0)
@@ -382,6 +518,20 @@ access_x86_mmio_finalize(const int socket)
                     handle->mmap_addr = NULL;
                 }
                 close(handle->fd);
+                handle->fd = -1;
+                handle->addr = 0;
+            }
+        }
+        for (i = 0; i < mmio_config->device_count; i++)
+        {
+            MMIOBoxHandle* handle = &sbox->freerun[i];
+            if (handle->fd >= 0)
+            {
+                if (handle->mmap_addr)
+                {
+                    munmap(handle->mmap_addr, mmio_config->mmap_size);
+                    handle->mmap_addr = NULL;
+                }
                 close(handle->fd);
                 handle->fd = -1;
                 handle->addr = 0;
@@ -392,9 +542,18 @@ access_x86_mmio_finalize(const int socket)
         for (i = 0; i < num_mmio_sockets; i++)
         {
             MMIOSocketBoxes* sbox = &mmio_sockets[socket];
-            for (j = 0; j < mmio_config->device_count; j++)
+            for (j = 0; j < mmio_config->device_count * mmio_config->channel_count; j++)
             {
                 MMIOBoxHandle* handle = &sbox->boxes[j];
+                if (handle->fd >= 0)
+                {
+                    not_done = 1;
+                    break;
+                }
+            }
+            for (j = 0; j < mmio_config->device_count; j++)
+            {
+                MMIOBoxHandle* handle = &sbox->freerun[j];
                 if (handle->fd >= 0)
                 {
                     not_done = 1;
@@ -409,8 +568,13 @@ access_x86_mmio_finalize(const int socket)
                 MMIOSocketBoxes* sbox = &mmio_sockets[socket];
                 if (sbox)
                 {
+                    free(sbox->freerun);
+                    sbox->freerun = NULL;
+                    sbox->num_freerun = 0;
                     free(sbox->boxes);
                     sbox->boxes = NULL;
+                    sbox->num_boxes = 0;
+                    sbox->pci_bus = 0;
                 }
             }
             free(mmio_sockets);
@@ -425,6 +589,8 @@ access_x86_mmio_finalize(const int socket)
 int
 access_x86_mmio_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t *data)
 {
+    int imc_idx = 0;
+    int width = 64;
     uint64_t d = 0;
     *data = d;
     if (!access_mmio_initialized)
@@ -438,35 +604,61 @@ access_x86_mmio_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_
     {
         return -ENODEV;
     }
-    if (dev < MMIO_IMC_DEVICE_0_CH_0 || dev > MMIO_IMC_DEVICE_3_CH_1)
-    {
-        return -ENODEV;
-    }
-
-    int imc_idx = (dev - MMIO_IMC_DEVICE_0_CH_0);
-
     MMIOSocketBoxes* sbox = &mmio_sockets[socket];
-    if (sbox)
+    MMIOBoxHandle* box = NULL;
+    if (dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1)
     {
-        MMIOBoxHandle* box = &sbox->boxes[imc_idx];
-        if (box)
+        imc_idx = (dev - MMIO_IMC_DEVICE_0_CH_0);
+        box = &sbox->boxes[imc_idx];
+        switch(reg)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MMIO counter 0x%X Dev %d on socket %d, reg, imc_idx, socket);
-            uint64_t d = (uint64_t)*((uint64_t *)(box->mmap_addr + box->reg_offset + reg));
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MMIO counter 0x%X Dev %d on socket %d returned 0x%lX, reg, imc_idx, socket, d);
-            *data = d;
+            case 0x08:
+            case 0x10:
+            case 0x18:
+            case 0x20:
+                width = 64;
+                break;
+            case 0x40:
+            case 0x44:
+            case 0x48:
+            case 0x4C:
+            case 0x00:
+            case 0x5C:
+                width = 32;
+                break;
         }
     }
+    else if (dev >= MMIO_IMC_DEVICE_0_FREERUN && dev <= MMIO_IMC_DEVICE_3_FREERUN)
+    {
+        imc_idx = dev - MMIO_IMC_DEVICE_0_FREERUN;
+        box = &sbox->freerun[imc_idx];
+        width = 64;
+    }
+    if (box)
+    {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MMIO counter 0x%X Dev %d on socket %d, reg, imc_idx, socket);
+        uint64_t d = 0;
+        if (width == 64)
+        {
+            d = (uint64_t)*((uint64_t *)(box->mmap_addr + box->reg_offset + reg));
+        }
+        else if (width == 32)
+        {
+            d = (uint64_t)(*((uint32_t *)(box->mmap_addr + box->reg_offset + reg)));
+        }
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MMIO counter 0x%X Dev %d on socket %d returned 0x%lX, reg, imc_idx, socket, d);
+        *data = d;
+        return 0;
+    }
+    return -ENODEV;
 
-    
-    return 0;
 }
-
 
 
 int
 access_x86_mmio_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t data)
 {
+    int width = 64;
     if (!access_mmio_initialized)
     {
         int ret = access_x86_mmio_init(socket);
@@ -483,6 +675,23 @@ access_x86_mmio_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64
     }
 
     int imc_idx = (dev - MMIO_IMC_DEVICE_0_CH_0);
+    switch(reg)
+    {
+        case 0x08:
+        case 0x10:
+        case 0x18:
+        case 0x20:
+            width = 64;
+            break;
+        case 0x40:
+        case 0x44:
+        case 0x48:
+        case 0x4C:
+        case 0x00:
+        case 0x5C:
+            width = 32;
+            break;
+    }
 
     MMIOSocketBoxes* sbox = &mmio_sockets[socket];
     if (sbox)
@@ -491,7 +700,14 @@ access_x86_mmio_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64
         if (box)
         {
             DEBUG_PRINT(DEBUGLEV_DEVELOP, Write MMIO counter 0x%X Dev %d on socket %d: 0x%lX, reg, imc_idx, socket, data);
-            *((uint64_t *)(box->mmap_addr + box->reg_offset + reg)) = data;
+            if (width == 64)
+            {
+                *((uint64_t *)(box->mmap_addr + box->reg_offset + reg)) = data;
+            }
+            else if (width == 32)
+            {
+                *((uint32_t*)(box->mmap_addr + box->reg_offset + reg)) = (uint32_t)data;
+            }
         }
     }
 }
@@ -499,6 +715,7 @@ access_x86_mmio_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64
 int
 access_x86_mmio_check(PciDeviceIndex dev, int socket)
 {
+    int imc_idx = 0;
     if (!access_mmio_initialized)
     {
         int ret = access_x86_mmio_init(socket);
@@ -509,22 +726,24 @@ access_x86_mmio_check(PciDeviceIndex dev, int socket)
     {
         return 0;
     }
-    if (dev < MMIO_IMC_DEVICE_0_CH_0 || dev > MMIO_IMC_DEVICE_3_CH_1)
+    MMIOSocketBoxes* sbox = &mmio_sockets[socket];
+    MMIOBoxHandle* box = NULL;
+    if (dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1)
     {
-        return -ENODEV;
+        imc_idx = (dev - MMIO_IMC_DEVICE_0_CH_0);
+        box = &sbox->boxes[imc_idx];
     }
-
-    int imc_idx = (dev - MMIO_IMC_DEVICE_0_CH_0);
-
+    else if (dev >= MMIO_IMC_DEVICE_0_FREERUN && dev <= MMIO_IMC_DEVICE_3_FREERUN)
+    {
+        imc_idx = (dev - MMIO_IMC_DEVICE_0_FREERUN);
+        box = &sbox->freerun[imc_idx];
+    }
     //DEBUG_PRINT(DEBUGLEV_DEVELOP, MMIO device check dev %d box %d socket %d, dev, imc_idx, socket);
 
-    MMIOSocketBoxes* sbox = &mmio_sockets[socket];
-    if (sbox)
+    if (box && box->mmap_addr)
     {
-        MMIOBoxHandle* box = &sbox->boxes[imc_idx];
-        if (box && box->mmap_addr)
-            return 1;
-    }    
+        return 1;
+    }
     return 0;
 }
 

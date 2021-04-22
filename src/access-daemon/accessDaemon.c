@@ -117,6 +117,9 @@
 /* IMC MMIO size*/
 #define ICX_IMC_MMIO_SIZE 0x4000
 
+#define ICX_IMC_MMIO_FREERUN_OFFSET 0x2259
+#define ICX_IMC_MMIO_FREERUN_SIZE 0x4000
+
 /*
  * I'm following the Linux kernel here but documentation tells us that
  * there are three channels out of which 2 are active.
@@ -124,6 +127,15 @@
 #define ICX_NUMBER_IMC_CHN          2
 #define ICX_IMC_MEM_STRIDE          0x4
 #define ICX_NUMBER_IMC_DEVS         4
+
+typedef struct {
+    int device_id;
+    int socket;
+    void* channel0;
+    void* channel1;
+    void* channel2;
+    void* freerun;
+} IntelMemoryDevice;
 
 /* Lock file controlled from outside which prevents likwid to start.
  * Can be used to synchronize access to the hardware counters
@@ -159,6 +171,7 @@ static int isClientMem = 0;
 
 static int isServerMem = 0;
 static void *** servermem_addrs = NULL;
+static void *** servermem_freerun_addrs = NULL;
 
 /* Socket to bus mapping -- will be determined at runtime;
  * typical mappings are:
@@ -254,24 +267,44 @@ clientmem_finalize()
 static void
 servermem_finalize()
 {
-    if (isServerMem && servermem_addrs)
+    if (isServerMem)
     {
         int i = 0;
         int j = 0;
-        for (i = 0; i < avail_sockets; i++)
+        if (servermem_addrs)
         {
-            for (j = 0; j < ICX_NUMBER_IMC_DEVS*ICX_NUMBER_IMC_CHN; j++)
+            for (i = 0; i < avail_sockets; i++)
             {
-                if (servermem_addrs[i][j])
+                for (j = 0; j < ICX_NUMBER_IMC_DEVS*ICX_NUMBER_IMC_CHN; j++)
                 {
-                    munmap(servermem_addrs[i][j], ICX_IMC_MMIO_SIZE);
+                    if (servermem_addrs[i][j])
+                    {
+                        munmap(servermem_addrs[i][j], ICX_IMC_MMIO_SIZE);
+                    }
                 }
+                free(servermem_addrs[i]);
+                servermem_addrs[i] = NULL;
             }
-            free(servermem_addrs[i]);
-            servermem_addrs[i] = NULL;
+            free(servermem_addrs);
+            servermem_addrs = NULL;
         }
-        free(servermem_addrs);
-        servermem_addrs = NULL;
+        if (servermem_freerun_addrs)
+        {
+            for (i = 0; i < avail_sockets; i++)
+            {
+                for (j = 0; j < ICX_NUMBER_IMC_DEVS; j++)
+                {
+                    if (servermem_freerun_addrs[i][j])
+                    {
+                        munmap(servermem_freerun_addrs[i][j], ICX_IMC_MMIO_FREERUN_SIZE);
+                    }
+                }
+                free(servermem_freerun_addrs[i]);
+                servermem_freerun_addrs[i] = NULL;
+            }
+            free(servermem_freerun_addrs);
+            servermem_freerun_addrs = NULL;
+        }
     }
 }
 
@@ -376,7 +409,7 @@ void __attribute__((destructor (101))) close_accessdaemon(void)
     {
         clientmem_finalize();
     }
-    if (isServerMem && servermem_addrs)
+    if (isServerMem)
     {
         servermem_finalize();
     }
@@ -975,7 +1008,12 @@ static int allowed_pci_icx(PciDeviceType type, uint32_t reg)
                 (reg == MMIO_ICX_IMC_BOX_CTR2) ||
                 (reg == MMIO_ICX_IMC_BOX_CTR3) ||
                 (reg == MMIO_ICX_IMC_BOX_CLK_CTL) ||
-                (reg == MMIO_ICX_IMC_BOX_CLK_CTR))
+                (reg == MMIO_ICX_IMC_BOX_CLK_CTR)||
+                (reg == MMIO_ICX_IMC_FREERUN_DDR_RD) ||
+                (reg == MMIO_ICX_IMC_FREERUN_DDR_WR) ||
+                (reg == MMIO_ICX_IMC_FREERUN_PMM_RD) ||
+                (reg == MMIO_ICX_IMC_FREERUN_PMM_RD) ||
+                (reg == MMIO_ICX_IMC_FREERUN_DCLK))
                 return 1;
         case HA:
             if ((reg == PCI_UNC_ICX_M2M_PMON_CTRL) ||
@@ -1345,6 +1383,76 @@ static int servermem_getStartAddr(int socketId, int pmc_idx, void **mmap_addr)
     return 0;
 }
 
+static int servermem_freerun_getStartAddr(int socketId, int pmc_idx, void **mmap_addr)
+{
+    off_t addr;
+    off_t addr2;
+    uint32_t tmp = 0x0U;
+    int pagesize = sysconf(_SC_PAGE_SIZE);
+    char sysfile[1000];
+    uint32_t pci_bus[2] = {0x7e, 0xfe};
+    // pcipath = malloc(1024 * sizeof(char));
+    // memset(pcipath, '\0', 1024 * sizeof(char));
+    //int sid = getBusFromSocket(socketId, &(pci_devices_daemon[UBOX]), 999, &sysfile);
+    //syslog(LOG_ERR, "Sysfs file %s", sysfile);
+
+    int ret = snprintf(sysfile, 999, "/sys/bus/pci/devices/0000:%.2x:00.1/config", pci_bus[socketId]);
+    if (ret >= 0)
+    {
+        sysfile[ret] = '\0';
+    }
+    else
+    {
+        return -1;
+    }
+    int pcihandle = open(sysfile, O_RDONLY);
+    if (pcihandle < 0)
+    {
+        return -1;
+    }
+
+    ret = pread(pcihandle, &tmp, sizeof(uint32_t), ICX_IMC_MMIO_BASE_OFFSET);
+    if (ret < 0)
+    {
+        close(pcihandle);
+        return -1;
+    }
+    if (!tmp)
+    {
+        close(pcihandle);
+        return -1;
+    }
+    addr = ((tmp & ICX_IMC_MMIO_BASE_MASK)) << ICX_IMC_MMIO_BASE_SHIFT;
+    int mem_offset = ICX_IMC_MMIO_MEM0_OFFSET + (pmc_idx / ICX_NUMBER_IMC_CHN) * ICX_IMC_MEM_STRIDE;
+    ret = pread(pcihandle, &tmp, sizeof(uint32_t), mem_offset);
+    if (ret < 0)
+    {
+        close(pcihandle);
+        return -1;
+    }
+    addr2 = ((tmp & ICX_IMC_MMIO_MEM_MASK)) << ICX_IMC_MMIO_MEM_SHIFT;
+    addr |= addr2;
+    addr += ICX_IMC_MMIO_FREERUN_OFFSET;
+
+    close(pcihandle);
+
+    pcihandle = open("/dev/mem", O_RDWR | O_SYNC);
+    uint64_t page_mask = ~(pagesize - 1);
+    void* maddr = mmap(0, ICX_IMC_MMIO_FREERUN_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, addr & page_mask);
+    if (maddr == MAP_FAILED)
+    {
+        syslog(LOG_ERR, "ServerMem: MMAP of addr 0x%lx failed\n", addr & page_mask);
+        close(pcihandle);
+        return -1;
+    }
+    close(pcihandle);
+    //*reg_offset = addr - (addr & page_mask);
+    //*raw_offset = addr;
+    *mmap_addr = maddr + (addr - (addr & page_mask));
+    
+    return 0;
+}
+
 static int
 servermem_init()
 {
@@ -1361,6 +1469,12 @@ servermem_init()
     {
         return -ENOMEM;
     }
+    servermem_freerun_addrs = malloc(avail_sockets * sizeof(void **));
+    if (!servermem_freerun_addrs)
+    {
+        free(servermem_addrs);
+        return -ENOMEM;
+    }
     for (i = 0; i < avail_sockets; i++)
     {
         servermem_addrs[i] = malloc(ICX_NUMBER_IMC_DEVS * ICX_NUMBER_IMC_CHN * sizeof(void *));
@@ -1374,9 +1488,30 @@ servermem_init()
             servermem_addrs = NULL;
             return -ENOMEM;
         }
+        servermem_freerun_addrs[i] = malloc(ICX_NUMBER_IMC_DEVS * sizeof(void *));
+        if (!servermem_freerun_addrs[i])
+        {
+            for (j = 0; j < i; j++)
+            {
+                free(servermem_freerun_addrs[j]);
+            }
+            for (j = 0; j < avail_sockets; j++)
+            {
+                free(servermem_addrs[j]);
+            }
+            free(servermem_freerun_addrs);
+            servermem_freerun_addrs = NULL;
+            free(servermem_addrs);
+            servermem_addrs = NULL;
+            return -ENOMEM;
+        }
         for (j = 0; j < ICX_NUMBER_IMC_DEVS * ICX_NUMBER_IMC_CHN; j++)
         {
             servermem_addrs[i][j] = NULL;
+        }
+        for (j = 0; j < ICX_NUMBER_IMC_DEVS ; j++)
+        {
+            servermem_freerun_addrs[i][j] = NULL;
         }
     }
     for (i = 0; i < avail_sockets; i++)
@@ -1387,12 +1522,21 @@ servermem_init()
             ret = servermem_getStartAddr(i, j, &servermem_addrs[i][j]);
             if (ret < 0)
             {
-                syslog(LOG_ERR, "Failed to open servermem socket %d box %d\n", i, j);
+                syslog(LOG_ERR, "Failed to open servermem socket %d offset %d\n", i, j);
+            }
+        }
+        for (j = 0; j < ICX_NUMBER_IMC_DEVS; j++)
+        {
+            ret = servermem_freerun_getStartAddr(i, j, &servermem_freerun_addrs[i][j]);
+            if (ret < 0)
+            {
+                syslog(LOG_ERR, "Failed to open servermem socket %d device %d\n", i, j);
             }
         }
     }
     return 0;
 }
+
 
 static void
 servermem_read(AccessDataRecord *dRecord)
@@ -1458,6 +1602,73 @@ servermem_read(AccessDataRecord *dRecord)
             case 0x5C:
                dRecord->data = (uint64_t) *((uint32_t*)(servermem_addrs[socketId][offset] + reg));
                break;
+            default:
+                break;
+        }
+    }
+    else
+    {
+        dRecord->errorcode = ERR_NODEV;
+    }
+}
+
+static void
+servermem_freerun_read(AccessDataRecord *dRecord)
+{
+    uint64_t data = 0;
+    uint32_t reg = dRecord->reg;
+    uint32_t socketId = dRecord->cpu;
+    uint32_t device = dRecord->device;
+    int offset = device - MMIO_IMC_DEVICE_0_FREERUN;
+
+    dRecord->errorcode = ERR_NOERROR;
+    dRecord->data = 0x0ULL;
+
+
+    if (!lock_check())
+    {
+        syslog(LOG_ERR,"Access to performance counters is locked.\n");
+        dRecord->errorcode = ERR_LOCKED;
+        return;
+    }
+
+    if (!isServerMem)
+    {
+        syslog(LOG_ERR, "ServerMem: Not available for this architecture\n");
+        dRecord->errorcode = ERR_RESTREG;
+        return;
+    }
+    if (socketId < 0 || socketId >= 2)
+    {
+        syslog(LOG_ERR, "ServerMem: Socket %d out of range\n", socketId);
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+    if (offset < 0 || offset >= ICX_NUMBER_IMC_DEVS)
+    {
+        syslog(LOG_ERR, "ServerMem: Device offset %d out of range\n", offset);
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+    if (allowedPci && (!allowedPci(pci_devices_daemon[device].type, reg)))
+    {
+        dRecord->errorcode = ERR_RESTREG;
+        return;
+    }
+    if (servermem_freerun_addrs && servermem_freerun_addrs[socketId] && servermem_freerun_addrs[socketId][offset])
+    {
+#ifdef DEBUG_LIKWID
+        syslog(LOG_INFO, "ServerMem: Read S %d Box %d Reg 0x%x\n", socketId, offset, reg);
+#endif
+        switch(reg)
+        {
+            case 0x00:
+            case 0x08:
+            case 0x10:
+            case 0x18:
+            case 0x20:
+                dRecord->data = *((uint64_t*)(servermem_freerun_addrs[socketId][offset] + reg));
+                break;
             default:
                 break;
         }
@@ -1541,6 +1752,71 @@ servermem_write(AccessDataRecord *dRecord)
 }
 
 static void
+servermem_freerun_write(AccessDataRecord *dRecord)
+{
+    uint32_t reg = dRecord->reg;
+    uint32_t socketId = dRecord->cpu;
+    uint32_t device = dRecord->device;
+    int offset = device - MMIO_IMC_DEVICE_0_FREERUN;
+
+    dRecord->errorcode = ERR_NOERROR;
+
+
+    if (!lock_check())
+    {
+        syslog(LOG_ERR,"Access to performance counters is locked.\n");
+        dRecord->errorcode = ERR_LOCKED;
+        return;
+    }
+
+    if (!isServerMem)
+    {
+        syslog(LOG_ERR, "ServerMem: Not available for this architecture\n");
+        dRecord->errorcode = ERR_RESTREG;
+        return;
+    }
+    if (socketId < 0 || socketId >= 2)
+    {
+        syslog(LOG_ERR, "ServerMem: Socket %d out of range\n", socketId);
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+    if (offset < 0 || offset >= ICX_NUMBER_IMC_DEVS)
+    {
+        syslog(LOG_ERR, "ServerMem: Device offset %d out of range\n", offset);
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+    if (allowedPci && (!allowedPci(pci_devices_daemon[device].type, reg)))
+    {
+        dRecord->errorcode = ERR_RESTREG;
+        return;
+    }
+    if (servermem_freerun_addrs && servermem_freerun_addrs[socketId] && servermem_freerun_addrs[socketId][offset])
+    {
+#ifdef DEBUG_LIKWID
+        syslog(LOG_INFO, "ServerMem: Write S %d Box %d Reg 0x%x Data 0x%x\n", socketId, offset, reg, dRecord->data);
+#endif
+        switch(reg)
+        {
+            case 0x00:
+            case 0x08:
+            case 0x10:
+            case 0x18:
+            case 0x20:
+                *((uint64_t*)(servermem_freerun_addrs[socketId][offset] + reg)) = dRecord->data;
+                break;
+            default:
+                break;
+        }
+    }
+    else
+    {
+        dRecord->errorcode = ERR_NODEV;
+    }
+}
+
+static void
 servermem_check(AccessDataRecord *dRecord)
 {
     dRecord->errorcode = ERR_NOERROR;
@@ -1575,6 +1851,40 @@ servermem_check(AccessDataRecord *dRecord)
     }
 }
 
+static void
+servermem_freerun_check(AccessDataRecord *dRecord)
+{
+    dRecord->errorcode = ERR_NOERROR;
+    if (!isServerMem)
+    {
+        syslog(LOG_ERR, "ServerMem: Not available for this architecture\n");
+        dRecord->errorcode = ERR_RESTREG;
+        return;
+    }
+    int socketId = dRecord->cpu;
+    int offset = dRecord->device - MMIO_IMC_DEVICE_0_FREERUN;
+#ifdef DEBUG_LIKWID
+    syslog(LOG_ERR, "ServerMem: Check Socket %d Box %d\n", socketId, offset);
+#endif
+    if (socketId < 0 || socketId >= 2)
+    {
+        syslog(LOG_ERR, "ServerMem: Socket %d out of range\n", socketId);
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+    if (offset < 0 || offset >= ICX_NUMBER_IMC_DEVS)
+    {
+        syslog(LOG_ERR, "ServerMem: Device offset %d out of range\n", offset);
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+    if (!(servermem_freerun_addrs && servermem_freerun_addrs[socketId] && servermem_freerun_addrs[socketId][offset]))
+    {
+        syslog(LOG_ERR, "ServerMem: Socket %d Device %d addr NULL\n", socketId, offset);
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+}
 
 static void
 msr_read(AccessDataRecord * dRecord)
@@ -2690,6 +3000,10 @@ LOOP:
                 {
                     servermem_read(&dRecord);
                 }
+                else if (dRecord.device >= MMIO_IMC_DEVICE_0_FREERUN && dRecord.device <= MMIO_IMC_DEVICE_3_FREERUN)
+                {
+                    servermem_freerun_read(&dRecord);
+                }
                 else
                 {
                     pci_read(&dRecord);
@@ -2708,6 +3022,11 @@ LOOP:
                 if (dRecord.device >= MMIO_IMC_DEVICE_0_CH_0 && dRecord.device <= MMIO_IMC_DEVICE_3_CH_1)
                 {
                     servermem_write(&dRecord);
+                    dRecord.data = 0x0ULL;
+                }
+                else if (dRecord.device >= MMIO_IMC_DEVICE_0_FREERUN && dRecord.device <= MMIO_IMC_DEVICE_3_FREERUN)
+                {
+                    servermem_freerun_write(&dRecord);
                     dRecord.data = 0x0ULL;
                 }
                 else
@@ -2732,6 +3051,10 @@ LOOP:
                 if (dRecord.device >= MMIO_IMC_DEVICE_0_CH_0 && dRecord.device <= MMIO_IMC_DEVICE_3_CH_1)
                 {
                     servermem_check(&dRecord);
+                }
+                else if (dRecord.device >= MMIO_IMC_DEVICE_0_FREERUN && dRecord.device <= MMIO_IMC_DEVICE_3_FREERUN)
+                {
+                    servermem_freerun_check(&dRecord);
                 }
                 else
                 {

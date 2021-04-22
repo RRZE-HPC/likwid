@@ -2295,6 +2295,7 @@
 #define MSR_UNC_ICX_PCU_PMON_CTR3               0x71A
 
 /* IMC - Memory Controller */
+// These registers use 0x22800, 0x26800 and 0x2A800 as base
 #define MMIO_ICX_IMC_BOX_CTRL            0x00
 #define MMIO_ICX_IMC_BOX_STATUS          0x5C
 #define MMIO_ICX_IMC_BOX_CTL0            0x40
@@ -2307,6 +2308,13 @@
 #define MMIO_ICX_IMC_BOX_CTR3            0x20
 #define MMIO_ICX_IMC_BOX_CLK_CTL         0x38
 #define MMIO_ICX_IMC_BOX_CLK_CTR         0x54
+
+// These registers use 0x2290 as base
+#define MMIO_ICX_IMC_FREERUN_DDR_RD     0x00
+#define MMIO_ICX_IMC_FREERUN_DDR_WR     0x08
+#define MMIO_ICX_IMC_FREERUN_PMM_RD     0x10
+#define MMIO_ICX_IMC_FREERUN_PMM_WR     0x18
+#define MMIO_ICX_IMC_FREERUN_DCLK       0x20
 
 /* CHA - Cache boxes/Home agents */
 #define MSR_UNC_ICX_C0_PMON_CTRL        0xE00
