@@ -887,8 +887,9 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                     if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
                     {
                         CHECK_MMIO_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
-                        eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
-                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST eventSet->events[i].threadCounter[thread_id].startData, READ_MDEV);
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST tmp, START_MDEV_RAW);
+                        eventSet->events[i].threadCounter[thread_id].startData = tmp;//field64(tmp, 0, box_map[type].regWidth);
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST eventSet->events[i].threadCounter[thread_id].startData, START_MDEV);
                     }
                     break;
                 case MBOX0:
@@ -1378,7 +1379,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
                     {
                         CHECK_MMIO_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
-                        counter_result = field64(tmp, 0, box_map[type].regWidth);
+                        counter_result = tmp;//field64(tmp, 0, box_map[type].regWidth);
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
                             VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_MDEV)
@@ -1735,7 +1736,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
                     {
                         CHECK_MMIO_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
-                        counter_result = field64(tmp, 0, box_map[type].regWidth);
+                        counter_result = tmp;//field64(tmp, 0, box_map[type].regWidth);
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
                             VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_MDEV)
