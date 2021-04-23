@@ -329,7 +329,7 @@ mmio_fillFreerunBox(MMIOConfig* config, uint32_t pci_bus, int imc_idx, MMIOBoxHa
     addr = (tmp & config->base_mask) << config->base_shift;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d BASE 0x%lX = (0x%lX & 0x%lX) << %d, imc_idx, addr, tmp, config->base_mask, config->base_shift);
     tmp = 0;
-    mem_offset = config->device_offset + (imc_idx / config->channel_count) * config->device_stride;
+    mem_offset = config->device_offset + imc_idx * config->device_stride;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d offset 0x%X, imc_idx, mem_offset);
     ret = pread(pcihandle, &tmp, sizeof(uint32_t), mem_offset);
     if (ret < 0)
@@ -636,7 +636,6 @@ access_x86_mmio_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_
     }
     if (box)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MMIO counter 0x%X Dev %d on socket %d, reg, imc_idx, socket);
         uint64_t d = 0;
         if (width == 64)
         {
@@ -646,7 +645,7 @@ access_x86_mmio_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_
         {
             d = (uint64_t)(*((uint32_t *)(box->mmap_addr + box->reg_offset + reg)));
         }
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MMIO counter 0x%X Dev %d on socket %d returned 0x%lX, reg, imc_idx, socket, d);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MMIO counter 0x%X Dev %d on socket %d: 0x%lX, reg, imc_idx, socket, d);
         *data = d;
         return 0;
     }
@@ -669,6 +668,10 @@ access_x86_mmio_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64
     {
         return -ENODEV;
     }
+    /*if (dev >= MMIO_IMC_DEVICE_0_FREERUN && dev <= MMIO_IMC_DEVICE_3_FREERUN)
+    {
+        return -EPERM;
+    }*/
     if (dev < MMIO_IMC_DEVICE_0_CH_0 || dev > MMIO_IMC_DEVICE_3_CH_1)
     {
         return -ENODEV;
@@ -708,8 +711,10 @@ access_x86_mmio_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64
             {
                 *((uint32_t*)(box->mmap_addr + box->reg_offset + reg)) = (uint32_t)data;
             }
+            return 0;
         }
     }
+    return -ENODEV;
 }
 
 int
