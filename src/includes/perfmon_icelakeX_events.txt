@@ -522,9 +522,9 @@ EVENT_SQ_MISC                       0xF4 PMC
 UMASK_SQ_MISC                       0x04
 
 EVENT_CAS_COUNT                         0x04 MBOX
-UMASK_CAS_COUNT_RD                      0x03
-UMASK_CAS_COUNT_WR                      0x0C
-UMASK_CAS_COUNT_ALL                     0x0F
+UMASK_CAS_COUNT_RD                      0x0F
+UMASK_CAS_COUNT_WR                      0x30
+UMASK_CAS_COUNT_ALL                     0x3F
 
 EVENT_CBOX_CLOCKTICKS                   0x00 CBOX
 UMASK_CBOX_CLOCKTICKS                   0x00
