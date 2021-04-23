@@ -87,7 +87,8 @@ access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *da
     {
         if (cpuid_info.supportUncore)
         {
-            if (dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1)
+            if ((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1) ||
+                (dev >= MMIO_IMC_DEVICE_0_FREERUN && dev <= MMIO_IMC_DEVICE_3_FREERUN))
             {
                 if (access_x86_mmio_check(dev, affinity_thread2socket_lookup[cpu_id]))
                 {
@@ -127,7 +128,8 @@ access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t da
     {
         if (cpuid_info.supportUncore)
         {
-            if (dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1)
+            if ((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1) ||
+                (dev >= MMIO_IMC_DEVICE_0_FREERUN && dev <= MMIO_IMC_DEVICE_3_FREERUN))
             {
                 if (access_x86_mmio_check(dev, affinity_thread2socket_lookup[cpu_id]))
                 {
@@ -181,7 +183,8 @@ access_x86_check(PciDeviceIndex dev, int cpu_id)
     {
         if (cpuid_info.supportUncore)
         {
-            if (dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1)
+            if ((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1) ||
+                (dev >= MMIO_IMC_DEVICE_0_FREERUN && dev <= MMIO_IMC_DEVICE_3_FREERUN))
             {
                 return access_x86_mmio_check(dev, affinity_thread2socket_lookup[cpu_id]);
             }
