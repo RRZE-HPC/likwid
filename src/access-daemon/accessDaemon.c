@@ -117,7 +117,7 @@
 /* IMC MMIO size*/
 #define ICX_IMC_MMIO_SIZE 0x4000
 
-#define ICX_IMC_MMIO_FREERUN_OFFSET 0x2259
+#define ICX_IMC_MMIO_FREERUN_OFFSET 0x2290
 #define ICX_IMC_MMIO_FREERUN_SIZE 0x4000
 
 /*
@@ -1423,7 +1423,7 @@ static int servermem_freerun_getStartAddr(int socketId, int pmc_idx, void **mmap
         return -1;
     }
     addr = ((tmp & ICX_IMC_MMIO_BASE_MASK)) << ICX_IMC_MMIO_BASE_SHIFT;
-    int mem_offset = ICX_IMC_MMIO_MEM0_OFFSET + (pmc_idx / ICX_NUMBER_IMC_CHN) * ICX_IMC_MEM_STRIDE;
+    int mem_offset = ICX_IMC_MMIO_MEM0_OFFSET + pmc_idx * ICX_IMC_MEM_STRIDE;
     ret = pread(pcihandle, &tmp, sizeof(uint32_t), mem_offset);
     if (ret < 0)
     {
