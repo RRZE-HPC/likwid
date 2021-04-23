@@ -230,6 +230,30 @@ int icx_setup_mbox(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     return 0;
 }
 
+int icx_setup_mboxfix(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    int j;
+    uint64_t flags = 0x0ULL;
+    PciDeviceIndex dev = counter_map[index].device;
+
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
+    if (!HPMcheck(dev, cpu_id))
+    {
+        return -ENODEV;
+    }
+    flags = (1ULL<<20)|(1ULL<<22);
+    if (flags != currentConfig[cpu_id][index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_MBOXFIX);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        currentConfig[cpu_id][index] = flags;
+    }
+    return 0;
+}
+    
 int icx_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
@@ -659,6 +683,19 @@ int perfmon_setupCounterThread_icelake(
             case MDEV2:
             case MDEV3:
                 break;
+            case MBOX0FIX:
+            case MBOX1FIX:
+            case MBOX2FIX:
+            case MBOX3FIX:
+            case MBOX4FIX:
+            case MBOX5FIX:
+            case MBOX6FIX:
+            case MBOX7FIX:
+		if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+                {
+                    icx_setup_mboxfix(cpu_id, index, event);
+                }
+                break;
             case MBOX0:
             case MBOX1:
             case MBOX2:
@@ -890,6 +927,20 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST tmp, START_MDEV_RAW);
                         eventSet->events[i].threadCounter[thread_id].startData = tmp;//field64(tmp, 0, box_map[type].regWidth);
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST eventSet->events[i].threadCounter[thread_id].startData, START_MDEV);
+                    }
+                    break;
+                case MBOX0FIX:
+                case MBOX1FIX:
+                case MBOX2FIX:
+                case MBOX3FIX:
+                case MBOX4FIX:
+                case MBOX5FIX:
+                case MBOX6FIX:
+                case MBOX7FIX:
+		    if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+                    {
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_MBOXFIX);
+                        CHECK_MMIO_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     }
                     break;
                 case MBOX0:
@@ -1360,6 +1411,21 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                         }
                     }
                     break;
+                case MBOX0FIX:
+                case MBOX1FIX:
+                case MBOX2FIX:
+                case MBOX3FIX:
+                case MBOX4FIX:
+                case MBOX5FIX:
+                case MBOX6FIX:
+                case MBOX7FIX:
+		    if (haveLock && (cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2))
+                    {
+                        CHECK_MMIO_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
+                        counter_result = field64(counter_result, 0, box_map[type].regWidth);
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_MBOXFIX);
+                    }
+                    break;
                 case MBOX0TMP:
                     if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2))
                     {
@@ -1743,6 +1809,26 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                             eventSet->events[i].threadCounter[thread_id].overflows++;
                         }
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST eventSet->events[i].threadCounter[thread_id].startData, READ_MDEV);
+                    }
+                    break;
+                case MBOX0FIX:
+                case MBOX1FIX:
+                case MBOX2FIX:
+                case MBOX3FIX:
+                case MBOX4FIX:
+                case MBOX5FIX:
+                case MBOX6FIX:
+                case MBOX7FIX:
+		    if (haveLock && (cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2))
+                    {
+                        CHECK_MMIO_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
+                        counter_result = field64(counter_result, 0, box_map[type].regWidth);
+                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                        {
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_MBOXFIX)
+                            eventSet->events[i].threadCounter[thread_id].overflows++;
+                        }
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_MBOXFIX);
                     }
                     break;
                 case EUBOX0:

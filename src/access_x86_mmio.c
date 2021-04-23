@@ -616,6 +616,7 @@ access_x86_mmio_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_
             case 0x10:
             case 0x18:
             case 0x20:
+            case 0x38:
                 width = 64;
                 break;
             case 0x40:
@@ -624,6 +625,7 @@ access_x86_mmio_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_
             case 0x4C:
             case 0x00:
             case 0x5C:
+            case 0x54:
                 width = 32;
                 break;
         }
@@ -684,6 +686,7 @@ access_x86_mmio_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64
         case 0x10:
         case 0x18:
         case 0x20:
+        case 0x38:
             width = 64;
             break;
         case 0x40:
@@ -692,6 +695,7 @@ access_x86_mmio_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64
         case 0x4C:
         case 0x00:
         case 0x5C:
+        case 0x54:
             width = 32;
             break;
     }

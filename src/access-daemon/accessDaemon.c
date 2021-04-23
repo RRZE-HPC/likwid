@@ -1592,6 +1592,7 @@ servermem_read(AccessDataRecord *dRecord)
             case 0x10:
             case 0x18:
             case 0x20:
+            case 0x38:
                 dRecord->data = *((uint64_t*)(servermem_addrs[socketId][offset] + reg));
                 break;
             case 0x40:
@@ -1600,6 +1601,7 @@ servermem_read(AccessDataRecord *dRecord)
             case 0x4C:
             case 0x00:
             case 0x5C:
+            case 0x54:
                dRecord->data = (uint64_t) *((uint32_t*)(servermem_addrs[socketId][offset] + reg));
                break;
             default:
@@ -1731,6 +1733,7 @@ servermem_write(AccessDataRecord *dRecord)
             case 0x10:
             case 0x18:
             case 0x20:
+            case 0x38:
                 *((uint64_t*)(servermem_addrs[socketId][offset] + reg)) = dRecord->data;
                 break;
             case 0x40:
@@ -1739,6 +1742,7 @@ servermem_write(AccessDataRecord *dRecord)
             case 0x4C:
             case 0x00:
             case 0x5C:
+            case 0x54:
                *((uint32_t*)(servermem_addrs[socketId][offset] + reg)) = (uint32_t) dRecord->data;
                break;
             default:

@@ -2306,8 +2306,8 @@
 #define MMIO_ICX_IMC_BOX_CTR1            0x10
 #define MMIO_ICX_IMC_BOX_CTR2            0x18
 #define MMIO_ICX_IMC_BOX_CTR3            0x20
-#define MMIO_ICX_IMC_BOX_CLK_CTL         0x38
-#define MMIO_ICX_IMC_BOX_CLK_CTR         0x54
+#define MMIO_ICX_IMC_BOX_CLK_CTL         0x54
+#define MMIO_ICX_IMC_BOX_CLK_CTR         0x38
 
 // These registers use 0x2290 as base
 #define MMIO_ICX_IMC_FREERUN_DDR_RD     0x00
