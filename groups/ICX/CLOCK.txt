@@ -6,7 +6,7 @@ FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
 FIXC3 TOPDOWN_SLOTS
 PWR0  PWR_PKG_ENERGY
-UBOXFIX UNCORE_CLOCK
+UBOXFIX UNCORE_CLOCKTICKS
 
 METRICS
 Runtime (RDTSC) [s] time
@@ -20,8 +20,8 @@ Power [W] PWR0/time
 LONG
 Formulas:
 Power =  PWR_PKG_ENERGY / time
-Uncore Clock [MHz] = 1.E-06 * UNCORE_CLOCK / time
+Uncore Clock [MHz] = 1.E-06 * UNCORE_CLOCKTICKS / time
 -
-Broadwell implements the new RAPL interface. This interface enables to
+Icelake implements the RAPL interface. This interface enables to
 monitor the consumed energy on the package (socket) level.
 
