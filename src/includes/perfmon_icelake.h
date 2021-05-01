@@ -358,6 +358,7 @@ int icx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     uint64_t filter_flags0 = 0x0ULL;
     uint32_t filter0 = box_map[counter_map[index].type].filterRegister1;
+    uint64_t umask_ext_mask = 0x1FFFFF;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
@@ -366,8 +367,25 @@ int icx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     flags = (1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
-    flags |= ((event->umask>>8) & 0x1FFF) << 32;
-
+    // TODO: Check for perf_event whether there is a separate field umask_ext
+    //       or a multi-slice umask
+    switch (event->eventId)
+    {
+        case 0x36:
+        case 0x35:
+            umask_ext_mask = 0x1FFFFF;
+            break;
+        case 0x34:
+            umask_ext_mask = 0x1FFF;
+            break;
+        default:
+            umask_ext_mask = 0x0;
+            break;
+    }
+    if (event->cfgBits != 0x0 && umask_ext_mask != 0x0)
+    {
+        flags |= ((event->cfgBits) & umask_ext_mask) << 32;
+    }
 
     if (event->numberOfOptions > 0)
     {
@@ -386,6 +404,7 @@ int icx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     break;
                 case EVENT_OPTION_TID:
                     flags |= (1ULL<<19);
+                    filter_flags0 |= (event->options[j].value & 0x1FFULL);
                     break;
                     break;
                 default:
