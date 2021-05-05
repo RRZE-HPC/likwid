@@ -1,0 +1,33 @@
+# generated files: headers, objects, intermediate assembly, etc.
+GCC
+GCCX86
+CLANG
+ICC
+MIC
+
+# libraries
+*.so*
+
+# executables
+bench/likwid-bench
+ext/lua/lua
+likwid-accessD
+likwid-setFreq
+
+# lua scripts
+likwid-config.cmake
+likwid-features
+likwid-genTopoCfg
+likwid-memsweeper
+likwid-mpirun
+likwid-perfctr
+likwid-perfscope
+likwid-pin
+likwid-powermeter
+likwid-setFrequencies
+likwid-topology
+likwid.lua
+
+# generated doc files
+doc/html
+
