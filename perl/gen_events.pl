@@ -124,7 +124,7 @@ while (<INFILE>) {
     elsif (/DEFAULT_OPTIONS_([A-Z0-9_]*)[ ]*([xA-Z0-9_=,]*)/) {
         $defoptkey = $1;
         $defopts = $2;
-    } elsif (/OPTIONS_([A-Z0-9_]*)[ ]*([A-Z0-9_\|]+)/) {
+    } elsif (/^OPTIONS_([A-Z0-9_]*)[ ]*([A-Z0-9_\|]+)/) {
         $optkey = $1;
         $opts = $2;
     }
