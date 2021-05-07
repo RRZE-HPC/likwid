@@ -378,13 +378,16 @@ int icx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         case 0x34:
             umask_ext_mask = 0x1FFF;
             break;
+        case 0x58:
+        case 0x5A:
+            umask_ext_mask = 0x3F;
+            break;
+        case 0x37:
+            umask_ext_mask = 0xA0;
+            break;
         default:
             umask_ext_mask = 0x0;
             break;
-    }
-    if (event->cfgBits != 0x0 && umask_ext_mask != 0x0)
-    {
-        flags |= ((event->cfgBits) & umask_ext_mask) << 32;
     }
 
     if (event->numberOfOptions > 0)
@@ -401,6 +404,12 @@ int icx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     break;
                 case EVENT_OPTION_THRESHOLD:
                     flags |= (event->options[j].value & 0xFFULL) << 24;
+                    break;
+                case EVENT_OPTION_MATCH0:
+                    flags |= (event->options[j].value & umask_ext_mask) << 32;
+                    break;
+                case EVENT_OPTION_STATE:
+                    flags |= (event->options[j].value & 0xFFULL) << 8;
                     break;
                 case EVENT_OPTION_TID:
                     flags |= (1ULL<<19);
@@ -532,6 +541,10 @@ int icx_upi_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     flags = (1ULL<<22)|(1ULL<<20);
     flags |= (event->umask<<8) + event->eventId;
+    if (event->cfgBits != 0x0)
+    {
+        flags |= (event->cfgBits & 0xFFFFFFULL) << 32;
+    }
     if (event->numberOfOptions > 0)
     {
         for(j = 0; j < event->numberOfOptions; j++)
@@ -549,6 +562,10 @@ int icx_upi_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     break;
                 case EVENT_OPTION_MATCH0:
                     flags |= (event->options[j].value & 0xFFFFFFULL) << 32;
+                    break;
+                case EVENT_OPTION_OPCODE:
+                    flags |= (event->options[j].value & 0xFULL) << 12;
+                    flags |= (1ULL<<32);
                     break;
                 default:
                     break;
