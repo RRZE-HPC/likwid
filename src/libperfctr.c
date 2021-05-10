@@ -621,7 +621,7 @@ likwid_markerClose(void)
             {
                 Map_t m = GET_THREAD_MAP(j, threads2Cpu[k]);
                 //LikwidThreadResults* tresults = NULL;
-                if (get_smap_by_idx(m, k, (void**)&tresults) == 0)
+                if (get_smap_by_idx(m, i, (void**)&tresults) == 0)
                 {
                     if (tresults->count == 0)
                     {
