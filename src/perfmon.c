@@ -2867,7 +2867,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
     add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
-    int cpu = 0, sock_cpu = 0, err = 0;
+    int cpu = 0, sock_cpu = 0, err = 0, num_socks = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
         if (groupSet->threads[e].thread_id == threadId)
@@ -2876,10 +2876,13 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
         }
     }
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
+    num_socks = cpuid_topology.numSockets;
     if (cpuid_info.isIntel && cpuid_info.model == SKYLAKEX && cpuid_topology.numDies != cpuid_topology.numSockets)
     {
         sock_cpu = die_lock[affinity_thread2die_lookup[cpu]];
+        num_socks = cpuid_topology.numDies;
     }
+    add_to_clist(&clist, "num_sockets", num_socks);
     if (cpu != sock_cpu)
     {
         for (e=0; e<groupSet->numberOfThreads; e++)
@@ -2954,7 +2957,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
     add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
-    int cpu = 0, sock_cpu = 0, err = 0;
+    int cpu = 0, sock_cpu = 0, err = 0, num_socks = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
         if (groupSet->threads[e].thread_id == threadId)
@@ -2963,10 +2966,13 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
         }
     }
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
+    num_socks = cpuid_topology.numSockets;
     if (cpuid_info.isIntel && cpuid_info.model == SKYLAKEX && cpuid_topology.numDies != cpuid_topology.numSockets)
     {
+        num_socks = cpuid_topology.numDies;
         sock_cpu = die_lock[affinity_thread2die_lookup[cpu]];
     }
+    add_to_clist(&clist, "num_sockets", num_socks);
     if (cpu != sock_cpu)
     {
         for (e=0; e<groupSet->numberOfThreads; e++)
@@ -3624,7 +3630,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
     add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
-    int cpu = 0, sock_cpu = 0;
+    int cpu = 0, sock_cpu = 0, num_socks = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
         if (groupSet->threads[e].thread_id == threadId)
@@ -3633,10 +3639,13 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
         }
     }
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
+    num_socks = cpuid_topology.numSockets;
     if (cpuid_info.isIntel && cpuid_info.model == SKYLAKEX && cpuid_topology.numDies != cpuid_topology.numSockets)
     {
         sock_cpu = die_lock[affinity_thread2die_lookup[cpu]];
+        num_socks = cpuid_topology.numDies;
     }
+    add_to_clist(&clist, "num_sockets", num_socks);
     if (cpu != sock_cpu)
     {
         for (e=0; e<groupSet->numberOfThreads; e++)
