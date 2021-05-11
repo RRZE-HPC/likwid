@@ -1,3 +1,18 @@
+# Changelog 5.2.0
+- Support for AMD Zen3 (Core + Uncore)
+- Fix for Ivybridge uncore code
+- Bypass accessdaemon by using rdpmc instruction on x86_64
+- Introduce notion of CPU die in topology module
+- Use CPU dies for socket-lock for Intel CascadelakeAP
+- Add environment variable LIKWID_IGNORE_CPUSET to break out of current CPUset
+- Fixes for affinity module CPUlist sorting
+- Build against system-installed hwloc
+- Update for Intel SkylakeX/CascadelakeX L3 group
+- Update for CPU MarkerAPI
+- Rename DataFabric events for all generations of AMD Zen
+- Add static cache configuration for Fujitsu A64FX
+- Add multiplexing checks for perf_event backend
+
 # Changelog 5.1.1
 - Support for Intel Cometlake desktop (Core + Uncore)
 - Fix for topology module of Fujitsu A64FX
