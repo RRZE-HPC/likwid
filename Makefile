@@ -123,6 +123,9 @@ OBJ := $(filter-out $(BUILD_DIR)/nvmon.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/topology_gpu.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/libnvctr.o,$(OBJ))
 endif
+ifneq ($(ROCM_INTERFACE), true)
+OBJ := $(filter-out $(BUILD_DIR)/topology_gpu_rocm.o,$(OBJ))
+endif
 ifeq ($(COMPILER),GCCPOWER)
 OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86.o,$(OBJ))
@@ -234,6 +237,7 @@ $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB)
 	@ln -sf $(TARGET_LIB) $(TARGET_LIB).$(VERSION).$(RELEASE)
 	@sed -e s+'@PREFIX@'+$(INSTALLED_PREFIX)+g \
 		-e s+'@NVIDIA_INTERFACE@'+$(NVIDIA_INTERFACE)+g \
+		-e s+'@ROCM_INTERFACE@'+$(ROCM_INTERFACE)+g \
 		-e s+'@FORTRAN_INTERFACE@'+$(FORTRAN_INTERFACE)+g \
 		-e s+'@LIBPREFIX@'+$(INSTALLED_LIBPREFIX)+g \
 		-e s+'@BINPREFIX@'+$(INSTALLED_BINPREFIX)+g \

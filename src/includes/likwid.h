@@ -2301,6 +2301,74 @@ int nvmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** lo
 
 #endif /* LIKWID_WITH_NVMON */
 
+/*
+################################################################################
+# Performance monitoring for AMD GPUs related functions
+################################################################################
+*/
+/** \addtogroup Performance monitoring for AMD GPUs
+ *  @{
+ */
+#ifdef LIKWID_WITH_ROCMON
+
+/*! \brief Structure with general GPU information for each device
+
+General information covers GPU devid, name and clock and memory specific information.
+Most information comes from hipGetDeviceProperties() and hipDeviceGetAttribute().
+*/
+typedef struct {
+    int devid; /*!< \brief Device ID  */
+    int numaNode; /*!< \brief Closest NUMA domain to the device */
+    char* name; /*!< \brief Name of the device */
+    // char* short_name; /*!< \brief Short name of the device */
+    size_t mem; /*!< \brief Size of global memory region (in bytes) */
+    int ccapMajor; /*!< \brief Major number of device's compute capability */
+    int ccapMinor; /*!< \brief Minor number of device's compute capability */
+    int maxThreadsPerBlock; /*!< \brief Maximam number of thread per block */
+    int maxThreadsDim[3]; /*!< \brief Maximum sizes of each dimension of a block */
+    int maxGridSize[3]; /*!< \brief Maximum sizes of each dimension of a grid */
+    int sharedMemPerBlock; /*!< \brief Total amount of shared memory available per block */
+    size_t totalConstantMemory; /*!< \brief Total amount of constant memory available on the device */
+    int simdWidth; /*!< \brief SIMD width of arithmetic units = warp size */
+    size_t memPitch; /*!< \brief Maximum pitch allowed by the memory copy functions that involve memory regions allocated through cuMemAllocPitch() */
+    int regsPerBlock; /*!< \brief Total number of registers available per block */
+    int clockRatekHz; /*!< \brief Clock frequency in kilohertz */
+    size_t textureAlign; /*!< \brief Alignment requirement */
+    // int surfaceAlign; /*!< \brief Alignment requirement for surfaces */
+    int l2Size; /*!< \brief L2 cache in bytes. 0 if the device doesn't have L2 cache */
+    int memClockRatekHz; /*!< \brief Peak memory clock frequency in kilohertz */
+    int pciBus; /*!< \brief PCI bus identifier of the device */
+    int pciDev; /*!< \brief PCI device (also known as slot) identifier of the device */
+    int pciDom; /*!< \brief PCI domain identifier of the device */
+    // int maxBlockRegs; /*!< \brief Maximum number of 32-bit registers available to a thread block */
+    int numMultiProcs; /*!< \brief Number of multiprocessors on the device */
+    int maxThreadPerMultiProc; /*!< \brief Maximum resident threads per multiprocessor */
+    int memBusWidth; /*!< \brief Global memory bus width in bits */
+    // int unifiedAddrSpace; /*!< \brief 1 if the device shares a unified address space with the host, or 0 if not */
+    int ecc; /*!< \brief 1 if error correction is enabled on the device, 0 if error correction is disabled or not supported by the device */
+    // int asyncEngines; /*!< \brief Number of asynchronous engines */
+    int mapHostMem; /*!< \brief 1 if the device can map host memory */
+    int integrated; /*!< \brief 1 if the device is an integrated (motherboard) GPU and 0 if it is a discrete (card) component */
+} GpuDevice_rocm;
+
+
+/*! \brief Structure holding information of all GPUs
+
+*/
+typedef struct {
+    int numDevices; /*!< \brief Number of detected devices */
+    GpuDevice_rocm* devices; /*!< \brief List with GPU-specific topology information */
+} GpuTopology_rocm;
+
+/** \brief Pointer for exporting the GpuTopology data structure */
+typedef GpuTopology_rocm* GpuTopology_rocm_t;
+
+int topology_gpu_init_rocm() __attribute__ ((visibility ("default") ));
+void topology_gpu_finalize_rocm(void) __attribute__ ((visibility ("default") ));
+GpuTopology_rocm_t get_gpuTopology_rocm(void) __attribute__ ((visibility ("default") ));
+
+#endif /* LIKWID_WITH_ROCMON */
+
 #ifdef __cplusplus
 }
 #endif

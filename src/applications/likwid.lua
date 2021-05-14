@@ -208,6 +208,10 @@ likwid.nvInit = likwid_nvInit
 likwid.nvAddEventSet = likwid_nvAddEventSet
 likwid.nvFinalize = likwid_nvFinalize
 
+likwid.rocmSupported = likwid_rocmSupported
+likwid.getGpuTopology_rocm = likwid_getGpuTopology_rocm
+likwid.putGpuTopology_rocm = likwid_putGpuTopology_rocm
+
 
 likwid.cpuFeatures = { [0]="HW_PREFETCHER", [1]="CL_PREFETCHER", [2]="DCU_PREFETCHER", [3]="IP_PREFETCHER",
                         [4]="FAST_STRINGS", [5]="THERMAL_CONTROL", [6]="PERF_MON", [7]="FERR_MULTIPLEX",

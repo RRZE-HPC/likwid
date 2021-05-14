@@ -298,6 +298,10 @@ else
 BUILDAPPDAEMON := false
 endif
 
+ifeq ($(strip $(ROCM_INTERFACE)),true)
+DEFINES += -DLIKWID_WITH_ROCMON -D__HIP_PLATFORM_HCC__
+endif
+
 ifeq ($(strip $(BUILDDAEMON)),true)
 ifneq ($(strip $(COMPILER)),MIC)
     DAEMON_TARGET = likwid-accessD

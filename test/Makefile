@@ -56,6 +56,9 @@ test-likwidAPI: test-likwidAPI.c
 test-msr-access: test-msr-access.c
 	gcc -o $@  test-msr-access.c
 
+test-topology-gpu-rocm: test-topology-gpu-rocm.c
+	gcc -O3 -std=c99 $(LIKWID_INC) $(LIKWID_DEFINES) $(LIKWID_LIB) -DLIKWID_WITH_ROCMON -o $@  test-topology-gpu-rocm.c -lm -llikwid
+
 streamICC: stream.c
 	if [ $(ICC_AVAILABLE) -ne 0 ]; then icc -O3 -xHost -std=c99 -qopenmp $(LIKWID_INC) $(LIKWID_DEFINES) $(LIKWID_LIB) -o $@ stream.c -lm -llikwid; fi
 
@@ -102,6 +105,6 @@ triadCU: triad.cu
 .PHONY: clean distclean streamGCC streamICC streamGCC_C11 streamICC_C11 testmarker-cnt testmarker-omp testmarkerF90 test-mpi test-mpi-pthreads stream_cilk serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul marker_overhead
 
 clean:
-	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker-cnt testmarkerF90 test-mpi test-mpi-pthreads testmarker-omp serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul marker_overhead
+	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker-cnt testmarkerF90 test-mpi test-mpi-pthreads testmarker-omp serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul marker_overhead test-topology-gpu-rocm
 
 distclean: clean

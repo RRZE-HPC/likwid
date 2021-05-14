@@ -2220,7 +2220,7 @@ lua_likwid_pinThread(lua_State* L)
             printf("\n");
     }
 #else
-    printf("Pinning of threads is not supported by your system\n")
+    printf("Pinning of threads is not supported by your system\n");
 #endif
     return 0;
 }
@@ -3501,6 +3501,170 @@ lua_likwid_nvSupported(lua_State *L)
 #endif /* LIKWID_WITH_NVMON */
 
 
+#ifdef LIKWID_WITH_ROCMON
+
+GpuTopology_rocm_t gputopo_rocm = NULL;
+int gputopology_isInitialized_rocm = 0;
+
+static int
+lua_likwid_rocmSupported(lua_State *L)
+{
+    lua_pushboolean(L, TRUE);
+    return 1;
+}
+
+static int
+lua_likwid_getGpuTopology_rocm(lua_State* L)
+{
+    if (!gputopology_isInitialized_rocm)
+    {
+        if (topology_gpu_init_rocm() == EXIT_SUCCESS)
+        {
+            gputopo_rocm = get_gpuTopology_rocm();
+            gputopology_isInitialized_rocm = 1;
+        }
+        else
+        {
+            lua_pushnil(L);
+            return 1;
+        }
+    }
+
+    lua_newtable(L);
+
+    lua_pushstring(L,"numDevices");
+    lua_pushinteger(L, (lua_Integer)(gputopo_rocm->numDevices));
+    lua_settable(L,-3);
+
+    lua_pushstring(L,"devices");
+    lua_newtable(L);
+    for (int i = 0; i < gputopo_rocm->numDevices; i++)
+    {
+        GpuDevice_rocm* gpu = &gputopo_rocm->devices[i];
+        lua_pushinteger(L, i+1);
+        lua_newtable(L);
+        lua_pushstring(L,"id");
+        lua_pushinteger(L, (lua_Integer)(gpu->devid));
+        lua_settable(L,-3);
+        lua_pushstring(L,"numaNode");
+        lua_pushinteger(L, (lua_Integer)(gpu->numaNode));
+        lua_settable(L,-3);
+        lua_pushstring(L,"name");
+        lua_pushstring(L, gpu->name);
+        lua_settable(L,-3);
+        lua_pushstring(L,"memory");
+        lua_pushinteger(L, (lua_Integer)(gpu->mem));
+        lua_settable(L,-3);
+        lua_pushstring(L,"ccapMajor");
+        lua_pushinteger(L, (lua_Integer)(gpu->ccapMajor));
+        lua_settable(L,-3);
+        lua_pushstring(L,"ccapMinor");
+        lua_pushinteger(L, (lua_Integer)(gpu->ccapMinor));
+        lua_settable(L,-3);
+        lua_pushstring(L,"l2Size");
+        lua_pushinteger(L, (lua_Integer)(gpu->l2Size));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxThreadsPerBlock");
+        lua_pushinteger(L, (lua_Integer)(gpu->maxThreadsPerBlock));
+        lua_settable(L,-3);
+        lua_pushstring(L,"sharedMemPerBlock");
+        lua_pushinteger(L, (lua_Integer)(gpu->sharedMemPerBlock));
+        lua_settable(L,-3);
+        lua_pushstring(L,"totalConstantMemory");
+        lua_pushinteger(L, (lua_Integer)(gpu->totalConstantMemory));
+        lua_settable(L,-3);
+        lua_pushstring(L,"memPitch");
+        lua_pushinteger(L, (lua_Integer)(gpu->memPitch));
+        lua_settable(L,-3);
+        lua_pushstring(L,"regsPerBlock");
+        lua_pushinteger(L, (lua_Integer)(gpu->regsPerBlock));
+        lua_settable(L,-3);
+        lua_pushstring(L,"clockRatekHz");
+        lua_pushinteger(L, (lua_Integer)(gpu->clockRatekHz));
+        lua_settable(L,-3);
+        lua_pushstring(L,"textureAlign");
+        lua_pushinteger(L, (lua_Integer)(gpu->textureAlign));
+        lua_settable(L,-3);
+        lua_pushstring(L,"memClockRatekHz");
+        lua_pushinteger(L, (lua_Integer)(gpu->memClockRatekHz));
+        lua_settable(L,-3);
+        lua_pushstring(L,"pciBus");
+        lua_pushinteger(L, (lua_Integer)(gpu->pciBus));
+        lua_settable(L,-3);
+        lua_pushstring(L,"pciDev");
+        lua_pushinteger(L, (lua_Integer)(gpu->pciDev));
+        lua_settable(L,-3);
+        lua_pushstring(L,"pciDom");
+        lua_pushinteger(L, (lua_Integer)(gpu->pciDom));
+        lua_settable(L,-3);
+        lua_pushstring(L,"numMultiProcs");
+        lua_pushinteger(L, (lua_Integer)(gpu->numMultiProcs));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxThreadPerMultiProc");
+        lua_pushinteger(L, (lua_Integer)(gpu->maxThreadPerMultiProc));
+        lua_settable(L,-3);
+        lua_pushstring(L,"memBusWidth");
+        lua_pushinteger(L, (lua_Integer)(gpu->memBusWidth));
+        lua_settable(L,-3);
+        lua_pushstring(L,"ecc");
+        lua_pushinteger(L, (lua_Integer)(gpu->ecc));
+        lua_settable(L,-3);
+        lua_pushstring(L,"mapHostMem");
+        lua_pushinteger(L, (lua_Integer)(gpu->mapHostMem));
+        lua_settable(L,-3);
+        lua_pushstring(L,"integrated");
+        lua_pushinteger(L, (lua_Integer)(gpu->integrated));
+        lua_settable(L,-3);
+
+        lua_pushstring(L,"maxThreadsDim");
+        lua_newtable(L);
+        for (int j = 0; j < 3; j++)
+        {
+            lua_pushinteger(L, j+1);
+            lua_pushinteger(L, (lua_Integer)(gpu->maxThreadsDim[j]));
+            lua_settable(L,-3);
+        }
+        lua_settable(L,-3);
+
+        lua_pushstring(L,"maxGridSize");
+        lua_newtable(L);
+        for (int j = 0; j < 3; j++)
+        {
+            lua_pushinteger(L, j+1);
+            lua_pushinteger(L, (lua_Integer)(gpu->maxGridSize[j]));
+            lua_settable(L,-3);
+        }
+        lua_settable(L,-3);
+
+        lua_settable(L,-3);
+    }
+    lua_settable(L,-3);
+
+    return 1;
+}
+
+static int
+lua_likwid_putGpuTopology_rocm(lua_State* L)
+{
+    if (gputopology_isInitialized_rocm)
+    {
+        topology_gpu_finalize_rocm();
+    }
+    return 0;
+}
+
+#else
+
+static int
+lua_likwid_rocmSupported(lua_State *L)
+{
+    lua_pushboolean(L, FALSE);
+    return 1;
+}
+
+#endif /* LIKWID_WITH_ROCMON */
+
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int __attribute__ ((visibility ("default") ))
@@ -3683,6 +3847,12 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_nvGetNameOfMetric",lua_likwid_nvGetNameOfMetric);
     lua_register(L, "likwid_nvGetNameOfGroup",lua_likwid_nvGetNameOfGroup);
 #endif /* LIKWID_WITH_NVMON */
+    // ROCm GPU functions
+    lua_register(L, "likwid_rocmSupported", lua_likwid_rocmSupported);
+#ifdef LIKWID_WITH_ROCMON
+    lua_register(L, "likwid_getGpuTopology_rocm", lua_likwid_getGpuTopology_rocm);
+    lua_register(L, "likwid_putGpuTopology_rocm", lua_likwid_putGpuTopology_rocm);
+#endif /* LIKWID_WITH_ROCMON */
 #ifdef __MIC__
     setuid(0);
     seteuid(0);

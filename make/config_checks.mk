@@ -81,3 +81,7 @@ ifeq ($(strip $(NVIDIA_INTERFACE)), true)
 INCLUDES += -I$(CUDAINCLUDE) -I$(CUPTIINCLUDE)
 #CPPFLAGS += -L$(CUDALIBDIR) -L$(CUPTILIBDIR)
 endif
+
+ifeq ($(strip $(ROCM_INTERFACE)), true)
+INCLUDES += -I$(HIPINCLUDE)
+endif
