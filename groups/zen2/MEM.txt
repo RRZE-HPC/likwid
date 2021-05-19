@@ -18,8 +18,8 @@ Memory data volume [GBytes] 1.0E-09*(DFC0+DFC1)*(4.0/(num_numadomains/num_socket
 
 LONG
 Formulas:
-Memory bandwidth [MBytes/s] = 4.0E-06*(DRAM_CHANNEL_0+DRAM_CHANNEL_1)*(4.0/(num_numadomains/num_sockets))*64.0/runtime
-Memory data volume [GBytes] = 4.0E-09*(DRAM_CHANNEL_0+DRAM_CHANNEL_1)*(4.0/(num_numadomains/num_sockets))*64.0
+Memory bandwidth [MBytes/s] = 1.0E-06*(DRAM_CHANNEL_0+DRAM_CHANNEL_1)*(4.0/(num_numadomains/num_sockets))*64.0/runtime
+Memory data volume [GBytes] = 1.0E-09*(DRAM_CHANNEL_0+DRAM_CHANNEL_1)*(4.0/(num_numadomains/num_sockets))*64.0
 -
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
 Since this group is based on Uncore events it is only possible to measure on a
