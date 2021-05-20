@@ -282,31 +282,12 @@ static int create_lookups()
         }
         affinity_thread2numa_lookup[hwthreadid] = memid;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2numa_lookup[%d] = %d, hwthreadid, memid);
-    }
-    if (do_cache && cachelimit > 0)
-    {
-        int* cache_threads = malloc(cachelimit * sizeof(int));
-        cacheIdx = 0;
-        int numberOfCoresPerCache = cachelimit/cpuid_topology.numThreadsPerCore;
-        for (int i = 0; i < cpuid_topology.numSockets; i++)
+        if (do_cache && cachelimit > 0)
         {
-            int offset = 0;
-            for (int j = 0; j < cpuid_topology.numCoresPerSocket/numberOfCoresPerCache; j++)
-            {
-                int tmp = treeFillNextEntries(cpuid_topology.topologyTree,
-                                          cache_threads, 0,
-                                          i, offset, numberOfCoresPerCache,
-                                          cachelimit);
-                for (int k = 0; k < cachelimit; k++)
-                {
-                    affinity_thread2sharedl3_lookup[cache_threads[k]] = cacheIdx;
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2sharedl3_lookup[%d] = %d, cache_threads[k], cacheIdx);
-                }
-                offset += (tmp < numberOfCoresPerCache ? tmp : numberOfCoresPerCache);
-                cacheIdx++;
-            }
+            int numberOfCoresPerCache = cachelimit/cpuid_topology.numThreadsPerCore;
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2sharedl3_lookup[%d] = %d, hwthreadid, coreid / numberOfCoresPerCache);
+            affinity_thread2sharedl3_lookup[hwthreadid] = coreid / numberOfCoresPerCache;
         }
-        free(cache_threads);
     }
 
     return 0;
