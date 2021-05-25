@@ -2010,7 +2010,7 @@ int main(void)
                         break;
                     default:
                         allowed = allowed_amd17;
-                        break
+                        break;
                 }
                 break;
             case ZEN3_FAMILY:
