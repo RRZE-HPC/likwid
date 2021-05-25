@@ -2001,13 +2001,16 @@ int main(void)
                 allowed = allowed_amd16;
                 break;
             case ZEN_FAMILY:
-                if (model == ZEN2_RYZEN || model == ZEN2_RYZEN2)
+                switch (model)
                 {
-                    allowed = allowed_amd17_zen2;
-                }
-                else
-                {
-                    allowed = allowed_amd17;
+                    case ZEN2_RYZEN:
+                    case ZEN2_RYZEN2:
+                    case ZEN2_RYZEN3:
+                        allowed = allowed_amd17_zen2;
+                        break;
+                    default:
+                        allowed = allowed_amd17;
+                        break;
                 }
                 break;
             case ZEN3_FAMILY:
