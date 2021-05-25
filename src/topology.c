@@ -347,6 +347,10 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
                 {
                     cpuid_topology.threadPool[thread].packageId = tmp;
                 }
+                else if (strcmp(value, "dieId") == 0)
+                {
+                    cpuid_topology.threadPool[thread].dieId = tmp;
+                }
                 else if (strcmp(value, "apicId") == 0)
                 {
                     cpuid_topology.threadPool[thread].apicId = tmp;
