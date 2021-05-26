@@ -180,4 +180,6 @@ BUILDAPPDAEMON=false
 # ROCM_INTERFACE=true. At runtime, the ROCm library have
 # to be in the LD_LIBRARY_PATH to dynamically load the libraries.
 # Include directory for ROCm headers
-HIPINCLUDE = $(ROCM_HOME)/hip/include
+HSAINCLUDE 			= $(ROCM_HOME)/hsa/include
+ROCPROFILERINCLUDE	= $(ROCM_HOME)/rocprofiler/include
+HIPINCLUDE 			= $(ROCM_HOME)/hip/include

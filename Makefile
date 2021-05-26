@@ -124,6 +124,7 @@ OBJ := $(filter-out $(BUILD_DIR)/topology_gpu.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/libnvctr.o,$(OBJ))
 endif
 ifneq ($(ROCM_INTERFACE), true)
+OBJ := $(filter-out $(BUILD_DIR)/rocmon.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/topology_gpu_rocm.o,$(OBJ))
 endif
 ifeq ($(COMPILER),GCCPOWER)

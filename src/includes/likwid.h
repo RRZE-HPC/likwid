@@ -2367,6 +2367,21 @@ int topology_gpu_init_rocm() __attribute__ ((visibility ("default") ));
 void topology_gpu_finalize_rocm(void) __attribute__ ((visibility ("default") ));
 GpuTopology_rocm_t get_gpuTopology_rocm(void) __attribute__ ((visibility ("default") ));
 
+
+/*
+################################################################################
+# Rocmon related functions (AMD GPU monitoring)
+################################################################################
+*/
+
+int rocmon_init(int numGpus, const int* gpuIds) __attribute__ ((visibility ("default") ));
+void rocmon_finalize(void) __attribute__ ((visibility ("default") ));
+int rocmon_addEventSet(const char* eventString) __attribute__ ((visibility ("default") ));
+int rocmon_startCounters(void) __attribute__ ((visibility ("default") ));
+int rocmon_stopCounters(void) __attribute__ ((visibility ("default") ));
+int rocmon_readCounters(void) __attribute__ ((visibility ("default") ));
+double rocmon_getLastResult(int gpuId, int eventId) __attribute__ ((visibility ("default") ));
+
 #endif /* LIKWID_WITH_ROCMON */
 
 #ifdef __cplusplus

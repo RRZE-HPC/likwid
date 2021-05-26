@@ -83,5 +83,6 @@ INCLUDES += -I$(CUDAINCLUDE) -I$(CUPTIINCLUDE)
 endif
 
 ifeq ($(strip $(ROCM_INTERFACE)), true)
-INCLUDES += -I$(HIPINCLUDE)
+# HSA includes 'hsa/xxx.h' and rocprofiler 'xxx.h'
+INCLUDES += -I$(HIPINCLUDE) -I$(HSAINCLUDE) -I$(HSAINCLUDE)/hsa -I$(ROCPROFILERINCLUDE)
 endif
