@@ -26,6 +26,7 @@ int main()
         printf("devid: %d\n", device->devid);
         printf("numaNode: %d\n", device->numaNode);
         printf("name: %s\n", device->name);
+        printf("short_name: %s\n", device->short_name);
         printf("mem: %u\n", device->mem);
         printf("ccapMajor: %d\n", device->ccapMajor);
         printf("ccapMinor: %d\n", device->ccapMinor);

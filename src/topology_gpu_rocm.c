@@ -139,6 +139,7 @@ topo_gpu_init(GpuDevice_rocm *device, int deviceId)
 
     device->devid = deviceId;
     device->name = NULL;
+    device->short_name = "amd_gpu";
 
     // Get HIP device properties
     err = (*hipGetDevicePropertiesTopoPtr)(&props, deviceId);

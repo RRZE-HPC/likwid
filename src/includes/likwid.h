@@ -2320,7 +2320,7 @@ typedef struct {
     int devid; /*!< \brief Device ID  */
     int numaNode; /*!< \brief Closest NUMA domain to the device */
     char* name; /*!< \brief Name of the device */
-    // char* short_name; /*!< \brief Short name of the device */
+    char* short_name; /*!< \brief Short name of the device */
     size_t mem; /*!< \brief Size of global memory region (in bytes) */
     int ccapMajor; /*!< \brief Major number of device's compute capability */
     int ccapMinor; /*!< \brief Minor number of device's compute capability */
