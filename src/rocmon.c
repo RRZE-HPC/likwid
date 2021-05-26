@@ -404,7 +404,7 @@ rocmon_finalize(void)
 
 
 int
-rocmon_addEventSet(const char* eventString)
+rocmon_addEventSet(const char* eventString, int* gid)
 {
     // Check arguments
     if (!eventString)
@@ -458,27 +458,50 @@ rocmon_addEventSet(const char* eventString)
             features[j].name = group->events[j];
         }
 
+        device->numActiveEvents = numFeatures;
+        device->activeEvents = features;
+    }
+
+    *gid = rocmon_context->numActiveGroups;
+    rocmon_context->numActiveGroups++;
+    return 0;
+}
+
+
+int
+rocmon_setupCounters(int gid)
+{
+    // Check arguments
+    if (gid < 0 || gid >= rocmon_context->numActiveGroups)
+    {
+        return -EINVAL;
+    }
+    
+    // Ensure rocmon is initialized
+    if (!rocmon_initialized)
+    {
+        return -EFAULT;
+    }
+
+    // Add events to each device
+    GroupInfo* group = &rocmon_context->groups[gid];
+    for (int i = 0; i < rocmon_context->numDevices; i++)
+    {
+        RocmonDevice* device = &rocmon_context->devices[i];
+
         // (Re-)create rocprofiler context
         if (device->context)
         {
-            ROCM_CALL(rocprofiler_close, (device->context),
-            {
-                free(features);
-                return 1;
-            });
+            ROCM_CALL(rocprofiler_close, (device->context), return 1);
         }
 
         rocprofiler_properties_t properties = {};
         properties.queue_depth = 128;
         uint32_t mode = ROCPROFILER_MODE_STANDALONE | ROCPROFILER_MODE_CREATEQUEUE | ROCPROFILER_MODE_SINGLEGROUP;
 
-        ROCM_CALL(rocprofiler_open, (device->hsa_agent, features, numFeatures, &device->context, mode, &properties), return -1);
-
-        device->numActiveEvents = numFeatures;
-        device->activeEvents = features;
+        ROCM_CALL(rocprofiler_open, (device->hsa_agent, device->activeEvents, device->numActiveEvents, &device->context, mode, &properties), return -1);
     }
-
-    rocmon_context->numActiveGroups++;
+    
     return 0;
 }
 

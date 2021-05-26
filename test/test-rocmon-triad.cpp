@@ -115,9 +115,15 @@ int main(int argc, char **argv) {
       printf("Failed to initialie Rocmon\n");
       return -1;
   }
-  if (rocmon_addEventSet("TCC_HIT_sum:Something") < 0)
+  int gid = -1;
+  if (rocmon_addEventSet("TCC_HIT_sum:Something", &gid) < 0 || gid < 0)
   {
       printf("Failed to add event set\n");
+      return -1;
+  }
+  if (rocmon_setupCounters(gid) < 0)
+  {
+      printf("Failed to setup counters\n");
       return -1;
   }
   if (rocmon_startCounters() < 0)

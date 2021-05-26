@@ -2376,7 +2376,8 @@ GpuTopology_rocm_t get_gpuTopology_rocm(void) __attribute__ ((visibility ("defau
 
 int rocmon_init(int numGpus, const int* gpuIds) __attribute__ ((visibility ("default") ));
 void rocmon_finalize(void) __attribute__ ((visibility ("default") ));
-int rocmon_addEventSet(const char* eventString) __attribute__ ((visibility ("default") ));
+int rocmon_addEventSet(const char* eventString, int* gid) __attribute__ ((visibility ("default") ));
+int rocmon_setupCounters(int gid) __attribute__ ((visibility ("default") ));
 int rocmon_startCounters(void) __attribute__ ((visibility ("default") ));
 int rocmon_stopCounters(void) __attribute__ ((visibility ("default") ));
 int rocmon_readCounters(void) __attribute__ ((visibility ("default") ));
