@@ -194,7 +194,12 @@ for level=1,cputopo["numCacheLevels"] do
         if (cputopo["cacheLevels"][level]["size"] < 1048576) then
             table.insert(output_csv, string.format("Size:\t\t\t%.0f kB",cputopo["cacheLevels"][level]["size"]/1024))
         else
-            table.insert(output_csv, string.format("Size:\t\t\t%.0f MB",cputopo["cacheLevels"][level]["size"]/1048576))
+            local x = cputopo["cacheLevels"][level]["size"]/1048576
+            if tonumber(string.format("%.2f", x)) == tonumber(string.format("%.0f", x)) then
+                table.insert(output_csv, string.format("Size:\t\t\t%.0f MB", x))
+            else
+                table.insert(output_csv, string.format("Size:\t\t\t%.2f MB", x))
+            end
         end
 
         if (print_caches) then
