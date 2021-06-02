@@ -37,22 +37,54 @@
 #include <rocprofiler.h>
 
 typedef struct {
-    int deviceId;
-    hsa_agent_t hsa_agent;
-    int numAllMetrics;
+    double lastValue;
+    double fullValue;
+} RocmonEventResult;
+
+typedef struct {
+    RocmonEventResult* results;
+    int numResults;
+} RocmonEventResultList;
+
+typedef struct {
+    int deviceId; // LIKWID device id
+
+    hsa_agent_t hsa_agent;  // HSA agent handle for this device
+    rocprofiler_t* context; // Rocprofiler context (has activeEvents configured)
+
+    // Available rocprofiler metrics
     rocprofiler_info_data_t* allMetrics;
-    rocprofiler_t* context; 
-    int numActiveEvents;
+    int numAllMetrics;
+
+    // Currently configured events (bound to context)
     rocprofiler_feature_t* activeEvents;
-    uint32_t rocprofilerGroupCount;
+    int numActiveEvents;
+
+    // Results for all events in all event sets
+    RocmonEventResultList* groupResults;
+    int numGroupResults;
+
+    // Timestamps in ns
+    struct {
+        uint64_t start;
+        uint64_t read;
+        uint64_t stop;
+    } time;
 } RocmonDevice;
 
 typedef struct {
-    int             numGroups;
-    int             numActiveGroups;
-    GroupInfo       *groups;
+    // Event Groups
+    GroupInfo   *groups;
+    int         numGroups;       // Number of allocated groups
+    int         numActiveGroups; // Number of used groups
+    int         activeGroup;     // Currently active group
+
+    // Devices (HSA agents)
+    RocmonDevice    *devices;
     int             numDevices;
-    RocmonDevice    *devices; // HSA agents
+
+    // System information
+    long double hsa_timestamp_factor; // hsa_timestamp * hsa_timestamp_factor = timestamp_in_ns
 } RocmonContext;
 
 extern RocmonContext *rocmon_context;

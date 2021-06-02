@@ -74,6 +74,7 @@ DECLAREROCMFUNC(hsa_init, ());
 DECLAREROCMFUNC(hsa_shut_down, ());
 DECLAREROCMFUNC(hsa_iterate_agents, (hsa_status_t (*callback)(hsa_agent_t agent, void* data), void* data));
 DECLAREROCMFUNC(hsa_agent_get_info, (hsa_agent_t agent, hsa_agent_info_t attribute, void* value));
+DECLAREROCMFUNC(hsa_system_get_info, (hsa_system_info_t attribute, void *value));
 DECLAREROCMFUNC(rocprofiler_iterate_info, (const hsa_agent_t* agent, rocprofiler_info_kind_t kind, hsa_status_t (*callback)(const rocprofiler_info_data_t, void* data), void* data));
 DECLAREROCMFUNC(rocprofiler_close, (rocprofiler_t* context));
 DECLAREROCMFUNC(rocprofiler_open, (hsa_agent_t agent, rocprofiler_feature_t* features, uint32_t feature_count, rocprofiler_t** context, uint32_t mode, rocprofiler_properties_t* properties));
@@ -110,6 +111,7 @@ _rocmon_link_libraries()
     DLSYM_AND_CHECK(dl_hsa_lib, hsa_shut_down);
     DLSYM_AND_CHECK(dl_hsa_lib, hsa_iterate_agents);
     DLSYM_AND_CHECK(dl_hsa_lib, hsa_agent_get_info);
+    DLSYM_AND_CHECK(dl_hsa_lib, hsa_system_get_info);
 
     // Link Rocprofiler functions
     DLSYM_AND_CHECK(dl_profiler_lib, rocprofiler_iterate_info);
@@ -214,6 +216,8 @@ _rocmon_iterate_agents_callback(hsa_agent_t agent, void* argv)
     device->context = NULL;
     device->numActiveEvents = 0;
     device->activeEvents = NULL;
+    device->numGroupResults = 0;
+    device->groupResults = NULL;
 
     // Get number of available metrics
     device->numAllMetrics = 0;
@@ -274,6 +278,51 @@ _rocmon_parse_eventstring(const char* eventString, GroupInfo* group)
             ERROR_PRINT(Cannot read performance group %s, eventString);
             return err;
         }
+    }
+
+    return 0;
+}
+
+
+int
+_rocmon_get_timestamp(uint64_t* timestamp_ns)
+{
+    uint64_t timestamp;
+
+    // Get timestamp from system
+    ROCM_CALL(hsa_system_get_info, (HSA_SYSTEM_INFO_TIMESTAMP, &timestamp), return -1);
+    // Convert to nanoseconds
+    *timestamp_ns = (uint64_t)((long double)timestamp * rocmon_context->hsa_timestamp_factor);
+
+    return 0;
+}
+
+
+int
+_rocmon_getLastResult(int gpuId, int eventId, double* value)
+{
+    RocmonDevice* device = &rocmon_context->devices[gpuId];
+    rocprofiler_data_t* data = &device->activeEvents[eventId].data;
+
+    switch (data->kind)
+    {
+	case ROCPROFILER_DATA_KIND_INT32:
+        *value = (double) data->result_int32;
+        break;
+	case ROCPROFILER_DATA_KIND_INT64:
+        *value = (double) data->result_int64;
+        break;
+	case ROCPROFILER_DATA_KIND_FLOAT:
+        *value = (double) data->result_float;
+        break;
+	case ROCPROFILER_DATA_KIND_DOUBLE:
+        *value = data->result_double;
+        break;
+        
+	case ROCPROFILER_DATA_KIND_BYTES:
+    case ROCPROFILER_DATA_KIND_UNINIT:
+    default:
+        return -1;
     }
 
     return 0;
@@ -342,6 +391,17 @@ rocmon_init(int numGpus, const int* gpuIds)
         return -1;
     });
 
+    // Get hsa timestamp factor
+    uint64_t frequency_hz;
+    ROCM_CALL(hsa_system_get_info, (HSA_SYSTEM_INFO_TIMESTAMP_FREQUENCY, &frequency_hz),
+    {
+        free(rocmon_context->devices);
+        free(rocmon_context);
+        rocmon_context = NULL;
+        return -1;
+    });
+    rocmon_context->hsa_timestamp_factor = (long double)1000000000 / (long double)frequency_hz;
+
     // initialize structures for specified devices (fetch ROCm specific info)
     iterate_agents_cb_arg arg = {
         .context = rocmon_context,
@@ -383,6 +443,16 @@ rocmon_finalize(void)
                 RocmonDevice* device = &context->devices[i];
                 FREE_IF_NOT_NULL(device->allMetrics);
                 FREE_IF_NOT_NULL(device->activeEvents);
+                if (device->groupResults)
+                {
+                    // Free events of event result lists
+                    for (int j = 0; j < device->numGroupResults; j++)
+                    {
+                        FREE_IF_NOT_NULL(device->groupResults[i].results);
+                    }
+                    // Free list
+                    free(device->groupResults);
+                }
                 if (device->context)
                 {
                     ROCM_CALL(rocprofiler_close, (device->context),);
@@ -438,28 +508,32 @@ rocmon_addEventSet(const char* eventString, int* gid)
         return err;
     }
 
-    // Add events to each device
-    GroupInfo* group = &rocmon_context->groups[rocmon_context->numActiveGroups];
+    // Allocate memory for event results
     for (int i = 0; i < rocmon_context->numDevices; i++)
     {
         RocmonDevice* device = &rocmon_context->devices[i];
-        
-        // Create feature array to monitor
-        int numFeatures = group->nevents;
-        rocprofiler_feature_t* features = (rocprofiler_feature_t*) malloc(numFeatures * sizeof(rocprofiler_feature_t));
-        if (features == NULL)
+
+        // Allocate memory for event results
+        int numEvents = rocmon_context->groups[rocmon_context->numActiveGroups].nevents;
+        RocmonEventResult* tmpResults = (RocmonEventResult*) malloc(numEvents * sizeof(RocmonEventResult));
+        if (tmpResults == NULL)
         {
-            ERROR_PLAIN_PRINT(Cannot allocate feature list);
+            ERROR_PLAIN_PRINT(Cannot allocate event results);
             return -ENOMEM;
         }
-        for (int j = 0; j < group->nevents; j++)
+
+        // Allocate memory for new event result list entry
+        RocmonEventResultList* tmpGroupResults = (RocmonEventResultList*) realloc(device->groupResults, (device->numGroupResults+1) * sizeof(RocmonEventResultList));
+        if (tmpGroupResults == NULL)
         {
-            features[j].kind = ROCPROFILER_FEATURE_KIND_METRIC;
-            features[j].name = group->events[j];
+            ERROR_PLAIN_PRINT(Cannot allocate new event group result list);
+            return -ENOMEM;
         }
 
-        device->numActiveEvents = numFeatures;
-        device->activeEvents = features;
+        device->groupResults = tmpGroupResults;
+        device->groupResults[device->numGroupResults].results = tmpResults;
+        device->groupResults[device->numGroupResults].numResults = numEvents;
+        device->numGroupResults++;
     }
 
     *gid = rocmon_context->numActiveGroups;
@@ -489,18 +563,37 @@ rocmon_setupCounters(int gid)
     {
         RocmonDevice* device = &rocmon_context->devices[i];
 
-        // (Re-)create rocprofiler context
+        // Close previous rocprofiler context
         if (device->context)
         {
             ROCM_CALL(rocprofiler_close, (device->context), return 1);
         }
 
+        // Create feature array to monitor
+        rocprofiler_feature_t* features = (rocprofiler_feature_t*) malloc(group->nevents * sizeof(rocprofiler_feature_t));
+        if (features == NULL)
+        {
+            ERROR_PLAIN_PRINT(Cannot allocate feature list);
+            return -ENOMEM;
+        }
+        for (int j = 0; j < group->nevents; j++)
+        {
+            features[j].kind = ROCPROFILER_FEATURE_KIND_METRIC;
+            features[j].name = group->events[j];
+        }
+
+        device->numActiveEvents = group->nevents;
+        device->activeEvents = features;
+
+        // Open context
         rocprofiler_properties_t properties = {};
         properties.queue_depth = 128;
         uint32_t mode = ROCPROFILER_MODE_STANDALONE | ROCPROFILER_MODE_CREATEQUEUE | ROCPROFILER_MODE_SINGLEGROUP;
 
+        // Important: only a single profiling group is supported at this time which limits the number of events that can be monitored at a time.
         ROCM_CALL(rocprofiler_open, (device->hsa_agent, device->activeEvents, device->numActiveEvents, &device->context, mode, &properties), return -1);
     }
+    rocmon_context->activeGroup = gid;
     
     return 0;
 }
@@ -509,15 +602,37 @@ rocmon_setupCounters(int gid)
 int
 rocmon_startCounters(void)
 {
+    int ret;
+
     // Ensure rocmon is initialized
     if (!rocmon_initialized)
     {
         return -EFAULT;
     }
 
+    // Get timestamp
+    uint64_t timestamp;
+    if (ret = _rocmon_get_timestamp(&timestamp))
+    {
+        return ret;
+    }
+
+    // Start counters on each device
     for (int i = 0; i < rocmon_context->numDevices; i++)
     {
         RocmonDevice* device = &rocmon_context->devices[i];
+        device->time.start = timestamp;
+        device->time.read = timestamp;
+
+        // Reset results
+        RocmonEventResultList* groupResult = &device->groupResults[rocmon_context->activeGroup];
+        for (int j = 0; j < groupResult->numResults; j++)
+        {
+            RocmonEventResult* result = &groupResult->results[j];
+            result->lastValue = 0;
+            result->fullValue = 0;
+        }
+
         if (device->context)
         {
             ROCM_CALL(rocprofiler_start, (device->context, 0), return -1);
@@ -531,18 +646,52 @@ rocmon_startCounters(void)
 int
 rocmon_stopCounters(void)
 {
+    int ret;
+
     // Ensure rocmon is initialized
     if (!rocmon_initialized)
     {
         return -EFAULT;
     }
 
+    // Get timestamp
+    uint64_t timestamp;
+    if (ret = _rocmon_get_timestamp(&timestamp))
+    {
+        return ret;
+    }
+
     for (int i = 0; i < rocmon_context->numDevices; i++)
     {
         RocmonDevice* device = &rocmon_context->devices[i];
-        if (device->context)
+        device->time.stop = timestamp;
+
+        if (!device->context)
         {
-            ROCM_CALL(rocprofiler_stop, (device->context, 0), return -1);
+            continue;
+        }
+
+        // Read values and close context
+        ROCM_CALL(rocprofiler_read, (device->context, 0), return -1);
+        ROCM_CALL(rocprofiler_get_data, (device->context, 0), return -1);
+        ROCM_CALL(rocprofiler_get_metrics, (device->context), return -1);
+        ROCM_CALL(rocprofiler_stop, (device->context, 0), return -1);
+
+        // Update results
+        RocmonEventResultList* groupResult = &device->groupResults[rocmon_context->activeGroup];
+        for (int j = 0; j < groupResult->numResults; j++)
+        {
+            RocmonEventResult* result = &groupResult->results[j];
+            
+            // Read value
+            ret = _rocmon_getLastResult(i, j, &result->fullValue);
+            if (ret < 0)
+            {
+                return -1;
+            }
+
+            // Calculate delta since last read
+            result->lastValue = result->fullValue - result->lastValue;
         }
     }
 
@@ -553,15 +702,26 @@ rocmon_stopCounters(void)
 int
 rocmon_readCounters(void)
 {
+    int ret;
+
     // Ensure rocmon is initialized
     if (!rocmon_initialized)
     {
         return -EFAULT;
     }
 
+    // Get timestamp
+    uint64_t timestamp;
+    if (ret = _rocmon_get_timestamp(&timestamp))
+    {
+        return ret;
+    }
+
     for (int i = 0; i < rocmon_context->numDevices; i++)
     {
         RocmonDevice* device = &rocmon_context->devices[i];
+        device->time.read = timestamp;
+
         if (!device->context)
         {
             continue;
@@ -570,14 +730,31 @@ rocmon_readCounters(void)
         ROCM_CALL(rocprofiler_read, (device->context, 0), return -1);
         ROCM_CALL(rocprofiler_get_data, (device->context, 0), return -1);
         ROCM_CALL(rocprofiler_get_metrics, (device->context), return -1);
+
+        // Update results
+        RocmonEventResultList* groupResult = &device->groupResults[rocmon_context->activeGroup];
+        for (int j = 0; j < groupResult->numResults; j++)
+        {
+            RocmonEventResult* result = &groupResult->results[j];
+            
+            // Read value
+            ret = _rocmon_getLastResult(i, j, &result->fullValue);
+            if (ret < 0)
+            {
+                return -1;
+            }
+
+            // Calculate delta since last read
+            result->lastValue = result->fullValue - result->lastValue;
+        }
     }
 
     return 0;
 }
 
-// TODO: multiple groups
+
 double
-rocmon_getLastResult(int gpuId, int eventId)
+rocmon_getResult(int gpuId, int groupId, int eventId)
 {
     // Ensure rocmon is initialized
     if (!rocmon_initialized)
@@ -591,32 +768,387 @@ rocmon_getLastResult(int gpuId, int eventId)
         return -EFAULT;
     }
 
+    // Validate groupId
     RocmonDevice* device = &rocmon_context->devices[gpuId];
-
-    // Validate eventId
-    if (eventId < 0 || eventId >= device->numActiveEvents)
+    if (groupId < 0 || groupId >= device->numGroupResults)
     {
         return -EFAULT;
     }
 
-    rocprofiler_data_t* data = &device->activeEvents[eventId].data;
-    printf("Data kind: %u\n", data->kind);
-    switch (data->kind)
+    // Validate eventId
+    RocmonEventResultList* groupResult = &device->groupResults[groupId];
+    if (eventId < 0 || eventId >= groupResult->numResults)
     {
-	case ROCPROFILER_DATA_KIND_INT32:
-        return (double) data->result_int32;
-	case ROCPROFILER_DATA_KIND_INT64:
-        return (double) data->result_int64;
-	case ROCPROFILER_DATA_KIND_FLOAT:
-        return (double) data->result_float;
-	case ROCPROFILER_DATA_KIND_DOUBLE:
-        return data->result_double;
-        
-	case ROCPROFILER_DATA_KIND_BYTES:
-    case ROCPROFILER_DATA_KIND_UNINIT:
-    default:
-        return -1;
+        return -EFAULT;
     }
+
+    // Return result
+    return groupResult->results[eventId].fullValue;
+}
+
+
+// TODO: multiple groups
+double
+rocmon_getLastResult(int gpuId, int groupId, int eventId)
+{
+    // Ensure rocmon is initialized
+    if (!rocmon_initialized)
+    {
+        return -EFAULT;
+    }
+
+    // Validate gpuId
+    if (gpuId < 0 || gpuId >= rocmon_context->numDevices)
+    {
+        return -EFAULT;
+    }
+
+    // Validate groupId
+    RocmonDevice* device = &rocmon_context->devices[gpuId];
+    if (groupId < 0 || groupId >= device->numGroupResults)
+    {
+        return -EFAULT;
+    }
+
+    // Validate eventId
+    RocmonEventResultList* groupResult = &device->groupResults[groupId];
+    if (eventId < 0 || eventId >= groupResult->numResults)
+    {
+        return -EFAULT;
+    }
+
+    // Return result
+    return groupResult->results[eventId].lastValue;
+}
+
+
+int
+rocmon_getEventsOfGpu(int gpuId, EventList_rocm_t** list)
+{
+    // Ensure rocmon is initialized
+    if (!rocmon_initialized)
+    {
+        return -EFAULT;
+    }
+
+    // Validate args
+    if (gpuId < 0 || gpuId > rocmon_context->numDevices)
+    {
+        return -EINVAL;
+    }
+    if (list == NULL)
+    {
+        return -EINVAL;
+    }
+
+    RocmonDevice* device = &rocmon_context->devices[gpuId];
+
+    // Allocate list structure
+    EventList_rocm_t* tmpList = (EventList_rocm_t*) malloc(sizeof(EventList_rocm_t));
+    if (list == NULL)
+    {
+        ERROR_PLAIN_PRINT(Cannot allocate event list);
+        return -ENOMEM;
+    }
+    
+    // Get number of events
+    tmpList->numEvents = device->numAllMetrics;
+    if (tmpList->numEvents == 0)
+    {
+        // No events -> return empty list
+        tmpList->events = NULL;
+        *list = tmpList;
+        return 0;
+    }
+
+    // Allocate event array
+    tmpList->events = (Event_rocm_t*) malloc(tmpList->numEvents * sizeof(Event_rocm_t));
+    if (tmpList->events == NULL)
+    {
+        ERROR_PLAIN_PRINT(Cannot allocate events for event list);
+        free(tmpList);
+        return -ENOMEM;
+    }
+
+    // Copy event information
+    for (int i = 0; i < tmpList->numEvents; i++)
+    {
+        rocprofiler_info_data_t* event = &device->allMetrics[i];
+        Event_rocm_t* out = &tmpList->events[i];
+
+        // Copy name
+        out->name = (char*) malloc(strlen(event->metric.name) + 2 /* NULL byte */);
+        if (out->name)
+        {
+            int ret = snprintf(out->name, strlen(event->metric.name)+1, "%s", event->metric.name);
+            if (ret > 0)
+            {
+                out->name[ret] = '\0';
+            }
+        }
+
+        // Copy description
+        out->description = (char*) malloc(strlen(event->metric.description) + 2 /* NULL byte */);
+        if (out->description)
+        {
+            int ret = snprintf(out->description, strlen(event->metric.description)+1, "%s", event->metric.description);
+            if (ret > 0)
+            {
+                out->description[ret] = '\0';
+            }
+        }
+
+        // Copy instances
+        out->instances = event->metric.instances;
+    }
+
+    *list = tmpList;
+    return 0;
+}
+
+void
+rocmon_freeEventsOfGpu(EventList_rocm_t* list)
+{
+#define FREE_IF_NOT_NULL(var) if ( var ) { free( var ); var = NULL; }
+
+    // Check pointer
+    if (list == NULL)
+    {
+        return;
+    }
+
+    if (list->events != NULL)
+    {
+        for (int i = 0; i < list->numEvents; i++)
+        {
+            Event_rocm_t* event = &list->events[i];
+            FREE_IF_NOT_NULL(event->name);
+            FREE_IF_NOT_NULL(event->description);
+        }
+        free(list->events);
+    }
+    free(list);
+}
+
+
+int
+rocmon_switchActiveGroup(int newGroupId)
+{
+    int ret;
+
+    ret = rocmon_stopCounters();
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    ret = rocmon_setupCounters(newGroupId);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    ret = rocmon_startCounters();
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    return 0;
+}
+
+
+int
+rocmon_getNumberOfGroups(void)
+{
+    if (!rocmon_context || !rocmon_initialized)
+    {
+        return -EFAULT;
+    }
+    return rocmon_context->numActiveGroups;
+}
+
+
+int
+rocmon_getIdOfActiveGroup(void)
+{
+    if (!rocmon_context || !rocmon_initialized)
+    {
+        return -EFAULT;
+    }
+    return rocmon_context->activeGroup;
+}
+
+
+int
+rocmon_getNumberOfGPUs(void)
+{
+    if (!rocmon_context || !rocmon_initialized)
+    {
+        return -EFAULT;
+    }
+    return rocmon_context->numDevices;
+}
+
+
+int
+rocmon_getNumberOfEvents(int groupId)
+{
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    {
+        return -EFAULT;
+    }
+    GroupInfo* ginfo = &rocmon_context->groups[groupId];
+    return ginfo->nevents;
+}
+
+
+int
+rocmon_getNumberOfMetrics(int groupId)
+{
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    {
+        return -EFAULT;
+    }
+    GroupInfo* ginfo = &rocmon_context->groups[groupId];
+    return ginfo->nmetrics;
+}
+
+
+double
+rocmon_getTimeOfGroup(int groupId)
+{
+    int i = 0;
+    double t = 0;
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    {
+        return -EFAULT;
+    }
+    for (i = 0; i < rocmon_context->numDevices; i++)
+    {
+        RocmonDevice* device = &rocmon_context->devices[i];
+        t = MAX(t, (double)(device->time.stop - device->time.start));
+    }
+    return t*1E-9;
+}
+
+
+double
+rocmon_getLastTimeOfGroup(int groupId)
+{
+    int i = 0;
+    double t = 0;
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    {
+        return -EFAULT;
+    }
+    for (i = 0; i < rocmon_context->numDevices; i++)
+    {
+        RocmonDevice* device = &rocmon_context->devices[i];
+        t = MAX(t, (double)(device->time.stop - device->time.read));
+    }
+    return t*1E-9;
+}
+
+
+char*
+rocmon_getEventName(int groupId, int eventId)
+{
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    {
+        return NULL;
+    }
+    GroupInfo* ginfo = &rocmon_context->groups[groupId];
+    if ((eventId < 0) || (eventId >= ginfo->nevents))
+    {
+        return NULL;
+    }
+    return ginfo->events[eventId];
+}
+
+
+char*
+rocmon_getCounterName(int groupId, int eventId)
+{
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    {
+        return NULL;
+    }
+    GroupInfo* ginfo = &rocmon_context->groups[groupId];
+    if ((eventId < 0) || (eventId >= ginfo->nevents))
+    {
+        return NULL;
+    }
+    return ginfo->counters[eventId];
+}
+
+
+char*
+rocmon_getMetricName(int groupId, int metricId)
+{
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    {
+        return NULL;
+    }
+    GroupInfo* ginfo = &rocmon_context->groups[groupId];
+    if ((metricId < 0) || (metricId >= ginfo->nmetrics))
+    {
+        return NULL;
+    }
+    return ginfo->metricnames[metricId];
+}
+
+
+char* 
+rocmon_getGroupName(int groupId)
+{
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    {
+        return NULL;
+    }
+    GroupInfo* ginfo = &rocmon_context->groups[groupId];
+    return ginfo->groupname;
+}
+
+
+char*
+rocmon_getGroupInfoShort(int groupId)
+{
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    {
+        return NULL;
+    }
+    GroupInfo* ginfo = &rocmon_context->groups[groupId];
+    return ginfo->shortinfo;
+}
+
+
+char*
+rocmon_getGroupInfoLong(int groupId)
+{
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    {
+        return NULL;
+    }
+    GroupInfo* ginfo = &rocmon_context->groups[groupId];
+    return ginfo->longinfo;
+}
+
+
+int
+rocmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos)
+{
+    init_configuration();
+    Configuration_t config = get_configuration();
+
+    return perfgroup_getGroups(config->groupPath, "amd_gpu", groups, shortinfos, longinfos);
+}
+
+
+int
+rocmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos)
+{
+    perfgroup_returnGroups(nrgroups, groups, shortinfos, longinfos);
 }
 
 #endif /* LIKWID_WITH_ROCMON */

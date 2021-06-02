@@ -44,6 +44,7 @@ double dtime() {
   return tseconds;
 }
 
+#define LIKWID_TEST(ans) { int err = (ans); if (err < 0) { std::cerr << "Error " << err << " in `" << #ans << "` (" << __FILE__ << ": " << __LINE__ << ")" << std::endl; return -err; } }
 #define GPU_ERROR(ans)                                                         \
   { gpuAssert((ans), __FILE__, __LINE__); }
 
@@ -79,8 +80,20 @@ __global__ void sch_triad_kernel(T *A, const T *__restrict__ B,
   }
 }
 
+void print_results(int gid)
+{
+  for (int j = 0; j < rocmon_getNumberOfEvents(gid); j++)
+  {
+    char* name = rocmon_getEventName(gid, j);
+    double lastValue = rocmon_getLastResult(0, gid, j);
+    double fullValue = rocmon_getResult(0, gid, j);
+
+    printf("%s: %.2f / %.2f\n", name, fullValue, lastValue);
+  }
+}
+
 int main(int argc, char **argv) {
-  const size_t buffer_size = 128 * 1024 * 1024;
+  const size_t buffer_size = 248 * 1024 * 1024;
 
   double *dA, *dB, *dC, *dD;
 
@@ -99,7 +112,7 @@ int main(int argc, char **argv) {
 
   const int block_size = 512;
   hipDeviceProp_t prop;
-  int deviceId;
+  int deviceId = 0;
   GPU_ERROR(hipGetDevice(&deviceId));
   GPU_ERROR(hipGetDeviceProperties(&prop, deviceId));
   int smCount = prop.multiProcessorCount;
@@ -116,21 +129,24 @@ int main(int argc, char **argv) {
       return -1;
   }
   int gid = -1;
-  if (rocmon_addEventSet("TCC_HIT_sum:Something", &gid) < 0 || gid < 0)
+  // if (rocmon_addEventSet("GRBM_COUNT:_,GRBM_GUI_ACTIVE:_,GPUBusy:_", &gid) < 0 || gid < 0)
+  // if (rocmon_addEventSet(
+  //   // "TCC_HIT[0]:_,TCC_HIT[1]:_,TCC_HIT[2]:_,TCC_HIT[3]:_,TCC_HIT[4]:_,TCC_HIT[5]:_,TCC_HIT[6]:_,TCC_HIT[7]:_,TCC_HIT[8]:_,TCC_HIT[9]:_,TCC_HIT[10]:_,TCC_HIT[11]:_,TCC_HIT[12]:_,TCC_HIT[13]:_,TCC_HIT[14]:_,TCC_HIT[15]:_"
+  //   // ",TCC_MISS[0]:_,TCC_MISS[1]:_,TCC_MISS[2]:_,TCC_MISS[3]:_,TCC_MISS[4]:_,TCC_MISS[5]:_,TCC_MISS[6]:_,TCC_MISS[7]:_,TCC_MISS[8]:_,TCC_MISS[9]:_,TCC_MISS[10]:_,TCC_MISS[11]:_,TCC_MISS[12]:_,TCC_MISS[13]:_,TCC_MISS[14]:_,TCC_MISS[15]:_"
+  //   // ",TA_FLAT_WRITE_WAVEFRONTS[0]:_,TA_FLAT_WRITE_WAVEFRONTS[1]:_,TA_FLAT_WRITE_WAVEFRONTS[2]:_,TA_FLAT_WRITE_WAVEFRONTS[3]:_,TA_FLAT_WRITE_WAVEFRONTS[4]:_,TA_FLAT_WRITE_WAVEFRONTS[5]:_,TA_FLAT_WRITE_WAVEFRONTS[6]:_,TA_FLAT_WRITE_WAVEFRONTS[7]:_,TA_FLAT_WRITE_WAVEFRONTS[8]:_,TA_FLAT_WRITE_WAVEFRONTS[9]:_,TA_FLAT_WRITE_WAVEFRONTS[10]:_,TA_FLAT_WRITE_WAVEFRONTS[11]:_,TA_FLAT_WRITE_WAVEFRONTS[12]:_,TA_FLAT_WRITE_WAVEFRONTS[13]:_,TA_FLAT_WRITE_WAVEFRONTS[14]:_,TA_FLAT_WRITE_WAVEFRONTS[15]:_"
+  //   // "SQ_WAVES:_,SQ_INSTS_VALU:_,SQ_INSTS_VMEM_WR:_,SQ_INSTS_VMEM_RD:_,SQ_INSTS_SALU:_"
+  //   // "SQ_INSTS_SMEM:_,SQ_INSTS_FLAT:_,SQ_INSTS_FLAT_LDS_ONLY:_,SQ_INSTS_LDS:_,SQ_INSTS_GDS:_"
+  //   ,&gid) < 0 || gid < 0)
+  // if (rocmon_addEventSet("GRBM_GUI_ACTIVE:_,GRBM_COUNT:_,GPUBusy:_", &gid) < 0 || gid < 0)
+  if (rocmon_addEventSet("GRBM_GUI_ACTIVE:_,GRBM_COUNT:_,TCC_HIT_sum:_", &gid) < 0 || gid < 0)
+  // if (rocmon_addEventSet("GRBM_GUI_ACTIVE:_,GRBM_COUNT:_,TCC_HIT_sum:_,GPUBusy:_", &gid) < 0 || gid < 0)
+  // if (rocmon_addEventSet("GRBM_GUI_ACTIVE:_,GRBM_COUNT:_,TCC_HIT_sum:_,GPUBusy:_,VALUInsts:_,VALUUtilization:_,LDSBankConflict:_,Wavefronts:_,FETCH_SIZE:_", &gid) < 0 || gid < 0)
   {
       printf("Failed to add event set\n");
       return -1;
   }
-  if (rocmon_setupCounters(gid) < 0)
-  {
-      printf("Failed to setup counters\n");
-      return -1;
-  }
-  if (rocmon_startCounters() < 0)
-  {
-      printf("Failed to start counters\n");
-      return -1;
-  }
+  LIKWID_TEST(rocmon_setupCounters(gid));
+  LIKWID_TEST(rocmon_startCounters());
 
   hipLaunchKernelGGL((sch_triad_kernel<double>), dim3(max_blocks), dim3(block_size), 0, 0, dA, dB, dC, dD, buffer_size);
 
@@ -138,23 +154,19 @@ int main(int argc, char **argv) {
   double t1 = dtime();
   for (int i = 0; i < iters; i++) {
     hipLaunchKernelGGL((sch_triad_kernel<double>), dim3(max_blocks), dim3(block_size), 0, 0, dA, dB, dC, dD, buffer_size);
+
+    LIKWID_TEST(rocmon_readCounters());
+    std::cout << i << ":" << std::endl; 
+    print_results(gid);
+    std::cout << std::endl;
   }
   GPU_ERROR(hipGetLastError());
   GPU_ERROR(hipDeviceSynchronize());
   double t2 = dtime();
 
-  if (rocmon_readCounters() < 0)
-  {
-      printf("Failed to read counters\n");
-      return -1;
-  }
-  if (rocmon_stopCounters() < 0)
-  {
-      printf("Failed to stop counters\n");
-      return -1;
-  }
-  double result = rocmon_getLastResult(0, 0);
-  printf("TCC_HIT_sum: %f\n", result);
+  LIKWID_TEST(rocmon_stopCounters());
+  print_results(gid);
+  printf("Time of group: %f / %f\n", rocmon_getTimeOfGroup(0), rocmon_getLastTimeOfGroup(0));
 
   double dt = (t2 - t1) / iters;
 

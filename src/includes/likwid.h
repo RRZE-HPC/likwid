@@ -2374,14 +2374,51 @@ GpuTopology_rocm_t get_gpuTopology_rocm(void) __attribute__ ((visibility ("defau
 ################################################################################
 */
 
+typedef struct {
+    char* name;
+    int instances;
+    char* description;
+} Event_rocm_t;
+
+typedef struct {
+    Event_rocm_t* events;
+    int numEvents;
+} EventList_rocm_t;
+
 int rocmon_init(int numGpus, const int* gpuIds) __attribute__ ((visibility ("default") ));
 void rocmon_finalize(void) __attribute__ ((visibility ("default") ));
 int rocmon_addEventSet(const char* eventString, int* gid) __attribute__ ((visibility ("default") ));
+int rocmon_switchActiveGroup(int newGroupId) __attribute__ ((visibility ("default") ));
 int rocmon_setupCounters(int gid) __attribute__ ((visibility ("default") ));
 int rocmon_startCounters(void) __attribute__ ((visibility ("default") ));
 int rocmon_stopCounters(void) __attribute__ ((visibility ("default") ));
 int rocmon_readCounters(void) __attribute__ ((visibility ("default") ));
-double rocmon_getLastResult(int gpuId, int eventId) __attribute__ ((visibility ("default") ));
+
+double rocmon_getResult(int gpuId, int groupId, int eventId) __attribute__ ((visibility ("default") ));
+double rocmon_getLastResult(int gpuId, int groupId, int eventId) __attribute__ ((visibility ("default") ));
+
+int rocmon_getEventsOfGpu(int gpuId, EventList_rocm_t** list) __attribute__ ((visibility ("default") ));
+void rocmon_freeEventsOfGpu(EventList_rocm_t* list) __attribute__ ((visibility ("default") ));
+
+int rocmon_getNumberOfGroups(void) __attribute__ ((visibility ("default") ));
+int rocmon_getIdOfActiveGroup(void) __attribute__ ((visibility ("default") ));
+int rocmon_getNumberOfGPUs(void) __attribute__ ((visibility ("default") ));
+int rocmon_getNumberOfEvents(int groupId) __attribute__ ((visibility ("default") ));
+int rocmon_getNumberOfMetrics(int groupId) __attribute__ ((visibility ("default") ));
+
+char* rocmon_getEventName(int groupId, int eventId) __attribute__ ((visibility ("default") ));
+char* rocmon_getCounterName(int groupId, int eventId) __attribute__ ((visibility ("default") ));
+char* rocmon_getMetricName(int groupId, int metricId) __attribute__ ((visibility ("default") ));
+
+double rocmon_getTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
+double rocmon_getLastTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
+
+char* rocmon_getGroupName(int groupId) __attribute__ ((visibility ("default") ));
+char* rocmon_getGroupInfoShort(int groupId) __attribute__ ((visibility ("default") ));
+char* rocmon_getGroupInfoLong(int groupId) __attribute__ ((visibility ("default") ));
+
+int rocmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos) __attribute__ ((visibility ("default") ));
+int rocmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos) __attribute__ ((visibility ("default") ));
 
 #endif /* LIKWID_WITH_ROCMON */
 
