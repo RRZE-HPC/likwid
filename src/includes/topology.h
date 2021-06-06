@@ -105,6 +105,7 @@ struct topology_functions {
 #define CANNONLAKE           0x66U
 #define ICELAKE1             0x7EU
 #define ICELAKE2             0x7DU
+#define ROCKETLAKE           0xA7U
 #define COMETLAKE1           0xA5U
 #define COMETLAKE2           0xA6U
 #define ICELAKEX1            0x6AU
