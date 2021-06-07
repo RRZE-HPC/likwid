@@ -824,21 +824,20 @@ perfmon_check_counter_map(int cpu_id)
         }
 #endif
     }
-    if (own_hpm)
-        HPMfinalize();
     for (int i=0; i<perfmon_numArchEvents; i++)
     {
         int found = 0;
-        bstring estr = bfromcstr(eventHash[i].name);
         if (i > 0 && strlen(eventHash[i-1].limit) != 0 && strcmp(eventHash[i-1].limit, eventHash[i].limit) == 0)
         {
-            bdestroy(estr);
             continue;
         }
+        bstring estr = bfromcstr(eventHash[i].name);
         for (int j=0;j<perfmon_numCounters; j++)
         {
             if (counter_map[j].type == NOTYPE)
+            {
                 continue;
+            }
             PerfmonEvent event;
             bstring cstr = bfromcstr(counter_map[j].key);
             if (getEvent(estr, cstr, &event) && checkCounter(cstr, eventHash[i].limit))
@@ -857,6 +856,8 @@ perfmon_check_counter_map(int cpu_id)
         }
     }
     maps_checked = 1;
+    if (own_hpm)
+        HPMfinalize();
 }
 
 void
@@ -1152,7 +1153,8 @@ perfmon_init_maps(void)
                     counter_map = icelakeX_counter_map;
                     box_map = icelakeX_box_map;
                     perfmon_numCounters = perfmon_numCountersIcelakeX;
-                    translate_types = default_translate_types;
+                    translate_types = icelakeX_translate_types;
+                    archRegisterTypeNames = registerTypeNamesIcelakeX;
                     break;
 
                 default:

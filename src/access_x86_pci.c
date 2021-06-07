@@ -80,6 +80,8 @@ static int nr_sockets = 0;
  *   1        0x7f      0x7f
  *   2                  0xbf
  *   3                  0xff
+ *
+ * With Intel IcelakeSP, the 2S mappings are 0x7e and 0xfe
  */
 static char* socket_bus[MAX_NUM_NODES] = { [0 ... (MAX_NUM_NODES-1)] = NULL};
 
@@ -132,6 +134,10 @@ access_x86_pci_init(const int socket)
                 break;
             case SKYLAKEX:
                 testDevice = 0x2042;
+                break;
+            case ICELAKEX1:
+            case ICELAKEX2:
+                testDevice = 0x344A;
                 break;
             default:
                 DEBUG_PRINT(DEBUGLEV_INFO,CPU model %s does not support PCI based Uncore performance monitoring, cpuid_info.name);

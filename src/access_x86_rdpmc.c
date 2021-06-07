@@ -47,9 +47,13 @@
 #include <registers.h>
 #include <signal.h>
 #include <sched.h>
+#include <cpuid.h>
 
 static int rdpmc_works_pmc = -1;
-static int rdpmc_works_fixed = -1;
+static int rdpmc_works_fixed_inst = -1;
+static int rdpmc_works_fixed_cyc = -1;
+static int rdpmc_works_fixed_ref = -1;
+static int rdpmc_works_fixed_slots = -1;
 static int rdpmc_works_llc = -1;
 static int rdpmc_works_mem = -1;
 
@@ -136,15 +140,39 @@ test_rdpmc(int cpu_id, uint64_t value, int flag)
 int
 access_x86_rdpmc_init(const int cpu_id)
 {
+    unsigned eax,ebx,ecx,edx;
+    if (cpuid_info.isIntel)
+    {
+        eax = 0xA;
+        CPUID(eax, ebx, ecx, edx);
+    }
     if (rdpmc_works_pmc < 0)
     {
         rdpmc_works_pmc = test_rdpmc(cpu_id, 0, 0);
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for PMC counters returned %d, rdpmc_works_pmc);
     }
-    if (rdpmc_works_fixed < 0 && cpuid_info.isIntel)
+    if (rdpmc_works_fixed_inst < 0 && cpuid_info.isIntel)
     {
-        rdpmc_works_fixed = test_rdpmc(cpu_id, (1<<30), 0);
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED counters returned %d, rdpmc_works_fixed);
+	if (ebx & (1<<1))
+	    rdpmc_works_fixed_inst = test_rdpmc(cpu_id, (1<<30), 0);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED instruction counter returned %d, rdpmc_works_fixed_inst);
+    }
+    if (rdpmc_works_fixed_cyc < 0 && cpuid_info.isIntel)
+    {
+	if (ebx & (1<<0))
+	    rdpmc_works_fixed_cyc = test_rdpmc(cpu_id, (1<<30) + 1, 0);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED core cycles counter returned %d, rdpmc_works_fixed_cyc);
+    }
+    if (rdpmc_works_fixed_ref < 0 && cpuid_info.isIntel)
+    {
+	if (ebx & (1<<2))
+	    rdpmc_works_fixed_ref = test_rdpmc(cpu_id, (1<<30) + 2, 0);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED reference cycle counter returned %d, rdpmc_works_fixed_ref);
+    }
+    if (rdpmc_works_fixed_slots < 0)
+    {
+        rdpmc_works_fixed_slots = test_rdpmc(cpu_id, (1<<30) + 3, 0);
+	DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED slots counter returned %d, rdpmc_works_fixed_ref);
     }
     if (rdpmc_works_llc < 0 && (!cpuid_info.isIntel))
     {
@@ -185,7 +213,10 @@ void
 access_x86_rdpmc_finalize(const int cpu_id)
 {
     rdpmc_works_pmc = -1;
-    rdpmc_works_fixed = -1;
+    rdpmc_works_fixed_inst = -1;
+    rdpmc_works_fixed_cyc = -1;
+    rdpmc_works_fixed_ref = -1;
+    rdpmc_works_fixed_slots = -1;
     rdpmc_works_llc = -1;
     rdpmc_works_mem = -1;
 }
@@ -193,7 +224,7 @@ access_x86_rdpmc_finalize(const int cpu_id)
 int
 access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
 {
-    int ret = 0;
+    int ret = -EAGAIN;
 
     switch(reg)
     {
@@ -249,16 +280,49 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
             }
             break;
         case MSR_PERF_FIXED_CTR0:
-        case MSR_PERF_FIXED_CTR1:
-        case MSR_PERF_FIXED_CTR2:
-        case MSR_PERF_FIXED_CTR3:
-            if (rdpmc_works_fixed == 1)
+            if (rdpmc_works_fixed_inst == 1)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED counter with RDPMC instruction with index 0x%X, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
-                ret = __rdpmc(cpu_id, reg - MSR_PERF_FIXED_CTR0, data);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED instruction counter with RDPMC instruction with index 0x%X, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
+                ret = __rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data);
                 if (ret)
                 {
-                    rdpmc_works_fixed = 0;
+                    rdpmc_works_fixed_inst = 0;
+                    ret = -EAGAIN;
+                }
+            }
+            break;
+        case MSR_PERF_FIXED_CTR1:
+            if (rdpmc_works_fixed_cyc == 1)
+            {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED core cycle counter with RDPMC instruction with index 0x%X, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
+                ret = __rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data);
+                if (ret)
+                {
+                    rdpmc_works_fixed_cyc = 0;
+                    ret = -EAGAIN;
+                }
+            }
+            break;
+        case MSR_PERF_FIXED_CTR2:
+            if (rdpmc_works_fixed_ref == 1)
+            {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED reference cycle counter with RDPMC instruction with index 0x%X, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
+                ret = __rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data);
+                if (ret)
+                {
+                    rdpmc_works_fixed_ref = 0;
+                    ret = -EAGAIN;
+                }
+            }
+            break;
+        case MSR_PERF_FIXED_CTR3: //Fixed-purpose counter for TOPDOWN_SLOTS is not readable with RDPMC
+            if (rdpmc_works_fixed_slots == 1)
+            {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED slots counter with RDPMC instruction with index 0x%X, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
+                ret = __rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data);
+                if (ret)
+                {
+                    rdpmc_works_fixed_slots = 0;
                     ret = -EAGAIN;
                 }
             }
@@ -313,7 +377,13 @@ access_x86_rdpmc_write( const int cpu_id, uint32_t reg, uint64_t data)
 
 int access_x86_rdpmc_check(PciDeviceIndex dev, int cpu_id)
 {
-    if (dev == MSR_DEV && (rdpmc_works_pmc > 0 || rdpmc_works_fixed > 0))
+    int core_works = rdpmc_works_pmc;
+    if (cpuid_info.isIntel)
+    {
+        core_works += rdpmc_works_fixed_ref + rdpmc_works_fixed_cyc;
+        core_works += rdpmc_works_fixed_inst + rdpmc_works_fixed_slots; 
+    }
+    if (dev == MSR_DEV && (core_works > 0))
     {
         return 1;
     }

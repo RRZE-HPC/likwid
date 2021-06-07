@@ -1,0 +1,38 @@
+SHORT Cycle Activities
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+FIXC3 TOPDOWN_SLOTS
+PMC0 CYCLE_ACTIVITY_CYCLES_L2_MISS
+PMC1 CYCLE_ACTIVITY_CYCLES_MEM_ANY
+PMC2 CYCLE_ACTIVITY_CYCLES_L1D_MISS
+PMC3 CYCLE_ACTIVITY_STALLS_TOTAL
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Cycles without execution [%] (PMC3/FIXC1)*100
+Cycles without execution due to L1D [%] (PMC2/FIXC1)*100
+Cycles without execution due to L2 [%] (PMC0/FIXC1)*100
+Cycles without execution due to memory loads [%] (PMC1/FIXC1)*100
+
+LONG
+Formulas:
+Cycles without execution [%] = CYCLE_ACTIVITY_STALLS_TOTAL/CPU_CLK_UNHALTED_CORE*100
+Cycles with stalls due to L1D [%] = CYCLE_ACTIVITY_CYCLES_L1D_MISS/CPU_CLK_UNHALTED_CORE*100
+Cycles with stalls due to L2 [%] = CYCLE_ACTIVITY_CYCLES_L2_MISS/CPU_CLK_UNHALTED_CORE*100
+Cycles without execution due to memory loads [%] = CYCLE_ACTIVITY_CYCLES_MEM_ANY/CPU_CLK_UNHALTED_CORE*100
+--
+This performance group measures the cycles while waiting for data from the cache
+and memory hierarchy.
+CYCLE_ACTIVITY_STALLS_TOTAL: Total execution stalls.
+CYCLE_ACTIVITY_CYCLES_L1D_MISS: Cycles while L1 cache miss demand load is
+outstanding.
+CYCLE_ACTIVITY_CYCLES_L2_MISS: Cycles while L2 cache miss demand load is
+outstanding.
+CYCLE_ACTIVITY_CYCLES_MEM_ANY: Cycles while memory subsystem has an
+outstanding load.

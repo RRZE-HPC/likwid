@@ -56,6 +56,7 @@ power_init(int cpuId)
     uint64_t flags;
     int i;
     int err;
+    int core_limits = 0;
     uint32_t unit_reg = MSR_RAPL_POWER_UNIT;
     int numDomains = NUM_POWER_DOMAINS;
     Configuration_t config;
@@ -121,7 +122,6 @@ power_init(int cpuId)
                     break;
                 case SKYLAKE1:
                 case SKYLAKE2:
-                case SKYLAKEX:
                 case KABYLAKE1:
                 case KABYLAKE2:
                 case CANNONLAKE:
@@ -131,8 +131,13 @@ power_init(int cpuId)
                 case TIGERLAKE2:
                 case ICELAKE1:
                 case ICELAKE2:
+                    power_info.hasRAPL = 1;
+                    numDomains = NUM_POWER_DOMAINS;
+                    break;
+                case SKYLAKEX:
                 case ICELAKEX1:
                 case ICELAKEX2:
+                    core_limits = 1;
                     power_info.hasRAPL = 1;
                     numDomains = NUM_POWER_DOMAINS;
                     break;
@@ -229,7 +234,7 @@ power_init(int cpuId)
             }
             else
             {
-                if (cpuid_info.model != SKYLAKEX)
+                if (!core_limits)
                 {
                     unsigned long flag_vals[4];
                     int flag_idx = 0;
@@ -340,6 +345,8 @@ power_init(int cpuId)
                 (cpuid_info.model == BROADWELL_D) ||
                 (cpuid_info.model == BROADWELL_E) ||
                 (cpuid_info.model == SKYLAKEX) ||
+                (cpuid_info.model == ICELAKEX1) ||
+                (cpuid_info.model == ICELAKEX2) ||
                 (cpuid_info.model == XEON_PHI_KNL) ||
                 (cpuid_info.model == XEON_PHI_KML))
             {
@@ -432,8 +439,8 @@ power_init(int cpuId)
             err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &flags);
             if (err == 0)
             {
-                power_info.uncoreMinFreq = ((double)((flags >> 8) & 0xFFULL)) * busSpeed;
-                power_info.uncoreMaxFreq = ((double)(flags & 0xFF)) * busSpeed;
+                power_info.uncoreMinFreq = ((double)((flags >> 8) & 0x3FULL)) * busSpeed;
+                power_info.uncoreMaxFreq = ((double)(flags & 0x3F)) * busSpeed;
             }
             err = HPMread(cpuId, MSR_DEV, MSR_ENERGY_PERF_BIAS, &flags);
             if (err == 0)
