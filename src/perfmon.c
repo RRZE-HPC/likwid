@@ -1295,6 +1295,18 @@ perfmon_init_maps(void)
                     perfmon_numCounters = perfmon_numCountersA15;
                     translate_types = a15_translate_types;
                     break;
+                case ARM_CORTEX_A57:
+                case ARM_CORTEX_A72:
+                case ARM_CORTEX_A73:
+                    eventHash = a57_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsA57;
+                    counter_map = a57_counter_map;
+                    box_map = a57_box_map;
+                    perfmon_numCounters = perfmon_numCountersA57;
+                    translate_types = a57_translate_types;
+                    break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported ARMv7 Processor);
             }
             break;
 

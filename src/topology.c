@@ -117,8 +117,10 @@ static char* armv7l_str = "ARM 7l architecture";
 static char* armv8_str = "ARM 8 architecture";
 static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
 static char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
-static char* arm_cortex_a57 = "ARM Cortex A57 (ARMv8)";
-static char* arm_cortex_a53 = "ARM Cortex A53 (ARMv8)";
+static char* arm_cortex_a57 = "ARM Cortex A57";
+static char* arm_cortex_a53 = "ARM Cortex A53";
+static char* arm_cortex_a72 = "ARM Cortex A72";
+static char* arm_cortex_a73 = "ARM Cortex A73";
 static char* arm_neoverse_n1 = "ARM Neoverse N1";
 static char* fujitsu_a64fx = "Fujitsu A64FX";
 static char* power7_str = "POWER7 architecture";
@@ -1109,6 +1111,22 @@ topology_setName(void)
                     cpuid_info.name = armv7l_str;
                     cpuid_info.short_name = short_arm7;
                     break;
+                case ARM_CORTEX_A57:
+                    cpuid_info.name = arm_cortex_a57;
+                    cpuid_info.short_name = short_arm7;
+                    break;
+                case ARM_CORTEX_A53:
+                    cpuid_info.name = arm_cortex_a53;
+                    cpuid_info.short_name = short_arm7;
+                    break;
+                case ARM_CORTEX_A72:
+                    cpuid_info.name = arm_cortex_a72;
+                    cpuid_info.short_name = short_arm7;
+                    break;
+                case ARM_CORTEX_A73:
+                    cpuid_info.name = arm_cortex_a73;
+                    cpuid_info.short_name = short_arm7;
+                    break;
                 default:
                     return EXIT_FAILURE;
                     break;
@@ -1126,6 +1144,14 @@ topology_setName(void)
                             break;
                         case ARM_CORTEX_A53:
                             cpuid_info.name = arm_cortex_a53;
+                            cpuid_info.short_name = short_arm8;
+                            break;
+                        case ARM_CORTEX_A72:
+                            cpuid_info.name = arm_cortex_a72;
+                            cpuid_info.short_name = short_arm8;
+                            break;
+                        case ARM_CORTEX_A73:
+                            cpuid_info.name = arm_cortex_a73;
                             cpuid_info.short_name = short_arm8;
                             break;
                         case ARM_NEOVERSE_N1:
