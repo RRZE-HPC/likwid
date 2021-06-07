@@ -1544,6 +1544,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",cascadelakeX_str);
     printf("\t%s\n",tigerlake_str);
     printf("\t%s\n",icelake_str);
+    printf("\t%s\n",icelakesp_str);
     printf("\n");
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);
