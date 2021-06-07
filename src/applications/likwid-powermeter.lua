@@ -157,51 +157,31 @@ end
 cpulist = {}
 before = {}
 after = {}
-if #sockets > 0 then
-    for i,socketId in pairs(sockets) do
-        local affinityID = "S"..tostring(socketId)
-        for j, domain in pairs(affinity["domains"]) do
-            if domain["tag"] == affinityID then
-                if #domain["processorList"] > 0 then
-                    local c = domain["processorList"][1]
-                    table.insert(cpulist,domain["processorList"][1])
-                    before[domain["processorList"][1]] = {}
-                    after[domain["processorList"][1]] = {}
-                    for _, id in pairs(domainList) do
-                        before[domain["processorList"][1]][id] = 0
-                        after[domain["processorList"][1]][id] = 0
-                    end
-                else
-                    print_stderr(string.format("No CPU available in domain %s", domain["tag"]))
-                end
-            end
-        end
-    end
-else
-    for j, domain in pairs(affinity["domains"]) do
+sock_cpulist = {}
+if #sockets == 0 then
+    for i, domain in pairs(affinity["domains"]) do
         if domain["tag"]:match("S%d+") then
-            if #domain["processorList"] > 0 then
-                table.insert(cpulist,domain["processorList"][1])
-                table.insert(sockets, domain["tag"]:match("S(%d+)"))
-                before[domain["processorList"][1]] = {}
-                after[domain["processorList"][1]] = {}
-                for _, id in pairs(domainList) do
-                    before[domain["processorList"][1]][id] = 0
-                    after[domain["processorList"][1]][id] = 0
-                end
-            else
-                print_stderr(string.format("No CPU available in domain %s", domain["tag"]))
-            end
+            sid = domain["tag"]:match("S(%d+)")
+            table.insert(sockets, sid)
         end
     end
 end
-
+for i, sid in pairs(sockets) do
+    pin = string.format("S%s:0-%d", tostring(sid), cputopo["numCoresPerSocket"])
+    _, sock_cpulist[sid] = likwid.cpustr_to_cpulist(pin)
+    before[sock_cpulist[sid][1]] = {}
+    after[sock_cpulist[sid][1]] = {}
+    for _, id in pairs(domainList) do
+        before[sock_cpulist[sid][1]][id] = 0
+        after[sock_cpulist[sid][1]][id] = 0
+    end
+end
 
 if likwid.setAccessClientMode(access_mode) ~= 0 then
     os.exit(1)
 end
 
-if #sockets == 0 or #cpulist == 0 then
+if #sockets == 0 or likwid.tablelength(sock_cpulist) == 0 then
     if raw_selection then
         print_stderr(string.format("No CPU accessible for selection -c %s", raw_selection))
     else
@@ -210,21 +190,22 @@ if #sockets == 0 or #cpulist == 0 then
     os.exit(1)
 end
 
+
 power = likwid.getPowerInfo()
 if not power then
-    print_stderr(string.format("The %s does not support reading power data or access is locked",cpuinfo["name"]))
+    print_stderr(string.format("The %s does not support reading power data or access is locked", cpuinfo["name"]))
     os.exit(1)
 end
 
 
 if not use_perfctr then
     print_stdout(likwid.hline);
-    print_stdout(string.format("CPU name:\t%s",cpuinfo["osname"]))
-    print_stdout(string.format("CPU type:\t%s",cpuinfo["name"]))
+    print_stdout(string.format("CPU name:\t%s", cpuinfo["osname"]))
+    print_stdout(string.format("CPU type:\t%s", cpuinfo["name"]))
     if cpuinfo["clock"] > 0 then
-        print_stdout(string.format("CPU clock:\t%3.2f GHz",cpuinfo["clock"] *  1.E-09))
+        print_stdout(string.format("CPU clock:\t%3.2f GHz", cpuinfo["clock"] * 1.E-09))
     else
-        print_stdout(string.format("CPU clock:\t%3.2f GHz",likwid.getCpuClock() *  1.E-09))
+        print_stdout(string.format("CPU clock:\t%3.2f GHz", likwid.getCpuClock() * 1.E-09))
     end
     print_stdout(likwid.hline)
 end
@@ -235,7 +216,7 @@ if print_info or verbose > 0 then
         print_stdout(string.format("Minimal clock:\t%.2f MHz", power["minFrequency"]))
         print_stdout("Turbo Boost Steps:")
         for i,step in pairs(power["turbo"]["steps"]) do
-            print_stdout(string.format("C%d %.2f MHz",i-1,power["turbo"]["steps"][i]))
+            print_stdout(string.format("C%d %.2f MHz", i-1, power["turbo"]["steps"][i]))
         end
     end
     print_stdout(likwid.hline)
@@ -251,10 +232,10 @@ if (print_info) then
         local domain = power["domains"][dname]
         if domain and domain["supportInfo"] then
             print_stdout(string.format("Info for RAPL domain %s:", dname));
-            print_stdout(string.format("Thermal Spec Power: %g Watt",domain["tdp"]*1E-6))
-            print_stdout(string.format("Minimum Power: %g Watt",domain["minPower"]*1E-6))
-            print_stdout(string.format("Maximum Power: %g Watt",domain["maxPower"]*1E-6))
-            print_stdout(string.format("Maximum Time Window: %g micro sec",domain["maxTimeWindow"]))
+            print_stdout(string.format("Thermal Spec Power: %g Watt", domain["tdp"]*1E-6))
+            print_stdout(string.format("Minimum Power: %g Watt", domain["minPower"]*1E-6))
+            print_stdout(string.format("Maximum Power: %g Watt", domain["maxPower"]*1E-6))
+            print_stdout(string.format("Maximum Time Window: %g micro sec", domain["maxTimeWindow"]))
             print_stdout()
         end
     end
@@ -307,10 +288,20 @@ local exitvalue = 0
 if not print_info and not print_temp then
     if stethoscope or (#arg > 0 and not use_perfctr) then
         for i,socket in pairs(sockets) do
-            cpu = cpulist[i]
             for idx, dom in pairs(domainList) do
-                if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
-                    before[cpu][dom] = likwid.startPower(cpu, idx)
+                if dom ~= "CORE" then
+                    if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
+                        cpu = sock_cpulist[socket][1]
+                        before[cpu][dom] = likwid.startPower(cpu, idx)
+                    end
+                else
+                    if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
+                        local sum = 0
+                        for j, c in pairs(sock_cpulist[socket]) do
+                            sum = sum + likwid.startPower(c, idx)
+                        end
+                        before[sock_cpulist[socket][1]][dom] = sum
+                    end
                 end
             end
         end
@@ -321,10 +312,20 @@ if not print_info and not print_temp then
                 while ((read_interval <= time_interval) and (time_interval > 0)) do
                     likwid.sleep(read_interval)
                     for i,socket in pairs(sockets) do
-                        cpu = cpulist[i]
                         for idx, dom in pairs(domainList) do
-                            if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
-                                after[cpu][dom] = likwid.stopPower(cpu, idx)
+                            if dom ~= "CORE" then
+                                cpu = sock_cpulist[socket][1]
+                                if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
+                                    after[cpu][dom] = likwid.stopPower(cpu, idx)
+                                end
+                            else
+                                if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
+                                    local sum = 0
+                                    for j, c in pairs(sock_cpulist[socket]) do
+                                        sum = sum + likwid.stopPower(c, idx)
+                                    end
+                                    after[sock_cpulist[socket][1]][dom] = sum
+                                end
                             end
                         end
                     end
@@ -350,7 +351,7 @@ if not print_info and not print_temp then
                 end
                 local remain = likwid.sleep(read_interval)
                 for i,socket in pairs(sockets) do
-                    cpu = cpulist[i]
+                    cpu = sock_cpulist[socket][1]
                     for idx, dom in pairs(domainList) do
                         if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
                             after[cpu][dom] = likwid.stopPower(cpu, idx)
@@ -367,10 +368,21 @@ if not print_info and not print_temp then
         time_after = likwid.stopClock()
 
         for i,socket in pairs(sockets) do
-            cpu = cpulist[i]
+            cpu = sock_cpulist[socket][1]
             for idx, dom in pairs(domainList) do
-                if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
-                    after[cpu][dom] = likwid.stopPower(cpu, idx)
+                if dom ~= "CORE" then
+                    cpu = sock_cpulist[socket][1]
+                    if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
+                        after[cpu][dom] = likwid.stopPower(cpu, idx)
+                    end
+                else
+                    if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
+                        local sum = 0
+                        for j, c in pairs(sock_cpulist[socket]) do
+                            sum = sum + likwid.stopPower(c, idx)
+                        end
+                        after[sock_cpulist[socket][1]][dom] = sum
+                    end
                 end
             end
         end
@@ -380,15 +392,14 @@ if not print_info and not print_temp then
         print_stdout(string.format("Runtime: %g s",runtime))
 
         for i,socket in pairs(sockets) do
-            cpu = cpulist[i]
-            print_stdout(string.format("Measure for socket %d on CPU %d", socket,cpu ))
-            table.concat(domainList, ",")
+            cpu = sock_cpulist[socket][1]
+            print_stdout(string.format("Measure for socket %d on CPU %d", socket, cpu))
             for j, dom in pairs(domainList) do
                 if power["domains"][dom] and power["domains"][dom]["supportStatus"] then
                     local energy = likwid.calcPower(before[cpu][dom], after[cpu][dom], j-1)
                     print_stdout(string.format("Domain %s:", dom))
-                    print_stdout(string.format("Energy consumed: %g Joules",energy))
-                    print_stdout(string.format("Power consumed: %g Watt",energy/runtime))
+                    print_stdout(string.format("Energy consumed: %g Joules", energy))
+                    print_stdout(string.format("Power consumed: %g Watt", energy/runtime))
                 end
             end
             if i < #sockets then print_stdout("") end
