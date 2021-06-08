@@ -476,6 +476,50 @@ likwid_gpuMarkerGetRegion(
     {
         return;
     }
+    bstring tag = bformat("%s-%d", regionTag, activeGpuGroup);
+    if (count != NULL)
+    {
+        for (int i = 0; i < MIN(nvmon_getNumberOfGPUs(), *nr_gpus); i++)
+        {
+            LikwidGpuResults *results = NULL;
+            int ret = get_smap_by_key(gpu_maps[i], bdata(tag), (void**)&results);
+            if (ret == 0)
+            {
+                count[i] = results->count;
+            }
+        }
+    }
+    if (time != NULL)
+    {
+        for (int i = 0; i < MIN(nvmon_getNumberOfGPUs(), *nr_gpus); i++)
+        {
+            LikwidGpuResults *results = NULL;
+            int ret = get_smap_by_key(gpu_maps[i], bdata(tag), (void**)&results);
+            if (ret == 0)
+            {
+                time[i] = results->time;
+            }
+        }
+    }
+    if (nr_events != NULL && events != NULL && *nr_events > 0)
+    {
+        for (int i = 0; i < MIN(nvmon_getNumberOfGPUs(), *nr_gpus); i++)
+        {
+            LikwidGpuResults *results = NULL;
+            int ret = get_smap_by_key(gpu_maps[i], bdata(tag), (void**)&results);
+            if (ret == 0)
+            {
+                for (int j = 0 j < MIN(nvmon_getNumberOfEvents(activeGpuGroup), *nr_events), j++)
+                {
+                    events[i][j] = results->PMcounters[j];
+                }
+            }
+        }
+        *nr_events = MIN(nvmon_getNumberOfEvents(activeGpuGroup), *nr_events);
+    }
+    *nr_gpus = MIN(nvmon_getNumberOfGPUs(), *nr_gpus);
+    bdestroy(tag);
+    return 0;
 }
 
 
