@@ -148,22 +148,19 @@ table.insert(output_csv, string.format("Cores per socket:\t%u",cputopo["numCores
 table.insert(output_csv, string.format("Threads per core:\t%u",cputopo["numThreadsPerCore"]))
 table.insert(output_csv, likwid.hline)
 table.insert(output_csv, "TABLE,Topology,"..tostring(cputopo["numHWThreads"]))
-table.insert(output_csv, "HWThread\tThread\t\tCore\t\tDie\t\tSocket\t\tAvailable")
-
+header = {"HWThread", "Thread", "Core", "Die", "Socket", "Available"}
 for cntr=0,cputopo["numHWThreads"]-1 do
+    local line = {tostring(cntr),
+                  tostring(cputopo["threadPool"][cntr]["threadId"]),
+                  tostring(cputopo["threadPool"][cntr]["coreId"]),
+                  tostring(cputopo["threadPool"][cntr]["dieId"]),
+                  tostring(cputopo["threadPool"][cntr]["packageId"])}
     if cputopo["threadPool"][cntr]["inCpuSet"] == 1 then
-        table.insert(output_csv, string.format("%d\t\t%u\t\t%u\t\t%u\t\t%u\t\t*",cntr,
-                            cputopo["threadPool"][cntr]["threadId"],
-                            cputopo["threadPool"][cntr]["coreId"],
-                            cputopo["threadPool"][cntr]["dieId"],
-                            cputopo["threadPool"][cntr]["packageId"]))
+        table.insert(line, "*")
     else
-        table.insert(output_csv, string.format("%d\t\t%u\t\t%u\t\t%u\t\t%u",cntr,
-                            cputopo["threadPool"][cntr]["threadId"],
-                            cputopo["threadPool"][cntr]["coreId"],
-                            cputopo["threadPool"][cntr]["dieId"],
-                            cputopo["threadPool"][cntr]["packageId"]))
+        table.insert(line, "")
     end
+    table.insert(output_csv, likwid.printTextTable(header, line, cntr == 0))
 end
 table.insert(output_csv, likwid.hline)
 
