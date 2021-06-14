@@ -759,6 +759,10 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     }
     if (num_sockets > cpuid_topology.numSockets)
         cpuid_topology.numSockets = num_sockets;
+    if (cpuid_topology.numDies == cpuid_topology.numSockets)
+    {
+        cpuid_topology.numDies = 0;
+    }
     for (int i = 0; i < cpuid_topology.numSockets; i++)
     {
         int core_count = 0;
@@ -1002,7 +1006,7 @@ proc_init_cacheTopology(void)
                 break;
             case ARMV8_FAMILY:
             case ARMV7_FAMILY:
-	    case PPC_FAMILY:
+            case PPC_FAMILY:
                 cachePool[i].inclusive = 0;
                 break;
             default:
