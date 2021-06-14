@@ -167,7 +167,7 @@ if #sockets == 0 then
     end
 end
 for i, sid in pairs(sockets) do
-    pin = string.format("S%s:0-%d", tostring(sid), cputopo["numCoresPerSocket"])
+    pin = string.format("S%s:0-%d", tostring(sid), cputopo["numCoresPerSocket"]-1)
     _, sock_cpulist[sid] = likwid.cpustr_to_cpulist(pin)
     before[sock_cpulist[sid][1]] = {}
     after[sock_cpulist[sid][1]] = {}
