@@ -1259,27 +1259,28 @@ perfmon_init_maps(void)
                 default:
                     ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
             }
+            break;
 #ifdef _ARCH_PPC
-	case PPC_FAMILY:
-	    switch ( cpuid_info.model )
+        case PPC_FAMILY:
+            switch ( cpuid_info.model )
             {
                 case POWER8:
-		    eventHash = power8_arch_events;
-	            counter_map = power8_counter_map;
-	            box_map = power8_box_map;
+                    eventHash = power8_arch_events;
+                    counter_map = power8_counter_map;
+                    box_map = power8_box_map;
                     translate_types = power8_translate_types;
-	            perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER8;
-	            perfmon_numCounters = NUM_COUNTERS_POWER8;
-	            break;
+                    perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER8;
+                    perfmon_numCounters = NUM_COUNTERS_POWER8;
+                    break;
                 case POWER9:
-		    eventHash = power9_arch_events;
-	            counter_map = power9_counter_map;
-	            box_map = power9_box_map;
+                    eventHash = power9_arch_events;
+                    counter_map = power9_counter_map;
+                    box_map = power9_box_map;
                     translate_types = power9_translate_types;
-	            perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER9;
-	            perfmon_numCounters = NUM_COUNTERS_POWER9;
-	            break;
-	    }
+                    perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER9;
+                    perfmon_numCounters = NUM_COUNTERS_POWER9;
+                    break;
+            }
             break;
 #endif
 
