@@ -510,28 +510,30 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
 #endif
         if (maxNumSockets < maxNumDies)
         {
-        while (obj->type != HWLOC_OBJ_DIE) {
-            obj = obj->parent;
-            if (!obj)
-            {
-                skip = 1;
-                break;
+            while (obj->type != HWLOC_OBJ_DIE) {
+                obj = obj->parent;
+                if (!obj)
+                {
+                    skip = 1;
+                    break;
+                }
             }
-        }
-        if (skip)
-        {
-            hwThreadPool[id].dieId = 0;
-            continue;
-        }
-	if (obj->type == HWLOC_OBJ_DIE)
-        {
-            hwThreadPool[id].dieId = obj->os_index;
+            if (skip)
+            {
+                hwThreadPool[id].dieId = 0;
+                continue;
+            }
+            if (obj->type == HWLOC_OBJ_DIE)
+            {
+                hwThreadPool[id].dieId = obj->os_index;
+            }
+            else
+            {
+                hwThreadPool[id].dieId = 0;
+            }
         }
         else
         {
-	    hwThreadPool[id].dieId = 0;
-        }
-        } else {
             hwThreadPool[id].dieId = 0;
         }
         while (obj->type != socket_type) {
