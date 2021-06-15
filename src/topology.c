@@ -511,7 +511,7 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
             else if (strcmp(field, "features") == 0)
             {
                 strcpy(value,&(line[strlen(structure)+strlen(field)+4]));
-		int len = 257;
+                int len = 257;
                 cpuid_info.features = (char*) malloc(len * sizeof(char));
                 strncpy(cpuid_info.features, value, len);
                 cpuid_info.features[strlen(value)-1] = '\0';
@@ -1046,7 +1046,7 @@ topology_setName(void)
             cpuid_info.short_name = short_k16;
             break;
 
-	case PPC_FAMILY:
+        case PPC_FAMILY:
             switch(cpuid_info.model)
             {
                 case POWER7:

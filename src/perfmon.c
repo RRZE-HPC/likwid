@@ -851,7 +851,7 @@ perfmon_check_counter_map(int cpu_id)
         bdestroy(estr);
         if (!found)
         {
-	    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot respect limit %s. Removing event %s, eventHash[i].limit, eventHash[i].name);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot respect limit %s. Removing event %s, eventHash[i].limit, eventHash[i].name);
             eventHash[i].limit = "";
         }
     }
