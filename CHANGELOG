@@ -9,10 +9,16 @@
 - Fixes for affinity module CPUlist sorting
 - Build against system-installed hwloc
 - Update for Intel SkylakeX/CascadelakeX L3 group
-- Update for CPU MarkerAPI
 - Rename DataFabric events for all generations of AMD Zen
 - Add static cache configuration for Fujitsu A64FX
 - Add multiplexing checks for perf_event backend
+- Fix for table width of likwid-topology afteradding CPU die column
+- Adding RasPi 4 with 32 bit OS as ARMv7
+- Add default groups for Intel Icelake desktop
+- Fix for likwid-setFrequencies to not apply minFreq when setting governor
+- likwid-powermeter: Fix hwthread selection when run with -p
+- likwid-setFrequencies: Get measured base frequency if register is not readable
+- CLOCK group for all AMD Zen
 
 # Changelog 5.1.1
 - Support for Intel Cometlake desktop (Core + Uncore)
