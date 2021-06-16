@@ -413,7 +413,7 @@ static int affinity_addDieDomain(int socket, int die, AffinityDomain* domain, in
     }
     if (cputopo)
     {
-        int numDiesPerSocket = MAX(cputopo->numDies, 1);
+        int numDiesPerSocket = MAX(cputopo->numDies/cputopo->numSockets, 1);
         int dieId = (socket * numDiesPerSocket) + die;
         int numCoresPerDie = cputopo->numCoresPerSocket/numDiesPerSocket;
         int numThreadsPerDie = numCoresPerDie * cputopo->numThreadsPerCore;
