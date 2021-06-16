@@ -1,6 +1,7 @@
 # Changelog 5.2.0
 - Support for AMD Zen3 (Core + Uncore)
 - Support for Intel IcelakeSP (Core + Uncore)
+- New affinity code
 - Fix for Ivybridge uncore code
 - Bypass accessdaemon by using rdpmc instruction on x86_64
 - Introduce notion of CPU die in topology module
