@@ -449,7 +449,7 @@ static int affinity_addCacheDomain(int socket, int cacheId, AffinityDomain* doma
     {
         int numThreadsPerCache = cputopo->cacheLevels[cputopo->numCacheLevels-1].threads;
         int numCoresPerCache = numThreadsPerCache / cputopo->numThreadsPerCore;
-        int numCachesPerSocket = numCoresPerCache / cputopo->numCoresPerSocket;
+        int numCachesPerSocket = cputopo->numCoresPerSocket / numCoresPerCache;
         int cid = (socket * numCachesPerSocket) + cacheId;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain C%d: Socket %d Cache %d, cid, socket, cacheId);
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain C%d: numCachesPerSocket %d numCoresPerCache %d numThreadsPerCache %d, cid, numCachesPerSocket, numCoresPerCache, numThreadsPerCache);
@@ -462,12 +462,13 @@ static int affinity_addCacheDomain(int socket, int cacheId, AffinityDomain* doma
         domain->numberOfCores = numCoresPerCache;
         int tmp = treeFillNextEntries(cputopo->topologyTree,
                                       domain->processorList,
-                                      cacheId * numThreadsPerCache,
-                                      socket, 0,
+                                      0,
+                                      socket,
+                                      cacheId * numCoresPerCache,
                                       numCoresPerCache,
                                       domain->numberOfProcessors);
         domain->numberOfProcessors = tmp;
-        domain->numberOfCores = affinity_countSocketCores(tmp, domain->processorList, help);
+        domain->numberOfCores = affinity_countSocketCores(domain->numberOfProcessors, domain->processorList, help);
         domain->tag = bformat("C%d", cid);
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain C%d: %d HW threads on %d cores, cid, domain->numberOfProcessors, domain->numberOfCores);
         return 0;
@@ -542,10 +543,10 @@ affinity_init()
         numberOfProcessorsPerCache = cputopo->cacheLevels[cputopo->numCacheLevels-1].threads;
         numberOfCoresPerCache = numberOfProcessorsPerCache / cputopo->numThreadsPerCore;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPU cores per LLC %d, numberOfCoresPerCache);
-        int numCachesPerSocket = numberOfCoresPerCache / cputopo->numCoresPerSocket;
-        numberOfDomains += cputopo->numSockets * numCachesPerSocket;
+        int numCachesPerSocket = cputopo->numCoresPerSocket / numberOfCoresPerCache;
         numberOfCacheDomains = cputopo->numSockets * numCachesPerSocket;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Cache domains %d, numberOfCacheDomains);
+        numberOfDomains += numberOfCacheDomains;
     }
     numberOfDomains += numatopo->numberOfNodes;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: NUMA domains %d, numatopo->numberOfNodes);
@@ -557,6 +558,7 @@ affinity_init()
         fprintf(stderr,"No more memory for %ld bytes for array of affinity domains\n",numberOfDomains * sizeof(AffinityDomain));
         return;
     }
+    memset(domains, 0, numberOfDomains * sizeof(AffinityDomain));
     int* helper = malloc(cputopo->numHWThreads * sizeof(int));
     if (!helper)
     {
@@ -605,7 +607,7 @@ affinity_init()
         {
             int numThreadPerCache = cputopo->cacheLevels[cputopo->numCacheLevels-1].threads;
             int numCoresPerCache = numThreadPerCache / cputopo->numThreadsPerCore;
-            int numCachesPerSocket = numCoresPerCache / cputopo->numCoresPerSocket;
+            int numCachesPerSocket = cputopo->numCoresPerSocket / numCoresPerCache;
             for (int j = 0; j < MAX(numCachesPerSocket, 1); j++)
             {
                 err = affinity_addCacheDomain(i, j, &domains[domid], helper);
