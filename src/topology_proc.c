@@ -712,77 +712,74 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
                             hwThreadPool[i].inCpuSet)
         bdestroy(cpudir);
     }
+    int* helper = malloc(cpuid_topology.numHWThreads * sizeof(int));
+    if (!helper)
+    {
+	    return;
+    }
     cpuid_topology.threadPool = hwThreadPool;
-    cpuid_topology.numSockets = num_sockets;
-    int workerDies[MAX_NUM_NODES];
-    int num_dies = 0;
+    int hidx = 0;
     for (int i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-        int pid = hwThreadPool[i].packageId;
-        int did = hwThreadPool[i].dieId;
-        int found = 0;
-        for (int j = 0; j < num_dies; j++)
-        {
-            if (workerDies[j] == ((pid * cpuid_topology.numSockets) + did))
-            {
-                found = 1;
-                break;
+	    int pid = hwThreadPool[i].packageId;
+	    int found = 0;
+	    for (int j = 0; j < hidx; j++)
+	    {
+		    if (pid == helper[j])
+		    {
+			    found = 1;
+			    break;
+		    }
+	    }
+	    if (!found)
+	    {
+		    helper[hidx++] = pid;
             }
-        }
-        if (!found)
-        {
-            workerDies[num_dies] = (pid * cpuid_topology.numSockets) + did;
-            num_dies++;
-        }
     }
-    cpuid_topology.numDies = num_dies;
-    int workerSockets[MAX_NUM_NODES];
-    num_sockets = 0;
-    last_socket = -1;
+    cpuid_topology.numSockets = hidx;
+    int first_socket_id = helper[0];
+    hidx = 0;
     for (int i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-        int found = 0;
-        int pid = (int)cpuid_topology.threadPool[i].packageId;
-        for (int j = 0; j < num_sockets; j++)
-        {
-            if (pid == workerSockets[j])
-            {
-                found = 1;
-                break;
+	    int did = hwThreadPool[i].dieId;
+	    int pid = hwThreadPool[i].packageId;
+	    if (pid != first_socket_id) continue;
+	    int found = 0;
+	    for (int j = 0; j < hidx; j++)
+	    {
+		    if (did == helper[j])
+		    {
+			    found = 1;
+			    break;
+		    }
+	    }
+	    if (!found)
+	    {
+		    helper[hidx++] = did;
             }
-        }
-        if (!found)
-        {
-            workerSockets[num_sockets] = pid;
-            num_sockets++;
-        }
     }
-    if (num_sockets > cpuid_topology.numSockets)
-        cpuid_topology.numSockets = num_sockets;
+
+    cpuid_topology.numDies = hidx * cpuid_topology.numSockets;
     if (cpuid_topology.numDies == cpuid_topology.numSockets)
     {
         cpuid_topology.numDies = 0;
     }
-    for (int i = 0; i < cpuid_topology.numSockets; i++)
+    num_threads_per_core = 0;
+    int test_core_id = hwThreadPool[0].coreId;
+    int test_socket_id = hwThreadPool[0].packageId;
+    int num_threads_per_socket = 0;
+    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-        int core_count = 0;
-        int max_tid = 0;
-        for (int j = 0; j < cpuid_topology.numHWThreads; j++)
-        {
-            if ((int)cpuid_topology.threadPool[j].packageId == i)
-            {
-                core_count++;
-                if (cpuid_topology.threadPool[j].threadId > max_tid)
-                    max_tid = cpuid_topology.threadPool[j].threadId;
-            }
-        }
-        if (core_count > num_cores_per_socket)
-            num_cores_per_socket = core_count;
-        if ((max_tid+1) > num_threads_per_core)
-            num_threads_per_core = max_tid+1;
+	    if (hwThreadPool[i].packageId == test_socket_id)
+	    {
+		    num_threads_per_socket++;
+		    if (hwThreadPool[i].coreId == test_core_id)
+			    num_threads_per_core++;
+	    }
     }
-    cpuid_topology.numCoresPerSocket = num_cores_per_socket/num_threads_per_core;
+    cpuid_topology.numCoresPerSocket = num_threads_per_socket/num_threads_per_core;
     cpuid_topology.numThreadsPerCore = num_threads_per_core;
+    free(helper);
     return;
 }
 
