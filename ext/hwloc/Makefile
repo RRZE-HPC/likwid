@@ -8,7 +8,7 @@ include $(MAKE_DIR)/include_$(COMPILER).mk
 include $(MAKE_DIR)/config_checks.mk
 include $(MAKE_DIR)/config_defines.mk
 
-CFLAGS    = -O2 -Wall -fPIC -fvisibility=hidden
+CFLAGS    = -O2 -fPIC -fvisibility=hidden
 INCLUDES  += -I./include
 #DEFINES   =
 LIBS      = -L. -lm
@@ -40,6 +40,9 @@ ifeq ($(strip $(COMPILER)), GCCARMv8)
 OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
 endif
 ifeq ($(strip $(COMPILER)), ARMCLANG)
+OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
+endif
+ifeq ($(strip $(COMPILER)), FCC)
 OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
 endif
 ifeq ($(COMPILER),GCCPOWER)
