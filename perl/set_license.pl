@@ -10,12 +10,12 @@ my $cc = ' *';
 my $fc = '!';
 my $lc = ' *';
 
-my $VERSION   = '<VERSION>';
-my $DATE   = '<DATE>';
-#my $VERSION   = '4.0';
-#my $DATE   = '16.6.2015';
-my $YEAR  = '2015';
-my $AUTHOR = 'RRZE, University Erlangen-Nuremberg';
+#my $VERSION   = '<VERSION>';
+#my $DATE   = '<DATE>';
+my $VERSION   = '5.2';
+my $DATE   = '17.6.2021';
+my $YEAR  = '2021';
+my $AUTHOR = 'NHR@FAU, University Erlangen-Nuremberg';
 my $LICENSE = 'gpl';
 
 my @SKIPLIST = ('ghash.c','ghash.h','loadData.S','loadDataARM.S','bstrlib.c','bstrlib.h', 'calculator_stack.h', 'calculator_stack.c');

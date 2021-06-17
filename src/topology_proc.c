@@ -5,14 +5,14 @@
  *
  *      Description:  Interface to the procfs/sysfs based topology backend
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.2
+ *      Released:  17.6.2021
  *
  *      Authors:  Jan Treibig (jt), jan.treibig@gmail.com,
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -213,6 +213,12 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
     const_bstring vendorString = bformat("CPU implementer\t:");
     const_bstring familyString = bformat("CPU architecture");
 #endif
+    cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
+    if (!cpuid_info.osname)
+    {
+        return;
+    }
+    cpuid_info.osname[0] = '\0';
 
     const_bstring countString = bformat("processor\t:");
 
@@ -226,8 +232,7 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
 #endif
     cpuid_info.stepping = 0;
     cpuid_topology.numHWThreads = 0;
-    cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
-    cpuid_info.osname[0] = '\0';
+    
 
     if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
     {
@@ -368,7 +373,7 @@ proc_init_cpuFeatures(void)
         if (bstrncmp(cpulines->entry[i], featString, 8) == BSTR_OK)
 #endif
 #ifdef _ARCH_PPC
-	if (ret != 1)
+    if (ret != 1)
 #endif
         {
             bdestroy(flagline);
@@ -715,25 +720,25 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     int* helper = malloc(cpuid_topology.numHWThreads * sizeof(int));
     if (!helper)
     {
-	    return;
+        return;
     }
     cpuid_topology.threadPool = hwThreadPool;
     int hidx = 0;
     for (int i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-	    int pid = hwThreadPool[i].packageId;
-	    int found = 0;
-	    for (int j = 0; j < hidx; j++)
-	    {
-		    if (pid == helper[j])
-		    {
-			    found = 1;
-			    break;
-		    }
-	    }
-	    if (!found)
-	    {
-		    helper[hidx++] = pid;
+        int pid = hwThreadPool[i].packageId;
+        int found = 0;
+        for (int j = 0; j < hidx; j++)
+        {
+            if (pid == helper[j])
+            {
+                found = 1;
+                break;
+            }
+        }
+        if (!found)
+        {
+            helper[hidx++] = pid;
             }
     }
     cpuid_topology.numSockets = hidx;
@@ -741,21 +746,21 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     hidx = 0;
     for (int i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-	    int did = hwThreadPool[i].dieId;
-	    int pid = hwThreadPool[i].packageId;
-	    if (pid != first_socket_id) continue;
-	    int found = 0;
-	    for (int j = 0; j < hidx; j++)
-	    {
-		    if (did == helper[j])
-		    {
-			    found = 1;
-			    break;
-		    }
-	    }
-	    if (!found)
-	    {
-		    helper[hidx++] = did;
+        int did = hwThreadPool[i].dieId;
+        int pid = hwThreadPool[i].packageId;
+        if (pid != first_socket_id) continue;
+        int found = 0;
+        for (int j = 0; j < hidx; j++)
+        {
+            if (did == helper[j])
+            {
+                found = 1;
+                break;
+            }
+        }
+        if (!found)
+        {
+            helper[hidx++] = did;
             }
     }
 
@@ -770,12 +775,12 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     int num_threads_per_socket = 0;
     for (int i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-	    if (hwThreadPool[i].packageId == test_socket_id)
-	    {
-		    num_threads_per_socket++;
-		    if (hwThreadPool[i].coreId == test_core_id)
-			    num_threads_per_core++;
-	    }
+        if (hwThreadPool[i].packageId == test_socket_id)
+        {
+            num_threads_per_socket++;
+            if (hwThreadPool[i].coreId == test_core_id)
+                num_threads_per_core++;
+        }
     }
     cpuid_topology.numCoresPerSocket = num_threads_per_socket/num_threads_per_core;
     cpuid_topology.numThreadsPerCore = num_threads_per_core;

@@ -4,14 +4,14 @@
 !
 !     Description: Marker API f90 module
 !
-!      Version:   <VERSION>
-!      Released:  <DATE>
+!      Version:   5.2
+!      Released:  17.6.2021
 !
 !     Authors:  Jan Treibig (jt), jan.treibig@gmail.com,
 !               Thomas Gruber (tr), thomas.roehl@googlemail.com
 !     Project:  likwid
 !
-!      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+!      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
 !
 !      This program is free software: you can redistribute it and/or modify it under
 !      the terms of the GNU General Public License as published by the Free Software

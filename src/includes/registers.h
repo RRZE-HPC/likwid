@@ -5,14 +5,14 @@
  *
  *      Description:  Register Defines for the perfmon module
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.2
+ *      Released:  17.6.2021
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -3247,6 +3247,9 @@
 #define MSR_AMD17_MPERF                 0x000000E7
 
 #define MSR_AMD17_FEATURE_ENABLE        0xC0000080
+#define MSR_AMD17_SPEC_CTRL             0x00000048
+#define MSR_AMD17_PREF_CTRL             0xC0000108
+#define MSR_AMD17_EXT_FEAT_ENABLE       0xC0000080
 
 #define MSR_AMD17_RAPL_POWER_UNIT       0xC0010299
 #define MSR_AMD17_RAPL_CORE_STATUS      0xC001029A

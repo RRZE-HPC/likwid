@@ -6,13 +6,13 @@
  *      Description:  Implementation of the Voltage Module.
  *                    Implements Intel Core Voltage Interface.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.2
+ *      Released:  17.6.2021
  *
  *      Author:   Jimmy Situ web@jimmystone.cn
  *      Project:  likwid
  *
- *      Copyright (C) 2016 Jimmy Situ
+ *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

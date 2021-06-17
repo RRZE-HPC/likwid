@@ -5,13 +5,13 @@
  *
  *      Description:  Header file of perfmon module for AMD Family 17 (ZEN)
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.2
+ *      Released:  17.6.2021
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2017 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
