@@ -460,20 +460,19 @@ likwid_gpuMarkerGetRegion(
         int* nr_gpus,
         int* nr_events,
         double** events,
-        double** time,
-        int **count)
+        double* time,
+        int *count)
 {
     if (!likwid_gpu_init)
     {
         *nr_gpus = 0;
         *nr_events = 0;
-        *time = NULL;
-        *events = NULL;
-        *count = NULL;
         return;
     }
     if (gettid() != main_tid)
     {
+        *nr_gpus = 0;
+        *nr_events = 0;
         return;
     }
     bstring tag = bformat("%s-%d", regionTag, activeGpuGroup);
@@ -509,7 +508,7 @@ likwid_gpuMarkerGetRegion(
             int ret = get_smap_by_key(gpu_maps[i], bdata(tag), (void**)&results);
             if (ret == 0)
             {
-                for (int j = 0 j < MIN(nvmon_getNumberOfEvents(activeGpuGroup), *nr_events), j++)
+                for (int j = 0; j < MIN(nvmon_getNumberOfEvents(activeGpuGroup), *nr_events); j++)
                 {
                     events[i][j] = results->PMcounters[j];
                 }
@@ -519,7 +518,7 @@ likwid_gpuMarkerGetRegion(
     }
     *nr_gpus = MIN(nvmon_getNumberOfGPUs(), *nr_gpus);
     bdestroy(tag);
-    return 0;
+    return;
 }
 
 
