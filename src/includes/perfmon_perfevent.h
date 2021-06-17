@@ -890,29 +890,36 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
                 continue;
             VERBOSEPRINTREG(cpu_id, 0x0, 0x0, RESET_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_RESET, 0);
-            eventSet->events[i].threadCounter[thread_id].startData = 0x0ULL;
+	    PerfmonCounter *c = &eventSet->events[i].threadCounter[thread_id];
+            c->startData = 0x0ULL;
+            c->counterData = 0x0ULL;
             if (eventSet->events[i].type == POWER)
             {
                 PerfEventResult res = {0ULL, 0ULL, 0ULL};
                 ret = read(cpu_event_fds[cpu_id][index], &res, sizeof(PerfEventResult));
-                VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, START_POWER);
+                VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, READ_COUNTER);
                 if (ret == sizeof(PerfEventResult))
                 {
-                    if (res.value > 0 && res.enabled > 0 && res.enabled != res.running)
-                    {
-                        double value = (double)res.value;
-                        double enabled = (double)res.enabled;
-                        double running = (double)res.running;
-                        value *= (enabled/running);
-                        res.value = (uint64_t)value;
-                        VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, SCALE_POWER);
-                        if (printed_multiplex_info == 0)
-                        {
-                            fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.\n");
-                            printed_multiplex_info = 1;
-                        }
-                    }
-                    eventSet->events[i].threadCounter[thread_id].startData = res.value;
+			uint64_t x = res.value;
+			if (res.enabled == res.running)
+			{
+				// nothing to do
+			}
+			else if (res.enabled && res.running)
+			{
+				long long scale = (res.enabled * 128LL) / res.running;
+				scale *= res.value;
+				scale /= 128LL;
+				x = scale;
+                        	VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], x, SCALE_COUNTER);
+				if (printed_multiplex_info == 0)
+				{
+					fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.\n");
+                        		fflush(stderr);
+                        		printed_multiplex_info = 1;
+				}
+			}
+			c->startData = c->counterData = x;
                 }
                 else
                 {
@@ -920,7 +927,7 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
                 }
             }
             VERBOSEPRINTREG(cpu_id, 0x0,
-                            eventSet->events[i].threadCounter[thread_id].startData,
+                            c->startData,
                             START_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_ENABLE, 0);
         }
@@ -950,21 +957,28 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, READ_COUNTER);
             if (ret == sizeof(PerfEventResult))
             {
-                if (res.value > 0 && res.enabled > 0 && res.enabled != res.running)
-                {
-                    double value = (double)res.value;
-                    double enabled = (double)res.enabled;
-                    double running = (double)res.running;
-                    value *= (enabled/running);
-                    res.value = (uint64_t)value;
-                    VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, SCALE_COUNTER);
-                    if (printed_multiplex_info == 0)
-                    {
-                        fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.\n");
-                        printed_multiplex_info = 1;
-                    }
-                }
-                eventSet->events[i].threadCounter[thread_id].counterData = res.value;
+		uint64_t x = res.value;
+		PerfmonCounter* c = &eventSet->events[i].threadCounter[thread_id];
+		if (res.enabled == res.running)
+		{
+			// nothing to do
+		}
+		else if (res.enabled && res.running)
+		{
+			long long scale = (res.enabled * 128LL) / res.running;
+			scale *= res.value;
+			scale /= 128LL;
+			x = scale;
+                        VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], x, SCALE_COUNTER);
+			if (printed_multiplex_info == 0)
+			{
+				fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.\n");
+                        	fflush(stderr);
+                        	printed_multiplex_info = 1;
+			}
+		}
+                c->counterData = x;
+
             }
             else
             {
@@ -999,21 +1013,27 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, READ_COUNTER);
             if (ret == sizeof(PerfEventResult))
             {
-                if (res.value > 0 && res.enabled > 0 && res.enabled != res.running)
-                {
-                    double value = (double)res.value;
-                    double enabled = (double)res.enabled;
-                    double running = (double)res.running;
-                    value *= (enabled/running);
-                    res.value = (uint64_t)value;
-                    VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, SCALE_COUNTER);
-                    if (printed_multiplex_info == 0)
-                    {
-                        fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.");
-                        printed_multiplex_info = 1;
-                    }
-                }
-                eventSet->events[i].threadCounter[thread_id].counterData = res.value;
+		uint64_t x = res.value;
+		PerfmonCounter* c = &eventSet->events[i].threadCounter[thread_id];
+		if (res.enabled == res.running)
+		{
+			// nothing to do
+		}
+		else if (res.enabled && res.running)
+		{
+			long long scale = (res.enabled * 128LL) / res.running;
+			scale *= res.value;
+			scale /= 128LL;
+			x = scale;
+                        VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], x, SCALE_COUNTER);
+			if (printed_multiplex_info == 0)
+			{
+				fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.\n");
+                        	fflush(stderr);
+                        	printed_multiplex_info = 1;
+			}
+		}
+                c->counterData = x;
             }
             else
             {
