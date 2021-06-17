@@ -1955,15 +1955,16 @@ Reset the values of all configured counters and timers.
 extern int likwid_gpuMarkerResetRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
 /*! \brief Get accumulated data of a code region
 
-Get the accumulated data of the current thread for the given regionTag.
+Get the accumulated data of the GPUs for the given regionTag. If the operation fails, nr_gpus and nr_events are set to zero.
+
 @param regionTag [in] Print data using this string
-@param nr_gpus [in,out] Length of first dimension of the arrys. Afterwards the actual count of GPUs.
-@param nr_events [in,out] Length of events array
+@param nr_gpus [in,out] Length of first dimension of the arrys. Afterwards the actual count of GPUs and consequently the length of events, time and count.
+@param nr_events [in,out] Length of events array. Afterwards the actual count of events in the second dimension of events.
 @param events [out] Events array for the intermediate results
-@param time [out] Accumulated measurement time
-@param count [out] Call count of the code region
+@param time [out] Accumulated measurement times per GPU
+@param count [out] Call counts of the code region per GPU
 */
-extern void likwid_gpuMarkerGetRegion(const char* regionTag, int* nr_gpus, int* nr_events, double** events, double **time, int **count) __attribute__ ((visibility ("default") ));
+extern void likwid_gpuMarkerGetRegion(const char* regionTag, int* nr_gpus, int* nr_events, double** events, double *time, int *count) __attribute__ ((visibility ("default") ));
 
 /*! \brief Read the output file of the NvMarker API
 @param [in] filename Filename with NvMarker API results
