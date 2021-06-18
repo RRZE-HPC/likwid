@@ -20,6 +20,7 @@
 - likwid-powermeter: Fix hwthread selection when run with -p
 - likwid-setFrequencies: Get measured base frequency if register is not readable
 - CLOCK group for all AMD Zen
+- Fixes in Nvidia GPU support in NvMarkerAPI and topology module
 
 # Changelog 5.1.1
 - Support for Intel Cometlake desktop (Core + Uncore)

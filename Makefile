@@ -96,6 +96,17 @@ OBJ := $(filter-out $(BUILD_DIR)/access_x86_clientmem.o,$(OBJ))
 else
 OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
+ifeq ($(COMPILER), FCC)
+OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/loadData.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_rdpmc.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_clientmem.o,$(OBJ))
+else
+OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
+endif
 ifeq ($(COMPILER), ARMCLANG)
 OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/loadData.o,$(OBJ))
