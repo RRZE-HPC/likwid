@@ -250,11 +250,13 @@ topology_gpu_init()
             size_t s = 0;
 #if CUDA_VERSION >= 10000
             if (cuda_version >= 10000 && cudart_version >= 10000)
+            {
                 CU_CALL((*cuDeviceTotalMem_v2TopoPtr)(&s, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
                 if (s == 0)
                 {
                     CU_CALL((*cuDeviceTotalMemTopoPtr)(&s, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
                 }
+            }
             else
             {
                 CU_CALL((*cuDeviceTotalMemTopoPtr)(&s, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
