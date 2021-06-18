@@ -1,9 +1,9 @@
 .TH LIKWID-TOPOLOGY 1 <DATE> likwid\-<VERSION>
 .SH NAME
-likwid-topology \- print thread and cache topology
+likwid-topology \- print thread, cache, NUMA and Nvidia GPU topology
 .SH SYNOPSIS
 .B likwid-topology
-.RB [\-hvgcC]
+.RB [\-hvgcCG]
 .RB [ \-V
 .IR level ]
 .RB [ \-o
@@ -11,10 +11,10 @@ likwid-topology \- print thread and cache topology
 .SH DESCRIPTION
 .B likwid-topology
 is a command line application to print the thread and cache
-topology on multicore x86, ARM and POWER processors. Used with mono spaced fonts it can
-draw the processor topology of a machine in ASCII art. Beyond topology
-likwid-topology determines the clock of a processor and prints detailed
-informations about the caches hierarchy.
+topology on multicore x86, ARM and POWER processors and Nvidia GPUs.
+Used with mono spaced fonts it can draw the processor topology of a
+machine in ASCII art. Beyond topology likwid-topology determines the
+clock of a processor and prints detailed informations about the caches hierarchy.
 When compiled with NVIDIA_INTERFACE=true in config.mk and the CUDA/CUPTI library reachable
 at runtime, likwid-topology prints information about the Nvidia GPUs in the system.
 .SH OPTIONS
@@ -29,7 +29,7 @@ prints version information to standard output, then exits.
 sets the verbosity level of LIKWID's topology backend. Possible levels range from 0 to 3.
 .TP
 .B \-g
-prints topology information in ASCII art. Best viewed with monospaced font.
+prints topology information in ASCII art. Best viewed with monospaced font. The GPU topology is not printed.
 .TP
 .B \-c, \-\-\^caches
 prints detailed information about cache hierarchy
@@ -37,10 +37,14 @@ prints detailed information about cache hierarchy
 .B \-C, \-\-\^clock
 measures and output the processor clock. This involves a longer run time of likwid-topology.
 .TP
+.B \-G, \-\-\^gpus
+prints detailed information about the Nvidia GPUs in the system (if compiled with Nvidia support)
+.TP
 .B \-o, \-\-\^output <file>
 write the output to file instead of stdout.
 Likwid applies filter scripts according to filename suffix.
-Currently available scripts are csv. You can place additional filter scripts in <INSTALLEDPREFIX>/share/likwid/filter.
+Currently available scripts are csv, xml and json.
+You can place additional filter scripts in <INSTALLEDPREFIX>/share/likwid/filter.
 
 .SH AUTHOR
 Written by Thomas Gruber <thomas.roehl@googlemail.com>.
