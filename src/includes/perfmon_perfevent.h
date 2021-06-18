@@ -156,6 +156,7 @@ static char* perfEventOptionNames[] = {
     [EVENT_OPTION_OCCUPANCY_INVERT] = "occ_inv",
 #ifdef _ARCH_PPC
     [EVENT_OPTION_GENERIC_CONFIG] = "pmcxsel",
+    [EVENT_OPTION_UNCORE_CONFIG] = "event",
 #else
     [EVENT_OPTION_GENERIC_CONFIG] = "event",
 #endif
@@ -490,6 +491,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     int perf_type = 0;
     PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
     int start = 0, end = -1;
+    uint64_t eventConfig = 0x0;
     if (perf_event_paranoid > 0 && getuid() != 0)
     {
         return EPERM;
@@ -525,34 +527,62 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     attr->type = perf_type;
     attr->disabled = 1;
     attr->inherit = 1;
+#ifdef _ARCH_PPC
+    eventConfig = (event->umask<<8)|event->eventId;
+#else
+    eventConfig = event->eventId;
+#endif
     //attr->config = (event->umask<<8) + event->eventId;
     getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
     switch(reg)
     {
         case PERF_EVENT_CONFIG_REG:
-            attr->config |= create_mask(event->eventId, start, end);
+            attr->config |= create_mask(eventConfig, start, end);
             break;
         case PERF_EVENT_CONFIG1_REG:
-            attr->config1 |= create_mask(event->eventId, start, end);
+            attr->config1 |= create_mask(eventConfig, start, end);
             break;
         case PERF_EVENT_CONFIG2_REG:
-            attr->config2 |= create_mask(event->eventId, start, end);
+            attr->config2 |= create_mask(eventConfig, start, end);
             break;
-    }
-    getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
-    switch(reg)
-    {
-        case PERF_EVENT_CONFIG_REG:
-            attr->config |= create_mask(event->umask, start, end);
-            break;
-        case PERF_EVENT_CONFIG1_REG:
-            attr->config1 |= create_mask(event->umask, start, end);
-            break;
-        case PERF_EVENT_CONFIG2_REG:
-            attr->config2 |= create_mask(event->umask, start, end);
-            break;
-    }
 
+    }
+#ifdef _ARCH_PPC
+    if (reg == PERF_EVENT_INVAL_REG)
+    {
+	uint64_t config = (event->umask<<8)|event->eventId;
+        getEventOptionConfig(translate_types[type], EVENT_OPTION_UNCORE_CONFIG, &reg, &start, &end);
+        switch(reg)
+        {
+            case PERF_EVENT_CONFIG_REG:
+                attr->config |= create_mask(eventConfig, start, end);
+                break;
+            case PERF_EVENT_CONFIG1_REG:
+                attr->config1 |= create_mask(eventConfig, start, end);
+                break;
+            case PERF_EVENT_CONFIG2_REG:
+                attr->config2 |= create_mask(eventConfig, start, end);
+                break;
+        }
+    }
+#else
+    if (event->umask != 0x0)
+    {
+        getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
+        switch(reg)
+        {
+            case PERF_EVENT_CONFIG_REG:
+                attr->config |= create_mask(event->umask, start, end);
+                break;
+            case PERF_EVENT_CONFIG1_REG:
+                attr->config1 |= create_mask(event->umask, start, end);
+                break;
+            case PERF_EVENT_CONFIG2_REG:
+                attr->config2 |= create_mask(event->umask, start, end);
+                break;
+        }
+    }
+#endif
 
     //attr->exclusive = 1;
     if (event->numberOfOptions > 0)
