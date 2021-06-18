@@ -90,6 +90,7 @@ typedef enum {
 #ifdef _ARCH_PPC
     EVENT_OPTION_PMC,
     EVENT_OPTION_PMCXSEL,
+    EVENT_OPTION_UNCORE_CONFIG, /*!< \brief Configuration bitmask for NEST (uncore) counters */
 #endif
     NUM_EVENT_OPTIONS /*!< \brief Amount of defined options */
 } EventOptionType;
