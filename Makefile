@@ -55,6 +55,7 @@ LIBS      += -l$(LUA_LIB_NAME)
 endif
 ifeq ($(USE_INTERNAL_HWLOC),false)
 LIBS      += -l$(HWLOC_LIB_NAME)
+SHARED_CFLAGS += -L$(HWLOC_LIB_DIR)
 endif
 
 #CONFIGURE BUILD SYSTEM
