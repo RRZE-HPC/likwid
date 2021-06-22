@@ -2420,6 +2420,14 @@ char* rocmon_getGroupInfoLong(int groupId) __attribute__ ((visibility ("default"
 int rocmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos) __attribute__ ((visibility ("default") ));
 int rocmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos) __attribute__ ((visibility ("default") ));
 
+// Marker API
+void rocmon_markerInit(void) __attribute__ ((visibility ("default") ));
+void rocmon_markerClose(void) __attribute__ ((visibility ("default") ));
+int rocmon_markerRegisterRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+int rocmon_markerStartRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+int rocmon_markerStopRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+int rocmon_markerResetRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+
 #endif /* LIKWID_WITH_ROCMON */
 
 #ifdef __cplusplus

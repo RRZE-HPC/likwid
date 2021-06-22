@@ -42,11 +42,13 @@
 #include <likwid.h>
 #include <bstrlib.h>
 #include <error.h>
-#include <rocmon_types.h>
 #include <dlfcn.h>
 
-#include <hsa/hsa.h>
-#include <rocprofiler.h>
+#include <likwid.h>
+#include <rocmon_types.h>
+
+// #include <hsa.h>
+// #include <rocprofiler.h>
 // #include <hsa/hsa_ext_amd.h>
 
 // Variables

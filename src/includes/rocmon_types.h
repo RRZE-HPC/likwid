@@ -33,7 +33,7 @@
 #define LIKWID_ROCMON_TYPES_H
 
 #include <likwid.h>
-#include <hsa/hsa.h>
+// #include <hsa.h>
 #include <rocprofiler.h>
 
 typedef struct {
