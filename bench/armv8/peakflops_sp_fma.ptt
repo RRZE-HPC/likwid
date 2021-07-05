@@ -1,0 +1,67 @@
+STREAMS 1
+TYPE SINGLE
+FLOPS 28
+BYTES 4
+DESC Single-precision multiplications and additions with a single load, only scalar operations using FMAs
+LOADS 1
+STORES 0
+INSTR_LOOP 28
+UOPS 29
+fmov    S1, WZR
+fmov    S2, WZR
+fmov    S3, WZR
+fmov    S4, WZR
+fmov    S5, WZR
+fmov    S6, WZR
+fmov    S7, WZR
+fmov    S8, WZR
+fmov    S9, WZR
+fmov    S10, WZR
+fmov    S11, WZR
+fmov    S12, WZR
+fmov    S13, WZR
+fmov    S14, WZR
+fmov    S15, WZR
+fmov    S16, WZR
+fmov    S17, WZR
+fmov    S18, WZR
+fmov    S19, WZR
+fmov    S20, WZR
+fmov    S21, WZR
+fmov    S22, WZR
+fmov    S23, WZR
+fmov    S24, WZR
+fmov    S25, WZR
+fmov    S26, WZR
+fmov    S27, WZR
+fmov    S28, WZR
+LOOP 1
+ldr      S16, [STR0], #4
+fmadd     S1, S1, S1, S1
+fmadd     S2, S2, S2, S2
+fmadd     S3, S3, S3, S3
+fmadd     S4, S4, S4, S4
+fmadd     S5, S5, S5, S5
+fmadd     S6, S6, S6, S6
+fmadd     S7, S7, S7, S7
+fmadd     S8, S8, S8, S8
+fmadd     S9, S9, S9, S9
+fmadd     S10, S10, S10, S10
+fmadd     S11, S11, S11, S11
+fmadd     S12, S12, S12, S12
+fmadd     S13, S13, S13, S13
+fmadd     S14, S14, S14, S14
+fmadd     S15, S15, S15, S15
+fmadd     S16, S16, S16, S16
+fmadd     S17, S17, S17, S17
+fmadd     S18, S18, S18, S18
+fmadd     S19, S19, S19, S19
+fmadd     S20, S20, S20, S20
+fmadd     S21, S21, S21, S21
+fmadd     S22, S22, S22, S22
+fmadd     S23, S23, S23, S23
+fmadd     S24, S24, S24, S24
+fmadd     S25, S25, S25, S25
+fmadd     S26, S26, S26, S26
+fmadd     S27, S27, S27, S27
+fmadd     S28, S28, S28, S28
