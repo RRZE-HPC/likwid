@@ -35,6 +35,7 @@
 #include <likwid.h>
 // #include <hsa.h>
 #include <rocprofiler.h>
+#include <map.h>
 
 typedef struct {
     double lastValue;
@@ -42,9 +43,33 @@ typedef struct {
 } RocmonEventResult;
 
 typedef struct {
-    RocmonEventResult* results;
+    RocmonEventResult* results; // First rocprofiler results, then SMI results
     int numResults;
 } RocmonEventResultList;
+
+typedef int (*RocmonSmiMeasureFunc)(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result);
+
+typedef enum {
+    ROCMON_SMI_EVENT_TYPE_NORMAL = 0,
+    ROCMON_SMI_EVENT_TYPE_VARIANT,
+    ROCMON_SMI_EVENT_TYPE_SUBVARIANT,
+    ROCMON_SMI_EVENT_TYPE_INSTANCES
+} RocmonSmiEventType;
+
+typedef struct {
+    char name[40];
+    uint64_t variant;
+    uint64_t subvariant;
+    uint64_t extra;
+    int instances;
+    RocmonSmiEventType type;
+    RocmonSmiMeasureFunc measureFunc;
+} RocmonSmiEvent;
+
+typedef struct {
+    RocmonSmiEvent* entries;
+    int numEntries;
+} RocmonSmiEventList;
 
 typedef struct {
     int deviceId; // LIKWID device id
@@ -53,12 +78,19 @@ typedef struct {
     rocprofiler_t* context; // Rocprofiler context (has activeEvents configured)
 
     // Available rocprofiler metrics
-    rocprofiler_info_data_t* allMetrics;
-    int numAllMetrics;
+    rocprofiler_info_data_t* rocMetrics;
+    int numRocMetrics;
 
-    // Currently configured events (bound to context)
-    rocprofiler_feature_t* activeEvents;
-    int numActiveEvents;
+    // Available ROCm SMI events
+    Map_t smiMetrics;
+
+    // Currently configured rocprofiler events (bound to context)
+    rocprofiler_feature_t* activeRocEvents;
+    int numActiveRocEvents;
+
+    // Currently configured ROCm SMI events
+    RocmonSmiEvent* activeSmiEvents;
+    int numActiveSmiEvents;
 
     // Results for all events in all event sets
     RocmonEventResultList* groupResults;
@@ -85,6 +117,9 @@ typedef struct {
 
     // System information
     long double hsa_timestamp_factor; // hsa_timestamp * hsa_timestamp_factor = timestamp_in_ns
+
+    // ROCm SMI events
+    Map_t smiEvents;
 } RocmonContext;
 
 extern RocmonContext *rocmon_context;

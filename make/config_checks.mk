@@ -84,5 +84,5 @@ endif
 
 ifeq ($(strip $(ROCM_INTERFACE)), true)
 # HSA includes 'hsa/xxx.h' and rocprofiler 'xxx.h'
-INCLUDES += -I$(HIPINCLUDE) -I$(HSAINCLUDE) -I$(HSAINCLUDE)/hsa -I$(ROCPROFILERINCLUDE)
+INCLUDES += -I$(HIPINCLUDE) -I$(HSAINCLUDE) -I$(HSAINCLUDE)/hsa -I$(ROCPROFILERINCLUDE) -I$(RSMIINCLUDE)
 endif

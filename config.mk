@@ -183,3 +183,4 @@ BUILDAPPDAEMON=false
 HSAINCLUDE 			= $(ROCM_HOME)/hsa/include
 ROCPROFILERINCLUDE	= $(ROCM_HOME)/rocprofiler/include
 HIPINCLUDE 			= $(ROCM_HOME)/hip/include
+RSMIINCLUDE			= $(ROCM_HOME)/rocm_smi/include

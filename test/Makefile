@@ -61,7 +61,7 @@ test-topology-gpu-rocm: test-topology-gpu-rocm.c
 	gcc -O3 -std=c99 $(LIKWID_INC) $(LIKWID_DEFINES) $(LIKWID_LIB) -DLIKWID_WITH_ROCMON -o $@  test-topology-gpu-rocm.c -lm -llikwid
 
 test-rocmon-triad: test-rocmon-triad.cpp
-	$(HIPCC) -O3 -std=c++11 $(LIKWID_INC) $(LIKWID_DEFINES) $(LIKWID_LIB) -DLIKWID_WITH_ROCMON test-rocmon-triad.cpp -o $@ -lm -llikwid
+	$(HIPCC) -O3 -std=c++11 $(LIKWID_INC) $(LIKWID_DEFINES) $(LIKWID_LIB) -I$(RSMIINCLUDE) -L$(ROCM_HOME)/rocm_smi/lib -lrocm_smi64 -DLIKWID_WITH_ROCMON test-rocmon-triad.cpp -o $@ -lm -llikwid
 
 test-rocmon-triad-marker: test-rocmon-triad-marker.cpp
 	$(HIPCC) -O3 -std=c++11 $(LIKWID_INC) $(LIKWID_DEFINES) $(LIKWID_LIB) -DLIKWID_WITH_ROCMON -DLIKWID_ROCMON test-rocmon-triad-marker.cpp -o $@ -lm -llikwid
