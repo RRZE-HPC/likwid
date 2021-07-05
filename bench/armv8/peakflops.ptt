@@ -5,8 +5,8 @@ BYTES 8
 DESC Double-precision multiplications and additions with a single load, only scalar operations
 LOADS 1
 STORES 0
-INSTR_LOOP 28
-UOPS 30
+INSTR_LOOP 29
+UOPS 29
 fmov    D1, ARG1
 fmov    D2, ARG1
 fmov    D3, ARG1

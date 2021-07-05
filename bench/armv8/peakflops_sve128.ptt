@@ -5,7 +5,7 @@ BYTES 8
 DESC Double-precision multiplications and additions with a single load, optimized for SVE 
 LOADS 1
 STORES 0
-INSTR_LOOP 28
+INSTR_LOOP 29
 UOPS 29
 ld1d    z1.d, p0/z, [STR0, GPR6, lsl 3]
 ld1d    z2.d, p0/z, [STR0, GPR6, lsl 3]

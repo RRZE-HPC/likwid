@@ -5,8 +5,8 @@ BYTES 4
 DESC Single-precision multiplications and additions with a single load, only scalar operations
 LOADS 1
 STORES 0
-INSTR_LOOP 28
-UOPS 30
+INSTR_LOOP 29
+UOPS 29
 fmov    S1, WZR
 fmov    S2, WZR
 fmov    S3, WZR

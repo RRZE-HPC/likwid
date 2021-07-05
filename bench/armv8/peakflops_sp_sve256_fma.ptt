@@ -1,42 +1,42 @@
 STREAMS 1
 TYPE SINGLE 
-FLOPS 28
-BYTES 8
+FLOPS 56
+BYTES 4
 DESC Single-precision multiplications and additions with a single load, optimized for SVE FMAs 
 LOADS 1
 STORES 0
-INSTR_LOOP 28
+INSTR_LOOP 29
 UOPS 29
-ld1d    z1.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z2.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z3.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z4.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z5.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z6.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z7.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z8.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z9.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z10.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z11.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z12.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z13.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z14.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z15.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z16.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z17.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z18.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z19.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z20.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z21.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z22.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z23.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z24.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z25.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z26.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z27.s, p0/z, [STR0, GPR6, lsl 3]
-ld1d    z28.s, p0/z, [STR0, GPR6, lsl 3]
-LOOP 4
-ld1d     z16.s, p0/z, [STR0, GPR6, lsl 3]
+ld1w    z1.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z2.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z3.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z4.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z5.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z6.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z7.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z8.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z9.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z10.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z11.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z12.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z13.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z14.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z15.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z16.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z17.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z18.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z19.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z20.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z21.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z22.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z23.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z24.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z25.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z26.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z27.s, p0/z, [STR0, GPR6, lsl 2]
+ld1w    z28.s, p0/z, [STR0, GPR6, lsl 2]
+LOOP 8
+ld1w     z16.s, p0/z, [STR0, GPR6, lsl 2]
 fmla     z1.s, p1/m, z1.s, z1.s
 fmla     z2.s, p1/m, z2.s, z2.s
 fmla     z3.s, p1/m, z3.s, z3.s

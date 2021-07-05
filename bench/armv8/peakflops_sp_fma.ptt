@@ -1,11 +1,11 @@
 STREAMS 1
 TYPE SINGLE
-FLOPS 28
+FLOPS 56
 BYTES 4
 DESC Single-precision multiplications and additions with a single load, only scalar operations using FMAs
 LOADS 1
 STORES 0
-INSTR_LOOP 28
+INSTR_LOOP 29
 UOPS 29
 fmov    S1, WZR
 fmov    S2, WZR
