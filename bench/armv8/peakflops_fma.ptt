@@ -7,34 +7,35 @@ LOADS 1
 STORES 0
 INSTR_LOOP 29
 UOPS 29
-fmov    D1, ARG1
-fmov    D2, ARG1
-fmov    D3, ARG1
-fmov    D4, ARG1
-fmov    D5, ARG1
-fmov    D6, ARG1
-fmov    D7, ARG1
-fmov    D8, ARG1
-fmov    D9, ARG1
-fmov    D10, ARG1
-fmov    D11, ARG1
-fmov    D12, ARG1
-fmov    D13, ARG1
-fmov    D14, ARG1
-fmov    D15, ARG1
-fmov    D16, ARG1
-fmov    D17, ARG1
-fmov    D18, ARG1
-fmov    D19, ARG1
-fmov    D20, ARG1
-fmov    D21, ARG1
-fmov    D22, ARG1
-fmov    D23, ARG1
-fmov    D24, ARG1
-fmov    D25, ARG1
-fmov    D26, ARG1
-fmov    D27, ARG1
-fmov    D28, ARG1
+fmov	D0, XZR
+fmov    D1, XZR
+fmov    D2, XZR
+fmov    D3, XZR
+fmov    D4, XZR
+fmov    D5, XZR
+fmov    D6, XZR
+fmov    D7, XZR
+fmov    D8, XZR
+fmov    D9, XZR
+fmov    D10, XZR
+fmov    D11, XZR
+fmov    D12, XZR
+fmov    D13, XZR
+fmov    D14, XZR
+fmov    D15, XZR
+fmov    D16, XZR
+fmov    D17, XZR
+fmov    D18, XZR
+fmov    D19, XZR
+fmov    D20, XZR
+fmov    D21, XZR
+fmov    D22, XZR
+fmov    D23, XZR
+fmov    D24, XZR
+fmov    D25, XZR
+fmov    D26, XZR
+fmov    D27, XZR
+fmov    D28, XZR
 LOOP 1
 ldr      D16, [STR0], #8
 fmadd     D0, D1, D2, D3
