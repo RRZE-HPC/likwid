@@ -1852,27 +1852,22 @@ rocmon_getEventsOfGpu(int gpuId, EventList_rocm_t** list)
     {
         rocprofiler_info_data_t* event = &device->rocMetrics[i];
         Event_rocm_t* out = &tmpList->events[i];
+        int len;
 
         // Copy name
-        out->name = (char*) malloc(strlen(event->metric.name) + 5 /* Prefix */ + 2 /* NULL byte */);
+        len = strlen(event->metric.name) + 5 /* Prefix */ + 1 /* NULL byte */;
+        out->name = (char*) malloc(len);
         if (out->name)
         {
-            int ret = snprintf(out->name, strlen(event->metric.name)+1, "ROCP_%s", event->metric.name);
-            if (ret > 0)
-            {
-                out->name[ret] = '\0';
-            }
+            snprintf(out->name, len, "ROCP_%s", event->metric.name);
         }
 
         // Copy description
-        out->description = (char*) malloc(strlen(event->metric.description) + 2 /* NULL byte */);
+        len = strlen(event->metric.description) + 1 /* NULL byte */;
+        out->description = (char*) malloc(len);
         if (out->description)
         {
-            int ret = snprintf(out->description, strlen(event->metric.description)+1, "%s", event->metric.description);
-            if (ret > 0)
-            {
-                out->description[ret] = '\0';
-            }
+            snprintf(out->description, len, "%s", event->metric.description);
         }
 
         // Copy instances
@@ -1884,6 +1879,7 @@ rocmon_getEventsOfGpu(int gpuId, EventList_rocm_t** list)
     {
         RocmonSmiEvent* event = NULL;
         Event_rocm_t* out = &tmpList->events[device->numRocMetrics + i];
+        int len;
 
         // Get event
         if (get_smap_by_idx(device->smiMetrics, i, (void**)&event) < 0)
@@ -1892,26 +1888,20 @@ rocmon_getEventsOfGpu(int gpuId, EventList_rocm_t** list)
         }
 
         // Copy name
-        out->name = (char*) malloc(strlen(event->name) + 5 /* Prefix */ + 2 /* NULL byte */);
+        len = strlen(event->name) + 5 /* Prefix */ + 1 /* NULL byte */;
+        out->name = (char*) malloc(len);
         if (out->name)
         {
-            int ret = snprintf(out->name, strlen(event->name)+1, "RSMI_%s", event->name);
-            if (ret > 0)
-            {
-                out->name[ret] = '\0';
-            }
+            snprintf(out->name, len, "RSMI_%s", event->name);
         }
 
         // Copy description
         char* description = "SMI Event"; // TODO: use real descriptions
-        out->description = (char*) malloc(strlen(description) + 2 /* NULL byte */);
+        len = strlen(description) + 1 /* NULL byte */;
+        out->description = (char*) malloc(len);
         if (out->description)
         {
-            int ret = snprintf(out->description, strlen(description)+1, "%s", description);
-            if (ret > 0)
-            {
-                out->description[ret] = '\0';
-            }
+            snprintf(out->description, len, "%s", description);
         }
 
         // Copy instances
