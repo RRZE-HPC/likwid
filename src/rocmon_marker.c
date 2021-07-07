@@ -116,8 +116,8 @@ _rocmon_saveToFile(void)
      * 1 numberOfGPUs numberOfRegions numberOfGpuGroups
      * 2 regionID:regionTag0
      * 3 regionID:regionTag1
-     * 4 regionID gpuID countersvalues(space separated)
-     * 5 regionID gpuID countersvalues
+     * 4 regionID groupID gpuID callCount timeActive numEvents countersvalues(space separated)
+     * 5 regionID groupID gpuID callCount timeActive numEvents countersvalues(space separated)
      */
 
     // Get markerfile path from environment
