@@ -2394,10 +2394,10 @@ int rocmon_startCounters(void) __attribute__ ((visibility ("default") ));
 int rocmon_stopCounters(void) __attribute__ ((visibility ("default") ));
 int rocmon_readCounters(void) __attribute__ ((visibility ("default") ));
 
-double rocmon_getResult(int gpuId, int groupId, int eventId) __attribute__ ((visibility ("default") ));
-double rocmon_getLastResult(int gpuId, int groupId, int eventId) __attribute__ ((visibility ("default") ));
+double rocmon_getResult(int gpuIdx, int groupId, int eventId) __attribute__ ((visibility ("default") ));
+double rocmon_getLastResult(int gpuIdx, int groupId, int eventId) __attribute__ ((visibility ("default") ));
 
-int rocmon_getEventsOfGpu(int gpuId, EventList_rocm_t** list) __attribute__ ((visibility ("default") ));
+int rocmon_getEventsOfGpu(int gpuIdx, EventList_rocm_t** list) __attribute__ ((visibility ("default") ));
 void rocmon_freeEventsOfGpu(EventList_rocm_t* list) __attribute__ ((visibility ("default") ));
 
 int rocmon_getNumberOfGroups(void) __attribute__ ((visibility ("default") ));

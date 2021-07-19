@@ -760,7 +760,7 @@ _rocmon_smi_build_label(RocmonSmiEventType type, const char* funcname, uint64_t 
 
 
 static int
-_rocmon_smi_add_event_to_device(int deviceId, const char* funcname, RocmonSmiEventType type, int64_t variant, uint64_t subvariant)
+_rocmon_smi_add_event_to_device(RocmonDevice* device, const char* funcname, RocmonSmiEventType type, int64_t variant, uint64_t subvariant)
 {
     int ret;
     
@@ -783,7 +783,7 @@ _rocmon_smi_add_event_to_device(int deviceId, const char* funcname, RocmonSmiEve
         {
             RocmonSmiEvent* event = &list->entries[i];
             RocmonSmiEvent* existingEvent = NULL;
-            ret = get_smap_by_key(rocmon_context->devices[deviceId].smiMetrics, event->name, (void**)&existingEvent);
+            ret = get_smap_by_key(device->smiMetrics, event->name, (void**)&existingEvent);
             if (ret < 0)
             {
                 ERROR_PRINT(Failed to find previous instance for event %s, event->name);
@@ -815,7 +815,7 @@ _rocmon_smi_add_event_to_device(int deviceId, const char* funcname, RocmonSmiEve
         tmpEvent->instances = 1;
 
         // Save event info to device event map
-        add_smap(rocmon_context->devices[deviceId].smiMetrics, tmpEvent->name, tmpEvent);
+        add_smap(device->smiMetrics, tmpEvent->name, tmpEvent);
     }
 
     return 0;
@@ -823,7 +823,7 @@ _rocmon_smi_add_event_to_device(int deviceId, const char* funcname, RocmonSmiEve
 
 
 static int
-_rocmon_smi_get_function_subvariants(int deviceId, const char* funcname, uint64_t variant, rsmi_func_id_iter_handle_t var_iter)
+_rocmon_smi_get_function_subvariants(RocmonDevice* device, const char* funcname, uint64_t variant, rsmi_func_id_iter_handle_t var_iter)
 {
     rsmi_func_id_iter_handle_t sub_var_iter;
     rsmi_func_id_value_t value;
@@ -835,7 +835,7 @@ _rocmon_smi_get_function_subvariants(int deviceId, const char* funcname, uint64_
     if (status == RSMI_STATUS_NO_DATA)
     {
         // No subvariants
-        ret = _rocmon_smi_add_event_to_device(deviceId, funcname, ROCMON_SMI_EVENT_TYPE_VARIANT, variant, 0);
+        ret = _rocmon_smi_add_event_to_device(device, funcname, ROCMON_SMI_EVENT_TYPE_VARIANT, variant, 0);
         if (ret < 0) return -1;
         return 0;
     }
@@ -847,9 +847,9 @@ _rocmon_smi_get_function_subvariants(int deviceId, const char* funcname, uint64_
 
         // Process info
         if (variant == RSMI_DEFAULT_VARIANT)
-            ret = _rocmon_smi_add_event_to_device(deviceId, funcname, ROCMON_SMI_EVENT_TYPE_INSTANCES, variant, value.id);
+            ret = _rocmon_smi_add_event_to_device(device, funcname, ROCMON_SMI_EVENT_TYPE_INSTANCES, variant, value.id);
         else
-            ret = _rocmon_smi_add_event_to_device(deviceId, funcname, ROCMON_SMI_EVENT_TYPE_SUBVARIANT, variant, value.id);
+            ret = _rocmon_smi_add_event_to_device(device, funcname, ROCMON_SMI_EVENT_TYPE_SUBVARIANT, variant, value.id);
         if (ret < 0) return ret;
 
         // Advance iterator
@@ -864,7 +864,7 @@ _rocmon_smi_get_function_subvariants(int deviceId, const char* funcname, uint64_
 
 
 static int
-_rocmon_smi_get_function_variants(int deviceId, const char* funcname, rsmi_func_id_iter_handle_t iter_handle)
+_rocmon_smi_get_function_variants(RocmonDevice* device, const char* funcname, rsmi_func_id_iter_handle_t iter_handle)
 {
     rsmi_func_id_iter_handle_t var_iter;
     rsmi_func_id_value_t value;
@@ -876,7 +876,7 @@ _rocmon_smi_get_function_variants(int deviceId, const char* funcname, rsmi_func_
     if (status == RSMI_STATUS_NO_DATA)
     {
         // No variants
-        ret = _rocmon_smi_add_event_to_device(deviceId, funcname, ROCMON_SMI_EVENT_TYPE_NORMAL, 0, 0);
+        ret = _rocmon_smi_add_event_to_device(device, funcname, ROCMON_SMI_EVENT_TYPE_NORMAL, 0, 0);
         if (ret < 0) return -1;
         return 0;
     }
@@ -887,7 +887,7 @@ _rocmon_smi_get_function_variants(int deviceId, const char* funcname, rsmi_func_
         (*rsmi_func_iter_value_get_ptr)(var_iter, &value);
 
         // Get function subvariants
-        ret = _rocmon_smi_get_function_subvariants(deviceId, funcname, value.id, var_iter);
+        ret = _rocmon_smi_get_function_subvariants(device, funcname, value.id, var_iter);
         if (ret < 0) return -1;
 
         // Advance iterator
@@ -902,7 +902,7 @@ _rocmon_smi_get_function_variants(int deviceId, const char* funcname, rsmi_func_
 
 
 static int
-_rocmon_smi_get_functions(int deviceId)
+_rocmon_smi_get_functions(RocmonDevice* device)
 {
     rsmi_func_id_iter_handle_t iter_handle;
     rsmi_func_id_value_t value;
@@ -910,7 +910,7 @@ _rocmon_smi_get_functions(int deviceId)
     int ret;
 
     // Open iterator
-    (*rsmi_dev_supported_func_iterator_open_ptr)(deviceId, &iter_handle);
+    (*rsmi_dev_supported_func_iterator_open_ptr)(device->deviceId, &iter_handle);
 
     do
     {
@@ -918,7 +918,7 @@ _rocmon_smi_get_functions(int deviceId)
         (*rsmi_func_iter_value_get_ptr)(iter_handle, &value);
 
         // Get function variants
-        ret = _rocmon_smi_get_function_variants(deviceId, value.name, iter_handle);
+        ret = _rocmon_smi_get_function_variants(device, value.name, iter_handle);
         if (ret < 0)
         {
             return -1;
@@ -932,7 +932,7 @@ _rocmon_smi_get_functions(int deviceId)
     (*rsmi_dev_supported_func_iterator_close_ptr)(&iter_handle);
 
     // Add device independent functions
-    ret = _rocmon_smi_add_event_to_device(deviceId, "rsmi_compute_process_info_get", ROCMON_SMI_EVENT_TYPE_NORMAL, 0, 0);
+    ret = _rocmon_smi_add_event_to_device(device, "rsmi_compute_process_info_get", ROCMON_SMI_EVENT_TYPE_NORMAL, 0, 0);
     if (ret < 0) return -1;
 
     return 0;
@@ -1171,9 +1171,9 @@ rocmon_init(int numGpus, const int* gpuIds)
 
     // Get available SMI events for devices
     _rocmon_smi_init_events();
-    for (int i = 0; i < numGpus; i++)
+    for (int i = 0; i < rocmon_context->numDevices; i++)
     {
-        if (_rocmon_smi_get_functions(gpuIds[i]) < 0)
+        if (_rocmon_smi_get_functions(&rocmon_context->devices[i]) < 0)
         {
             return -1;
         }
@@ -1731,7 +1731,7 @@ rocmon_readCounters(void)
 
 
 double
-rocmon_getResult(int gpuId, int groupId, int eventId)
+rocmon_getResult(int gpuIdx, int groupId, int eventId)
 {
     // Ensure rocmon is initialized
     if (!rocmon_initialized)
@@ -1739,14 +1739,14 @@ rocmon_getResult(int gpuId, int groupId, int eventId)
         return -EFAULT;
     }
 
-    // Validate gpuId
-    if (gpuId < 0 || gpuId >= rocmon_context->numDevices)
+    // Validate gpuIdx
+    if (gpuIdx < 0 || gpuIdx >= rocmon_context->numDevices)
     {
         return -EFAULT;
     }
 
     // Validate groupId
-    RocmonDevice* device = &rocmon_context->devices[gpuId];
+    RocmonDevice* device = &rocmon_context->devices[gpuIdx];
     if (groupId < 0 || groupId >= device->numGroupResults)
     {
         return -EFAULT;
@@ -1766,7 +1766,7 @@ rocmon_getResult(int gpuId, int groupId, int eventId)
 
 // TODO: multiple groups
 double
-rocmon_getLastResult(int gpuId, int groupId, int eventId)
+rocmon_getLastResult(int gpuIdx, int groupId, int eventId)
 {
     // Ensure rocmon is initialized
     if (!rocmon_initialized)
@@ -1774,14 +1774,14 @@ rocmon_getLastResult(int gpuId, int groupId, int eventId)
         return -EFAULT;
     }
 
-    // Validate gpuId
-    if (gpuId < 0 || gpuId >= rocmon_context->numDevices)
+    // Validate gpuIdx
+    if (gpuIdx < 0 || gpuIdx >= rocmon_context->numDevices)
     {
         return -EFAULT;
     }
 
     // Validate groupId
-    RocmonDevice* device = &rocmon_context->devices[gpuId];
+    RocmonDevice* device = &rocmon_context->devices[gpuIdx];
     if (groupId < 0 || groupId >= device->numGroupResults)
     {
         return -EFAULT;
@@ -1800,7 +1800,7 @@ rocmon_getLastResult(int gpuId, int groupId, int eventId)
 
 
 int
-rocmon_getEventsOfGpu(int gpuId, EventList_rocm_t** list)
+rocmon_getEventsOfGpu(int gpuIdx, EventList_rocm_t** list)
 {
     // Ensure rocmon is initialized
     if (!rocmon_initialized)
@@ -1809,7 +1809,7 @@ rocmon_getEventsOfGpu(int gpuId, EventList_rocm_t** list)
     }
 
     // Validate args
-    if (gpuId < 0 || gpuId > rocmon_context->numDevices)
+    if (gpuIdx < 0 || gpuIdx > rocmon_context->numDevices)
     {
         return -EINVAL;
     }
@@ -1818,7 +1818,7 @@ rocmon_getEventsOfGpu(int gpuId, EventList_rocm_t** list)
         return -EINVAL;
     }
 
-    RocmonDevice* device = &rocmon_context->devices[gpuId];
+    RocmonDevice* device = &rocmon_context->devices[gpuIdx];
 
     // Allocate list structure
     EventList_rocm_t* tmpList = (EventList_rocm_t*) malloc(sizeof(EventList_rocm_t));
