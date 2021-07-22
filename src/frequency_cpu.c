@@ -1272,7 +1272,7 @@ int freq_setTurbo(const int cpu_id, const int turbo)
     return 1;
 }
 
-void __attribute__((destructor (104))) close_frequency_cpu(void)
-{
-    _freqFinalize();
-}
+/*void __attribute__((destructor (104))) close_frequency_cpu(void)*/
+/*{*/
+/*    _freqFinalize();*/
+/*}*/
