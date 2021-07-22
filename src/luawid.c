@@ -2019,12 +2019,19 @@ lua_likwid_startProgram(lua_State* L)
             lua_pop(L,1);
         }
     }
-    else
+    /*else
     {
+        int count = 0;
         for (nrThreads = 0; nrThreads < cpuid_topology.numHWThreads; nrThreads++)
-            cpus[nrThreads] = cpuid_topology.threadPool[nrThreads].apicId;
-        nrThreads = cpuid_topology.numHWThreads;
-    }
+        {
+            if (cpuid_topology.threadPool[nrThreads].inCpuSet == 1)
+            {
+                cpus[count] = cpuid_topology.threadPool[nrThreads].apicId;
+                count++;
+            }
+        }
+        nrThreads = count;
+    }*/
     int args = parse(exec, argv, MAX_NUM_CLIARGS);
     if (args < 0)
     {
