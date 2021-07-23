@@ -140,7 +140,7 @@ if filetype == "perfctr" or filetype == "topology":
 
         for elems in tables[groups[0]]["Raw"]:
             for k in elems:
-                m = re.match("Core (\d+)", k)
+                m = re.match("HWThread (\d+)", k)
                 if m:
                     cpulist.append(int(m.group(1)))
                 m = re.match("GPU (\d+)", k)

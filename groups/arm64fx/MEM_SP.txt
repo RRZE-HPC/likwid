@@ -1,31 +1,30 @@
 SHORT Overview of arithmetic and main memory performance
 
 EVENTSET
-PMC0  INST_RETIRED
-PMC1  CPU_CYCLES
-PMC2  BUS_READ_TOTAL_MEM
-PMC3  BUS_WRITE_TOTAL_MEM
-PMC4  FP_SP_FIXED_OPS_SPEC
-PMC5  FP_SP_SCALE_OPS_SPEC
+PMC0  FP_SP_FIXED_OPS_SPEC
+PMC1  FP_SP_SCALE_OPS_SPEC
+PMC2  L2D_CACHE_REFILL
+PMC3  L2D_CACHE_WB
+PMC4  L2D_SWAP_DM
+PMC5  L2D_CACHE_MIBMCH_PRF
 
 
 METRICS
 Runtime (RDTSC) [s] time
-CPI  PMC1/PMC0
-SP (FP) [MFLOP/s] 1E-06*(PMC4)/time
-SP (FP+SVE128) [MFLOP/s] 1E-06*(((PMC5*128.0)/128.0)+PMC4)/time
-SP (FP+SVE256) [MFLOP/s] 1E-06*(((PMC5*256.0)/128.0)+PMC4)/time
-SP (FP+SVE512) [MFLOP/s] 1E-06*(((PMC5*512.0)/128.0)+PMC4)/time
-Memory read bandwidth [MBytes/s] 1.0E-06*(PMC2)*256.0/time
-Memory read data volume [GBytes] 1.0E-09*(PMC2)*256.0
+SP (FP) [MFLOP/s] 1E-06*(PMC0)/time
+SP (FP+SVE128) [MFLOP/s] 1E-06*(((PMC1*128.0)/128.0)+PMC0)/time
+SP (FP+SVE256) [MFLOP/s] 1E-06*(((PMC1*256.0)/128.0)+PMC0)/time
+SP (FP+SVE512) [MFLOP/s] 1E-06*(((PMC1*512.0)/128.0)+PMC0)/time
+Memory read bandwidth [MBytes/s] 1.0E-06*(PMC2-(PMC4+PMC5))*256.0/time
+Memory read data volume [GBytes] 1.0E-09*(PMC2-(PMC4+PMC5))*256.0
 Memory write bandwidth [MBytes/s] 1.0E-06*(PMC3)*256.0/time
 Memory write data volume [GBytes] 1.0E-09*(PMC3)*256.0
-Memory bandwidth [MBytes/s] 1.0E-06*(PMC2+PMC3)*256.0/time
-Memory data volume [GBytes] 1.0E-09*(PMC2+PMC3)*256.0
-Operational intensity (FP) PMC4/((PMC2+PMC3)*256.0)
-Operational intensity (FP+SVE128) (((PMC5*128.0)/128.0)+PMC4)/((PMC2+PMC3)*256.0)
-Operational intensity (FP+SVE256) (((PMC5*256.0)/128.0)+PMC4)/((PMC2+PMC3)*256.0)
-Operational intensity (FP+SVE512) (((PMC5*512.0)/128.0)+PMC4)/((PMC2+PMC3)*256.0)
+Memory bandwidth [MBytes/s] 1.0E-06*((PMC2-(PMC4+PMC5))+PMC3)*256.0/time
+Memory data volume [GBytes] 1.0E-09*((PMC2-(PMC4+PMC5))+PMC3)*256.0
+Operational intensity (FP) PMC0/(((PMC2-(PMC4+PMC5))+PMC3)*256.0)
+Operational intensity (FP+SVE128) (((PMC1*128.0)/128.0)+PMC0)/(((PMC2-(PMC4+PMC5))+PMC3)*256.0)
+Operational intensity (FP+SVE256) (((PMC1*256.0)/128.0)+PMC0)/(((PMC2-(PMC4+PMC5))+PMC3)*256.0)
+Operational intensity (FP+SVE512) (((PMC1*512.0)/128.0)+PMC0)/(((PMC2-(PMC4+PMC5))+PMC3)*256.0)
 
 
 LONG
@@ -34,16 +33,16 @@ SP (FP) [MFLOP/s] = 1E-06*FP_SP_FIXED_OPS_SPEC/time
 SP (FP+SVE128) [MFLOP/s] = 1.0E-06*(FP_SP_FIXED_OPS_SPEC+((FP_SP_SCALE_OPS_SPEC*128)/128))/time
 SP (FP+SVE256) [MFLOP/s] = 1.0E-06*(FP_SP_FIXED_OPS_SPEC+((FP_SP_SCALE_OPS_SPEC*256)/128))/time
 SP (FP+SVE512) [MFLOP/s] = 1.0E-06*(FP_SP_FIXED_OPS_SPEC+((FP_SP_SCALE_OPS_SPEC*512)/128))/time
-Memory read bandwidth [MBytes/s] = 1.0E-06*(BUS_READ_TOTAL_MEM)*256.0/runtime
-Memory read data volume [GBytes] = 1.0E-09*(BUS_READ_TOTAL_MEM)*256.0
-Memory write bandwidth [MBytes/s] = 1.0E-06*(BUS_WRITE_TOTAL_MEM)*256.0/runtime
-Memory write data volume [GBytes] = 1.0E-09*(BUS_WRITE_TOTAL_MEM)*256.0
-Memory bandwidth [MBytes/s] = 1.0E-06*(BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0/runtime
-Memory data volume [GBytes] = 1.0E-09*(BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0
-Operational intensity (FP) = FP_SP_FIXED_OPS_SPEC/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
-Operational intensity (FP+SVE128) = (FP_SP_FIXED_OPS_SPEC+((FP_SP_SCALE_OPS_SPEC*128)/128)/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
-Operational intensity (FP+SVE256) = (FP_SP_FIXED_OPS_SPEC+((FP_SP_SCALE_OPS_SPEC*256)/128)/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
-Operational intensity (FP+SVE512) = (FP_SP_FIXED_OPS_SPEC+((FP_SP_SCALE_OPS_SPEC*512)/128)/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
+Memory read bandwidth [MBytes/s] = 1.0E-06*(L2D_CACHE_REFILL-(L2D_SWAP_DM+L2D_CACHE_MIBMCH_PRF))*256.0/runtime
+Memory read data volume [GBytes] = 1.0E-09*(L2D_CACHE_REFILL-(L2D_SWAP_DM+L2D_CACHE_MIBMCH_PRF))*256.0
+Memory write bandwidth [MBytes/s] = 1.0E-06*(L2D_CACHE_WB)*256.0/runtime
+Memory write data volume [GBytes] = 1.0E-09*(L2D_CACHE_WB)*256.0
+Memory bandwidth [MBytes/s] = 1.0E-06*((L2D_CACHE_REFILL-(L2D_SWAP_DM+L2D_CACHE_MIBMCH_PRF))+L2D_CACHE_WB)*256.0/runtime
+Memory data volume [GBytes] = 1.0E-09*((L2D_CACHE_REFILL-(L2D_SWAP_DM+L2D_CACHE_MIBMCH_PRF))+L2D_CACHE_WB)*256.0
+Operational intensity (FP) = FP_DP_FIXED_OPS_SPEC/(((L2D_CACHE_REFILL-(L2D_SWAP_DM+L2D_CACHE_MIBMCH_PRF))+L2D_CACHE_WB)*256.0)
+Operational intensity (FP+SVE128) = (FP_DP_FIXED_OPS_SPEC+((FP_DP_SCALE_OPS_SPEC*128)/128)/(((L2D_CACHE_REFILL-(L2D_SWAP_DM+L2D_CACHE_MIBMCH_PRF))+L2D_CACHE_WB)*256.0)
+Operational intensity (FP+SVE256) = (FP_DP_FIXED_OPS_SPEC+((FP_DP_SCALE_OPS_SPEC*256)/128)/(((L2D_CACHE_REFILL-(L2D_SWAP_DM+L2D_CACHE_MIBMCH_PRF))+L2D_CACHE_WB)*256.0)
+Operational intensity (FP+SVE512) = (FP_DP_FIXED_OPS_SPEC+((FP_DP_SCALE_OPS_SPEC*512)/128)/(((L2D_CACHE_REFILL-(L2D_SWAP_DM+L2D_CACHE_MIBMCH_PRF))+L2D_CACHE_WB)*256.0)
 -
 Profiling group to measure memory bandwidth and single-precision FP rate for scalar and SVE vector
 operations with different widths. The events for the SVE metrics assumes that all vector elements

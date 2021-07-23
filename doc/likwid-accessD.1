@@ -5,9 +5,9 @@ to the MSR  and PCI device files
 .SH DESCRIPTION
 .B likwid-accessD
 is a command line application that opens a UNIX file socket and waits for access
-operations from LIKWID tools that require access to the MSR and PCI device
-files. The MSR and PCI device files are only accessible for users with root
-privileges, therefore
+operations from LIKWID tools that require access to the MSR/PCI device
+files or MMIO ranges. The MSR/PCI device files and MMIO rangesare only accessible
+for users with root privileges, therefore
 .B likwid-accessD
 requires the suid-bit set or a suitable libcap setting.
 Depending on the current system architecture,

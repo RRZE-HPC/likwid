@@ -608,6 +608,10 @@ likwid_markerStopRegion(const char* regionTag)
     if (results->state != MARKER_STATE_START)
     {
         fprintf(stderr, "WARN: Stopping an unknown/not-started region %s\n", regionTag);
+        if (use_locks == 1)
+        {
+            pthread_mutex_unlock(&threadLocks[myCPU]);
+        }
         return -EFAULT;
     }
     results->groupID = groupSet->activeGroup;
@@ -795,3 +799,4 @@ likwid_pinProcess(int processorId)
 
     return TRUE;
 }
+

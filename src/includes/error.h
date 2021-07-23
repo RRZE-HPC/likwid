@@ -118,6 +118,8 @@
 #define CHECK_MSR_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, MSR read operation failed);
 #define CHECK_PCI_WRITE_ERROR(func) CHECK_AND_RETURN_ERROR(func, PCI write operation failed);
 #define CHECK_PCI_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, PCI read operation failed);
+#define CHECK_MMIO_WRITE_ERROR(func) CHECK_AND_RETURN_ERROR(func, MMIO write operation failed);
+#define CHECK_MMIO_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, MMIO read operation failed);
 #define CHECK_POWER_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, Power register read operation failed);
 #define CHECK_TEMP_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, Temperature register read operation failed);
 

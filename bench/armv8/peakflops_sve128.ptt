@@ -1,0 +1,67 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 28
+BYTES 8
+DESC Double-precision multiplications and additions with a single load, optimized for SVE 
+LOADS 1
+STORES 0
+INSTR_LOOP 29
+UOPS 29
+ld1d    z1.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z2.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z3.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z4.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z5.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z6.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z7.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z8.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z9.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z10.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z11.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z12.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z13.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z14.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z15.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z16.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z17.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z18.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z19.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z20.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z21.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z22.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z23.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z24.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z25.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z26.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z27.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d    z28.d, p0/z, [STR0, GPR6, lsl 3]
+LOOP 2
+ld1d     z16.d, p0/z, [STR0, GPR6, lsl 3]
+fadd     z1.d, p1/m, z1.d, z1.d
+fadd     z2.d, p1/m, z2.d, z2.d
+fmul     z3.d, p1/m, z3.d, z3.d
+fmul     z4.d, p1/m, z4.d, z4.d
+fmul     z5.d, p1/m, z5.d, z5.d
+fadd     z6.d, p1/m, z6.d, z6.d
+fadd     z7.d, p1/m, z7.d, z7.d
+fmul     z8.d, p1/m, z8.d, z8.d
+fadd     z9.d, p1/m, z9.d, z9.d
+fadd     z10.d, p1/m, z10.d, z10.d
+fmul     z11.d, p1/m, z11.d, z11.d
+fmul     z12.d, p1/m, z12.d, z12.d
+fmul     z13.d, p1/m, z13.d, z13.d
+fadd     z14.d, p1/m, z14.d, z14.d
+fadd     z15.d, p1/m, z15.d, z15.d
+fmul     z16.d, p1/m, z16.d, z16.d
+fadd     z17.d, p1/m, z17.d, z17.d
+fmul     z18.d, p1/m, z18.d, z18.d
+fadd     z19.d, p1/m, z19.d, z19.d
+fadd     z20.d, p1/m, z20.d, z20.d
+fmul     z21.d, p1/m, z21.d, z21.d
+fmul     z22.d, p1/m, z22.d, z22.d
+fmul     z23.d, p1/m, z23.d, z23.d
+fadd     z24.d, p1/m, z24.d, z24.d
+fadd     z25.d, p1/m, z25.d, z25.d
+fmul     z26.d, p1/m, z26.d, z26.d
+fadd     z27.d, p1/m, z27.d, z27.d
+fmul     z28.d, p1/m, z28.d, z28.d

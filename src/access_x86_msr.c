@@ -52,6 +52,7 @@
 #include <error.h>
 #include <topology.h>
 #include <access_x86_msr.h>
+#include <access_x86_rdpmc.h>
 #include <registers.h>
 #ifdef LIKWID_PROFILE_COUNTER_READ
 #include <timer.h>
@@ -66,79 +67,12 @@
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int *FD = NULL;
-static int rdpmc_works_pmc = -1;
-static int rdpmc_works_fixed = -1;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static inline int
-__rdpmc(int cpu_id, int counter, uint64_t* value)
-{
-    unsigned low, high;
-    cpu_set_t cpuset, current;
-    sched_getaffinity(0, sizeof(cpu_set_t), &current);
-    CPU_ZERO(&cpuset);
-    CPU_SET(cpu_id, &cpuset);
-    sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
-    __asm__ volatile("rdpmc" : "=a" (low), "=d" (high) : "c" (counter));
-    *value = ((low) | ((uint64_t )(high) << 32));
-    sched_setaffinity(0, sizeof(cpu_set_t), &current);
-    return 0;
-}
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-//Needed for rdpmc check
-void
-segfault_sigaction(int signal, siginfo_t *si, void *arg)
-{
-    exit(1);
-}
-
-int
-test_rdpmc(int cpu_id, uint64_t value, int flag)
-{
-    int ret;
-    int pid;
-
-    pid = fork();
-
-    if (pid < 0)
-    {
-        return -1;
-    }
-    if (!pid)
-    {
-        uint64_t tmp;
-        struct sigaction sa;
-        memset(&sa, 0, sizeof(struct sigaction));
-        sigemptyset(&sa.sa_mask);
-        sa.sa_sigaction = segfault_sigaction;
-        sa.sa_flags   = SA_SIGINFO;
-        sigaction(SIGSEGV, &sa, NULL);
-        if (flag == 0)
-        {
-            __rdpmc(cpu_id, value, &tmp);
-            usleep(100);
-        }
-        exit(0);
-    }
-    else
-    {
-        int status = 0;
-        int waiting = 0;
-        waiting = waitpid(pid, &status, 0);
-        if ((waiting < 0) || (WEXITSTATUS(status) != 0))
-        {
-            ret = 0;
-        }
-        else
-        {
-            ret = 1;
-        }
-    }
-    return ret;
-}
 
 int
 access_x86_msr_init(const int cpu_id)
@@ -200,16 +134,17 @@ access_x86_msr_init(const int cpu_id)
     {
         close(fd);
     }
-    if (rdpmc_works_pmc < 0)
-    {
-        rdpmc_works_pmc = test_rdpmc(cpu_id, 0, 0);
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for PMC counters returned %d, rdpmc_works_pmc);
-    }
-    if (rdpmc_works_fixed < 0)
-    {
-        rdpmc_works_fixed = test_rdpmc(cpu_id, (1<<30), 0);
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED counters returned %d, rdpmc_works_fixed);
-    }
+    // if (rdpmc_works_pmc < 0)
+    // {
+    //     rdpmc_works_pmc = test_rdpmc(cpu_id, 0, 0);
+    //     DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for PMC counters returned %d, rdpmc_works_pmc);
+    // }
+    // if (rdpmc_works_fixed < 0)
+    // {
+    //     rdpmc_works_fixed = test_rdpmc(cpu_id, (1<<30), 0);
+    //     DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED counters returned %d, rdpmc_works_fixed);
+    // }
+    access_x86_rdpmc_init(cpu_id);
 
     sprintf(msr_file_name,"/dev/msr%d",cpu_id);
     fd = open(msr_file_name, O_RDWR);
@@ -258,6 +193,7 @@ access_x86_msr_finalize(const int cpu_id)
         free(FD);
         FD = NULL;
     }
+    access_x86_rdpmc_finalize(cpu_id);
 }
 
 int
@@ -265,37 +201,47 @@ access_x86_msr_read( const int cpu_id, uint32_t reg, uint64_t *data)
 {
     int ret;
 
-    if ((rdpmc_works_pmc == 1) && (reg >= MSR_PMC0) && (reg <=MSR_PMC7))
+    ret = access_x86_rdpmc_read(cpu_id, reg, data);
+    if (ret == -EAGAIN && FD[cpu_id] > 0)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Read PMC counter with RDPMC instruction with index %d, reg - MSR_PMC0);
-        if (__rdpmc(cpu_id, reg - MSR_PMC0, data) )
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MSR counter 0x%X with RDMSR instruction on CPU %d, reg, cpu_id);
+        ret = pread(FD[cpu_id], data, sizeof(*data), reg);
+        if ( ret != sizeof(*data) )
         {
-            rdpmc_works_pmc = 0;
-            goto fallback;
+            return ret;
         }
     }
-    else if ((rdpmc_works_fixed == 1) && (reg >= MSR_PERF_FIXED_CTR0) && (reg <= MSR_PERF_FIXED_CTR2))
-    {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED counter with RDPMC instruction with index %d, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
-        if (__rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data) )
-        {
-            rdpmc_works_fixed = 0;
-            goto fallback;
-        }
-    }
-    else
-    {
-fallback:
-        if (FD[cpu_id] > 0)
-        {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MSR counter 0x%X with RDMSR instruction on CPU %d, reg, cpu_id);
-            ret = pread(FD[cpu_id], data, sizeof(*data), reg);
-            if ( ret != sizeof(*data) )
-            {
-                return ret;
-            }
-        }
-    }
+//     if ((rdpmc_works_pmc == 1) && (reg >= MSR_PMC0) && (reg <=MSR_PMC7))
+//     {
+//         DEBUG_PRINT(DEBUGLEV_DEVELOP, Read PMC counter with RDPMC instruction with index %d, reg - MSR_PMC0);
+//         if (__rdpmc(cpu_id, reg - MSR_PMC0, data) )
+//         {
+//             rdpmc_works_pmc = 0;
+//             goto fallback;
+//         }
+//     }
+//     else if ((rdpmc_works_fixed == 1) && (reg >= MSR_PERF_FIXED_CTR0) && (reg <= MSR_PERF_FIXED_CTR2))
+//     {
+//         DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED counter with RDPMC instruction with index %d, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
+//         if (__rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data) )
+//         {
+//             rdpmc_works_fixed = 0;
+//             goto fallback;
+//         }
+//     }
+//     else
+//     {
+// fallback:
+//         if (FD[cpu_id] > 0)
+//         {
+//             DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MSR counter 0x%X with RDMSR instruction on CPU %d, reg, cpu_id);
+//             ret = pread(FD[cpu_id], data, sizeof(*data), reg);
+//             if ( ret != sizeof(*data) )
+//             {
+//                 return ret;
+//             }
+//         }
+//     }
     return 0;
 }
 
@@ -317,9 +263,15 @@ access_x86_msr_write( const int cpu_id, uint32_t reg, uint64_t data)
 
 int access_x86_msr_check(PciDeviceIndex dev, int cpu_id)
 {
+    int ret = 0;
     if (dev == MSR_DEV)
     {
-        if (FD[cpu_id] > 0)
+        ret = access_x86_rdpmc_check(dev, cpu_id);
+        if (ret == 1)
+        {
+            return 1;
+        }
+        else if (FD[cpu_id] > 0)
         {
             return 1;
         }

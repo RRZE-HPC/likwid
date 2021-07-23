@@ -33,6 +33,15 @@
 #include <hwloc.h>
 #include <sched.h>
 
+#ifdef USE_INTERNAL_HWLOC
+#define HWLOC_PREFIX likwid_
+#else
+#define HWLOC_PREFIX
+#endif
+#define LIKWID_HWLOC_MUNGE_NAME(a, b) LIKWID_HWLOC_MUNGE_NAME2(a, b)
+#define LIKWID_HWLOC_MUNGE_NAME2(a, b) a ## b
+#define LIKWID_HWLOC_NAME(name) LIKWID_HWLOC_MUNGE_NAME(HWLOC_PREFIX, hwloc_ ## name)
+
 extern hwloc_topology_t hwloc_topology;
 
 int likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t obj, hwloc_obj_type_t type, int* index, uint32_t **list);

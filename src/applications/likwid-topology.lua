@@ -148,20 +148,19 @@ table.insert(output_csv, string.format("Cores per socket:\t%u",cputopo["numCores
 table.insert(output_csv, string.format("Threads per core:\t%u",cputopo["numThreadsPerCore"]))
 table.insert(output_csv, likwid.hline)
 table.insert(output_csv, "TABLE,Topology,"..tostring(cputopo["numHWThreads"]))
-table.insert(output_csv, "HWThread\tThread\t\tCore\t\tSocket\t\tAvailable")
-
+header = {"HWThread", "Thread", "Core", "Die", "Socket", "Available"}
 for cntr=0,cputopo["numHWThreads"]-1 do
+    local line = {tostring(cntr),
+                  tostring(cputopo["threadPool"][cntr]["threadId"]),
+                  tostring(cputopo["threadPool"][cntr]["coreId"]),
+                  tostring(cputopo["threadPool"][cntr]["dieId"]),
+                  tostring(cputopo["threadPool"][cntr]["packageId"])}
     if cputopo["threadPool"][cntr]["inCpuSet"] == 1 then
-        table.insert(output_csv, string.format("%d\t\t%u\t\t%u\t\t%u\t\t*",cntr,
-                            cputopo["threadPool"][cntr]["threadId"],
-                            cputopo["threadPool"][cntr]["coreId"],
-                            cputopo["threadPool"][cntr]["packageId"]))
+        table.insert(line, "*")
     else
-        table.insert(output_csv, string.format("%d\t\t%u\t\t%u\t\t%u",cntr,
-                            cputopo["threadPool"][cntr]["threadId"],
-                            cputopo["threadPool"][cntr]["coreId"],
-                            cputopo["threadPool"][cntr]["packageId"]))
+        table.insert(line, "")
     end
+    table.insert(output_csv, likwid.printTextTable(header, line, cntr == 0))
 end
 table.insert(output_csv, likwid.hline)
 
@@ -192,7 +191,12 @@ for level=1,cputopo["numCacheLevels"] do
         if (cputopo["cacheLevels"][level]["size"] < 1048576) then
             table.insert(output_csv, string.format("Size:\t\t\t%.0f kB",cputopo["cacheLevels"][level]["size"]/1024))
         else
-            table.insert(output_csv, string.format("Size:\t\t\t%.0f MB",cputopo["cacheLevels"][level]["size"]/1048576))
+            local x = cputopo["cacheLevels"][level]["size"]/1048576
+            if tonumber(string.format("%.2f", x)) == tonumber(string.format("%.0f", x)) then
+                table.insert(output_csv, string.format("Size:\t\t\t%.0f MB", x))
+            else
+                table.insert(output_csv, string.format("Size:\t\t\t%.2f MB", x))
+            end
         end
 
         if (print_caches) then

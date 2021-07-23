@@ -14,7 +14,7 @@ BuildRequires: gcc-gfortran
 BuildRequires: lua-devel
 %endif
 %if %{fedora} >= 23
-BuildRequires: perl-Text-Balanced
+BuildRequires: perl-Text-Balanced perl-File-Copy
 %endif
 %endif
 
@@ -44,6 +44,7 @@ BuildRequires: liblua5_1 lua5_1-devel
 %endif
 %endif
 BuildRequires: perl
+BuildRequires: perl-Data-Dumper
 
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig

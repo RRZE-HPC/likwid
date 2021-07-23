@@ -1,0 +1,22 @@
+SHORT  Cycles per instruction
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  CPU_CLOCKS_UNHALTED
+PWR1  RAPL_PKG_ENERGY
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s]   PMC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI PMC1/PMC0
+Energy [J]  PWR1
+Power [W] PWR1/time
+
+LONG
+Formulas:
+CPI = CPU_CLOCKS_UNHALTED/RETIRED_INSTRUCTIONS
+Power [W] =  PWR_PKG_ENERGY / time
+-

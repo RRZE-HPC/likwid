@@ -1,0 +1,67 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 28
+BYTES 8
+DESC Double-precision multiplications and additions with a single load, only scalar operations
+LOADS 1
+STORES 0
+INSTR_LOOP 29
+UOPS 29
+fmov    D1, XZR
+fmov    D2, XZR
+fmov    D3, XZR
+fmov    D4, XZR
+fmov    D5, XZR
+fmov    D6, XZR
+fmov    D7, XZR
+fmov    D8, XZR
+fmov    D9, XZR
+fmov    D10, XZR
+fmov    D11, XZR
+fmov    D12, XZR
+fmov    D13, XZR
+fmov    D14, XZR
+fmov    D15, XZR
+fmov    D16, XZR
+fmov    D17, XZR
+fmov    D18, XZR
+fmov    D19, XZR
+fmov    D20, XZR
+fmov    D21, XZR
+fmov    D22, XZR
+fmov    D23, XZR
+fmov    D24, XZR
+fmov    D25, XZR
+fmov    D26, XZR
+fmov    D27, XZR
+fmov    D28, XZR
+LOOP 1
+ldr      D16, [STR0], #8
+fadd     D1, D1, D1
+fadd     D2, D2, D2
+fmul     D3, D3, D3
+fmul     D4, D4, D4
+fmul     D5, D5, D5
+fadd     D6, D6, D6
+fadd     D7, D7, D7
+fmul     D8, D8, D8
+fadd     D9, D9, D9
+fadd     D10, D10, D10
+fmul     D11, D11, D11
+fmul     D12, D12, D12
+fmul     D13, D13, D13
+fadd     D14, D14, D14
+fadd     D15, D15, D15
+fmul     D16, D16, D16
+fadd     D17, D17, D17
+fmul     D18, D18, D18
+fadd     D19, D19, D19
+fadd     D20, D20, D20
+fmul     D21, D21, D21
+fmul     D22, D22, D22
+fmul     D23, D23, D23
+fadd     D24, D24, D24
+fadd     D25, D25, D25
+fmul     D26, D26, D26
+fadd     D27, D27, D27
+fmul     D28, D28, D28

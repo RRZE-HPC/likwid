@@ -1,0 +1,46 @@
+SHORT Memory bandwidth in MBytes/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+FIXC3 TOPDOWN_SLOTS
+PMC0  INST_RETIRED_ANY
+MDEV0C0 DDR_READ_BYTES
+MDEV0C1 DDR_WRITE_BYTES
+MDEV1C0 DDR_READ_BYTES
+MDEV1C1 DDR_WRITE_BYTES
+MDEV2C0 DDR_READ_BYTES
+MDEV2C1 DDR_WRITE_BYTES
+MDEV3C0 DDR_READ_BYTES
+MDEV3C1 DDR_WRITE_BYTES
+
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Memory read bandwidth [MBytes/s] 1.0E-06*(MDEV0C0+MDEV1C0+MDEV2C0+MDEV3C0)*64.0/time
+Memory read data volume [GBytes] 1.0E-09*(MDEV0C0+MDEV1C0+MDEV2C0+MDEV3C0)*64.0
+Memory write bandwidth [MBytes/s] 1.0E-06*(MDEV0C1+MDEV1C1+MDEV2C1+MDEV3C1)*64.0/time
+Memory write data volume [GBytes] 1.0E-09*(MDEV0C1+MDEV1C1+MDEV2C1+MDEV3C1)*64.0
+Memory bandwidth [MBytes/s] 1.0E-06*(MDEV0C0+MDEV1C0+MDEV2C0+MDEV3C0+MDEV0C1+MDEV1C1+MDEV2C1+MDEV3C1)*64.0/time
+Memory data volume [GBytes] 1.0E-09*(MDEV0C0+MDEV1C0+MDEV2C0+MDEV3C0+MDEV0C1+MDEV1C1+MDEV2C1+MDEV3C1)*64.0
+
+LONG
+Formulas:
+Memory read bandwidth [MBytes/s] = 1.0E-06*(SUM(DDR_READ_BYTES))*64.0/runtime
+Memory read data volume [GBytes] = 1.0E-09*(SUM(DDR_READ_BYTES))*64.0
+Memory write bandwidth [MBytes/s] = 1.0E-06*(SUM(DDR_WRITE_BYTES))*64.0/runtime
+Memory write data volume [GBytes] = 1.0E-09*(SUM(DDR_WRITE_BYTES))*64.0
+Memory bandwidth [MBytes/s] = 1.0E-06*(SUM(DDR_READ_BYTES)+SUM(DDR_WRITE_BYTES))*64.0/runtime
+Memory data volume [GBytes] = 1.0E-09*(SUM(DDR_READ_BYTES)+SUM(DDR_WRITE_BYTES))*64.0
+-
+Profiling group to measure memory bandwidth drawn by all cores of a socket.
+Since this group is based on Uncore events it is only possible to measure on a
+per socket base. Some of the counters may not be available on your system.
+Also outputs total data volume transferred from main memory.
+This group uses free-running counters available since Intel IcelakeX which provide
+the bytes read/written to attached DIMMs per controller. There is no differentiation
+between memory channels possible, for that use the common MEM group.

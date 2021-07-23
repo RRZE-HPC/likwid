@@ -66,14 +66,17 @@ endif
 ifeq ($(COMPILER),ARMCLANG)
 BENCH_DIR   = ./armv8
 endif
+ifeq ($(COMPILER),FCC)
+BENCH_DIR   = ./armv8
+endif
 ifeq ($(COMPILER),GCCPOWER)
 BENCH_DIR   = ./power
 endif
 
 
 
-SHARED_TARGET_LIB := -L.. -L../ext/hwloc/ -L$(LUA_LIB_DIR) -llikwid -llikwid-hwloc -l$(LUA_LIB_NAME)
-STATIC_TARGET_LIB := ../liblikwid.a ../ext/hwloc/liblikwid-hwloc.a $(LUA_LIB_DIR)/lib$(LUA_LIB_NAME).a
+SHARED_TARGET_LIB := -L.. -L$(HWLOC_LIB_DIR) -L$(LUA_LIB_DIR) -llikwid -l$(HWLOC_LIB_NAME) -l$(LUA_LIB_NAME)
+STATIC_TARGET_LIB := ../liblikwid.a $(HWLOC_LIB_DIR)/lib$(HWLOC_LIB_NAME).a $(LUA_LIB_DIR)/lib$(LUA_LIB_NAME).a
 TARGET_LIB = $(SHARED_TARGET_LIB)
 
 BENCH_LIBS :=

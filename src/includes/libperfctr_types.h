@@ -31,6 +31,7 @@
 #define LIBPERFCTR_H
 
 #include <bstrlib.h>
+#include <map.h>
 
 typedef enum LikwidThreadStates {
     MARKER_STATE_NEW,
@@ -51,6 +52,25 @@ typedef struct LikwidThreadResults{
     double PMcounters[NUM_PMC];
     LikwidThreadStates state;
 } LikwidThreadResults;
+
+typedef struct {
+    int thread_id;
+    int cpu_id;
+    uint64_t last;
+    LikwidThreadResults* last_res;
+    Map_t regions;
+    uint64_t _padding[4];
+} GroupThreadsMap;
+
+typedef struct {
+    int numberOfThreads;
+    GroupThreadsMap *threads;
+} GroupThreads;
+
+typedef struct {
+    int numberOfGroups;
+    GroupThreads *groups;
+} MarkerGroups;
 
 typedef struct {
     bstring  tag;

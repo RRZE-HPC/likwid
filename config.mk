@@ -90,6 +90,12 @@ INSTALL_CHOWN = -g root -o root#NO SPACE
 #LUA_LIB_NAME = lua5.2#NO SPACE, executable is assumed to have the same name
 #LUA_BIN = /usr/bin#NO SPACE
 
+# uncomment to optionally use system hwloc (tested with hwloc 2.x):
+# default is to use internal hwloc
+#HWLOC_INCLUDE_DIR = /usr/include#NO SPACE
+#HWLOC_LIB_DIR = /usr/lib#NO SPACE
+#HWLOC_LIB_NAME = hwloc#NO SPACE, used later as -l$HWLOC_LIB_NAME
+
 # Change to true to a build shared library instead of a static one
 # It is NOT recommended to switch to static libraries as some features don't
 # work when compiled statically
@@ -116,10 +122,10 @@ TOPO_FILE_PATH = /etc/likwid_topo.cfg
 # Versioning Information
 # The libraries are named liblikwid.<VERSION>.<RELEASE>
 VERSION = 5
-RELEASE = 1
+RELEASE = 2
 MINOR = 0
 # Date when the release is published
-DATE    = 16.11.2020
+DATE    = 15.06.2021
 
 # In come cases it is important to set the rpaths for the LIKWID library. One
 # example is the use of sudo because it resets environment variables like

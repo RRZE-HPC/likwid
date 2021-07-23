@@ -5,33 +5,24 @@ FIXC1 ACTUAL_CPU_CLOCK
 FIXC2 MAX_CPU_CLOCK
 PMC0  RETIRED_INSTRUCTIONS
 PMC1  CPU_CLOCKS_UNHALTED
-DFC0  DATA_FROM_LOCAL_DRAM_CHANNEL
-DFC1  DATA_TO_LOCAL_DRAM_CHANNEL
+DFC0  DRAM_CHANNEL_0
+DFC1  DRAM_CHANNEL_1
 
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  PMC1/PMC0
-Memory read bandwidth [MBytes/s] 1.0E-06*(DFC0)*64.0/time
-Memory read data volume [GBytes] 1.0E-09*(DFC0)*64.0
-Memory write bandwidth [MBytes/s] 1.0E-06*(DFC1)*64.0/time
-Memory write data volume [GBytes] 1.0E-09*(DFC1)*64.0
 Memory bandwidth [MBytes/s] 1.0E-06*(DFC0+DFC1)*64.0/time
 Memory data volume [GBytes] 1.0E-09*(DFC0+DFC1)*64.0
 
 LONG
 Formulas:
-Memory read bandwidth [MBytes/s] = 1.0E-06*(DATA_FROM_LOCAL_DRAM_CHANNEL)*64.0/runtime
-Memory read data volume [GBytes] = 1.0E-09*(DATA_FROM_LOCAL_DRAM_CHANNEL)*64.0
-Memory write bandwidth [MBytes/s] = 1.0E-06*(DATA_TO_LOCAL_DRAM_CHANNEL)*64.0/runtime
-Memory write data volume [GBytes] = 1.0E-09*(DATA_TO_LOCAL_DRAM_CHANNEL)*64.0
-Memory bandwidth [MBytes/s] = 1.0E-06*(DATA_FROM_LOCAL_DRAM_CHANNEL+DATA_TO_LOCAL_DRAM_CHANNEL)*64.0/runtime
-Memory data volume [GBytes] = 1.0E-09*(DATA_FROM_LOCAL_DRAM_CHANNEL+DATA_TO_LOCAL_DRAM_CHANNEL)*64.0
+Memory bandwidth [MBytes/s] = 1.0E-06*(DRAM_CHANNEL_0+DRAM_CHANNEL_1)*64.0/runtime
+Memory data volume [GBytes] = 1.0E-09*(DRAM_CHANNEL_0+DRAM_CHANNEL_1)*64.0
 -
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
 Since this group is based on Uncore events it is only possible to measure on a
 per socket base.
-Even though the group provides almost accurate results for the total bandwidth
-and data volume, the read and write bandwidths and data volumes seem off. AMD
-describes this metric are "approximate" in the documentation for AMD Rome.
+The group provides almost accurate results for the total bandwidth and data volume.
+AMD describes this metric as "approximate" in the documentation for AMD Rome.

@@ -1,10 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  topology_cavtx2.h
+ *      Filename:  access_x86_rdpmc.h
  *
- *      Description:  Header File for hardcoded cache information for Marvell/Cavium
- *                    Thunder X2.
+ *      Description:  Header file of rdpmc module to bypass costly msr or accessdaemon
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -12,7 +11,7 @@
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2020 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,17 +27,15 @@
  *
  * =======================================================================================
  */
+#ifndef ACCESS_X86_RDPMC_H
+#define ACCESS_X86_RDPMC_H
 
-#ifndef TOPOLOGY_CAVTX2_H
-#define TOPOLOGY_CAVTX2_H
+#include <types.h>
 
-CacheLevel caviumTX2_caches[3] = {
-    {1, DATACACHE, 32, 4, 64, 32768, 2, 1},
-    {2, DATACACHE, 1, 8, 64, 262144, 2, 1},
-    {3, DATACACHE, 0, 8, 64, 29360128, 112, 1},
-};
+int access_x86_rdpmc_init(const int cpu_id);
+void access_x86_rdpmc_finalize(const int cpu_id);
+int access_x86_rdpmc_read(const int cpu, uint32_t reg, uint64_t *data);
+int access_x86_rdpmc_write(const int cpu, uint32_t reg, uint64_t data);
+int access_x86_rdpmc_check(PciDeviceIndex dev, int cpu_id);
 
-
-
-
-#endif
+#endif /* ACCESS_X86_RDPMC_H */

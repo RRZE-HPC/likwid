@@ -10,6 +10,6 @@ INSTR_CONST 9
 LOOP 8
 ld1d  z0.d, p0/z, [STR0, GPR6, lsl 3]
 ld1d  z1.d, p0/z, [STR1, GPR6, lsl 3]
-ld1d  z2.d, p0/z, [STR1, GPR6, lsl 3]
+ld1d  z2.d, p0/z, [STR2, GPR6, lsl 3]
 fmla    z0.d, p1/m, z1.d, z2.d
-st1d    z0.d, p0, [STR2, GPR6, lsl 3]
+st1d    z0.d, p0, [STR3, GPR6, lsl 3]

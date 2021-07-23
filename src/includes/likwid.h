@@ -330,6 +330,7 @@ typedef struct {
     uint32_t coreId; /*!< \brief ID of CPU core that executes the HW thread */
     uint32_t packageId; /*!< \brief ID of CPU socket containing the HW thread */
     uint32_t apicId; /*!< \brief ID of HW thread retrieved through the Advanced Programmable Interrupt Controller */
+    uint32_t dieId; /*!< \brief ID of die. A package might contain multiple dies */
     uint32_t inCpuSet; /*!< \brief Flag if HW thread is inside the CPUset */
 } HWThread;
 
@@ -371,6 +372,7 @@ typedef struct {
     uint32_t numHWThreads; /*!< \brief Amount of active HW threads in the system (e.g. in cpuset) */
     uint32_t activeHWThreads; /*!< \brief Amount of HW threads in the system and length of \a threadPool */
     uint32_t numSockets; /*!< \brief Amount of CPU sockets/packages in the system */
+    uint32_t numDies; /*!< \brief Amount of CPU dies in the system */
     uint32_t numCoresPerSocket; /*!< \brief Amount of physical cores in one CPU socket/package */
     uint32_t numThreadsPerCore; /*!< \brief Amount of HW threads in one physical CPU core */
     uint32_t numCacheLevels; /*!< \brief Amount of caches for each HW thread and length of \a cacheLevels */
@@ -1953,15 +1955,16 @@ Reset the values of all configured counters and timers.
 extern int likwid_gpuMarkerResetRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
 /*! \brief Get accumulated data of a code region
 
-Get the accumulated data of the current thread for the given regionTag.
+Get the accumulated data of the GPUs for the given regionTag. If the operation fails, nr_gpus and nr_events are set to zero.
+
 @param regionTag [in] Print data using this string
-@param nr_gpus [in,out] Length of first dimension of the arrys. Afterwards the actual count of GPUs.
-@param nr_events [in,out] Length of events array
+@param nr_gpus [in,out] Length of first dimension of the arrys. Afterwards the actual count of GPUs and consequently the length of events, time and count.
+@param nr_events [in,out] Length of events array. Afterwards the actual count of events in the second dimension of events.
 @param events [out] Events array for the intermediate results
-@param time [out] Accumulated measurement time
-@param count [out] Call count of the code region
+@param time [out] Accumulated measurement times per GPU
+@param count [out] Call counts of the code region per GPU
 */
-extern void likwid_gpuMarkerGetRegion(const char* regionTag, int* nr_gpus, int* nr_events, double** events, double **time, int **count) __attribute__ ((visibility ("default") ));
+extern void likwid_gpuMarkerGetRegion(const char* regionTag, int* nr_gpus, int* nr_events, double** events, double *time, int *count) __attribute__ ((visibility ("default") ));
 
 /*! \brief Read the output file of the NvMarker API
 @param [in] filename Filename with NvMarker API results

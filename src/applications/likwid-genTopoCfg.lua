@@ -97,7 +97,7 @@ end
 print_stdout(string.format("Writing new topology file %s", filename))
 cpuinfo["clock"] = likwid.getCpuClock()
 
-local threadPool_order = {"threadId", "coreId", "packageId", "apicId"}
+local threadPool_order = {"threadId", "coreId", "packageId", "apicId", "dieId"}
 local cacheLevels_order = {"type", "associativity", "sets", "lineSize", "size", "threads", "inclusive"}
 
 for field, value in pairs(cpuinfo) do

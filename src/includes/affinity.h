@@ -38,6 +38,7 @@ extern int *socket_lock;
 extern int *core_lock;
 extern int *tile_lock;
 extern int *numa_lock;
+extern int *die_lock;
 extern int *sharedl2_lock;
 extern int *sharedl3_lock;
 
@@ -46,6 +47,7 @@ extern AffinityDomains affinityDomains;
 extern int *affinity_thread2core_lookup;
 extern int *affinity_thread2socket_lookup;
 extern int *affinity_thread2numa_lookup;
+extern int *affinity_thread2die_lookup;
 extern int *affinity_thread2sharedl3_lookup;
 extern int affinity_processGetProcessorId();
 extern int affinity_threadGetProcessorId();

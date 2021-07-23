@@ -233,6 +233,8 @@ likwid_hwloc_record_objs_of_type_below_obj(
     return count;
 }
 
+
+
 void
 hwloc_init_cpuInfo(cpu_set_t cpuSet)
 {
@@ -245,16 +247,17 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     }
     if (!hwloc_topology)
     {
-        likwid_hwloc_topology_init(&hwloc_topology);
+        //HWLOC_PREFIX#hwloc_topology_init(&hwloc_topology);
+        LIKWID_HWLOC_NAME(topology_init)(&hwloc_topology);
 #if HWLOC_API_VERSION > 0x00020000
-        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED );
-        likwid_hwloc_topology_set_type_filter(hwloc_topology, HWLOC_OBJ_PCI_DEVICE, HWLOC_TYPE_FILTER_KEEP_ALL);
+        LIKWID_HWLOC_NAME(topology_set_flags)(hwloc_topology, HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED );
+        LIKWID_HWLOC_NAME(topology_set_type_filter)(hwloc_topology, HWLOC_OBJ_PCI_DEVICE, HWLOC_TYPE_FILTER_KEEP_ALL);
 #else
-        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM|HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
+        LIKWID_HWLOC_NAME(topology_set_flags)(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM|HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
 #endif
-        likwid_hwloc_topology_load(hwloc_topology);
+        LIKWID_HWLOC_NAME(topology_load)(hwloc_topology);
     }
-    obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_SOCKET, 0);
+    obj = LIKWID_HWLOC_NAME(get_obj_by_type)(hwloc_topology, HWLOC_OBJ_SOCKET, 0);
 
     cpuid_info.model = 0;
     cpuid_info.family = 0;
@@ -271,20 +274,20 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
 
     const char * info;
 #ifdef __x86_64
-    if ((info = hwloc_obj_get_info_by_name(obj, "CPUModelNumber")))
+    if ((info = LIKWID_HWLOC_NAME(obj_get_info_by_name)(obj, "CPUModelNumber")))
         cpuid_info.model = atoi(info);
-    if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUFamilyNumber")))
+    if ((info = LIKWID_HWLOC_NAME(obj_get_info_by_name)(obj, "CPUFamilyNumber")))
        cpuid_info.family = atoi(info);
-    if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUVendor")))
+    if ((info = LIKWID_HWLOC_NAME(obj_get_info_by_name)(obj, "CPUVendor")))
         cpuid_info.isIntel = strcmp(info, "GenuineIntel") == 0;
-    if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUStepping")))
+    if ((info = LIKWID_HWLOC_NAME(obj_get_info_by_name)(obj, "CPUStepping")))
         cpuid_info.stepping = atoi(info);
     snprintf(cpuid_info.architecture, 19, "x86_64");
 #endif
 #ifdef __ARM_ARCH_7A__
-    if ((info = hwloc_obj_get_info_by_name(obj, "CPUArchitecture")))
+    if ((info = LIKWID_HWLOC_NAME(obj_get_info_by_name)(obj, "CPUArchitecture")))
        cpuid_info.family = atoi(info);
-    if ((info = hwloc_obj_get_info_by_name(obj, "CPURevision")))
+    if ((info = LIKWID_HWLOC_NAME(obj_get_info_by_name)(obj, "CPURevision")))
         cpuid_info.model = atoi(info);
     if (cpuid_info.family == 0 || cpuid_info.model == 0)
     {
@@ -302,10 +305,10 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
 #endif
 
 #ifndef _ARCH_PPC
-    if ((info = hwloc_obj_get_info_by_name(obj, "CPUModel")))
+    if ((info = LIKWID_HWLOC_NAME(obj_get_info_by_name)(obj, "CPUModel")))
         strcpy(cpuid_info.osname, info);
 #else
-    if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUModel")))
+    if ((info = LIKWID_HWLOC_NAME(obj_get_info_by_name)(obj, "CPUModel")))
     {
         if (strstr(info, "POWER7") != NULL)
         {
@@ -339,7 +342,7 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
 #endif
 
 
-    cpuid_topology.numHWThreads = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
+    cpuid_topology.numHWThreads = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_PU);
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
     if (count > cpuid_topology.numHWThreads)
         cpuid_topology.numHWThreads = count;
@@ -369,6 +372,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     int maxNumLogicalProcsPerCore = 0;
     int maxNumCores = 0;
     int maxNumSockets = 0;
+    int maxNumDies = 0;
     int maxNumCoresPerSocket = 0;
     hwloc_obj_t obj = NULL;
     int poolsize = 0;
@@ -398,22 +402,26 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
         hwThreadPool[i].threadId = -1;
         hwThreadPool[i].coreId = -1;
         hwThreadPool[i].packageId = -1;
+        hwThreadPool[i].dieId = -1;
         hwThreadPool[i].inCpuSet = 0;
     }
 
-    maxNumLogicalProcs = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
-    maxNumCores = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_CORE);
-    if (likwid_hwloc_get_nbobjs_by_type(hwloc_topology, socket_type) == 0)
+    maxNumLogicalProcs = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_PU);
+    maxNumCores = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_CORE);
+    if (LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, socket_type) == 0)
     {
         socket_type = HWLOC_OBJ_NODE;
     }
+
     maxNumSockets = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, socket_type);
+    maxNumDies = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_DIE);
     obj = likwid_hwloc_get_obj_by_type(hwloc_topology, socket_type, 0);
+
     if (obj)
     {
         maxNumCoresPerSocket = likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology, obj, HWLOC_OBJ_CORE, NULL, NULL);
     }
-    obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_CORE, 0);
+    obj = LIKWID_HWLOC_NAME(get_obj_by_type)(hwloc_topology, HWLOC_OBJ_CORE, 0);
     if (obj)
     {
         maxNumLogicalProcsPerCore = likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
@@ -425,7 +433,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
     {
         int skip = 0;
-        obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PU, i);
+        obj = LIKWID_HWLOC_NAME(get_obj_by_type)(hwloc_topology, HWLOC_OBJ_PU, i);
         if (!obj)
         {
             continue;
@@ -500,6 +508,34 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             }
         }
 #endif
+        if (maxNumSockets < maxNumDies)
+        {
+            while (obj->type != HWLOC_OBJ_DIE) {
+                obj = obj->parent;
+                if (!obj)
+                {
+                    skip = 1;
+                    break;
+                }
+            }
+            if (skip)
+            {
+                hwThreadPool[id].dieId = 0;
+                continue;
+            }
+            if (obj->type == HWLOC_OBJ_DIE)
+            {
+                hwThreadPool[id].dieId = obj->os_index;
+            }
+            else
+            {
+                hwThreadPool[id].dieId = 0;
+            }
+        }
+        else
+        {
+            hwThreadPool[id].dieId = 0;
+        }
         while (obj->type != socket_type) {
             obj = obj->parent;
             if (!obj)
@@ -525,10 +561,11 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
 #else
         hwThreadPool[id].packageId = obj->os_index;
 #endif
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Socket %d inCpuSet %d,
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Die %d Socket %d inCpuSet %d,
                             hwThreadPool[id].apicId,
                             hwThreadPool[id].threadId,
                             hwThreadPool[id].coreId,
+                            hwThreadPool[id].dieId,
                             hwThreadPool[id].packageId,
                             hwThreadPool[id].inCpuSet)
     }
@@ -566,6 +603,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     cpuid_topology.numThreadsPerCore = maxNumLogicalProcsPerCore;
     cpuid_topology.numCoresPerSocket = maxNumCoresPerSocket;
     cpuid_topology.numSockets = maxNumSockets;
+    cpuid_topology.numDies = maxNumDies;
     return;
 }
 
@@ -573,29 +611,29 @@ void hwloc_split_llc_check(CacheLevel* llc_cache)
 {
     int i = 0;
     hwloc_obj_t obj = NULL;
-    int num_sockets = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_SOCKET);
-    int num_nodes = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_NODE);
+    int num_sockets = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_SOCKET);
+    int num_nodes = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_NODE);
     if (num_sockets == num_nodes)
     {
         return;
     }
-    obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_SOCKET, 0);
+    obj = LIKWID_HWLOC_NAME(get_obj_by_type)(hwloc_topology, HWLOC_OBJ_SOCKET, 0);
     int num_threads_per_socket = likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
     if (num_threads_per_socket == 0)
     {
-        for (i = 0; i < likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU); i++)
+        for (i = 0; i < LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_PU); i++)
         {
-            if (hwloc_bitmap_isset(obj->cpuset, i))
+            if (LIKWID_HWLOC_NAME(bitmap_isset)(obj->cpuset, i))
                 num_threads_per_socket++;
         }
     }
-    obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_NODE, 0);
+    obj = LIKWID_HWLOC_NAME(get_obj_by_type)(hwloc_topology, HWLOC_OBJ_NODE, 0);
     int num_threads_per_node = likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
     if (num_threads_per_node == 0)
     {
-        for (i = 0; i < likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU); i++)
+        for (i = 0; i < LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_PU); i++)
         {
-            if (hwloc_bitmap_isset(obj->cpuset, i))
+            if (LIKWID_HWLOC_NAME(bitmap_isset)(obj->cpuset, i))
                 num_threads_per_node++;
         }
     }
@@ -621,11 +659,11 @@ hwloc_init_cacheTopology(void)
     const char* info;
 
     /* Sum up all depths with caches */
-    depth = likwid_hwloc_topology_get_depth(hwloc_topology);
+    depth = LIKWID_HWLOC_NAME(topology_get_depth)(hwloc_topology);
     for (d = 0; d < depth; d++)
     {
 #if HWLOC_API_VERSION > 0x00020000
-        hwloc_obj_type_t depth_type = likwid_hwloc_get_depth_type(hwloc_topology, d);
+        hwloc_obj_type_t depth_type = LIKWID_HWLOC_NAME(get_depth_type)(hwloc_topology, d);
         if (depth_type == HWLOC_OBJ_L1CACHE ||
             depth_type == HWLOC_OBJ_L2CACHE ||
             depth_type == HWLOC_OBJ_L3CACHE ||
@@ -633,7 +671,7 @@ hwloc_init_cacheTopology(void)
             depth_type == HWLOC_OBJ_L5CACHE)
             maxNumLevels++;
 #else
-        if (likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_CACHE)
+        if (LIKWID_HWLOC_NAME(get_depth_type)(hwloc_topology, d) == HWLOC_OBJ_CACHE)
             maxNumLevels++;
 #endif
     }
@@ -645,20 +683,20 @@ hwloc_init_cacheTopology(void)
         return;
     }
     /* Start at the bottom of the tree to get all cache levels in order */
-    depth = likwid_hwloc_topology_get_depth(hwloc_topology);
+    depth = LIKWID_HWLOC_NAME(topology_get_depth)(hwloc_topology);
     id = 0;
     for(d=depth-1;d >= 0; d--)
     {
         /* We only need caches, so skip other levels */
 #if HWLOC_API_VERSION > 0x00020000
-        hwloc_obj_type_t depth_type = likwid_hwloc_get_depth_type(hwloc_topology, d);
+        hwloc_obj_type_t depth_type = LIKWID_HWLOC_NAME(get_depth_type)(hwloc_topology, d);
         if (depth_type != HWLOC_OBJ_L1CACHE &&
             depth_type != HWLOC_OBJ_L2CACHE &&
             depth_type != HWLOC_OBJ_L3CACHE &&
             depth_type != HWLOC_OBJ_L4CACHE &&
             depth_type != HWLOC_OBJ_L5CACHE)
 #else
-        if (likwid_hwloc_get_depth_type(hwloc_topology, d) < HWLOC_OBJ_CACHE)
+        if (LIKWID_HWLOC_NAME(get_depth_type)(hwloc_topology, d) < HWLOC_OBJ_CACHE)
 #endif
         {
             continue;
@@ -672,7 +710,7 @@ hwloc_init_cacheTopology(void)
         cachePool[id].inclusive = 0;
         cachePool[id].threads = 0;
         /* Get the cache object */
-        obj = likwid_hwloc_get_obj_by_depth(hwloc_topology, d, 0);
+        obj = LIKWID_HWLOC_NAME(get_obj_by_depth)(hwloc_topology, d, 0);
         /* All caches have this attribute, so safe to access */
         switch (obj->attr->cache.type)
         {
@@ -716,7 +754,7 @@ hwloc_init_cacheTopology(void)
 #if defined(__x86_64) || defined(__i386__)
         if (obj->infos_count > 0)
         {
-            while (!(info = likwid_hwloc_obj_get_info_by_name(obj, "inclusiveness")) && obj->next_cousin)
+            while (!(info = LIKWID_HWLOC_NAME(obj_get_info_by_name)(obj, "inclusiveness")) && obj->next_cousin)
             {
                 // If some PU/core are not bindable because of cgroup, hwloc may
                 // not know the inclusiveness of some of their cache.
@@ -776,7 +814,7 @@ hwloc_close(void)
 {
     if (hwloc_topology)
     {
-        likwid_hwloc_topology_destroy(hwloc_topology);
+        LIKWID_HWLOC_NAME(topology_destroy)(hwloc_topology);
         hwloc_topology = NULL;
     }
 }

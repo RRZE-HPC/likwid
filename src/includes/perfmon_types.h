@@ -88,8 +88,10 @@ typedef enum {
     EVENT_OPTION_PERF_FLAGS, /*!< \brief FLAGS parameters to use in the perf_event_open call */
 #endif
 #ifdef _ARCH_PPC
-    EVENT_OPTION_PMC,
+    EVENT_OPTION_PMC, /*!< \brief Specify which PMC counter should be used */
     EVENT_OPTION_PMCXSEL,
+    EVENT_OPTION_UNCORE_CONFIG, /*!< \brief Configuration bitmask for event ID for NEST (Uncore) measurements */
+
 #endif
     NUM_EVENT_OPTIONS /*!< \brief Amount of defined options */
 } EventOptionType;
@@ -204,6 +206,12 @@ typedef struct {
     uint64_t    counterData; /*!< \brief Intermediate data from the counters */
     double      lastResult; /*!< \brief Last measurement result*/
     double      fullResult; /*!< \brief Aggregated measurement result */
+#if defined(__x86_64__) || defined(__i386__) || defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    uint64_t    _padding[2]; /*!< \brief Padding to one  64B cache line */
+#endif
+#if defined(_ARCH_PPC)
+    uint64_t    _padding[10]; /*!< \brief Padding to one 128B cache line */
+#endif
 } PerfmonCounter;
 
 

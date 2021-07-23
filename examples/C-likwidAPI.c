@@ -43,6 +43,8 @@ int main(int argc, char* argv[])
     int gid;
     double result = 0.0;
     char estr[] = "L2_LINES_IN_ALL:PMC0,L2_TRANS_L2_WB:PMC1";
+    char* enames[2] = {"L2_LINES_IN_ALL:PMC0","L2_TRANS_L2_WB:PMC1"};
+    int n = sizeof(enames) / sizeof(enames[0]);
     //perfmon_setVerbosity(3);
     // Load the topology module and print some values.
     err = topology_init();
@@ -111,9 +113,61 @@ int main(int argc, char* argv[])
         topology_finalize();
         return 1;
     }
-    // Perform something
-    sleep(10);
-    // Stop all counters in the previously started event set.
+
+
+    // Perform some work.
+    sleep(2);
+
+    // Read and record current event counts.
+    err = perfmon_readCounters();
+    if (err < 0)
+    {
+        printf("Failed to read counters for group %d for thread %d\n",gid, (-1*err)-1);
+        perfmon_finalize();
+        topology_finalize();
+        return 1;
+    }
+
+    // Print the result of every thread/CPU for all events in estr, counting from last read/startCounters().
+    printf("Work task 1/2 measurements:\n");
+    for (j=0; j<n; j++)
+    {
+        for (i = 0;i < topo->numHWThreads; i++)
+        {
+            result = perfmon_getLastResult(gid, j, i);
+            printf("- event set %s at CPU %d: %f\n", enames[j], cpus[i], result);
+        }
+    }
+
+
+    // Perform another piece of work
+    sleep(2);
+
+    // Read and record current event counts.
+    err = perfmon_readCounters();
+    if (err < 0)
+    {
+        printf("Failed to read counters for group %d for thread %d\n",gid, (-1*err)-1);
+        perfmon_finalize();
+        topology_finalize();
+        return 1;
+    }
+
+    // Print the result of every thread/CPU for all events in estr, counting between the 
+    // previous two calls of perfmon_readCounters().
+    printf("Work task 2/2 measurements:\n");
+    for (j=0; j<n; j++)
+    {
+        for (i = 0;i < topo->numHWThreads; i++)
+        {
+            result = perfmon_getLastResult(gid, j, i);
+            printf("- event set %s at CPU %d: %f\n", enames[j], cpus[i], result);
+        }
+    }
+
+
+
+    // Stop all counters in the currently-active event set.
     err = perfmon_stopCounters();
     if (err < 0)
     {
@@ -123,19 +177,15 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-
-    // Print the result of every thread/CPU for all events in estr.
-    char* ptr = strtok(estr,",");
-    j = 0;
-    while (ptr != NULL)
+    // Print the result of every thread/CPU for all events in estr, counting since counters first started.
+    printf("Total sum measurements:\n");
+    for (j=0; j<n; j++)
     {
         for (i = 0;i < topo->numHWThreads; i++)
         {
             result = perfmon_getResult(gid, j, i);
-            printf("Measurement result for event set %s at CPU %d: %f\n", ptr, cpus[i], result);
+            printf("- event set %s at CPU %d: %f\n", enames[j], cpus[i], result);
         }
-        ptr = strtok(NULL,",");
-        j++;
     }
 
 

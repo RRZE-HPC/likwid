@@ -255,9 +255,9 @@ numa_init(void)
     }
     else
     {
-        cpu_set_t cpuSet;
-        CPU_ZERO(&cpuSet);
-        sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
+/*        cpu_set_t cpuSet;*/
+/*        CPU_ZERO(&cpuSet);*/
+/*        sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);*/
         if (cpuid_topology.activeHWThreads < cpuid_topology.numHWThreads &&
             getenv("HWLOC_FSROOT") == NULL)
         {

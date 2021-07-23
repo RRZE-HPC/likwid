@@ -96,6 +96,7 @@ int perfmon_init_perfevent(int cpu_id)
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &numa_lock[affinity_thread2numa_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &die_lock[affinity_thread2die_lookup[cpu_id]], cpu_id);
     if (cpu_event_fds == NULL)
     {
         cpu_event_fds = malloc(cpuid_topology.numHWThreads * sizeof(int*));
@@ -147,6 +148,7 @@ static char* perfEventOptionNames[] = {
     [EVENT_OPTION_OCCUPANCY_INVERT] = "occ_inv",
 #ifdef _ARCH_PPC
     [EVENT_OPTION_GENERIC_CONFIG] = "pmcxsel",
+    [EVENT_OPTION_UNCORE_CONFIG] = "event",
 #else
     [EVENT_OPTION_GENERIC_CONFIG] = "event",
 #endif
@@ -478,6 +480,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     int perf_type = 0;
     PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
     int start = 0, end = -1;
+    uint64_t eventConfig = 0x0;
     if (perf_event_paranoid > 0 && getuid() != 0)
     {
         return EPERM;
@@ -512,34 +515,62 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     attr->type = perf_type;
     attr->disabled = 1;
     attr->inherit = 1;
+#ifdef _ARCH_PPC
+    eventConfig = (event->umask<<8)|event->eventId;
+#else
+    eventConfig = event->eventId;
+#endif
     //attr->config = (event->umask<<8) + event->eventId;
     getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
     switch(reg)
     {
         case PERF_EVENT_CONFIG_REG:
-            attr->config |= create_mask(event->eventId, start, end);
+            attr->config |= create_mask(eventConfig, start, end);
             break;
         case PERF_EVENT_CONFIG1_REG:
-            attr->config1 |= create_mask(event->eventId, start, end);
+            attr->config1 |= create_mask(eventConfig, start, end);
             break;
         case PERF_EVENT_CONFIG2_REG:
-            attr->config2 |= create_mask(event->eventId, start, end);
+            attr->config2 |= create_mask(eventConfig, start, end);
             break;
-    }
-    getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
-    switch(reg)
-    {
-        case PERF_EVENT_CONFIG_REG:
-            attr->config |= create_mask(event->umask, start, end);
-            break;
-        case PERF_EVENT_CONFIG1_REG:
-            attr->config1 |= create_mask(event->umask, start, end);
-            break;
-        case PERF_EVENT_CONFIG2_REG:
-            attr->config2 |= create_mask(event->umask, start, end);
-            break;
-    }
 
+    }
+#ifdef _ARCH_PPC
+    if (reg == PERF_EVENT_INVAL_REG)
+    {
+	uint64_t config = (event->umask<<8)|event->eventId;
+        getEventOptionConfig(translate_types[type], EVENT_OPTION_UNCORE_CONFIG, &reg, &start, &end);
+        switch(reg)
+        {
+            case PERF_EVENT_CONFIG_REG:
+                attr->config |= create_mask(eventConfig, start, end);
+                break;
+            case PERF_EVENT_CONFIG1_REG:
+                attr->config1 |= create_mask(eventConfig, start, end);
+                break;
+            case PERF_EVENT_CONFIG2_REG:
+                attr->config2 |= create_mask(eventConfig, start, end);
+                break;
+        }
+    }
+#else
+    if (event->umask != 0x0)
+    {
+        getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
+        switch(reg)
+        {
+            case PERF_EVENT_CONFIG_REG:
+                attr->config |= create_mask(event->umask, start, end);
+                break;
+            case PERF_EVENT_CONFIG1_REG:
+                attr->config1 |= create_mask(event->umask, start, end);
+                break;
+            case PERF_EVENT_CONFIG2_REG:
+                attr->config2 |= create_mask(event->umask, start, end);
+                break;
+        }
+    }
+#endif
 
     //attr->exclusive = 1;
     if (event->numberOfOptions > 0)
@@ -781,6 +812,16 @@ int perfmon_setupCountersThread_perfevent(
                         has_lock = 1;
                     }
                 }
+                else if (cpuid_info.family == P6_FAMILY &&
+                         cpuid_info.model == SKYLAKEX &&
+                         cpuid_info.stepping >= 5 &&
+                         cpuid_topology.numDies > cpuid_topology.numSockets)
+                {
+                    if (die_lock[affinity_thread2die_lookup[cpu_id]] == cpu_id)
+                    {
+                        has_lock = 1;
+                    }
+                }
                 else
                 {
                     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
@@ -867,7 +908,9 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
                 continue;
             VERBOSEPRINTREG(cpu_id, 0x0, 0x0, RESET_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_RESET, 0);
-            eventSet->events[i].threadCounter[thread_id].startData = 0x0ULL;
+            PerfmonCounter *c = &eventSet->events[i].threadCounter[thread_id];
+            c->startData = 0x0ULL;
+            c->counterData = 0x0ULL;
             if (eventSet->events[i].type == POWER)
             {
                 ret = read(cpu_event_fds[cpu_id][index],
@@ -875,7 +918,7 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
                         sizeof(long long));
             }
             VERBOSEPRINTREG(cpu_id, 0x0,
-                            eventSet->events[i].threadCounter[thread_id].startData,
+                            c->startData,
                             START_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_ENABLE, 0);
         }

@@ -1560,4 +1560,29 @@ end
 
 likwid.getNvMarkerResults = getNvMarkerResults
 
+local function printTextTable(header, line, print_header)
+    local linelength = 80
+    local headerlength = 0
+    local out = {}
+    local headcount = 0
+    for _, h in pairs(header) do
+        headerlength = headerlength + string.len(h)
+        headcount = headcount + 1
+    end
+    hspaces = math.floor((linelength - headerlength)/(headcount-1))
+    if print_header and print_header == true then
+        table.insert(out, table.concat(header, string.rep(" ",hspaces)))
+    end
+    ltab = {}
+    for i, l in pairs(line) do
+        hlength = string.len(header[i]) + hspaces
+        v = l .. string.rep(" ",hlength - string.len(l))
+        table.insert(ltab, v)
+    end
+    table.insert(out, table.concat(ltab, ""))
+    return table.concat(out, "\n")
+end
+
+likwid.printTextTable = printTextTable
+
 return likwid
