@@ -254,7 +254,10 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
     elseif (opt == "perfflags") then
         perfflags = arg
     elseif (opt == "perfpid") then
-        perfpid = arg
+        if likwid.perfctr_checkpid(arg) then
+            perfpid = arg
+            execpid = false
+        end
     elseif (opt == "outprefix") then
         outprefix = arg
     elseif (opt == "E") then
@@ -369,6 +372,13 @@ end
 local execList = {}
 for i=1, likwid.tablelength(arg)-2 do
     table.insert(execList, arg[i])
+end
+
+if perfpid and (not execpid) and (not cpulist) then
+    local rawlist = likwid.perfctr_pid_cpulist(perfpid)
+    if rawlist then
+        num_cpus, cpulist = likwid.cpustr_to_cpulist(rawlist)
+    end
 end
 
 io.stdout:setvbuf("no")
