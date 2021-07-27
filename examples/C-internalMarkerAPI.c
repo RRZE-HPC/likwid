@@ -43,6 +43,7 @@
 
 #include <omp.h>
 #include <likwid.h>
+#include <likwid-marker.h>
 
 #define NUM_FLOPS 100000000
 #define NUM_COPIES 100000
