@@ -2019,12 +2019,12 @@ lua_likwid_startProgram(lua_State* L)
             lua_pop(L,1);
         }
     }
-    else
+    /*else
     {
         for (nrThreads = 0; nrThreads < cpuid_topology.numHWThreads; nrThreads++)
             cpus[nrThreads] = cpuid_topology.threadPool[nrThreads].apicId;
         nrThreads = cpuid_topology.numHWThreads;
-    }
+    }*/
     int args = parse(exec, argv, MAX_NUM_CLIARGS);
     if (args < 0)
     {
