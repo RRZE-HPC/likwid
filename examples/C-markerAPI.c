@@ -65,7 +65,7 @@
 #include <unistd.h>
 
 #include <omp.h>
-#include <likwid.h>
+#include <likwid-marker.h>
 
 #ifdef LIKWID_PERFMON
 #define MAX_NUM_EVENTS 10

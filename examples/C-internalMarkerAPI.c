@@ -44,7 +44,10 @@
 #include <stdint.h>
 
 #include <omp.h>
+// We need the full C API
 #include <likwid.h>
+// and the MarkerAPI macros
+#include <likwid-marker.h>
 
 #define NUM_FLOPS 100000000
 #define NUM_COPIES 100000
