@@ -50,7 +50,7 @@
 // Variables
 static void *topo_dl_libhip = NULL;
 static int topo_gpu_initialized = 0;
-GpuTopology_rocm gpuTopology = {0, NULL};
+static GpuTopology_rocm topo_gpuTopology = {0, NULL};
 
 
 // HIP function declarations
@@ -123,12 +123,12 @@ topo_gpu_cleanup(int numDevices)
 
     for (int i = 0; i < numDevices; i++)
     {
-        GpuDevice_rocm *device = &gpuTopology.devices[i];
+        GpuDevice_rocm *device = &topo_gpuTopology.devices[i];
 
         FREE_IF_NOT_NULL(device->name)
     }
 
-    FREE_IF_NOT_NULL(gpuTopology.devices)
+    FREE_IF_NOT_NULL(topo_gpuTopology.devices)
 }
 
 static int
@@ -228,8 +228,8 @@ topology_gpu_init_rocm()
     // Allocate memory for device information
     if (num_devs > 0)
     {
-        gpuTopology.devices = malloc(num_devs * sizeof(GpuDevice_rocm));
-        if (!gpuTopology.devices)
+        topo_gpuTopology.devices = malloc(num_devs * sizeof(GpuDevice_rocm));
+        if (!topo_gpuTopology.devices)
         {
             return -ENOMEM;
         }
@@ -238,7 +238,7 @@ topology_gpu_init_rocm()
     // Initialize devices
     for (int i = 0; i < num_devs; i++)
     {
-        ret = topo_gpu_init(&gpuTopology.devices[i], i);
+        ret = topo_gpu_init(&topo_gpuTopology.devices[i], i);
         if (ret != 0)
         {
             topo_gpu_cleanup(i+1);
@@ -247,7 +247,7 @@ topology_gpu_init_rocm()
     }
 
     // Finished
-    gpuTopology.numDevices = num_devs;
+    topo_gpuTopology.numDevices = num_devs;
     topo_gpu_initialized = 1;
     return EXIT_SUCCESS;
 }
@@ -257,7 +257,7 @@ topology_gpu_finalize_rocm(void)
 {
     if (topo_gpu_initialized)
     {
-        topo_gpu_cleanup(gpuTopology.numDevices);
+        topo_gpu_cleanup(topo_gpuTopology.numDevices);
     }
 }
 
@@ -266,7 +266,7 @@ get_gpuTopology_rocm(void)
 {
     if (topo_gpu_initialized)
     {
-        return &gpuTopology;
+        return &topo_gpuTopology;
     }
 }
 
