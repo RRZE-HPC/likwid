@@ -42,8 +42,8 @@ int nvml_startCounters();
 int nvml_stopCounters();
 int nvml_readCounters();
 int nvml_getNumberOfEvents(int groupId);
-int nvml_getResult(int gpuIdx, int groupId, int eventId);
-int nvml_getLastResult(int gpuIdx, int groupId, int eventId);
+double nvml_getResult(int gpuIdx, int groupId, int eventId);
+double nvml_getLastResult(int gpuIdx, int groupId, int eventId);
 double nvml_getTimeOfGroup(int groupId);
 double nvml_getLastTimeOfGroup(int groupId);
 

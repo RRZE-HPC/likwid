@@ -1245,7 +1245,7 @@ nvml_getNumberOfEvents(int groupId)
 }
 
 
-int
+double
 nvml_getResult(int gpuIdx, int groupId, int eventId)
 {
     // Ensure nvml is initialized
@@ -1279,7 +1279,7 @@ nvml_getResult(int gpuIdx, int groupId, int eventId)
 }
 
 
-int
+double
 nvml_getLastResult(int gpuIdx, int groupId, int eventId)
 {
     // Ensure nvml is initialized
