@@ -893,7 +893,7 @@ double nvmon_getLastResult(int groupId, int eventId, int gpuId)
     // Get value from respective source
     if (info->sourceTypes[eventId] == NVMON_SOURCE_NVML)
     {
-        return nvml_getResult(gpuId, groupId, info->sourceIds[eventId]);
+        return nvml_getLastResult(gpuId, groupId, info->sourceIds[eventId]);
     }
     else
     {
