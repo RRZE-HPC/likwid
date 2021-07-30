@@ -120,6 +120,7 @@ OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
 ifneq ($(NVIDIA_INTERFACE), true)
 OBJ := $(filter-out $(BUILD_DIR)/nvmon.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/nvmon_nvml.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/topology_gpu.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/libnvctr.o,$(OBJ))
 endif
