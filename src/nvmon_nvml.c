@@ -210,14 +210,20 @@ DECLAREFUNC_CUPTI(cuptiGetResultString, (CUptiResult result, const char **str));
 //   Wrapper functions
 // ----------------------------------------------------
 
+static void
+_nvml_resultAddMeasurement(NvmlEventResult* result, double value)
+{
+    result->lastValue = value;
+    result->fullValue += value;
+}
+
 static int
 _nvml_wrapper_getClockInfo(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
     unsigned int clock;
 
     NVML_CALL(nvmlDeviceGetClockInfo, (device, event->options.clock, &clock), return -1);
-    result->fullValue += clock;
-    result->lastValue = clock;
+    _nvml_resultAddMeasurement(result, clock);
 
     return 0;
 }
@@ -229,8 +235,7 @@ _nvml_wrapper_getMaxClock(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult
     unsigned int clock;
 
     NVML_CALL(nvmlDeviceGetClock, (device, event->options.clock, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, &clock), return -1);
-    result->fullValue += clock;
-    result->lastValue = clock;
+    _nvml_resultAddMeasurement(result, clock);
 
     return 0;
 }
@@ -240,20 +245,16 @@ static int
 _nvml_wrapper_getEccLocalErrors(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
     nvmlEccErrorCounts_t counts;
-    double count;
 
     NVML_CALL(nvmlDeviceGetDetailedEccErrors, (device, event->options.ecc.type, NVML_VOLATILE_ECC, &counts), return -1);
     switch (event->options.ecc.counter)
     {
-    case LOCAL_ECC_L1:      count = counts.l1Cache;         break;
-    case LOCAL_ECC_L2:      count = counts.l2Cache;         break;
-    case LOCAL_ECC_MEM:     count = counts.deviceMemory;    break;
-    case LOCAL_ECC_REGFILE: count = counts.registerFile;    break;
+    case LOCAL_ECC_L1:      _nvml_resultAddMeasurement(result, counts.l1Cache);         break;
+    case LOCAL_ECC_L2:      _nvml_resultAddMeasurement(result, counts.l2Cache);         break;
+    case LOCAL_ECC_MEM:     _nvml_resultAddMeasurement(result, counts.deviceMemory);    break;
+    case LOCAL_ECC_REGFILE: _nvml_resultAddMeasurement(result, counts.registerFile);    break;
     default:                return -1;
     }
-
-    result->fullValue += count;
-    result->lastValue = count;
 
     return 0;
 }
@@ -265,8 +266,7 @@ _nvml_wrapper_getEccTotalErrors(nvmlDevice_t device, NvmlEvent* event, NvmlEvent
     unsigned long long count;
 
     NVML_CALL(nvmlDeviceGetTotalEccErrors, (device, event->options.ecc.type, NVML_VOLATILE_ECC, &count), return -1);
-    result->fullValue += count;
-    result->lastValue = count;
+    _nvml_resultAddMeasurement(result, count);
 
     return 0;
 }
@@ -278,8 +278,7 @@ _nvml_wrapper_getFanSpeed(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult
     unsigned int speed;
 
     NVML_CALL(nvmlDeviceGetFanSpeed_v2, (device, event->options.fan, &speed), return -1);
-    result->fullValue += speed;
-    result->lastValue = speed;
+    _nvml_resultAddMeasurement(result, speed);
     
     return 0;
 }
@@ -289,19 +288,15 @@ static int
 _nvml_wrapper_getMemoryInfo(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
     nvmlMemory_t memory;
-    double selectedMemory;
 
     NVML_CALL(nvmlDeviceGetMemoryInfo, (device, &memory), return -1);
     switch (event->options.memory)
     {
-    case MEMORY_FREE:   selectedMemory = memory.free;   break;
-    case MEMORY_TOTAL:  selectedMemory = memory.total;  break;
-    case MEMORY_USED:   selectedMemory = memory.used;   break;
+    case MEMORY_FREE:   _nvml_resultAddMeasurement(result, memory.free);    break;
+    case MEMORY_TOTAL:  _nvml_resultAddMeasurement(result, memory.total);   break;
+    case MEMORY_USED:   _nvml_resultAddMeasurement(result, memory.used);    break;
     default:            return -1;
     }
-
-    result->fullValue += selectedMemory;
-    result->lastValue = selectedMemory;
     
     return 0;
 }
@@ -313,8 +308,7 @@ _nvml_wrapper_getPerformanceState(nvmlDevice_t device, NvmlEvent* event, NvmlEve
     nvmlPstates_t state;
 
     NVML_CALL(nvmlDeviceGetPerformanceState, (device, &state), return -1);
-    result->fullValue += state;
-    result->lastValue = state;
+    _nvml_resultAddMeasurement(result, state);
 
     return 0;
 }
@@ -326,8 +320,7 @@ _nvml_wrapper_getPowerUsage(nvmlDevice_t device, NvmlEvent* event, NvmlEventResu
     unsigned int power;
 
     NVML_CALL(nvmlDeviceGetPowerUsage, (device, &power), return -1);
-    result->fullValue += power;
-    result->lastValue = power;
+    _nvml_resultAddMeasurement(result, power);
 
     return 0;
 }
@@ -339,8 +332,7 @@ _nvml_wrapper_getTemperature(nvmlDevice_t device, NvmlEvent* event, NvmlEventRes
     unsigned int temp;
 
     NVML_CALL(nvmlDeviceGetTemperature, (device, event->options.tempSensor, &temp), return -1);
-    result->fullValue += temp;
-    result->lastValue = temp;
+    _nvml_resultAddMeasurement(result, temp);
 
     return 0;
 }
@@ -352,8 +344,7 @@ _nvml_wrapper_getPowerManagementLimit(nvmlDevice_t device, NvmlEvent* event, Nvm
     unsigned int limit;
 
     NVML_CALL(nvmlDeviceGetPowerManagementLimit, (device, &limit), return -1);
-    result->fullValue += limit;
-    result->lastValue = limit;
+    _nvml_resultAddMeasurement(result, limit);
 
     return 0;
 }
@@ -368,13 +359,11 @@ _nvml_wrapper_getPowerManagementLimitConstraints(nvmlDevice_t device, NvmlEvent*
     NVML_CALL(nvmlDeviceGetPowerManagementLimitConstraints, (device, &minLimit, &maxLimit), return -1);
     if (event->options.powerLimit == LIMIT_MIN)
     {
-        result->fullValue += minLimit;
-        result->lastValue = minLimit;
+        _nvml_resultAddMeasurement(result, minLimit);
     }
     else if (event->options.powerLimit == LIMIT_MAX)
     {
-        result->fullValue += maxLimit;
-        result->lastValue = maxLimit;
+        _nvml_resultAddMeasurement(result, maxLimit);
     }
 
     return 0;
@@ -385,18 +374,14 @@ static int
 _nvml_wrapper_getUtilization(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
     nvmlUtilization_t utilization;
-    double selectedUtil;
 
     NVML_CALL(nvmlDeviceGetUtilizationRates, (device, &utilization), return -1);
     switch (event->options.utilization)
     {
-    case UTILIZATION_GPU:       selectedUtil = utilization.gpu;     break;
-    case UTILIZATION_MEMORY:    selectedUtil = utilization.memory;  break;
+    case UTILIZATION_GPU:       _nvml_resultAddMeasurement(result, utilization.gpu);        break;
+    case UTILIZATION_MEMORY:    _nvml_resultAddMeasurement(result, utilization.memory);     break;
     default:                    return -1;
     }
-
-    result->fullValue += selectedUtil;
-    result->lastValue = selectedUtil;
     
     return 0;
 }
