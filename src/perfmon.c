@@ -3797,8 +3797,8 @@ perfmon_readMarkerFile(const char* filename)
             char fmt[64];
             // using %d:%s for sscanf doesn't support spaces so replace %s with %Nc where N is one minus
             // the size of regiontag, thus to avoid hardcoding N, compose fmt from the size of regiontag, e.g.:
-            //      regiontag[50]  --> %d:%50c
-            //      regiontag[100] --> %d:%100c
+            //      regiontag[50]  --> %d:%49c
+            //      regiontag[100] --> %d:%99c
             snprintf(fmt, 60, "%s:%s%ic", "%d", "%", (int) (sizeof(regiontag) - 1));
             // use fmt (%d:%Nc) in lieu of %d:%s to support spaces
             ret = sscanf(buf, fmt, &regionid, regiontag);
