@@ -1352,3 +1352,31 @@ nvml_getLastTimeOfGroup(int groupId)
     // Return time as seconds
     return time*1E-9;
 }
+
+
+double
+nvml_getTimeToLastReadOfGroup(int groupId)
+{
+    double time = 0;
+
+    // Ensure nvml is initialized
+    if (!nvml_initialized)
+    {
+        return -EFAULT;
+    }
+
+    // Validate gpuIdx
+    if (groupId < 0 || groupId >= nvGroupSet->numberOfActiveGroups)
+    {
+        return -EINVAL;
+    }
+
+    // Get largest time measured
+    for (int i = 0; i < nvmlContext.numDevices; i++)
+    {
+        time = MAX(time, (double)(nvmlContext.devices[i].time.read - nvmlContext.devices[i].time.start));
+    }
+
+    // Return time as seconds
+    return time*1E-9;
+}

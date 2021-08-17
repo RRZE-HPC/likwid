@@ -46,5 +46,6 @@ double nvml_getResult(int gpuIdx, int groupId, int eventId);
 double nvml_getLastResult(int gpuIdx, int groupId, int eventId);
 double nvml_getTimeOfGroup(int groupId);
 double nvml_getLastTimeOfGroup(int groupId);
+double nvml_getTimeToLastReadOfGroup(int groupId);
 
 #endif /* LIKWID_NVMON_NVML_H */

@@ -1005,6 +1005,36 @@ double nvmon_getLastTimeOfGroup(int groupId)
     return MAX(backendTime, nvmlTime);
 }
 
+
+double nvmon_getTimeToLastReadOfGroup(int groupId)
+{
+    if ((!nvGroupSet) || (!nvmon_initialized) || (groupId < 0) || groupId >= nvGroupSet->numberOfActiveGroups)
+    {
+        return -EFAULT;
+    }
+
+    // Get largest time from backend measurings
+    double backendTime = 0;
+    for (int i = 0; i < nvGroupSet->numberOfGPUs; i++)
+    {
+        // timeStart and timeStop are zero if no backend event is registered
+        backendTime = MAX(backendTime, (double)(nvGroupSet->gpus[i].timeRead - nvGroupSet->gpus[i].timeStart));
+    }
+    backendTime *= 1E-9; // ns to seconds
+
+    // Get largest time of nvml events
+    double nvmlTime = 0;
+    nvmlTime = nvml_getTimeToLastReadOfGroup(groupId);
+    if (nvmlTime < 0)
+    {
+        return nvmlTime;
+    }
+
+    // Return largest time
+    return MAX(backendTime, nvmlTime);
+}
+
+
 char* nvmon_getEventName(int groupId, int eventId)
 {
     if ((!nvGroupSet) || (!nvmon_initialized) || (groupId < 0) || groupId >= nvGroupSet->numberOfActiveGroups)

@@ -2057,6 +2057,24 @@ rocmon_getLastTimeOfGroup(int groupId)
 }
 
 
+double
+rocmon_getTimeToLastReadOfGroup(int groupId)
+{
+    int i = 0;
+    double t = 0;
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    {
+        return -EFAULT;
+    }
+    for (i = 0; i < rocmon_context->numDevices; i++)
+    {
+        RocmonDevice* device = &rocmon_context->devices[i];
+        t = MAX(t, (double)(device->time.read - device->time.start));
+    }
+    return t*1E-9;
+}
+
+
 char*
 rocmon_getEventName(int groupId, int eventId)
 {

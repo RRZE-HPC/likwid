@@ -2227,6 +2227,12 @@ double nvmon_getTimeOfGroup(int groupId) __attribute__ ((visibility ("default") 
 @return Time in seconds the event group was measured the last time
 */
 double nvmon_getLastTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the measurement time from start to last read of a group (Nvmon)
+
+@param [in] groupId ID of group
+@return Time in seconds the event group was measured the last time
+*/
+double nvmon_getTimeToLastReadOfGroup(int groupId) __attribute__ ((visibility ("default") ));
 /*! \brief Get the event name of the specified group and event (Nvmon)
 
 Get the metric name as defined in the performance group file
@@ -2412,6 +2418,7 @@ char* rocmon_getMetricName(int groupId, int metricId) __attribute__ ((visibility
 
 double rocmon_getTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
 double rocmon_getLastTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
+double rocmon_getTimeToLastReadOfGroup(int groupId) __attribute__ ((visibility ("default") ));
 
 char* rocmon_getGroupName(int groupId) __attribute__ ((visibility ("default") ));
 char* rocmon_getGroupInfoShort(int groupId) __attribute__ ((visibility ("default") ));
