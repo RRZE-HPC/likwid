@@ -47,7 +47,8 @@ typedef struct {
     int numResults;
 } RocmonEventResultList;
 
-typedef int (*RocmonSmiMeasureFunc)(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result);
+struct RocmonSmiEvent_struct;
+typedef int (*RocmonSmiMeasureFunc)(int deviceId, struct RocmonSmiEvent_struct* event, RocmonEventResult* result);
 
 typedef enum {
     ROCMON_SMI_EVENT_TYPE_NORMAL = 0,
@@ -56,7 +57,7 @@ typedef enum {
     ROCMON_SMI_EVENT_TYPE_INSTANCES
 } RocmonSmiEventType;
 
-typedef struct {
+typedef struct RocmonSmiEvent_struct {
     char name[40];
     uint64_t variant;
     uint64_t subvariant;

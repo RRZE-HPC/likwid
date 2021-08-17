@@ -132,14 +132,14 @@ DECLAREFUNC_SMI(rsmi_compute_process_info_get, (rsmi_process_info_t* procs, uint
 // ----------------------------------------------------
 
 static int
-_smi_wrapper_pci_throughput_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_pci_throughput_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t value;
 
     // Internal variant: 0 for sent, 1 for received bytes and 2 for max packet size
-    if (extra == 0)       RSMI_CALL(rsmi_dev_pci_throughput_get, (deviceId, &value, NULL, NULL), return -1);
-    else if (extra == 1)  RSMI_CALL(rsmi_dev_pci_throughput_get, (deviceId, NULL, &value, NULL), return -1);
-    else if (extra == 2)  RSMI_CALL(rsmi_dev_pci_throughput_get, (deviceId, NULL, NULL, &value), return -1);
+    if (event->extra == 0)       RSMI_CALL(rsmi_dev_pci_throughput_get, (deviceId, &value, NULL, NULL), return -1);
+    else if (event->extra == 1)  RSMI_CALL(rsmi_dev_pci_throughput_get, (deviceId, NULL, &value, NULL), return -1);
+    else if (event->extra == 2)  RSMI_CALL(rsmi_dev_pci_throughput_get, (deviceId, NULL, NULL, &value), return -1);
     else return -1;
 
     result->fullValue += value;
@@ -150,7 +150,7 @@ _smi_wrapper_pci_throughput_get(int deviceId, uint64_t variant, uint64_t subvari
 
 
 static int
-_smi_wrapper_pci_replay_counter_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_pci_replay_counter_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t counter;
     RSMI_CALL(rsmi_dev_pci_replay_counter_get, (deviceId, &counter), return -1);
@@ -162,10 +162,10 @@ _smi_wrapper_pci_replay_counter_get(int deviceId, uint64_t variant, uint64_t sub
 
 
 static int
-_smi_wrapper_power_ave_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_power_ave_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t power;
-    RSMI_CALL(rsmi_dev_power_ave_get, (deviceId, subvariant, &power), return -1);
+    RSMI_CALL(rsmi_dev_power_ave_get, (deviceId, event->subvariant, &power), return -1);
     result->fullValue += power;
     result->lastValue = power;
 
@@ -174,10 +174,10 @@ _smi_wrapper_power_ave_get(int deviceId, uint64_t variant, uint64_t subvariant, 
 
 
 static int
-_smi_wrapper_memory_total_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_memory_total_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t total;
-    RSMI_CALL(rsmi_dev_memory_total_get, (deviceId, variant, &total), return -1);
+    RSMI_CALL(rsmi_dev_memory_total_get, (deviceId, event->variant, &total), return -1);
     result->fullValue += total;
     result->lastValue = total;
 
@@ -186,10 +186,10 @@ _smi_wrapper_memory_total_get(int deviceId, uint64_t variant, uint64_t subvarian
 
 
 static int
-_smi_wrapper_memory_usage_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_memory_usage_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t used;
-    RSMI_CALL(rsmi_dev_memory_usage_get, (deviceId, variant, &used), return -1);
+    RSMI_CALL(rsmi_dev_memory_usage_get, (deviceId, event->variant, &used), return -1);
     result->fullValue += used;
     result->lastValue = used;
 
@@ -198,7 +198,7 @@ _smi_wrapper_memory_usage_get(int deviceId, uint64_t variant, uint64_t subvarian
 
 
 static int
-_smi_wrapper_memory_busy_percent_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_memory_busy_percent_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint32_t percent;
     RSMI_CALL(rsmi_dev_memory_busy_percent_get, (deviceId, &percent), return -1);
@@ -210,7 +210,7 @@ _smi_wrapper_memory_busy_percent_get(int deviceId, uint64_t variant, uint64_t su
 
 
 static int
-_smi_wrapper_memory_reserved_pages_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_memory_reserved_pages_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint32_t num_pages;
     RSMI_CALL(rsmi_dev_memory_reserved_pages_get, (deviceId, &num_pages, NULL), return -1);
@@ -222,10 +222,10 @@ _smi_wrapper_memory_reserved_pages_get(int deviceId, uint64_t variant, uint64_t 
 
 
 static int
-_smi_wrapper_fan_rpms_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_fan_rpms_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t speed;
-    RSMI_CALL(rsmi_dev_fan_rpms_get, (deviceId, subvariant, &speed), return -1);
+    RSMI_CALL(rsmi_dev_fan_rpms_get, (deviceId, event->subvariant, &speed), return -1);
     result->fullValue += speed;
     result->lastValue = speed;
 
@@ -234,10 +234,10 @@ _smi_wrapper_fan_rpms_get(int deviceId, uint64_t variant, uint64_t subvariant, u
 
 
 static int
-_smi_wrapper_fan_speed_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_fan_speed_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t speed;
-    RSMI_CALL(rsmi_dev_fan_speed_get, (deviceId, subvariant, &speed), return -1);
+    RSMI_CALL(rsmi_dev_fan_speed_get, (deviceId, event->subvariant, &speed), return -1);
     result->fullValue += speed;
     result->lastValue = speed;
 
@@ -246,10 +246,10 @@ _smi_wrapper_fan_speed_get(int deviceId, uint64_t variant, uint64_t subvariant, 
 
 
 static int
-_smi_wrapper_fan_speed_max_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_fan_speed_max_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t max_speed;
-    RSMI_CALL(rsmi_dev_fan_speed_max_get, (deviceId, subvariant, &max_speed), return -1);
+    RSMI_CALL(rsmi_dev_fan_speed_max_get, (deviceId, event->subvariant, &max_speed), return -1);
     result->fullValue += max_speed;
     result->lastValue = max_speed;
 
@@ -258,10 +258,10 @@ _smi_wrapper_fan_speed_max_get(int deviceId, uint64_t variant, uint64_t subvaria
 
 
 static int
-_smi_wrapper_temp_metric_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_temp_metric_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t temperature;
-    RSMI_CALL(rsmi_dev_temp_metric_get, (deviceId, subvariant, variant, &temperature), return -1);
+    RSMI_CALL(rsmi_dev_temp_metric_get, (deviceId, event->subvariant, event->variant, &temperature), return -1);
     result->fullValue += temperature;
     result->lastValue = temperature;
 
@@ -270,10 +270,10 @@ _smi_wrapper_temp_metric_get(int deviceId, uint64_t variant, uint64_t subvariant
 
 
 static int
-_smi_wrapper_volt_metric_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_volt_metric_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t voltage;
-    RSMI_CALL(rsmi_dev_volt_metric_get, (deviceId, subvariant, variant, &voltage), return -1);
+    RSMI_CALL(rsmi_dev_volt_metric_get, (deviceId, event->subvariant, event->variant, &voltage), return -1);
     result->fullValue += voltage;
     result->lastValue = voltage;
 
@@ -282,7 +282,7 @@ _smi_wrapper_volt_metric_get(int deviceId, uint64_t variant, uint64_t subvariant
 
 
 static int
-_smi_wrapper_overdrive_level_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_overdrive_level_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint32_t overdrive;
     RSMI_CALL(rsmi_dev_overdrive_level_get, (deviceId, &overdrive), return -1);
@@ -294,17 +294,17 @@ _smi_wrapper_overdrive_level_get(int deviceId, uint64_t variant, uint64_t subvar
 
 
 static int
-_smi_wrapper_ecc_count_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_ecc_count_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     rsmi_error_count_t error_count;
-    RSMI_CALL(rsmi_dev_ecc_count_get, (deviceId, variant, &error_count), return -1);
+    RSMI_CALL(rsmi_dev_ecc_count_get, (deviceId, event->variant, &error_count), return -1);
 
-    if (extra == 0)
+    if (event->extra == 0)
     {
         result->lastValue = error_count.correctable_err - result->fullValue;
         result->fullValue = error_count.correctable_err;
     }
-    else if (extra == 1)
+    else if (event->extra == 1)
     {
         result->lastValue = error_count.uncorrectable_err - result->fullValue;
         result->fullValue = error_count.uncorrectable_err;
@@ -319,7 +319,7 @@ _smi_wrapper_ecc_count_get(int deviceId, uint64_t variant, uint64_t subvariant, 
 
 
 static int
-_smi_wrapper_compute_process_info_get(int deviceId, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonEventResult* result)
+_smi_wrapper_compute_process_info_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint32_t num_items;
     RSMI_CALL(rsmi_compute_process_info_get, (NULL, &num_items), return -1);
@@ -677,7 +677,7 @@ _rocmon_readCounters_smi(RocmonDevice* device)
         // Measure counter
         if (event->measureFunc)
         {
-            event->measureFunc(device->deviceId, event->variant, event->subvariant, event->extra, result);
+            event->measureFunc(device->deviceId, event, result);
         }
     }
 
@@ -1619,7 +1619,7 @@ _rocmon_startCounters_smi(RocmonDevice* device)
         // Measure counter
         if (event->measureFunc)
         {
-            event->measureFunc(device->deviceId, event->variant, event->subvariant, event->extra, result);
+            event->measureFunc(device->deviceId, event, result);
         }
 
         // Save value
