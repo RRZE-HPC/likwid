@@ -235,11 +235,54 @@ static int cuda_version = 0;
 static int
 link_perfworks_libraries(void)
 {
+    int ret = 0;
+    char *err = NULL;
     /* Attempt to guess if we were statically linked to libc, if so bail */
     if(_dl_non_dynamic_init != NULL) {
         return -1;
     }
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Init PerfWorks Libaries);
+    char libcudartpath[1024];
+    char libnvperfpath[1024];
+    char libcuptipath[1024];
+    char* cudahome = getenv("CUDA_HOME");
+    if (cudahome != NULL)
+    {
+        ret = snprintf(libcudartpath, 1023, "%s/lib64/libcudart.so", cudahome);
+        if (ret >= 0)
+        {
+            libcudartpath[ret] = '\0';
+        }
+        ret = snprintf(libnvperfpath, 1023, "%s/extras/CUPTI/lib64/libnvperf_host.so", cudahome);
+        if (ret >= 0)
+        {
+            libnvperfpath[ret] = '\0';
+        }
+        ret = snprintf(libcuptipath, 1023, "%s/extras/CUPTI/lib64/libcupti.so", cudahome);
+        if (ret >= 0)
+        {
+            libcuptipath[ret] = '\0';
+        }
+    }
+    else
+    {
+        ret = snprintf(libcudartpath, 1023, "libcudart.so");
+        if (ret >= 0)
+        {
+            libcudartpath[ret] = '\0';
+        }
+        ret = snprintf(libnvperfpath, 1023, "libnvperf_host.so");
+        if (ret >= 0)
+        {
+            libnvperfpath[ret] = '\0';
+        }
+        ret = snprintf(libcuptipath, 1023, "libcupti.so");
+        if (ret >= 0)
+        {
+            libcuptipath[ret] = '\0';
+        }
+    }
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, LD_LIBRARY_PATH=%s, getenv("LD_LIBRARY_PATH"))
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, CUDA_HOME=%s, getenv("CUDA_HOME"))
     dl_perfworks_libcuda = dlopen("libcuda.so", RTLD_NOW | RTLD_GLOBAL);
     if (!dl_perfworks_libcuda || dlerror() != NULL)
     {
@@ -260,8 +303,8 @@ link_perfworks_libraries(void)
     cuCtxCreatePtr = DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuCtxCreate");
     cuDevicePrimaryCtxRetainPtr = DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuDevicePrimaryCtxRetain");
 
-    dl_perfworks_libcudart = dlopen("libcudart.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
-    if (!dl_perfworks_libcudart)
+    dl_perfworks_libcudart = dlopen(libcudartpath, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+    if ((!dl_perfworks_libcudart) || (dlerror() != NULL))
     {
         fprintf(stderr, "CUDA runtime library libcudart.so not found.");
         return -1;
@@ -272,8 +315,8 @@ link_perfworks_libraries(void)
     cudaDriverGetVersionPtr = DLSYM_AND_CHECK(dl_perfworks_libcudart, "cudaDriverGetVersion");
     cudaRuntimeGetVersionPtr = DLSYM_AND_CHECK(dl_perfworks_libcudart, "cudaRuntimeGetVersion");
 
-    dl_libhost = dlopen("libnvperf_host.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
-    if (!dl_libhost || dlerror() != NULL)
+    dl_libhost = dlopen(libnvperfpath, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+    if ((!dl_libhost) || (dlerror() != NULL))
     {
         fprintf(stderr, "CUpti library libnvperf_host.so not found.");
         return -1;
@@ -290,7 +333,7 @@ link_perfworks_libraries(void)
     NVPA_RawMetricsConfig_CreatePtr = DLSYM_AND_CHECK(dl_libhost, "NVPA_RawMetricsConfig_Create");
     NVPW_RawMetricsConfig_DestroyPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_Destroy");
     NVPW_RawMetricsConfig_BeginPassGroupPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_BeginPassGroup");
-    NVPW_RawMetricsConfig_EndPassGroupPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_EndPassGroup")
+    NVPW_RawMetricsConfig_EndPassGroupPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_EndPassGroup");
     NVPW_RawMetricsConfig_AddMetricsPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_AddMetrics");
     NVPW_RawMetricsConfig_GenerateConfigImagePtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_GenerateConfigImage");
     NVPW_RawMetricsConfig_GetConfigImagePtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_GetConfigImage");
@@ -306,9 +349,8 @@ link_perfworks_libraries(void)
     NVPW_MetricsContext_EvaluateToGpuValuesPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_MetricsContext_EvaluateToGpuValues");
     NVPW_RawMetricsConfig_GetNumPassesPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_GetNumPasses");
 
-
-    dl_cupti = dlopen("libcupti.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
-    if (!dl_cupti || dlerror() != NULL)
+    dl_cupti = dlopen(libcuptipath, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+    if ((!dl_cupti) || (dlerror() != NULL))
     {
         fprintf(stderr, "CUpti library libcupti.so not found.");
         return -1;
