@@ -97,10 +97,11 @@ test-arm8-perf-warmup:
     stage: test
     variables:
       SLURM_NODELIST: warmup
-    needs: ["build-arm8-perf"]
+    needs: ["build-arm8"]
     tags:
       - testcluster
     script:
       - export PATH=$CI_PROJECT_DIR/likwid-arm8-perf/bin:$PATH
       - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-arm8-perf/lib:$PATH
       - likwid-topology
+
