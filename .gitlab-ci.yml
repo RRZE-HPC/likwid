@@ -31,8 +31,9 @@ build-arm8:
     variables:
       LIKWID_COMPILER: "GCCARMv8"
       LIKWID_ACCESSMODE: "perf_event"
+      SLURM_NODELIST: warmup
     script:
-      - mkdir likwid-x86
+      - mkdir likwid-arm8
       - module load "$LIKWID_MODULE"
       - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
       - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
