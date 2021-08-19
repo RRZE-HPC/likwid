@@ -79,7 +79,7 @@ test-x86-daemon-broadwellEP:
       - testcluster
     script:
       - export PATH=$CI_PROJECT_DIR/likwid-x86-daemon/bin:$PATH
-      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-daemon/lib:$PATH
+      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-daemon/lib:$LD_LIBRARY_PATH
       - likwid-topology
       - likwid-perfctr -i
 
@@ -94,8 +94,7 @@ test-x86-perf-broadwellEP:
       - testcluster
     script:
       - export PATH=$CI_PROJECT_DIR/likwid-x86-perf/bin:$PATH
-      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-perf/lib:$PATH
-      - ls -la $CI_PROJECT_DIR/likwid-x86-perf/bin
+      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-perf/lib:$LD_LIBRARY_PATH
       - likwid-topology
 
 test-arm8-perf-warmup:
@@ -108,7 +107,6 @@ test-arm8-perf-warmup:
       - testcluster
     script:
       - export PATH=$CI_PROJECT_DIR/likwid-arm8-perf/bin:$PATH
-      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-arm8-perf/lib:$PATH
-      - ls -la $CI_PROJECT_DIR/likwid-arm8-perf/bin
+      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-arm8-perf/lib:$LD_LIBRARY_PATH
       - likwid-topology
 
