@@ -25,28 +25,27 @@
 #    tags:
 #      - testcluster
 
-#build-x86-perf:
-#    stage: build
-#    variables:
-#      LIKWID_COMPILER: "GCC"
-#      LIKWID_ACCESSMODE: "perf_event"
-#      SLURM_NODELIST: broadep2
-#    script:
-#      - mkdir likwid-x86-perf
-#      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
-#      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
-#      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/likwid-x86-perf"+g -i config.mk
-#      - sed -e s+"INSTALLED_PREFIX ?= .*"+"INSTALLED_PREFIX=$(pwd)/likwid-x86-perf"+g -i config.mk
-#      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
-#      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
-#      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
-#      - make
-#      - make BUILDDAEMON=false BUILDFREQ=false install
-#    artifacts:
-#      paths:
-#        - likwid-x86-perf
-#    tags:
-#      - testcluster
+build-x86-perf:
+    stage: build
+    variables:
+      LIKWID_COMPILER: "GCC"
+      LIKWID_ACCESSMODE: "perf_event"
+      SLURM_NODELIST: broadep2
+    script:
+      - mkdir likwid-x86-perf
+      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
+      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/likwid-x86-perf"+g -i config.mk
+      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
+      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
+      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
+      - make
+      - make BUILDDAEMON=false BUILDFREQ=false install
+    artifacts:
+      paths:
+        - likwid-x86-perf
+    tags:
+      - testcluster
 
 build-arm8:
     stage: build
@@ -85,18 +84,21 @@ build-arm8:
 #      - likwid-perfctr -i
 
 
-#test-x86-perf-broadwellEP:
-#    stage: test
-#    variables:
-#      SLURM_NODELIST: broadep2
-#      SLURM_CONSTRAINT: hwperf
-#    needs: ["build-x86-perf"]
-#    tags:
-#      - testcluster
-#    script:
-#      - export PATH=$CI_PROJECT_DIR/likwid-x86-perf/bin:$PATH
-#      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-perf/lib:$LD_LIBRARY_PATH
-#      - likwid-topology
+test-x86-perf-broadwellEP:
+    stage: test
+    variables:
+      SLURM_NODELIST: broadep2
+      SLURM_CONSTRAINT: hwperf
+    needs: ["build-x86-perf"]
+    tags:
+      - testcluster
+    script:
+      - export PATH=$CI_PROJECT_DIR/likwid-x86-perf/bin:$PATH
+      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-perf/lib:$LD_LIBRARY_PATH
+      - likwid-topology
+      - likwid-perfctr -i
+      - likwid-pin -p
+
 
 test-arm8-perf-warmup:
     stage: test
@@ -112,3 +114,24 @@ test-arm8-perf-warmup:
       - likwid-topology
       - likwid-perfctr -i
       - likwid-pin -p
+
+
+#check-group-files:
+#    stage: test
+#    tags:
+#      - testcluster
+#    variables:
+#      NO_SLURM_SUBMIT: 1
+#    script:
+#      - module load python
+#      - test/check_data_files.py groups
+
+check-event-files:
+    stage: test
+    tags:
+      - testcluster
+    variables:
+      NO_SLURM_SUBMIT: 1
+    script:
+      - module load python
+      - test/check_data_files.py events
