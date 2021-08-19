@@ -35,6 +35,7 @@ build-x86-perf:
       - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
       - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
       - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/likwid-x86-perf"+g -i config.mk
+      - sed -e s+"INSTALLED_PREFIX ?= .*"+"INSTALLED_PREFIX=$(pwd)/likwid-x86-perf"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
       - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
@@ -72,6 +73,7 @@ test-x86-daemon-broadwellEP:
     stage: test
     variables:
       SLURM_NODELIST: broadep2
+      SLURM_CONSTRAINT: hwperf
     needs: ["build-x86-daemon"]
     tags:
       - testcluster
@@ -79,29 +81,34 @@ test-x86-daemon-broadwellEP:
       - export PATH=$CI_PROJECT_DIR/likwid-x86-daemon/bin:$PATH
       - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-daemon/lib:$PATH
       - likwid-topology
+      - likwid-perfctr -i
 
 
 test-x86-perf-broadwellEP:
     stage: test
     variables:
       SLURM_NODELIST: broadep2
+      SLURM_CONSTRAINT: hwperf
     needs: ["build-x86-perf"]
     tags:
       - testcluster
     script:
       - export PATH=$CI_PROJECT_DIR/likwid-x86-perf/bin:$PATH
       - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-perf/lib:$PATH
+      - ls -la $CI_PROJECT_DIR/likwid-x86-perf/bin
       - likwid-topology
 
 test-arm8-perf-warmup:
     stage: test
     variables:
       SLURM_NODELIST: warmup
+      SLURM_CONSTRAINT: hwperf
     needs: ["build-arm8"]
     tags:
       - testcluster
     script:
       - export PATH=$CI_PROJECT_DIR/likwid-arm8-perf/bin:$PATH
       - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-arm8-perf/lib:$PATH
+      - ls -la $CI_PROJECT_DIR/likwid-arm8-perf/bin
       - likwid-topology
 
