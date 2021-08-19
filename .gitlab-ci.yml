@@ -1,11 +1,11 @@
-variables:
-  LIKWID_MODULE: "likwid/5.2-dev"
+
 
 build-x86-daemon:
     stage: build
     variables:
       LIKWID_COMPILER: "GCC"
       LIKWID_ACCESSMODE: "accessdaemon"
+      LIKWID_MODULE: "likwid/5.2-dev"
     script:
       - mkdir likwid-x86-daemon
       - module load "$LIKWID_MODULE"
@@ -68,5 +68,39 @@ build-arm8:
     tags:
       - testcluster
 
+test-x86-daemon-broadwellEP:
+    stage: test
+    variables:
+      SLURM_NODELIST: broadep2
+    needs: ["build-x86-daemon"]
+    tags:
+      - testcluster
+    script:
+      - export PATH=$CI_PROJECT_DIR/likwid-x86-daemon/bin:$PATH
+      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-daemon/lib:$PATH
+      - likwid-topology
 
 
+test-x86-perf-broadwellEP:
+    stage: test
+    variables:
+      SLURM_NODELIST: broadep2
+    needs: ["build-x86-perf"]
+    tags:
+      - testcluster
+    script:
+      - export PATH=$CI_PROJECT_DIR/likwid-x86-perf/bin:$PATH
+      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-perf/lib:$PATH
+      - likwid-topology
+
+test-arm8-perf-warmup:
+    stage: test
+    variables:
+      SLURM_NODELIST: warmup
+    needs: ["build-arm8-perf"]
+    tags:
+      - testcluster
+    script:
+      - export PATH=$CI_PROJECT_DIR/likwid-arm8-perf/bin:$PATH
+      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-arm8-perf/lib:$PATH
+      - likwid-topology
