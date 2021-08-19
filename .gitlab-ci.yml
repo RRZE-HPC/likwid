@@ -75,6 +75,8 @@ test-x86-daemon-broadwellEP:
       SLURM_NODELIST: broadep2
       SLURM_CONSTRAINT: hwperf
     needs: ["build-x86-daemon"]
+    dependencies:
+      - build-x86-daemon
     tags:
       - testcluster
     script:
@@ -90,6 +92,8 @@ test-x86-perf-broadwellEP:
       SLURM_NODELIST: broadep2
       SLURM_CONSTRAINT: hwperf
     needs: ["build-x86-perf"]
+    dependencies:
+      - build-x86-perf
     tags:
       - testcluster
     script:
@@ -105,6 +109,8 @@ test-x86-daemon-skylakeSP:
       SLURM_NODELIST: skylakesp2
       SLURM_CONSTRAINT: hwperf
     needs: ["build-x86-daemon"]
+    dependencies:
+      - build-x86-daemon
     tags:
       - testcluster
     script:
@@ -120,6 +126,8 @@ test-x86-perf-skylakeSP:
       SLURM_NODELIST: skylakesp2
       SLURM_CONSTRAINT: hwperf
     needs: ["build-x86-perf"]
+    dependencies:
+      - build-x86-perf
     tags:
       - testcluster
     script:
@@ -135,6 +143,8 @@ test-arm8-perf-warmup:
       SLURM_NODELIST: warmup
       SLURM_CONSTRAINT: hwperf
     needs: ["build-arm8"]
+    dependencies:
+      - build-arm8
     tags:
       - testcluster
     script:
