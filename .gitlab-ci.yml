@@ -1,51 +1,52 @@
 
 
-build-x86-daemon:
-    stage: build
-    variables:
-      LIKWID_COMPILER: "GCC"
-      LIKWID_ACCESSMODE: "accessdaemon"
-      LIKWID_MODULE: "likwid/5.2-dev"
-    script:
-      - mkdir likwid-x86-daemon
-      - module load "$LIKWID_MODULE"
-      - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/likwid-x86-daemon"+g -i config.mk
-      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
-      - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$(echo "$LIKWID_PREFIX")/sbin/likwid-accessD"+g -i config.mk
-      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
-      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
-      - make
-      - make BUILDDAEMON=false BUILDFREQ=false install
-    artifacts:
-      paths:
-        - likwid-x86-daemon
-    tags:
-      - testcluster
+#build-x86-daemon:
+#    stage: build
+#    variables:
+#      LIKWID_COMPILER: "GCC"
+#      LIKWID_ACCESSMODE: "accessdaemon"
+#      LIKWID_MODULE: "likwid/5.2-dev"
+#    script:
+#      - mkdir likwid-x86-daemon
+#      - module load "$LIKWID_MODULE"
+#      - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
+#      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
+#      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
+#      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/likwid-x86-daemon"+g -i config.mk
+#      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
+#      - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$(echo "$LIKWID_PREFIX")/sbin/likwid-accessD"+g -i config.mk
+#      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
+#      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
+#      - make
+#      - make BUILDDAEMON=false BUILDFREQ=false install
+#    artifacts:
+#      paths:
+#        - likwid-x86-daemon
+#    tags:
+#      - testcluster
 
-build-x86-perf:
-    stage: build
-    variables:
-      LIKWID_COMPILER: "GCC"
-      LIKWID_ACCESSMODE: "perf_event"
-    script:
-      - mkdir likwid-x86-perf
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/likwid-x86-perf"+g -i config.mk
-      - sed -e s+"INSTALLED_PREFIX ?= .*"+"INSTALLED_PREFIX=$(pwd)/likwid-x86-perf"+g -i config.mk
-      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
-      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
-      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
-      - make
-      - make BUILDDAEMON=false BUILDFREQ=false install
-    artifacts:
-      paths:
-        - likwid-x86-perf
-    tags:
-      - testcluster
+#build-x86-perf:
+#    stage: build
+#    variables:
+#      LIKWID_COMPILER: "GCC"
+#      LIKWID_ACCESSMODE: "perf_event"
+#      SLURM_NODELIST: broadep2
+#    script:
+#      - mkdir likwid-x86-perf
+#      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
+#      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
+#      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/likwid-x86-perf"+g -i config.mk
+#      - sed -e s+"INSTALLED_PREFIX ?= .*"+"INSTALLED_PREFIX=$(pwd)/likwid-x86-perf"+g -i config.mk
+#      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
+#      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
+#      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
+#      - make
+#      - make BUILDDAEMON=false BUILDFREQ=false install
+#    artifacts:
+#      paths:
+#        - likwid-x86-perf
+#    tags:
+#      - testcluster
 
 build-arm8:
     stage: build
@@ -69,33 +70,33 @@ build-arm8:
     tags:
       - testcluster
 
-test-x86-daemon-broadwellEP:
-    stage: test
-    variables:
-      SLURM_NODELIST: broadep2
-      SLURM_CONSTRAINT: hwperf
-    needs: ["build-x86-daemon"]
-    tags:
-      - testcluster
-    script:
-      - export PATH=$CI_PROJECT_DIR/likwid-x86-daemon/bin:$PATH
-      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-daemon/lib:$LD_LIBRARY_PATH
-      - likwid-topology
-      - likwid-perfctr -i
+#test-x86-daemon-broadwellEP:
+#    stage: test
+#    variables:
+#      SLURM_NODELIST: broadep2
+#      SLURM_CONSTRAINT: hwperf
+#    needs: ["build-x86-daemon"]
+#    tags:
+#      - testcluster
+#    script:
+#      - export PATH=$CI_PROJECT_DIR/likwid-x86-daemon/bin:$PATH
+#      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-daemon/lib:$LD_LIBRARY_PATH
+#      - likwid-topology
+#      - likwid-perfctr -i
 
 
-test-x86-perf-broadwellEP:
-    stage: test
-    variables:
-      SLURM_NODELIST: broadep2
-      SLURM_CONSTRAINT: hwperf
-    needs: ["build-x86-perf"]
-    tags:
-      - testcluster
-    script:
-      - export PATH=$CI_PROJECT_DIR/likwid-x86-perf/bin:$PATH
-      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-perf/lib:$LD_LIBRARY_PATH
-      - likwid-topology
+#test-x86-perf-broadwellEP:
+#    stage: test
+#    variables:
+#      SLURM_NODELIST: broadep2
+#      SLURM_CONSTRAINT: hwperf
+#    needs: ["build-x86-perf"]
+#    tags:
+#      - testcluster
+#    script:
+#      - export PATH=$CI_PROJECT_DIR/likwid-x86-perf/bin:$PATH
+#      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-perf/lib:$LD_LIBRARY_PATH
+#      - likwid-topology
 
 test-arm8-perf-warmup:
     stage: test
@@ -108,5 +109,7 @@ test-arm8-perf-warmup:
     script:
       - export PATH=$CI_PROJECT_DIR/likwid-arm8-perf/bin:$PATH
       - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-arm8-perf/lib:$LD_LIBRARY_PATH
+      - likwid-lua  -e "print('Bla')"
+      - $CI_PROJECT_DIR/likwid-arm8-perf/bin/likwid-lua  -e "print('Bla')"
       - likwid-topology
 
