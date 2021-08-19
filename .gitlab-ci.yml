@@ -1,28 +1,48 @@
 variables:
   LIKWID_MODULE: "likwid/5.2-dev"
 
-build-x86:
+build-x86-daemon:
     stage: build
     variables:
       LIKWID_COMPILER: "GCC"
       LIKWID_ACCESSMODE: "accessdaemon"
     script:
-      - mkdir likwid-x86
+      - mkdir likwid-x86-daemon
       - module load "$LIKWID_MODULE"
       - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
       - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
       - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/likwid-x86"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/likwid-x86-daemon"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$(echo "$LIKWID_PREFIX")/sbin/likwid-accessD"+g -i config.mk
-      - sed -e s+"RPATH = .*"+"RPATH="+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
       - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
       - make
       - make BUILDDAEMON=false BUILDFREQ=false install
     artifacts:
       paths:
-        - likwid-x86
+        - likwid-x86-daemon
+    tags:
+      - testcluster
+
+build-x86-perf:
+    stage: build
+    variables:
+      LIKWID_COMPILER: "GCC"
+      LIKWID_ACCESSMODE: "perf_event"
+    script:
+      - mkdir likwid-x86-perf
+      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
+      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/likwid-x86-perf"+g -i config.mk
+      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
+      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
+      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
+      - make
+      - make BUILDDAEMON=false BUILDFREQ=false install
+    artifacts:
+      paths:
+        - likwid-x86-perf
     tags:
       - testcluster
 
@@ -33,12 +53,10 @@ build-arm8:
       LIKWID_ACCESSMODE: "perf_event"
       SLURM_NODELIST: warmup
     script:
-      - mkdir likwid-arm8
-      - module load "$LIKWID_MODULE"
-      - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
+      - mkdir likwid-arm8-perf
       - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
       - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/likwid-arm8"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/likwid-arm8-perf"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
       - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
@@ -46,7 +64,7 @@ build-arm8:
       - make BUILDDAEMON=false BUILDFREQ=false install
     artifacts:
       paths:
-        - likwid-arm8
+        - likwid-arm8-perf
     tags:
       - testcluster
 
