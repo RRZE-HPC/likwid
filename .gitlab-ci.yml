@@ -109,7 +109,6 @@ test-arm8-perf-warmup:
     script:
       - export PATH=$CI_PROJECT_DIR/likwid-arm8-perf/bin:$PATH
       - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-arm8-perf/lib:$LD_LIBRARY_PATH
-      - likwid-lua  -e "print('Bla')"
-      - $CI_PROJECT_DIR/likwid-arm8-perf/bin/likwid-lua  -e "print('Bla')"
       - likwid-topology
-
+      - likwid-perfctr -i
+      - likwid-pin -p
