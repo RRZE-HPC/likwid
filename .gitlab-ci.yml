@@ -21,7 +21,7 @@ build-x86-daemon:
       - make BUILDDAEMON=false BUILDFREQ=false install
     artifacts:
       paths:
-        - likwid-x86-daemon
+        - likwid-x86-daemon/
     tags:
       - testcluster
 
@@ -43,7 +43,7 @@ build-x86-perf:
       - make BUILDDAEMON=false BUILDFREQ=false install
     artifacts:
       paths:
-        - likwid-x86-perf
+        - likwid-x86-perf/
     tags:
       - testcluster
 
@@ -65,7 +65,7 @@ build-arm8:
       - make BUILDDAEMON=false BUILDFREQ=false install
     artifacts:
       paths:
-        - likwid-arm8-perf
+        - likwid-arm8-perf/
     tags:
       - testcluster
 
