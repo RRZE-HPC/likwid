@@ -53,7 +53,7 @@ build-x86-daemon-nv:
       LIKWID_COMPILER: "GCC"
       LIKWID_ACCESSMODE: "accessdaemon"
       LIKWID_MODULE: "likwid/5.2-dev"
-      CUDA_MODULE: "cuda/11.4"
+      CUDA_MODULE: "cuda/10.2"
       SLURM_NODELIST: medusa
     script:
       - mkdir build-x86-daemon-nv
@@ -82,7 +82,7 @@ build-x86-perf-nv:
       LIKWID_COMPILER: "GCC"
       LIKWID_ACCESSMODE: "perf_event"
       SLURM_NODELIST: medusa
-      CUDA_MODULE: "cuda/11.4"
+      CUDA_MODULE: "cuda/10.2"
     script:
       - mkdir build-x86-perf-nv
       - module load "$CUDA_MODULE"
