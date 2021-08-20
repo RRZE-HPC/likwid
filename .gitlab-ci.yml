@@ -12,14 +12,16 @@ build-x86-daemon:
       - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
       - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
       - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-x86-daemon"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=$CI_PROJECT_DIR/build-x86-daemon"+g -i config.mk
       - sed -e s+"INSTALLED_PREFIX ?= .*"+"INSTALLED_PREFIX=/tmp/build-x86-daemon"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$LIKWID_PREFIX/sbin/likwid-accessD"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
       - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
+      - cat config.mk
       - make
       - make BUILDDAEMON=false BUILDFREQ=false install
+      - head $CI_PROJECT_DIR/build-x86-daemon/bin/likwid-topology
     artifacts:
       paths:
         - build-x86-daemon/
@@ -39,6 +41,7 @@ test-x86-daemon-phinally:
         - export LD_LIBRARY_PATH=/tmp/build-x86-daemon/lib:$LD_LIBRARY_PATH
         - head /tmp/build-x86-daemon/bin/likwid-topology
         - likwid-topology
+        - which likwid-topology
     after_script:
         - rm -rf /tmp/build-x86-daemon
     tags:
