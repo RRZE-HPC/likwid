@@ -69,108 +69,33 @@ build-arm8:
     tags:
       - testcluster
 
-test-x86-daemon-broadwellEP:
-    stage: test
-    variables:
-      SLURM_NODELIST: broadep2
-      SLURM_CONSTRAINT: hwperf
-    needs: ["build-x86-daemon"]
-    dependencies:
-      - build-x86-daemon
-    tags:
-      - testcluster
-    script:
-      - export PATH=$CI_PROJECT_DIR/likwid-x86-daemon/bin:$PATH
-      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-daemon/lib:$LD_LIBRARY_PATH
-      - likwid-topology
-      - likwid-perfctr -i
-
-
-test-x86-perf-broadwellEP:
-    stage: test
-    variables:
-      SLURM_NODELIST: broadep2
-      SLURM_CONSTRAINT: hwperf
-    needs: ["build-x86-perf"]
-    dependencies:
-      - build-x86-perf
-    tags:
-      - testcluster
-    script:
-      - export PATH=$CI_PROJECT_DIR/likwid-x86-perf/bin:$PATH
-      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-perf/lib:$LD_LIBRARY_PATH
-      - likwid-topology
-      - likwid-perfctr -i
-      - likwid-pin -p
-
-test-x86-daemon-skylakeSP:
-    stage: test
-    variables:
-      SLURM_NODELIST: skylakesp2
-      SLURM_CONSTRAINT: hwperf
-    needs: ["build-x86-daemon"]
-    dependencies:
-      - build-x86-daemon
-    tags:
-      - testcluster
-    script:
-      - export PATH=$CI_PROJECT_DIR/likwid-x86-daemon/bin:$PATH
-      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-daemon/lib:$LD_LIBRARY_PATH
-      - likwid-topology
-      - likwid-perfctr -i
-
-
-test-x86-perf-skylakeSP:
-    stage: test
-    variables:
-      SLURM_NODELIST: skylakesp2
-      SLURM_CONSTRAINT: hwperf
-    needs: ["build-x86-perf"]
-    dependencies:
-      - build-x86-perf
-    tags:
-      - testcluster
-    script:
-      - export PATH=$CI_PROJECT_DIR/likwid-x86-perf/bin:$PATH
-      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-x86-perf/lib:$LD_LIBRARY_PATH
-      - likwid-topology
-      - likwid-perfctr -i
-      - likwid-pin -p
-
-test-arm8-perf-warmup:
-    stage: test
-    variables:
-      SLURM_NODELIST: warmup
-      SLURM_CONSTRAINT: hwperf
-    needs: ["build-arm8"]
-    dependencies:
-      - build-arm8
-    tags:
-      - testcluster
-    script:
-      - export PATH=$CI_PROJECT_DIR/likwid-arm8-perf/bin:$PATH
-      - export LD_LIBRARY_PATH=$CI_PROJECT_DIR/likwid-arm8-perf/lib:$LD_LIBRARY_PATH
-      - likwid-topology
-      - likwid-perfctr -i
-      - likwid-pin -p
-
-
-#check-group-files:
-#    stage: test
-#    tags:
-#      - testcluster
-#    variables:
-#      NO_SLURM_SUBMIT: 1
-#    script:
-#      - module load python
-#      - test/check_data_files.py groups
 
 check-event-files:
     stage: test
     tags:
       - testcluster
-    variables:
-      NO_SLURM_SUBMIT: 1
     script:
       - module load python
       - test/check_data_files.py events
+#      - test/check_data_files.py groups
+
+generator:
+  stage: generate
+  tags:
+    - testcluster
+  variables:
+    NO_SLURM_SUBMIT: 1
+  script: 
+   - test/generate_ci_jobs.sh > generated-pipeline.yml
+  artifacts:
+    paths:
+      - generated-pipeline.yml
+
+testcluster-pipeline:
+  stage: trigger
+  trigger:
+    include:
+      - artifact: generated-pipeline.yml
+        job: generator
+    strategy: depend
+
