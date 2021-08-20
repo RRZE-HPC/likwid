@@ -33,7 +33,7 @@ test-x86-daemon-phinally:
       SLURM_NODELIST: phinally
       SLURM_CONSTRAINT: hwperf
     before_script:
-        - mv build-x86-daemon /tmp/build-x86-daemon
+        - cp -r build-x86-daemon /tmp/build-x86-daemon
     script:
         - export PATH=/tmp/build-x86-daemon/bin:$PATH
         - export LD_LIBRARY_PATH=/tmp/build-x86-daemon/lib:$LD_LIBRARY_PATH
