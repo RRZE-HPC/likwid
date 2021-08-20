@@ -20,8 +20,9 @@ build-x86-daemon:
       - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
       - cat config.mk
       - make
-      - make BUILDDAEMON=false BUILDFREQ=false install
-      - head $CI_PROJECT_DIR/build-x86-daemon/bin/likwid-topology
+      - cp -r * build-x86-daemon
+      - if [ -e build-x86-daemon/likwid-accessD ]; then rm build-x86-daemon/likwid-accessD; fi
+      - if [ -e build-x86-daemon/likwid-setFreq ]; then rm build-x86-daemon/likwid-setFreq; fi
     artifacts:
       paths:
         - build-x86-daemon/
@@ -36,10 +37,12 @@ test-x86-daemon-phinally:
       SLURM_CONSTRAINT: hwperf
     before_script:
         - cp -r build-x86-daemon /tmp/build-x86-daemon
+        - cd /tmp/build-x86-daemon
+        - make local
+        - export PATH=/tmp/build-x86-daemon:$PATH
+        - export LD_LIBRARY_PATH=/tmp/build-x86-daemon:$LD_LIBRARY_PATH
     script:
-        - export PATH=/tmp/build-x86-daemon/bin:$PATH
-        - export LD_LIBRARY_PATH=/tmp/build-x86-daemon/lib:$LD_LIBRARY_PATH
-        - head /tmp/build-x86-daemon/bin/likwid-topology
+        - head /tmp/build-x86-daemon/likwid-topology
         - likwid-topology
         - which likwid-topology
     after_script:
