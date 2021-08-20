@@ -10,12 +10,12 @@ build-x86-daemon:
       - mkdir build-x86-daemon
       - module load "$LIKWID_MODULE"
       - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-x86-daemon"+g -i config.mk
+      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
+      - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
+#      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-x86-daemon"+g -i config.mk
       - sed -e s+"INSTALLED_PREFIX ?= .*"+"INSTALLED_PREFIX=/tmp/build-x86-daemon"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
-      - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$(echo "$LIKWID_PREFIX")/sbin/likwid-accessD"+g -i config.mk
+      - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$LIKWID_PREFIX/sbin/likwid-accessD"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
       - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
       - make
@@ -37,6 +37,7 @@ test-x86-daemon-phinally:
     script:
         - export PATH=/tmp/build-x86-daemon/bin:$PATH
         - export LD_LIBRARY_PATH=/tmp/build-x86-daemon/lib:$LD_LIBRARY_PATH
+        - head /tmp/build-x86-daemon/bin/likwid-topology
         - likwid-topology
     after_script:
         - rm -rf /tmp/build-x86-daemon
