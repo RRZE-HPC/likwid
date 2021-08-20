@@ -7,22 +7,24 @@ build-x86-daemon:
       LIKWID_ACCESSMODE: "accessdaemon"
       LIKWID_MODULE: "likwid/5.2-dev"
     script:
-      - mkdir build-x86-daemon
+      - mkdir -p /tmp/build-x86-daemon
       - module load "$LIKWID_MODULE"
       - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
+      - module unload "$LIKWID_MODULE"
       - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
       - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=$CI_PROJECT_DIR/build-x86-daemon"+g -i config.mk
-      - sed -e s+"INSTALLED_PREFIX ?= .*"+"INSTALLED_PREFIX=/tmp/build-x86-daemon"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/build-x86-daemon"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$LIKWID_PREFIX/sbin/likwid-accessD"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
       - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
       - cat config.mk
       - make
-      - cp -r * build-x86-daemon
-      - if [ -e build-x86-daemon/likwid-accessD ]; then rm build-x86-daemon/likwid-accessD; fi
-      - if [ -e build-x86-daemon/likwid-setFreq ]; then rm build-x86-daemon/likwid-setFreq; fi
+      - make BUILDDAEMON=false BUILDFREQ=false install
+      - cp -r /tmp/build-x86-daemon $CI_PROJECT_DIR/build-x86-daemon
+      - if [ -e build-x86-daemon/sbin/likwid-accessD ]; then rm build-x86-daemon/sbin/likwid-accessD; fi
+      - if [ -e build-x86-daemon/sbin/likwid-setFreq ]; then rm build-x86-daemon/sbin/likwid-setFreq; fi
+      - rm -rf /tmp/build-x86-daemon
     artifacts:
       paths:
         - build-x86-daemon/
@@ -38,11 +40,10 @@ test-x86-daemon-phinally:
     before_script:
         - cp -r build-x86-daemon /tmp/build-x86-daemon
         - cd /tmp/build-x86-daemon
-        - make local
-        - export PATH=/tmp/build-x86-daemon:$PATH
-        - export LD_LIBRARY_PATH=/tmp/build-x86-daemon:$LD_LIBRARY_PATH
+        - export PATH=/tmp/build-x86-daemon/bin:$PATH
+        - export LD_LIBRARY_PATH=/tmp/build-x86-daemon/lib:$LD_LIBRARY_PATH
     script:
-        - head /tmp/build-x86-daemon/likwid-topology
+        - head /tmp/build-x86-daemon/bin/likwid-topology
         - likwid-topology
         - which likwid-topology
     after_script:
