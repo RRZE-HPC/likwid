@@ -413,9 +413,9 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
         socket_type = HWLOC_OBJ_NODE;
     }
 
-    maxNumSockets = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, socket_type);
-    maxNumDies = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_DIE);
-    obj = likwid_hwloc_get_obj_by_type(hwloc_topology, socket_type, 0);
+    maxNumSockets = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, socket_type);
+    maxNumDies = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_DIE);
+    obj = LIKWID_HWLOC_NAME(get_obj_by_type)(hwloc_topology, socket_type, 0);
 
     if (obj)
     {
