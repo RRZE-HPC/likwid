@@ -80,7 +80,7 @@ check-event-files:
 #      - test/check_data_files.py groups
 
 generator:
-  stage: generate
+  stage: .pre
   tags:
     - testcluster
   variables:
