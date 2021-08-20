@@ -43,6 +43,9 @@ EOF
         if [ "$L" = "aurora1" ]; then
             continue
         fi
+        if [ "$L" = "milan1" ]; then
+            continue
+        fi
         echo
     cat <<EOF
 test-$L-daemon:
