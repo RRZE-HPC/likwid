@@ -35,9 +35,8 @@ test-x86-daemon-phinally:
     before_script:
         - mv build-x86-daemon /tmp/build-x86-daemon
     script:
-        - export PATH=/tmp/build-x86-daemon/bin:\$PATH
-        - export LD_LIBRARY_PATH=/tmp/build-x86-daemon/lib:\$LD_LIBRARY_PATH
-        - which likwid-topology
+        - export PATH=/tmp/build-x86-daemon/bin:$PATH
+        - export LD_LIBRARY_PATH=/tmp/build-x86-daemon/lib:$LD_LIBRARY_PATH
         - likwid-topology
     after_script:
         - rm -rf /tmp/build-x86-daemon
