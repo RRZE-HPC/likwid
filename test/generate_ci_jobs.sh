@@ -25,8 +25,8 @@ test-$L-perf:
   before_script:
     - cp -r $depend /tmp/$depend
     - cd /tmp/$depend
-    - export PATH=/tmp/$depend/bin:$PATH
-    - export LD_LIBRARY_PATH=/tmp/$depend/lib:$LD_LIBRARY_PATH
+    - export PATH=/tmp/$depend/bin:\$PATH
+    - export LD_LIBRARY_PATH=/tmp/$depend/lib:\$LD_LIBRARY_PATH
   script:
     - likwid-topology
     - likwid-pin -p
@@ -56,8 +56,8 @@ test-$L-daemon:
   before_script:
     - cp -r $depend /tmp/$depend
     - cd /tmp/$depend
-    - export PATH=/tmp/$depend/bin:$PATH
-    - export LD_LIBRARY_PATH=/tmp/$depend/lib:$LD_LIBRARY_PATH
+    - export PATH=/tmp/$depend/bin:\$PATH
+    - export LD_LIBRARY_PATH=/tmp/$depend/lib:\$LD_LIBRARY_PATH
   script:
     - likwid-topology
     - likwid-pin -p
