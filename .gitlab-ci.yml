@@ -13,6 +13,7 @@ build-x86-daemon:
       - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
       - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
       - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-x86-daemon"+g -i config.mk
+      - sed -e s+"INSTALLED_PREFIX ?= .*"+"INSTALLED_PREFIX=/tmp/build-x86-daemon"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$(echo "$LIKWID_PREFIX")/sbin/likwid-accessD"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
@@ -25,133 +26,151 @@ build-x86-daemon:
     tags:
       - testcluster
 
-build-x86-perf:
-    stage: build
-    variables:
-      LIKWID_COMPILER: "GCC"
-      LIKWID_ACCESSMODE: "perf_event"
-      SLURM_NODELIST: broadep2
-    script:
-      - mkdir build-x86-perf
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-x86-perf"+g -i config.mk
-      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
-      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
-      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
-      - make
-      - make BUILDDAEMON=false BUILDFREQ=false install
-    artifacts:
-      paths:
-        - build-x86-perf/
-    tags:
-      - testcluster
-
-build-x86-daemon-nv:
-    stage: build
-    variables:
-      LIKWID_COMPILER: "GCC"
-      LIKWID_ACCESSMODE: "accessdaemon"
-      LIKWID_MODULE: "likwid/5.2-dev"
-      CUDA_MODULE: "cuda/10.2"
-      SLURM_NODELIST: medusa
-    script:
-      - mkdir build-x86-daemon-nv
-      - module load "$LIKWID_MODULE"
-      - module load "$CUDA_MODULE"
-      - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-x86-daemon-nv"+g -i config.mk
-      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
-      - sed -e s+"NVIDIA_INTERFACE = .*"+"NVIDIA_INTERFACE=true"+g -i config.mk
-      - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$(echo "$LIKWID_PREFIX")/sbin/likwid-accessD"+g -i config.mk
-      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
-      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
-      - make
-      - make BUILDDAEMON=false BUILDFREQ=false install
-    artifacts:
-      paths:
-        - build-x86-daemon-nv/
-    tags:
-      - testcluster
-
-build-x86-perf-nv:
-    stage: build
-    variables:
-      LIKWID_COMPILER: "GCC"
-      LIKWID_ACCESSMODE: "perf_event"
-      SLURM_NODELIST: medusa
-      CUDA_MODULE: "cuda/10.2"
-    script:
-      - mkdir build-x86-perf-nv
-      - module load "$CUDA_MODULE"
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-x86-perf-nv"+g -i config.mk
-      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
-      - sed -e s+"NVIDIA_INTERFACE = .*"+"NVIDIA_INTERFACE=true"+g -i config.mk
-      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
-      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
-      - make
-      - make BUILDDAEMON=false BUILDFREQ=false install
-    artifacts:
-      paths:
-        - build-x86-perf-nv/
-    tags:
-      - testcluster
-
-build-arm8-perf:
-    stage: build
-    variables:
-      LIKWID_COMPILER: "GCCARMv8"
-      LIKWID_ACCESSMODE: "perf_event"
-      SLURM_NODELIST: warmup
-    script:
-      - mkdir build-arm8-perf
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-arm8-perf"+g -i config.mk
-      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
-      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
-      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
-      - make
-      - make BUILDDAEMON=false BUILDFREQ=false install
-    artifacts:
-      paths:
-        - build-arm8-perf/
-    tags:
-      - testcluster
-
-
-check-event-files:
+test-x86-daemon-phinally:
     stage: test
+    needs: [build-x86-daemon]
+    variables:
+      SLURM_NODELIST: phinally
+      SLURM_CONSTRAINT: hwperf
+    before_script:
+        - mv build-x86-daemon /tmp/build-x86-daemon
+    script:
+        - export PATH=/tmp/build-x86-daemon/bin:\$PATH
+        - export LD_LIBRARY_PATH=/tmp/build-x86-daemon/lib:\$LD_LIBRARY_PATH
+        - which likwid-topology
+        - likwid-topology
+    after_script:
+        - rm -rf /tmp/build-x86-daemon
     tags:
       - testcluster
-    script:
-      - module load python
-      - test/check_data_files.py events
-#      - test/check_data_files.py groups
 
-generator:
-  stage: build
-  tags:
-    - testcluster
-  variables:
-    NO_SLURM_SUBMIT: 1
-  script: 
-   - test/generate_ci_jobs.sh > generated-pipeline.yml
-  artifacts:
-    paths:
-      - generated-pipeline.yml
+#build-x86-perf:
+#    stage: build
+#    variables:
+#      LIKWID_COMPILER: "GCC"
+#      LIKWID_ACCESSMODE: "perf_event"
+#      SLURM_NODELIST: broadep2
+#    script:
+#      - mkdir build-x86-perf
+#      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
+#      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
+#      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-x86-perf"+g -i config.mk
+#      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
+#      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
+#      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
+#      - make
+#      - make BUILDDAEMON=false BUILDFREQ=false install
+#    artifacts:
+#      paths:
+#        - build-x86-perf/
+#    tags:
+#      - testcluster
 
-testcluster-pipeline:
-  stage: test
-  trigger:
-    include:
-      - artifact: generated-pipeline.yml
-        job: generator
-    strategy: depend
-  variables:
-    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+#build-x86-daemon-nv:
+#    stage: build
+#    variables:
+#      LIKWID_COMPILER: "GCC"
+#      LIKWID_ACCESSMODE: "accessdaemon"
+#      LIKWID_MODULE: "likwid/5.2-dev"
+#      CUDA_MODULE: "cuda/10.2"
+#      SLURM_NODELIST: medusa
+#    script:
+#      - mkdir build-x86-daemon-nv
+#      - module load "$LIKWID_MODULE"
+#      - module load "$CUDA_MODULE"
+#      - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
+#      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
+#      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
+#      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-x86-daemon-nv"+g -i config.mk
+#      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
+#      - sed -e s+"NVIDIA_INTERFACE = .*"+"NVIDIA_INTERFACE=true"+g -i config.mk
+#      - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$(echo "$LIKWID_PREFIX")/sbin/likwid-accessD"+g -i config.mk
+#      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
+#      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
+#      - make
+#      - make BUILDDAEMON=false BUILDFREQ=false install
+#    artifacts:
+#      paths:
+#        - build-x86-daemon-nv/
+#    tags:
+#      - testcluster
+
+#build-x86-perf-nv:
+#    stage: build
+#    variables:
+#      LIKWID_COMPILER: "GCC"
+#      LIKWID_ACCESSMODE: "perf_event"
+#      SLURM_NODELIST: medusa
+#      CUDA_MODULE: "cuda/10.2"
+#    script:
+#      - mkdir build-x86-perf-nv
+#      - module load "$CUDA_MODULE"
+#      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
+#      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
+#      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-x86-perf-nv"+g -i config.mk
+#      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
+#      - sed -e s+"NVIDIA_INTERFACE = .*"+"NVIDIA_INTERFACE=true"+g -i config.mk
+#      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
+#      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
+#      - make
+#      - make BUILDDAEMON=false BUILDFREQ=false install
+#    artifacts:
+#      paths:
+#        - build-x86-perf-nv/
+#    tags:
+#      - testcluster
+
+#build-arm8-perf:
+#    stage: build
+#    variables:
+#      LIKWID_COMPILER: "GCCARMv8"
+#      LIKWID_ACCESSMODE: "perf_event"
+#      SLURM_NODELIST: warmup
+#    script:
+#      - mkdir build-arm8-perf
+#      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
+#      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
+#      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-arm8-perf"+g -i config.mk
+#      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
+#      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
+#      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
+#      - make
+#      - make BUILDDAEMON=false BUILDFREQ=false install
+#    artifacts:
+#      paths:
+#        - build-arm8-perf/
+#    tags:
+#      - testcluster
+
+
+#check-event-files:
+#    stage: test
+#    tags:
+#      - testcluster
+#    script:
+#      - module load python
+#      - test/check_data_files.py events
+##      - test/check_data_files.py groups
+
+#generator:
+#  stage: build
+#  tags:
+#    - testcluster
+#  variables:
+#    NO_SLURM_SUBMIT: 1
+#  script: 
+#   - test/generate_ci_jobs.sh > generated-pipeline.yml
+#  artifacts:
+#    paths:
+#      - generated-pipeline.yml
+
+#testcluster-pipeline:
+#  stage: test
+#  trigger:
+#    include:
+#      - artifact: generated-pipeline.yml
+#        job: generator
+#    strategy: depend
+#  variables:
+#    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
