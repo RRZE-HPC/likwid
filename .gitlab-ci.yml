@@ -7,27 +7,26 @@ build-x86-daemon:
       LIKWID_ACCESSMODE: "accessdaemon"
       LIKWID_MODULE: "likwid/5.2-dev"
     script:
-      - mkdir -p /tmp/build-x86-daemon
+      - mkdir /tmp/$CI_JOB_NAME
       - module load "$LIKWID_MODULE"
       - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
       - module unload "$LIKWID_MODULE"
+      - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$LIKWID_PREFIX/sbin/likwid-accessD"+g -i config.mk
       - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
       - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/build-x86-daemon"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/$CI_JOB_NAME"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
-      - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$LIKWID_PREFIX/sbin/likwid-accessD"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
       - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
-      - cat config.mk
       - make
       - make BUILDDAEMON=false BUILDFREQ=false install
-      - cp -r /tmp/build-x86-daemon $CI_PROJECT_DIR/build-x86-daemon
-      - if [ -e build-x86-daemon/sbin/likwid-accessD ]; then rm build-x86-daemon/sbin/likwid-accessD; fi
-      - if [ -e build-x86-daemon/sbin/likwid-setFreq ]; then rm build-x86-daemon/sbin/likwid-setFreq; fi
-      - rm -rf /tmp/build-x86-daemon
+      - cp -r /tmp/$CI_JOB_NAME $CI_PROJECT_DIR/$CI_JOB_NAME
+      - if [ -e $CI_JOB_NAME/sbin/likwid-accessD ]; then rm $CI_JOB_NAME/sbin/likwid-accessD; fi
+      - if [ -e $CI_JOB_NAME/sbin/likwid-setFreq ]; then rm $CI_JOB_NAME/sbin/likwid-setFreq; fi
+      - rm -rf /tmp/$CI_JOB_NAME
     artifacts:
       paths:
-        - build-x86-daemon/
+        - $CI_JOB_NAME/
     tags:
       - testcluster
 
@@ -38,22 +37,22 @@ build-x86-perf:
       LIKWID_COMPILER: "GCC"
       LIKWID_ACCESSMODE: "perf_event"
     script:
-      - mkdir /tmp/build-x86-perf
+      - mkdir /tmp/$CI_JOB_NAME
       - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
       - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/build-x86-perf"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/$CI_JOB_NAME"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
       - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
       - make
       - make BUILDDAEMON=false BUILDFREQ=false install
-      - cp -r /tmp/build-x86-perf $CI_PROJECT_DIR/build-x86-perf
-      - if [ -e build-x86-perf/sbin/likwid-accessD ]; then rm build-x86-perf/sbin/likwid-accessD; fi
-      - if [ -e build-x86-perf/sbin/likwid-setFreq ]; then rm build-x86-perf/sbin/likwid-setFreq; fi
-      - rm -rf /tmp/build-x86-perf
+      - cp -r /tmp/$CI_JOB_NAME $CI_PROJECT_DIR/$CI_JOB_NAME
+      - if [ -e $CI_JOB_NAME/sbin/likwid-accessD ]; then rm $CI_JOB_NAME/sbin/likwid-accessD; fi
+      - if [ -e $CI_JOB_NAME/sbin/likwid-setFreq ]; then rm $CI_JOB_NAME/sbin/likwid-setFreq; fi
+      - rm -rf /tmp/$CI_JOB_NAME
     artifacts:
       paths:
-        - build-x86-perf/
+        - $CI_JOB_NAME/
     tags:
       - testcluster
 
@@ -66,27 +65,27 @@ build-x86-daemon-nv:
       CUDA_MODULE: "cuda/10.2"
       SLURM_NODELIST: medusa
     script:
-      - mkdir -p /tmp/build-x86-daemon-nv
+      - mkdir -p /tmp/$CI_JOB_NAME
       - module load "$LIKWID_MODULE"
       - module load "$CUDA_MODULE"
       - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/build-x86-daemon-nv"+g -i config.mk
-      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
-      - sed -e s+"NVIDIA_INTERFACE = .*"+"NVIDIA_INTERFACE=true"+g -i config.mk
       - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$(echo "$LIKWID_PREFIX")/sbin/likwid-accessD"+g -i config.mk
+      - sed -e s+"NVIDIA_INTERFACE = .*"+"NVIDIA_INTERFACE=true"+g -i config.mk
+      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
+      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/$CI_JOB_NAME"+g -i config.mk
+      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
       - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
       - make
       - make BUILDDAEMON=false BUILDFREQ=false install
-      - cp -r /tmp/build-x86-daemon-nv $CI_PROJECT_DIR/build-x86-daemon-nv
-      - if [ -e build-x86-daemon-nv/sbin/likwid-accessD ]; then rm build-x86-daemon-nv/sbin/likwid-accessD; fi
-      - if [ -e build-x86-daemon-nv/sbin/likwid-setFreq ]; then rm build-x86-daemon-nv/sbin/likwid-setFreq; fi
-      - rm -rf /tmp/build-x86-daemon-nv
+      - cp -r /tmp/$CI_JOB_NAME $CI_PROJECT_DIR/$CI_JOB_NAME
+      - if [ -e $CI_JOB_NAME/sbin/likwid-accessD ]; then rm $CI_JOB_NAME/sbin/likwid-accessD; fi
+      - if [ -e $CI_JOB_NAME/sbin/likwid-setFreq ]; then rm $CI_JOB_NAME/sbin/likwid-setFreq; fi
+      - rm -rf /tmp/$CI_JOB_NAME
     artifacts:
       paths:
-        - build-x86-daemon-nv/
+        - $CI_JOB_NAME/
     tags:
       - testcluster
 
@@ -126,22 +125,22 @@ build-arm8-perf:
       LIKWID_ACCESSMODE: "perf_event"
       SLURM_NODELIST: warmup
     script:
-      - mkdir /tmp/build-arm8-perf
+      - mkdir /tmp/$CI_JOB_NAME
       - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
       - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
-      - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/build-arm8-perf"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/$CI_JOB_NAME"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
       - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
       - make
       - make BUILDDAEMON=false BUILDFREQ=false install
-      - cp -r /tmp/build-x86-perf $CI_PROJECT_DIR/build-arm8-perf
-      - if [ -e build-arm8-perf/sbin/likwid-accessD ]; then rm build-arm8-perf/sbin/likwid-accessD; fi
-      - if [ -e build-arm8-perf/sbin/likwid-setFreq ]; then rm build-arm8-perf/sbin/likwid-setFreq; fi
-      - rm -rf /tmp/build-arm8-perf
+      - cp -r /tmp/$CI_JOB_NAME $CI_PROJECT_DIR/$CI_JOB_NAME
+      - if [ -e $CI_JOB_NAME/sbin/likwid-accessD ]; then rm $CI_JOB_NAME/sbin/likwid-accessD; fi
+      - if [ -e $CI_JOB_NAME/sbin/likwid-setFreq ]; then rm $CI_JOB_NAME/sbin/likwid-setFreq; fi
+      - rm -rf /tmp/$CI_JOB_NAME
     artifacts:
       paths:
-        - build-arm8-perf/
+        - $CI_JOB_NAME/
     tags:
       - testcluster
 
