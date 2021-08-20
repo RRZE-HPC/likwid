@@ -40,6 +40,9 @@ EOF
         if [ "$L" = "medusa" ]; then
             depend="build-x86-daemon-nv"
         fi
+        if [ "$L" = "aurora1" ]; then
+            continue
+        fi
         echo
     cat <<EOF
 test-$L-daemon:
