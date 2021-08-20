@@ -5,7 +5,7 @@ for L in $(sinfo -t idle -h --partition=work -o "%n"); do
     depend="build-x86-perf"
     if [ "$L" = "warmup" ]; then
         arch="arm8"
-        depend="build-arm8"
+        depend="build-arm8-perf"
     fi
     if [ "$L" = "medusa" ]; then
         depend="build-x86-perf-nv"
@@ -22,13 +22,18 @@ test-$L-perf:
     job: $depend
   tags:
     - testcluster
+  before_script:
+    - cp -r $depend /tmp/$depend
+    - cd /tmp/$depend
+    - export PATH=/tmp/$depend/bin:$PATH
+    - export LD_LIBRARY_PATH=/tmp/$depend/lib:$LD_LIBRARY_PATH
   script:
-    - export PATH=\$CI_PROJECT_DIR/$depend/bin:\$PATH
-    - export LD_LIBRARY_PATH=\$CI_PROJECT_DIR/$depend/lib:\$LD_LIBRARY_PATH
     - likwid-topology
     - likwid-pin -p
     - likwid-perfctr -i
     - likwid-powermeter -i
+  after_script:
+    - rm -rf /tmp/$depend
 EOF
 
     if [ "$arch" == "x86" ]; then
@@ -48,13 +53,18 @@ test-$L-daemon:
     job: $depend
   tags:
     - testcluster
+  before_script:
+    - cp -r $depend /tmp/$depend
+    - cd /tmp/$depend
+    - export PATH=/tmp/$depend/bin:$PATH
+    - export LD_LIBRARY_PATH=/tmp/$depend/lib:$LD_LIBRARY_PATH
   script:
-    - export PATH=\$CI_PROJECT_DIR/$depend/bin:\$PATH
-    - export LD_LIBRARY_PATH=\$CI_PROJECT_DIR/$depend/lib:\$LD_LIBRARY_PATH
     - likwid-topology
     - likwid-pin -p
     - likwid-perfctr -i
     - likwid-powermeter -i
+  after_script:
+    - rm -rf /tmp/$depend
 EOF
     fi
     echo
