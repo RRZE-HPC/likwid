@@ -347,7 +347,7 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     if (count > cpuid_topology.numHWThreads)
         cpuid_topology.numHWThreads = count;
 #endif
-    count = likwid_sysfs_list_len("/sys/devices/system/cpu/present");
+    count = likwid_sysfs_list_len("/sys/devices/system/cpu/online");
     if (count > cpuid_topology.numHWThreads)
         cpuid_topology.numHWThreads = count;
     if (cpuid_topology.activeHWThreads > cpuid_topology.numHWThreads)
