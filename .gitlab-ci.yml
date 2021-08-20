@@ -92,7 +92,7 @@ generator:
       - generated-pipeline.yml
 
 testcluster-pipeline:
-  stage: trigger
+  stage: build
   trigger:
     include:
       - artifact: generated-pipeline.yml
