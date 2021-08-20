@@ -11,11 +11,11 @@ build-x86-daemon:
       - mkdir likwid-x86-daemon
       - module load "$LIKWID_MODULE"
       - export LIKWID_PREFIX=\$(realpath \$(dirname \$(which likwid-topology))/..)
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=\$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=\$(echo "$LIKWID_COMPILER")"+g -i config.mk
+      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=\$(echo "\$LIKWID_ACCESSMODE")"+g -i config.mk
+      - sed -e s+"COMPILER = .*"+"COMPILER=\$(echo "\$LIKWID_COMPILER")"+g -i config.mk
       - sed -e s+"PREFIX ?= .*"+"PREFIX=\$(pwd)/likwid-x86-daemon"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
-      - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=\$(echo "$LIKWID_PREFIX")/sbin/likwid-accessD"+g -i config.mk
+      - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=\$(echo "\$LIKWID_PREFIX")/sbin/likwid-accessD"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
       - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
       - make
@@ -34,8 +34,8 @@ build-x86-perf:
       SLURM_NODELIST: broadep2
     script:
       - mkdir likwid-x86-perf
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=\$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=\$(echo "$LIKWID_COMPILER")"+g -i config.mk
+      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=\$(echo "\$LIKWID_ACCESSMODE")"+g -i config.mk
+      - sed -e s+"COMPILER = .*"+"COMPILER=\$(echo "\$LIKWID_COMPILER")"+g -i config.mk
       - sed -e s+"PREFIX ?= .*"+"PREFIX=\$(pwd)/likwid-x86-perf"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
@@ -56,8 +56,8 @@ build-arm8:
       SLURM_NODELIST: warmup
     script:
       - mkdir likwid-arm8-perf
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=\$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=\$(echo "$LIKWID_COMPILER")"+g -i config.mk
+      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=\$(echo "\$LIKWID_ACCESSMODE")"+g -i config.mk
+      - sed -e s+"COMPILER = .*"+"COMPILER=\$(echo "\$LIKWID_COMPILER")"+g -i config.mk
       - sed -e s+"PREFIX ?= .*"+"PREFIX=\$(pwd)/likwid-arm8-perf"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
