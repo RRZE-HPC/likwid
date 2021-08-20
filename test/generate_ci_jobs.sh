@@ -31,7 +31,6 @@ test-$L-perf:
     - likwid-topology
     - likwid-pin -p
     - likwid-perfctr -i
-    - likwid-powermeter -i
   after_script:
     - rm -rf /tmp/$depend
 EOF
@@ -62,7 +61,6 @@ test-$L-daemon:
     - likwid-topology
     - likwid-pin -p
     - likwid-perfctr -i
-    - likwid-powermeter -i
   after_script:
     - rm -rf /tmp/$depend
 EOF
