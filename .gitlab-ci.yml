@@ -12,7 +12,7 @@ build-x86-daemon:
       - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
       - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
       - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
-#      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-x86-daemon"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=$(pwd)/build-x86-daemon"+g -i config.mk
       - sed -e s+"INSTALLED_PREFIX ?= .*"+"INSTALLED_PREFIX=/tmp/build-x86-daemon"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$LIKWID_PREFIX/sbin/likwid-accessD"+g -i config.mk
