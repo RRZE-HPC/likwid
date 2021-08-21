@@ -228,7 +228,7 @@ build-cuda-10.1:
 #  tags:
 #    - testcluster
 #  variables:
-#    NO_SLURM_SUBMIT: 1
+#    SLURM_NODELIST: medusa
 #  script: 
 #   - test/gitlab-ci/generate_cuda_jobs.sh > cuda-pipeline.yml
 #  artifacts:
