@@ -196,51 +196,24 @@ arch-pipeline:
   variables:
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
-build-cuda-10.1:
-    stage: build
-    variables:
-      LIKWID_COMPILER: "GCC"
-      LIKWID_ACCESSMODE: "perf_event"
-      SLURM_NODELIST: medusa
-      CUDA_MODULE: cuda/10.1
-    script:
-      - module load "$CUDA_MODULE"
-      - echo "$CUDA_HOME"
-      - ls "$CUDA_HOME/lib64"
-      - ls "$CUDA_HOME/extras/CUPTI/lib64"
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
-      - sed -e s+"NVIDIA_INTERFACE = .*"+"NVIDIA_INTERFACE=true"+g -i config.mk
-      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
-      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
-      - make
-      - make local
-      - if [ -e likwid-accessD ]; then rm likwid-accessD; fi
-      - if [ -e likwid-setFreq ]; then rm likwid-setFreq; fi
-      - export LD_LIBRARY_PATH=$(pwd):$LD_LIBRARY_PATH
-      - ./likwid-topology
-    tags:
-      - testcluster
+cuda-gen:
+  stage: build
+  tags:
+    - testcluster
+  variables:
+    SLURM_NODELIST: medusa
+  script: 
+   - test/gitlab-ci/generate_cuda_jobs.sh > cuda-pipeline.yml
+  artifacts:
+    paths:
+      - cuda-pipeline.yml
 
-
-#cuda-gen:
-#  stage: build
-#  tags:
-#    - testcluster
-#  variables:
-#    SLURM_NODELIST: medusa
-#  script: 
-#   - test/gitlab-ci/generate_cuda_jobs.sh > cuda-pipeline.yml
-#  artifacts:
-#    paths:
-#      - cuda-pipeline.yml
-
-#cuda-pipeline:
-#  stage: test
-#  trigger:
-#    include:
-#      - artifact: cuda-pipeline.yml
-#        job: cuda-gen
-#    strategy: depend
-#  variables:
-#    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+cuda-pipeline:
+  stage: test
+  trigger:
+    include:
+      - artifact: cuda-pipeline.yml
+        job: cuda-gen
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
