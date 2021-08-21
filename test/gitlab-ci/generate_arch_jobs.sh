@@ -7,9 +7,6 @@ for L in $(sinfo -t idle -h --partition=work -o "%n"); do
         arch="arm8"
         depend="build-arm8-perf"
     fi
-    if [ "$L" = "medusa" ]; then
-        depend="build-x86-perf-nv"
-    fi
 
     cat <<EOF
 test-$L-perf:
@@ -37,9 +34,6 @@ EOF
 
     if [ "$arch" == "x86" ]; then
         depend="build-x86-daemon"
-        if [ "$L" = "medusa" ]; then
-            depend="build-x86-daemon-nv"
-        fi
         if [ "$L" = "aurora1" ]; then
             continue
         fi

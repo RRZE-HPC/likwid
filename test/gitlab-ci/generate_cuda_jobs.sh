@@ -1,6 +1,9 @@
 #!/bin/bash -l
 
 for VER in $(module avail -t cuda 2>&1 | grep -E "^cuda" | cut -d ' ' -f 1); do
+    module purge
+    LOADERR=$(module load "$VER" 2>&1 | grep -i "not installed" | wc -l)
+    if [ "$LOADERR" = "1" ]; then continue; fi
     PVER=${VER/\//-}
 cat <<EOF
 build-$PVER:
@@ -13,8 +16,6 @@ build-$PVER:
     script:
       - module load "\$CUDA_MODULE"
       - echo "\$CUDA_HOME"
-      - ls "\$CUDA_HOME/lib64"
-      - ls "\$CUDA_HOME/extras/CUPTI/lib64"
       - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=\$LIKWID_ACCESSMODE"+g -i config.mk
       - sed -e s+"COMPILER = .*"+"COMPILER=\$LIKWID_COMPILER"+g -i config.mk
       - sed -e s+"NVIDIA_INTERFACE = .*"+"NVIDIA_INTERFACE=true"+g -i config.mk
