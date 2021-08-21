@@ -77,10 +77,10 @@ build-x86-daemon-nv:
       - module load "$LIKWID_MODULE"
       - module load "$CUDA_MODULE"
       - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
-      - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$(echo "$LIKWID_PREFIX")/sbin/likwid-accessD"+g -i config.mk
+      - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$LIKWID_PREFIX/sbin/likwid-accessD"+g -i config.mk
       - sed -e s+"NVIDIA_INTERFACE = .*"+"NVIDIA_INTERFACE=true"+g -i config.mk
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
+      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
+      - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
       - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/$CI_JOB_NAME"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
@@ -111,8 +111,8 @@ build-x86-perf-nv:
     script:
       - mkdir -p /tmp/$CI_JOB_NAME
       - module load "$CUDA_MODULE"
-      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$(echo "$LIKWID_ACCESSMODE")"+g -i config.mk
-      - sed -e s+"COMPILER = .*"+"COMPILER=$(echo "$LIKWID_COMPILER")"+g -i config.mk
+      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
+      - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
       - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/$CI_JOB_NAME"+g -i config.mk
       - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
       - sed -e s+"NVIDIA_INTERFACE = .*"+"NVIDIA_INTERFACE=true"+g -i config.mk
@@ -174,25 +174,73 @@ check-event-files:
       - test/check_data_files.py events
 #      - test/check_data_files.py groups
 
-generator:
+arch-gen:
   stage: build
   tags:
     - testcluster
   variables:
     NO_SLURM_SUBMIT: 1
   script: 
-   - test/generate_ci_jobs.sh > generated-pipeline.yml
+   - test/gitlab-ci/generate_arch_jobs.sh > arch-pipeline.yml
   artifacts:
     paths:
-      - generated-pipeline.yml
+      - arch-pipeline.yml
 
-testcluster-pipeline:
+arch-pipeline:
   stage: test
   trigger:
     include:
-      - artifact: generated-pipeline.yml
-        job: generator
+      - artifact: arch-pipeline.yml
+        job: arch-gen
     strategy: depend
   variables:
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
+build-cuda-10.1:
+    stage: build
+    variables:
+      LIKWID_COMPILER: "GCC"
+      LIKWID_ACCESSMODE: "perf_event"
+      SLURM_NODELIST: medusa
+      CUDA_MODULE: cuda/10.1
+    script:
+      - module load "$CUDA_MODULE"
+      - echo "$CUDA_HOME"
+      - ls "$CUDA_HOME/lib64"
+      - ls "$CUDA_HOME/extras/CUPTI/lib64"
+      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
+      - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
+      - sed -e s+"NVIDIA_INTERFACE = .*"+"NVIDIA_INTERFACE=true"+g -i config.mk
+      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
+      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
+      - make
+      - make local
+      - if [ -e likwid-accessD ]; then rm likwid-accessD; fi
+      - if [ -e likwid-setFreq ]; then rm likwid-setFreq; fi
+      - export LD_LIBRARY_PATH=$(pwd):$LD_LIBRARY_PATH
+      - ./likwid-topology
+    tags:
+      - testcluster
+
+
+#cuda-gen:
+#  stage: build
+#  tags:
+#    - testcluster
+#  variables:
+#    NO_SLURM_SUBMIT: 1
+#  script: 
+#   - test/gitlab-ci/generate_cuda_jobs.sh > cuda-pipeline.yml
+#  artifacts:
+#    paths:
+#      - cuda-pipeline.yml
+
+#cuda-pipeline:
+#  stage: test
+#  trigger:
+#    include:
+#      - artifact: cuda-pipeline.yml
+#        job: cuda-gen
+#    strategy: depend
+#  variables:
+#    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
