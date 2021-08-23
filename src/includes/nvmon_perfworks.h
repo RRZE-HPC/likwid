@@ -31,7 +31,7 @@
 #define LIKWID_NVMON_PERFWORKS_H
 
 
-
+#if defined(CUDART_VERSION) && CUDART_VERSION > 10000
 
 #include <cuda.h>
 #include <cupti_target.h>
@@ -43,7 +43,7 @@
 #include <nvperf_target.h>
 
 
-#if defined(CUDART_VERSION) && CUDART_VERSION >= 10000
+
 
 static void *dl_perfworks_libcuda = NULL;
 static void *dl_libhost = NULL;
