@@ -967,10 +967,11 @@ local function assignHosts(hosts, np, ppn, tpp)
             break
         end
     end
-    if current < np then
-        print_stdout(string.format("WARN: Only %d processes out of %d can be assigned, running with %d processes", current, np, current))
-        np = current
-        ppn = np/#newhosts
+    if current*#newhosts < np then
+        local newnp = current*#newhosts
+        print_stdout(string.format("WARN: Only %d processes out of %d can be assigned, running with %d processes", newnp, np, newnp))
+        np = newnp
+        ppn = current
     end
     for i=1, #newhosts do
         if newhosts[i] then
@@ -2365,9 +2366,6 @@ elseif np < #cpuexprs then
     end
     ppn = #cpuexprs
 end
-if ppn < 1 then ppn = 1 end
-if tpp < 1 then tpp = 1 end
-if np < 1 then np = 1 end
 
 if skipStr == "" then
     if mpitype == "intelmpi" then
