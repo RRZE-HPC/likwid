@@ -2365,6 +2365,9 @@ elseif np < #cpuexprs then
     end
     ppn = #cpuexprs
 end
+if ppn < 1 then ppn = 1 end
+if tpp < 1 then tpp = 1 end
+if np < 1 then np = 1 end
 
 if skipStr == "" then
     if mpitype == "intelmpi" then
