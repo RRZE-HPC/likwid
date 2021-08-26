@@ -263,7 +263,7 @@ static void appdaemon_close_nvmon(void)
         {
             for (int j = 0; j < nvmon_numgpus; j++)
             {
-                fprintf(output_file, "Nvmon, %d, %f, %s, %f\n", nvmon_gpulist[j], nvmon_getTimeOfGroup(nvmon_gpulist[j]), nvmon_getEventName(gid, i), nvmon_getResult(gid, i, j));
+                fprintf(output_file, "Nvmon, %d, %f, %s, %f, %f\n", nvmon_gpulist[j], nvmon_getTimeOfGroup(nvmon_gpulist[j]), nvmon_getEventName(gid, i), nvmon_getResult(gid, i, j), nvmon_getLastResult(gid, i, j));
             }
         }
     }
@@ -307,7 +307,7 @@ static void appdaemon_read_nvmon(void)
         {
             for (int j = 0; j < nvmon_numgpus; j++)
             {
-                fprintf(output_file, "Nvmon, %d, %f, %s, %f\n", nvmon_gpulist[j], nvmon_getTimeToLastReadOfGroup(nvmon_gpulist[j]), nvmon_getEventName(gid, i), nvmon_getResult(gid, i, j));
+                fprintf(output_file, "Nvmon, %d, %f, %s, %f, %f\n", nvmon_gpulist[j], nvmon_getTimeToLastReadOfGroup(nvmon_gpulist[j]), nvmon_getEventName(gid, i), nvmon_getResult(gid, i, j), nvmon_getLastResult(gid, i, j));
             }
         }
     }
@@ -432,7 +432,7 @@ static void appdaemon_close_rocmon(void)
         {
             for (int j = 0; j < rocmon_numgpus; j++)
             {
-                fprintf(output_file, "Rocmon, %d, %f, %s, %f\n", rocmon_gpulist[j], rocmon_getTimeOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(gid, i, j));
+                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(gid, i, j), rocmon_getLastResult(gid, i, j));
             }
         }
     }
@@ -475,7 +475,7 @@ static void appdaemon_read_rocmon(void)
         {
             for (int j = 0; j < rocmon_numgpus; j++)
             {
-                fprintf(output_file, "Rocmon, %d, %f, %s, %f\n", rocmon_gpulist[j], rocmon_getTimeToLastReadOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(gid, i, j));
+                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeToLastReadOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(gid, i, j), rocmon_getLastResult(gid, i, j));
             }
         }
     }
@@ -565,7 +565,7 @@ int __libc_start_main(int (*main) (int,char **,char **),
         fprintf(stderr, "%s", strerror(errno));
         return -1;
     }
-    fprintf(output_file, "Backend, GPU, Time, Event, Value\n");
+    fprintf(output_file, "Backend, GPU, Time, Event, Full Value, Last Value\n");
 
 #ifdef LIKWID_NVMON
     char* nvEventStr = getenv("NVMON_EVENTS");
