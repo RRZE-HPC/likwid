@@ -275,11 +275,7 @@ likwid_gpuMarkerClose(void)
                                                               nvmon_getNumberOfEvents(results->groupID));
                     for (int k = 0; k < nvmon_getNumberOfEvents(results->groupID); k++)
                     {
-                        bstring tmp;
-                        if (nvGroupSet->groupSources[results->groupID].sourceTypes[k] == NVMON_SOURCE_NVML)
-                            tmp = bformat("%e", results->PMcounters[k] / results->count);
-                        else
-                            tmp = bformat("%e ", results->PMcounters[k]);
+                        bstring tmp = bformat("%e ", results->PMcounters[k]);
                         bconcat(l, tmp);
                         bdestroy(tmp);
                     }
