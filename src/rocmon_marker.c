@@ -401,8 +401,8 @@ rocmon_markerRegisterRegion(const char* regionTag)
         results->label = bformat("%s-%d", regionTag, active_group);
         results->timeActive = 0;
         results->count = 0;
-        results->gpuId = i;
-        results->groupId = active_group;
+        results->gpuId = gpu_ids[i];
+        results->groupId = gpu_groups[active_group];
         results->state = ROCMON_MARKER_STATE_NEW;
         
         // Get number of events in active group
@@ -482,7 +482,7 @@ rocmon_markerStartRegion(const char* regionTag)
         for (int j = 0; j < results->groupResults.numResults; j++)
         {
             RocmonEventResult* res = &results->groupResults.results[j];
-            res->lastValue = rocmon_getLastResult(i, results->groupId, j);
+            res->lastValue = rocmon_getResult(results->gpuId, results->groupId, j);
         }
 
         results->state = ROCMON_MARKER_STATE_START;
@@ -542,7 +542,14 @@ rocmon_markerStopRegion(const char* regionTag)
         for (int j = 0; j < results->groupResults.numResults; j++)
         {
             RocmonEventResult* res = &results->groupResults.results[j];
-            res->fullValue = rocmon_getLastResult(i, results->groupId, j) - res->lastValue;
+            if (rocmon_getEventName(results->groupId, j)[1] == 'S')
+            {   // ROCm SMI event
+                res->fullValue += rocmon_getLastResult(results->gpuId, results->groupId, j);
+            }
+            else
+            {   // ROC-Profiler event
+                res->fullValue += rocmon_getResult(results->gpuId, results->groupId, j) - res->lastValue;
+            }
         }
 
         results->state = ROCMON_MARKER_STATE_STOP;
