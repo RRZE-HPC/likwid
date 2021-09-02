@@ -79,22 +79,18 @@ __global__ void sch_triad_kernel(T *A, const T *__restrict__ B,
   }
 }
 
-void print_results(int gid)
-{
-  for (int j = 0; j < rocmon_getNumberOfEvents(gid); j++)
-  {
-    char* name = rocmon_getEventName(gid, j);
-    double lastValue = rocmon_getLastResult(0, gid, j);
-    double fullValue = rocmon_getResult(0, gid, j);
-
-    printf("%s: %.2f / %.2f\n", name, fullValue, lastValue);
-  }
-}
-
 int main(int argc, char **argv) {
-  const size_t buffer_size = 248 * 1024 * 1024;
+  size_t buffer_size = 128 * 1024 * 1024;
+  if (argc == 2)
+  {
+    buffer_size = atoi(argv[1]);
+  }
+  cout << "Buffer size: " << buffer_size << endl;
 
   double *dA, *dB, *dC, *dD;
+  
+  // Get start time
+  double tstart = dtime();
 
   // Marker init
   ROCMON_MARKER_INIT;
@@ -114,7 +110,8 @@ int main(int argc, char **argv) {
   ROCMON_MARKER_STOP("init");
 
   GPU_ERROR(hipDeviceSynchronize());
-  const int iters = 10;
+  const int iters = 100;
+  cout << "Iterations: " << iters << endl;
 
   const int block_size = 512;
   hipDeviceProp_t prop;
@@ -145,14 +142,20 @@ int main(int argc, char **argv) {
   // Marker stop
   ROCMON_MARKER_CLOSE;
 
-  double dt = (t2 - t1) / iters;
-
-  cout << fixed << setprecision(2) << setw(6) << dt * 1000 << "ms " << setw(5)
-       << 4 * buffer_size * sizeof(double) / dt * 1e-9 << "GB/s \n";
-
   GPU_ERROR(hipFree(dA));
   GPU_ERROR(hipFree(dB));
   GPU_ERROR(hipFree(dC));
   GPU_ERROR(hipFree(dD));
+
+  // Get start time
+  double tstop = dtime();
+
+  cout << "Total time: " << (tstop - tstart) * 1000 << " ms" << endl;
+  cout << "Iteration time: " << (t2 - t1) * 1000 << " ms" << endl;
+
+  double dt = (t2 - t1) / iters;
+  cout << fixed << setprecision(2) << setw(6) << dt * 1000 << "ms " << setw(5)
+       << 4 * buffer_size * sizeof(double) / dt * 1e-9 << "GB/s \n";
+
   return 0;
 }

@@ -78,23 +78,38 @@ __global__ void sch_triad_kernel(T *A, const T *__restrict__ B,
 }
 
 int main(int argc, char **argv) {
-  const size_t buffer_size = 128 * 1024 * 1024;
+  size_t buffer_size = 128 * 1024 * 1024;
+  if (argc == 2)
+  {
+    buffer_size = atoi(argv[1]);
+  }
+  cout << "Buffer size: " << buffer_size << endl;
 
   double *dA, *dB, *dC, *dD;
+  
+  // Get start time
+  double tstart = dtime();
+
+  LIKWID_NVMARKER_INIT;
+  LIKWID_NVMARKER_REGISTER("init");
+  LIKWID_NVMARKER_REGISTER("triad");
 
   GPU_ERROR(cudaMalloc(&dA, buffer_size * sizeof(double)));
   GPU_ERROR(cudaMalloc(&dB, buffer_size * sizeof(double)));
   GPU_ERROR(cudaMalloc(&dC, buffer_size * sizeof(double)));
   GPU_ERROR(cudaMalloc(&dD, buffer_size * sizeof(double)));
 
+  LIKWID_NVMARKER_START("init");
   init_kernel<<<256, 400>>>(dA, dA, dA, dA, buffer_size);
   init_kernel<<<256, 400>>>(dB, dB, dB, dB, buffer_size);
   init_kernel<<<256, 400>>>(dC, dC, dC, dC, buffer_size);
   init_kernel<<<256, 400>>>(dD, dD, dD, dD, buffer_size);
+  LIKWID_NVMARKER_STOP("init");
+
   GPU_ERROR(cudaDeviceSynchronize());
-  LIKWID_NVMARKER_INIT;
-  LIKWID_NVMARKER_REGISTER("triad");
-  const int iters = 10;
+  
+  const int iters = 100;
+  cout << "Iterations: " << iters << endl;
 
   const int block_size = 512;
   cudaDeviceProp prop;
@@ -124,15 +139,21 @@ int main(int argc, char **argv) {
   GPU_ERROR(cudaDeviceSynchronize());
   double t2 = dtime();
 
-  double dt = (t2 - t1) / iters;
-
-  cout << fixed << setprecision(2) << setw(6) << dt * 1000 << "ms " << setw(5)
-       << 4 * buffer_size * sizeof(double) / dt * 1e-9 << "GB/s \n";
-
   GPU_ERROR(cudaFree(dA));
   GPU_ERROR(cudaFree(dB));
   GPU_ERROR(cudaFree(dC));
   GPU_ERROR(cudaFree(dD));
   LIKWID_NVMARKER_CLOSE;
+
+  // Get start time
+  double tstop = dtime();
+
+  cout << "Total time: " << (tstop - tstart) * 1000 << " ms" << endl;
+  cout << "Iteration time: " << (t2 - t1) * 1000 << " ms" << endl;
+
+  double dt = (t2 - t1) / iters;
+  cout << fixed << setprecision(2) << setw(6) << dt * 1000 << "ms " << setw(5)
+       << 4 * buffer_size * sizeof(double) / dt * 1e-9 << "GB/s \n";
+
   return 0;
 }
