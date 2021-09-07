@@ -28,14 +28,22 @@ or
 .IR skip_mask ]
 .RB [ \-E
 .IR search_str ]
+.RB [ \-G
+.IR gpu_list (*) ]
+.RB [ \-W
+.IR gpu_performance_group
+or
+.IR gpu_performance_event_string (*) ]
 .RB [ \-\-stats ]
 .SH DESCRIPTION
 .B likwid-perfctr
 is a lightweight command line application to configure and read out hardware performance monitoring data
-on supported x86, ARM and POWER processors. It can measure either as wrapper without changing the measured application
-or with marker API functions inside the code, which will turn on and off the counters. There are preconfigured
-performance groups with useful event sets and derived metrics. Additonally, arbitrary events can be measured with
-custom event sets. The marker API can measure mulitple named regions and the results are accumulated over multiple region calls.
+on supported x86, ARM and POWER processors and Nvidia GPUs. It can measure either as wrapper without changing
+the measured application or with marker API functions inside the code, which will turn on and off the counters.
+There are preconfigured performance groups with useful event sets and derived metrics. Additonally, arbitrary
+events can be measured with custom event sets. The marker API can measure mulitple named regions and the
+results are accumulated over multiple region calls.
+.IR (*) Option only available if built with Nvidia GPU support
 
 .SH OPTIONS
 .TP
@@ -51,21 +59,21 @@ prints group help message (use together with -g switch).
 .B \-\^V <level>, \-\-\^verbose <level>
 verbose output during execution for debugging. 0 for only errors, 1 for informational output, 2 for detailed output and 3 for developer output
 .TP
-.B \-\^m
+.B \-\^m, \-\-\^marker
 run in marker API mode
 .TP
 .B \-\^a
 print available performance groups for current processor, then exit.
 .TP
 .B \-\^e
-print available counters and performance events of current processor.
+print available counters and performance events of current processor and (if available) Nvidia GPUs.
 .TP
 .B \-\^o, \-\-\^output <filename>
 store all ouput to a file instead of stdout. For the filename the following placeholders are supported:
 %j for PBS_JOBID, %r for MPI RANK (only Intel MPI at the moment), %h host name and %p for process pid.
 The placeholders must be separated by underscore as, e.g., -o test_%h_%p. You must specify a suffix to
 the filename. For txt the output is printed as is to the file. Other suffixes trigger a filter on the output.
-Available filters are csv (comma separated values) and xml at the moment.
+Available filters are csv (comma separated values), xml and json at the moment.
 .TP
 .B \-\^O
 print output in CSV format (conform to RFC 4180, see
@@ -106,6 +114,16 @@ Force writing of registers even if they are in use.
 .TP
 .B \-\^E <search_str>
 Print only events and corresponding counters matching <search_str>
+.TP
+.B \-\^G, \-\-\^gpus <gpu_list>
+specify a numerical list of GPU IDs. The list may contain multiple
+items, separated by comma, and ranges. For example 0,3,9-11.
+.TP
+.B \-\^W, \-\-\^gpugroup <gpu performance group> or <gpu performance event set string>
+specify which performance group to measure on the specified Nvidia GPUs.
+This can be one of the tags output with the -a flag in the GPU section.
+Also a custom event set can be specified by a comma separated list of events. Each event has the format
+eventId:GPUx (x=0,1,2,...). You can add as many events to the string until you hit an error.
 .TP
 .B \-\-\^stats
 Always print statistics table

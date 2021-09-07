@@ -88,8 +88,10 @@ typedef enum {
     EVENT_OPTION_PERF_FLAGS, /*!< \brief FLAGS parameters to use in the perf_event_open call */
 #endif
 #ifdef _ARCH_PPC
-    EVENT_OPTION_PMC,
+    EVENT_OPTION_PMC, /*!< \brief Specify which PMC counter should be used */
     EVENT_OPTION_PMCXSEL,
+    EVENT_OPTION_UNCORE_CONFIG, /*!< \brief Configuration bitmask for event ID for NEST (Uncore) measurements */
+
 #endif
     NUM_EVENT_OPTIONS /*!< \brief Amount of defined options */
 } EventOptionType;

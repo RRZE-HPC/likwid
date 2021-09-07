@@ -1,0 +1,37 @@
+SHORT Main memory bandwidth in MBytes/s (experimental)
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  CPU_CLOCKS_UNHALTED
+PMC2  RETIRED_SSE_AVX_FLOPS_ALL
+PMC3  MERGE
+DFC0  DRAM_CHANNEL_0
+DFC1  DRAM_CHANNEL_1
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  PMC1/PMC0
+DP [MFLOP/s]   1.0E-06*(PMC2)/time
+Memory bandwidth [MBytes/s] 1.0E-06*(DFC0+DFC1)*(4.0/(num_numadomains/num_sockets))*64.0/time
+Memory data volume [GBytes] 1.0E-09*(DFC0+DFC1)*(4.0/(num_numadomains/num_sockets))*64.0
+Operational intensity PMC2/((DFC0+DFC1)*(4.0/(num_numadomains/num_sockets))*64.0)
+
+LONG
+Formulas:
+Memory bandwidth [MBytes/s] = 1.0E-06*(DRAM_CHANNEL_0+DRAM_CHANNEL_1)*(4.0/(num_numadomains/num_sockets))*64.0/runtime
+Memory data volume [GBytes] = 1.0E-09*(DRAM_CHANNEL_0+DRAM_CHANNEL_1)*(4.0/(num_numadomains/num_sockets))*64.0
+-
+Profiling group to measure memory bandwidth drawn by all cores of a socket.
+Since this group is based on Uncore events it is only possible to measure on a
+per socket base.
+The group provides almost accurate results for the total bandwidth
+and data volume.
+The metric formulas contain a correction factor of (4.0/(num_numadomains/num_sockets)) to
+return the value for all 4 memory controllers in NPS1 mode per socket. This is probably
+a work-around. Requested info from AMD but no answer.
+In contrast to AMD Zen, the Zen2 microarchitecture does not provide events to
+differentiate between single- and double-precision.

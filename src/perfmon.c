@@ -824,21 +824,20 @@ perfmon_check_counter_map(int cpu_id)
         }
 #endif
     }
-    if (own_hpm)
-        HPMfinalize();
     for (int i=0; i<perfmon_numArchEvents; i++)
     {
         int found = 0;
-        bstring estr = bfromcstr(eventHash[i].name);
         if (i > 0 && strlen(eventHash[i-1].limit) != 0 && strcmp(eventHash[i-1].limit, eventHash[i].limit) == 0)
         {
-            bdestroy(estr);
             continue;
         }
+        bstring estr = bfromcstr(eventHash[i].name);
         for (int j=0;j<perfmon_numCounters; j++)
         {
             if (counter_map[j].type == NOTYPE)
+            {
                 continue;
+            }
             PerfmonEvent event;
             bstring cstr = bfromcstr(counter_map[j].key);
             if (getEvent(estr, cstr, &event) && checkCounter(cstr, eventHash[i].limit))
@@ -852,11 +851,13 @@ perfmon_check_counter_map(int cpu_id)
         bdestroy(estr);
         if (!found)
         {
-	    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot respect limit %s. Removing event %s, eventHash[i].limit, eventHash[i].name);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot respect limit %s. Removing event %s, eventHash[i].limit, eventHash[i].name);
             eventHash[i].limit = "";
         }
     }
     maps_checked = 1;
+    if (own_hpm)
+        HPMfinalize();
 }
 
 void
@@ -1153,7 +1154,8 @@ perfmon_init_maps(void)
                     counter_map = icelakeX_counter_map;
                     box_map = icelakeX_box_map;
                     perfmon_numCounters = perfmon_numCountersIcelakeX;
-                    translate_types = default_translate_types;
+                    translate_types = icelakeX_translate_types;
+                    archRegisterTypeNames = registerTypeNamesIcelakeX;
                     break;
 
                 default:
@@ -1231,6 +1233,7 @@ perfmon_init_maps(void)
                     break;
                 case ZEN2_RYZEN:
                 case ZEN2_RYZEN2:
+                case ZEN2_RYZEN3:
                     eventHash = zen2_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen2;
                     counter_map = zen2_counter_map;
@@ -1257,27 +1260,28 @@ perfmon_init_maps(void)
                 default:
                     ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
             }
+            break;
 #ifdef _ARCH_PPC
-	case PPC_FAMILY:
-	    switch ( cpuid_info.model )
+        case PPC_FAMILY:
+            switch ( cpuid_info.model )
             {
                 case POWER8:
-		    eventHash = power8_arch_events;
-	            counter_map = power8_counter_map;
-	            box_map = power8_box_map;
+                    eventHash = power8_arch_events;
+                    counter_map = power8_counter_map;
+                    box_map = power8_box_map;
                     translate_types = power8_translate_types;
-	            perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER8;
-	            perfmon_numCounters = NUM_COUNTERS_POWER8;
-	            break;
+                    perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER8;
+                    perfmon_numCounters = NUM_COUNTERS_POWER8;
+                    break;
                 case POWER9:
-		    eventHash = power9_arch_events;
-	            counter_map = power9_counter_map;
-	            box_map = power9_box_map;
+                    eventHash = power9_arch_events;
+                    counter_map = power9_counter_map;
+                    box_map = power9_box_map;
                     translate_types = power9_translate_types;
-	            perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER9;
-	            perfmon_numCounters = NUM_COUNTERS_POWER9;
-	            break;
-	    }
+                    perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER9;
+                    perfmon_numCounters = NUM_COUNTERS_POWER9;
+                    break;
+            }
             break;
 #endif
 
@@ -1292,6 +1296,28 @@ perfmon_init_maps(void)
                     box_map = a15_box_map;
                     perfmon_numCounters = perfmon_numCountersA15;
                     translate_types = a15_translate_types;
+                    break;
+                case ARM_CORTEX_A35:
+                case ARM_CORTEX_A53:
+                    eventHash = a57_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsA57;
+                    counter_map = a57_counter_map;
+                    box_map = a57_box_map;
+                    perfmon_numCounters = perfmon_numCountersA57;
+                    translate_types = a53_translate_types;
+                    break;
+                case ARM_CORTEX_A57:
+                case ARM_CORTEX_A72:
+                case ARM_CORTEX_A73:
+                    eventHash = a57_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsA57;
+                    counter_map = a57_counter_map;
+                    box_map = a57_box_map;
+                    perfmon_numCounters = perfmon_numCountersA57;
+                    translate_types = a57_translate_types;
+                    break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported ARMv7 Processor);
                     break;
             }
             break;
@@ -1330,6 +1356,7 @@ perfmon_init_maps(void)
                             translate_types = neon1_translate_types;
                             break;
                         default:
+                            ERROR_PLAIN_PRINT(Unsupported ARMv8 Processor);
                             break;
                     }
                     break;
@@ -1345,6 +1372,7 @@ perfmon_init_maps(void)
                             translate_types = cav_tx2_translate_types;
                             break;
                         default:
+                            ERROR_PLAIN_PRINT(Unsupported Cavium/Marvell Processor);
                             break;
                     }
                     break;
@@ -1360,6 +1388,7 @@ perfmon_init_maps(void)
                             translate_types = cav_tx2_translate_types;
                             break;
                         default:
+                            ERROR_PLAIN_PRINT(Unsupported Cavium/Marvell Processor);
                             break;
                     }
                     break;
@@ -1375,6 +1404,7 @@ perfmon_init_maps(void)
                             translate_types = a64fx_translate_types;
                             break;
                         default:
+                            ERROR_PLAIN_PRINT(Unsupported Fujitsu Processor);
                             break;
                     }
                     break;
@@ -1767,6 +1797,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
                 case ZEN2_RYZEN:
                 case ZEN2_RYZEN2:
+                case ZEN2_RYZEN3:
                     initThreadArch = perfmon_init_zen2;
                     initialize_power = TRUE;
                     perfmon_startCountersThread = perfmon_startCountersThread_zen2;
@@ -2869,7 +2900,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
     add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
-    int cpu = 0, sock_cpu = 0, err = 0;
+    int cpu = 0, sock_cpu = 0, err = 0, num_socks = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
         if (groupSet->threads[e].thread_id == threadId)
@@ -2878,10 +2909,13 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
         }
     }
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
+    num_socks = cpuid_topology.numSockets;
     if (cpuid_info.isIntel && cpuid_info.model == SKYLAKEX && cpuid_topology.numDies != cpuid_topology.numSockets)
     {
         sock_cpu = die_lock[affinity_thread2die_lookup[cpu]];
+        num_socks = cpuid_topology.numDies;
     }
+    add_to_clist(&clist, "num_sockets", num_socks);
     if (cpu != sock_cpu)
     {
         for (e=0; e<groupSet->numberOfThreads; e++)
@@ -2956,7 +2990,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
     add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
-    int cpu = 0, sock_cpu = 0, err = 0;
+    int cpu = 0, sock_cpu = 0, err = 0, num_socks = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
         if (groupSet->threads[e].thread_id == threadId)
@@ -2965,10 +2999,13 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
         }
     }
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
+    num_socks = cpuid_topology.numSockets;
     if (cpuid_info.isIntel && cpuid_info.model == SKYLAKEX && cpuid_topology.numDies != cpuid_topology.numSockets)
     {
+        num_socks = cpuid_topology.numDies;
         sock_cpu = die_lock[affinity_thread2die_lookup[cpu]];
     }
+    add_to_clist(&clist, "num_sockets", num_socks);
     if (cpu != sock_cpu)
     {
         for (e=0; e<groupSet->numberOfThreads; e++)
@@ -3626,7 +3663,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
     add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
-    int cpu = 0, sock_cpu = 0;
+    int cpu = 0, sock_cpu = 0, num_socks = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
         if (groupSet->threads[e].thread_id == threadId)
@@ -3635,10 +3672,13 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
         }
     }
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
+    num_socks = cpuid_topology.numSockets;
     if (cpuid_info.isIntel && cpuid_info.model == SKYLAKEX && cpuid_topology.numDies != cpuid_topology.numSockets)
     {
         sock_cpu = die_lock[affinity_thread2die_lookup[cpu]];
+        num_socks = cpuid_topology.numDies;
     }
+    add_to_clist(&clist, "num_sockets", num_socks);
     if (cpu != sock_cpu)
     {
         for (e=0; e<groupSet->numberOfThreads; e++)

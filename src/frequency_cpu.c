@@ -904,11 +904,16 @@ static int getBaseFreq(const int cpu_id)
     err = HPMread(cpu_id, MSR_DEV, MSR_PLATFORM_INFO, &tmp);
     if (err)
     {
-        ERROR_PRINT(Cannot read register 0x%x, MSR_PLATFORM_INFO);
-        return err;
+        timer_init();
+        uint64_t tmp = timer_getCpuClock()/1000;
+        return tmp;
     }
-    tmp = extractBitField(tmp,8,8);
-    return 100000 * tmp;
+    else
+    {
+        tmp = extractBitField(tmp,8,8);
+        return 100000 * tmp;
+    }
+
 #endif
 }
 
@@ -1267,7 +1272,7 @@ int freq_setTurbo(const int cpu_id, const int turbo)
     return 1;
 }
 
-void __attribute__((destructor (104))) close_frequency_cpu(void)
-{
-    _freqFinalize();
-}
+/*void __attribute__((destructor (104))) close_frequency_cpu(void)*/
+/*{*/
+/*    _freqFinalize();*/
+/*}*/

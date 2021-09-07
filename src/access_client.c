@@ -233,7 +233,9 @@ access_client_init(int cpu_id)
             pthread_mutex_init(&cpuLocks[i], NULL);
         }
     }
+#if defined(__x86_64__) || defined(__i386__)
     access_x86_rdpmc_init(cpu_id);
+#endif
     if (masterPid != 0 && gettid() == masterPid)
     {
         return 0;
@@ -478,7 +480,9 @@ access_client_finalize(int cpu_id)
         globalSocket = -1;
     }
     masterPid = 0;
+#if defined(__x86_64__) || defined(__i386__)
     access_x86_rdpmc_finalize(cpu_id);
+#endif
 }
 
 int

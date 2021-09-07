@@ -118,8 +118,10 @@ static char* armv7l_str = "ARM 7l architecture";
 static char* armv8_str = "ARM 8 architecture";
 static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
 static char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
-static char* arm_cortex_a57 = "ARM Cortex A57 (ARMv8)";
-static char* arm_cortex_a53 = "ARM Cortex A53 (ARMv8)";
+static char* arm_cortex_a57 = "ARM Cortex A57";
+static char* arm_cortex_a53 = "ARM Cortex A53";
+static char* arm_cortex_a72 = "ARM Cortex A72";
+static char* arm_cortex_a73 = "ARM Cortex A73";
 static char* arm_neoverse_n1 = "ARM Neoverse N1";
 static char* fujitsu_a64fx = "Fujitsu A64FX";
 static char* power7_str = "POWER7 architecture";
@@ -349,6 +351,10 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
                 {
                     cpuid_topology.threadPool[thread].packageId = tmp;
                 }
+                else if (strcmp(value, "dieId") == 0)
+                {
+                    cpuid_topology.threadPool[thread].dieId = tmp;
+                }
                 else if (strcmp(value, "apicId") == 0)
                 {
                     cpuid_topology.threadPool[thread].apicId = tmp;
@@ -507,7 +513,7 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
             else if (strcmp(field, "features") == 0)
             {
                 strcpy(value,&(line[strlen(structure)+strlen(field)+4]));
-		int len = 257;
+                int len = 257;
                 cpuid_info.features = (char*) malloc(len * sizeof(char));
                 strncpy(cpuid_info.features, value, len);
                 cpuid_info.features[strlen(value)-1] = '\0';
@@ -923,6 +929,7 @@ topology_setName(void)
 
                 case ICELAKEX1:
                 case ICELAKEX2:
+                    cpuid_info.supportUncore = 1;
                     cpuid_info.name = icelakesp_str;
                     cpuid_info.short_name = short_icelakesp;
                     break;
@@ -1047,7 +1054,7 @@ topology_setName(void)
             cpuid_info.short_name = short_k16;
             break;
 
-	case PPC_FAMILY:
+        case PPC_FAMILY:
             switch(cpuid_info.model)
             {
                 case POWER7:
@@ -1084,6 +1091,7 @@ topology_setName(void)
                     break;
                 case ZEN2_RYZEN:
                 case ZEN2_RYZEN2:
+                case ZEN2_RYZEN3:
                     cpuid_info.name = amd_zen2_str;
                     cpuid_info.short_name = short_zen2;
                     break;
@@ -1111,6 +1119,22 @@ topology_setName(void)
                     cpuid_info.name = armv7l_str;
                     cpuid_info.short_name = short_arm7;
                     break;
+                case ARM_CORTEX_A57:
+                    cpuid_info.name = arm_cortex_a57;
+                    cpuid_info.short_name = short_arm7;
+                    break;
+                case ARM_CORTEX_A53:
+                    cpuid_info.name = arm_cortex_a53;
+                    cpuid_info.short_name = short_arm7;
+                    break;
+                case ARM_CORTEX_A72:
+                    cpuid_info.name = arm_cortex_a72;
+                    cpuid_info.short_name = short_arm7;
+                    break;
+                case ARM_CORTEX_A73:
+                    cpuid_info.name = arm_cortex_a73;
+                    cpuid_info.short_name = short_arm7;
+                    break;
                 default:
                     return EXIT_FAILURE;
                     break;
@@ -1128,6 +1152,14 @@ topology_setName(void)
                             break;
                         case ARM_CORTEX_A53:
                             cpuid_info.name = arm_cortex_a53;
+                            cpuid_info.short_name = short_arm8;
+                            break;
+                        case ARM_CORTEX_A72:
+                            cpuid_info.name = arm_cortex_a72;
+                            cpuid_info.short_name = short_arm8;
+                            break;
+                        case ARM_CORTEX_A73:
+                            cpuid_info.name = arm_cortex_a73;
                             cpuid_info.short_name = short_arm8;
                             break;
                         case ARM_NEOVERSE_N1:
@@ -1284,7 +1316,20 @@ topology_init(void)
     {
 standard_init:
         CPU_ZERO(&cpuSet);
-        sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
+        if (getenv("LIKWID_IGNORE_CPUSET") == NULL)
+        {
+            sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
+        }
+        else
+        {
+            for (int i = 0; i < sysconf(_SC_NPROCESSORS_CONF); i++)
+            {
+                if (likwid_cpu_online(i))
+                {
+                    CPU_SET(i, &cpuSet);
+                }
+            }
+        }
         if (cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF))
         {
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
@@ -1397,7 +1442,20 @@ standard_init:
     else
     {
         CPU_ZERO(&cpuSet);
-        sched_getaffinity(0, sizeof(cpu_set_t), &cpuSet);
+        if (getenv("LIKWID_IGNORE_CPUSET") == NULL)
+        {
+            sched_getaffinity(0, sizeof(cpu_set_t), &cpuSet);
+        }
+        else
+        {
+            for (int i = 0; i < sysconf(_SC_NPROCESSORS_CONF); i++)
+            {
+                if (likwid_cpu_online(i))
+                {
+                    CPU_SET(i, &cpuSet);
+                }
+            }
+        }
         DEBUG_PRINT(DEBUGLEV_INFO, Reading topology information from %s, config.topologyCfgFileName);
         ret = readTopologyFile(config.topologyCfgFileName, cpuSet);
         if (ret < 0)
@@ -1521,6 +1579,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",tigerlake_str);
     printf("\t%s\n",icelake_str);
     printf("\t%s\n",rocketlake_str);
+    printf("\t%s\n",icelakesp_str);
     printf("\n");
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);

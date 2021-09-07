@@ -1540,11 +1540,11 @@ lua_likwid_getPowerInfo(lua_State* L)
         power_hasRAPL = power_init(0);
         if (power_hasRAPL > 0)
         {
-            for(i=0;i<affinity->numberOfAffinityDomains;i++)
+            for (i = 0; i < cputopo->numHWThreads; i++)
             {
-                if (bstrchrp(affinity->domains[i].tag, 'S', 0) != BSTR_ERR)
+                if (cputopo->threadPool[i].inCpuSet)
                 {
-                    HPMaddThread(affinity->domains[i].processorList[0]);
+                    HPMaddThread(cputopo->threadPool[i].apicId);
                 }
             }
             power_isInitialized = 1;
@@ -2019,12 +2019,19 @@ lua_likwid_startProgram(lua_State* L)
             lua_pop(L,1);
         }
     }
-    else
+    /*else
     {
+        int count = 0;
         for (nrThreads = 0; nrThreads < cpuid_topology.numHWThreads; nrThreads++)
-            cpus[nrThreads] = cpuid_topology.threadPool[nrThreads].apicId;
-        nrThreads = cpuid_topology.numHWThreads;
-    }
+        {
+            if (cpuid_topology.threadPool[nrThreads].inCpuSet == 1)
+            {
+                cpus[count] = cpuid_topology.threadPool[nrThreads].apicId;
+                count++;
+            }
+        }
+        nrThreads = count;
+    }*/
     int args = parse(exec, argv, MAX_NUM_CLIARGS);
     if (args < 0)
     {

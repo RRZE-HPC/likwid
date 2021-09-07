@@ -1,3 +1,27 @@
+# Changelog 5.2.0
+- Support for AMD Zen3 (Core + Uncore)
+- Support for Intel IcelakeSP (Core + Uncore)
+- New affinity code
+- Fix for Ivybridge uncore code
+- Bypass accessdaemon by using rdpmc instruction on x86_64
+- Introduce notion of CPU die in topology module
+- Use CPU dies for socket-lock for Intel CascadelakeAP
+- Add environment variable LIKWID_IGNORE_CPUSET to break out of current CPUset
+- Fixes for affinity module CPUlist sorting
+- Build against system-installed hwloc
+- Update for Intel SkylakeX/CascadelakeX L3 group
+- Rename DataFabric events for all generations of AMD Zen
+- Add static cache configuration for Fujitsu A64FX
+- Add multiplexing checks for perf_event backend
+- Fix for table width of likwid-topology afteradding CPU die column
+- Adding RasPi 4 with 32 bit OS as ARMv7
+- Add default groups for Intel Icelake desktop
+- Fix for likwid-setFrequencies to not apply minFreq when setting governor
+- likwid-powermeter: Fix hwthread selection when run with -p
+- likwid-setFrequencies: Get measured base frequency if register is not readable
+- CLOCK group for all AMD Zen
+- Fixes in Nvidia GPU support in NvMarkerAPI and topology module
+
 # Changelog 5.1.1
 - Support for Intel Cometlake desktop (Core + Uncore)
 - Fix for topology module of Fujitsu A64FX

@@ -146,6 +146,12 @@ on the executables. Not all file systems support capabilities.
 The only feasable way is to register the likwid-accessD and proxy all access
 over it.
 
+Update for Linux kernel 5.9 and newer:
+With Linux 5.9, the msr kernel module got some security fixes. The major change for LIKWID is, that now all MSR are non-writable by default. In order to change that, you have to change the boot options of your operating system to contain msr.allow_writes=on to enable writes again. This affects only ACCESSMODE=direct and ACCESSMODE=accessdaemon. If you use the perf_event backend, you don't have to change anything.
+
+Update for Linux kernel 5.10 and newer:
+We got reports, that with Linux 5.10 the PCI accesses are also restricted by security mechanisms. In order to fix this, the access daemon requires an additinal capabilities flag: sudo setcap cap_sys_admin,cap_sys_rawio=ep EXECUTABLE
+
 If you have still problems please let me know on the likwid mailing list:
 http://groups.google.com/group/likwid-users
 

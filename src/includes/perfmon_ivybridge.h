@@ -1210,15 +1210,15 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                     break;
 
                 case MBOX0:
-                    if (!cpuid_info.supportClientmem)
+                    if (haveLock)
                     {
-                        counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_CLEAR_CTR);
-                        ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
-                                            *current, box_map[type].ovflOffset, getCounterTypeOffset(index)+1);
-                    }
-                    else
-                    {
-                        if (haveLock)
+                        if (!cpuid_info.supportClientmem)
+                        {
+                            counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_CLEAR_CTR);
+                            ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
+                                                *current, box_map[type].ovflOffset, getCounterTypeOffset(index)+1);
+                        }
+                        else
                         {
                             uint64_t tmp = 0x0;
                             CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
@@ -1234,9 +1234,12 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                 case MBOX5:
                 case MBOX6:
                 case MBOX7:
-                    counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_CLEAR_CTR);
-                    ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
-                                        *current, box_map[type].ovflOffset, getCounterTypeOffset(index)+1);
+                    if (haveLock)
+                    {
+                        counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_CLEAR_CTR);
+                        ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
+                                            *current, box_map[type].ovflOffset, getCounterTypeOffset(index)+1);
+                    }
                     break;
 
 
@@ -1248,9 +1251,12 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                 case MBOX5FIX:
                 case MBOX6FIX:
                 case MBOX7FIX:
-                    counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_CLEAR_CTR);
-                    ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
-                                        *current, box_map[type].ovflOffset, 0);
+                    if (haveLock)
+                    {
+                        counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_CLEAR_CTR);
+                        ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
+                                            *current, box_map[type].ovflOffset, 0);
+                    }
                     break;
                 case WBOX0FIX:
                 case WBOX1FIX:
@@ -1298,9 +1304,12 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                 case RBOX1:
                 case RBOX2:
                 case IBOX0:
-                    counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_CLEAR_CTR);
-                    ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
-                                        *current, box_map[type].ovflOffset, getCounterTypeOffset(index));
+                    if (haveLock)
+                    {
+                        counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_CLEAR_CTR);
+                        ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
+                                            *current, box_map[type].ovflOffset, getCounterTypeOffset(index));
+                    }
                     break;
 
                 default:
@@ -1442,22 +1451,25 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                     break;
 
                 case MBOX0:
-                    if (!cpuid_info.supportClientmem)
+                    if (haveLock)
                     {
-                        counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_ONLYFREEZE);
-                        ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
-                                            *current, box_map[type].ovflOffset, getCounterTypeOffset(index)+1);
-                    }
-                    else if (haveLock)
-                    {
-                        CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
-                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                        if (!cpuid_info.supportClientmem)
                         {
-                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_CLIENTMEM)
-                            eventSet->events[i].threadCounter[thread_id].overflows++;
+                            counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_ONLYFREEZE);
+                            ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
+                                                *current, box_map[type].ovflOffset, getCounterTypeOffset(index)+1);
                         }
-                        *current = counter_result;
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
+                        else
+                        {
+                            CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
+                            if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                            {
+                                VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_CLIENTMEM)
+                                eventSet->events[i].threadCounter[thread_id].overflows++;
+                            }
+                            *current = counter_result;
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
+                        }
                     }
                     break;
                 case MBOX1:
@@ -1467,9 +1479,12 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                 case MBOX5:
                 case MBOX6:
                 case MBOX7:
-                    counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_ONLYFREEZE);
-                    ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
-                                        *current, box_map[type].ovflOffset, getCounterTypeOffset(index)+1);
+                    if (haveLock)
+                    {
+                        counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_ONLYFREEZE);
+                        ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
+                                            *current, box_map[type].ovflOffset, getCounterTypeOffset(index)+1);
+                    }
                     break;
 
 
@@ -1481,9 +1496,12 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                 case MBOX5FIX:
                 case MBOX6FIX:
                 case MBOX7FIX:
-                    counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_ONLYFREEZE);
-                    ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
-                                        *current, box_map[type].ovflOffset, 0);
+                    if (haveLock)
+                    {
+                        counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_ONLYFREEZE);
+                        ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
+                                            *current, box_map[type].ovflOffset, 0);
+                    }
                     break;
                 case WBOX0FIX:
                 case WBOX1FIX:
@@ -1498,9 +1516,12 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                     break;
 
                 case IBOX1:
-                    counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_ONLYFREEZE);
-                    ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
-                                        *current, -1, getCounterTypeOffset(index)+2);
+                    if (haveLock)
+                    {
+                        counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_ONLYFREEZE);
+                        ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
+                                            *current, -1, getCounterTypeOffset(index)+2);
+                    }
                     break;
 
                 case SBOX0:
@@ -1531,9 +1552,12 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                 case RBOX1:
                 case RBOX2:
                 case IBOX0:
-                    counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_ONLYFREEZE);
-                    ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
-                                        *current, box_map[type].ovflOffset, getCounterTypeOffset(index));
+                    if (haveLock)
+                    {
+                        counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_ONLYFREEZE);
+                        ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
+                                            *current, box_map[type].ovflOffset, getCounterTypeOffset(index));
+                    }
                     break;
 
                 default:
@@ -1627,10 +1651,20 @@ int perfmon_finalizeCountersThread_ivybridge(int thread_id, PerfmonEventSet* eve
     }
     if (haveLock && MEASURE_UNCORE(eventSet))
     {
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_STATUS, LLU_CAST 0x0ULL, CLEAR_UNCORE_OVF)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_STATUS, 0x0ULL));
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, CLEAR_UNCORE_CTRL)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_CTL, 0x0ULL));
+        if (cpuid_info.model == IVYBRIDGE_EP)
+        {
+            VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_STATUS, LLU_CAST 0x0ULL, CLEAR_UNCORE_OVF)
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_STATUS, 0x0ULL));
+            VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, CLEAR_UNCORE_CTRL)
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_CTL, 0x0ULL));
+        }
+        else if (cpuid_info.model == IVYBRIDGE)
+        {
+            VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_OVF_CTRL, LLU_CAST 0x0ULL, CLEAR_UNCORE_OVF)
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
+            VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, CLEAR_UNCORE_CTRL)
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL));
+        }
         for (int i=UNCORE;i<NUM_UNITS;i++)
         {
             if (TESTTYPE(eventSet, i) && box_map[i].ctrlRegister != 0x0)

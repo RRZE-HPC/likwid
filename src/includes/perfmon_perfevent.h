@@ -40,13 +40,6 @@
 #include <asm/unistd.h>
 #include <string.h>
 
-
-typedef struct __attribute__((packed)) {
-    uint64_t value;
-    uint64_t enabled;
-    uint64_t running;
-} PerfEventResult;
-
 extern char** translate_types;
 static int** cpu_event_fds = NULL;
 static int active_cpus = 0;
@@ -56,7 +49,6 @@ static int running_group = -1;
 static int perf_event_num_cpus = 0;
 static int perf_disable_uncore = 0;
 static int perf_event_paranoid = -1;
-static int printed_multiplex_info = 0;
 
 static long
 perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
@@ -156,6 +148,7 @@ static char* perfEventOptionNames[] = {
     [EVENT_OPTION_OCCUPANCY_INVERT] = "occ_inv",
 #ifdef _ARCH_PPC
     [EVENT_OPTION_GENERIC_CONFIG] = "pmcxsel",
+    [EVENT_OPTION_UNCORE_CONFIG] = "event",
 #else
     [EVENT_OPTION_GENERIC_CONFIG] = "event",
 #endif
@@ -252,7 +245,6 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
     attr->type = PERF_TYPE_HARDWARE;
     attr->disabled = 1;
     attr->inherit = 1;
-    attr->read_format = PERF_FORMAT_TOTAL_TIME_ENABLED|PERF_FORMAT_TOTAL_TIME_RUNNING;
     if (translate_types[FIXED] != NULL &&
         strcmp(translate_types[PMC], translate_types[FIXED]) == 0)
     {
@@ -332,7 +324,6 @@ int perf_perf_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEv
     attr->disabled = 1;
     attr->inherit = 1;
     attr->config = event->eventId;
-    attr->read_format = PERF_FORMAT_TOTAL_TIME_ENABLED|PERF_FORMAT_TOTAL_TIME_RUNNING;
     return 0;
 }
 
@@ -347,7 +338,6 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     attr->exclude_hv = 1;
     attr->disabled = 1;
     attr->inherit = 1;
-    attr->read_format = PERF_FORMAT_TOTAL_TIME_ENABLED|PERF_FORMAT_TOTAL_TIME_RUNNING;
     //attr->exclusive = 1;
 #if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
     if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
@@ -490,12 +480,12 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     int perf_type = 0;
     PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
     int start = 0, end = -1;
+    uint64_t eventConfig = 0x0;
     if (perf_event_paranoid > 0 && getuid() != 0)
     {
         return EPERM;
     }
     attr->type = 0;
-    attr->read_format = PERF_FORMAT_TOTAL_TIME_ENABLED|PERF_FORMAT_TOTAL_TIME_RUNNING;
     ret = sprintf(checkfolder, "%s", translate_types[type]);
     if (access(checkfolder, F_OK))
     {
@@ -525,34 +515,62 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     attr->type = perf_type;
     attr->disabled = 1;
     attr->inherit = 1;
+#ifdef _ARCH_PPC
+    eventConfig = (event->umask<<8)|event->eventId;
+#else
+    eventConfig = event->eventId;
+#endif
     //attr->config = (event->umask<<8) + event->eventId;
     getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
     switch(reg)
     {
         case PERF_EVENT_CONFIG_REG:
-            attr->config |= create_mask(event->eventId, start, end);
+            attr->config |= create_mask(eventConfig, start, end);
             break;
         case PERF_EVENT_CONFIG1_REG:
-            attr->config1 |= create_mask(event->eventId, start, end);
+            attr->config1 |= create_mask(eventConfig, start, end);
             break;
         case PERF_EVENT_CONFIG2_REG:
-            attr->config2 |= create_mask(event->eventId, start, end);
+            attr->config2 |= create_mask(eventConfig, start, end);
             break;
-    }
-    getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
-    switch(reg)
-    {
-        case PERF_EVENT_CONFIG_REG:
-            attr->config |= create_mask(event->umask, start, end);
-            break;
-        case PERF_EVENT_CONFIG1_REG:
-            attr->config1 |= create_mask(event->umask, start, end);
-            break;
-        case PERF_EVENT_CONFIG2_REG:
-            attr->config2 |= create_mask(event->umask, start, end);
-            break;
-    }
 
+    }
+#ifdef _ARCH_PPC
+    if (reg == PERF_EVENT_INVAL_REG)
+    {
+	uint64_t config = (event->umask<<8)|event->eventId;
+        getEventOptionConfig(translate_types[type], EVENT_OPTION_UNCORE_CONFIG, &reg, &start, &end);
+        switch(reg)
+        {
+            case PERF_EVENT_CONFIG_REG:
+                attr->config |= create_mask(eventConfig, start, end);
+                break;
+            case PERF_EVENT_CONFIG1_REG:
+                attr->config1 |= create_mask(eventConfig, start, end);
+                break;
+            case PERF_EVENT_CONFIG2_REG:
+                attr->config2 |= create_mask(eventConfig, start, end);
+                break;
+        }
+    }
+#else
+    if (event->umask != 0x0)
+    {
+        getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
+        switch(reg)
+        {
+            case PERF_EVENT_CONFIG_REG:
+                attr->config |= create_mask(event->umask, start, end);
+                break;
+            case PERF_EVENT_CONFIG1_REG:
+                attr->config1 |= create_mask(event->umask, start, end);
+                break;
+            case PERF_EVENT_CONFIG2_REG:
+                attr->config2 |= create_mask(event->umask, start, end);
+                break;
+        }
+    }
+#endif
 
     //attr->exclusive = 1;
     if (event->numberOfOptions > 0)
@@ -890,37 +908,17 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
                 continue;
             VERBOSEPRINTREG(cpu_id, 0x0, 0x0, RESET_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_RESET, 0);
-            eventSet->events[i].threadCounter[thread_id].startData = 0x0ULL;
+            PerfmonCounter *c = &eventSet->events[i].threadCounter[thread_id];
+            c->startData = 0x0ULL;
+            c->counterData = 0x0ULL;
             if (eventSet->events[i].type == POWER)
             {
-                PerfEventResult res = {0ULL, 0ULL, 0ULL};
-                ret = read(cpu_event_fds[cpu_id][index], &res, sizeof(PerfEventResult));
-                VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, START_POWER);
-                if (ret == sizeof(PerfEventResult))
-                {
-                    if (res.value > 0 && res.enabled > 0 && res.enabled != res.running)
-                    {
-                        double value = (double)res.value;
-                        double enabled = (double)res.enabled;
-                        double running = (double)res.running;
-                        value *= (enabled/running);
-                        res.value = (uint64_t)value;
-                        VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, SCALE_POWER);
-                        if (printed_multiplex_info == 0)
-                        {
-                            fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.\n");
-                            printed_multiplex_info = 1;
-                        }
-                    }
-                    eventSet->events[i].threadCounter[thread_id].startData = res.value;
-                }
-                else
-                {
-                    ERROR_PRINT(Failed to read FD %d HW thread %d RegIdx %d, cpu_event_fds[cpu_id][index], cpu_id, index);
-                }
+                ret = read(cpu_event_fds[cpu_id][index],
+                        &eventSet->events[i].threadCounter[thread_id].startData,
+                        sizeof(long long));
             }
             VERBOSEPRINTREG(cpu_id, 0x0,
-                            eventSet->events[i].threadCounter[thread_id].startData,
+                            c->startData,
                             START_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_ENABLE, 0);
         }
@@ -932,6 +930,7 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
 {
     int ret;
     int cpu_id = groupSet->threads[thread_id].processorId;
+    long long tmp = 0;
     if (!perf_event_initialized)
     {
         return -(thread_id+1);
@@ -945,30 +944,12 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                 continue;
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
-            PerfEventResult res = {0ULL, 0ULL, 0ULL};
-            ret = read(cpu_event_fds[cpu_id][index], &res, sizeof(PerfEventResult));
-            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, READ_COUNTER);
-            if (ret == sizeof(PerfEventResult))
+            tmp = 0;
+            ret = read(cpu_event_fds[cpu_id][index], &tmp, sizeof(long long));
+            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
+            if (ret == sizeof(long long))
             {
-                if (res.value > 0 && res.enabled > 0 && res.enabled != res.running)
-                {
-                    double value = (double)res.value;
-                    double enabled = (double)res.enabled;
-                    double running = (double)res.running;
-                    value *= (enabled/running);
-                    res.value = (uint64_t)value;
-                    VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, SCALE_COUNTER);
-                    if (printed_multiplex_info == 0)
-                    {
-                        fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.\n");
-                        printed_multiplex_info = 1;
-                    }
-                }
-                eventSet->events[i].threadCounter[thread_id].counterData = res.value;
-            }
-            else
-            {
-                ERROR_PRINT(Failed to read FD %d HW thread %d RegIdx %d, cpu_event_fds[cpu_id][index], cpu_id, index);
+                eventSet->events[i].threadCounter[thread_id].counterData = tmp;
             }
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_RESET, 0);
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, RESET_COUNTER);
@@ -981,6 +962,7 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
 {
     int ret;
     int cpu_id = groupSet->threads[thread_id].processorId;
+    long long tmp = 0;
     if (!perf_event_initialized)
     {
         return -(thread_id+1);
@@ -994,30 +976,12 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                 continue;
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
-            PerfEventResult res = {0ULL, 0ULL, 0ULL};
-            ret = read(cpu_event_fds[cpu_id][index], &res, sizeof(PerfEventResult));
-            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, READ_COUNTER);
-            if (ret == sizeof(PerfEventResult))
+            tmp = 0;
+            ret = read(cpu_event_fds[cpu_id][index], &tmp, sizeof(long long));
+            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
+            if (ret == sizeof(long long))
             {
-                if (res.value > 0 && res.enabled > 0 && res.enabled != res.running)
-                {
-                    double value = (double)res.value;
-                    double enabled = (double)res.enabled;
-                    double running = (double)res.running;
-                    value *= (enabled/running);
-                    res.value = (uint64_t)value;
-                    VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, SCALE_COUNTER);
-                    if (printed_multiplex_info == 0)
-                    {
-                        fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.");
-                        printed_multiplex_info = 1;
-                    }
-                }
-                eventSet->events[i].threadCounter[thread_id].counterData = res.value;
-            }
-            else
-            {
-                ERROR_PRINT(Failed to read FD %d HW thread %d RegIdx %d, cpu_event_fds[cpu_id][index], cpu_id, index);
+                eventSet->events[i].threadCounter[thread_id].counterData = tmp;
             }
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, UNFREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_ENABLE, 0);

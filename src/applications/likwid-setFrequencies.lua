@@ -554,7 +554,7 @@ elseif min_first and min_freq then
             local f = likwid.setCpuClockMax(cpulist[i], max_freq)
         end
     end
-else
+elseif min_freq and max_freq then
     for i=1,#cpulist do
         local f = likwid.setCpuClockMin(cpulist[i], min_freq)
         local f = likwid.setCpuClockMax(cpulist[i], max_freq)

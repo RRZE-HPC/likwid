@@ -927,7 +927,7 @@ int perfmon_setupCounterThread_skylake(
                 skylake_cbox_setup(cpu_id, index, event);
                 break;
             case MBOX0:
-                if (!cpuid_info.supportClientmem)
+                if (haveLock && !cpuid_info.supportClientmem)
                 {
                     skx_mbox_setup(cpu_id, index, event);
                 }
@@ -937,7 +937,10 @@ int perfmon_setupCounterThread_skylake(
             case MBOX3:
             case MBOX4:
             case MBOX5:
-                skx_mbox_setup(cpu_id, index, event);
+                if (haveLock)
+                {
+                    skx_mbox_setup(cpu_id, index, event);
+                }
                 break;
             case MBOX0FIX:
             case MBOX1FIX:
@@ -1138,7 +1141,6 @@ int perfmon_startCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet
                 case EUBOX3:
                 case EUBOX4:
                 case EUBOX5:
-
                 case IBOX0FIX:
                 case IBOX1FIX:
                 case IBOX2FIX:
@@ -1462,10 +1464,13 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case MBOX3:
                 case MBOX4:
                 case MBOX5:
-                    skl_uncore_read(cpu_id, index, event, current, overflows,
-                                    0, ovf_offset, getCounterTypeOffset(index)+1);
-                    counter_result = *current;
-                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
+                    if (haveLock)
+                    {
+                        skl_uncore_read(cpu_id, index, event, current, overflows,
+                                        0, ovf_offset, getCounterTypeOffset(index)+1);
+                        counter_result = *current;
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
+                    }
                     break;
                 case MBOX0FIX:
                 case MBOX1FIX:
@@ -1475,9 +1480,12 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case MBOX5FIX:
                 case MBOX6FIX:
                 case MBOX7FIX:
-                    skl_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, ovf_offset, 0);
-                    counter_result = *current;
+                    if (haveLock)
+                    {
+                        skl_uncore_read(cpu_id, index, event, current, overflows,
+                                        FREEZE_FLAG_CLEAR_CTR, ovf_offset, 0);
+                        counter_result = *current;
+                    }
                     break;
                 case BBOX0:
                 case BBOX1:
@@ -1499,11 +1507,13 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case EUBOX3:
                 case EUBOX4:
                 case EUBOX5:
-                    skl_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
-                    counter_result = *current;
-                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_BBOX)
-
+                    if (haveLock)
+                    {
+                        skl_uncore_read(cpu_id, index, event, current, overflows,
+                                        FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
+                        counter_result = *current;
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_BBOX)
+                    }
                     break;
                 default:
                     break;
@@ -1694,9 +1704,12 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case MBOX3:
                 case MBOX4:
                 case MBOX5:
-                    skl_uncore_read(cpu_id, index, event, current, overflows,
-                                    0, ovf_offset, getCounterTypeOffset(index)+1);
-                    counter_result = *current;
+                    if (haveLock)
+                    {
+                        skl_uncore_read(cpu_id, index, event, current, overflows,
+                                        0, ovf_offset, getCounterTypeOffset(index)+1);
+                        counter_result = *current;
+                    }
                     break;
                 case MBOX0FIX:
                 case MBOX1FIX:
@@ -1704,9 +1717,12 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case MBOX3FIX:
                 case MBOX4FIX:
                 case MBOX5FIX:
-                    skl_uncore_read(cpu_id, index, event, current, overflows,
-                                    0, ovf_offset, 0);
-                    counter_result = *current;
+                    if (haveLock)
+                    {
+                        skl_uncore_read(cpu_id, index, event, current, overflows,
+                                        0, ovf_offset, 0);
+                        counter_result = *current;
+                    }
                     break;
                 case BBOX0:
                 case BBOX1:
@@ -1729,10 +1745,13 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case EUBOX4:
                 case EUBOX5:
                 case WBOX:
-                    skl_uncore_read(cpu_id, index, event, current, overflows,
-                                    0, ovf_offset, getCounterTypeOffset(index));
-                    counter_result = *current;
-                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_BBOX)
+                    if (haveLock)
+                    {
+                        skl_uncore_read(cpu_id, index, event, current, overflows,
+                                        0, ovf_offset, getCounterTypeOffset(index));
+                        counter_result = *current;
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_BBOX)
+                    }
                     break;
                 default:
                     break;
