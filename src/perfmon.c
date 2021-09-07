@@ -1136,6 +1136,7 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersTigerlake;
                 case ICELAKE1:
                 case ICELAKE2:
+                case ROCKETLAKE:
                     pci_devices = icelake_pci_devices;
                     eventHash = icelake_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsIcelake;
@@ -1684,6 +1685,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                 case ICELAKE2:
                 case ICELAKEX1:
                 case ICELAKEX2:
+                case ROCKETLAKE:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_icelake;
