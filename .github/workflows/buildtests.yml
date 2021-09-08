@@ -7,16 +7,29 @@ on:
     branches: [ master ]
 
 jobs:
-  build-accessdaemon:
+  build-x86-accessdaemon:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - name: make accessdaemon
       run: make ACCESSMODE=accessdaemon
 
-  build-perfevent:
+  build-x86-perfevent:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - name: make perf_event
       run: make ACCESSMODE=perf_event
+
+  build-arm8-perfevent:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: uraimo/run-on-arch-action@v2.0.5
+      id: aarch64-perf
+      with:
+        arch: aarch64
+        distro: ubuntu20.04
+        run: make COMPILER=ARMv8
+    - name: result
+      run: echo "${{ steps.aarch64-perf.outputs }}"
