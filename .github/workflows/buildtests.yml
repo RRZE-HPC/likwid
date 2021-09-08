@@ -22,14 +22,14 @@ jobs:
       run: make ACCESSMODE=perf_event
 
   build-arm8-perfevent:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
     - uses: uraimo/run-on-arch-action@v2.0.5
       id: aarch64-perf
       with:
         arch: aarch64
-        distro: ubuntu20.04
+        distro: ubuntu18.04
         run: make COMPILER=ARMv8
     - name: result
       run: echo "${{ steps.aarch64-perf.outputs }}"
