@@ -96,13 +96,13 @@ build-arm8-perf:
 
 
 check-event-files:
-    stage: test
+    stage: .pre
     tags:
       - testcluster
     script:
       - module load python
       - test/check_data_files.py events
-#      - test/check_data_files.py groups
+      - test/check_data_files.py groups
 
 arch-gen:
   stage: build
