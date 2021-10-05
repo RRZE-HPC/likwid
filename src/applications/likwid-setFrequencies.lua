@@ -372,7 +372,7 @@ if do_reset then
     local availfreqs = likwid.getAvailFreq(cpulist[1])
     local availgovs = likwid.getAvailGovs(cpulist[1])
     if driver == "intel_pstate" then
-        availfreqs = {likwid.getConfCpuClockMin(cpulist[1]), likwid.getConfCpuClockMax(cpulist[1])}
+        availfreqs = {likwid.getConfCpuClockMin(cpulist[1]), base_freq}
     end
     if not min_freq then
         min_freq = availfreqs[1]
@@ -461,25 +461,56 @@ if min_u_freq and max_u_freq and max_u_freq < min_u_freq then
     os.exit(1)
 end
 
-if max_freq and (likwid.getTurbo(cpulist[1]) == 1 or (set_turbo and turbo == 1)) and tonumber(max_freq) < base_freq then
-    print_stderr("ERROR: Setting maximal CPU frequency below base CPU frequency with activated Turbo mode is not supported.")
-    likwid.finalizeFreq()
-    os.exit(1)
-end
-if (likwid.getTurbo(cpulist[1]) == 0 and not set_turbo) then
-    local do_exit = false
-    if max_freq and tonumber(max_freq) > base_freq then
-        print_stderr("ERROR: Setting maximal CPU frequency above base CPU frequency with deactivated Turbo mode is not supported.")
-        do_exit = true
-    elseif min_freq and tonumber(min_freq) > base_freq then
-        print_stderr("ERROR: Setting minimal CPU frequency above base CPU frequency with deactivated Turbo mode is not supported.")
-        do_exit = true
+if max_freq then
+    if tonumber(max_freq) < base_freq then
+        
+        if (set_turbo and turbo == 1) then
+            print_stderr("ERROR: Setting maximal CPU frequency below base CPU frequency with activated Turbo mode is not supported.")
+            likwid.finalizeFreq()
+            os.exit(1)
+        elseif (likwid.getTurbo(cpulist[1]) == 1 and ((not set_turbo) and turbo == 0)) then
+--            print_stdout("currently invalid setting but we will disable turbo")
+        end
+    elseif tonumber(max_freq) > base_freq then
+        if ((set_turbo and turbo == 0)) then
+            print_stderr("ERROR: Setting maximal CPU frequency above base CPU frequency with deactivated Turbo mode is not supported.")
+            likwid.finalizeFreq()
+            os.exit(1)
+        elseif ((likwid.getTurbo(cpulist[1]) == 0) and not (set_turbo and turbo == 1)) then
+            print_stderr("ERROR: Setting maximal CPU frequency above base CPU frequency when Turbo mode is deactivated is not supported.")
+            likwid.finalizeFreq()
+            os.exit(1)
+        elseif ((likwid.getTurbo(cpulist[1]) == 1) or ((not set_turbo) and turbo == 1)) then
+            print_stdout("currently invalid setting but we will enable turbo")
+        end
     end
-    if do_exit then
-        likwid.finalizeFreq()
-        os.exit(1)
+end
+
+if min_freq then
+    if tonumber(min_freq) < base_freq then
+        
+        if (set_turbo and turbo == 1) then
+            print_stderr("ERROR: Setting minimal CPU frequency below base CPU frequency with activated Turbo mode is not supported.")
+            likwid.finalizeFreq()
+            os.exit(1)
+        elseif (likwid.getTurbo(cpulist[1]) == 1 and ((not set_turbo) and turbo == 0)) then
+            print_stdout("currently invalid setting but we will disable turbo")
+        end
+    elseif tonumber(min_freq) > base_freq then
+        if ((set_turbo and turbo == 0)) then
+            print_stderr("ERROR: Setting minimal CPU frequency above base CPU frequency with deactivated Turbo mode is not supported.")
+            likwid.finalizeFreq()
+            os.exit(1)
+        elseif ((likwid.getTurbo(cpulist[1]) == 0) and not (set_turbo and turbo == 1))then
+            print_stderr("ERROR: Setting minimal CPU frequency above base CPU frequency when Turbo mode is deactivated is not supported.")
+            likwid.finalizeFreq()
+            os.exit(1)
+        elseif ((likwid.getTurbo(cpulist[1]) == 1) or ((not set_turbo) and turbo == 1)) then
+--            print_stdout("currently invalid setting but we will enable turbo")
+        end
     end
 end
+
 
 
 local availfreqs = likwid.getAvailFreq(cpulist[1])
@@ -535,7 +566,6 @@ if set_turbo then
     end
 end
 
-
 if max_first and max_freq then
     for i=1,#cpulist do
         local f = likwid.setCpuClockMax(cpulist[i], max_freq)
@@ -557,6 +587,14 @@ elseif min_first and min_freq then
 elseif min_freq and max_freq then
     for i=1,#cpulist do
         local f = likwid.setCpuClockMin(cpulist[i], min_freq)
+        local f = likwid.setCpuClockMax(cpulist[i], max_freq)
+    end
+elseif min_freq then
+    for i=1,#cpulist do
+        local f = likwid.setCpuClockMin(cpulist[i], min_freq)
+    end
+elseif max_freq then
+    for i=1,#cpulist do
         local f = likwid.setCpuClockMax(cpulist[i], max_freq)
     end
 end
