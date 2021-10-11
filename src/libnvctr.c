@@ -538,7 +538,7 @@ likwid_gpuMarkerResetRegion(const char* regionTag)
     {
         LikwidGpuResults *results = NULL;
         int ret = get_smap_by_key(gpu_maps[i], bdata(tag), (void**)&results);
-        if ((ret < 0) || (results->state != GPUMARKER_STATE_START))
+        if ((ret < 0) || (results->state != GPUMARKER_STATE_STOP))
         {
             fprintf(stderr, "ERROR: Can only reset known/stopped regions\n");
             return -EFAULT;
