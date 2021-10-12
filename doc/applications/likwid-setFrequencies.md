@@ -42,6 +42,14 @@
   <TD>-g &lt;arg&gt;</TD>
   <TD>Specify the governor for the selected CPUs.</TD>
 </TR>
+<TR>
+  <TD>-reset</TD>
+  <TD>Reset the CPU frequencies to the min and base frequency range with turbo disabled. The governor tries 'performance', 'conservative' and finally takes the last in the list of governors</TD>
+</TR>
+<TR>
+  <TD>-ureset</TD>
+  <TD>Reset the Uncore frequencies to the minimal CPU frequency and the max Turbo frequency.</TD>
+</TR>
 </TABLE>
 
 <H1>Notice</H1>
