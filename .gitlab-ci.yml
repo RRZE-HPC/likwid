@@ -96,7 +96,7 @@ build-arm8-perf:
 
 
 check-event-files:
-    stage: test
+    stage: .pre
     tags:
       - testcluster
     script:
