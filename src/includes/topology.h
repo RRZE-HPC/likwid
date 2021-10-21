@@ -145,6 +145,7 @@ struct topology_functions {
 #define ZEN2_RYZEN3     0x60
 #define ZEN3_RYZEN      0x01
 #define ZEN3_RYZEN2     0x21
+#define ZEN3_RYZEN3     0x50
 
 /* ARM */
 #define  ARM7L          0x3U

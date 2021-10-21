@@ -162,7 +162,8 @@ power_init(int cpuId)
                 cpuid_info.model == ZEN2_RYZEN2 ||
                 cpuid_info.model == ZEN2_RYZEN3 ||
                 cpuid_info.model == ZEN3_RYZEN ||
-                cpuid_info.model == ZEN3_RYZEN2)
+                cpuid_info.model == ZEN3_RYZEN2 ||
+                cpuid_info.model == ZEN3_RYZEN3)
             {
                 cpuid_info.turbo = 0;
                 power_info.hasRAPL = 1;
