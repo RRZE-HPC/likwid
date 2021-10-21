@@ -10,7 +10,7 @@ our hands to test them properly.
 
 [LIKWID Playlist (YouTube)](https://www.youtube.com/playlist?list=PLxVedhmuwLq2CqJpAABDMbZG8Whi7pKsk)
 
-[![Build Status](https://travis-ci.com/RRZE-HPC/likwid.svg?branch=master)](https://travis-ci.com/github/RRZE-HPC/likwid) [![General LIKWID DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4275676.svg)](https://doi.org/10.5281/zenodo.4275676)
+[![Build Status](https://gitlab.rrze.fau.de/ub55yzis/likwid/badges/master/pipeline.svg)](https://gitlab.rrze.fau.de/ub55yzis/likwid/-/commits/master) [![General LIKWID DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4275676.svg)](https://doi.org/10.5281/zenodo.4275676)
 
 It consists of:
 
@@ -137,8 +137,8 @@ Extras
 https://github.com/jacek-lewandowski/likwid-java-api
 - For Python you can find an interface to the LIKWID API here:
 https://github.com/RRZE-HPC/pylikwid or `pip install pylikwid`
-- The JuliaLab created an interface for Julia:
-https://github.com/JuliaPerf/LIKWID.jl or `]add LIKWID`
+- A Julia interface to LIKWID is provided by the [Paderborn Center for Parallel Computing (PC²)](https://pc2.uni-paderborn.de) and the [MIT JuliaLab](https://julia.mit.edu/):
+https://github.com/JuliaPerf/LIKWID.jl or `] add LIKWID`
 
 --------------------------------------------------------------------------------
 Survey
