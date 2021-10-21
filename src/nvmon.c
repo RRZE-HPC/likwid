@@ -866,7 +866,7 @@ double nvmon_getMetric(int groupId, int metricId, int gpuId)
     {
         return NAN;
     }
-    
+
     char* f = ginfo->metricformulas[metricId];
     NvmonDevice_t device = &nvGroupSet->gpus[gpuId];
     if (groupId < 0 || groupId >= device->numNvEventSets)
@@ -1062,14 +1062,22 @@ nvmon_readMarkerFile(const char* filename)
             char regiontag[100];
             char* ptr = NULL;
             char* colonptr = NULL;
-            regiontag[0] = '\0';
-            ret = sscanf(buf, "%d:%s", &regionid, regiontag);
+            // zero out ALL of regiontag due to replacing %s with %Nc
+            memset(regiontag, 0, sizeof(regiontag) * sizeof(char));
+            char fmt[64];
+            // using %d:%s for sscanf doesn't support spaces so replace %s with %Nc where N is one minus
+            // the size of regiontag, thus to avoid hardcoding N, compose fmt from the size of regiontag, e.g.:
+            //      regiontag[50]  --> %d:%49c
+            //      regiontag[100] --> %d:%99c
+            snprintf(fmt, 60, "%s:%s%ic", "%d", "%", (int) (sizeof(regiontag) - 1));
+            // use fmt (%d:%Nc) in lieu of %d:%s to support spaces
+            ret = sscanf(buf, fmt, &regionid, regiontag);
 
             ptr = strrchr(regiontag,'-');
             colonptr = strchr(buf,':');
             if (ret != 2 || ptr == NULL || colonptr == NULL)
             {
-                fprintf(stderr, "Line %s not a valid region description\n", buf);
+                fprintf(stderr, "Line %s not a valid region description: %s\n", buf, regiontag);
                 continue;
             }
             groupid = atoi(ptr+1);
@@ -1378,5 +1386,3 @@ double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
     destroy_clist(&clist);
     return result;
 }
-
-
