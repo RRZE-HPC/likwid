@@ -95,10 +95,10 @@ page in the wiki https://github.com/RRZE-HPC/likwid/wiki/Build
 
 For quick install:
 ```bash
-$VERSION=stable
+VERSION=stable
 wget http://ftp.fau.de/pub/likwid/likwid-$VERSION.tar.gz
 tar -xaf likwid-$VERSION.tar.gz
-cd likwid-$VERSION
+cd likwid-*
 vi config.mk # configure build, e.g. change installation prefix and architecture flags
 make
 sudo make install # sudo required to install the access daemon with proper permissions
