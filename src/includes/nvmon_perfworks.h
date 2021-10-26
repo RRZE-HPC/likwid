@@ -775,6 +775,9 @@ nvmon_perfworks_createDevice(int id, NvmonDevice *dev)
     int ierr = 0;
     size_t i = 0;
     int count = 0;
+    struct tagbstring sumtype = bsStatic (".sum");
+    struct tagbstring mintype = bsStatic (".min");
+    struct tagbstring maxtype = bsStatic (".max");
 
     if (dl_perfworks_libcuda == NULL ||
         dl_perfworks_libcudart == NULL ||
@@ -883,6 +886,22 @@ nvmon_perfworks_createDevice(int id, NvmonDevice *dev)
                 {
                     event->name[ret] = '\0';
                 }
+                if (binstrrcaseless(t, blength(t)-1, &sumtype) != BSTR_OK)
+                {
+                    event->rtype = ENTITY_TYPE_SUM;
+                }
+                else if (binstrrcaseless(t, blength(t)-1, &mintype) != BSTR_OK)
+                {
+                    event->rtype = ENTITY_TYPE_MIN;
+                }
+                else if (binstrrcaseless(t, blength(t)-1, &maxtype) != BSTR_OK)
+                {
+                    event->rtype = ENTITY_TYPE_MAX;
+                }
+                else
+                {
+                    event->rtype = ENTITY_TYPE_INSTANT;
+                }
                 bdestroy(t);
                 ret = snprintf(event->real, NVMON_DEFAULT_STR_LEN-1, "%s", getMetricNameBeginParams.ppMetricNames[i]);
                 if (ret > 0)
@@ -954,7 +973,6 @@ int nvmon_perfworks_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
                         }
                     }
                     out->desc = NULL;
- 
                 }
                 l->numEvents = device.numAllEvents;
                 *list = l;
@@ -1429,7 +1447,7 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
         }
         return -EFAULT;
     }
-    
+
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Increase size of eventSet space on device %d, device->deviceId);
     NvmonEventSet* tmpEventSet = realloc(device->nvEventSets, (device->numNvEventSets+1)*sizeof(NvmonEventSet));
     if (!tmpEventSet)
@@ -1517,7 +1535,7 @@ static int nvmon_perfworks_setupCounterImageData(NvmonEventSet* eventSet)//int s
     counterDataImageOptions.pCounterDataPrefix = eventSet->counterDataImagePrefix;
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, counterDataPrefixSize %ld, eventSet->counterDataImagePrefixSize);
     counterDataImageOptions.maxNumRanges = 1;
-    counterDataImageOptions.maxNumRangeTreeNodes = 2;
+    counterDataImageOptions.maxNumRangeTreeNodes = 1;
     counterDataImageOptions.maxRangeNameLength = NVMON_DEFAULT_STR_LEN-1;
 
     CUpti_Profiler_CounterDataImage_CalculateSize_Params calculateSizeParams = {CUpti_Profiler_CounterDataImage_CalculateSize_Params_STRUCT_SIZE};
@@ -1541,7 +1559,6 @@ static int nvmon_perfworks_setupCounterImageData(NvmonEventSet* eventSet)//int s
     eventSet->counterDataImage = tmp;
     eventSet->counterDataImageSize = calculateSizeParams.counterDataImageSize;
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Resized counterDataImage to %ld, eventSet->counterDataImageSize);
-    //initializeParams.pCounterDataImage = &(eventSet->counterDataImage)[0];
     initializeParams.pCounterDataImage = eventSet->counterDataImage;
     LIKWID_CUPTI_API_CALL((*cuptiProfilerCounterDataImageInitializePtr)(&initializeParams), return -EFAULT);
 
@@ -1617,7 +1634,6 @@ static int nvmon_perfworks_getMetricValue(char* chip, uint8_t* counterDataImage,
     getNumRangesParams.pCounterDataImage = counterDataImage;
     LIKWID_NVPW_API_CALL((*NVPW_CounterData_GetNumRangesPtr)(&getNumRangesParams), ierr = -1; goto nvmon_perfworks_getMetricValue_out;);
 
-
     int num_metricnames = bstrListToCharList(events, &metricnames);
 
 
@@ -1635,7 +1651,7 @@ static int nvmon_perfworks_getMetricValue(char* chip, uint8_t* counterDataImage,
     evalToGpuParams.numMetrics = num_metricnames;
     evalToGpuParams.ppMetricNames = (const char**)metricnames;
     memset(gpuValues, 0, events->qty * sizeof(double));
-    evalToGpuParams.pMetricValues = gpuValues;
+    evalToGpuParams.pMetricValues = &gpuValues[0];
     LIKWID_NVPW_API_CALL((*NVPW_MetricsContext_EvaluateToGpuValuesPtr)(&evalToGpuParams), ierr = -1; free(gpuValues); goto nvmon_perfworks_getMetricValue_out;);
     // for (j = 0; j < events->qty; j++)
     // {
@@ -1741,8 +1757,11 @@ int nvmon_perfworks_startCounters(NvmonDevice_t device)
     }
     CUpti_Profiler_SetConfig_Params setConfigParams = {CUpti_Profiler_SetConfig_Params_size};
     CUpti_Profiler_EnableProfiling_Params enableProfilingParams = {CUpti_Profiler_EnableProfiling_Params_STRUCT_SIZE};
+    enableProfilingParams.ctx = device->context;
     CUpti_Profiler_PushRange_Params pushRangeParams = {CUpti_Profiler_PushRange_Params_STRUCT_SIZE};
+    pushRangeParams.ctx = device->context;
     CUpti_Profiler_BeginPass_Params beginPassParams = {CUpti_Profiler_BeginPass_Params_STRUCT_SIZE};
+    beginPassParams.ctx = device->context;
 
     beginSessionParams.ctx = device->context;//cuContext;//;
     beginSessionParams.counterDataImageSize = eventSet->counterDataImageSize;
@@ -1808,7 +1827,9 @@ int nvmon_perfworks_stopCounters(NvmonDevice_t device)
     NvmonEventSet* eventSet = &device->nvEventSets[device->activeEventSet];
 
     CUpti_Profiler_DisableProfiling_Params disableProfilingParams = {CUpti_Profiler_DisableProfiling_Params_STRUCT_SIZE};
+    disableProfilingParams.ctx = device->context;
     CUpti_Profiler_PopRange_Params popRangeParams = {CUpti_Profiler_PopRange_Params_STRUCT_SIZE};
+    popRangeParams.ctx = device->context;
     size_t CUpti_Profiler_EndPass_Params_size = 0;
     size_t CUpti_Profiler_FlushCounterData_Params_size = 0;
 
@@ -1823,9 +1844,13 @@ int nvmon_perfworks_stopCounters(NvmonDevice_t device)
         CUpti_Profiler_FlushCounterData_Params_size = CUpti_Profiler_FlushCounterData_Params_STRUCT_SIZE11;
     }
     CUpti_Profiler_EndPass_Params endPassParams = {CUpti_Profiler_EndPass_Params_size};
+    endPassParams.ctx = device->context;
     CUpti_Profiler_FlushCounterData_Params flushCounterDataParams = {CUpti_Profiler_FlushCounterData_Params_size};
+    flushCounterDataParams.ctx = device->context;
     CUpti_Profiler_UnsetConfig_Params unsetConfigParams = {CUpti_Profiler_UnsetConfig_Params_STRUCT_SIZE};
+    unsetConfigParams.ctx = device->context;
     CUpti_Profiler_EndSession_Params endSessionParams = {CUpti_Profiler_EndSession_Params_STRUCT_SIZE};
+    endSessionParams.ctx = device->context;
 
     LIKWID_CUPTI_API_CALL((*cuptiProfilerPopRangePtr)(&popRangeParams), return -1);
     LIKWID_CUPTI_API_CALL((*cuptiProfilerDisableProfilingPtr)(&disableProfilingParams), return -1);
@@ -1842,11 +1867,27 @@ int nvmon_perfworks_stopCounters(NvmonDevice_t device)
     nvmon_perfworks_getMetricValue(device->chip, eventSet->counterDataImage, eventSet->events, &values);
 
     int i = 0, j = 0;
-    for (j = 0; j < eventSet->events->qty; j++)
+/*    for (j = 0; j < eventSet->events->qty; j++)*/
+    for (j = 0; j < eventSet->numberOfEvents; j++)
     {
         double res = values[j];
+        NvmonEvent_t nve = eventSet->nvEvents[j];
         eventSet->results[j].lastValue = res;
-        eventSet->results[j].fullValue += res;
+        switch (nve->rtype)
+        {
+            case ENTITY_TYPE_SUM:
+                eventSet->results[j].fullValue += res;
+                break;
+            case ENTITY_TYPE_MIN:
+                eventSet->results[j].fullValue = (res < eventSet->results[j].fullValue ? res : eventSet->results[j].fullValue);
+                break;
+            case ENTITY_TYPE_MAX:
+                eventSet->results[j].fullValue = (res > eventSet->results[j].fullValue ? res : eventSet->results[j].fullValue);
+                break;
+            case ENTITY_TYPE_INSTANT:
+                eventSet->results[j].fullValue = res;
+                break;
+        }
         eventSet->results[j].stopValue = eventSet->results[j].fullValue;
         eventSet->results[j].overflows = 0;
         GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, %s Last %f Full %f, bdata(eventSet->events->entry[j]), eventSet->results[j].lastValue, eventSet->results[j].fullValue);
