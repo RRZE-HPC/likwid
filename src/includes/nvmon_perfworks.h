@@ -54,7 +54,7 @@ static void *dl_perfworks_libcudart = NULL;
     do {                                                                \
         CUresult _status = (call);                                      \
         if (_status != CUDA_SUCCESS) {                                  \
-            fprintf(stderr, "Error: function %s failed with error %d.\n", #call, _status); \
+            ERROR_PRINT(Function %s failed with error %d, #call, _status); \
             handleerror;                                                \
         }                                                               \
     } while (0)
@@ -65,7 +65,7 @@ static void *dl_perfworks_libcudart = NULL;
         NVPA_Status _status = (call);                                                          \
         if(_status != NVPA_STATUS_SUCCESS)                                                \
         {                                                                                \
-            fprintf(stderr, "Error: function %s failed with error %d.\n", #call, _status); \
+            ERROR_PRINT(Function %s failed with error %d, #call, _status); \
             handleerror;                                                               \
         }                                                                                \
     } while(0)
@@ -74,7 +74,7 @@ static void *dl_perfworks_libcudart = NULL;
     do {                                                                           \
         CUptiResult _status = (call);                                         \
         if (_status != CUPTI_SUCCESS) {                                            \
-            fprintf(stderr, "Error: function %s failed with error %d.\n", #call, _status);                    \
+            ERROR_PRINT(Function %s failed with error %d, #call, _status); \
             handleerror;                                                             \
         }                                                                          \
     } while (0)
@@ -83,7 +83,7 @@ static void *dl_perfworks_libcudart = NULL;
     do {                                                                \
         cudaError_t _status = (call);                                   \
         if (_status != cudaSuccess) {                                   \
-            fprintf(stderr, "Error: function %s failed with error %d.\n", #call, _status); \
+            ERROR_PRINT(Function %s failed with error %d, #call, _status); \
             handleerror;                                                \
         }                                                               \
     } while (0)
@@ -377,7 +377,7 @@ link_perfworks_libraries(void)
     dl_perfworks_libcuda = dlopen("libcuda.so", RTLD_NOW | RTLD_GLOBAL);
     if (!dl_perfworks_libcuda || dlerror() != NULL)
     {
-        fprintf(stderr, "CUDA library libcuda.so not found.");
+        DEBUG_PRINT(DEBUGLEV_INFO, CUDA library libcuda.so not found);
         return -1;
     }
     cuCtxGetCurrentPtr = DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuCtxGetCurrent");
@@ -397,7 +397,7 @@ link_perfworks_libraries(void)
     dl_perfworks_libcudart = dlopen(libcudartpath, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
     if ((!dl_perfworks_libcudart) || (dlerror() != NULL))
     {
-        fprintf(stderr, "CUDA runtime library libcudart.so not found.\n");
+        DEBUG_PRINT(DEBUGLEV_INFO, CUDA library libcudart.so not found);
         return -1;
     }
     cudaGetDevicePtr = DLSYM_AND_CHECK(dl_perfworks_libcudart, "cudaGetDevice");
@@ -414,7 +414,7 @@ link_perfworks_libraries(void)
         dl_libhost = dlopen("libnvperf_host.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
         if ((!dl_libhost) || (dlerror() != NULL))
         {
-            fprintf(stderr, "CUpti library libnvperf_host.so not found.\n");
+            DEBUG_PRINT(DEBUGLEV_INFO, CUDA library libnvperf_host.so not found);
             return -1;
         }
     }
@@ -463,7 +463,7 @@ link_perfworks_libraries(void)
         dl_cupti = dlopen("libcupti.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
         if ((!dl_cupti) || (dlerror() != NULL))
         {
-            fprintf(stderr, "CUpti library libcupti.so not found.\n");
+            DEBUG_PRINT(DEBUGLEV_INFO, CUpti library libcupti.so not found);
             return -1;
         }
     }
