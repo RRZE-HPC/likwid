@@ -26,19 +26,19 @@ movapd xmm15, [rip+SCALAR]
 .align 32
 LOOP 2
 movapd    xmm1, [STR0 + GPR1 * 8 ]
-addpd     xmm1, xmm2
-mulpd     xmm3, xmm4
-addpd     xmm5, xmm6
-mulpd     xmm7, xmm8
-addpd     xmm9, xmm10
-mulpd     xmm11, xmm12
-addpd     xmm13, xmm14
-mulpd     xmm15, xmm0
-addpd     xmm1, xmm2
-mulpd     xmm3, xmm4
-addpd     xmm5, xmm6
-mulpd     xmm7, xmm8
-addpd     xmm9, xmm10
-mulpd     xmm11, xmm12
-addpd     xmm13, xmm14
-mulpd     xmm15, xmm0
+mulpd     xmm0, xmm1
+addpd     xmm2, xmm1
+mulpd     xmm3, xmm1
+addpd     xmm4, xmm1
+mulpd     xmm5, xmm1
+addpd     xmm6, xmm1
+mulpd     xmm7, xmm1
+addpd     xmm8, xmm1
+mulpd     xmm9, xmm1
+addpd     xmm10, xmm1
+mulpd     xmm11, xmm1
+addpd     xmm12, xmm1
+mulpd     xmm13, xmm1
+addpd     xmm14, xmm1
+mulpd     xmm15, xmm1
+addpd     xmm8, xmm1
