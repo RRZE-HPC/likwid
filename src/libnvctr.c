@@ -394,8 +394,8 @@ likwid_gpuMarkerStartRegion(const char* regionTag)
             if (device->backend == LIKWID_NVMON_CUPTI_BACKEND)
                 results->StartPMcounters[j] = nvmon_getLastResult(results->groupID, j, i);
             else if (device->backend == LIKWID_NVMON_PERFWORKS_BACKEND)
-                results->StartPMcounters[j] = 0.0;
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, START Device %d Event %d: %f - %f, i, j, results->StartPMcounters[j], results->PMcounters[j]);
+                results->StartPMcounters[j] = nvmon_getResult(results->groupID, j, i);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, START Device %d Event %d: %f, i, j, results->StartPMcounters[j]);
         }
         results->state = GPUMARKER_STATE_START;
         timer_start(&(results->startTime));
@@ -440,13 +440,16 @@ likwid_gpuMarkerStopRegion(const char* regionTag)
         results->count++;
         for (int j = 0; j < results->nevents; j++)
         {
-            double end = nvmon_getLastResult(results->groupID, j, i);
+            double end = nvmon_getResult(results->groupID, j, i);
             NvmonDevice_t device = &nvGroupSet->gpus[i];
-            if (device->backend == LIKWID_NVMON_CUPTI_BACKEND)
-                results->PMcounters[j] += end - results->StartPMcounters[j];
-            else if (device->backend == LIKWID_NVMON_PERFWORKS_BACKEND)
-                results->PMcounters[j] += end;
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, STOP Device %d Event %d: %f - %f, i, j, end, results->PMcounters[j]);
+/*            if (device->backend == LIKWID_NVMON_CUPTI_BACKEND)*/
+/*                results->PMcounters[j] += end - results->StartPMcounters[j];*/
+/*            else if (device->backend == LIKWID_NVMON_PERFWORKS_BACKEND)*/
+/*            {*/
+/*                */
+/*            }*/
+            results->PMcounters[j] += end - results->StartPMcounters[j];
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, STOP Device %d Event %d: %f - %f, i, j, end, results->StartPMcounters[j]);
         }
         results->state = GPUMARKER_STATE_STOP;
     }

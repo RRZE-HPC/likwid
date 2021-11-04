@@ -50,7 +50,7 @@
     do {                                                                \
         CUresult _status = (call);                                      \
         if (_status != CUDA_SUCCESS) {                                  \
-            fprintf(stderr, "Error: function %s failed with error %d.\n", #call, _status); \
+            ERROR_PRINT(Function %s failed with error %d, #call, _status); \
             handleerror;                                                \
         }                                                               \
     } while (0)
@@ -63,7 +63,7 @@
     do {                                                                \
         cudaError_t _status = (call);                                   \
         if (_status != cudaSuccess) {                                   \
-            fprintf(stderr, "Error: function %s failed with error %d.\n", #call, _status); \
+            ERROR_PRINT(Function %s failed with error %d, #call, _status); \
             handleerror;                                                \
         }                                                               \
     } while (0)
@@ -111,13 +111,13 @@ topo_link_libraries(void)
     topo_dl_libcuda = dlopen("libcuda.so", RTLD_NOW | RTLD_GLOBAL);
     if (!topo_dl_libcuda)
     {
-        fprintf(stderr, "CUDA library libcuda.so not found.\n");
+        DEBUG_PRINT(DEBUGLEV_INFO, CUDA library libcuda.so not found);
         return -1;
     }
     topo_dl_libcudart = dlopen("libcudart.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
     if (!topo_dl_libcudart)
     {
-        fprintf(stderr, "CUDA runtime library libcudart.so not found.");
+        DEBUG_PRINT(DEBUGLEV_INFO, CUDA library libcudart.so not found);
         return -1;
     }
     cuDeviceGetTopoPtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGet");
@@ -145,7 +145,7 @@ topo_init_cuda(void)
     CUresult cuErr = (*cuInitTopoPtr)(0);
     if (cuErr != CUDA_SUCCESS)
     {
-        fprintf(stderr, "CUDA cannot be found and initialized (cuInit failed).\n");
+        DEBUG_PRINT(DEBUGLEV_INFO, CUDA cannot be found and initialized (cuInit failed));
         return -ENODEV;
     }
     return 0;
@@ -223,13 +223,11 @@ topology_gpu_init()
     ret = topo_link_libraries();
     if (ret != 0)
     {
-        ERROR_PLAIN_PRINT(Cannot open CUDA library to fill GPU topology);
         return EXIT_FAILURE;
     }
     int num_devs = topo_get_numDevices();
     if (num_devs < 0)
     {
-        ERROR_PLAIN_PRINT(Cannot get number of devices from CUDA library);
         return EXIT_FAILURE;
     }
     CUDA_CALL((*cudaDriverGetVersionTopoPtr)(&cuda_version), ret = -1; goto topology_gpu_init_error;);
