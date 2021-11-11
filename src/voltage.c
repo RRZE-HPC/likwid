@@ -6,8 +6,8 @@
  *      Description:  Implementation of the Voltage Module.
  *                    Implements Intel Core Voltage Interface.
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.1
+ *      Released:  11.11.2021
  *
  *      Author:   Jimmy Situ web@jimmystone.cn
  *      Project:  likwid

@@ -6,8 +6,8 @@
  *
  *      Description:  A application to retrieve and manipulate CPU features.
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.1
+ *      Released:  11.11.2021
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid

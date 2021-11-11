@@ -8,8 +8,8 @@
  *                    on x86, ARM and POWER processors. Also the Nvidia GPU topology
  *                    is printed.
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.1
+ *      Released:  11.11.2021
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid

@@ -5,8 +5,8 @@
  *
  *      Description:  Implementation of access daemon.
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.1
+ *      Released:  11.11.2021
  *
  *      Authors:  Michael Meier, michael.meier@rrze.fau.de
  *                Jan Treibig (jt), jan.treibig@gmail.com,

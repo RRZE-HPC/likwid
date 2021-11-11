@@ -9,8 +9,8 @@
  *                   sys interface of the Linux 2.6 kernel. This module
  *                   is based on the msr-util tools.
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.1
+ *      Released:  11.11.2021
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com.
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com

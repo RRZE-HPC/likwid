@@ -6,8 +6,8 @@
  *      Description:  Header file for the interface to x86 client memory controllers for
  *                    the access module.
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.1
+ *      Released:  11.11.2021
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

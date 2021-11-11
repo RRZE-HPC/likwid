@@ -6,8 +6,8 @@
  *      Description:  Overloaded library for pthread_create call. 
  *                    Implements pinning of threads together with likwid-pin.
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.1
+ *      Released:  11.11.2021
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
