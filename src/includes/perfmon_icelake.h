@@ -727,7 +727,7 @@ int perfmon_setupCounterThread_icelake(
             case MBOX5FIX:
             case MBOX6FIX:
             case MBOX7FIX:
-		if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+                if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
                 {
                     icx_setup_mboxfix(cpu_id, index, event);
                 }
@@ -973,7 +973,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                 case MBOX5FIX:
                 case MBOX6FIX:
                 case MBOX7FIX:
-		    if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+                    if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
                     {
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_MBOXFIX);
                         CHECK_MMIO_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
@@ -1168,7 +1168,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                 case CBOX37:
                 case CBOX38:
                 case CBOX39:
-                    if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+                    if (haveLock)
                     {
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_CBOX);
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
@@ -1968,7 +1968,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                 case CBOX37:
                 case CBOX38:
                 case CBOX39:
-                    if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+                    if (haveLock)
                     {
                         icx_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
