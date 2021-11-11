@@ -254,7 +254,10 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
     elseif (opt == "perfflags") then
         perfflags = arg
     elseif (opt == "perfpid") then
-        perfpid = arg
+        if likwid.perfctr_checkpid(arg) then
+            perfpid = arg
+            execpid = false
+        end
     elseif (opt == "outprefix") then
         outprefix = arg
     elseif (opt == "E") then
@@ -371,11 +374,18 @@ for i=1, likwid.tablelength(arg)-2 do
     table.insert(execList, arg[i])
 end
 
+if perfpid and (not execpid) and (not cpulist) then
+    local rawlist = likwid.perfctr_pid_cpulist(perfpid)
+    if rawlist then
+        num_cpus, cpulist = likwid.cpustr_to_cpulist(rawlist)
+    end
+end
+
 io.stdout:setvbuf("no")
 cpuinfo = likwid.getCpuInfo()
 cputopo = likwid.getCpuTopology()
 ---------------------------
-if gpusSupported then
+if gpusSupported and (#gpu_event_string_list > 0 or print_events or print_event ~= nil) then
     gputopo = likwid.getGpuTopology()
 end
 ---------------------------
@@ -849,7 +859,7 @@ elseif not ldpath:match(libpath) then
     likwid.setenv("LD_LIBRARY_PATH", libpath..":"..ldpath)
 end
 ---------------------------
-if gpusSupported then
+if gpusSupported  and #gpu_event_string_list > 0 then
     local cudahome = os.getenv("CUDA_HOME")
     if cudahome then
         ldpath = os.getenv("LD_LIBRARY_PATH")
@@ -904,7 +914,7 @@ for i, event_string in pairs(event_string_list) do
         table.insert(group_ids, gid)
     end
 end
-if gpusSupported then
+if gpusSupported  and #gpu_event_string_list > 0 then
     for i, event_string in pairs(gpu_event_string_list) do
         if event_string:len() > 0 then
             local gid = likwid.nvAddEventSet(event_string)
@@ -1153,7 +1163,7 @@ if outfile and not use_timeline then
         suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
     end
     local command = "<INSTALLED_PREFIX>/share/likwid/filter/" .. suffix
-    if suffix:len() > 0 then
+    if suffix:len() > 0 and suffix ~= "csv" and suffix ~= "txt" then
         if likwid.access(command, "x") == 0 then
             local tmpfile = outfile..".tmp"
             os.rename(outfile, tmpfile)

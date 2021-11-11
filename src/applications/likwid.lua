@@ -1585,4 +1585,34 @@ end
 
 likwid.printTextTable = printTextTable
 
+local function perfctr_checkpid(pid)
+    local fname = string.format("/proc/%d/status", pid)
+    local f = io.open(fname, "r")
+    if f ~= nil then
+        f:close()
+        return true
+    end
+    return false
+end
+likwid.perfctr_checkpid = perfctr_checkpid
+
+local function perfctr_pid_cpulist(pid)
+    local cpulist = nil
+    local fname = string.format("/proc/%d/status", pid)
+    local f = io.open(fname, "r")
+    if f ~= nil then
+        local l = f:read("*line")
+        while l do
+            if l:match("Cpus_allowed_list:.*") then
+                cpulist = l:match("Cpus_allowed_list:%s+([0-9%-,]+)")
+                break
+            end
+            l = f:read("*line")
+        end
+        f:close()
+    end
+    return cpulist
+end
+likwid.perfctr_pid_cpulist = perfctr_pid_cpulist
+
 return likwid
