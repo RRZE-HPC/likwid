@@ -2701,7 +2701,7 @@ int main(void)
                     allowed = allowed_sandybridge;
                     isClientMem = 1;
                 }
-                else if (model == ICELAKE1 || model == ICELAKE2)
+                else if (model == ICELAKE1 || model == ICELAKE2 || model == ROCKETLAKE)
                 {
                     allowed = allowed_icl;
                     isClientMem = 1;
@@ -2780,9 +2780,16 @@ int main(void)
                 }
                 break;
             case ZEN3_FAMILY:
-                if (model == ZEN3_RYZEN || model == ZEN3_RYZEN2)
+                switch (model)
                 {
-                    allowed = allowed_amd17_zen2;
+                    case ZEN3_RYZEN:
+                    case ZEN3_RYZEN2:
+                    case ZEN3_RYZEN3:
+                        allowed = allowed_amd17_zen2;
+                        break;
+                    default:
+                        allowed = allowed_amd17;
+                        break;
                 }
                 break;
             default:

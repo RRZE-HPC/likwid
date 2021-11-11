@@ -198,6 +198,7 @@ cpuFeatures_update(int cpu)
             (cpuid_info.model == KABYLAKE2) ||
             (cpuid_info.model == ICELAKE1) ||
             (cpuid_info.model == ICELAKE2) ||
+            (cpuid_info.model == ROCKETLAKE) ||
             (cpuid_info.model == ICELAKEX1) ||
             (cpuid_info.model == ICELAKEX2) ||
             (cpuid_info.model == ATOM_SILVERMONT_GOLD) ||
@@ -382,6 +383,7 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == COMETLAKE2) ||
             (cpuid_info.model == ICELAKE1) ||
             (cpuid_info.model == ICELAKE2) ||
+            (cpuid_info.model == ROCKETLAKE) ||
             (cpuid_info.model == ICELAKEX1) ||
             (cpuid_info.model == ICELAKEX2) ||
             (cpuid_info.model == ATOM_SILVERMONT_GOLD))
@@ -545,6 +547,7 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == COMETLAKE2) ||
             (cpuid_info.model == ICELAKE1) ||
             (cpuid_info.model == ICELAKE2) ||
+            (cpuid_info.model == ROCKETLAKE) ||
             (cpuid_info.model == ICELAKEX1) ||
             (cpuid_info.model == ICELAKEX2) ||
             (cpuid_info.model == ATOM_SILVERMONT_GOLD))

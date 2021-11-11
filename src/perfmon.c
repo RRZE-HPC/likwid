@@ -1136,6 +1136,7 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersTigerlake;
                 case ICELAKE1:
                 case ICELAKE2:
+                case ROCKETLAKE:
                     pci_devices = icelake_pci_devices;
                     eventHash = icelake_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsIcelake;
@@ -1249,6 +1250,7 @@ perfmon_init_maps(void)
             {
                 case ZEN3_RYZEN:
                 case ZEN3_RYZEN2:
+                case ZEN3_RYZEN3:
                     eventHash = zen3_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen3;
                     counter_map = zen3_counter_map;
@@ -1692,6 +1694,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                 case ICELAKE2:
                 case ICELAKEX1:
                 case ICELAKEX2:
+                case ROCKETLAKE:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_icelake;
@@ -1823,6 +1826,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             {
                 case ZEN3_RYZEN:
                 case ZEN3_RYZEN2:
+                case ZEN3_RYZEN3:
                     initThreadArch = perfmon_init_zen3;
                     initialize_power = TRUE;
                     perfmon_startCountersThread = perfmon_startCountersThread_zen3;

@@ -1008,7 +1008,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                     }
                     break;
                 case MBOX0TMP:
-                    if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2))
+                    if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE))
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
                         eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
@@ -1182,7 +1182,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
     }
     if (haveLock && MEASURE_UNCORE(eventSet))
     {
-        if ((cpuid_info.model == ICELAKE1) || (cpuid_info.model == ICELAKE2))
+        if ((cpuid_info.model == ICELAKE1) || (cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE))
         {
             VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29), UNFREEZE_UNCORE);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29)));
@@ -1343,7 +1343,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
     }
     if (haveLock && MEASURE_UNCORE(eventSet))
     {
-        if ((cpuid_info.model == ICELAKE1) || (cpuid_info.model == ICELAKE2))
+        if (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE)
         {
             VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_UNCORE);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL));
@@ -1463,7 +1463,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     }
                     break;
                 case MBOX0TMP:
-                    if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2))
+                    if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE))
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, PCI_IMC_DEVICE_0_CH_0, counter1, &counter_result));
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
@@ -1697,7 +1697,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
     }
     if (haveLock && MEASURE_UNCORE(eventSet))
     {
-        if ((cpuid_info.model == ICELAKE1) && (cpuid_info.model == ICELAKE2))
+        if (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE)
         {
             VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_UNCORE);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL));
@@ -1820,7 +1820,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     }
                     break;
                 case MBOX0TMP:
-                    if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2))
+                    if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE))
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_MBOX);
@@ -2027,7 +2027,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
     }
     if (haveLock && MEASURE_UNCORE(eventSet))
     {
-        if ((cpuid_info.model == ICELAKE1) || (cpuid_info.model == ICELAKE2))
+        if (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE)
         {
             VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29), UNFREEZE_UNCORE);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29)));

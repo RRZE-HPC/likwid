@@ -105,6 +105,7 @@ struct topology_functions {
 #define CANNONLAKE           0x66U
 #define ICELAKE1             0x7EU
 #define ICELAKE2             0x7DU
+#define ROCKETLAKE           0xA7U
 #define COMETLAKE1           0xA5U
 #define COMETLAKE2           0xA6U
 #define ICELAKEX1            0x6AU
@@ -144,6 +145,7 @@ struct topology_functions {
 #define ZEN2_RYZEN3     0x60
 #define ZEN3_RYZEN      0x01
 #define ZEN3_RYZEN2     0x21
+#define ZEN3_RYZEN3     0x50
 
 /* ARM */
 #define  ARM7L          0x3U
