@@ -48,6 +48,10 @@ static char* a57_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/armv8_pmuv3",
 };
 
+static char* a72_translate_types[NUM_UNITS] = {
+    [PMC] = "/sys/bus/event_source/devices/armv8_cortex_a72",
+};
+
 static char* a53_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/cpu",
 };
