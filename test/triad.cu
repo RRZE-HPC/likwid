@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
       double dt = (t2 - t1) / iters;
 #pragma omp critical
       cout << deviceId << " " << setw(40) << prop.name << fixed << setprecision(1) << "   " << setw(6) << dt * 1000 << "ms " << setw(5)
-           << 4 * buffer_size * sizeof(double) / dt * 1e-9 << "GB/s \n";
+           << 4 * buffer_size * sizeof(double) / dt * 1e-9 << "GB/s " << setw(2) << 2*buffer_size /dt*1e-6 << "MFLOP/s\n";
 
       GPU_ERROR(cudaFree(dA));
       GPU_ERROR(cudaFree(dB));
