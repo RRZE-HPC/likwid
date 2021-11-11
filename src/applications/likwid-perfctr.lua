@@ -385,7 +385,7 @@ io.stdout:setvbuf("no")
 cpuinfo = likwid.getCpuInfo()
 cputopo = likwid.getCpuTopology()
 ---------------------------
-if gpusSupported then
+if gpusSupported and (#gpu_event_string_list > 0 or print_events or print_event ~= nil) then
     gputopo = likwid.getGpuTopology()
 end
 ---------------------------
@@ -859,7 +859,7 @@ elseif not ldpath:match(libpath) then
     likwid.setenv("LD_LIBRARY_PATH", libpath..":"..ldpath)
 end
 ---------------------------
-if gpusSupported then
+if gpusSupported  and #gpu_event_string_list > 0 then
     local cudahome = os.getenv("CUDA_HOME")
     if cudahome then
         ldpath = os.getenv("LD_LIBRARY_PATH")
@@ -914,7 +914,7 @@ for i, event_string in pairs(event_string_list) do
         table.insert(group_ids, gid)
     end
 end
-if gpusSupported then
+if gpusSupported  and #gpu_event_string_list > 0 then
     for i, event_string in pairs(gpu_event_string_list) do
         if event_string:len() > 0 then
             local gid = likwid.nvAddEventSet(event_string)
