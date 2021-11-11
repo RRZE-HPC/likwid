@@ -55,9 +55,9 @@
 
 #ifdef LIKWID_USE_HWLOC
 #include <pci_hwloc.h>
-#else
-#include <pci_proc.h>
 #endif
+#include <pci_proc.h>
+
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -161,23 +161,25 @@ access_x86_pci_init(const int socket)
             }
         }
 
+        ret = 1;
 #ifdef LIKWID_USE_HWLOC
         DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using hwloc to find pci devices);
         ret = hwloc_pci_init(testDevice, socket_bus, &nr_sockets);
         if (ret)
         {
             ERROR_PLAIN_PRINT(Using hwloc to find pci devices failed);
-            return -ENODEV;
-        }
-#else
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using procfs to find pci devices);
-        ret = proc_pci_init(testDevice, socket_bus, &nr_sockets);
-        if (ret)
-        {
-            ERROR_PLAIN_PRINT(Using procfs to find pci devices failed);
-            return -ENODEV;
         }
 #endif
+        if (ret)
+        {
+            DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using procfs to find pci devices);
+            ret = proc_pci_init(testDevice, socket_bus, &nr_sockets);
+            if (ret)
+            {
+                ERROR_PLAIN_PRINT(Using procfs to find pci devices failed);
+                return -ENODEV;
+            }
+        }
     }
 
     for(int j=1;j<MAX_NUM_PCI_DEVICES;j++)
