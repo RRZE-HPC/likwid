@@ -49,8 +49,10 @@ typedef enum {
 } NvmonEventType;
 
 typedef enum {
-    ENTITY_EVENT_TYPE_MONOTONIC = 0,
-    ENTITY_TYPE_INSTANT,
+    ENTITY_TYPE_INSTANT = 0,
+    ENTITY_TYPE_SUM,
+    ENTITY_TYPE_MIN,
+    ENTITY_TYPE_MAX,
 } NvmonEventResultType;
 
 typedef struct {
@@ -74,6 +76,7 @@ typedef struct {
     char description[NVMON_DEFAULT_STR_LEN];
     int active;
     NvmonEventType type;
+    NvmonEventResultType rtype;
 } NvmonEvent;
 typedef NvmonEvent* NvmonEvent_t;
 
