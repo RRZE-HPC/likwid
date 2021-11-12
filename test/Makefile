@@ -78,10 +78,10 @@ testmarker-omp: testmarker-omp.c
 testmarkerF90: chaos.F90
 	ifort -O3 $(LIKWID_INC) $(LIKWID_DEFINES) $(LIKWID_LIB) -o $@ chaos.F90 -lpthread -llikwid
 
-test-mpi: MPI_pin_test.c$
+test-mpi: MPI_pin_test.c
 	mpicc -O2 -fopenmp -D_GNU_SOURCE  -o $@ MPI_pin_test.c
 
-test-mpi-pthreads: MPI_pin_test.c$
+test-mpi-pthreads: MPI_pin_test.c
 	mpicc -O2 -pthread -DPTHREADS -D_GNU_SOURCE  -o $@ MPI_pin_test.c
 
 stream_cilk: stream_cilk.c
