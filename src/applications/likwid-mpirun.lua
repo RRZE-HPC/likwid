@@ -135,6 +135,22 @@ local getEnvironment = nil
 local executeCommand = nil
 local mpiexecutable = nil
 local hostpattern = "([%.%a%d_-]+)"
+local pid = likwid.getpid()
+local hostfilename = string.format(".hostfile_%s.txt", pid)
+local scriptfilename = string.format(".likwidscript_%s.txt", pid)
+local outfilename = string.format(os.getenv("PWD").."/.output_%s_%%r_%%h.csv", pid)
+local filelist = {}
+
+local function mpirun_exit(exitcode)
+    if likwid.access(scriptfilename, "e") == 0 then os.remove(scriptfilename) end
+    if likwid.access(hostfilename, "e") == 0 then os.remove(hostfilename) end
+    for _, file in pairs(filelist) do
+        if likwid.access(hostfilename, "e") == 0 then
+            os.remove(file)
+        end
+    end
+    os.exit(exitvalue)
+end
 
 local function abspath(cmd)
     local pathlist = os.getenv("PATH")
@@ -157,7 +173,7 @@ local function readHostfileOpenMPI(filename)
     local f = io.open(filename, "r")
     if f == nil then
         print_stderr("ERROR: Cannot open hostfile "..filename)
-        os.exit(1)
+        mpirun_exit(1)
     end
     if debug then
         print_stdout("DEBUG: Reading hostfile in openmpi style")
@@ -221,7 +237,7 @@ local function writeHostfileOpenMPI(hostlist, filename)
     local f = io.open(filename, "w")
     if f == nil then
         print_stderr("ERROR: Cannot open hostfile "..filename)
-        os.exit(1)
+        mpirun_exit(1)
     end
     for i, hostcontent in pairs(hostlist) do
         str = hostcontent["hostname"]
@@ -246,8 +262,7 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
 
-
-    ver1,ver2 = getMpiVersion()
+    ver1,ver2 = getMpiVersion(mpiexecutable)
     if ver1 == 1 then
         if ver2 >= 7 then
             bindstr = "--bind-to none"
@@ -267,6 +282,9 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
         print_stdout("EXEC: "..cmd)
     end
     local ret = os.execute(cmd)
+    if (not ret) and slurm_involved then
+        print_stderr("Usage of mpirun/mpiexec inside of SLURM jobs may not work. Retry with --mpi slurm")
+    end
     return ret
 end
 
@@ -278,7 +296,7 @@ local function readHostfileIntelMPI(filename)
     local f = io.open(filename, "r")
     if f == nil then
         print_stderr("ERROR: Cannot open hostfile "..filename)
-        os.exit(1)
+        mpirun_exit(1)
     end
     if debug then
         print_stdout("DEBUG: Reading hostfile in intelmpi style")
@@ -316,7 +334,7 @@ local function writeHostfileIntelMPI(hostlist, filename)
     local f = io.open(filename, "w")
     if f == nil then
         print_stderr("ERROR: Cannot open hostfile "..filename)
-        os.exit(1)
+        mpirun_exit(1)
     end
     for i, hostcontent in pairs(hostlist) do
         str = hostcontent["hostname"]
@@ -407,7 +425,7 @@ local function readHostfileMvapich2(filename)
     local f = io.open(filename, "r")
     if f == nil then
         print_stderr("ERROR: Cannot open hostfile "..filename)
-        os.exit(1)
+        mpirun_exit(1)
     end
     if debug then
         print_stdout("DEBUG: Reading hostfile in mvapich2 style")
@@ -452,7 +470,7 @@ local function writeHostfileMvapich2(hostlist, filename)
     local f = io.open(filename, "w")
     if f == nil then
         print_stderr("ERROR: Cannot open hostfile "..filename)
-        os.exit(1)
+        mpirun_exit(1)
     end
     for i, hostcontent in pairs(hostlist) do
         str = hostcontent["hostname"]
@@ -505,7 +523,7 @@ local function readHostfilePBS(filename)
     local f = io.open(filename, "r")
     if f == nil then
         print_stderr("ERROR: Cannot open hostfile "..filename)
-        os.exit(1)
+        mpirun_exit(1)
     end
     if debug then
         print_stdout("DEBUG: Reading hostfile from batch system")
@@ -609,12 +627,47 @@ local function getEnvironmentSlurm()
     return {}
 end
 
+local function _srun_get_mpi_types()
+    t = {}
+    local f = io.popen("srun --mpi=list 2>&1", 'r')
+    if f ~= nil then
+        local s = assert(f:read('*a'))
+        f:close()
+        for i, line in pairs(likwid.stringsplit(s, "\n")) do
+            if line:match("srun: ([^%s]+)") then
+                local mpitype = line:match("srun: ([^%s]+)")
+                t[mpitype] = true
+            end
+        end
+    end
+    return t
+end
+
 local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
+    local opts = {}
+    local srunopts = ""
+
     if wrapperscript.sub(1,1) ~= "/" then
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
-    local exec = string.format("srun --nodes %d --ntasks %d --ntasks-per-node=%d --cpu_bind=none %s %s",
-                                nrNodes, np, ppn, mpiopts or "", wrapperscript)
+    opts["nodes"] = string.format("%d", nrNodes)
+    opts["ntasks"] = string.format("%d", np)
+    opts["ntasks-per-node"] = string.format("%d", ppn)
+    opts["cpu_bind"] = "none"
+    opts["cpus-per-task"] = string.format("%d", threads)
+    supported_types = _srun_get_mpi_types()
+    if supported_types["pmi2"] then
+        opts["mpi"] = "pmi2"
+    end
+
+    for k,v in pairs(opts) do
+        srunopts = srunopts .. string.format(" --%s=%s", k, v)
+    end
+    if mpiopts then
+        srunopts = srunopts .. " " .. mpiopts
+    end
+    
+    local exec = string.format("srun %s %s", srunopts, wrapperscript)
     if debug then
         print_stdout("EXEC: "..exec)
     end
@@ -721,7 +774,8 @@ local function getMpiType()
     return mpitype
 end
 
-function getMpiVersion()
+function getMpiVersion(exec)
+    local cmdlist = {"mpiexec.hydra", "mpiexec", "mpirun", "srun"}
     maj = nil
     min = nil
     intel_match = "Version (%d+) Update (%d+)"
@@ -729,7 +783,16 @@ function getMpiVersion()
     intel_match_old = "Version (%d+).(%d+).%d+"
     openmpi_match = "(%d+)%.(%d+)%.%d+"
     slurm_match = "slurm (%d+).(%d+).%d+"
-    for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun", "srun"}) do
+    if exec then
+        t = {exec}
+        for _,c in pairs(cmdlist) do
+            if c ~= exec then
+                table.insert(t, c)
+            end
+        end
+        cmdlist = t
+    end
+    for i, exec in pairs(cmdlist) do
         f = io.popen(string.format("which %s 2>/dev/null", exec), 'r')
         if f ~= nil then
             mpiexec = f:read("*line")
@@ -765,6 +828,9 @@ function getMpiVersion()
                     end
                 end
             end
+        end
+        if min and maj then
+            break
         end
     end
     return maj, min
@@ -815,7 +881,7 @@ local function getMpiExec(mpitype)
     if mpiexecutable == nil then
         local testmpitype = getMpiType()
         print_stderr(string.format("ERROR: Cannot find executable for MPI type %s but %s", mpitype, testmpitype))
-        os.exit(1)
+        mpirun_exit(1)
     end
 end
 
@@ -944,7 +1010,7 @@ local function assignHosts(hosts, np, ppn, tpp)
                     print_stderr("ERROR: In SLURM environments, it might be a problem with --ntasks (the slots) and --cpus-per-task options")
                 end
                 print_stderr("ERROR: Oversubscription may be forced by setting '-f' on the command line.")
-                os.exit(1)
+                mpirun_exit(1)
             else
                 table.insert(newhosts, {hostname=host["hostname"],
                                         slots=ppn*tpp,
@@ -1329,7 +1395,7 @@ local function setPerfStrings(perflist, cpuexprs)
     end
     if #grouplist == 0 then
         print_stderr("No group can be configured for measurements, exiting.")
-        os.exit(1)
+        mpirun_exit(1)
     end
     return perfexprs, grouplist
 end
@@ -1401,7 +1467,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     local f = io.open(scriptname, "w")
     if f == nil then
         print_stderr("ERROR: Cannot open hostfile "..scriptname)
-        os.exit(1)
+        mpirun_exit(1)
     end
 
     if outputname:sub(1,1) ~= "/" then
@@ -1542,7 +1608,7 @@ local function parseOutputFile(filename)
     local f = io.open(filename, "r")
     if f == nil then
         print_stderr("ERROR: Cannot open output file "..filename)
-        os.exit(1)
+        mpirun_exit(1)
     end
     rank, host = filename:match("output_%d+_(%d+)_([^%s]+).csv")
 
@@ -1550,7 +1616,7 @@ local function parseOutputFile(filename)
     f:close()
     if t:len() == 0 then
         print_stderr("Error Output file "..filename.." is empty")
-        os.exit(1)
+        mpirun_exit(1)
     end
     for i, line in pairs(likwid.stringsplit(t, "\n")) do
         if (not line:match("^-")) and
@@ -1630,7 +1696,7 @@ local function parseMarkerOutputFile(filename)
     local f = io.open(filename, "r")
     if f == nil then
         print_stderr("ERROR: Cannot open output file "..filename)
-        os.exit(1)
+        mpirun_exit(1)
     end
     rank, host = filename:match("output_%d+_(%d+)_([^%s]+).csv")
     local t = f:read("*all")
@@ -1953,7 +2019,7 @@ end
 
 if #arg == 0 then
     usage()
-    os.exit(0)
+    mpirun_exit(0)
 end
 
 local cmd_options = {"h","help", -- default options for help message
@@ -1978,16 +2044,16 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         if s == 1 then
             print_stderr(string.format("ERROR: Argument %s to option -%s starts with invalid character -.", arg, opt))
             print_stderr("ERROR: Did you forget an argument to an option?")
-            os.exit(1)
+            mpirun_exit(1)
         end
     end
 
     if opt == "h" or opt == "help" then
         usage()
-        os.exit(0)
+        mpirun_exit(0)
     elseif opt == "v" or opt == "version"then
         version()
-        os.exit(0)
+        mpirun_exit(0)
     elseif opt == "d" or opt == "debug" then
         debug = true
     elseif opt == "m" or opt == "marker" then
@@ -2002,7 +2068,7 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         np = tonumber(arg)
         if np == nil then
             print_stderr("Argument for -n/-np must be a number")
-            os.exit(1)
+            mpirun_exit(1)
         end
     elseif opt == "t" or opt == "tpp" then
         if arg:match("%d+:%a+") then
@@ -2010,7 +2076,7 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
             tpp = tonumber(t)
             if tpp == nil then
                 print_stderr("Argument for -t/-tpp must be a number")
-                os.exit(1)
+                mpirun_exit(1)
             end
             if tpp == 0 then
                 print_stderr("Cannot run with 0 threads, at least 1 is required, sanitizing tpp to 1")
@@ -2031,7 +2097,7 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
             tpp = tonumber(arg)
             if tpp == nil then
                 print_stderr("Argument for -t/-tpp must be a number")
-                os.exit(1)
+                mpirun_exit(1)
             end
             if tpp == 0 then
                 print_stderr("Cannot run with 0 threads, at least 1 is required, sanitizing tpp to 1")
@@ -2039,7 +2105,7 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
             end
         else
             print_stderr("Argument for -t/-tpp must be a number")
-            os.exit(1)
+            mpirun_exit(1)
         end
     elseif opt == "dist" then
         if arg:match("%d+:%a+") then
@@ -2057,7 +2123,7 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
             dist = tonumber(t)
             if dist == nil then
                 print_stderr("Argument for -dist must be a number or number:ordering")
-                os.exit(1)
+                mpirun_exit(1)
             end
             if dist == 0 then
                 print_stderr("Cannot run with distance 0, at least 1 is required, sanitizing dist to 1")
@@ -2067,7 +2133,7 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
             dist = tonumber(arg)
             if dist == nil then
                 print_stderr("Argument for -dist must be a number or number:ordering")
-                os.exit(1)
+                mpirun_exit(1)
             end
             if dist == 0 then
                 print_stderr("Cannot run with distance 0, at least 1 is required, sanitizing dist to 1")
@@ -2075,13 +2141,13 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
             end
         else
             print_stderr("Argument for -dist must be a number or number:ordering")
-            os.exit(1)
+            mpirun_exit(1)
         end
     elseif opt == "nperdomain" then
         local domain, count, threads = arg:match("([NSCMD]):(%d+)[:]*(%d*)")
         if domain == nil or count == nil then
             print_stderr("Invalid option to -nperdomain")
-            os.exit(1)
+            mpirun_exit(1)
         end
         nperdomain = string.format("%s:%s", domain, count)
         if threads ~= nil then
@@ -2120,10 +2186,10 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         mpiopts = tostring(arg)
     elseif opt == "?" then
         print_stderr("Invalid commandline option -"..arg)
-        os.exit(1)
+        mpirun_exit(1)
     elseif opt == "!" then
         print_stderr("Option requires an argument")
-        os.exit(1)
+        mpirun_exit(1)
     elseif opt == "-" then
         break
     end
@@ -2132,12 +2198,12 @@ end
 
 if np == 0 and nperdomain == nil and #cpuexprs == 0 then
     print_stderr("ERROR: No option -n/-np, -nperdomain or -pin")
-    os.exit(1)
+    mpirun_exit(1)
 end
 
 if use_marker and #perf == 0 then
     print_stderr("ERROR: You selected the MarkerAPI feature but didn't set any events on the commandline")
-    os.exit(1)
+    mpirun_exit(1)
 end
 
 for i,x in pairs(arg) do
@@ -2148,7 +2214,7 @@ end
 
 if #executable == 0 then
     print_stderr("ERROR: No executable given on commandline")
-    os.exit(1)
+    mpirun_exit(1)
 end
 
 if debug then
@@ -2164,7 +2230,7 @@ end
 if not gotExecutable then
     print_stderr("ERROR: Cannot find an executable on commandline")
     print_stderr(table.concat(executable, " "))
-    os.exit(1)
+    mpirun_exit(1)
 end
 
 if mpiopts and mpiopts:len() > 0 and debug then
@@ -2175,7 +2241,7 @@ if mpitype == nil then
     mpitype = getMpiType()
     if mpitype == nil then
         print_stderr("ERROR: Cannot find MPI implementation")
-        os.exit(1)
+        mpirun_exit(1)
     end
     if debug then
         print_stdout("DEBUG: Using MPI implementation "..mpitype)
@@ -2183,13 +2249,13 @@ if mpitype == nil then
 end
 if mpitype ~= "intelmpi" and mpitype ~= "mvapich2" and mpitype ~= "openmpi" and mpitype ~= "slurm" then
     print_stderr("ERROR: Cannot determine current MPI implementation. likwid-mpirun checks for openmpi, intelmpi and mvapich2 or if running in a SLURM environment")
-    os.exit(1)
+    mpirun_exit(1)
 end
 
 getMpiExec(mpitype)
 if (mpiexecutable == nil) then
     print_stderr(string.format("Cannot find executable for determined MPI implementation %s", mpitype))
-    os.exit(1)
+    mpirun_exit(1)
 end
 
 if omptype == nil then
@@ -2217,7 +2283,7 @@ if not hostfile then
         table.insert(hosts, {hostname='localhost', slots=cpus, maxslots=cpus})
         if slurm_involved then
             print_stderr("ERROR: Cannot run on localhost with SLURM involved")
-            os.exit(1)
+            mpirun_exit(1)
         end
     end
 else
@@ -2253,7 +2319,7 @@ if #perf > 0 then
     end
     if np > sum_maxslots then
         print_stderr("ERROR: Processes requested exceeds maximally available slots of given hosts. Maximal processes: "..sum_maxslots)
-        os.exit(1)
+        mpirun_exit(1)
     end
 end
 if #perf == 0 and print_stats then
@@ -2297,7 +2363,7 @@ if #cpuexprs > 0 then
     if np > #cpuexprs*#newhosts and #perf > 0 then
         print_stderr("ERROR: Oversubsribing not allowed.")
         print_stderr(string.format("ERROR: You want %d processes but the pinning expression has only expressions for %d processes. There are only %d hosts in the host list.", np, #cpuexprs*#newhosts, #newhosts))
-        os.exit(1)
+        mpirun_exit(1)
     end
 else
     ppn = math.tointeger(np / givenNrNodes)
@@ -2346,7 +2412,7 @@ else
     elseif np > (givenNrNodes * ppn) and #perf > 0 then
         print_stderr("ERROR: Oversubsribing nodes not allowed!")
         print_stderr(string.format("ERROR: You want %d processes with %d on each of the %d hosts", np, ppn, givenNrNodes))
-        os.exit(1)
+        mpirun_exit(1)
     end
     newhosts, ppn = assignHosts(hosts, np, ppn, tpp)
 end
@@ -2411,7 +2477,7 @@ if skipStr == "" then
         elseif omptype == "gnu" and nrNodes == 1 then
             skipStr = '-s 0x0'
             if tpp > 0 then
-                skipStr = '-s 0x3'
+                skipStr = '-s 0x1'
             end
         end
     elseif mpitype == "slurm" then
@@ -2428,25 +2494,17 @@ if debug and skipStr ~= "" then
     print_stdout(string.format("DEBUG: Using skip option %s to skip pinning of shepard threads", skipStr))
 end
 
-local pid = likwid.getpid()
-local hostfilename = string.format(".hostfile_%s.txt", pid)
-local scriptfilename = string.format(".likwidscript_%s.txt", pid)
-local outfilename = string.format(os.getenv("PWD").."/.output_%s_%%r_%%h.csv", pid)
-
 checkLikwid()
 
 if writeHostfile == nil or getEnvironment == nil or executeCommand == nil then
     print_stderr("ERROR: Initialization for MPI specific functions failed")
-    os.exit(1)
+    mpirun_exit(1)
 end
 
 writeHostfile(newhosts, hostfilename)
 local skipped_ranks = writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, envsettings, outfilename)
 local env = getEnvironment()
 local exitvalue = executeCommand(scriptfilename, hostfilename, env, nrNodes)
-
-os.remove(scriptfilename)
-os.remove(hostfilename)
 
 infilepart = ".output_"..pid
 filelist = listdir(os.getenv("PWD"), infilepart)
@@ -2461,7 +2519,6 @@ if not use_marker then
             all_results[rank]["hostname"] = host
             all_results[rank]["results"] = results
             all_results[rank]["cpus"] = cpulist
-            os.remove(file)
         end
     end
     if likwid.tablelength(all_results) > 0 then
@@ -2484,7 +2541,6 @@ else
             end
             cpuCount = cpuCount + #cpulist
             tmpList[rank] = results
-            os.remove(file)
         end
     end
     regionlist = uniqueList(regionlist)
@@ -2497,4 +2553,6 @@ else
         end
     end
 end
-os.exit(exitvalue)
+
+mpirun_exit(exitvalue)
+
