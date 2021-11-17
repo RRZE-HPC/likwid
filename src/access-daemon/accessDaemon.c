@@ -2937,6 +2937,11 @@ int main(void)
                 syslog(LOG_NOTICE, "PCI Uncore not supported on this system");
                 goto LOOP;
             }
+            if (!pci_devices_daemon)
+            {
+                syslog(LOG_NOTICE, "PCI Uncore not supported on this system");
+                goto LOOP;
+            }
             if (isServerMem)
             {
                 ret = servermem_init();
@@ -2956,7 +2961,7 @@ int main(void)
 
             for (int i=1; i<MAX_NUM_PCI_DEVICES; i++)
             {
-                if (pci_devices_daemon[i].path && strlen(pci_devices_daemon[i].path) > 0)
+                if (pci_devices_daemon && pci_devices_daemon[i].path && strlen(pci_devices_daemon[i].path) > 0)
                 {
                     int socket_id = getBusFromSocket(0, &(pci_devices_daemon[i]), 0, NULL);
                     if (socket_id == 0)
@@ -3018,7 +3023,7 @@ LOOP:
                 {
                     servermem_freerun_read(&dRecord);
                 }
-                else
+                else if (pci_devices_daemon != NULL)
                 {
                     pci_read(&dRecord);
                 }
@@ -3043,7 +3048,7 @@ LOOP:
                     servermem_freerun_write(&dRecord);
                     dRecord.data = 0x0ULL;
                 }
-                else
+                else if (pci_devices_daemon != NULL)
                 {
                     pci_write(&dRecord);
                     dRecord.data = 0x0ULL;
@@ -3070,7 +3075,7 @@ LOOP:
                 {
                     servermem_freerun_check(&dRecord);
                 }
-                else
+                else if (pci_devices_daemon != NULL)
                 {
                     pci_check(&dRecord);
                 }
