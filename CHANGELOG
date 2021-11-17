@@ -1,3 +1,23 @@
+# Changelog 5.2.1
+- Add support for Intel Rocketlake and AMD Zen3 variant (Family 19, Model 0x50)
+- Fix for perf_event multiplexing (important!)
+- Fix for potential deadlock in MarkerAPI (thx @jenny-cheung)
+- Build and runtime fixes for Nvidia GPU backend, updates for CUDA test codes
+- peakflops kernel for ARMv8
+- Updates for AMD Zen1/2/3 event lists and groups
+- Support spaces in MarkerAPI region tags (thx @jrmadsen)
+- Use 'online' cpulist instead of 'present'
+- Switch CI from Travis-CI to NHR@FAU Cx services
+- Document -reset and -ureset for likwid-setFrequencies
+- Reset cpuset in unpinned runs
+- Remove destructor in frequency module
+- Check PID if given through --perfpid
+- Intel Icelake: OFFCORE_RESPONSE events
+- AccessDaemon: Check PCI init state before using it
+- likwid-mpirun: Set mpi type for SLURM automatically
+- likwid-mpirun: Fix for skip mask for OpenMPI
+
+
 # Changelog 5.2.0
 - Support for AMD Zen3 (Core + Uncore)
 - Support for Intel IcelakeSP (Core + Uncore)
