@@ -85,6 +85,7 @@ int perfmon_init_icelake(int cpu_id)
         {
             case ICELAKE1:
             case ICELAKE2:
+            case ROCKETLAKE:
                 icelake_cbox_setup = icl_cbox_setup;
                 break;
             case ICELAKEX1:
@@ -164,15 +165,34 @@ int icl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (1ULL<<33);
                     break;
                 case EVENT_OPTION_MATCH0:
-                    offcore_flags |= (event->options[j].value & 0x8FFFULL);
+                    offcore_flags |= (event->options[j].value & 0xAFB7ULL);
                     break;
                 case EVENT_OPTION_MATCH1:
-                    offcore_flags |= (event->options[j].value<< 16);
+                    offcore_flags |= ((event->options[j].value & 0x3FFFDDULL) << 16);
                     break;
                 default:
                     break;
             }
         }
+    }
+
+    if (event->eventId == 0xB7)
+    {
+        if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
+        {
+            offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
+        }
+        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE0);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, offcore_flags));
+    }
+    else if (event->eventId == 0xBB)
+    {
+        if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
+        {
+            offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
+        }
+        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE1);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, offcore_flags));
     }
 
     if (flags != currentConfig[cpu_id][index])
