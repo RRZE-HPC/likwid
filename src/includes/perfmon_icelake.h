@@ -66,7 +66,7 @@ int perfmon_init_icelake(int cpu_id)
 
     uint64_t misc_enable = 0x0;
     ret = HPMread(cpu_id, MSR_DEV, MSR_IA32_MISC_ENABLE, &misc_enable);
-    if (ret == 0 && testBit(misc_enable, 7) && (testBit(misc_enable, 12) == 0))
+    if (ret == 0 && (testBit(misc_enable, 7) == 1) && (testBit(misc_enable, 12) == 0))
     {
         ret = HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL);
         if (ret != 0)
@@ -81,12 +81,21 @@ int perfmon_init_icelake(int cpu_id)
     }
     if (!icl_did_cbox_check)
     {
+        uint64_t data = 0x0ULL;
         switch(cpuid_info.model)
         {
             case ICELAKE1:
             case ICELAKE2:
             case ROCKETLAKE:
-                icelake_cbox_setup = icl_cbox_setup;
+                ret = HPMread(cpu_id, MSR_DEV, MSR_UNC_CBO_CONFIG, &data);
+                if ((ret == 0) && ((data & 0xF) > 0))
+                {
+                    icelake_cbox_setup = icl_cbox_setup;
+                }
+                else
+                {
+                    icelake_cbox_setup = icl_cbox_nosetup;
+                }
                 break;
             case ICELAKEX1:
             case ICELAKEX2:
