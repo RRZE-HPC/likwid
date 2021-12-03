@@ -6,7 +6,7 @@
  *      Description:  Header File of likwid Marker API
  *
  *      Version:   5.2.1
- *      Released:  11.11.2021
+ *      Released:  03.12.2021
  *
  *      Authors:  Thomas Gruber (tg), thomas.roehl@googlemail.com
  *

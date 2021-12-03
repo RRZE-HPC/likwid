@@ -6,7 +6,7 @@
  *      Description: F90 interface for marker API
  *
  *      Version:   5.2.1
- *      Released:  11.11.2021
+ *      Released:  03.12.2021
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com,
  *               Thomas Gruber (tr), thomas.roehl@googlemail.com

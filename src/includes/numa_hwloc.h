@@ -6,7 +6,7 @@
  *      Description:  Header File hwloc NUMA backend
  *
  *      Version:   5.2.1
- *      Released:  11.11.2021
+ *      Released:  03.12.2021
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

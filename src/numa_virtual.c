@@ -6,7 +6,7 @@
  *      Description:  Virtual/Fake NUMA backend
  *
  *      Version:   5.2.1
- *      Released:  11.11.2021
+ *      Released:  03.12.2021
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *                Tobias Auerochs, tobi291019@gmail.com

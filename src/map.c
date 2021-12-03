@@ -6,7 +6,7 @@
  *      Description:  Implementation a hashmap in C using ghash as backend
  *
  *      Version:   5.2.1
- *      Released:  11.11.2021
+ *      Released:  03.12.2021
  *
  *      Author:   Thoams Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid

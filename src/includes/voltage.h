@@ -7,7 +7,7 @@
  *                    Implements Intel Core Voltage Interface.
  *
  *      Version:   5.2.1
- *      Released:  11.11.2021
+ *      Released:  03.12.2021
  *
  *      Author:   Jimmy Situ web@jimmystone.cn
  *      Project:  likwid
