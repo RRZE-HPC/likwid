@@ -16,5 +16,5 @@
 -c 0 hostname | EXIT 0 | GREP consumed | GREP socket 0
 -M 1 | EXIT 0 | GREP Runtime: 2
 -M 0 | EXIT 1 | GREP Operation not permitted
--t | EXIT 0 | GREP Current core temperatures: | GREP Socket 0 Core 0:
--f | EXIT 0 | GREP Current core temperatures: | GREP Socket 0 Core 0:
+-t | EXIT 0 | GREP Current HW thread temperatures: | GREP Socket 0 HWThread 0:
+-f | EXIT 0 | GREP Current HW thread temperatures: | GREP Socket 0 HWThread 0:
