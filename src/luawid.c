@@ -59,6 +59,14 @@
 
 #define gettid() syscall(SYS_gettid)
 
+#if LUA_VERSION_NUM == 501
+#define LIKWID_UINT_CAST (lua_Integer)
+#define LIKWID_LUA_UINT(pos) (LIKWID_UINT_CAST lua_tointeger(L, (pos)))
+#else
+#define LIKWID_UINT_CAST (lua_Unsigned)
+#define LIKWID_LUA_UINT(pos) (LIKWID_UINT_CAST lua_tointegerx(L, (pos), NULL))
+#endif
+
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int topology_isInitialized = 0;
@@ -234,11 +242,7 @@ lua_likwid_init(lua_State* L)
     for (ret = 1; ret<=nrThreads; ret++)
     {
         lua_rawgeti(L,-1,ret);
-#if LUA_VERSION_NUM == 501
-        cpus[ret-1] = ((lua_Integer)lua_tointeger(L,-1));
-#else
-        cpus[ret-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
-#endif
+        cpus[ret-1]= LIKWID_LUA_UINT(-1);
         lua_pop(L,1);
     }
     if (topology_isInitialized == 0)
@@ -1246,11 +1250,7 @@ lua_likwid_setMemInterleaved(lua_State* L)
     for (ret = 1; ret<=nrThreads; ret++)
     {
         lua_rawgeti(L,-1,ret);
-#if LUA_VERSION_NUM == 501
-        cpus[ret-1] = ((lua_Integer)lua_tointeger(L,-1));
-#else
-        cpus[ret-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
-#endif
+        cpus[ret-1] = LIKWID_LUA_UINT(-1);
         lua_pop(L,1);
     }
     numa_setInterleaved(cpus, nrThreads);
@@ -1271,11 +1271,7 @@ lua_likwid_setMembind(lua_State* L)
     for (ret = 1; ret<=nrThreads; ret++)
     {
         lua_rawgeti(L,-1,ret);
-#if LUA_VERSION_NUM == 501
-        cpus[ret-1] = ((lua_Integer)lua_tointeger(L,-1));
-#else
-        cpus[ret-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
-#endif
+        cpus[ret-1] = LIKWID_LUA_UINT(-1);
         lua_pop(L,1);
     }
     numa_setMembind(cpus, nrThreads);
@@ -1696,11 +1692,7 @@ lua_likwid_startPower(lua_State* L)
     PowerData pwrdata;
     int cpuId = lua_tonumber(L,1);
     luaL_argcheck(L, cpuId >= 0, 1, "CPU ID must be greater than 0");
-#if LUA_VERSION_NUM == 501
-    PowerType type = (PowerType) ((lua_Integer)lua_tointeger(L,2));
-#else
-    PowerType type = (PowerType) ((lua_Unsigned)lua_tointegerx(L,2, NULL));
-#endif
+    PowerType type = (PowerType) LIKWID_LUA_UINT(2);
     luaL_argcheck(L, type >= PKG+1 && type <= NUM_POWER_DOMAINS, 2, "Type not valid");
     power_start(&pwrdata, cpuId, type-1);
     lua_pushnumber(L,pwrdata.before);
@@ -1713,11 +1705,7 @@ lua_likwid_stopPower(lua_State* L)
     PowerData pwrdata;
     int cpuId = lua_tonumber(L,1);
     luaL_argcheck(L, cpuId >= 0, 1, "CPU ID must be greater than 0");
-#if LUA_VERSION_NUM == 501
-    PowerType type = (PowerType) ((lua_Integer)lua_tointeger(L,2));
-#else
-    PowerType type = (PowerType) ((lua_Unsigned)lua_tointegerx(L,2, NULL));
-#endif
+    PowerType type = (PowerType) LIKWID_LUA_UINT(2);
     luaL_argcheck(L, type >= PKG+1 && type <= NUM_POWER_DOMAINS, 2, "Type not valid");
     power_stop(&pwrdata, cpuId, type-1);
     lua_pushnumber(L,pwrdata.after);
@@ -1802,11 +1790,7 @@ lua_likwid_getCycleClock(lua_State* L)
 static int
 lua_sleep(lua_State* L)
 {
-#if LUA_VERSION_NUM == 501
-    lua_pushnumber(L, timer_sleep(((lua_Integer)lua_tointeger(L,-1))));
-#else
-    lua_pushnumber(L, timer_sleep(((lua_Unsigned)lua_tointegerx(L,-1, NULL))));
-#endif
+    lua_pushnumber(L, LIKWID_LUA_UINT(-1));
     return 1;
 }
 
@@ -1882,11 +1866,7 @@ lua_likwid_getClock(lua_State* L)
 static int
 lua_likwid_initTemp(lua_State* L)
 {
-#if LUA_VERSION_NUM == 501
-    int cpuid = ((lua_Integer)lua_tointeger(L,-1));
-#else
-    int cpuid = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
-#endif
+    int cpuid = LIKWID_LUA_UINT(-1);
     thermal_init(cpuid);
     return 0;
 }
@@ -1894,11 +1874,7 @@ lua_likwid_initTemp(lua_State* L)
 static int
 lua_likwid_readTemp(lua_State* L)
 {
-#if LUA_VERSION_NUM == 501
-    int cpuid = ((lua_Integer)lua_tointeger(L,-1));
-#else
-    int cpuid = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
-#endif
+    int cpuid = LIKWID_LUA_UINT(-1);
     uint32_t data;
     if (thermal_read(cpuid, &data)) {
         lua_pushstring(L,"Cannot read thermal data");
@@ -1937,13 +1913,8 @@ static int
 lua_likwid_send_signal(lua_State* L)
 {
     int err = 0;
-#if LUA_VERSION_NUM == 501
-    pid_t pid = ((lua_Integer)lua_tointeger(L,1));
-    int signal = ((lua_Integer)lua_tointeger(L,2));
-#else
-    pid_t pid = ((lua_Unsigned)lua_tointegerx(L,1, NULL));
-    int signal = ((lua_Unsigned)lua_tointegerx(L,2, NULL));
-#endif
+    pid_t pid = LIKWID_LUA_UINT(1);
+    int signal = LIKWID_LUA_UINT(2);
     err = kill(pid, signal);
     lua_pushnumber(L, err);
     return 1;
@@ -2004,11 +1975,7 @@ lua_likwid_startProgram(lua_State* L)
         for (status = 1; status<=nrThreads; status++)
         {
             lua_rawgeti(L,-1,status);
-#if LUA_VERSION_NUM == 501
-            cpus[status-1] = ((lua_Integer)lua_tointeger(L,-1));
-#else
-            cpus[status-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
-#endif
+            cpus[status-1] = LIKWID_LUA_UINT(-1);
             lua_pop(L,1);
         }
     }
@@ -2127,11 +2094,7 @@ lua_likwid_memSweep(lua_State* L)
     for (i = 1; i <= nrThreads; i++)
     {
         lua_rawgeti(L,-1,i);
-#if LUA_VERSION_NUM == 501
-        cpus[i-1] = ((lua_Integer)lua_tointeger(L,-1));
-#else
-        cpus[i-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
-#endif
+        cpus[i-1] = LIKWID_LUA_UINT(-1);
         lua_pop(L,1);
     }
     memsweep_threadGroup(cpus, nrThreads);
@@ -2239,6 +2202,9 @@ lua_likwid_setVerbosity(lua_State* L)
 #ifdef LIKWID_WITH_NVMON
     nvmon_setVerbosity(verbosity);
 #endif /* LIKWID_WITH_NVMON */
+#ifdef LIKWID_WITH_XEMON
+    xemon_setVerbosity(verbosity);
+#endif
     return 0;
 }
 
@@ -2405,11 +2371,7 @@ static int
 lua_likwid_cpuFeatures_name(lua_State* L)
 {
     char* name = NULL;
-#if LUA_VERSION_NUM == 501
-    CpuFeature feature = ((lua_Integer)lua_tointeger(L,-1));
-#else
-    CpuFeature feature = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
-#endif
+    CpuFeature feature = LIKWID_LUA_UINT(-1);
     name = cpuFeatures_name(feature);
     if (name != NULL)
     {
@@ -3405,11 +3367,7 @@ lua_likwid_nvInit(lua_State* L)
     for (ret = 1; ret<=nrGpus; ret++)
     {
         lua_rawgeti(L,-1,ret);
-#if LUA_VERSION_NUM == 501
-        gpus[ret-1] = ((lua_Integer)lua_tointeger(L,-1));
-#else
-        gpus[ret-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
-#endif
+        gpus[ret-1] = LIKWID_LUA_UINT(-1);
         lua_pop(L,1);
     }
     if (gputopology_isInitialized == 0)
@@ -3479,6 +3437,241 @@ lua_likwid_nvSupported(lua_State *L)
     return 0;
 }
 #endif /* LIKWID_WITH_NVMON */
+
+#ifdef LIKWID_WITH_XEMON
+
+AccelXeTopology_t xetopo = NULL;
+static int xegputopology_isInitialized = 0;
+
+static int
+lua_likwid_getXeGpuTopology(lua_State* L)
+{
+    if (!xegputopology_isInitialized)
+    {
+        printf("Init Xe topology\n");
+        int ret = topology_xe_init();
+        if (ret == EXIT_SUCCESS)
+        {
+            xetopo = get_xeGpuTopology();
+            if (xetopo)
+            {
+                xegputopology_isInitialized = 1;
+            }
+            else
+            {
+                lua_pushnil(L);
+                return 1;
+            }
+        }
+        else
+        {
+            lua_pushnil(L);
+            return 1;
+        }
+    }
+    lua_newtable(L);
+    lua_pushstring(L,"numDevices");
+    lua_pushinteger(L, (lua_Integer)(xetopo->numDevices));
+    lua_settable(L,-3);
+
+    lua_pushstring(L,"devices");
+    lua_newtable(L);
+    for (int i = 0; i < xetopo->numDevices; i++)
+    {
+        AccelDevXe* gpu = &xetopo->devices[i];
+        printf("LUA Dev %d Idx %d Ptr %p\n", i, i+1, gpu);
+        lua_pushinteger(L, i+1);
+        lua_newtable(L);
+        lua_pushstring(L, "devid");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->devid));
+        lua_settable(L,-3);
+        lua_pushstring(L,"drvid");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->drvid));
+        lua_settable(L,-3);
+        lua_pushstring(L,"vendorId");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->vendorId));
+        lua_settable(L,-3);
+        lua_pushstring(L,"deviceId");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->deviceId));
+        lua_settable(L,-3);
+        lua_pushstring(L,"name");
+        lua_pushstring(L, gpu->name);
+        lua_settable(L,-3);
+        if (gpu->short_name)
+        {
+            lua_pushstring(L,"short_name");
+            lua_pushstring(L, gpu->short_name);
+            lua_settable(L,-3);
+        }
+        lua_pushstring(L,"numaNode");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->numaNode));
+        lua_settable(L,-3);
+        lua_pushstring(L,"coreClockRate");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->coreClockRate));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxMemAllocSize");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->maxMemAllocSize));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxHardwareContexts");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->maxHardwareContexts));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxCommandQueuePriority");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->maxCommandQueuePriority));
+        lua_settable(L,-3);
+        lua_pushstring(L,"numThreadsPerEU");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->numThreadsPerEU));
+        lua_settable(L,-3);
+        lua_pushstring(L,"physicalEUSimdWidth");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->physicalEUSimdWidth));
+        lua_settable(L,-3);
+        lua_pushstring(L,"numEUsPerSubslice");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->numEUsPerSubslice));
+        lua_settable(L,-3);
+        lua_pushstring(L,"numSubslicesPerSlice");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->numSubslicesPerSlice));
+        lua_settable(L,-3);
+        lua_pushstring(L,"numSlices");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->numSlices));
+        lua_settable(L,-3);
+        lua_pushstring(L,"timerResolution");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->timerResolution));
+        lua_settable(L,-3);
+        lua_pushstring(L,"timestampValidBits");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->timestampValidBits));
+        lua_settable(L,-3);
+        lua_pushstring(L,"kernelTimestampValidBits");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->kernelTimestampValidBits));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxTotalGroupSize");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->maxTotalGroupSize));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxGroupSizeX");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->maxGroupSizeX));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxGroupSizeY");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->maxGroupSizeY));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxGroupSizeZ");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->maxGroupSizeZ));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxGroupCountX");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->maxGroupCountX));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxGroupCountY");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->maxGroupCountY));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxGroupCountZ");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->maxGroupCountZ));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxSharedLocalMemory");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->maxSharedLocalMemory));
+        lua_settable(L,-3);
+        lua_pushstring(L,"numSubGroupSizes");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->numSubGroupSizes));
+        lua_settable(L,-3);
+        lua_pushstring(L, "subGroupSizes");
+        lua_newtable(L);
+        for (int j = 0; j < gpu->numSubGroupSizes; j++)
+        {
+            lua_pushinteger(L, j+1);
+            lua_pushinteger(L, LIKWID_UINT_CAST(gpu->subGroupSizes[j]));
+            lua_settable(L,-3);
+        }
+        lua_settable(L,-3);
+        lua_pushstring(L,"numCmdQueues");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->numCmdQueues));
+        lua_settable(L,-3);
+
+        lua_pushstring(L,"spirvVersionSupported");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->spirvVersionSupported));
+        lua_settable(L,-3);
+
+        lua_pushstring(L,"numMemories");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->numMemories));
+        lua_settable(L,-3);
+        lua_pushstring(L,"memories");
+        lua_newtable(L);
+        for (int j = 0; j < gpu->numMemories; j++)
+        {
+            lua_pushinteger(L, j+1);
+            lua_newtable(L);
+            lua_pushstring(L, "name");
+            lua_pushstring(L, gpu->memories[j].name);
+            lua_settable(L,-3);
+            lua_pushstring(L, "maxClockRate");
+            lua_pushinteger(L, LIKWID_UINT_CAST (gpu->memories[j].maxClockRate));
+            lua_settable(L,-3);
+            lua_pushstring(L, "maxBusWidth");
+            lua_pushinteger(L, LIKWID_UINT_CAST (gpu->memories[j].maxBusWidth));
+            lua_settable(L,-3);
+            lua_pushstring(L, "totalSize");
+            lua_pushinteger(L, LIKWID_UINT_CAST (gpu->memories[j].totalSize));
+            lua_settable(L,-3);
+            lua_settable(L,-3);
+        }
+        lua_settable(L,-3);
+
+        lua_pushstring(L,"numCaches");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->numCaches));
+        lua_settable(L,-3);
+        lua_pushstring(L,"caches");
+        lua_newtable(L);
+        for (int j = 0; j < gpu->numCaches; j++)
+        {
+            lua_pushinteger(L, j+1);
+            lua_newtable(L);
+            lua_pushstring(L, "id");
+            lua_pushinteger(L, LIKWID_UINT_CAST (gpu->caches[j].id));
+            lua_settable(L,-3);
+            lua_pushstring(L, "cacheSize");
+            lua_pushinteger(L, LIKWID_UINT_CAST (gpu->caches[j].cacheSize));
+            lua_settable(L,-3);
+            lua_settable(L,-3);
+        }
+        lua_settable(L,-3);
+
+
+        lua_pushstring(L,"pciBus");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->pciBus));
+        lua_settable(L,-3);
+        lua_pushstring(L,"pciDom");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->pciDom));
+        lua_settable(L,-3);
+        lua_pushstring(L,"pciDev");
+        lua_pushinteger(L, LIKWID_UINT_CAST (gpu->pciDev));
+        lua_settable(L,-3);
+
+        lua_settable(L,-3);
+    }
+    lua_settable(L,-3);
+    return 1;
+}
+
+static int
+lua_likwid_putGpuTopology(lua_State* L)
+{
+    if (xegputopology_isInitialized)
+    {
+        topology_xe_finalize();
+    }
+    return 0;
+}
+
+
+static int
+lua_likwid_xeSupported(lua_State *L)
+{
+    lua_pushboolean(L, 1);
+    return 1;
+}
+#else
+static int
+lua_likwid_xeSupported(lua_State *L)
+{
+    lua_pushboolean(L, 0);
+    return 1;
+}
+#endif /* LIKWID_WITH_XEMON */
 
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -3663,6 +3856,11 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_nvGetNameOfMetric",lua_likwid_nvGetNameOfMetric);
     lua_register(L, "likwid_nvGetNameOfGroup",lua_likwid_nvGetNameOfGroup);
 #endif /* LIKWID_WITH_NVMON */
+#ifdef LIKWID_WITH_XEMON
+    lua_register(L, "likwid_getXeTopology", lua_likwid_getXeGpuTopology);
+    lua_register(L, "likwid_putXeTopology", lua_likwid_putGpuTopology);
+#endif /* LIKWID_WITH_XEMON */
+    lua_register(L, "likwid_xeSupported", lua_likwid_xeSupported);
 #ifdef __MIC__
     setuid(0);
     seteuid(0);

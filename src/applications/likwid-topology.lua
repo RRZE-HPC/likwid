@@ -53,7 +53,7 @@ function usage()
     io.stdout:write("-G, --gpus\t\t List GPU information\n")
     io.stdout:write("-O\t\t\t CSV output\n")
     io.stdout:write("-o, --output <file>\t Store output to file. (Optional: Apply text filter)\n")
-    io.stdoutfalsewrite("-g\t\t\t Graphical output\n")
+    io.stdout:write("-g\t\t\t Graphical output\n")
 end
 
 print_caches = false
@@ -323,6 +323,76 @@ if likwid.nvSupported() then
         end
     end
     likwid.putGpuTopology()
+end
+if likwid.xeSupported() then
+    likwid.setenv("ZES_ENABLE_SYSMAN", "1")
+    xetopo = likwid.getXeTopology()
+    likwid.tableprint(xetopo, true)
+    if xetopo then
+        table.insert(output_csv, likwid.sline)
+        table.insert(output_csv, "Intel Xe Topology")
+        table.insert(output_csv, likwid.sline)
+        table.insert(output_csv, string.format("GPU count:\t\t%d", xetopo["numDevices"]))
+        table.insert(output_csv, likwid.hline)
+
+        for i=1, xetopo["numDevices"] do
+            gpu = xetopo["devices"][i]
+            likwid.tableprint(gpu, true)
+            table.insert(output_csv, string.format("STRUCT,GPU Topology %d,9", i))
+            table.insert(output_csv, string.format("ID:\t\t\t%d", gpu["devid"]))
+            table.insert(output_csv, string.format("Name:\t\t\t%s", gpu["name"]))
+            table.insert(output_csv, string.format("Core clock [MHz]:\t%s", gpu["coreClockRate"]))
+            table.insert(output_csv, string.format("Slices:\t\t\t%d", gpu["numSlices"]))
+            table.insert(output_csv, string.format("Subslices per slice:\t%d", gpu["numSubslicesPerSlice"]))
+            table.insert(output_csv, string.format("EUs per subslice:\t%d", gpu["numEUsPerSubslice"]))
+            table.insert(output_csv, string.format("Threads per EU:\t\t%d", gpu["numThreadsPerEU"]))
+            table.insert(output_csv, string.format("Phys. SIMD width:\t%d", gpu["physicalEUSimdWidth"]))
+            table.insert(output_csv, string.format("Attached to NUMA node:\t%d", gpu["numaNode"]))
+            for j=1, gpu["numCaches"] do
+                if gpu["caches"][j]["cacheSize"] > (1024*1024) then
+                    table.insert(output_csv, string.format("Cache %d size:\t\t%.0f MB", gpu["caches"][j]["id"], gpu["caches"][j]["cacheSize"]/(1024*1024)))
+                else
+                    table.insert(output_csv, string.format("Cache %d size:\t\t%.0f kB", gpu["caches"][j]["id"], gpu["caches"][j]["cacheSize"]/1024))
+                end
+            end
+            if gpu["maxSharedLocalMemory"] > (1024*1024) then
+                table.insert(output_csv, string.format("Max. shared local mem:\t%.0f MB", gpu["maxSharedLocalMemory"]/(1024*1024)))
+            else
+                table.insert(output_csv, string.format("Max. shared local mem:\t%.0f kB", gpu["maxSharedLocalMemory"]/1024))
+            end
+            for j=1, gpu["numMemories"] do
+                local memid = j-1
+                table.insert(output_csv, string.format("Memory %d name:\t\t%s", memid, gpu["memories"][j]["name"]))
+                if gpu["memories"][j]["totalSize"] > (1024*1024) then
+                    table.insert(output_csv, string.format("Memory %d size:\t\t%.0f GB", memid, gpu["memories"][j]["totalSize"]/(1024*1024*1024)))
+                elseif gpu["memories"][j]["totalSize"] > (1024*1024) then
+                    table.insert(output_csv, string.format("Memory %d size:\t\t%.0f MB", memid, gpu["memories"][j]["totalSize"]/(1024*1024)))
+                else
+                    table.insert(output_csv, string.format("Memory %d size:\t\t%.0f kB", memid, gpu["memories"][j]["totalSize"]/1024))
+                end
+                table.insert(output_csv, string.format("Memory %d max bus width:\t%d", memid, gpu["memories"][j]["maxBusWidth"]))
+            end
+            if print_gpus then
+                table.insert(output_csv, string.format("Max. total group size:\t%d", gpu["maxTotalGroupSize"]))
+                local s = {}
+                table.insert(s, string.format("%d", gpu["maxGroupSizeX"]))
+                table.insert(s, string.format("%d", gpu["maxGroupSizeY"]))
+                table.insert(s, string.format("%d", gpu["maxGroupSizeZ"]))
+                table.insert(output_csv, string.format("Max. group size:\t%s", table.concat(s, "/")))
+                local c = {}
+                table.insert(c, string.format("%d", gpu["maxGroupCountX"]))
+                table.insert(c, string.format("%d", gpu["maxGroupCountY"]))
+                table.insert(c, string.format("%d", gpu["maxGroupCountZ"]))
+                table.insert(output_csv, string.format("Max. group count:\t%s", table.concat(c, "/")))
+                table.insert(output_csv, string.format("Sub group sizes:\t%d", gpu["numSubGroupSizes"]))
+                for j=1, gpu["numSubGroupSizes"] do
+                    table.insert(output_csv, string.format("Sub group size %d:\t%d", j-1, gpu["subGroupSizes"][j]))
+                end
+            end
+            table.insert(output_csv, likwid.hline)
+        end
+        likwid.putXeTopology()
+    end
 end
 
 if print_csv then

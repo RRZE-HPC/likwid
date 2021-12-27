@@ -2299,60 +2299,144 @@ int nvmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** lo
 
 #endif /* LIKWID_WITH_NVMON */
 
+/*
+################################################################################
+# Performance monitoring for Intel GPUs
+################################################################################
+*/
+/** \addtogroup Xemon Performance monitoring for Intel GPUs
+ *  @{
+ */
+
 #if defined(LIKWID_WITH_XEMON) || defined(LIKWID_XEMON)
+
+
+#ifndef ZE_SUBGROUPSIZE_COUNT
+#define ZE_SUBGROUPSIZE_COUNT 10
+#endif
+
+#ifndef ZE_MAX_DEVICE_NAME
+#define ZE_MAX_DEVICE_NAME 100
+#endif
+
+typedef enum {
+    CMD_QUEUE_COMPUTE = 0,
+    CMD_QUEUE_COPY,
+    CMD_QUEUE_COOP_KERNELS,
+    CMD_QUEUE_METRICS,
+    MAX_CMD_QUEUE_FLAGS,
+} AccelDevXeCmdQueueFlags;
+
+#define AccelDevXeCmdQueueMask(flag) (1ULL<<flag)
+
+typedef struct {
+    uint32_t numQueues;
+    size_t maxMemoryFillPatternSize;
+    uint32_t flags;
+} AccelDevXeCmdQueue;
+
+typedef enum {
+    MEMORY_TDB = 0,
+    MAX_MEMORY_FLAGS,
+} AccelDevXeMemoryFlags;
+
+#define AccelDevXeMemoryMask(flag) (1ULL<<flag)
+
+typedef struct {
+    uint32_t maxClockRate;
+    uint32_t maxBusWidth;
+    uint64_t totalSize;
+    uint32_t flags;
+    char     name[ZE_MAX_DEVICE_NAME];
+} AccelDevXeMemory;
+
+typedef enum {
+    CACHE_USER_CONTROL = 0,
+    MAX_CACHE_FLAGS,
+} AccelDevXeCacheFlags;
+
+#define AccelDevXeCacheMask(flag) (1ULL<<flag)
+
+typedef struct {
+    uint32_t id;
+    size_t cacheSize;
+    uint32_t flags;
+} AccelDevXeCache;
+
 /*! \brief Structure with general Intel GPU information for each device
 
 General information covers Intel GPU devid, name and clock and memory specific information.
 Most information comes from cuDeviceGetProperties() and cuDeviceGetAttribute().
 */
+
+
 typedef struct {
-    int devid; /*!< \brief Device ID  */
-    int numaNode; /*!< \brief Closest NUMA domain to the device */
-    char* name; /*!< \brief Name of the device */
-    char* short_name; /*!< \brief Short name of the device */
-    uint64_t mem; /*!< \brief Total memory of device */
-    int ccapMajor; /*!< \brief Major number of device's compute capability */
-    int ccapMinor; /*!< \brief Minor number of device's compute capability */
-    int maxThreadsPerBlock; /*!< \brief Maximam number of thread per block */
-    int maxThreadsDim[3]; /*!< \brief Maximum sizes of each dimension of a block */
-    int maxGridSize[3]; /*!< \brief Maximum sizes of each dimension of a grid */
-    int sharedMemPerBlock; /*!< \brief Total amount of shared memory available per block */
-    int totalConstantMemory; /*!< \brief Total amount of constant memory available on the device */
-    int simdWidth; /*!< \brief SIMD width of arithmetic units = warp size */
-    int memPitch; /*!< \brief Maximum pitch allowed by the memory copy functions that involve memory regions allocated through cuMemAllocPitch() */
-    int regsPerBlock; /*!< \brief Total number of registers available per block */
-    int clockRatekHz; /*!< \brief Clock frequency in kilohertz */
-    int textureAlign; /*!< \brief Alignment requirement */
-    int surfaceAlign; /*!< \brief Alignment requirement for surfaces */
-    int l2Size; /*!< \brief L2 cache in bytes. 0 if the device doesn't have L2 cache */
-    int memClockRatekHz; /*!< \brief Peak memory clock frequency in kilohertz */
+    int drvid;
+    int devid;
+    int numaNode;
+    uint32_t vendorId;
+    uint32_t deviceId;
+    uint64_t uuid;
+    char name[ZE_MAX_DEVICE_NAME];
+    char* short_name;
+    //uint32_t propertyFlags;
+    uint32_t subDeviceId;
+    uint32_t coreClockRate;
+    uint64_t maxMemAllocSize;
+    uint32_t maxHardwareContexts;
+    uint32_t maxCommandQueuePriority;
+    uint32_t numThreadsPerEU;
+    uint32_t physicalEUSimdWidth;
+    uint32_t numEUsPerSubslice;
+    uint32_t numSubslicesPerSlice;
+    uint32_t numSlices;
+    uint64_t timerResolution;
+    uint32_t timestampValidBits;
+    uint32_t kernelTimestampValidBits;
+    // compute properties
+    uint32_t maxTotalGroupSize;
+    uint32_t maxGroupSizeX;
+    uint32_t maxGroupSizeY;
+    uint32_t maxGroupSizeZ;
+    uint32_t maxGroupCountX;
+    uint32_t maxGroupCountY;
+    uint32_t maxGroupCountZ;
+    uint32_t maxSharedLocalMemory;
+    uint32_t numSubGroupSizes;
+    uint32_t subGroupSizes[ZE_SUBGROUPSIZE_COUNT];
+    // compute queue properties
+    uint32_t numCmdQueues;
+    AccelDevXeCmdQueue* cmdQueues;
+    // module properties
+    uint32_t spirvVersionSupported;
+    // memory properties
+    uint32_t numMemories;
+    AccelDevXeMemory* memories;
+    // memory access properties (probably required)
+    // cache properties
+    uint32_t numCaches;
+    AccelDevXeCache* caches;
+    // image properties
+    // external memory properties
+    // p2p properties (like NUMA distance map)
+    // PCI infos through sysman -> numa node
     int pciBus; /*!< \brief PCI bus identifier of the device */
     int pciDev; /*!< \brief PCI device (also known as slot) identifier of the device */
     int pciDom; /*!< \brief PCI domain identifier of the device */
-    int maxBlockRegs; /*!< \brief Maximum number of 32-bit registers available to a thread block */
-    int numMultiProcs; /*!< \brief Number of multiprocessors on the device */
-    int maxThreadPerMultiProc; /*!< \brief Maximum resident threads per multiprocessor */
-    int memBusWidth; /*!< \brief Global memory bus width in bits */
-    int unifiedAddrSpace; /*!< \brief 1 if the device shares a unified address space with the host, or 0 if not */
-    int ecc; /*!< \brief 1 if error correction is enabled on the device, 0 if error correction is disabled or not supported by the device */
-    int asyncEngines; /*!< \brief Number of asynchronous engines */
-    int mapHostMem; /*!< \brief 1 if the device can map host memory into the CUDA address space */
-    int integrated; /*!< \brief 1 if the device is an integrated (motherboard) GPU and 0 if it is a discrete (card) component */
-} XeGpuDevice;
-
+} AccelDevXe;
 
 /*! \brief Structure holding information of all GPUs
 
 */
 typedef struct {
     int numDevices; /*!< \brief Number of detected devices */
-    GpuDevice* devices; /*!< \brief List with GPU-specific topology information */
+    AccelDevXe* devices; /*!< \brief List with GPU-specific topology information */
 } XeGpuTopology;
 
 /*! \brief Variable holding the global gpu information structure */
-extern XeGpuTopology gpuTopology;
+extern XeGpuTopology xeGpuTopology;
 /** \brief Pointer for exporting the GpuTopology data structure */
-typedef XeGpuTopology* GpuTopology_t;
+typedef XeGpuTopology* AccelXeTopology_t;
 
 
 /*! \brief Initialize GPU topology information
@@ -2373,414 +2457,15 @@ extern void topology_xe_finalize(void) __attribute__ ((visibility ("default") ))
 \sa GpuTopology_t
 @return GpuTopology_t (pointer to internal gpuTopology structure)
 */
-extern XeGpuTopology_t get_xeGpuTopology(void) __attribute__ ((visibility ("default") ));
+extern AccelXeTopology_t get_xeGpuTopology(void) __attribute__ ((visibility ("default") ));
 
 
-/*
-################################################################################
-# NvMarker API related functions
-################################################################################
-*/
-/** \addtogroup NvMarkerAPI Marker API module for GPUs
-*  @{
-*/
-/*! \brief Initialize NvLIKWID's marker API
-
-Must be called in serial region of the application to set up basic data structures
-of LIKWID.
-Reads environment variables:
-- LIKWID_GEVENTS (GPU event string)
-- LIKWID_GPUS (GPU list separated by ,)
-- LIKWID_GPUFILEPATH (Outputpath for NvMarkerAPI file)
-*/
-extern void likwid_xeMarkerInit(void) __attribute__ ((visibility ("default") ));
-/*! \brief Select next group to measure
-
-Must be called in parallel region of the application to switch group on every CPU.
-*/
-extern void likwid_xeMarkerNextGroup(void) __attribute__ ((visibility ("default") ));
-/*! \brief Close LIKWID's NvMarker API
-
-Must be called in serial region of the application. It gathers all data of regions and
-writes them out to a file (filepath in env variable LIKWID_FILEPATH).
-*/
-extern void likwid_xeMarkerClose(void) __attribute__ ((visibility ("default") ));
-/*! \brief Register a measurement region
-
-Initializes the hashTable entry in order to reduce execution time of likwid_gpuMarkerStartRegion()
-@param regionTag [in] Initialize data using this string
-@return Error code
-*/
-extern int likwid_xeMarkerRegisterRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
-/*! \brief Start a measurement region
-
-Reads the values of all configured counters and saves the results under the name given
-in regionTag.
-@param regionTag [in] Store data using this string
-@return Error code of start operation
-*/
-extern int likwid_xeMarkerStartRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
-/*! \brief Stop a measurement region
-
-Reads the values of all configured counters and saves the results under the name given
-in regionTag. The measurement data of the stopped region gets summed up in global region counters.
-@param regionTag [in] Store data using this string
-@return Error code of stop operation
-*/
-extern int likwid_xeMarkerStopRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
-/*! \brief Reset a measurement region
-
-Reset the values of all configured counters and timers.
-@param regionTag [in] Reset data using this string
-@return Error code of reset operation
-*/
-extern int likwid_xeMarkerResetRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
-/*! \brief Get accumulated data of a code region
-
-Get the accumulated data of the current thread for the given regionTag.
-@param regionTag [in] Print data using this string
-@param nr_gpus [in,out] Length of first dimension of the arrys. Afterwards the actual count of GPUs.
-@param nr_events [in,out] Length of events array
-@param events [out] Events array for the intermediate results
-@param time [out] Accumulated measurement time
-@param count [out] Call count of the code region
-*/
-extern void likwid_xeMarkerGetRegion(const char* regionTag, int* nr_gpus, int* nr_events, double** events, double **time, int **count) __attribute__ ((visibility ("default") ));
-
-/*! \brief Read the output file of the NvMarker API
-@param [in] filename Filename with NvMarker API results
-@return 0 or negative error number
-*/
-int xemon_readMarkerFile(const char* filename) __attribute__ ((visibility ("default") ));
-/*! \brief Free space for read in NvMarker API file
-*/
-void xemon_destroyMarkerResults() __attribute__ ((visibility ("default") ));
-/*! \brief Get the number of regions listed in NvMarker API result file
-
-@return Number of regions
-*/
-int xemon_getNumberOfRegions() __attribute__ ((visibility ("default") ));
-/*! \brief Get the number of metrics of a region
-@param [in] region ID of region
-@return Number of metrics of region
-*/
-int xemon_getMetricsOfRegion(int region) __attribute__ ((visibility ("default") ));
-/*! \brief Get the number of GPUs of a region
-@param [in] region ID of region
-@return Number of GPUs of region
-*/
-int xemon_getGpusOfRegion(int region) __attribute__ ((visibility ("default") ));
-/*! \brief Get the GPU list of a region
-@param [in] region ID of region
-@param [in] count Length of gpulist array
-@param [in,out] gpulist gpulist array
-@return Number of GPUs of region or count, whatever is lower
-*/
-int xemon_getGpulistOfRegion(int region, int count, int* gpulist) __attribute__ ((visibility ("default") ));
-/*! \brief Get the accumulated measurement time of a region for a GPU
-@param [in] region ID of region
-@param [in] gpu ID of GPU
-@return Measurement time of a region for a GPU
-*/
-double xemon_getTimeOfRegion(int region, int gpu) __attribute__ ((visibility ("default") ));
-/*! \brief Get the call count of a region for a GPU
-@param [in] region ID of region
-@param [in] gpu ID of GPU
-@return Call count of a region for a GPU
-*/
-int xemon_getCountOfRegion(int region, int gpu) __attribute__ ((visibility ("default") ));
-/*! \brief Get the groupID of a region
-
-@param [in] region ID of region
-@return Group ID of region
-*/
-int xemon_getGroupOfRegion(int region) __attribute__ ((visibility ("default") ));
-/*! \brief Get the tag of a region
-@param [in] region ID of region
-@return tag of region
-*/
-char* xemon_getTagOfRegion(int region) __attribute__ ((visibility ("default") ));
-/*! \brief Get the number of events of a region
-@param [in] region ID of region
-@return Number of events of region
-*/
-int xemon_getEventsOfRegion(int region) __attribute__ ((visibility ("default") ));
-/*! \brief Get the event result of a region for an event and GPU
-@param [in] region ID of region
-@param [in] eventId ID of event
-@param [in] gpuId ID of GPU
-@return Result of a region for an event and GPU
-*/
-double xemon_getResultOfRegionGpu(int region, int eventId, int gpuId) __attribute__ ((visibility ("default") ));
-/*! \brief Get the metric result of a region for a metric and GPU
-@param [in] region ID of region
-@param [in] metricId ID of metric
-@param [in] gpuId ID of GPU
-@return Metric result of a region for a GPU
-*/
-double xemon_getMetricOfRegionGpu(int region, int metricId, int gpuId) __attribute__ ((visibility ("default") ));
-
-/** @}*/
-
-/*
-################################################################################
-# Nvmon related functions (Nvidia GPU monitoring)
-################################################################################
-*/
-
-/** \addtogroup Nvmon Nvidia GPU monitoring API module for GPUs
-*  @{
-*/
-
-/*! \brief Element in the output list from xemon_getEventsOfGpu
-
-It holds the name, the description and the limitation string for one event.
-*/
-typedef struct {
-    char* name; /*!< \brief Name of the event */
-    char* desc; /*!< \brief Description of the event */
-    char* limit; /*!< \brief Limitation string of the event, commonly 'GPU' */
-} NvmonEventListEntry;
-
-/*! \brief Output list from xemon_getEventsOfGpu with all supported events
-
-Output list from xemon_getEventsOfGpu with all supported events
-*/
-typedef struct {
-    int numEvents; /*!< \brief Number of events */
-    NvmonEventListEntry *events; /*!< \brief List of events */
-} NvmonEventList;
-/** \brief Pointer for exporting the NvmonEventList data structure */
-typedef NvmonEventList* NvmonEventList_t;
-
-
-/*! \brief Get the list of supported event of a GPU
-
-@param [in] gpuId ID of GPU (from GPU topology)
-@param [out] list List of events
-@return Number of supported events or -errno
-*/
-int xemon_getEventsOfGpu(int gpuId, NvmonEventList_t* list);
-/*! \brief Return the list of supported event of a GPU
-
-Return the list of supported event of a GPU from xemon_getEventsOfGpu()
-@param [in] list List of events
-*/
-void xemon_returnEventsOfGpu(NvmonEventList_t list);
-
-
-/*! \brief Initialize the Nvidia GPU performance monitoring facility (Nvmon)
-
-Initialize the Nvidia GPU performance monitoring feature by creating basic data structures.
-The CUDA and CUPTI library paths need to be in LD_LIBRARY_PATH to be found by dlopen.
-
-@param [in] nrGpus Amount of GPUs
-@param [in] gpuIds List of GPUs
-@return error code (0 on success, -ERRORCODE on failure)
-*/
-int xemon_init(int nrGpus, const int* gpuIds) __attribute__ ((visibility ("default") ));
-
-/*! \brief Close the Nvidia GPU perfomance monitoring facility of LIKWID (Nvmon)
-
-Deallocates all internal data that is used during Nvmon performance monitoring. Also
-the counter values are not accessible anymore after calling this function.
-*/
-void xemon_finalize(void) __attribute__ ((visibility ("default") ));
-/*! \brief Add an event string to LIKWID Nvmon
-
-A event string looks like Eventname:Countername,...
-The eventname and countername are checked if they are available.
-
-@param [in] eventCString Event string
-@return Returns the ID of the new eventSet
-*/
-int xemon_addEventSet(const char* eventCString) __attribute__ ((visibility ("default") ));
-/*! \brief Setup all Nvmon performance monitoring counters of an eventSet
-
-@param [in] gid (returned from perfmon_addEventSet()
-@return error code (-ENOENT if groupId is invalid and -1 if the counters of one CPU cannot be set up)
-*/
-int xemon_setupCounters(int gid) __attribute__ ((visibility ("default") ));
-/*! \brief Start Nvmon performance monitoring counters
-
-Start the counters that have been previously set up by xemon_setupCounters().
-The counter registered are zeroed before enabling the counters
-@return 0 on success and -(gpuid+1) for error
-*/
-int xemon_startCounters(void) __attribute__ ((visibility ("default") ));
-/*! \brief Stop Nvmon performance monitoring counters
-
-Stop the counters that have been previously started by xemon_startCounters().
-@return 0 on success and -(gpuid+1) for error
-*/
-int xemon_stopCounters(void) __attribute__ ((visibility ("default") ));
-/*! \brief Read the Nvmon performance monitoring counters on all GPUs
-
-Read the counters that have been previously started by xemon_startCounters().
-@return 0 on success and -(gpuid+1) for error
-*/
-int xemon_readCounters(void) __attribute__ ((visibility ("default") ));
-/*! \brief Switch the active eventSet to a new one (Nvmon)
-
-Stops the currently running counters, switches the eventSet by setting up the
-counters and start the counters.
-@param [in] new_group ID of group that should be switched to.
-@return 0 on success and -(thread_id+1) for error
-*/
-int xemon_switchActiveGroup(int new_group) __attribute__ ((visibility ("default") ));
-/*! \brief Set verbosity of LIKWID Nvmon library
-
-*/
-void xemon_setVerbosity(int level) __attribute__ ((visibility ("default") ));
-
-/*! \brief Get the results of the specified group, counter and GPU (Nvmon)
-
-Get the result of all measurement cycles.
-@param [in] groupId ID of the group that should be read
-@param [in] eventId ID of the event that should be read
-@param [in] gpuId ID of the GPU that should be read
-@return The counter result
-*/
-double xemon_getResult(int groupId, int eventId, int gpuId) __attribute__ ((visibility ("default") ));
-/*! \brief Get the last results of the specified group, counter and GPU (Nvmon)
-
-Get the result of the last measurement cycle (between start/stop, start/read, read/read or read/top).
-@param [in] groupId ID of the group that should be read
-@param [in] eventId ID of the event that should be read
-@param [in] gpuId ID of the GPU that should be read
-@return The counter result
-*/
-double xemon_getLastResult(int groupId, int eventId, int gpuId) __attribute__ ((visibility ("default") ));
-/*! \brief Get the metric result of the specified group, counter and GPU (Nvmon)
-
-Get the metric result of all measurement cycles. It reads all raw results for the given groupId and gpuId.
-@param [in] groupId ID of the group that should be read
-@param [in] metricId ID of the metric that should be calculated
-@param [in] gpuId ID of the GPU that should be read
-@return The metric result
-*/
-double xemon_getMetric(int groupId, int metricId, int gpuId);
-/*! \brief Get the last metric result of the specified group, counter and GPU (Nvmon)
-
-Get the metric result of the last measurement cycle. It reads all raw results for the given groupId and gpuId.
-@param [in] groupId ID of the group that should be read
-@param [in] metricId ID of the metric that should be calculated
-@param [in] gpuId ID of the GPU that should be read
-@return The metric result
-*/
-double xemon_getLastMetric(int groupId, int metricId, int gpuId);
-/*! \brief Get the number of configured event groups (Nvmon)
-
-@return Number of groups
-*/
-int xemon_getNumberOfGroups(void) __attribute__ ((visibility ("default") ));
-/*! \brief Get the ID of the currently set up event group (Nvmon)
-
-@return Number of active group
-*/
-int xemon_getIdOfActiveGroup(void) __attribute__ ((visibility ("default") ));
-/*! \brief Get the number of GPUs specified at xemon_init() (Nvmon)
-
-@return Number of GPUs
-*/
-int xemon_getNumberOfGPUs(void) __attribute__ ((visibility ("default") ));
-/*! \brief Get the number of configured eventSets in group (Nvmon)
-
-@param [in] groupId ID of group
-@return Number of eventSets
-*/
-int xemon_getNumberOfEvents(int groupId) __attribute__ ((visibility ("default") ));
-/*! \brief Get the number of configured metrics for group (Nvmon)
-
-@param [in] groupId ID of group
-@return Number of metrics
-*/
-int xemon_getNumberOfMetrics(int groupId) __attribute__ ((visibility ("default") ));
-/*! \brief Get the accumulated measurement time a group (Nvmon)
-
-@param [in] groupId ID of group
-@return Time in seconds the event group was measured
-*/
-double xemon_getTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
-/*! \brief Get the last measurement time a group (Nvmon)
-
-@param [in] groupId ID of group
-@return Time in seconds the event group was measured the last time
-*/
-double xemon_getLastTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
-/*! \brief Get the event name of the specified group and event (Nvmon)
-
-Get the metric name as defined in the performance group file
-@param [in] groupId ID of the group that should be read
-@param [in] eventId ID of the event that should be returned
-@return The event name or NULL in case of failure
-*/
-char* xemon_getEventName(int groupId, int eventId) __attribute__ ((visibility ("default") ));
-/*! \brief Get the counter name of the specified group and event (Nvmon)
-
-Get the counter name as defined in the performance group file
-@param [in] groupId ID of the group that should be read
-@param [in] eventId ID of the event of which the counter should be returned
-@return The counter name or NULL in case of failure
-*/
-char* xemon_getCounterName(int groupId, int eventId) __attribute__ ((visibility ("default") ));
-/*! \brief Get the metric name of the specified group and metric (Nvmon)
-
-Get the metric name as defined in the performance group file
-@param [in] groupId ID of the group that should be read
-@param [in] metricId ID of the metric that should be calculated
-@return The metric name or NULL in case of failure
-*/
-char* xemon_getMetricName(int groupId, int metricId) __attribute__ ((visibility ("default") ));
-/*! \brief Get the name group (Nvmon)
-
-Get the name of group. Either it is the name of the performance group or "Custom"
-@param [in] groupId ID of the group that should be read
-@return The group name or NULL in case of failure
-*/
-char* xemon_getGroupName(int groupId) __attribute__ ((visibility ("default") ));
-/*! \brief Get the short informational string of the specified group (Nvmon)
-
-Returns the short information string as defined by performance groups or "Custom"
-in case of custom event sets
-@param [in] groupId ID of the group that should be read
-@return The short information or NULL in case of failure
-*/
-char* xemon_getGroupInfoShort(int groupId) __attribute__ ((visibility ("default") ));
-/*! \brief Get the long descriptive string of the specified group (Nvmon)
-
-Returns the long descriptive string as defined by performance groups or NULL
-in case of custom event sets
-@param [in] groupId ID of the group that should be read
-@return The long description or NULL in case of failure
-*/
-char* xemon_getGroupInfoLong(int groupId) __attribute__ ((visibility ("default") ));
-
-/*! \brief Get all groups (Nvmon)
-
-Checks the configured performance group path for the current GPU and
-returns all found group names
-@param [in] gpuId Get groups for a specific GPU
-@param [out] groups List of group names
-@param [out] shortinfos List of short information string about group
-@param [out] longinfos List of long information string about group
-@return Amount of found performance groups
-*/
-int xemon_getGroups(int gpuId, char*** groups, char*** shortinfos, char*** longinfos) __attribute__ ((visibility ("default") ));
-/*! \brief Free all group information (Nvmon)
-
-@param [in] nrgroups Number of groups
-@param [in] groups List of group names
-@param [in] shortinfos List of short information string about group
-@param [in] longinfos List of long information string about group
-*/
-int xemon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos) __attribute__ ((visibility ("default") ));
-
+extern void xemon_setVerbosity(int verbosity) __attribute__ ((visibility ("default") ));
 
 
 /** @}*/
 
-#endif /* LIKWID_WITH_NVMON */
+#endif /* LIKWID_WITH_XEMON */
 
 
 #ifdef __cplusplus
