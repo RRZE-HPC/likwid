@@ -384,7 +384,7 @@ endif
 
 
 ifeq ($(strip $(DEBUG)),true)
-DEBUG_FLAGS = -g
+DEBUG_FLAGS = -g -ggdb
 DEBUG_CFLAGS := $(filter-out -O0, $(CFLAGS))
 DEBUG_CFLAGS := $(filter-out -O1, $(DEBUG_CFLAGS))
 DEBUG_CFLAGS := $(filter-out -O2, $(DEBUG_CFLAGS))

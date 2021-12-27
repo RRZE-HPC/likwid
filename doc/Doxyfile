@@ -1503,7 +1503,7 @@ INCLUDE_FILE_PATTERNS  =
 # undefined via #undef or recursively expanded use the := operator
 # instead of the = operator.
 
-PREDEFINED             = LIKWID_WITH_NVMON LIKWID_PERFMON LIKWID_NVMON
+PREDEFINED             = LIKWID_WITH_NVMON LIKWID_PERFMON LIKWID_NVMON LIKWID_WITH_XEMON LIKWID_XEMON
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then
 # this tag can be used to specify a list of macro names that should be expanded.

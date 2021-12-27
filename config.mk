@@ -30,6 +30,10 @@ INSTRUMENT_BENCH = true#NO SPACE
 # For configuring include paths, go to CUDA section
 NVIDIA_INTERFACE = false#NO SPACE
 
+# Build LIKWID with Intel GPU interface (Level Zero)
+# For configuring include paths, go to XEMON section
+INTELGPU_INTERFACE = true#NO SPACE
+
 #################################################################
 #################################################################
 # Advanced configuration options                                #
@@ -162,3 +166,7 @@ CUPTIINCLUDE = $(CUDA_HOME)/extras/CUPTI/include
 # In order to hook into the CUDA application, the appDaemon is required
 # If you just want the NvMarkerAPI, you can keep it false
 BUILDAPPDAEMON=false
+
+# Intel GPU (level zero) build data
+INTELGPUINCLUDE = /opt/intel/oneapi/dal/2021.2.0/include/services/internal
+INTELXEINCLUDE = /usr/local/include/level_zero
