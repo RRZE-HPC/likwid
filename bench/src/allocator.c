@@ -93,10 +93,12 @@ allocator_allocateVector(
         void** ptr,
         int alignment,
         uint64_t size,
-        int offset,
+        off_t offset,
         DataType type,
         int stride,
         bstring domainString,
+        InitMethod init_method,
+        uint64_t init_method_arg,
         int init_per_thread)
 {
     int i;
@@ -155,7 +157,7 @@ allocator_allocateVector(
     numberOfAllocatedVectors++;
 
     affinity_pinProcess(domain->processorList[0]);
-    printf("Allocate: Process running on hwthread %d (Domain %s) - Vector length %llu/%llu Offset %d Alignment %llu\n",
+    printf("Allocate: Process running on hwthread %d (Domain %s) - Vector length %llu/%llu Offset %llu Alignment %llu\n",
             affinity_processGetProcessorId(),
             bdata(domain->tag),
             LLU_CAST size,
@@ -165,48 +167,99 @@ allocator_allocateVector(
 
     if (!init_per_thread)
     {
-        switch ( type )
-        {
-            case INT:
-                {
-                    int* sptr = (int*) (*ptr);
-                    sptr += offset;
+        allocator_initVector(ptr, size, offset, type, stride, init_method, init_method_arg, true);
+    }
+}
 
-                    for ( uint64_t i=0; i < size; i++ )
-                    {
-                        sptr[i] = 1;
-                    }
-                    *ptr = (void*) sptr;
+void allocator_initVector(void** ptr,
+        uint64_t size,
+        off_t offset,
+        DataType type,
+        int stride,
+        InitMethod init_method,
+        uint64_t init_method_arg,
+        bool fill)
+{
+    switch ( type )
+    {
+        case INT:
+            {
+                int* iptr = (int*) (*ptr);
+                iptr += offset;
 
+                switch ( init_method ) {
+                    case CONSTANT_ONE:
+                        for ( uint64_t i=0; fill && i < size; i++ )
+                        {
+                            iptr[i] = 1;
+                        }
+                        break;
+                    case INDEX_STRIDE:
+                        for ( int64_t i=0; fill && i < size; i++ )
+                        {
+                            iptr[i] = (int) ((i + stride) % size);
+                        }
+                        break;
+                    case LINKED_LIST:
+			;
+                        /* init_method_arg is guaranteed to be a non-zero multiple of sizeof(int) or linked lists items */
+                        const int64_t ll_int_item_size = init_method_arg / sizeof(int);
+                        const int64_t ll_items = size / init_method_arg;
+
+                        for ( int64_t i=0; fill && i < ll_items; i++ )
+                        {
+                            iptr[i * ll_int_item_size] = i * init_method_arg;
+                        }
+
+                        /* Use Sattolo's algorithm to create single-cycle permutation */
+                        struct drand48_data rng_state;
+                        srand48_r(0, &rng_state);
+
+                        int64_t i = ll_items;
+                        while ( i > 1 && fill )
+                        {
+                            i--;
+
+                            long j;
+                            mrand48_r(&rng_state, &j);
+                            j = abs(j) % i;
+
+                            /* swap */
+                            const int tmp = iptr[i * ll_int_item_size];
+                            iptr[i * ll_int_item_size] = iptr[j * ll_int_item_size];
+                            iptr[j * ll_int_item_size] = tmp;
+                        }
+                        break;
                 }
-                break;
 
-            case SINGLE:
+                *ptr = (void*) iptr;
+            }
+            break;
+
+        case SINGLE:
+            {
+                float* sptr = (float*) (*ptr);
+                sptr += offset;
+
+                for ( uint64_t i=0; fill && i < size; i++ )
                 {
-                    float* sptr = (float*) (*ptr);
-                    sptr += offset;
-
-                    for ( uint64_t i=0; i < size; i++ )
-                    {
-                        sptr[i] = 1.0;
-                    }
-                    *ptr = (void*) sptr;
-
+                    sptr[i] = 1.0;
                 }
-                break;
+                *ptr = (void*) sptr;
+            }
+            break;
 
-            case DOUBLE:
+        case DOUBLE:
+            {
+                double* dptr = (double*) (*ptr);
+                dptr += offset;
+
+                for ( uint64_t i=0; fill && i < size; i++ )
                 {
-                    double* dptr = (double*) (*ptr);
-                    dptr += offset;
-
-                    for ( uint64_t i=0; i < size; i++ )
-                    {
-                        dptr[i] = 1.0;
-                    }
-                    *ptr = (void*) dptr;
+                    dptr[i] = 1.0;
                 }
-                break;
-        }
+                *ptr = (void*) dptr;
+            }
+            break;
     }
 }

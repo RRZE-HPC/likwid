@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include <unistd.h>
 #include <errno.h>
 #include <libgen.h>
@@ -173,6 +174,10 @@ static struct bstrList* analyse_ptt(bstring pttfile, TestCase** testcase)
     bstring bUOPS = bformat("UOPS");
     bstring bBRANCHES = bformat("BRANCHES");
     bstring bLOOP = bformat("LOOP");
+    bstring bINITMETHOD = bformat("INIT");
+    bstring bINITMETHOD_ONES = bformat("CONST");
+    bstring bINITMETHOD_INDEX = bformat("INDEX_STRIDE");
+    bstring bINITMETHOD_LINKED_LIST = bformat("LINKED_LIST");
     int (*ownatoi)(const char*) = &atoi;
 
     ptt = read_ptt(pttfile);
@@ -189,6 +194,7 @@ static struct bstrList* analyse_ptt(bstring pttfile, TestCase** testcase)
             test->instr_const = -1;
             test->instr_loop = -1;
             test->uops = -1;
+            test->init_method = CONSTANT_ONE; /* compat: set default to "all 1" initialization */
             code = bstrListCreate();
             for (int i = 0; i < ptt->qty; i++)
             {
@@ -249,6 +255,56 @@ static struct bstrList* analyse_ptt(bstring pttfile, TestCase** testcase)
                         }
                     }
                 }
+                else if (bstrncmp(ptt->entry[i], bINITMETHOD, blength(bINITMETHOD)) == BSTR_OK)
+                {
+                    bstring binit_method = bmidstr(ptt->entry[i], blength(bINITMETHOD)+1, blength(ptt->entry[i])-blength(bINITMETHOD));
+                    btrimws(binit_method);
+
+                    int skip = 0;
+                    if (bstrncmp(binit_method, bINITMETHOD_ONES, blength(bINITMETHOD_ONES)) == BSTR_OK)
+                    {
+                        test->init_method = CONSTANT_ONE;
+                    }
+                    else if (bstrncmp(binit_method, bINITMETHOD_INDEX, blength(bINITMETHOD_INDEX)) == BSTR_OK)
+                    {
+                        test->init_method = INDEX_STRIDE;
+                        skip = blength(bINITMETHOD_INDEX);
+                    }
+                    else if (bstrncmp(binit_method, bINITMETHOD_LINKED_LIST, blength(bINITMETHOD_LINKED_LIST)) == BSTR_OK)
+                    {
+                        test->init_method = LINKED_LIST;
+                        skip = blength(bINITMETHOD_LINKED_LIST);
+                    }
+                    else
+                    {
+                        fprintf(stderr, "Unknown initialization type (\"%s\"). Falling back to CONSTANT_ONE\n", binit_method->data);
+                        test->init_method = CONSTANT_ONE;
+                    }
+
+                    test->init_arg = 0;
+                    if (test->init_method == INDEX_STRIDE || test->init_method == LINKED_LIST)
+                    {
+                        ANALYSE_PTT_GET_INT(binit_method,
+                                test->init_method == INDEX_STRIDE ? bINITMETHOD_INDEX : bINITMETHOD_LINKED_LIST,
+                                test->init_arg);
+
+                    }
+
+                    if (test->init_method == LINKED_LIST)
+                    {
+                        if ( test->init_arg % sizeof(int) != 0 )
+                        {
+                            test->init_arg = (test->init_arg / sizeof(int)) * sizeof(int);
+                            fprintf(stderr, "Warning: Size of linked list item not a multiple of int size (%zu), truncated to %" PRIu64 ".\n",
+                                    sizeof(int), test->init_arg);
+                        }
+                        if ( test->init_arg == 0 ) {
+                            test->init_arg = sizeof(int);
+                        }
+                    }
+
+                    bdestroy(binit_method);
+                }
                 else if (bstrncmp(ptt->entry[i], bTYPE, blength(bTYPE)) == BSTR_OK)
                 {
                     bstring btype = bmidstr(ptt->entry[i], blength(bTYPE)+1, blength(ptt->entry[i])-blength(bTYPE));
@@ -303,6 +359,10 @@ static struct bstrList* analyse_ptt(bstring pttfile, TestCase** testcase)
     bdestroy(bUOPS);
     bdestroy(bBRANCHES);
     bdestroy(bLOOP);
+    bdestroy(bINITMETHOD);
+    bdestroy(bINITMETHOD_ONES);
+    bdestroy(bINITMETHOD_INDEX);
+    bdestroy(bINITMETHOD_LINKED_LIST);
     return code;
 }
 
