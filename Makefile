@@ -400,19 +400,19 @@ endif
 ifeq ($(BUILDFREQ),true)
 ifneq ($(COMPILER),MIC)
 install_freq:
-	@echo "===> INSTALL setFrequencies tool to $(PREFIX)/sbin/$(FREQ_TARGET)"
-	@mkdir -p $(PREFIX)/sbin
-	@install -m 4755 $(INSTALL_CHOWN) $(FREQ_TARGET) $(PREFIX)/sbin/$(FREQ_TARGET)
+	@echo "===> INSTALL setFrequencies tool to $(SBINPREFIX)/$(FREQ_TARGET)"
+	@mkdir -p $(SBINPREFIX)
+	@install -m 4755 $(INSTALL_CHOWN) $(FREQ_TARGET) $(SBINPREFIX)/$(FREQ_TARGET)
 move_freq:
-	@echo "===> MOVE setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET) to $(INSTALLED_PREFIX)/sbin/$(FREQ_TARGET)"
-	@mkdir -p $(INSTALLED_PREFIX)/sbin
-	@install -m 4755 $(INSTALL_CHOWN) $(PREFIX)/sbin/$(FREQ_TARGET) $(INSTALLED_PREFIX)/sbin/$(FREQ_TARGET)
+	@echo "===> MOVE setFrequencies tool from $(SBINPREFIX)/$(FREQ_TARGET) to $(INSTALLED_SBINPREFIX)/$(FREQ_TARGET)"
+	@mkdir -p $(INSTALLED_SBINPREFIX)
+	@install -m 4755 $(INSTALL_CHOWN) $(SBINPREFIX)/$(FREQ_TARGET) $(INSTALLED_SBINPREFIX)/$(FREQ_TARGET)
 uninstall_freq:
-	@echo "===> REMOVING setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET)"
-	@rm -f $(PREFIX)/sbin/$(FREQ_TARGET)
+	@echo "===> REMOVING setFrequencies tool from $(SBINPREFIX)/$(FREQ_TARGET)"
+	@rm -f $(SBINPREFIX)/$(FREQ_TARGET)
 uninstall_freq_moved:
-	@echo "===> REMOVING setFrequencies tool from $(INSTALLED_PREFIX)/sbin/$(FREQ_TARGET)"
-	@rm -f $(INSTALLED_PREFIX)/sbin/$(FREQ_TARGET)
+	@echo "===> REMOVING setFrequencies tool from $(INSTALLED_SBINPREFIX)/$(FREQ_TARGET)"
+	@rm -f $(INSTALLED_SBINPREFIX)/$(FREQ_TARGET)
 else
 install_freq:
 	@echo "===> No INSTALL of setFrequencies tool"
