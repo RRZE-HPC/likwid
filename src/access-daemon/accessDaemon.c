@@ -2580,10 +2580,12 @@ daemonize(int* parentPid)
         syslog(LOG_ERR, "fork failed: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
+    signal(SIGCHLD, SIG_IGN);
 
     /* If we got a good PID, then we can exit the parent process. */
     if (pid > 0)
     {
+        syslog(LOG_ERR, "Closing parent process %d", *parentPid);
         exit(EXIT_SUCCESS);
     }
 
@@ -2619,13 +2621,14 @@ daemonize(int* parentPid)
 int main(void)
 {
     int ret;
-    pid_t pid;
+    pid_t pid = getpid();
     struct sockaddr_un  addr1;
     socklen_t socklen;
     AccessDataRecord dRecord;
     mode_t oldumask;
     uint32_t numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
     uint32_t model;
+    struct stat stats;
     for (int i=0;i<avail_cpus;i++)
     {
         FD_MSR[i] = -1;
@@ -2644,7 +2647,10 @@ int main(void)
         stop_daemon();
     }
 
-    daemonize(&pid);
+    stat("/run/systemd/system", &stats);
+    if (!S_ISDIR(stats.st_mode)) {
+        daemonize(&pid);
+    }
 #ifdef DEBUG_LIKWID
     syslog(LOG_INFO, "AccessDaemon runs with UID %d, eUID %d\n", getuid(), geteuid());
 #endif
