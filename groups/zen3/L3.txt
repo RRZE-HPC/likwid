@@ -22,4 +22,5 @@ Formulas:
 L3 bandwidth [MBytes/s] = 1.0E-06*(L2_PF_HIT_IN_L3+L2_PF_MISS_IN_L3+L2_CACHE_MISS_AFTER_L1_MISS)*64.0/time
 L3 data volume [GBytes] = 1.0E-09*(L2_PF_HIT_IN_L3+L2_PF_MISS_IN_L3+L2_CACHE_MISS_AFTER_L1_MISS)*64.0
 --
-Profiling group to measure L3 cache bandwidth.
+Profiling group to measure L3 cache bandwidth. It measures only loads from L3.
+There is no performance event to measure the stores to L3.
