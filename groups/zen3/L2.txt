@@ -25,4 +25,5 @@ L2 data volume [GBytes] = 1.0E-09*(REQUESTS_TO_L2_GRP1_ALL_NO_PF)*64
 Prefetch bandwidth [MBytes/s] = 1.0E-06*(L2_PF_HIT_IN_L2)*64/time
 Prefetch data volume [GBytes] = 1.0E-09*(L2_PF_HIT_IN_L2)*64
 -
-Profiling group to measure L2 cache bandwidth including prefetchers.
+Profiling group to measure L2 cache load bandwidth including prefetchers.
+There are no events to count stores.
