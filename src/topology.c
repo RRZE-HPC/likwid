@@ -93,6 +93,7 @@ static char* icelake_str = "Intel Icelake processor";
 static char* tigerlake_str = "Intel Tigerlake processor";
 static char* icelakesp_str = "Intel Icelake SP processor";
 static char* rocketlake_str = "Intel Rocketlake processor";
+static char* sapphire_rapids_str = "Intel SapphireRapids processor";
 //static char* snowridgex_str = "Intel SnowridgeX processor";
 
 static char* barcelona_str = "AMD K10 (Barcelona) processor";
@@ -157,6 +158,7 @@ static char* short_kabylake = "skylake";
 static char* short_cascadelakeX = "CLX";
 static char* short_cannonlake = "cannonlake";
 static char* short_tigerlake = "TGL";
+static char* short_sapphire_rapids = "SPR";
 static char* short_phi = "phi";
 static char* short_phi2 = "knl";
 static char* short_icelake = "ICL";
@@ -944,6 +946,11 @@ topology_setName(void)
                     //cpuid_info.supportClientmem = 1;
                     cpuid_info.name = tigerlake_str;
                     cpuid_info.short_name = short_tigerlake;
+                    break;
+
+                case SAPPHIRERAPIDS:
+                    cpuid_info.name = sapphire_rapids_str;
+                    cpuid_info.short_name = short_sapphire_rapids;
                     break;
 
                 default:
