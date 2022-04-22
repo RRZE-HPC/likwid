@@ -269,6 +269,12 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
             ret = 0;
         }
 #endif
+        if (strcmp(event->name, "TOPDOWN_SLOTS") == 0)
+        {
+            attr->config = 0x0400;
+            attr->type = PERF_TYPE_RAW;
+            ret = 0;
+        }
     }
     else
     {
