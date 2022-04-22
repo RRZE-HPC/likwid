@@ -2761,6 +2761,11 @@ int main(void)
                     isPCIUncore = 1;
                     allowedPci = allowed_pci_knl;
                 }
+                else if (model == SAPPHIRERAPIDS)
+                {
+                    allowed = allowed_icx;
+                    isPCI64 = 1;
+                }
                 break;
             case K8_FAMILY:
             case K10_FAMILY:
