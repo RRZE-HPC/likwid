@@ -72,6 +72,7 @@ static pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t *cpuLocks = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+void __attribute__((destructor (104))) close_access_client(void);
 
 static char*
 access_client_strerror(AccessErrorType det)
@@ -104,6 +105,21 @@ access_client_errno(AccessErrorType det)
         case ERR_NODEV:      return -ENODEV;
         default:             return -EFAULT;
     }
+}
+
+static void access_client_signal_catcher(int sig) {
+    close_access_client();
+}
+
+static int
+access_client_catch_signal()
+{
+    struct sigaction sia;
+    sia.sa_handler = access_client_signal_catcher;
+    sigemptyset(&sia.sa_mask);
+    sia.sa_flags = SA_ONSTACK;
+    sigaction(SIGCHLD, &sia, NULL);
+    return 0;
 }
 
 static int
