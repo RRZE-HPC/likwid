@@ -2037,6 +2037,7 @@ lua_likwid_startProgram(lua_State* L)
     {
         lua_pushstring(L,"Number of CLI args greater than configured");
         lua_error(L);
+        free(cpus);
         return 0;
     }
     ppid = getpid();
