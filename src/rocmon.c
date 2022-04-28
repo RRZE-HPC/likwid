@@ -337,7 +337,7 @@ _smi_wrapper_compute_process_info_get(int deviceId, RocmonSmiEvent* event, Rocmo
 static int
 _rocmon_link_libraries()
 {
-    #define DLSYM_AND_CHECK( dllib, name ) name##_ptr = dlsym( dllib, #name ); if ( dlerror() != NULL ) { return -1; }
+    #define DLSYM_AND_CHECK( dllib, name ) name##_ptr = dlsym( dllib, #name ); if ( dlerror() != NULL ) { printf("Failed to link %s \n", #name); return -1; }
 
     // Need to link in the ROCm HSA libraries
     dl_hsa_lib = dlopen("libhsa-runtime64.so", RTLD_NOW | RTLD_GLOBAL);
@@ -357,7 +357,7 @@ _rocmon_link_libraries()
 
     // Need to link in the Rocprofiler libraries
     dl_rsmi_lib = dlopen("librocm_smi64.so", RTLD_NOW | RTLD_GLOBAL);
-    if (!dl_profiler_lib)
+    if (!dl_rsmi_lib)
     {
         fprintf(stderr, "ROCm SMI library librocm_smi64.so not found.\n");
         return -1;
@@ -1102,6 +1102,7 @@ rocmon_init(int numGpus, const int* gpuIds)
     int ret = _rocmon_link_libraries();
     if (ret < 0)
     {
+	ERROR_PLAIN_PRINT(Failed to initialize libraries);
         return ret;
     }
 
@@ -1129,6 +1130,7 @@ rocmon_init(int numGpus, const int* gpuIds)
     // init hsa library
     ROCM_CALL(hsa_init, (),
     {
+        ERROR_PLAIN_PRINT(Failed to init hsa library);
         free(rocmon_context->devices);
         free(rocmon_context);
         rocmon_context = NULL;
@@ -1138,6 +1140,7 @@ rocmon_init(int numGpus, const int* gpuIds)
     // init rocm smi library
     RSMI_CALL(rsmi_init, (0),
     {
+        ERROR_PLAIN_PRINT(Failed to init rocm_smi);
         free(rocmon_context->devices);
         free(rocmon_context);
         rocmon_context = NULL;
