@@ -47,6 +47,7 @@
 
 extern int perfmon_verbosity;
 extern int likwid_nvmon_verbosity;
+extern int likwid_rocmon_verbosity;
 
 #ifdef __cplusplus
 extern "C" {
@@ -660,6 +661,19 @@ Reads the GPU selection string and fills the given list with the GPU numbers def
 extern int gpustr_to_gpulist(const char* gpustr, int* gpulist, int length)  __attribute__ ((visibility ("default") ));
 
 #endif /* LIKWID_WITH_NVMON */
+
+#ifdef LIKWID_WITH_ROCMON
+/*! \brief Read GPU selection string and resolve to available ROCM GPUs numbers
+
+Reads the GPU selection string and fills the given list with the GPU numbers defined in the selection string.
+@param [in] gpustr Selection string
+@param [out] gpulist List of available ROCM GPU
+@param [in] length Length of GPU list
+@return error code (>0 on success for the returned list length, -ERRORCODE on failure)
+*/
+extern int gpustr_to_gpulist_rocm(const char* gpustr, int* gpulist, int length)  __attribute__ ((visibility ("default") ));
+
+#endif /* LIKWID_WITH_ROCMON */
 
 /** @}*/
 
@@ -2389,8 +2403,10 @@ typedef struct {
 typedef struct {
     Event_rocm_t* events;
     int numEvents;
-} EventList_rocm_t;
+} EventList_rocm;
+typedef EventList_rocm* EventList_rocm_t;
 
+void rocmon_setVerbosity(int level) __attribute__ ((visibility ("default") ));
 int rocmon_init(int numGpus, const int* gpuIds) __attribute__ ((visibility ("default") ));
 void rocmon_finalize(void) __attribute__ ((visibility ("default") ));
 int rocmon_addEventSet(const char* eventString, int* gid) __attribute__ ((visibility ("default") ));
@@ -2403,8 +2419,8 @@ int rocmon_readCounters(void) __attribute__ ((visibility ("default") ));
 double rocmon_getResult(int gpuIdx, int groupId, int eventId) __attribute__ ((visibility ("default") ));
 double rocmon_getLastResult(int gpuIdx, int groupId, int eventId) __attribute__ ((visibility ("default") ));
 
-int rocmon_getEventsOfGpu(int gpuIdx, EventList_rocm_t** list) __attribute__ ((visibility ("default") ));
-void rocmon_freeEventsOfGpu(EventList_rocm_t* list) __attribute__ ((visibility ("default") ));
+int rocmon_getEventsOfGpu(int gpuIdx, EventList_rocm_t* list) __attribute__ ((visibility ("default") ));
+void rocmon_freeEventsOfGpu(EventList_rocm_t list) __attribute__ ((visibility ("default") ));
 
 int rocmon_getNumberOfGroups(void) __attribute__ ((visibility ("default") ));
 int rocmon_getIdOfActiveGroup(void) __attribute__ ((visibility ("default") ));
@@ -2434,6 +2450,21 @@ int rocmon_markerRegisterRegion(const char* regionTag) __attribute__ ((visibilit
 int rocmon_markerStartRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
 int rocmon_markerStopRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
 int rocmon_markerResetRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+
+int rocmon_readMarkerFile(const char* filename) __attribute__ ((visibility ("default") ));
+void rocmon_destroyMarkerResults() __attribute__ ((visibility ("default") ));
+int rocmon_getCountOfRegion(int region, int gpu) __attribute__ ((visibility ("default") ));
+double rocmon_getTimeOfRegion(int region, int gpu) __attribute__ ((visibility ("default") ));
+int rocmon_getGpulistOfRegion(int region, int count, int* gpulist) __attribute__ ((visibility ("default") ));
+int rocmon_getGpusOfRegion(int region) __attribute__ ((visibility ("default") ));
+int rocmon_getMetricsOfRegion(int region) __attribute__ ((visibility ("default") ));
+int rocmon_getNumberOfRegions() __attribute__ ((visibility ("default") ));
+int rocmon_getGroupOfRegion(int region) __attribute__ ((visibility ("default") ));
+char* rocmon_getTagOfRegion(int region) __attribute__ ((visibility ("default") ));
+int rocmon_getEventsOfRegion(int region) __attribute__ ((visibility ("default") ));
+double rocmon_getResultOfRegionGpu(int region, int eventId, int gpuId) __attribute__ ((visibility ("default") ));
+double rocmon_getMetricOfRegionGpu(int region, int metricId, int gpuId) __attribute__ ((visibility ("default") ));
+
 
 #endif /* LIKWID_WITH_ROCMON */
 
