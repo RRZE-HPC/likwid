@@ -160,10 +160,11 @@ perfpid = nil
 nan2value = '-'
 cputopo = nil
 cpuinfo = nil
+cliopts = {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats", "execpid", "perfflags:", "perfpid:", "Z", "outprefix:"}
 
 
 ---------------------------
-gpusSupported = likwid.nvSupported()
+nvSupported = likwid.nvSupported()
 num_gpus = 0
 gpulist = {}
 gpu_event_string_list = {}
@@ -171,16 +172,50 @@ nvMarkerFile = string.format("%s/likwid_gpu_%d.txt", markerFolder, likwid.getpid
 gotG = false
 gpugroups = {}
 gputopo = nil
+if nvSupported then
+    table.insert(cliopts, "W:")
+    table.insert(cliopts, "G:")
+    table.insert(cliopts, "gpugroup:")
+end
+---------------------------
+rocmSupported = likwid.rocmSupported()
+num_rocm_gpus = 0
+gpulist_rocm = {}
+rocm_event_string_list = {}
+rocmMarkerFile = string.format("%s/likwid_rocm_%d.txt", markerFolder, likwid.getpid())
+gotRocmG = false
+rocmgroups = {}
+rocmInitialized = false
+rocmtopo = nil
+if rocmSupported then
+    table.insert(cliopts, "I:")
+    table.insert(cliopts, "R:")
+    table.insert(cliopts, "rocmgroup:")
+end
 ---------------------------
 
 likwid.catchSignal()
 
 local function perfctr_exit(exitcode)
+    
     if likwid.access(nvMarkerFile, "e") == 0 then
         os.remove(nvMarkerFile)
     end
     if likwid.access(markerFile, "e") == 0 then
         os.remove(markerFile)
+    end
+    if rocmSupported then
+        if rocmInitialized then
+            likwid.finalize_rocm()
+            rocmInitialized = false
+            rocmgroups = {}
+            rocm_event_string_list = {}
+            num_rocm_gpus = 0
+            gpulist_rocm = {}
+        end
+        if likwid.access(rocmMarkerFile, "e") == 0 then
+            os.remove(rocmMarkerFile)
+        end
     end
     if cputopo then
         likwid.putTopology()
@@ -203,7 +238,7 @@ if #arg == 0 then
     perfctr_exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "G:", "W:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats", "execpid", "perfflags:", "perfpid:", "Z", "gpugroup:", "outprefix:"}) do
+for opt,arg in likwid.getopt(arg, cliopts) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -345,7 +380,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
     elseif (opt == "stats") then
         print_stats = true
 ---------------------------
-    elseif gpusSupported and (opt == "G") then
+    elseif nvSupported and (opt == "G") then
         if arg ~= nil then
             num_gpus, gpulist = likwid.gpustr_to_gpulist(arg)
         else
@@ -353,9 +388,25 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
             perfctr_exit(1)
         end
         gotG = true
-    elseif gpusSupported and (opt == "W" or opt == "gpugroup") then
+    elseif nvSupported and (opt == "W" or opt == "gpugroup") then
         if arg ~= nil then
             table.insert(gpu_event_string_list, arg)
+        else
+            print_stderr("Option requires an argument")
+            perfctr_exit(1)
+        end
+---------------------------
+    elseif rocmSupported and (opt == "I") then
+        if arg ~= nil then
+            num_rocm_gpus, gpulist_rocm = likwid.gpustr_to_gpulist_rocm(arg)
+        else
+            print_stderr("Option requires an argument")
+            perfctr_exit(1)
+        end
+        gotG = true
+    elseif rocmSupported and (opt == "R" or opt == "rocmgroup") then
+        if arg ~= nil then
+            table.insert(rocm_event_string_list, arg)
         else
             print_stderr("Option requires an argument")
             perfctr_exit(1)
@@ -385,10 +436,13 @@ io.stdout:setvbuf("no")
 cpuinfo = likwid.getCpuInfo()
 cputopo = likwid.getCpuTopology()
 ---------------------------
-if gpusSupported then
+if nvSupported then
     gputopo = likwid.getGpuTopology()
 end
 ---------------------------
+if rocmSupported then
+    rocmtopo = likwid.getGpuTopology_rocm()
+end
 
 if num_cpus == 0 and
    not gotC and
@@ -417,7 +471,7 @@ elseif num_cpus == 0 and
 end
 
 ---------------------------
-if gpusSupported and
+if nvSupported and
    num_gpus == 0 and
    not gotG and
    gputopo and
@@ -434,6 +488,23 @@ if gpusSupported and
     gpulist = newgpulist
 end
 ---------------------------
+if rocmSupported and
+   num_rocm_gpus == 0 and
+   not gotRocmG and
+   rocmtopo and
+   not print_events and
+   print_event == nil and
+   not print_groups and
+   not print_group_help and
+   not print_info then
+    newrocmlist = {}
+    for g=1,rocmtopo["numDevices"] do
+        num_rocm_gpus = num_rocm_gpus + 1
+        table.insert(newrocmlist, rocmtopo["devices"][g]["devid"])
+    end
+    gpulist_rocm = newrocmlist
+end
+---------------------------
 
 if num_cpus > 0 then
     for i,cpu1 in pairs(cpulist) do
@@ -447,9 +518,20 @@ if num_cpus > 0 then
 end
 
 ---------------------------
-if gpusSupported and gputopo and num_gpus > 0 then
+if nvSupported and gputopo and num_gpus > 0 then
     for i,gpu1 in pairs(gpulist) do
         for j, gpu2 in pairs(gpulist) do
+            if i ~= j and gpu1 == gpu2 then
+                print_stderr("List of GPUs is not unique, got two times GPU " .. tostring(gpu1))
+                perfctr_exit(1)
+            end
+        end
+    end
+end
+---------------------------
+if rocmSupported and rocmtopo and num_rocm_gpus > 0 then
+    for i,gpu1 in pairs(gpulist_rocm) do
+        for j, gpu2 in pairs(gpulist_rocm) do
             if i ~= j and gpu1 == gpu2 then
                 print_stderr("List of GPUs is not unique, got two times GPU " .. tostring(gpu1))
                 perfctr_exit(1)
@@ -484,7 +566,7 @@ if print_events == true then
         print_stdout(outstr)
     end
 ---------------------------
-    if gpusSupported and gputopo then
+    if nvSupported and gputopo then
         local cudahome = os.getenv("CUDA_HOME")
         if cudahome and cudahome:len() > 0 then
             ldpath = os.getenv("LD_LIBRARY_PATH")
@@ -497,6 +579,33 @@ if print_events == true then
                 print_stdout("\n\n")
                 print_stdout(string.format("The GPUs %d provides %d events.", d, #tab["devices"][d]))
                 print_stdout("You can use as many GPUx counters until you get an error.")
+                print_stdout("Event tags (tag, counters)")
+                for _,e in pairs(tab["devices"][d]) do
+                    outstr = string.format("%s, %s", e["Name"], e["Limit"])
+                    print_stdout(outstr)
+                end
+            end
+        end
+    end
+---------------------------
+    if rocmSupported and rocmtopo then
+        local rocmhome = os.getenv("ROCM_HOME")
+        if rocmhome and rocmhome:len() > 0 then
+            ldpath = os.getenv("LD_LIBRARY_PATH")
+            local hiplib = string.format("%s/hip/lib", rocmhome)
+            local hsalib = string.format("%s/hsa/lib", rocmhome)
+            local rocproflib = string.format("%s/rocprofiler/lib", rocmhome)
+            local metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
+            likwid.setenv("LD_LIBRARY_PATH", hiplib..":"..hsalib..":"..rocproflib..":"..ldpath)
+            likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so.1")
+            likwid.setenv("ROCP_METRICS", metrics_xml)
+        end
+        tab = likwid.getGpuEventsAndCounters_rocm()
+        for d=0,tab["numDevices"],1 do
+            if tab["devices"][d] then
+                print_stdout("\n\n")
+                print_stdout(string.format("The ROCM GPU %d provides %d events.", d, #tab["devices"][d]))
+                print_stdout("You can use as many ROCMx counters until you get an error.")
                 print_stdout("Event tags (tag, counters)")
                 for _,e in pairs(tab["devices"][d]) do
                     outstr = string.format("%s, %s", e["Name"], e["Limit"])
@@ -537,7 +646,7 @@ if print_event ~= nil then
         end
     end
 ---------------------------
-    if gpusSupported and gputopo then
+    if nvSupported and gputopo then
         local cudahome = os.getenv("CUDA_HOME")
         if cudahome and cudahome:len() > 0 then
             ldpath = os.getenv("LD_LIBRARY_PATH")
@@ -559,6 +668,40 @@ if print_event ~= nil then
                         if not f then
                             table.insert(events, e)
                             counters["GPU"] = {["Name"] = "GPU", ["TypeName"] = "Nvidia GPU counters"}
+                        end
+                    end
+                end
+            end
+        end
+    end
+---------------------------
+    if rocmSupported and rocmtopo then
+        local rocmhome = os.getenv("ROCM_HOME")
+        if rocmhome and rocmhome:len() > 0 then
+            ldpath = os.getenv("LD_LIBRARY_PATH")
+            local hiplib = string.format("%s/hip/lib", rocmhome)
+            local hsalib = string.format("%s/hsa/lib", rocmhome)
+            local rocproflib = string.format("%s/rocprofiler/lib", rocmhome)
+            likwid.setenv("LD_LIBRARY_PATH", hiplib..":"..hsalib..":"..rocproflib..":"..ldpath)
+            likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so.1")
+            local metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
+            likwid.setenv("ROCP_METRICS", metrics_xml)
+        end
+        if rocmhome then
+            tab = likwid.getGpuEventsAndCounters_rocm()
+            for d=0,tab["numDevices"]-1,1 do
+                for _,e in pairs(tab["devices"][d]) do
+                    if e["Name"]:match(case_insensitive_pattern(print_event)) then
+                        local f = false
+                        for _,x in pairs(events) do
+                            if e["Name"] == x["Name"] then
+                                f = true
+                                break
+                            end
+                        end
+                        if not f then
+                            table.insert(events, e)
+                            counters["ROCM"] = {["Name"] = "ROCM", ["TypeName"] = "ROCM GPU counters"}
                         end
                     end
                 end
@@ -599,7 +742,7 @@ if print_groups == true then
             if g["Name"]:len() > max_len then max_len = g["Name"]:len() end
         end
         local s = string.format("%%%ds\t%%s", max_len)
-        if gpusSupported and gputopo then
+        if nvSupported and gputopo then
             print_stdout(string.format(s,"PerfMon group name", "Description"))
         else
             print_stdout(string.format(s,"Group name", "Description"))
@@ -611,7 +754,8 @@ if print_groups == true then
     else
         print_stdout(string.format("No groups defined for %s",cpuinfo["name"]))
     end
-    if gpusSupported and gputopo then
+---------------------------
+    if nvSupported and gputopo then
         avail_groups = likwid.getGpuGroups(0)
         if avail_groups then
             local max_len = 0
@@ -628,6 +772,25 @@ if print_groups == true then
             print_stdout(string.format("No groups defined for %s",gputopo["devices"][1]["name"]))
         end
     end
+---------------------------
+    if rocmSupported and rocmtopo then
+        avail_groups = likwid.getGpuGroups_rocm(0)
+        if avail_groups then
+            local max_len = 0
+            for i,g in pairs(avail_groups) do
+                if g["Name"]:len() > max_len then max_len = g["Name"]:len() end
+            end
+            local s = string.format("%%%ds\t%%s", max_len)
+            print_stdout(string.format(s,"\nRocMon group name", "Description"))
+            print_stdout(likwid.hline)
+            for i,g in pairs(avail_groups) do
+                print_stdout(string.format(s, g["Name"], g["Info"]))
+            end
+        else
+            print_stdout(string.format("No groups defined for %s",rocmtopo["devices"][1]["name"]))
+        end
+    end
+---------------------------
     perfctr_exit(0)
 end
 
@@ -652,8 +815,8 @@ if print_group_help == true then
     perfctr_exit(0)
 end
 
-if #event_string_list == 0 and #gpu_event_string_list == 0 and not print_info then
-    print_stderr("Option(s) -g <string> or -W <string> must be given on commandline")
+if #event_string_list == 0 and #gpu_event_string_list == 0 and #rocm_event_string_list == 0  and not print_info then
+    print_stderr("Option(s) -g <string>, -W <string> (Nvidia) or -R <string> (AMD) must be given on commandline")
     usage()
     perfctr_exit(1)
 end
@@ -686,7 +849,8 @@ if print_info or verbose > 0 then
         print_stdout(string.format("PERFMON width of counters:\t\t%u",cpuinfo["perf_width_ctr"]))
         print_stdout(string.format("PERFMON number of fixed counters:\t%u",cpuinfo["perf_num_fixed_ctr"]))
     end
-    if gpusSupported and gputopo then
+---------------------------
+    if nvSupported and gputopo then
         print_stdout(likwid.hline)
         for i=1, gputopo["numDevices"] do
             gpu = gputopo["devices"][i]
@@ -694,11 +858,30 @@ if print_info or verbose > 0 then
             print_stdout(string.format("NVMON GPU %d short:\t\t%s", gpu["id"], gpu["short"]))
         end
     end
+---------------------------
+    if rocmSupported and rocmtopo then
+        print_stdout(likwid.hline)
+        for i=1, rocmtopo["numDevices"] do
+            gpu = rocmtopo["devices"][i]
+            print_stdout(string.format("ROCMON GPU %d compute capability:\t%d.%d", gpu["id"], gpu["ccapMajor"], gpu["ccapMinor"]))
+            print_stdout(string.format("ROCMON GPU %d short:\t\t\t%s", gpu["id"], gpu["short"]))
+        end
+    end
+---------------------------
     print_stdout(likwid.hline)
     if print_info then
         likwid.printSupportedCPUs()
         perfctr_exit(0)
     end
+    --[[if nvSupported and gputopo then
+        print("Supported NVIDIA GPUs processors:")
+        print("\tCompute capability < 7.0")
+        print("\tCompute capability >= 7.0")
+    end
+    if rocmSupported and rocmtopo then
+        print("Supported AMD ROCM GPUs processors:")
+        print("\tall variants")
+    end]]
 end
 
 if use_marker == true and use_timeline == true then
@@ -728,7 +911,7 @@ if use_marker then
         print_stderr(string.format("Please purge all MarkerAPI files from %s.", markerFolder))
         perfctr_exit(1)
     end
-    if gpusSupported and #gpulist and likwid.access(nvMarkerFile, "rw") ~= -1 then
+    if nvSupported and #gpulist and likwid.access(nvMarkerFile, "rw") ~= -1 then
         print_stderr(string.format("ERROR: GPUMarkerAPI file %s not accessible. Maybe a remaining file of another user.", nvMarkerFile))
         print_stderr(string.format("Please purge all GPUMarkerAPI files from %s.", markerFolder))
         perfctr_exit(1)
@@ -803,11 +986,25 @@ if use_marker == true then
     likwid.setenv("LIKWID_THREADS", table.concat(cpulist,","))
     likwid.setenv("LIKWID_FORCE", "-1")
     likwid.setenv("KMP_INIT_AT_FORK", "FALSE")
-    if gpusSupported and #gpulist > 0 and #gpu_event_string_list > 0 then
+    if nvSupported and #gpulist > 0 and #gpu_event_string_list > 0 then
         likwid.setenv("LIKWID_GPUS", table.concat(gpulist,","))
         str = table.concat(gpu_event_string_list, "|")
         likwid.setenv("LIKWID_GEVENTS", str)
         likwid.setenv("LIKWID_GPUFILEPATH", nvMarkerFile)
+    end
+    if rocmSupported and #gpulist_rocm > 0 and #rocm_event_string_list > 0 then
+        likwid.setenv("LIKWID_ROCMON_GPUS", table.concat(gpulist_rocm,","))
+        str = table.concat(rocm_event_string_list, "|")
+        likwid.setenv("LIKWID_ROCMON_EVENTS", str)
+        likwid.setenv("LIKWID_ROCMON_FILEPATH", rocmMarkerFile)
+        local rocmhome = os.getenv("ROCM_HOME")
+        if rocmhome then
+            local metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
+            likwid.setenv("ROCP_METRICS", metrics_xml)
+        end
+        if verbose > 0 then
+            likwid.setenv("LIKWID_ROCMON_VERBOSITY", tostring(verbose))
+        end
     end
 end
 local likwid_hwthreads = {}
@@ -841,8 +1038,15 @@ if #event_string_list > 0 then
     end
 end
 ---------------------------
-if gpusSupported and #gpu_event_string_list > 0 then
+if nvSupported and #gpu_event_string_list > 0 then
     if likwid.nvInit(num_gpus, gpulist) < 0 then
+        perfctr_exit(1)
+    end
+end
+---------------------------
+if rocmSupported and #rocm_event_string_list > 0 then
+    if likwid.init_rocm(num_rocm_gpus, gpulist_rocm) < 0 then
+        rocmInitialized = true
         perfctr_exit(1)
     end
 end
@@ -859,7 +1063,7 @@ elseif not ldpath:match(libpath) then
     likwid.setenv("LD_LIBRARY_PATH", libpath..":"..ldpath)
 end
 ---------------------------
-if gpusSupported then
+if nvSupported then
     local cudahome = os.getenv("CUDA_HOME")
     if cudahome then
         ldpath = os.getenv("LD_LIBRARY_PATH")
@@ -867,6 +1071,20 @@ if gpusSupported then
         if not ldpath:match(cuptilib) then
             likwid.setenv("LD_LIBRARY_PATH", cuptilib..":"..ldpath)
         end
+    end
+end
+---------------------------
+if rocmSupported then
+    local rocmhome = os.getenv("ROCM_HOME")
+    if rocmhome and rocmhome:len() > 0 then
+        ldpath = os.getenv("LD_LIBRARY_PATH")
+        local hiplib = string.format("%s/hip/lib", rocmhome)
+        local hsalib = string.format("%s/hsa/lib", rocmhome)
+        local rocproflib = string.format("%s/rocprofiler/lib", rocmhome)
+        likwid.setenv("LD_LIBRARY_PATH", hiplib..":"..hsalib..":"..rocproflib..":"..ldpath)
+        likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so.1")
+        local metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
+        likwid.setenv("ROCP_METRICS", metrics_xml)
     end
 end
 ---------------------------
@@ -914,7 +1132,8 @@ for i, event_string in pairs(event_string_list) do
         table.insert(group_ids, gid)
     end
 end
-if gpusSupported then
+---------------------------
+if nvSupported then
     for i, event_string in pairs(gpu_event_string_list) do
         if event_string:len() > 0 then
             local gid = likwid.nvAddEventSet(event_string)
@@ -926,7 +1145,21 @@ if gpusSupported then
         end
     end
 end
-if #group_ids == 0 and not (#gpu_event_string_list > 0 and use_marker) then
+---------------------------
+if rocmSupported then
+    for i, event_string in pairs(rocm_event_string_list) do
+        if event_string:len() > 0 then
+            local gid = likwid.addEventSet_rocm(event_string)
+            if gid < 0 then
+                likwid.finalize_rocm()
+                perfctr_exit(1)
+            end
+            table.insert(rocmgroups, gid)
+        end
+    end
+end
+---------------------------
+if #group_ids == 0 and #gpugroups == 0 and #rocmgroups == 0 then
     print_stderr("ERROR: No valid eventset given on commandline. Exiting...")
     likwid.finalize()
     perfctr_exit(1)
@@ -943,15 +1176,21 @@ if #event_string_list > 0 then
         print_stdout(likwid.hline)
     end
 end
-
-if gpusSupported and #gpu_event_string_list > 0 then
+---------------------------
+if nvSupported and #gpu_event_string_list > 0 then
     activeNvGroup = gpugroups[1]
     if outfile == nil then
         print_stdout(likwid.hline)
     end
 end
-
-
+---------------------------
+if rocmSupported and #rocm_event_string_list > 0 then
+    activeRocmGroup = rocmgroups[1]
+    if outfile == nil then
+        print_stdout(likwid.hline)
+    end
+end
+---------------------------
 
 
 if #event_string_list > 0 then
@@ -1012,10 +1251,12 @@ if use_wrapper or use_timeline then
         duration = 30.E06
     end
 
-    local ret = likwid.startCounters()
-    if ret < 0 then
-        print_stderr(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
-        perfctr_exit(1)
+    if #event_string_list > 0 then
+        local ret = likwid.startCounters()
+        if ret < 0 then
+            print_stderr(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
+            perfctr_exit(1)
+        end
     end
 
     likwid.sendSignal(pid, 18)
@@ -1045,7 +1286,9 @@ if use_wrapper or use_timeline then
 
             stop = likwid.stopClock()
             xstart = likwid.startClock()
-            likwid.readCounters()
+            if #event_string_list > 0 then
+                likwid.readCounters()
+            end
 
             local time = likwid.getClock(start, stop)
             if likwid.getNumberOfMetrics(activeGroup) == 0 then
@@ -1074,7 +1317,9 @@ if use_wrapper or use_timeline then
             twork = likwid.getClock(xstart, xstop)
         else
             xstart = likwid.startClock()
-            likwid.readCounters()
+            if #event_string_list > 0 then
+                likwid.readCounters()
+            end
             xstop = likwid.stopClock()
             twork = likwid.getClock(xstart, xstop)
         end
@@ -1102,11 +1347,13 @@ elseif use_marker then
 end
 
 if not use_marker then
-    local ret = likwid.stopCounters()
-    if ret < 0 then
-        print_stderr(string.format("Error stopping counters for thread %d.",ret * (-1)))
-        likwid.finalize()
-        perfctr_exit(exitvalue)
+    if #event_string_list > 0 then
+        local ret = likwid.stopCounters()
+        if ret < 0 then
+            print_stderr(string.format("Error stopping counters for thread %d.",ret * (-1)))
+            likwid.finalize()
+            perfctr_exit(exitvalue)
+        end
     end
 end
 io.stdout:flush()
@@ -1133,7 +1380,8 @@ if use_marker == true then
             print_stderr("Marker API result file does not exist. This may happen if the application has not called LIKWID_MARKER_CLOSE.")
         end
     end
-    if gpusSupported and #gpu_event_string_list > 0 then
+---------------------------
+    if nvSupported and #gpu_event_string_list > 0 then
         if likwid.access(nvMarkerFile, "e") >= 0 then
             results, metrics = likwid.getNvMarkerResults(nvMarkerFile, markergpulist, nan2value)
             if not results then
@@ -1151,10 +1399,32 @@ if use_marker == true then
             print_stderr("GPU Marker API result file does not exist. This may happen if the application has not called LIKWID_GPUMARKER_CLOSE.")
         end
     end
+---------------------------
+    if rocmSupported and #rocm_event_string_list > 0 then
+        if likwid.access(rocmMarkerFile, "e") >= 0 then
+            results, metrics = likwid.getMarkerResultsRocm(rocmMarkerFile, markerrocmgpulist, nan2value)
+            if not results then
+                print_stderr("Failure reading ROCM Marker API result file.")
+            elseif #results == 0 then
+                print_stderr("No regions could be found in ROCM Marker API result file.")
+            else
+                for r=1, #results do
+                    likwid.printOutputRocm(results[r], metrics[r], gpulist, r, print_stats)
+                end
+            end
+            likwid.destroyMarkerFileRocm()
+            os.remove(rocmMarkerFile)
+        else
+            print_stderr("ROCM Marker API result file does not exist. This may happen if the application has not called LIKWID_ROCMMARKER_CLOSE.")
+        end
+    end
+---------------------------
 elseif use_timeline == false then
-    results = likwid.getResults(nan2value)
-    metrics = likwid.getMetrics(nan2value)
-    likwid.printOutput(results, metrics, cpulist, nil, print_stats)
+    if #event_string_list > 0 then
+        results = likwid.getResults(nan2value)
+        metrics = likwid.getMetrics(nan2value)
+        likwid.printOutput(results, metrics, cpulist, nil, print_stats)
+    end
 end
 
 if outfile and not use_timeline then

@@ -72,6 +72,7 @@ static int power_hasRAPL = 0;
 static int config_isInitialized = 0;
 
 static int nvmon_initialized = 0;
+static int rocmon_initialized = 0;
 
 /* #####   VARIABLES  -  EXPORTED VARIABLES   ############################# */
 
@@ -2259,6 +2260,9 @@ lua_likwid_setVerbosity(lua_State* L)
 #ifdef LIKWID_WITH_NVMON
     nvmon_setVerbosity(verbosity);
 #endif /* LIKWID_WITH_NVMON */
+#ifdef LIKWID_WITH_ROCMON
+    rocmon_setVerbosity(verbosity);
+#endif /* LIKWID_WITH_ROCMON */
     return 0;
 }
 
@@ -3552,6 +3556,9 @@ lua_likwid_getGpuTopology_rocm(lua_State* L)
         lua_pushstring(L,"name");
         lua_pushstring(L, gpu->name);
         lua_settable(L,-3);
+        lua_pushstring(L,"short");
+        lua_pushstring(L, gpu->short_name);
+        lua_settable(L,-3);
         lua_pushstring(L,"memory");
         lua_pushinteger(L, (lua_Integer)(gpu->mem));
         lua_settable(L,-3);
@@ -3653,6 +3660,660 @@ lua_likwid_putGpuTopology_rocm(lua_State* L)
     return 0;
 }
 
+static int
+lua_likwid_init_rocm(lua_State* L)
+{
+    int ret;
+    int nrGpus = luaL_checknumber(L,1);
+    luaL_argcheck(L, nrGpus > 0, 1, "GPU count must be greater than 0");
+    int gpus[nrGpus];
+    if (!lua_istable(L, -1)) {
+      lua_pushstring(L,"No table given as second argument");
+      lua_error(L);
+    }
+    for (ret = 1; ret<=nrGpus; ret++)
+    {
+        lua_rawgeti(L,-1,ret);
+#if LUA_VERSION_NUM == 501
+        gpus[ret-1] = ((lua_Integer)lua_tointeger(L,-1));
+#else
+        gpus[ret-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
+#endif
+        lua_pop(L,1);
+    }
+    if (gputopology_isInitialized_rocm == 0)
+    {
+        topology_gpu_init_rocm();
+    }
+    if ((gputopology_isInitialized_rocm) && (gputopo_rocm == NULL))
+    {
+        gputopo_rocm = get_gpuTopology_rocm();
+    }
+    if (rocmon_initialized == 0)
+    {
+        ret = rocmon_init(nrGpus, gpus);
+        if (ret != 0)
+        {
+            lua_pushstring(L,"Cannot initialize likwid rocmon");
+            rocmon_finalize();
+            lua_pushinteger(L,ret);
+            return 1;
+        }
+        rocmon_initialized = 1;
+        lua_pushinteger(L,ret);
+    }
+    return 1;
+}
+
+static int
+lua_likwid_gpustr_to_gpulist_rocm(lua_State* L)
+{
+    int ret = 0;
+    char* gpustr = (char *)luaL_checkstring(L, 1);
+    if (!gputopology_isInitialized_rocm)
+    {
+        if (topology_gpu_init_rocm() == EXIT_SUCCESS)
+        {
+            gputopo_rocm = get_gpuTopology_rocm();
+            gputopology_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushnumber(L, 0);
+            lua_pushnil(L);
+            return 2;
+        }
+    }
+    int* gpulist = (int*) malloc(gputopo_rocm->numDevices * sizeof(int));
+    if (gpulist == NULL)
+    {
+        lua_pushstring(L,"Cannot allocate data for the GPU list");
+        lua_error(L);
+    }
+    ret = gpustr_to_gpulist_rocm(gpustr, gpulist, gputopo_rocm->numDevices);
+    if (ret <= 0)
+    {
+        lua_pushstring(L,"Cannot parse GPU string");
+        lua_error(L);
+    }
+    lua_pushnumber(L, ret);
+    lua_newtable(L);
+    for (int i=0;i<ret;i++)
+    {
+        lua_pushinteger(L, (lua_Integer)( i+1));
+        lua_pushinteger(L, (lua_Integer)( gpulist[i]));
+        lua_settable(L,-3);
+    }
+    free(gpulist);
+    return 2;
+}
+
+static int
+lua_likwid_getGpuEventsAndCounters_rocm(lua_State* L)
+{
+    int* glist = NULL;
+    if (!gputopology_isInitialized_rocm)
+    {
+        if (topology_gpu_init_rocm() == EXIT_SUCCESS)
+        {
+            gputopo_rocm = get_gpuTopology_rocm();
+            gputopology_isInitialized_rocm = 1;
+        }
+        else
+        {
+            lua_pushnil(L);
+            return 1;
+        }
+    }
+    if (!rocmon_initialized)
+    {
+        glist = malloc(gputopo_rocm->numDevices * sizeof(int));
+        if (!glist)
+        {
+            lua_pushnil(L);
+            return 1;
+        }
+        for (int i = 0; i < gputopo_rocm->numDevices; i++)
+        {
+            GpuDevice_rocm* gpu = &gputopo_rocm->devices[i];
+            glist[i] = gpu->devid;
+        }
+        int ret = rocmon_init(gputopo_rocm->numDevices, glist);
+        if (ret != 0)
+        {
+            lua_pushnil(L);
+            return 1;
+        }
+    }
+    lua_newtable(L);
+    lua_pushstring(L,"numDevices");
+    lua_pushinteger(L, (lua_Integer)(gputopo_rocm->numDevices));
+    lua_settable(L,-3);
+
+    lua_pushstring(L,"devices");
+    lua_newtable(L);
+    for (int i = 0; i < gputopo_rocm->numDevices; i++)
+    {
+        EventList_rocm_t l = NULL;
+        GpuDevice_rocm* gpu = &gputopo_rocm->devices[i];
+        lua_pushinteger(L, gpu->devid);
+        lua_newtable(L);
+
+        int ret = rocmon_getEventsOfGpu(gpu->devid, &l);
+        if (ret == 0)
+        {
+            for (int j = 0; j < l->numEvents; j++)
+            {
+                lua_pushinteger(L, j+1);
+                lua_newtable(L);
+                lua_pushstring(L,"Name");
+                lua_pushstring(L, l->events[j].name);
+                lua_settable(L,-3);
+                if (l->events[j].description)
+                {
+                    lua_pushstring(L,"Description");
+                    lua_pushstring(L, l->events[j].description);
+                    lua_settable(L,-3);
+                }
+                lua_pushstring(L,"Limit");
+                lua_pushstring(L, "ROCM");
+                lua_settable(L,-3);
+                lua_pushstring(L,"Instances");
+                lua_pushinteger(L, l->events[j].instances);
+
+                lua_settable(L,-3);
+                lua_settable(L,-3);
+            }
+            lua_settable(L,-3);
+            if (l)
+            {
+                rocmon_freeEventsOfGpu(l);
+            }
+        }
+        lua_settable(L,-3);
+    }
+    if (glist)
+    {
+        free(glist);
+    }
+    return 1;
+}
+
+
+static int
+lua_likwid_getShortInfoOfGroup_rocm(lua_State* L)
+{
+    int groupId;
+    char* tmp;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    tmp = rocmon_getGroupInfoShort(groupId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int
+lua_likwid_getLongInfoOfGroup_rocm(lua_State* L)
+{
+    int groupId;
+    char* tmp;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    tmp = rocmon_getGroupInfoLong(groupId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int
+lua_likwid_getGpuGroups_rocm(lua_State* L)
+{
+    int i, ret;
+    char** tmp, **infos, **longs;
+    int gpuId = lua_tonumber(L,1);
+    if (!gputopology_isInitialized_rocm)
+    {
+        if (topology_gpu_init_rocm() == EXIT_SUCCESS)
+        {
+            gputopo_rocm = get_gpuTopology_rocm();
+            gputopology_isInitialized_rocm = 1;
+        }
+        else
+        {
+            lua_pushnil(L);
+            return 1;
+        }
+    }
+    ret = rocmon_getGroups(&tmp, &infos, &longs);
+    if (ret > 0)
+    {
+        lua_newtable(L);
+        for (i=0;i<ret;i++)
+        {
+            lua_pushinteger(L, (lua_Integer)( i+1));
+            lua_newtable(L);
+            lua_pushstring(L, "Name");
+            lua_pushstring(L, tmp[i]);
+            lua_settable(L,-3);
+            lua_pushstring(L, "Info");
+            lua_pushstring(L, infos[i]);
+            lua_settable(L,-3);
+            lua_pushstring(L, "Long");
+            lua_pushstring(L, longs[i]);
+            lua_settable(L,-3);
+            lua_settable(L,-3);
+        }
+        rocmon_returnGroups(ret, tmp, infos, longs);
+        return 1;
+    }
+    return 0;
+}
+
+
+static int
+lua_likwid_getNameOfEvent_rocm(lua_State* L)
+{
+    int eventId, groupId;
+    char* tmp;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    eventId = lua_tonumber(L,2);
+    tmp = rocmon_getEventName(groupId-1, eventId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int
+lua_likwid_getNameOfCounter_rocm(lua_State* L)
+{
+    int eventId, groupId;
+    char* tmp;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    eventId = lua_tonumber(L,2);
+    tmp = rocmon_getCounterName(groupId-1, eventId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+
+static int
+lua_likwid_getNameOfMetric_rocm(lua_State* L)
+{
+    int metricId, groupId;
+    char* tmp;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    metricId = lua_tonumber(L,2);
+    tmp = rocmon_getMetricName(groupId-1, metricId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int
+lua_likwid_getNameOfGroup_rocm(lua_State* L)
+{
+    int groupId;
+    char* tmp;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    tmp = rocmon_getGroupName(groupId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int
+lua_likwid_markerFile_read_rocm(lua_State* L)
+{
+    const char* filename = (const char*)luaL_checkstring(L, -1);
+    int ret = rocmon_readMarkerFile(filename);
+    lua_pushinteger(L, ret);
+    return 1;
+}
+
+static int
+lua_likwid_markerFile_destroy_rocm(lua_State* L)
+{
+    rocmon_destroyMarkerResults();
+    return 0;
+}
+
+static int
+lua_likwid_markerNumRegions_rocm(lua_State* L)
+{
+    lua_pushinteger(L, rocmon_getNumberOfRegions());
+    return 1;
+}
+
+static int
+lua_likwid_markerRegionGroup_rocm(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushinteger(L, rocmon_getGroupOfRegion(region-1)+1);
+    return 1;
+}
+
+static int
+lua_likwid_markerRegionTag_rocm(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushstring(L, rocmon_getTagOfRegion(region-1));
+    return 1;
+}
+
+static int
+lua_likwid_markerRegionEvents_rocm(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushinteger(L, rocmon_getEventsOfRegion(region-1));
+    return 1;
+}
+
+static int
+lua_likwid_markerRegionMetrics_rocm(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushinteger(L, rocmon_getMetricsOfRegion(region-1));
+    return 1;
+}
+
+
+static int
+lua_likwid_markerRegionGpus_rocm(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushinteger(L, rocmon_getGpusOfRegion(region-1));
+    return 1;
+}
+
+static int
+lua_likwid_markerRegionGpulist_rocm(lua_State* L)
+{
+    int i = 0;
+    int region = lua_tointeger(L,-1);
+    int* gpulist;
+    int regionGPUs = 0;
+    if (gputopology_isInitialized_rocm == 0)
+    {
+        topology_gpu_init_rocm();
+        gputopology_isInitialized_rocm = 1;
+    }
+    if ((gputopology_isInitialized_rocm) && (gputopo_rocm == NULL))
+    {
+        gputopo_rocm = get_gpuTopology_rocm();
+    }
+
+    gpulist = (int*)malloc(gputopo_rocm->numDevices * sizeof(int));
+    if (gpulist == NULL)
+    {
+        return 0;
+    }
+    regionGPUs = rocmon_getGpulistOfRegion(region-1, gputopo_rocm->numDevices, gpulist);
+    if (regionGPUs > 0)
+    {
+        lua_newtable(L);
+        for (i=0; i < regionGPUs; i++)
+        {
+            lua_pushinteger(L, i+1);
+            lua_pushinteger(L, gpulist[i]);
+            lua_settable(L, -3);
+        }
+        return 1;
+    }
+    return 0;
+}
+
+static int
+lua_likwid_markerRegionTime_rocm(lua_State* L)
+{
+    int region = lua_tointeger(L,-2);
+    int thread = lua_tointeger(L,-1);
+    lua_pushnumber(L, rocmon_getTimeOfRegion(region-1, thread-1));
+    return 1;
+}
+
+static int
+lua_likwid_markerRegionCount_rocm(lua_State* L)
+{
+    int region = lua_tointeger(L,-2);
+    int thread = lua_tointeger(L,-1);
+    lua_pushinteger(L, rocmon_getCountOfRegion(region-1, thread-1));
+    return 1;
+}
+
+static int
+lua_likwid_markerRegionResult_rocm(lua_State* L)
+{
+    int region = lua_tointeger(L,-3);
+    int event = lua_tointeger(L,-2);
+    int gpu = lua_tointeger(L,-1);
+    lua_pushnumber(L, rocmon_getResultOfRegionGpu(region-1, event-1, gpu-1));
+    return 1;
+}
+
+static int
+lua_likwid_markerRegionMetric_rocm(lua_State* L)
+{
+    int region = lua_tointeger(L,-3);
+    int metric = lua_tointeger(L,-2);
+    int gpu = lua_tointeger(L,-1);
+    lua_pushnumber(L, rocmon_getMetricOfRegionGpu(region-1, metric-1, gpu-1));
+    return 1;
+}
+
+
+
+static int
+lua_likwid_addEventSet_rocm(lua_State* L)
+{
+    int groupId, n;
+    const char* tmpString;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    n = lua_gettop(L);
+    tmpString = luaL_checkstring(L, n);
+    luaL_argcheck(L, strlen(tmpString) > 0, n, "Event string must be larger than 0");
+
+    int ret = rocmon_addEventSet((char*)tmpString, &groupId);
+    if (groupId >= 0)
+    {
+        lua_pushinteger(L, groupId+1);
+    }
+    else
+    {
+        lua_pushstring(L,"Failed to add event string");
+        lua_error(L);
+    }
+    return 1;
+}
+
+static int
+lua_likwid_setupCounters_rocm(lua_State* L)
+{
+    int ret;
+    int groupId = lua_tonumber(L,1);
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    ret = rocmon_setupCounters(groupId-1);
+    lua_pushinteger(L,ret);
+    return 1;
+}
+
+static int
+lua_likwid_startCounters_rocm(lua_State* L)
+{
+    int ret;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    ret = rocmon_startCounters();
+    lua_pushinteger(L,ret);
+    return 1;
+}
+
+static int
+lua_likwid_stopCounters_rocm(lua_State* L)
+{
+    int ret;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    ret = rocmon_stopCounters();
+    lua_pushinteger(L,ret);
+    return 1;
+}
+
+static int
+lua_likwid_readCounters_rocm(lua_State* L)
+{
+    int ret;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    ret = rocmon_readCounters();
+    lua_pushinteger(L,ret);
+    return 1;
+}
+
+static int
+lua_likwid_switchGroup_rocm(lua_State* L)
+{
+    int ret = -1;
+    int newgroup = lua_tonumber(L,1)-1;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    if (newgroup >= rocmon_getNumberOfGroups())
+    {
+        newgroup = 0;
+    }
+    if (newgroup == rocmon_getIdOfActiveGroup())
+    {
+        lua_pushinteger(L, ret);
+        return 1;
+    }
+    ret = rocmon_switchActiveGroup(newgroup);
+    lua_pushinteger(L, ret);
+    return 1;
+}
+
+static int
+lua_likwid_getResult_rocm(lua_State* L)
+{
+    int groupId, eventId, threadId;
+    double result = 0;
+    groupId = lua_tonumber(L,1);
+    eventId = lua_tonumber(L,2);
+    threadId = lua_tonumber(L,3);
+    result = rocmon_getResult(groupId-1, eventId-1, threadId-1);
+    lua_pushnumber(L,result);
+    return 1;
+}
+
+static int
+lua_likwid_getLastResult_rocm(lua_State* L)
+{
+    int groupId, eventId, threadId;
+    double result = 0;
+    groupId = lua_tonumber(L,1);
+    eventId = lua_tonumber(L,2);
+    threadId = lua_tonumber(L,3);
+    result = rocmon_getLastResult(groupId-1, eventId-1, threadId-1);
+    lua_pushnumber(L,result);
+    return 1;
+}
+
+static int
+lua_likwid_getIdOfActiveGroup_rocm(lua_State* L)
+{
+    int number;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    number = rocmon_getIdOfActiveGroup();
+    lua_pushinteger(L,number+1);
+    return 1;
+}
+
+static int
+lua_likwid_getRuntimeOfGroup_rocm(lua_State* L)
+{
+    double time;
+    int groupId;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    time = rocmon_getTimeOfGroup(groupId-1);
+    lua_pushnumber(L, time);
+    return 1;
+}
+
+static int
+lua_likwid_getLastTimeOfGroup_rocm(lua_State* L)
+{
+    double time;
+    int groupId;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    time = rocmon_getLastTimeOfGroup(groupId-1);
+    lua_pushnumber(L, time);
+    return 1;
+}
+
+static int
+lua_likwid_getTimeToLastReadOfGroup_rocm(lua_State* L)
+{
+    double time;
+    int groupId;
+    if (rocmon_initialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    time = rocmon_getTimeToLastReadOfGroup(groupId-1);
+    lua_pushnumber(L, time);
+    return 1;
+}
+
+static int
+lua_likwid_finalize_rocm(lua_State *L)
+{
+    if (rocmon_initialized)
+        rocmon_finalize();
+    return 0;
+}
+
 #else
 
 static int
@@ -3661,6 +4322,9 @@ lua_likwid_rocmSupported(lua_State *L)
     lua_pushboolean(L, FALSE);
     return 1;
 }
+
+
+
 
 #endif /* LIKWID_WITH_ROCMON */
 
@@ -3852,6 +4516,29 @@ luaopen_liblikwid(lua_State* L){
 #ifdef LIKWID_WITH_ROCMON
     lua_register(L, "likwid_getGpuTopology_rocm", lua_likwid_getGpuTopology_rocm);
     lua_register(L, "likwid_putGpuTopology_rocm", lua_likwid_putGpuTopology_rocm);
+    lua_register(L, "likwid_getGpuEventsAndCounters_rocm", lua_likwid_getGpuEventsAndCounters_rocm);
+    lua_register(L, "likwid_getGpuGroups_rocm", lua_likwid_getGpuGroups_rocm);
+    lua_register(L, "likwid_gpustr_to_gpulist_rocm", lua_likwid_gpustr_to_gpulist_rocm);
+    lua_register(L, "likwid_init_rocm",lua_likwid_init_rocm);
+    lua_register(L, "likwid_addEventSet_rocm", lua_likwid_addEventSet_rocm);
+    lua_register(L, "likwid_finalize_rocm",lua_likwid_finalize_rocm);
+    lua_register(L, "likwid_getNameOfEvent_rocm",lua_likwid_getNameOfEvent_rocm);
+    lua_register(L, "likwid_getNameOfCounter_rocm",lua_likwid_getNameOfCounter_rocm);
+    lua_register(L, "likwid_getNameOfMetric_rocm", lua_likwid_getNameOfMetric_rocm);
+    lua_register(L, "likwid_getNameOfGroup_rocm",lua_likwid_getNameOfGroup_rocm);
+    lua_register(L, "likwid_readMarkerFile_rocm", lua_likwid_markerFile_read_rocm);
+    lua_register(L, "likwid_markerFile_destroy_rocm", lua_likwid_markerFile_destroy_rocm);
+    lua_register(L, "likwid_markerNumRegions_rocm", lua_likwid_markerNumRegions_rocm);
+    lua_register(L, "likwid_markerRegionGroup_rocm", lua_likwid_markerRegionGroup_rocm);
+    lua_register(L, "likwid_markerRegionTag_rocm", lua_likwid_markerRegionTag_rocm);
+    lua_register(L, "likwid_markerRegionEvents_rocm", lua_likwid_markerRegionEvents_rocm);
+    lua_register(L, "likwid_markerRegionMetrics_rocm", lua_likwid_markerRegionMetrics_rocm);
+    lua_register(L, "likwid_markerRegionGpus_rocm", lua_likwid_markerRegionGpus_rocm);
+    lua_register(L, "likwid_markerRegionGpulist_rocm", lua_likwid_markerRegionGpulist_rocm);
+    lua_register(L, "likwid_markerRegionTime_rocm", lua_likwid_markerRegionTime_rocm);
+    lua_register(L, "likwid_markerRegionCount_rocm", lua_likwid_markerRegionCount_rocm);
+    lua_register(L, "likwid_markerRegionResult_rocm", lua_likwid_markerRegionResult_rocm);
+    lua_register(L, "likwid_markerRegionMetric_rocm", lua_likwid_markerRegionMetric_rocm);
 #endif /* LIKWID_WITH_ROCMON */
 #ifdef __MIC__
     setuid(0);
