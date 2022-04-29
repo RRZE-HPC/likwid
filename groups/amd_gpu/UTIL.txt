@@ -1,0 +1,16 @@
+SHORT GPU utilization
+
+EVENTSET
+ROCM0 ROCP_GRBM_COUNT
+ROCM1 ROCP_GRBM_GUI_ACTIVE
+
+
+METRICS
+GPU utilization 100*GRBM_GUI_ACTIVE/GRBM_COUNT
+
+
+LONG
+--
+This group reassembles the 'GPUBusy' metric provided by RocProfiler.
+We should add, that we can select the GPUBusy metric directly and the
+calculations are done internally in case the metric formula changes.
