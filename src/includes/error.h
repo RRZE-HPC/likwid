@@ -93,6 +93,12 @@
         fflush(stdout); \
     }
 
+#define ROCMON_DEBUG_PRINT(lev, fmt, ...) \
+    if ((lev >= 0) && (lev <= likwid_rocmon_verbosity)) { \
+        fprintf(stdout, "ROCMON DEBUG - [%s:%d] " str(fmt) "\n", __func__, __LINE__,##__VA_ARGS__); \
+        fflush(stdout); \
+    }
+
 #define DEBUG_PLAIN_PRINT(lev, msg) \
     if ((lev >= 0) && (lev <= perfmon_verbosity)) { \
         fprintf(stdout, "DEBUG - [%s:%d] " str(msg) "\n",__func__, __LINE__);  \
@@ -108,6 +114,11 @@
     if (likwid_nvmon_verbosity >= DEBUGLEV_INFO) \
     { \
         fprintf(stdout, "INFO - " STRINGIFY(fmt) "\n", ##__VA_ARGS__); \
+    }
+#define ROCMON_INFO_PRINT(fmt, ...) \
+    if (likwid_rocmon_verbosity >= DEBUGLEV_INFO) \
+    { \
+        fprintf(stdout, "ROCMON INFO - " STRINGIFY(fmt) "\n", ##__VA_ARGS__); \
     }
 
 #define TODO_PRINT(fmt, ...)  \
