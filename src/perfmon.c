@@ -1438,7 +1438,7 @@ perfmon_init_maps(void)
             memset(tmp + perfmon_numArchEvents, '\0', 10*sizeof(PerfmonEvent));
             eventHash = tmp;
             eventHash[perfmon_numArchEvents].name = "GENERIC_EVENT";
-            bstring bsep = bfromcstr("|");
+            struct tagbstring bsep = bsStatic ("|");
             struct bstrList* outlist = bstrListCreate();
             for (int i = 0; i < perfmon_numArchEvents; i++)
             {
@@ -1478,7 +1478,8 @@ perfmon_init_maps(void)
                 bstrListDestroy(xlist);
             }
 
-            bstring blim = bjoin(outlist, bsep);
+            bstring blim = bjoin(outlist, &bsep);
+            bstrListDestroy(outlist);
             eventHash[perfmon_numArchEvents].limit = malloc((blength(blim)+2)*sizeof(char));
             int ret = snprintf(eventHash[perfmon_numArchEvents].limit,
                                blength(blim)+1, "%s", bdata(blim));
