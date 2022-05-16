@@ -490,8 +490,9 @@ likwid_markerClose(void)
     {
         free(results);
     }
-    likwid_init = 0;
+    perfmon_finalize();
     HPMfinalize();
+    likwid_init = 0;
 }
 
 int
