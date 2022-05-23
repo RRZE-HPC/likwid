@@ -75,6 +75,7 @@ static void *dl_perfworks_libcudart = NULL;
         CUptiResult _status = (call);                                         \
         if (_status != CUPTI_SUCCESS) {                                            \
             ERROR_PRINT(Function %s failed with error %d, #call, _status); \
+            char* es = NULL; (*cuptiGetResultStringPtr)(_status, &es); if (es) ERROR_PRINT(%s, es); \
             handleerror;                                                             \
         }                                                                          \
     } while (0)
@@ -308,6 +309,7 @@ DECLARE_CUPTIFUNC(cuptiProfilerFlushCounterData, (CUpti_Profiler_FlushCounterDat
 DECLARE_CUPTIFUNC(cuptiProfilerUnsetConfig, (CUpti_Profiler_UnsetConfig_Params* params));
 DECLARE_CUPTIFUNC(cuptiProfilerEndSession, (CUpti_Profiler_EndSession_Params* params));
 DECLARE_CUPTIFUNC(cuptiProfilerGetCounterAvailability, (CUpti_Profiler_GetCounterAvailability_Params* params));
+DECLARE_CUPTIFUNC(cuptiGetResultString, (CUptiResult result, const char **str));
 
 
 #ifndef DLSYM_AND_CHECK
@@ -485,6 +487,7 @@ link_perfworks_libraries(void)
     cuptiProfilerFlushCounterDataPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiProfilerFlushCounterData");
     cuptiProfilerUnsetConfigPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiProfilerUnsetConfig");
     cuptiProfilerEndSessionPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiProfilerEndSession");
+    cuptiGetResultStringPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiGetResultString");
     
     dlerror();
     int curDeviceId = -1;
