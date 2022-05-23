@@ -11,9 +11,10 @@ HAS_MEMPOLICY = $(shell if [ $(KERNEL_VERSION) -lt 7 -a $(KERNEL_VERSION_MAJOR) 
 HAS_PERFEVENT = $(shell if [ $(KERNEL_VERSION) -lt 6 -a $(KERNEL_VERSION_MAJOR) -lt 2 -a $(KERNEL_VERSION_MINOR) -lt 31 ]; then echo 0; else echo 1; fi; )
 
 # determine glibc Version
-GLIBC_VERSION := $(shell ldd --version | grep ldd |  awk '{ print $$NF }' | awk -F. '{ print $$2 }')
+GLIBC_VERSION_MAJOR := $(shell echo '\#include <features.h>' | cc -dM -E - | grep -E '\#define __GLIBC__' | cut -d ' ' -f 3)
+GLIBC_VERSION_MINOR := $(shell echo '\#include <features.h>' | cc -dM -E - | grep -E '\#define __GLIBC_MINOR__' | cut -d ' ' -f 3)
 
-HAS_SCHEDAFFINITY = $(shell if [ $(GLIBC_VERSION) -lt 4 ]; then \
+HAS_SCHEDAFFINITY = $(shell if [ $(GLIBC_VERSION_MINOR) -lt 4 ]; then \
                echo 0;  else echo 1; \
 			   fi; )
 ENOUGH_CPUS = $(shell [ $(shell grep processor /proc/cpuinfo | wc -l) -le $(MAX_NUM_THREADS) ] && echo True )

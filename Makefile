@@ -483,7 +483,9 @@ install: install_daemon install_freq install_appdaemon
 	@chmod 755 $(LIBPREFIX)
 	@install -m 755 $(TARGET_LIB) $(LIBPREFIX)/$(TARGET_LIB).$(VERSION).$(RELEASE)
 	@install -m 755 liblikwidpin.so $(LIBPREFIX)/liblikwidpin.so.$(VERSION).$(RELEASE)
-	@install -m 755 $(TARGET_HWLOC_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE)
+	@if [ "$(USE_INTERNAL_HWLOC)" = "true" ]; then \
+		install -m 755 $(TARGET_HWLOC_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE); \
+	fi
 	@if [ "$(LUA_INTERNAL)" = "true" ]; then \
 		install -m 755 $(TARGET_LUA_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE); \
 	fi
@@ -491,8 +493,10 @@ install: install_daemon install_freq install_appdaemon
 	@cd $(LIBPREFIX) && ln -fs $(TARGET_LIB).$(VERSION).$(RELEASE) $(TARGET_LIB).$(VERSION)
 	@cd $(LIBPREFIX) && ln -fs $(PINLIB).$(VERSION).$(RELEASE) $(PINLIB)
 	@cd $(LIBPREFIX) && ln -fs $(PINLIB).$(VERSION).$(RELEASE) $(PINLIB).$(VERSION)
-	@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_HWLOC_LIB))
-	@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION)
+	@if [ "$(USE_INTERNAL_HWLOC)" = "true" ]; then \
+		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_HWLOC_LIB)); \
+		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION); \
+	fi
 	@if [ "$(LUA_INTERNAL)" = "true" ]; then \
 		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB)); \
 		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB)).$(VERSION); \
@@ -713,8 +717,12 @@ local: $(L_APPS) likwid.lua
 	@ln -sf $(LUA_FOLDER)/liblikwid-lua.so liblikwid-lua.so.$(VERSION).$(RELEASE)
 	@ln -sf $(GOTCHA_FOLDER)/liblikwid-gotcha.so liblikwid-gotcha.so.$(VERSION)
 	@ln -sf $(GOTCHA_FOLDER)/liblikwid-gotcha.so liblikwid-gotcha.so.$(VERSION).$(RELEASE)
-	@if [ -e $(LUA_FOLDER)/liblikwid-lua.so ]; then ln -sf $(LUA_FOLDER)/liblikwid-lua.so liblikwid-lua.so.$(VERSION).$(RELEASE); fi
-	@if [ -e $(HWLOC_FOLDER)/liblikwid-hwloc.so ]; then ln -sf $(HWLOC_FOLDER)/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION).$(RELEASE); fi
+	@if [ "$(LUA_INTERNAL)" = "true" ]; then \
+		if [ -e $(LUA_FOLDER)/liblikwid-lua.so ]; then ln -sf $(LUA_FOLDER)/liblikwid-lua.so liblikwid-lua.so.$(VERSION).$(RELEASE); fi; \
+	fi
+	@if [ "$(USE_INTERNAL_HWLOC)" = "true" ]; then \
+		if [ -e $(HWLOC_FOLDER)/liblikwid-hwloc.so ]; then ln -sf $(HWLOC_FOLDER)/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION).$(RELEASE); fi; \
+	fi
 	@if [ -e $(PINLIB) ]; then ln -sf $(PINLIB) $(PINLIB).$(VERSION).$(RELEASE); fi
 	@if [ -e $(CUDA_HOME)/extras/CUPTI/lib64 ]; then echo "export LD_LIBRARY_PATH=$(PWD):$(CUDA_HOME)/extras/CUPTI/lib64:$$LD_LIBRARY_PATH"; else echo "export LD_LIBRARY_PATH=$(PWD):$$LD_LIBRARY_PATH"; fi
 
