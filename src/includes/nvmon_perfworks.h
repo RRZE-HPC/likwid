@@ -75,7 +75,7 @@ static void *dl_perfworks_libcudart = NULL;
         CUptiResult _status = (call);                                         \
         if (_status != CUPTI_SUCCESS) {                                            \
             ERROR_PRINT(Function %s failed with error %d, #call, _status); \
-            char* es = NULL; (*cuptiGetResultStringPtr)(_status, &es); if (es) ERROR_PRINT(%s, es); \
+            if (cuptiGetResultStringPtr) { const char* es = NULL; (*cuptiGetResultStringPtr)(_status, &es); if (es) ERROR_PRINT(%s, es); } \
             handleerror;                                                             \
         }                                                                          \
     } while (0)
@@ -739,6 +739,21 @@ void nvmon_perfworks_freeDevice(NvmonDevice_t dev)
         if (dev->allevents)
         {
             int i = 0;
+            if (dev->nvEventSets != NULL)
+            {
+                for (i = 0; i < dev->numNvEventSets; i++)
+                {
+                    NvmonEventSet* ev = &dev->nvEventSets[i];
+                    if (ev->results)
+                    {
+                        free(ev->results);
+                    }
+                    if (ev->nvEvents)
+                    {
+                        free(ev->nvEvents);
+                    }
+                }
+            }
             for (i = 0; i < dev->numAllEvents; i++)
             {
                 free(dev->allevents[i]);
@@ -1498,6 +1513,7 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
         }
         bstrListDestroy(parts);
     }
+    bstrListDestroy(tmp);
     if (eventtokens->qty == 0)
     {
         ERROR_PRINT(No event in eventset);
@@ -1520,6 +1536,7 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
     if (!tmpEventSet)
     {
         ERROR_PRINT(Cannot enlarge GPU %d eventSet list, device->deviceId);
+        bstrListDestroy(eventtokens);
         return -ENOMEM;
     }
     device->nvEventSets = tmpEventSet;
@@ -1536,6 +1553,7 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
         availImage = malloc(getCounterAvailabilityParams.counterAvailabilityImageSize);
         if (!availImage)
         {
+            bstrListDestroy(eventtokens);
             return -ENOMEM;
         }
         getCounterAvailabilityParams.ctx = device->context;
@@ -1562,23 +1580,37 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
         newEventSet->counterAvailabilityImage = availImage;
         newEventSet->counterAvailabilityImageSize = availImageSize;
         newEventSet->events = eventtokens;
-        newEventSet->numberOfEvents = tmp->qty;
+        newEventSet->numberOfEvents = eventtokens->qty;
         newEventSet->id = device->numNvEventSets;
         gid = device->numNvEventSets;
-        newEventSet->results = malloc(tmp->qty * sizeof(NvmonEventResult));
+        newEventSet->nvEvents = malloc(eventtokens->qty * sizeof(NvmonEvent_t));
+        if (newEventSet->nvEvents == NULL)
+        {
+            ERROR_PRINT(Cannot allocate event list for group %d\n, gid);
+            return -ENOMEM;
+        }
+        memset(newEventSet->nvEvents, 0, eventtokens->qty * sizeof(NvmonEvent_t));
+        for (i = 0; i < eventtokens->qty; i++)
+        {
+            for (j = 0; j < device->numAllEvents; j++)
+            {
+                bstring brealname = bfromcstr(device->allevents[j]->real);
+                if (bstrcmp(eventtokens->entry[i], brealname) == BSTR_OK)
+                {
+                    newEventSet->nvEvents[i] = device->allevents[j];
+                }
+            }
+        }
+        newEventSet->results = malloc(eventtokens->qty * sizeof(NvmonEventResult));
         if (newEventSet->results == NULL)
         {
             ERROR_PRINT(Cannot allocate result list for group %d\n, gid);
             return -ENOMEM;
         }
-        memset(newEventSet->results, 0, tmp->qty * sizeof(NvmonEventResult));
+        memset(newEventSet->results, 0, eventtokens->qty * sizeof(NvmonEventResult));
         device->numNvEventSets++;
         GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Adding eventset %d, gid);
     }
-
-    bstrListDestroy(tmp);
-    //bstrListDestroy(eventtokens);
-    
 
     if(popContext > 0)
     {
@@ -1936,7 +1968,7 @@ int nvmon_perfworks_stopCounters(NvmonDevice_t device)
     nvmon_perfworks_getMetricValue(device->chip, eventSet->counterDataImage, eventSet->events, &values);
 
     int i = 0, j = 0;
-/*    for (j = 0; j < eventSet->events->qty; j++)*/
+    //for (j = 0; j < eventSet->events->qty; j++)
     for (j = 0; j < eventSet->numberOfEvents; j++)
     {
         double res = values[j];
