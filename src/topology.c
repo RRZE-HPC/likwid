@@ -257,15 +257,15 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
 
     while (fgets(line, 512, fp) != NULL) {
         sscanf(line,"%s %s", structure, field);
-        if ((strcmp(structure, "cpuid_topology") == 0) && (strcmp(field, "numHWThreads") == 0))
+        if ((strncmp(structure, "cpuid_topology", 14) == 0) && (strncmp(field, "numHWThreads", 12) == 0))
         {
             sscanf(line,"%s %s = %d", structure, field, &numHWThreads);
         }
-        else if ((strcmp(structure, "cpuid_topology") == 0) && (strcmp(field, "numCacheLevels") == 0))
+        else if ((strncmp(structure, "cpuid_topology", 14) == 0) && (strncmp(field, "numCacheLevels", 15) == 0))
         {
             sscanf(line,"%s %s = %d", structure, field, &numCacheLevels);
         }
-        else if ((strcmp(structure, "numa_info") == 0) && (strcmp(field, "numberOfNodes") == 0))
+        else if ((strncmp(structure, "numa_info", 9) == 0) && (strncmp(field, "numberOfNodes", 13) == 0))
         {
             sscanf(line,"%s %s = %d", structure, field, &numberOfNodes);
         }
@@ -286,7 +286,7 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
     counter = 0;
     while (fgets(line, 512, fp) != NULL) {
         sscanf(line,"%s %s %d %s = %d", structure, field, &tmp, value, &tmp1);
-        if ((strcmp(structure, "numa_info") == 0) && (strcmp(value, "numberOfProcessors") == 0))
+        if ((strncmp(structure, "numa_info", 9) == 0) && (strncmp(value, "numberOfProcessors", 19) == 0))
         {
             tmpNumberOfProcessors[tmp-1] = tmp1;
             counter++;
@@ -316,46 +316,51 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
 
     while (fgets(line, 512, fp) != NULL) {
         sscanf(line,"%s %s", structure, field);
-        if (strcmp(structure, "cpuid_topology") == 0)
+        if (strncmp(structure, "cpuid_topology", 14) == 0)
         {
-            if (strcmp(field, "numSockets") == 0)
+            if (strncmp(field, "numSockets", 11) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_topology.numSockets = tmp;
             }
-            else if (strcmp(field, "numCoresPerSocket") == 0)
+            else if (strncmp(field, "numCoresPerSocket", 18) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_topology.numCoresPerSocket = tmp;
             }
-            else if (strcmp(field, "numThreadsPerCore") == 0)
+            else if (strncmp(field, "numThreadsPerCore", 18) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_topology.numThreadsPerCore = tmp;
             }
-            else if (strcmp(field, "threadPool") == 0)
+            else if (strncmp(field, "numDies", 7) == 0)
+            {
+                sscanf(line, "%s %s = %d", structure, field, &tmp);
+                cpuid_topology.numDies = tmp;
+            }
+            else if (strncmp(field, "threadPool", 11) == 0)
             {
                 int thread;
 
                 sscanf(line, "%s %s %d %s = %d", structure, field, &thread, value, &tmp);
 
-                if (strcmp(value, "threadId") == 0)
+                if (strncmp(value, "threadId", 8) == 0)
                 {
                     cpuid_topology.threadPool[thread].threadId = tmp;
                 }
-                else if (strcmp(value, "coreId") == 0)
+                else if (strncmp(value, "coreId", 6) == 0)
                 {
                     cpuid_topology.threadPool[thread].coreId = tmp;
                 }
-                else if (strcmp(value, "packageId") == 0)
+                else if (strncmp(value, "packageId", 10) == 0)
                 {
                     cpuid_topology.threadPool[thread].packageId = tmp;
                 }
-                else if (strcmp(value, "dieId") == 0)
+                else if (strncmp(value, "dieId", 5) == 0)
                 {
                     cpuid_topology.threadPool[thread].dieId = tmp;
                 }
-                else if (strcmp(value, "apicId") == 0)
+                else if (strncmp(value, "apicId", 6) == 0)
                 {
                     cpuid_topology.threadPool[thread].apicId = tmp;
                     if (CPU_ISSET(tmp, &cpuSet))
@@ -369,37 +374,37 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
                 }
 
             }
-            else if (strcmp(field, "cacheLevels") == 0)
+            else if (strncmp(field, "cacheLevels", 12) == 0)
             {
                 int level;
                 char type[128];
                 sscanf(line, "%s %s %d %s", structure, field, &level, value);
 
                 cpuid_topology.cacheLevels[level-1].level = level-1;
-                if (strcmp(value, "type") == 0)
+                if (strncmp(value, "type", 4) == 0)
                 {
                     sscanf(line, "%s %s %d %s = %s", structure, field, &level, value, type);
-                    if (strcmp(type, "UNIFIEDCACHE") == 0)
+                    if (strncmp(type, "UNIFIEDCACHE", 13) == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].type = UNIFIEDCACHE;
                     }
-                    else if (strcmp(type, "DATACACHE") == 0)
+                    else if (strncmp(type, "DATACACHE", 9) == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].type = DATACACHE;
                     }
-                    else if (strcmp(type, "INSTRUCTIONCACHE") == 0)
+                    else if (strncmp(type, "INSTRUCTIONCACHE", 17) == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].type = INSTRUCTIONCACHE;
                     }
-                    else if (strcmp(type, "ITLB") == 0)
+                    else if (strncmp(type, "ITLB", 4) == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].type = ITLB;
                     }
-                    else if (strcmp(type, "DTLB") == 0)
+                    else if (strncmp(type, "DTLB", 4) == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].type = DTLB;
                     }
-                    else if (strcmp(type, "NOCACHE") == 0)
+                    else if (strncmp(type, "NOCACHE", 7) == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].type = NOCACHE;
                     }
@@ -407,27 +412,27 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
                 else
                 {
                     sscanf(line, "%s %s %d %s = %d", structure, field, &level, value, &tmp);
-                    if (strcmp(value, "associativity") == 0)
+                    if (strncmp(value, "associativity", 14) == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].associativity = tmp;
                     }
-                    else if (strcmp(value, "sets") == 0)
+                    else if (strncmp(value, "sets", 4) == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].sets = tmp;
                     }
-                    else if (strcmp(value, "lineSize") == 0)
+                    else if (strncmp(value, "lineSize", 8) == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].lineSize = tmp;
                     }
-                    else if (strcmp(value, "size") == 0)
+                    else if (strncmp(value, "size", 4) == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].size = tmp;
                     }
-                    else if (strcmp(value, "threads") == 0)
+                    else if (strncmp(value, "threads", 9) == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].threads = tmp;
                     }
-                    else if (strcmp(value, "inclusive") == 0)
+                    else if (strncmp(value, "inclusive", 10) == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].inclusive = tmp;
                     }
@@ -435,20 +440,20 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
 
             }
         }
-        else if (strcmp(structure, "cpuid_info") == 0)
+        else if (strncmp(structure, "cpuid_info", 11) == 0)
         {
-            if (strcmp(field, "family") == 0)
+            if (strncmp(field, "family", 6) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.family = tmp;
 
             }
-            else if (strcmp(field, "model") == 0)
+            else if (strncmp(field, "model", 5) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.model = tmp;
             }
-            else if (strcmp(field, "osname") == 0)
+            else if (strncmp(field, "osname", 6) == 0)
             {
                 strncpy(value,&(line[strlen(structure)+strlen(field)+4]), 256);
                 int len = 257;
@@ -456,61 +461,74 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
                 strncpy(cpuid_info.osname, value, len);
                 cpuid_info.osname[strlen(value)-1] = '\0';
             }
-            else if (strcmp(field, "stepping") == 0)
+            else if (strncmp(field, "stepping", 9) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.stepping = tmp;
-
             }
-            else if (strcmp(field, "clock") == 0)
+            else if (strncmp(field, "vendor", 6) == 0)
+            {
+                sscanf(line, "%s %s = %d", structure, field, &tmp);
+                cpuid_info.vendor = tmp;
+            }
+            else if (strncmp(field, "part", 4) == 0)
+            {
+                sscanf(line, "%s %s = %d", structure, field, &tmp);
+                cpuid_info.part = tmp;
+            }
+            else if (strncmp(field, "clock", 5) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.clock = tmp;
-
             }
-            else if (strcmp(field, "turbo") == 0)
+            else if (strncmp(field, "turbo", 5) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.turbo = tmp;
-
             }
-            else if (strcmp(field, "isIntel") == 0)
+            else if (strncmp(field, "isIntel", 7) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.isIntel = tmp;
-
             }
-            else if (strcmp(field, "featureFlags") == 0)
+            else if (strncmp(field, "featureFlags", 13) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.featureFlags = tmp;
 
             }
-            else if (strcmp(field, "perf_version") == 0)
+            else if (strncmp(field, "perf_version", 13) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.perf_version = tmp;
 
             }
-            else if (strcmp(field, "perf_num_ctr") == 0)
+            else if (strncmp(field, "perf_num_ctr", 13) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.perf_num_ctr = tmp;
-
             }
-            else if (strcmp(field, "perf_width_ctr") == 0)
+            else if (strncmp(field, "perf_width_ctr", 15) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.perf_width_ctr = tmp;
-
             }
-            else if (strcmp(field, "perf_num_fixed_ctr") == 0)
+            else if (strncmp(field, "perf_num_fixed_ctr", 19) == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.perf_num_fixed_ctr = tmp;
-
             }
-            else if (strcmp(field, "features") == 0)
+            else if (strncmp(field, "supportClientmem", 17) == 0)
+            {
+                sscanf(line, "%s %s = %d", structure, field, &tmp);
+                cpuid_info.supportClientmem = tmp;
+            }
+            else if (strncmp(field, "supportUncore", 14) == 0)
+            {
+                sscanf(line, "%s %s = %d", structure, field, &tmp);
+                cpuid_info.supportUncore = tmp;
+            }
+            else if (strncmp(field, "features", 9) == 0)
             {
                 strcpy(value,&(line[strlen(structure)+strlen(field)+4]));
                 int len = 257;
@@ -519,44 +537,44 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
                 cpuid_info.features[strlen(value)-1] = '\0';
             }
         }
-        else if (strcmp(structure, "numa_info") == 0)
+        else if (strncmp(structure, "numa_info", 9) == 0)
         {
-            if (strcmp(field, "nodes") == 0)
+            if (strncmp(field, "nodes", 5) == 0)
             {
                 int id;
                 sscanf(line, "%s %s %d %s", structure, field, &id, value);
 
-                if (strcmp(value,"numberOfProcessors") == 0)
+                if (strncmp(value,"numberOfProcessors", 19) == 0)
                 {
                     sscanf(line, "%s %s %d %s = %d", structure, field, &id, value, &tmp);
                     numa_info.nodes[id-1].numberOfProcessors = tmp;
                 }
-                else if (strcmp(value, "freeMemory") == 0)
+                else if (strncmp(value, "freeMemory", 11) == 0)
                 {
                     sscanf(line, "%s %s %d %s = %d", structure, field, &id, value, &tmp);
                     numa_info.nodes[id-1].freeMemory = tmp;
                 }
-                else if (strcmp(value, "id") == 0)
+                else if (strncmp(value, "id", 2) == 0)
                 {
                     sscanf(line, "%s %s %d %s = %d", structure, field, &id, value, &tmp);
                     numa_info.nodes[id-1].id = tmp;
                 }
-                else if (strcmp(value, "totalMemory") == 0)
+                else if (strncmp(value, "totalMemory", 12) == 0)
                 {
                     sscanf(line, "%s %s %d %s = %d", structure, field, &id, value, &tmp);
                     numa_info.nodes[id-1].totalMemory = tmp;
                 }
-                else if (strcmp(value, "numberOfDistances") == 0)
+                else if (strncmp(value, "numberOfDistances", 18) == 0)
                 {
                     sscanf(line, "%s %s %d %s = %d", structure, field, &id, value, &tmp);
                     numa_info.nodes[id-1].numberOfDistances = tmp;
                 }
-                if (strcmp(value, "processors") == 0)
+                if (strncmp(value, "processors", 11) == 0)
                 {
                     sscanf(line, "%s %s %d %s %d = %d", structure, field, &id, value, &tmp, &tmp1);
                     numa_info.nodes[id-1].processors[tmp-1] = tmp1;
                 }
-                else if (strcmp(value,"distances") == 0)
+                else if (strncmp(value,"distances", 10) == 0)
                 {
                     sscanf(line, "%s %s %d %s %d = %d", structure, field, &id, value, &tmp, &tmp1);
                     numa_info.nodes[id-1].distances[tmp] = tmp1;
