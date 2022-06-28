@@ -718,6 +718,12 @@ lua_likwid_getCpuInfo(lua_State* L)
     lua_pushstring(L,"stepping");
     lua_pushinteger(L, (lua_Integer)(cpuinfo->stepping));
     lua_settable(L,-3);
+    lua_pushstring(L,"vendor");
+    lua_pushinteger(L, (lua_Integer)(cpuinfo->vendor));
+    lua_settable(L,-3);
+    lua_pushstring(L,"part");
+    lua_pushinteger(L, (lua_Integer)(cpuinfo->part));
+    lua_settable(L,-3);
     lua_pushstring(L,"clock");
     lua_pushinteger(L, (lua_Integer)(cpuinfo->clock));
     lua_settable(L,-3);
@@ -756,6 +762,12 @@ lua_likwid_getCpuInfo(lua_State* L)
     lua_settable(L,-3);
     lua_pushstring(L,"perf_num_fixed_ctr");
     lua_pushinteger(L, (lua_Integer)(cpuinfo->perf_num_fixed_ctr));
+    lua_settable(L,-3);
+    lua_pushstring(L,"supportUncore");
+    lua_pushinteger(L, (lua_Integer)(cpuinfo->supportUncore));
+    lua_settable(L,-3);
+    lua_pushstring(L,"supportClientmem");
+    lua_pushinteger(L, (lua_Integer)(cpuinfo->supportClientmem));
     lua_settable(L,-3);
     return 1;
 }
@@ -805,6 +817,10 @@ lua_likwid_getCpuTopology(lua_State* L)
 
     lua_pushstring(L,"numSockets");
     lua_pushinteger(L, (lua_Integer)(cputopo->numSockets));
+    lua_settable(L,-3);
+
+    lua_pushstring(L,"numDies");
+    lua_pushinteger(L, (lua_Integer)(cputopo->numDies));
     lua_settable(L,-3);
 
     lua_pushstring(L,"numCoresPerSocket");
