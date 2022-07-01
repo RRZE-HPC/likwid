@@ -491,10 +491,10 @@ int main(int argc, char** argv)
                         if ((int)(floor(orig_size/currentWorkgroup->numberOfThreads)) % test->stride)
                         {
                             int typesize = allocator_dataTypeLength(test->type);
-                            newsize = (((int)(floor(orig_size/nrThreads))/stride)*(stride))*nrThreads;
+                            newsize = (((size_t)(floor(orig_size/nrThreads))/stride)*(stride))*nrThreads;
                             if (newsize > 0 && warn_once)
                             {
-                                fprintf (stdout, "Warning: Sanitizing vector length to a multiple of the loop stride %d and thread count %d from %d elements (%d bytes) to %d elements (%d bytes)\n",stride, nrThreads, orig_size, orig_size*typesize, newsize, newsize*typesize);
+                                fprintf (stdout, "Warning: Sanitizing vector length to a multiple of the loop stride %d and thread count %d from %ld elements (%ld bytes) to %ld elements (%ld bytes)\n",stride, nrThreads, orig_size, orig_size*typesize, newsize, newsize*typesize);
                                 warn_once = 0;
                             }
                             else if (newsize == 0)
