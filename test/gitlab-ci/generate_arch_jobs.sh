@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-for L in $(sinfo -t idle -h --partition=work -o "%n"); do
+for L in $(sinfo -t idle -h --partition=work -o "%n %t" | grep "idle" | cut -d ' ' -f 1); do
     arch="x86"
     depend="build-x86-perf"
     if [ "$L" = "aurora1" ]; then
