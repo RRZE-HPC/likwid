@@ -94,16 +94,6 @@ build-arm8-perf:
     tags:
       - testcluster
 
-update-repo:
-    stage: .pre
-    tags:
-      - testcluster
-    script:
-      - git remote add --mirror=fetch original https://github.com/RRZE-HPC/likwid.git
-      - cat .git/config
-      - git fetch original
-      - git push --all -o ci.skip "https://whatever:${GIT_PUSH_TOKEN}@${CI_REPOSITORY_URL#*@}"
-
 check-event-files:
     stage: .pre
     tags:
