@@ -11,7 +11,7 @@ EOF
 cat << EOF > success.json
 {
   "state" : "success",
-  "target_url" : "${CI_PIPELINE_URL},
+  "target_url" : "${CI_PIPELINE_URL}",
   "description" : "CI runs at NHR@FAU systems successful",
   "context" : "continuous-integration/gitlab"
 }
@@ -19,7 +19,7 @@ EOF
 cat << EOF > failure.json
 {
   "state" : "failure",
-  "target_url" : "${CI_PIPELINE_URL},
+  "target_url" : "${CI_PIPELINE_URL}",
   "description" : "CI runs at NHR@FAU systems failed",
   "context" : "continuous-integration/gitlab"
 }
