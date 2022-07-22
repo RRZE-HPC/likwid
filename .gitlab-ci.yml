@@ -146,3 +146,13 @@ cuda-pipeline:
     strategy: depend
   variables:
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+notify-github:
+  stage: .post
+  tags:
+    - testcluster
+  variables:
+    NO_SLURM_SUBMIT: 1
+  script:
+    - echo '{"status": "success"}' > status.json
+    - curl -X POST -H 'Accept: application/vnd.github+json' -H "Authorization: token ${GITHUB_API_TOKEN}" https://api.github.com/repos/RRZE-HPC/likwid/statuses/${CI_COMMIT_SHA} -d @status.json
