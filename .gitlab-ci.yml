@@ -147,11 +147,22 @@ cuda-pipeline:
   variables:
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
-notify-github:
+notify-github-success:
   stage: .post
   tags:
     - testcluster
   variables:
     NO_SLURM_SUBMIT: 1
+  when: on_success
   script:
-    - curl -X POST -H 'Accept:application/vnd.github+json' -H "Authorization:token ${GITHUB_API_TOKEN}" https://api.github.com/repos/RRZE-HPC/likwid/statuses/${CI_COMMIT_SHA} -d "{\"state\":\"success\"}"
+    - test/gitlab-ci/notify_github.sh success
+
+notify-github-failure:
+  stage: .post
+  tags:
+    - testcluster
+  variables:
+    NO_SLURM_SUBMIT: 1
+  when: on_failure
+  script:
+    - test/gitlab-ci/notify_github.sh failure
