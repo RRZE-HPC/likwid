@@ -8,12 +8,18 @@ cat << EOF > headers.curl
 Accept: application/vnd.github+json
 Authorization: token ${GITHUB_API_TOKEN}
 EOF
+#cat << EOF > success.json
+#{
+#  "state" : "success",
+#  "target_url" : "${CI_PIPELINE_URL}",
+#  "description" : "CI runs at NHR@FAU systems successful",
+#  "context" : "continuous-integration/gitlab"
+#}
+#EOF
 cat << EOF > success.json
 {
   "state" : "success",
-  "target_url" : "${CI_PIPELINE_URL}",
-  "description" : "CI runs at NHR@FAU systems successful",
-  "context" : "continuous-integration/gitlab"
+  "target_url" : "${CI_PIPELINE_URL}"
 }
 EOF
 cat << EOF > failure.json
@@ -26,7 +32,9 @@ cat << EOF > failure.json
 EOF
 GITHUB_API_URL="https://api.github.com/repos/${GITHUB_ORG}/${GITHUB_REPO}/statuses/${GITHUB_SHA}"
 if [ "$1" == "success" ]; then
-	curl -X POST -H @headers.curl "${GITHUB_API_URL}" -d @success.json
+	cat success.json
+	curl -s -X POST -H @headers.curl "${GITHUB_API_URL}" -d @success.json
 else
-	curl -X POST -H @headers.curl "${GITHUB_API_URL}" -d @failure.json
+	cat failure.json
+	curl -s -X POST -H @headers.curl "${GITHUB_API_URL}" -d @failure.json
 fi
