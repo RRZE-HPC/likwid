@@ -103,6 +103,16 @@ check-event-files:
       - test/check_data_files.py events
 #      - test/check_data_files.py groups
 
+notify-github-pending:
+  stage: .post
+  tags:
+    - testcluster
+  variables:
+    NO_SLURM_SUBMIT: 1
+  when: always
+  script:
+    - test/gitlab-ci/notify_github.sh pending
+
 arch-gen:
   stage: build
   tags:

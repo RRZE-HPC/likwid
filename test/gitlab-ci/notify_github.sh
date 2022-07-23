@@ -30,11 +30,21 @@ cat << EOF > failure.json
   "description" : "CI runs at NHR@FAU systems failed"
 }
 EOF
+cat << EOF > pending.json
+{
+  "state" : "pending",
+  "target_url" : "${CI_PIPELINE_URL}",
+  "description" : "CI runs at NHR@FAU systems pending"
+}
+EOF
 GITHUB_API_URL="https://api.github.com/repos/${GITHUB_ORG}/${GITHUB_REPO}/statuses/${GITHUB_SHA}"
 if [ "$1" == "success" ]; then
 	cat success.json
 	curl -s -X POST -H @headers.curl "${GITHUB_API_URL}" -d @success.json
-else
+elif [ "$1" == "failure" ]; then
 	cat failure.json
 	curl -s -X POST -H @headers.curl "${GITHUB_API_URL}" -d @failure.json
+elif [ "$1" == "pending" ]; then
+	cat pending.json
+	curl -s -X POST -H @headers.curl "${GITHUB_API_URL}" -d @pending.json
 fi
