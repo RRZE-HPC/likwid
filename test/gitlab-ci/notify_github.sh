@@ -19,15 +19,15 @@ EOF
 cat << EOF > success.json
 {
   "state" : "success",
-  "target_url" : "${CI_PIPELINE_URL}"
+  "target_url" : "${CI_PIPELINE_URL}",
+  "description" : "CI runs at NHR@FAU systems successful"
 }
 EOF
 cat << EOF > failure.json
 {
   "state" : "failure",
   "target_url" : "${CI_PIPELINE_URL}",
-  "description" : "CI runs at NHR@FAU systems failed",
-  "context" : "continuous-integration/gitlab"
+  "description" : "CI runs at NHR@FAU systems failed"
 }
 EOF
 GITHUB_API_URL="https://api.github.com/repos/${GITHUB_ORG}/${GITHUB_REPO}/statuses/${GITHUB_SHA}"
