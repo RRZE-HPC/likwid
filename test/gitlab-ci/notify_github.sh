@@ -20,6 +20,7 @@ cat << EOF > success.json
 {
   "state" : "success",
   "target_url" : "${CI_PIPELINE_URL}",
+  "context" : "ci/${CI_SERVER_URL}",
   "description" : "CI runs at NHR@FAU systems successful"
 }
 EOF
@@ -27,6 +28,7 @@ cat << EOF > failure.json
 {
   "state" : "failure",
   "target_url" : "${CI_PIPELINE_URL}",
+  "context" : "ci/${CI_SERVER_URL}",
   "description" : "CI runs at NHR@FAU systems failed"
 }
 EOF
@@ -34,6 +36,7 @@ cat << EOF > pending.json
 {
   "state" : "pending",
   "target_url" : "${CI_PIPELINE_URL}",
+  "context" : "ci/${CI_SERVER_URL}",
   "description" : "CI runs at NHR@FAU systems pending"
 }
 EOF
