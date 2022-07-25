@@ -1662,7 +1662,6 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
         if (newEventSet->results == NULL)
         {
             ERROR_PRINT(Cannot allocate result list for group %d\n, gid);
-            bstrListDestroy(tmp);
             return -ENOMEM;
         }
         memset(newEventSet->results, 0, eventtokens->qty * sizeof(NvmonEventResult));
