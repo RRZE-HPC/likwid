@@ -2178,7 +2178,7 @@ Get the metric result of all measurement cycles. It reads all raw results for th
 @param [in] gpuId ID of the GPU that should be read
 @return The metric result
 */
-double nvmon_getMetric(int groupId, int metricId, int gpuId);
+double nvmon_getMetric(int groupId, int metricId, int gpuId) __attribute__ ((visibility ("default") ));
 /*! \brief Get the last metric result of the specified group, counter and GPU (Nvmon)
 
 Get the metric result of the last measurement cycle. It reads all raw results for the given groupId and gpuId.
@@ -2187,7 +2187,7 @@ Get the metric result of the last measurement cycle. It reads all raw results fo
 @param [in] gpuId ID of the GPU that should be read
 @return The metric result
 */
-double nvmon_getLastMetric(int groupId, int metricId, int gpuId);
+double nvmon_getLastMetric(int groupId, int metricId, int gpuId) __attribute__ ((visibility ("default") ));
 /*! \brief Get the number of configured event groups (Nvmon)
 
 @return Number of groups

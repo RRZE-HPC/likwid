@@ -736,6 +736,58 @@ void nvmon_perfworks_freeDevice(NvmonDevice_t dev)
             free(dev->chip);
             dev->chip = NULL;
         }
+        if (dev->nvEventSets)
+        {
+            for (int i = 0; i < dev->numNvEventSets; i++)
+            {
+                NvmonEventSet* evset = &dev->nvEventSets[i];
+                bstrListDestroy(evset->events);
+                if (evset->nvEvents)
+                {
+                    free(evset->nvEvents);
+                    evset->nvEvents = NULL;
+                }
+                if (evset->results)
+                {
+                    free(evset->results);
+                    evset->results = NULL;
+                }
+                if (evset->configImage)
+                {
+                    free(evset->configImage);
+                    evset->configImage = NULL;
+                    evset->configImageSize = 0;
+                }
+                if (evset->counterDataImage)
+                {
+                    free(evset->counterDataImage);
+                    evset->counterDataImage = NULL;
+                    evset->counterDataImageSize = 0;
+                }
+                if (evset->counterDataScratchBuffer)
+                {
+                    free(evset->counterDataScratchBuffer);
+                    evset->counterDataScratchBuffer = NULL;
+                    evset->counterDataScratchBufferSize = 0;
+                }
+                if (evset->counterDataImagePrefix)
+                {
+                    free(evset->counterDataImagePrefix);
+                    evset->counterDataImagePrefix = NULL;
+                    evset->counterDataImagePrefixSize = 0;
+                }
+                if (evset->counterAvailabilityImage)
+                {
+                    free(evset->counterAvailabilityImage);
+                    evset->counterAvailabilityImage = NULL;
+                    evset->counterAvailabilityImageSize = 0;
+                }
+            }
+            free(dev->nvEventSets);
+            dev->nvEventSets = NULL;
+            dev->numNvEventSets = 0;
+            dev->activeEventSet = -1;
+        }
         if (dev->allevents)
         {
             int i = 0;
@@ -1496,6 +1548,12 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
     tmp = bsplit(eventBString, ',');
     bdestroy(eventBString);
 
+    NvmonEvent_t* nvEvents = malloc(tmp->qty * sizeof(NvmonEvent_t));
+    if (!nvEvents)
+    {
+        bstrListDestroy(tmp);
+        return -ENOMEM;
+    }
     eventtokens = bstrListCreate();
 
     for (i = 0; i < tmp->qty; i++)
@@ -1508,6 +1566,7 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
             if (bstrcmp(parts->entry[0], bname) == BSTR_OK)
             {
                 bstrListAddChar(eventtokens, device->allevents[j]->real);
+                nvEvents[i] = device->allevents[j];
                 GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Adding real event %s, device->allevents[j]->real);
             }
         }
@@ -1608,6 +1667,7 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
             return -ENOMEM;
         }
         memset(newEventSet->results, 0, eventtokens->qty * sizeof(NvmonEventResult));
+        newEventSet->nvEvents = nvEvents;
         device->numNvEventSets++;
         GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Adding eventset %d, gid);
     }
@@ -1968,7 +2028,6 @@ int nvmon_perfworks_stopCounters(NvmonDevice_t device)
     nvmon_perfworks_getMetricValue(device->chip, eventSet->counterDataImage, eventSet->events, &values);
 
     int i = 0, j = 0;
-    //for (j = 0; j < eventSet->events->qty; j++)
     for (j = 0; j < eventSet->numberOfEvents; j++)
     {
         double res = values[j];
