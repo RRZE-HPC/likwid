@@ -94,7 +94,6 @@ build-arm8-perf:
     tags:
       - testcluster
 
-
 check-event-files:
     stage: .pre
     tags:
@@ -103,6 +102,16 @@ check-event-files:
       - module load python
       - test/check_data_files.py events
 #      - test/check_data_files.py groups
+
+notify-github-pending:
+  stage: .pre
+  tags:
+    - testcluster
+  variables:
+    NO_SLURM_SUBMIT: 1
+  when: always
+  script:
+    - test/gitlab-ci/notify_github.sh pending
 
 arch-gen:
   stage: build
@@ -147,3 +156,23 @@ cuda-pipeline:
     strategy: depend
   variables:
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+notify-github-success:
+  stage: .post
+  tags:
+    - testcluster
+  variables:
+    NO_SLURM_SUBMIT: 1
+  when: on_success
+  script:
+    - test/gitlab-ci/notify_github.sh success
+
+notify-github-failure:
+  stage: .post
+  tags:
+    - testcluster
+  variables:
+    NO_SLURM_SUBMIT: 1
+  when: on_failure
+  script:
+    - test/gitlab-ci/notify_github.sh failure
