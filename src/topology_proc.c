@@ -351,8 +351,8 @@ proc_init_cpuFeatures(void)
 #ifdef _ARCH_PPC
     return;
 #endif
-    const_bstring flagString = bformat("flags");
-    const_bstring featString = bformat("Features");
+    struct tagbstring flagString = bsStatic ("flags");
+    struct tagbstring featString = bsStatic ("Features");
     bstring flagline = bfromcstr("");
 
     bstring cpuinfo = read_file("/proc/cpuinfo");
@@ -361,11 +361,11 @@ proc_init_cpuFeatures(void)
     for (int i = 0; i < cpulines->qty; i++)
     {
 #if defined(__x86_64__) || defined(__i386__)
-        if (bstrncmp(cpulines->entry[i], flagString, 5) == BSTR_OK ||
-            bstrncmp(cpulines->entry[i], featString, 8) == BSTR_OK)
+        if (bstrncmp(cpulines->entry[i], &flagString, 5) == BSTR_OK ||
+            bstrncmp(cpulines->entry[i], &featString, 8) == BSTR_OK)
 #endif
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__) || defined(__ARM_ARCH_8A)
-        if (bstrncmp(cpulines->entry[i], featString, 8) == BSTR_OK)
+        if (bstrncmp(cpulines->entry[i], &featString, 8) == BSTR_OK)
 #endif
 #ifdef _ARCH_PPC
 	if (ret != 1)
@@ -379,6 +379,7 @@ proc_init_cpuFeatures(void)
     bstrListDestroy(cpulines);
 
     struct bstrList* flaglist = bsplit(flagline, ' ');
+    bdestroy(flagline);
     bstring bfeatures = bfromcstr("");
 
     cpuid_info.featureFlags = 0;
