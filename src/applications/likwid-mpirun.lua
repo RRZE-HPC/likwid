@@ -401,7 +401,7 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
             print_stdout(string.format("EXEC: %s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
             print_stdout(string.format("EXEC: %s/mpdallexit", path))
         else
-            print_stdout(string.format("%s %s -f %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
+            print_stdout(string.format("%s %s -machinefile %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
         end
     end
 
@@ -412,7 +412,7 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
         ret = os.execute(string.format("%s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
         ret = os.execute(string.format("%s/mpdallexit", path))
     else
-        ret = os.execute(string.format("%s %s -f %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
+        ret = os.execute(string.format("%s %s -machinefile %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
     end
     return ret
 end
@@ -2481,12 +2481,14 @@ if skipStr == "" then
             end
         end
     elseif mpitype == "slurm" then
-        if omptype == "intel" and nrNodes > 1 then
+        if omptype == "intel" then
             if nrNodes == 1 then
                 skipStr = '-s 0x1'
             else
                 skipStr = '-s 0x3'
             end
+        elseif omptype == "gnu" then
+            skipStr = '-s 0x1'
         end
     end
 end
