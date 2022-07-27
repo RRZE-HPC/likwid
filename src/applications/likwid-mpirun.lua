@@ -269,9 +269,7 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
         elseif ver2 == "6" then
             bindstr = "--bind-to-none"
         end
-    elseif ver1 == 2 then
-        bindstr = "--bind-to none"
-    elseif ver1 == 3 then
+    elseif ver1 >= 2 then
         bindstr = "--bind-to none"
     end
 
@@ -2474,30 +2472,24 @@ if skipStr == "" then
             skipStr = '-s 0x7'
         end
     elseif mpitype == "openmpi" then
-        if omptype == "intel" and nrNodes > 1 then
+        if omptype == "intel" then
             skipStr = '-s 0x7'
-        elseif omptype == "intel" and nrNodes == 1 then
-            skipStr = '-s 0x1'
-            if tpp > 1 then
-                skipStr = '-s 0x3'
-            end
-        elseif omptype == "gnu" and nrNodes > 1 then
+        elseif omptype == "gnu" then
             skipStr = '-s 0x7'
-        elseif omptype == "gnu" and nrNodes == 1 then
-            skipStr = '-s 0x0'
-            if tpp > 0 then
-                skipStr = '-s 0x1'
-            end
         end
     elseif mpitype == "slurm" then
         if omptype == "intel" then
-            if nrNodes == 1 then
+            if nrNodes == 1 and tpp == 1 then
                 skipStr = '-s 0x1'
             else
                 skipStr = '-s 0x3'
             end
         elseif omptype == "gnu" then
-            skipStr = '-s 0x1'
+            if nrNodes == 1 and tpp == 1 then
+                skipStr = '-s 0x1'
+            else
+                skipStr = '-s 0x3'
+            end
         end
     end
 end
