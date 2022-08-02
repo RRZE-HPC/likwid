@@ -5,14 +5,14 @@
  *
  *      Description:  Module implementing Intel RAPL interface
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Authors:  Jan Treibig (jt), jan.treibig@gmail.com,
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -131,6 +131,7 @@ power_init(int cpuId)
                 case TIGERLAKE2:
                 case ICELAKE1:
                 case ICELAKE2:
+                case ROCKETLAKE:
                     power_info.hasRAPL = 1;
                     numDomains = NUM_POWER_DOMAINS;
                     break;
@@ -164,7 +165,8 @@ power_init(int cpuId)
                 cpuid_info.model == ZEN2_RYZEN2 ||
                 cpuid_info.model == ZEN2_RYZEN3 ||
                 cpuid_info.model == ZEN3_RYZEN ||
-                cpuid_info.model == ZEN3_RYZEN2)
+                cpuid_info.model == ZEN3_RYZEN2 ||
+                cpuid_info.model == ZEN3_RYZEN3)
             {
                 cpuid_info.turbo = 0;
                 power_info.hasRAPL = 1;

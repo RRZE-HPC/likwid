@@ -19,9 +19,9 @@ if (! -e $filename)
 {
     die "Input file does not exist!\n";
 }
-
 open INFILE,"<$filename";
 $filename =~ s/\.tmp/\.$FILTERTYPE/;
+$filename =~ s/\.$FILTERTYPE\.$FILTERTYPE/\.$FILTERTYPE/;
 open OUTFILE,">$filename";
 
 
@@ -188,7 +188,7 @@ if ($fileType eq 'topology') {
                 
                 for (my $i=0; $i<@cpus; $i++) {
                     
-                    print OUTFILE '<cpu'.$cpus[$i].'>'.$col[2+$i].'</cpu'.$cpus[$i].'>'.$NL;
+                    print OUTFILE '<hwthread'.$cpus[$i].'>'.$col[2+$i].'</hwthread'.$cpus[$i].'>'.$NL;
                 }
                 print OUTFILE '</event>'.$NL;
             }
@@ -211,7 +211,7 @@ if ($fileType eq 'topology') {
                     print OUTFILE '<unit>'.$unit.'</unit>'.$NL;
                 }
                 for (my $i=0; $i<@cpus; $i++) {
-                    print OUTFILE '<cpu'.$cpus[$i].'>'.$col[1+$i].'</cpu'.$cpus[$i].'>'.$NL;
+                    print OUTFILE '<hwthread'.$cpus[$i].'>'.$col[1+$i].'</hwthread'.$cpus[$i].'>'.$NL;
                 }
                 print OUTFILE '</metric>'.$NL;
             }

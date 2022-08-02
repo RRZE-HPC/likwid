@@ -26,20 +26,20 @@
 -S 1s -C 0 | EXIT 1 | GREP Option(s) -g <string> or -W <string> must be given on commandline
 -S 1s -c 0 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP Branch
 -S 1s -C 0 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP Branch
--S 1s -c 0,1 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP core 1 | GREP Branch
--S 1s -c 0-1 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP core 1 | GREP Branch
--S 1s -c 0,1-1 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP core 1 | GREP Branch
--S 1s -C 0,1 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP core 1 | GREP Branch
--S 1s -C 0-1 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP core 1 | GREP Branch
--S 1s -C 0,1-1 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP core 1 | GREP Branch
--S 1s -c E:N:2 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP Branch
--S 1s -c E:N:2:1:2 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP Branch
--S 1s -c M:scatter -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP Branch
--S 1s -C E:N:2 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP Branch
--S 1s -C E:N:2:1:2 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP Branch
--S 1s -C M:scatter -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP Branch
--c 0 -g BRANCH -f hostname | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP Branch
--C 0 -g BRANCH -f hostname | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP Branch
+-S 1s -c 0,1 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP HWThread 1 | GREP Branch
+-S 1s -c 0-1 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP HWThread 1 | GREP Branch
+-S 1s -c 0,1-1 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP HWThread 1 | GREP Branch
+-S 1s -C 0,1 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP HWThread 1 | GREP Branch
+-S 1s -C 0-1 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP HWThread 1 | GREP Branch
+-S 1s -C 0,1-1 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP HWThread 1 | GREP Branch
+-S 1s -c E:N:2 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP Branch
+-S 1s -c E:N:2:1:2 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP Branch
+-S 1s -c M:scatter -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP Branch
+-S 1s -C E:N:2 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP Branch
+-S 1s -C E:N:2:1:2 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP Branch
+-S 1s -C M:scatter -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP Branch
+-c 0 -g BRANCH -f hostname | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP Branch
+-C 0 -g BRANCH -f hostname | EXIT 0 | GREP Group 1: BRANCH | GREP HWThread 0 | GREP Branch
 -C 0 -g BRANCH -f -m hostname | EXIT 1 | GREP Marker API result file does not exist
--C 0 -g BRANCH -f -t 200ms hostname | EXIT 0 | GREP Cores: 0
+-C 0 -g BRANCH -f -t 200ms hostname | EXIT 0 | GREP HWThreads: 0
 -C 0 -g BRANCH -f -m ../streamGCC | EXIT 0 | GREP Region triad | GREP Region copy

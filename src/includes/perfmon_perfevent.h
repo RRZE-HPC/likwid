@@ -5,13 +5,13 @@
  *
  *      Description:  Header File of perfmon module for perf_event kernel interface.
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -946,7 +946,26 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
             if (ret == sizeof(long long))
             {
+#if defined(__ARM_ARCH_8A)
+                if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
+                {
+                    switch (eventSet->events[i].event.eventId) {
+                        case 0x3E8:
+                            tmp *= 256;
+                            break;
+                        case 0x3E0:
+                            if (cpuid_topology.numCoresPerSocket == 24)
+                                tmp *= 36;
+                            else
+                                tmp *= 32;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+#endif
                 eventSet->events[i].threadCounter[thread_id].counterData = tmp;
+
             }
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_RESET, 0);
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, RESET_COUNTER);
@@ -978,6 +997,24 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
             if (ret == sizeof(long long))
             {
+#if defined(__ARM_ARCH_8A)
+                if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
+                {
+                    switch (eventSet->events[i].event.eventId) {
+                        case 0x3E8:
+                            tmp *= 256;
+                            break;
+                        case 0x3E0:
+                            if (cpuid_topology.numCoresPerSocket == 24)
+                                tmp *= 36;
+                            else
+                                tmp *= 32;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+#endif
                 eventSet->events[i].threadCounter[thread_id].counterData = tmp;
             }
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, UNFREEZE_COUNTER);

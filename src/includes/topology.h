@@ -5,14 +5,14 @@
  *
  *      Description:  Header File of topology module.
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -105,6 +105,7 @@ struct topology_functions {
 #define CANNONLAKE           0x66U
 #define ICELAKE1             0x7EU
 #define ICELAKE2             0x7DU
+#define ROCKETLAKE           0xA7U
 #define COMETLAKE1           0xA5U
 #define COMETLAKE2           0xA6U
 #define ICELAKEX1            0x6AU
@@ -144,6 +145,7 @@ struct topology_functions {
 #define ZEN2_RYZEN3     0x60
 #define ZEN3_RYZEN      0x01
 #define ZEN3_RYZEN2     0x21
+#define ZEN3_RYZEN3     0x50
 
 /* ARM */
 #define  ARM7L          0x3U

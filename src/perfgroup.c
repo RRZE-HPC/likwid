@@ -5,14 +5,14 @@
  *
  *      Description:  Handler for performance groups and event sets
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -774,7 +774,7 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
             i++;
         }
         if ((!has_fix3) && cpuid_info.perf_num_fixed_ctr > 3 && 
-            (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2))
+            (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 || cpuid_info.model == ROCKETLAKE))
         {
             ginfo->events[i] = malloc(14 * sizeof(char));
             ginfo->counters[i] = malloc(6 * sizeof(char));

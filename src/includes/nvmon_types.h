@@ -7,13 +7,13 @@
  *                    Configures and reads out performance counters
  *                    on NVIDIA GPUs. Supports multi GPUs.
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Author:   Thomas Gruber (tg), thomas.gruber@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -49,8 +49,10 @@ typedef enum {
 } NvmonEventType;
 
 typedef enum {
-    ENTITY_EVENT_TYPE_MONOTONIC = 0,
-    ENTITY_TYPE_INSTANT,
+    ENTITY_TYPE_INSTANT = 0,
+    ENTITY_TYPE_SUM,
+    ENTITY_TYPE_MIN,
+    ENTITY_TYPE_MAX,
 } NvmonEventResultType;
 
 typedef struct {
@@ -74,6 +76,7 @@ typedef struct {
     char description[NVMON_DEFAULT_STR_LEN];
     int active;
     NvmonEventType type;
+    NvmonEventResultType rtype;
 } NvmonEvent;
 typedef NvmonEvent* NvmonEvent_t;
 

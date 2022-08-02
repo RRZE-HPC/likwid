@@ -5,13 +5,13 @@
  *
  *      Description:  C part of the Likwid Lua interface
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -718,6 +718,12 @@ lua_likwid_getCpuInfo(lua_State* L)
     lua_pushstring(L,"stepping");
     lua_pushinteger(L, (lua_Integer)(cpuinfo->stepping));
     lua_settable(L,-3);
+    lua_pushstring(L,"vendor");
+    lua_pushinteger(L, (lua_Integer)(cpuinfo->vendor));
+    lua_settable(L,-3);
+    lua_pushstring(L,"part");
+    lua_pushinteger(L, (lua_Integer)(cpuinfo->part));
+    lua_settable(L,-3);
     lua_pushstring(L,"clock");
     lua_pushinteger(L, (lua_Integer)(cpuinfo->clock));
     lua_settable(L,-3);
@@ -756,6 +762,12 @@ lua_likwid_getCpuInfo(lua_State* L)
     lua_settable(L,-3);
     lua_pushstring(L,"perf_num_fixed_ctr");
     lua_pushinteger(L, (lua_Integer)(cpuinfo->perf_num_fixed_ctr));
+    lua_settable(L,-3);
+    lua_pushstring(L,"supportUncore");
+    lua_pushinteger(L, (lua_Integer)(cpuinfo->supportUncore));
+    lua_settable(L,-3);
+    lua_pushstring(L,"supportClientmem");
+    lua_pushinteger(L, (lua_Integer)(cpuinfo->supportClientmem));
     lua_settable(L,-3);
     return 1;
 }
@@ -805,6 +817,10 @@ lua_likwid_getCpuTopology(lua_State* L)
 
     lua_pushstring(L,"numSockets");
     lua_pushinteger(L, (lua_Integer)(cputopo->numSockets));
+    lua_settable(L,-3);
+
+    lua_pushstring(L,"numDies");
+    lua_pushinteger(L, (lua_Integer)(cputopo->numDies));
     lua_settable(L,-3);
 
     lua_pushstring(L,"numCoresPerSocket");
@@ -2030,6 +2046,7 @@ lua_likwid_startProgram(lua_State* L)
     {
         lua_pushstring(L,"Number of CLI args greater than configured");
         lua_error(L);
+        free(cpus);
         return 0;
     }
     ppid = getpid();

@@ -224,9 +224,9 @@ int main(int argn, char** argc)
                         1E-6*((3*SIZE*sizeof(DATATYPE))/add_time),
                         1E-6*(SIZE/add_time));
     printf("Processed %.1f Mbyte at triad benchmark in %.4f seconds: %.2f MByte/s %.2f MFLOP/s\n",
-                        1E-6*(4*SIZE*sizeof(DATATYPE)),
+                        1E-6*(3*SIZE*sizeof(DATATYPE)),
                         triad_time,
-                        1E-6*((4*SIZE*sizeof(DATATYPE))/triad_time),
+                        1E-6*((3*SIZE*sizeof(DATATYPE))/triad_time),
                         1E-6*((2*SIZE)/triad_time));
 
 

@@ -5,14 +5,14 @@
  *
  *      Description:  Header File of perfmon module for Intel Skylake.
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -106,7 +106,7 @@ int perfmon_init_skylake(int cpu_id)
 
     uint64_t misc_enable = 0x0;
     ret = HPMread(cpu_id, MSR_DEV, MSR_IA32_MISC_ENABLE, &misc_enable);
-    if (ret == 0 && testBit(misc_enable, 7) && (testBit(misc_enable, 12) == 0))
+    if (ret == 0 && (testBit(misc_enable, 7) == 1) && (testBit(misc_enable, 12) == 0))
     {
         ret = HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL);
         if (ret != 0)
@@ -126,14 +126,21 @@ int perfmon_init_skylake(int cpu_id)
             if (IS_SKYLAKE_CLIENT(cpuid_info.model))
             {
                 uint64_t data = 0x0ULL;
-                ret = HPMwrite(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, 0x0ULL);
-                ret += HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, &data);
-                ret += HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
-                ret += HPMread(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, &data);
-                if ((ret == 0) && (data == 0x0ULL))
-                    skylake_cbox_setup = skl_cbox_setup;
-                else
+                ret = 0;
+                ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_CBO_CONFIG, &data);
+                skylake_cbox_setup = NULL;
+                if (ret == 0 && (data & 0xF) > 0)
+                {
+                    ret = 0;
+                    ret += HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, &data);
+                    ret += HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, data);
+                    if (ret == 0)
+                        skylake_cbox_setup = skl_cbox_setup;
+                }
+                if (!skylake_cbox_setup)
+                {
                     skylake_cbox_setup = skl_cbox_nosetup;
+                }
             }
             else if (cpuid_info.model == SKYLAKEX)
             {

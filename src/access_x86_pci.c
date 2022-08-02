@@ -8,14 +8,14 @@
  *                   performance monitoring registers in PCI Cfg space
  *                   for Intel Sandy Bridge Processors.
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com,
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -55,9 +55,9 @@
 
 #ifdef LIKWID_USE_HWLOC
 #include <pci_hwloc.h>
-#else
-#include <pci_proc.h>
 #endif
+#include <pci_proc.h>
+
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -161,23 +161,25 @@ access_x86_pci_init(const int socket)
             }
         }
 
+        ret = 1;
 #ifdef LIKWID_USE_HWLOC
         DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using hwloc to find pci devices);
         ret = hwloc_pci_init(testDevice, socket_bus, &nr_sockets);
         if (ret)
         {
             ERROR_PLAIN_PRINT(Using hwloc to find pci devices failed);
-            return -ENODEV;
-        }
-#else
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using procfs to find pci devices);
-        ret = proc_pci_init(testDevice, socket_bus, &nr_sockets);
-        if (ret)
-        {
-            ERROR_PLAIN_PRINT(Using procfs to find pci devices failed);
-            return -ENODEV;
         }
 #endif
+        if (ret)
+        {
+            DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using procfs to find pci devices);
+            ret = proc_pci_init(testDevice, socket_bus, &nr_sockets);
+            if (ret)
+            {
+                ERROR_PLAIN_PRINT(Using procfs to find pci devices failed);
+                return -ENODEV;
+            }
+        }
     }
 
     for(int j=1;j<MAX_NUM_PCI_DEVICES;j++)

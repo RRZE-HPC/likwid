@@ -4,13 +4,13 @@
 #
 #      Description:  Event list for Intel Icelake
 #
-#      Version:   5.2
-#      Released:  17.6.2021
+#      Version:   5.2.2
+#      Released:  26.07.2022
 #
 #      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+#      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -357,6 +357,7 @@ EVENT_INST_RETIRED                      0xC0 PMC
 UMASK_INST_RETIRED_ANY                  0x00
 UMASK_INST_RETIRED_ANY_P                0x00
 UMASK_INST_RETIRED_STALL_CYCLES         0x01
+UMASK_INST_RETIRED_NOP                  0x02
 
 EVENT_ASSISTS                           0xC1 PMC
 UMASK_ASSISTS_FP                        0x02
@@ -516,6 +517,14 @@ UMASK_L2_LINES_OUT_USELESS_HWPF         0x04
 
 EVENT_SQ_MISC                       0xF4 PMC
 UMASK_SQ_MISC                       0x04
+
+EVENT_OFFCORE_RESPONSE_0                            0xB7 PMC
+OPTIONS_OFFCORE_RESPONSE_0_OPTIONS                  EVENT_OPTION_MATCH0_MASK|EVENT_OPTION_MATCH1_MASK
+UMASK_OFFCORE_RESPONSE_0_OPTIONS                    0x01 0xFF 0xFF
+
+EVENT_OFFCORE_RESPONSE_1                            0xBB PMC
+OPTIONS_OFFCORE_RESPONSE_1_OPTIONS                  EVENT_OPTION_MATCH0_MASK|EVENT_OPTION_MATCH1_MASK
+UMASK_OFFCORE_RESPONSE_1_OPTIONS                    0x01 0xFF 0xFF
 
 EVENT_UNCORE_CLOCK                          0x00 UBOXFIX
 UMASK_UNCORE_CLOCK                          0x01

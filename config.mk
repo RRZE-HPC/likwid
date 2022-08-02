@@ -45,6 +45,7 @@ COLOR = BLUE#NO SPACE
 # Some path definitions
 MANPREFIX = $(PREFIX)/man#NO SPACE
 BINPREFIX = $(PREFIX)/bin#NO SPACE
+SBINPREFIX = $(PREFIX)/sbin#NO SPACE
 LIBPREFIX = $(PREFIX)/lib#NO SPACE
 
 # These paths are hardcoded into executables and libraries. Usually
@@ -56,21 +57,22 @@ LIBPREFIX = $(PREFIX)/lib#NO SPACE
 # the INTSTALLED_PREFIX
 INSTALLED_PREFIX ?= $(PREFIX)#NO SPACE
 INSTALLED_BINPREFIX = $(INSTALLED_PREFIX)/bin#NO SPACE
+INSTALLED_SBINPREFIX = $(INSTALLED_PREFIX)/sbin#NO SPACE
 INSTALLED_LIBPREFIX = $(INSTALLED_PREFIX)/lib#NO SPACE
 
 # Build the accessDaemon. Have a look in the WIKI for details.
 BUILDDAEMON = true#NO SPACE
 # For the daemon based secure msr/pci access configure
 # the absolute path to the msr daemon executable.
-ACCESSDAEMON = $(PREFIX)/sbin/likwid-accessD#NO SPACE
-INSTALLED_ACCESSDAEMON = $(INSTALLED_PREFIX)/sbin/likwid-accessD#NO SPACE
+ACCESSDAEMON = $(SBINPREFIX)/likwid-accessD#NO SPACE
+INSTALLED_ACCESSDAEMON = $(INSTALLED_SBINPREFIX)/likwid-accessD#NO SPACE
 
 # Build the setFrequencies daemon to allow users setting the CPU and Uncore
 # frequency
 BUILDFREQ = true#NO SPACE
 # Paths for frequencie deaemon after installation
-FREQDAEMON = $(PREFIX)/sbin/likwid-setFreq#NO SPACE
-INSTALLED_FREQDAEMON = $(INSTALLED_PREFIX)/sbin/likwid-setFreq#NO SPACE
+FREQDAEMON = $(SBINPREFIX)/likwid-setFreq#NO SPACE
+INSTALLED_FREQDAEMON = $(INSTALLED_SBINPREFIX)/likwid-setFreq#NO SPACE
 
 # Build the appDaemon. It's not really a daemon but an LD_PRELOAD library
 # It is required to get access to the application context.
@@ -123,9 +125,9 @@ TOPO_FILE_PATH = /etc/likwid_topo.cfg
 # The libraries are named liblikwid.<VERSION>.<RELEASE>
 VERSION = 5
 RELEASE = 2
-MINOR = 0
+MINOR = 2
 # Date when the release is published
-DATE    = 15.06.2021
+DATE    = 26.07.2022
 
 # In come cases it is important to set the rpaths for the LIKWID library. One
 # example is the use of sudo because it resets environment variables like

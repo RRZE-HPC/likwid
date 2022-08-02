@@ -5,13 +5,13 @@
  *
  *      Description:  Lua LIKWID interface library
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -1584,5 +1584,35 @@ local function printTextTable(header, line, print_header)
 end
 
 likwid.printTextTable = printTextTable
+
+local function perfctr_checkpid(pid)
+    local fname = string.format("/proc/%d/status", pid)
+    local f = io.open(fname, "r")
+    if f ~= nil then
+        f:close()
+        return true
+    end
+    return false
+end
+likwid.perfctr_checkpid = perfctr_checkpid
+
+local function perfctr_pid_cpulist(pid)
+    local cpulist = nil
+    local fname = string.format("/proc/%d/status", pid)
+    local f = io.open(fname, "r")
+    if f ~= nil then
+        local l = f:read("*line")
+        while l do
+            if l:match("Cpus_allowed_list:.*") then
+                cpulist = l:match("Cpus_allowed_list:%s+([0-9%-,]+)")
+                break
+            end
+            l = f:read("*line")
+        end
+        f:close()
+    end
+    return cpulist
+end
+likwid.perfctr_pid_cpulist = perfctr_pid_cpulist
 
 return likwid

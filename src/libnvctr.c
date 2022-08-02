@@ -5,13 +5,13 @@
  *
  *      Description:  Marker API interface of module nvmon
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Authors:  Thomas Gruber (tg), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -538,7 +538,7 @@ likwid_gpuMarkerResetRegion(const char* regionTag)
     {
         LikwidGpuResults *results = NULL;
         int ret = get_smap_by_key(gpu_maps[i], bdata(tag), (void**)&results);
-        if ((ret < 0) || (results->state != GPUMARKER_STATE_START))
+        if ((ret < 0) || (results->state != GPUMARKER_STATE_STOP))
         {
             fprintf(stderr, "ERROR: Can only reset known/stopped regions\n");
             return -EFAULT;

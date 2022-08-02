@@ -5,14 +5,14 @@
  *
  *      Description:  Main implementation of the performance monitoring module
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -1136,6 +1136,7 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersTigerlake;
                 case ICELAKE1:
                 case ICELAKE2:
+                case ROCKETLAKE:
                     pci_devices = icelake_pci_devices;
                     eventHash = icelake_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsIcelake;
@@ -1249,6 +1250,7 @@ perfmon_init_maps(void)
             {
                 case ZEN3_RYZEN:
                 case ZEN3_RYZEN2:
+                case ZEN3_RYZEN3:
                     eventHash = zen3_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen3;
                     counter_map = zen3_counter_map;
@@ -1314,6 +1316,10 @@ perfmon_init_maps(void)
                     box_map = a57_box_map;
                     perfmon_numCounters = perfmon_numCountersA57;
                     translate_types = a57_translate_types;
+                    if (access(translate_types[PMC], F_OK) != 0)
+                    {
+                        translate_types = a72_translate_types;
+                    }
                     break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported ARMv7 Processor);
@@ -1336,6 +1342,10 @@ perfmon_init_maps(void)
                             box_map = a57_box_map;
                             perfmon_numCounters = perfmon_numCountersA57;
                             translate_types = a57_translate_types;
+                            if (access(translate_types[PMC], F_OK) != 0)
+                            {
+                                translate_types = a72_translate_types;
+                            }
                             break;
                         case ARM_CORTEX_A35:
                         case ARM_CORTEX_A53:
@@ -1428,7 +1438,7 @@ perfmon_init_maps(void)
             memset(tmp + perfmon_numArchEvents, '\0', 10*sizeof(PerfmonEvent));
             eventHash = tmp;
             eventHash[perfmon_numArchEvents].name = "GENERIC_EVENT";
-            bstring bsep = bfromcstr("|");
+            struct tagbstring bsep = bsStatic ("|");
             struct bstrList* outlist = bstrListCreate();
             for (int i = 0; i < perfmon_numArchEvents; i++)
             {
@@ -1468,7 +1478,7 @@ perfmon_init_maps(void)
                 bstrListDestroy(xlist);
             }
 
-            bstring blim = bjoin(outlist, bsep);
+            bstring blim = bjoin(outlist, &bsep);
             eventHash[perfmon_numArchEvents].limit = malloc((blength(blim)+2)*sizeof(char));
             int ret = snprintf(eventHash[perfmon_numArchEvents].limit,
                                blength(blim)+1, "%s", bdata(blim));
@@ -1684,6 +1694,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                 case ICELAKE2:
                 case ICELAKEX1:
                 case ICELAKEX2:
+                case ROCKETLAKE:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_icelake;
@@ -1815,6 +1826,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             {
                 case ZEN3_RYZEN:
                 case ZEN3_RYZEN2:
+                case ZEN3_RYZEN3:
                     initThreadArch = perfmon_init_zen3;
                     initialize_power = TRUE;
                     perfmon_startCountersThread = perfmon_startCountersThread_zen3;
@@ -1845,7 +1857,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
     *init_temp = initialize_thermal;
 }
 
-char** 
+char**
 getArchRegisterTypeNames()
 {
     return archRegisterTypeNames;
@@ -3792,14 +3804,22 @@ perfmon_readMarkerFile(const char* filename)
             char regiontag[100];
             char* ptr = NULL;
             char* colonptr = NULL;
-            regiontag[0] = '\0';
-            ret = sscanf(buf, "%d:%s", &regionid, regiontag);
+            // zero out ALL of regiontag due to replacing %s with %Nc
+            memset(regiontag, 0, sizeof(regiontag) * sizeof(char));
+            char fmt[64];
+            // using %d:%s for sscanf doesn't support spaces so replace %s with %Nc where N is one minus
+            // the size of regiontag, thus to avoid hardcoding N, compose fmt from the size of regiontag, e.g.:
+            //      regiontag[50]  --> %d:%49c
+            //      regiontag[100] --> %d:%99c
+            snprintf(fmt, 60, "%s:%s%ic", "%d", "%", (int) (sizeof(regiontag) - 1));
+            // use fmt (%d:%Nc) in lieu of %d:%s to support spaces
+            ret = sscanf(buf, fmt, &regionid, regiontag);
 
             ptr = strrchr(regiontag,'-');
             colonptr = strchr(buf,':');
             if (ret != 2 || ptr == NULL || colonptr == NULL)
             {
-                fprintf(stderr, "Line %s not a valid region description\n", buf);
+                fprintf(stderr, "Line %s not a valid region description: %s\n", buf, regiontag);
                 continue;
             }
             groupid = atoi(ptr+1);

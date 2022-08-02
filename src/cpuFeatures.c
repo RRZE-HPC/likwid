@@ -9,13 +9,13 @@
  *                  Allows to turn on and off the Hardware prefetcher
  *                  available.
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -198,6 +198,7 @@ cpuFeatures_update(int cpu)
             (cpuid_info.model == KABYLAKE2) ||
             (cpuid_info.model == ICELAKE1) ||
             (cpuid_info.model == ICELAKE2) ||
+            (cpuid_info.model == ROCKETLAKE) ||
             (cpuid_info.model == ICELAKEX1) ||
             (cpuid_info.model == ICELAKEX2) ||
             (cpuid_info.model == ATOM_SILVERMONT_GOLD) ||
@@ -382,6 +383,7 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == COMETLAKE2) ||
             (cpuid_info.model == ICELAKE1) ||
             (cpuid_info.model == ICELAKE2) ||
+            (cpuid_info.model == ROCKETLAKE) ||
             (cpuid_info.model == ICELAKEX1) ||
             (cpuid_info.model == ICELAKEX2) ||
             (cpuid_info.model == ATOM_SILVERMONT_GOLD))
@@ -545,6 +547,7 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == COMETLAKE2) ||
             (cpuid_info.model == ICELAKE1) ||
             (cpuid_info.model == ICELAKE2) ||
+            (cpuid_info.model == ROCKETLAKE) ||
             (cpuid_info.model == ICELAKEX1) ||
             (cpuid_info.model == ICELAKEX2) ||
             (cpuid_info.model == ATOM_SILVERMONT_GOLD))

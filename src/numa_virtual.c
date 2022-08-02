@@ -5,14 +5,14 @@
  *
  *      Description:  Virtual/Fake NUMA backend
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *                Tobias Auerochs, tobi291019@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -51,14 +51,14 @@ virtual_numa_init()
     NumaNode* nodes = (NumaNode*) malloc(sizeof(NumaNode));
     if (!nodes)
     {
-        fprintf(stderr,"No memory to allocate %ld byte for nodes array\n",sizeof(NumaNode));
+        fprintf(stderr,"No memory to allocate %ld byte for nodes array\n", sizeof(NumaNode));
         return -1;
     }
     nodes[0].processors = (uint32_t*) malloc(cpuid_topology.numHWThreads * sizeof(uint32_t));
     if (!nodes[0].processors)
     {
         fprintf(stderr,"No memory to allocate %ld byte for processors array of NUMA node %d\n",
-                cpuid_topology.numHWThreads * sizeof(uint32_t),0);
+                cpuid_topology.numHWThreads * sizeof(uint32_t), 0);
         free(nodes);
         return -1;
     }
@@ -66,9 +66,9 @@ virtual_numa_init()
     if (!nodes[0].distances)
     {
         fprintf(stderr,"No memory to allocate %ld byte for distances array of NUMA node %d\n",
-                sizeof(uint32_t),0);
-        free(nodes);
+                sizeof(uint32_t), 0);
         free(nodes[0].processors);
+        free(nodes);
         return -1;
     }
 

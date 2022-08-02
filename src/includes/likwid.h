@@ -5,14 +5,14 @@
  *
  *      Description:  Header File of likwid API
  *
- *      Version:   5.2
- *      Released:  17.6.2021
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Authors:  Thomas Gruber (tr), thomas.roehl@googlemail.com
  *
  *      Project:  likwid
  *
- *      Copyright (C) 2021 NHR@FAU, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -2178,7 +2178,7 @@ Get the metric result of all measurement cycles. It reads all raw results for th
 @param [in] gpuId ID of the GPU that should be read
 @return The metric result
 */
-double nvmon_getMetric(int groupId, int metricId, int gpuId);
+double nvmon_getMetric(int groupId, int metricId, int gpuId) __attribute__ ((visibility ("default") ));
 /*! \brief Get the last metric result of the specified group, counter and GPU (Nvmon)
 
 Get the metric result of the last measurement cycle. It reads all raw results for the given groupId and gpuId.
@@ -2187,7 +2187,7 @@ Get the metric result of the last measurement cycle. It reads all raw results fo
 @param [in] gpuId ID of the GPU that should be read
 @return The metric result
 */
-double nvmon_getLastMetric(int groupId, int metricId, int gpuId);
+double nvmon_getLastMetric(int groupId, int metricId, int gpuId) __attribute__ ((visibility ("default") ));
 /*! \brief Get the number of configured event groups (Nvmon)
 
 @return Number of groups
