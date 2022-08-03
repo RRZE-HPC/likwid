@@ -86,10 +86,10 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void __attribute__((constructor (103))) init_pthread_overload(void)
 {
-    char *str = NULL;
+    char *str = NULL, *pinstr = NULL;
     char *token = NULL, *saveptr = NULL;
     char *delimiter = ",";
-    int i = 0;
+    int i = 0, ret = 0;
     static long avail_cpus = 0;
     avail_cpus = sysconf(_SC_NPROCESSORS_CONF);
     pin_ids = malloc(avail_cpus * sizeof(int));
@@ -97,17 +97,33 @@ void __attribute__((constructor (103))) init_pthread_overload(void)
     str = getenv("LIKWID_PIN");
     if (str != NULL)
     {
-        token = str;
+        pinstr = malloc((strlen(str)+2) * sizeof(char));
+        if (!pinstr)
+        {
+            free(pin_ids);
+            pin_ids = NULL;
+            return;
+        }
+        ret = snprintf(pinstr, (strlen(str)+1), "%s", str);
+        if (ret <= 0)
+        {
+            free(pin_ids);
+            pin_ids = NULL;
+            return;
+        }
+        pinstr[ret] = '\0';
+        saveptr = pinstr;
+        token = pinstr;
         while (token)
         {
-            token = strtok_r(str,delimiter,&saveptr);
-            str = NULL;
+            token = strtok_r(saveptr, delimiter ,&saveptr);
             if (token)
             {
                 ncpus++;
                 pin_ids[i++] = strtoul(token, &token, 10);
             }
         }
+        free(pinstr);
     }
     str = getenv("LIKWID_SKIP");
     if (str != NULL)
