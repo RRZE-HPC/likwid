@@ -1,3 +1,20 @@
+# Changelog 5.2.2
+- Add mutex to pinning library
+- Fix pin string parsing in pinning library
+- Make SBIN path configurable in build system
+- Add PKGBUILD for ArchLinux package builds
+- Remove accessDaemon double-fork in systemd environements
+- Group updates for L2/L3 (mainly AMD Zen)
+- Fix multi-initialization in MarkerAPI
+- Add energy event scaling for Fujitsu A64FX
+- Nvmon: Use Cupti error string to get better warning/error messages
+- Nvmon: Store events internally to re-use event strings in stopCounters
+- AccessLayer: Catch SIGCHLD to stop sending requests to accessDaemon if it was killed
+- likwid-genTopoCfg: Update writing and reading of topology file
+- Add INST_RETIRED_NOP event for Intel Icelake (desktop & server)
+- Removed some memory leaks
+
+
 # Changelog 5.2.1
 - Add support for Intel Rocketlake and AMD Zen3 variant (Family 19, Model 0x50)
 - Fix for perf_event multiplexing (important!)
