@@ -1222,6 +1222,18 @@ end
 
 likwid.gethostname = gethostname
 
+local function get_perf_event_paranoid()
+    local f = io.open("/proc/sys/kernel/perf_event_paranoid")
+    if f then
+        value = f:read("*l")
+        f:close()
+        return tonumber(value)
+    end
+    return 4
+end
+
+likwid.perf_event_paranoid = get_perf_event_paranoid
+
 local function getjid()
     jid = "X"
     for _, v in pairs({"PBS_JOBID", "SLURM_JOB_ID", "SLURM_JOBID", "LOADL_STEP_ID", "LSB_JOBID" }) do
