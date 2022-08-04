@@ -59,7 +59,7 @@ local function examples()
     end
 end
 
-local function usage()
+local function usage(config)
     version()
     io.stdout:write("A tool to read out performance counter registers on x86, ARM and POWER processors\n\n")
     io.stdout:write("Options:\n")
@@ -97,6 +97,11 @@ local function usage()
     io.stdout:write("-o, --output <file>\t Store output to file. (Optional: Apply text filter according to filename suffix)\n")
     io.stdout:write("-O\t\t\t Output easily parseable CSV instead of fancy tables\n")
     io.stdout:write("--stats\t\t\t Always print statistics table\n")
+    if config and config["daemonMode"] == -1 then
+        io.stdout:write("perf_event specific options:\n")
+        io.stdout:write("--perfpid <pid>\t\t Measure given PID\n")
+        io.stdout:write("--execpid\t\t Use the PID of wrapped application for measurements\n")
+    end
     io.stdout:write("\n")
     examples()
 end
@@ -152,7 +157,7 @@ markerFolder = "/tmp"
 markerFile = string.format("%s/likwid_%d.txt", markerFolder, likwid.getpid())
 cpuClock = 1
 execpid = false
-if config["daemonMode"] == -1 then
+if config["daemonMode"] == -1 and likwid.perf_event_paranoid() > 0 then
     execpid = true
 end
 perfflags = nil
@@ -199,7 +204,7 @@ local function perfctr_exit(exitcode)
 end
 
 if #arg == 0 then
-    usage()
+    usage(config)
     perfctr_exit(0)
 end
 
@@ -213,7 +218,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         end
     end
     if opt == "h" or opt == "help" then
-        usage()
+        usage(config)
         perfctr_exit(0)
     elseif opt == "v" or opt == "version" then
         version()
@@ -654,7 +659,7 @@ end
 
 if #event_string_list == 0 and #gpu_event_string_list == 0 and not print_info then
     print_stderr("Option(s) -g <string> or -W <string> must be given on commandline")
-    usage()
+    usage(config)
     perfctr_exit(1)
 end
 
@@ -718,7 +723,7 @@ end
 
 if use_wrapper and likwid.tablelength(arg)-2 == 0 and print_info == false then
     print_stderr("No Executable can be found on commandline")
-    usage()
+    usage(config)
     perfctr_exit(0)
 end
 
