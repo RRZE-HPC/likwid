@@ -2063,12 +2063,21 @@ perfmon_finalize(void)
         groupSet->groups[group].state = STATE_NONE;
     }
     if (groupSet->groups != NULL)
+    {
         free(groupSet->groups);
+        groupSet->groups = NULL;
+    }
     if (groupSet->threads != NULL)
+    {
         free(groupSet->threads);
+        groupSet->threads = NULL;
+    }
     groupSet->activeGroup = -1;
     if (groupSet)
+    {
         free(groupSet);
+        groupSet = NULL;
+    }
     if (currentConfig)
     {
         for (group=0; group < cpuid_topology.numHWThreads; group++)
@@ -2102,7 +2111,6 @@ perfmon_finalize(void)
         added_generic_event = 0;
     }
     perfmon_initialized = 0;
-    groupSet = NULL;
     return;
 }
 
@@ -3732,6 +3740,11 @@ perfmon_readMarkerFile(const char* filename)
     int nr_regions = 0;
     int cpus = 0, groups = 0, regions = 0;
 
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
     if (filename == NULL)
     {
         return -EINVAL;
@@ -3750,6 +3763,7 @@ perfmon_readMarkerFile(const char* filename)
     if (ret != 3)
     {
         fprintf(stderr, "Marker file missformatted.\n");
+        fclose(fp);
         return -EINVAL;
     }
     //markerResults = malloc(regions * sizeof(LikwidResults));
@@ -3757,12 +3771,14 @@ perfmon_readMarkerFile(const char* filename)
     if (markerResults == NULL)
     {
         fprintf(stderr, "Failed to allocate %lu bytes for the marker results storage\n", regions * sizeof(LikwidResults));
+        fclose(fp);
         return -ENOMEM;
     }
     int* regionCPUs = (int*)malloc(regions * sizeof(int));
     if (regionCPUs == NULL)
     {
         fprintf(stderr, "Failed to allocate %lu bytes for temporal cpu count storage\n", regions * sizeof(int));
+        fclose(fp);
         return -ENOMEM;
     }
     markerRegions = regions;
@@ -3775,24 +3791,54 @@ perfmon_readMarkerFile(const char* filename)
         if (!markerResults[i].time)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the time storage\n", cpus * sizeof(double));
+            for (int j = 0; j < i; j++) {
+                free(markerResults[j].time);
+                free(markerResults[j].count);
+                free(markerResults[j].cpulist);
+                free(markerResults[j].counters);
+            }
             break;
         }
         markerResults[i].count = (uint32_t*) malloc(cpus * sizeof(uint32_t));
         if (!markerResults[i].count)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the count storage\n", cpus * sizeof(uint32_t));
+            free(markerResults[i].time);
+            for (int j = 0; j < i; j++) {
+                free(markerResults[j].time);
+                free(markerResults[j].count);
+                free(markerResults[j].cpulist);
+                free(markerResults[j].counters);
+            }
             break;
         }
         markerResults[i].cpulist = (int*) malloc(cpus * sizeof(int));
         if (!markerResults[i].count)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n", cpus * sizeof(int));
+            free(markerResults[i].time);
+            free(markerResults[i].count);
+            for (int j = 0; j < i; j++) {
+                free(markerResults[j].time);
+                free(markerResults[j].count);
+                free(markerResults[j].cpulist);
+                free(markerResults[j].counters);
+            }
             break;
         }
         markerResults[i].counters = (double**) malloc(cpus * sizeof(double*));
         if (!markerResults[i].counters)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the counter result storage\n", cpus * sizeof(double*));
+            free(markerResults[i].time);
+            free(markerResults[i].count);
+            free(markerResults[i].cpulist);
+            for (int j = 0; j < i; j++) {
+                free(markerResults[j].time);
+                free(markerResults[j].count);
+                free(markerResults[j].cpulist);
+                free(markerResults[j].counters);
+            }
             break;
         }
     }
