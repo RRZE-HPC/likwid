@@ -740,9 +740,29 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         if (!found)
         {
             helper[hidx++] = pid;
-            }
+        }
     }
     cpuid_topology.numSockets = hidx;
+    /* Traverse all sockets to get maximal thread count per socket.
+     * This should fix the code for architectures with "empty" sockets.
+     */
+    int num_threads_per_socket = 0;
+    for (int i = 0; i < cpuid_topology.numSockets; i++)
+    {
+        int threadCount = 0;
+        for (int j = 0; j < cpuid_topology.numHWThreads; j++)
+        {
+            if (helper[i] == hwThreadPool[j].packageId)
+            {
+                threadCount++;
+            }
+        }
+        if (threadCount > num_threads_per_socket)
+        {
+            num_threads_per_socket = threadCount;
+        }
+    }
+
     int first_socket_id = helper[0];
     hidx = 0;
     for (int i = 0; i < cpuid_topology.numHWThreads; i++)
@@ -762,7 +782,7 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         if (!found)
         {
             helper[hidx++] = did;
-            }
+        }
     }
 
     cpuid_topology.numDies = hidx * cpuid_topology.numSockets;
@@ -770,19 +790,15 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     {
         cpuid_topology.numDies = 0;
     }
-    num_threads_per_core = 0;
-    int test_core_id = hwThreadPool[0].coreId;
-    int test_socket_id = hwThreadPool[0].packageId;
-    int num_threads_per_socket = 0;
+    int max_thread_sibling_id = 0;
     for (int i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-        if (hwThreadPool[i].packageId == test_socket_id)
+        if (hwThreadPool[i].threadId > max_thread_sibling_id)
         {
-            num_threads_per_socket++;
-            if (hwThreadPool[i].coreId == test_core_id)
-                num_threads_per_core++;
+            max_thread_sibling_id = hwThreadPool[i].threadId;
         }
     }
+    num_threads_per_core = max_thread_sibling_id + 1;
     cpuid_topology.numCoresPerSocket = num_threads_per_socket/num_threads_per_core;
     cpuid_topology.numThreadsPerCore = num_threads_per_core;
     free(helper);
