@@ -344,8 +344,26 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
 
     cpuid_topology.numHWThreads = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_PU);
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+    if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
+    {
+        int max_id = 0;
+        for (int i = 0; i < LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_PU); i++)
+        {
+            obj = LIKWID_HWLOC_NAME(get_obj_by_type)(hwloc_topology, HWLOC_OBJ_PU, i);
+            if (obj->os_index > max_id)
+            {
+                max_id = obj->os_index;
+            }
+        }
+        if (max_id + 1 > count)
+        {
+            count = max_id + 1;
+        }
+    }
     if (count > cpuid_topology.numHWThreads)
+    {
         cpuid_topology.numHWThreads = count;
+    }
 #endif
     count = likwid_sysfs_list_len("/sys/devices/system/cpu/online");
     if (count > cpuid_topology.numHWThreads)
