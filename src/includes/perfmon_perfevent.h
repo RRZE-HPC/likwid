@@ -250,25 +250,47 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
     {
         attr->exclude_kernel = 1;
         attr->exclude_hv = 1;
-        if (strcmp(event->name, "INSTR_RETIRED_ANY") == 0)
+        if (strncmp(event->name, "INSTR_RETIRED_ANY", 18) == 0)
         {
             attr->config = PERF_COUNT_HW_INSTRUCTIONS;
             ret = 0;
         }
-        if (strcmp(event->name, "CPU_CLK_UNHALTED_CORE") == 0 ||
-            strcmp(event->name, "ACTUAL_CPU_CLOCK") == 0 ||
-            strcmp(event->name, "APERF") == 0)
+        if (strncmp(event->name, "CPU_CLK_UNHALTED_CORE", 22) == 0 ||
+            strncmp(event->name, "ACTUAL_CPU_CLOCK", 17) == 0 ||
+            strncmp(event->name, "APERF", 5) == 0)
         {
             attr->config = PERF_COUNT_HW_CPU_CYCLES;
             ret = 0;
         }
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
-        if (strcmp(event->name, "CPU_CLK_UNHALTED_REF") == 0)
+        if (strncmp(event->name, "CPU_CLK_UNHALTED_REF", 21) == 0)
         {
             attr->config = PERF_COUNT_HW_REF_CPU_CYCLES;
             ret = 0;
         }
 #endif
+        if (cpuid_info.isIntel)
+        {
+            switch(cpuid_info.model)
+            {
+                case ICELAKE1:
+                case ICELAKE2:
+                case ICELAKEX1:
+                case ICELAKEX2:
+                case ROCKETLAKE:
+                case COMETLAKE1:
+                case COMETLAKE2:
+                case TIGERLAKE1:
+                case TIGERLAKE2:
+                case SNOWRIDGEX:
+                    if (strncmp(event->name, "TOPDOWN_SLOTS", 13) == 0)
+                    {
+                        attr->config = 0x0400;
+                        attr->type = PERF_TYPE_RAW;
+                        ret = 0;
+                    }
+            }
+        }
     }
     else
     {
