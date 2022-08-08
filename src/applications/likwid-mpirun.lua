@@ -1435,22 +1435,30 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
         end
     end
 
+    if np == nil then np = 1 end
+    local i_np = math.tointeger(np)
+    if i_np == nil then i_np = 1 end
+
+    if ppn == nil then ppn = 1 end
+    local i_ppn = math.tointeger(ppn)
+    if i_ppn == nil then i_ppn = 1 end
+
     if mpitype == "openmpi" then
         glsize_var = "$OMPI_COMM_WORLD_SIZE"
         glrank_var = "${OMPI_COMM_WORLD_RANK:-$(($GLOBALSIZE * 2))}"
         losize_var = "$OMPI_COMM_WORLD_LOCAL_SIZE"
     elseif mpitype == "intelmpi" then
         glrank_var = "${PMI_RANK:-$(($GLOBALSIZE * 2))}"
-        glsize_var = tostring(math.tointeger(np))
-        losize_var = tostring(math.tointeger(ppn))
+        glsize_var = tostring(i_np)
+        losize_var = tostring(i_ppn)
     elseif mpitype == "mvapich2" then
         glrank_var = "${PMI_RANK:-$(($GLOBALSIZE * 2))}"
-        glsize_var = tostring(math.tointeger(np))
-        losize_var = tostring(math.tointeger(ppn))
+        glsize_var = tostring(i_np)
+        losize_var = tostring(i_ppn)
     elseif mpitype == "slurm" then
         glrank_var = "${SLURM_PROCID:-$(($GLOBALSIZE * 2))}"
-        glsize_var = tostring(math.tointeger(np))
-        losize_var = string.format("${SLURM_NTASKS_PER_NODE:-%d}", math.tointeger(ppn))
+        glsize_var = tostring(i_np)
+        losize_var = string.format("${SLURM_NTASKS_PER_NODE:-%d}", i_ppn)
     else
         print_stderr("Invalid MPI vendor "..mpitype)
         return
@@ -1523,6 +1531,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     f:write("GLOBALSIZE="..glsize_var.."\n")
     f:write("GLOBALRANK="..glrank_var.."\n")
     if os.getenv("OMP_NUM_THREADS") == nil then
+        if tpp == nil then tpp = 1 end
         f:write(string.format("export OMP_NUM_THREADS=%d\n", tpp))
     else
         f:write(string.format("export OMP_NUM_THREADS=%s\n", os.getenv("OMP_NUM_THREADS")))
