@@ -180,8 +180,11 @@ access_x86_rdpmc_init(const int cpu_id)
     }
     if (rdpmc_works_fixed_slots < 0 && cpuid_info.isIntel)
     {
-        rdpmc_works_fixed_slots = test_rdpmc(cpu_id, (1<<30) + 3, 0);
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED slots counter returned %d, rdpmc_works_fixed_slots);
+        if (!(ebx & (1<<7)))
+        {
+            rdpmc_works_fixed_slots = test_rdpmc(cpu_id, (1<<30) + 3, 0);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED slots counter returned %d, rdpmc_works_fixed_slots);
+        }
     }
     if (rdpmc_works_llc < 0 && (!cpuid_info.isIntel))
     {
