@@ -3213,10 +3213,7 @@ perfmon_getMaxCounterValue(RegisterType type)
     {
         width = box_map[type].regWidth;
     }
-    for(int i=0;i<width;i++)
-    {
-        tmp |= (1ULL<<i);
-    }
+    tmp = (1ULL << width) - 1;
     return tmp;
 }
 
