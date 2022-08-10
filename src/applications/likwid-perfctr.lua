@@ -157,8 +157,14 @@ markerFolder = "/tmp"
 markerFile = string.format("%s/likwid_%d.txt", markerFolder, likwid.getpid())
 cpuClock = 1
 execpid = false
-if config["daemonMode"] == -1 and likwid.perf_event_paranoid() > 0 then
-    execpid = true
+local perf_paranoid = likwid.perf_event_paranoid()
+if config["daemonMode"] == -1 then
+    if perf_paranoid > 2 then
+        print_stderr(string.format("Cannot use performance monitoring with perf_event_paranoid = %d", perf_paranoid))
+        os.exit(1)
+    elseif perf_paranoid > 0 then
+        execpid = true
+    end
 end
 perfflags = nil
 perfpid = nil
