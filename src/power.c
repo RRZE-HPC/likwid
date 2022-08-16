@@ -238,9 +238,8 @@ power_init(int cpuId)
             {
                 if (!core_limits)
                 {
-                    unsigned long flag_vals[4];
+                    uint64_t flag_vals[4];
                     int flag_idx = 0;
-                    int reg_idx = 1;
                     int valid_idx = 0;
                     flag_vals[0] = flags;
                     if (power_info.turbo.numSteps > 8)
@@ -273,7 +272,6 @@ power_init(int cpuId)
                         if (i % 8 == 0)
                         {
                             flag_idx++;
-                            reg_idx = 0;
                         }
                         power_info.turbo.steps[i] = busSpeed * (double) field64(flag_vals[flag_idx],(i%8)*8, 8);
                         if (power_info.turbo.steps[i] > 0)
