@@ -348,8 +348,6 @@ static int
 getEvent(bstring event_str, bstring counter_str, PerfmonEvent* event)
 {
     int ret = FALSE;
-    int (*ownstrncmp)(const char *, const char *, size_t);
-    ownstrncmp = &strncmp;
     for (int i=0; i< perfmon_numArchEvents; i++)
     {
         if (biseqcstr(event_str, eventHash[i].name))
@@ -863,7 +861,6 @@ perfmon_check_counter_map(int cpu_id)
 void
 perfmon_init_maps(void)
 {
-    uint32_t eax, ebx, ecx, edx;
     if (eventHash != NULL && counter_map != NULL && box_map != NULL && perfmon_numCounters > 0 && perfmon_numArchEvents > 0)
         return;
     switch ( cpuid_info.family )
@@ -1459,7 +1456,8 @@ perfmon_init_maps(void)
                     {
                         for (int k = 0; k < perfmon_numCounters; k++)
                         {
-                            if (strncmp(bdata(xlist->entry[j]), counter_map[k].key, blength(xlist->entry[j])) == 0)
+                            bstring bkey = bfromcstr(counter_map[k].key);
+                            if (bstrcmp(xlist->entry[j], bkey) == BSTR_OK)
                             {
 #ifndef LIKWID_USE_PERFEVENT
                                 if (HPMcheck(counter_map[k].device, cpu_id))
@@ -1468,9 +1466,11 @@ perfmon_init_maps(void)
 #endif
                                 {
                                     bstrListAdd(outlist, xlist->entry[j]);
+                                    bdestroy(bkey);
                                     break;
                                 }
                             }
+                            bdestroy(bkey);
                         }
                     }
                 }
