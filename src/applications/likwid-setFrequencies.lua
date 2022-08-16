@@ -1,4 +1,4 @@
-#!<INSTALLED_BINPREFIX>/likwid-lua
+#!/usr/bin/env <LIKWID_LUA_INTERPRETER>
 --[[
  * =======================================================================================
  *
@@ -210,9 +210,9 @@ for opt,arg in likwid.getopt(arg, {"V:", "g:", "c:", "f:", "l", "p", "h", "v", "
     elseif opt == "ureset" then
         do_ureset = true
     elseif opt == "umin" then
-        if arg then min_u_freq = tostring(arg) end
+        if arg then min_u_freq = tonumber(arg) end
     elseif opt == "umax" then
-        if arg then max_u_freq = tostring(arg) end
+        if arg then max_u_freq = tonumber(arg) end
     elseif (opt == "p") then
         printCurFreq = true
     elseif (opt == "l") then

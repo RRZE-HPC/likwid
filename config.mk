@@ -11,7 +11,7 @@
 COMPILER = GCC#NO SPACE
 
 # Path were to install likwid
-PREFIX ?= /usr/local#NO SPACE
+PREFIX ?= /home/unrz139/.modules/likwid-master#NO SPACE
 
 # Set the default mode for MSR access.
 # This can usually be overriden on the commandline.
@@ -104,7 +104,7 @@ INSTALL_CHOWN = -g root -o root#NO SPACE
 SHARED_LIBRARY = true#NO SPACE
 
 # Build LIKWID with debug flags
-DEBUG = false#NO SPACE
+DEBUG = true#NO SPACE
 
 # Basic configuration for some internal arrays.
 # Maximal number of hardware threads
