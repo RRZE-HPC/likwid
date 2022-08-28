@@ -1284,7 +1284,7 @@ perfmon_init_maps(void)
 #endif
 
         case ARMV7_FAMILY:
-            switch ( cpuid_info.model )
+            switch ( cpuid_info.part )
             {
                 case ARMV7L:
                 case ARM7L:
