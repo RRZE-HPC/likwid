@@ -1,0 +1,15 @@
+STREAMS 1
+TYPE INT
+INIT INDEX_STRIDE
+FLOPS 0
+BYTES 4
+DESC Stride-based 32-bit integer pointer chase
+LOADS 4
+STORES 0
+INSTR_LOOP 1
+mov  x2,  xzr
+LOOP 4
+ldr  w3, [STR0, x2, lsl 2]
+ldr  w4, [STR0, x3, lsl 2]
+ldr  w5, [STR0, x4, lsl 2]
+ldr  w2, [STR0, x5, lsl 2]

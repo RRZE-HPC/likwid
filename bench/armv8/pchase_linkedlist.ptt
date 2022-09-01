@@ -1,0 +1,15 @@
+STREAMS 1
+TYPE INT
+INIT LINKED_LIST 32
+FLOPS 0
+BYTES 4
+DESC Linked list pointer chase with 32 byte-sized list items
+LOADS 4
+STORES 0
+INSTR_LOOP 1
+mov  x2,  xzr
+LOOP 4
+ldr  w3, [STR0, x2]
+ldr  w4, [STR0, x3]
+ldr  w5, [STR0, x4]
+ldr  w2, [STR0, x5]
