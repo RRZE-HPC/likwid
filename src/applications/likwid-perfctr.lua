@@ -382,7 +382,11 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
 end
 local execList = {}
 for i=1, likwid.tablelength(arg)-2 do
-    table.insert(execList, arg[i])
+    if string.find(arg[i], " ") then
+        table.insert(execList, "\""..arg[i].."\"")
+    else
+        table.insert(execList, arg[i])
+    end
 end
 
 if perfpid and (not execpid) and (not cpulist) then

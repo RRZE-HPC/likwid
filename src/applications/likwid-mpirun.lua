@@ -2215,7 +2215,13 @@ end
 
 for i,x in pairs(arg) do
     if i > 0 then
-        table.insert(executable, abspath(x) or x)
+        table.insert(executable, )
+        local t = abspath(x) or x
+        if string.find(arg[i], " ") then
+            table.insert(execList, "\""..t.."\"")
+        else
+            table.insert(execList, t)
+        end
     end
 end
 
