@@ -63,54 +63,54 @@ int parse_cpuinfo(uint32_t* count, uint32_t* family, uint32_t* variant, uint32_t
     uint32_t c = 0;
     int (*ownatoi)(const char*);
     ownatoi = &atoi;
+    struct tagbstring familyString = bsStatic("CPU architecture");
+    struct tagbstring variantString = bsStatic("CPU variant");
+    struct tagbstring steppingString = bsStatic("CPU revision");
+    struct tagbstring partString = bsStatic("CPU part");
+    struct tagbstring vendString = bsStatic("CPU implementer");
+    struct tagbstring procString = bsStatic("processor");
 
-    if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
+    if (NULL != (fp = fopen ("cpuinfo", "r")))
     {
-        const_bstring familyString = bformat("CPU architecture");
-        const_bstring variantString = bformat("CPU variant");
-        const_bstring steppingString = bformat("CPU revision");
-        const_bstring partString = bformat("CPU part");
-        const_bstring vendString = bformat("CPU implementer");
-        const_bstring procString = bformat("processor");
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
         bdestroy(src);
         fclose(fp);
         for (i=0;i<tokens->qty;i++)
         {
-            if ((f == 0) && (binstr(tokens->entry[i],0,procString) != BSTR_ERR))
+            if ((binstr(tokens->entry[i],0,&procString) != BSTR_ERR))
             {
                 c++;
             }
-            else if ((f == 0) && (binstr(tokens->entry[i],0,familyString) != BSTR_ERR))
+            else if ((f == 0) && (binstr(tokens->entry[i],0,&familyString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 f = ownatoi(bdata(subtokens->entry[1]));
                 bstrListDestroy(subtokens);
             }
-            else if ((s == 0) && (binstr(tokens->entry[i],0,steppingString) != BSTR_ERR))
+            else if ((s == 0) && (binstr(tokens->entry[i],0,&steppingString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 s = ownatoi(bdata(subtokens->entry[1]));
                 bstrListDestroy(subtokens);
             }
-            else if ((v == 0) && (binstr(tokens->entry[i],0,variantString) != BSTR_ERR))
+            else if ((v == 0) && (binstr(tokens->entry[i],0,&variantString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 v = strtol(bdata(subtokens->entry[1]), NULL, 0);
                 bstrListDestroy(subtokens);
             }
-            else if ((p == 0) && (binstr(tokens->entry[i],0,partString) != BSTR_ERR))
+            else if ((p == 0) && (binstr(tokens->entry[i],0,&partString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 p = strtol(bdata(subtokens->entry[1]), NULL, 0);
                 bstrListDestroy(subtokens);
             }
-            else if ((p == 0) && (binstr(tokens->entry[i],0,vendString) != BSTR_ERR))
+            else if ((vend == 0) && (binstr(tokens->entry[i],0,&vendString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
@@ -119,9 +119,6 @@ int parse_cpuinfo(uint32_t* count, uint32_t* family, uint32_t* variant, uint32_t
             }
         }
         bstrListDestroy(tokens);
-        /*bdestroy(familyString);
-        bdestroy(variantString);
-        bdestroy(steppingString);*/
     }
     else
     {
