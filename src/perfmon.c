@@ -83,6 +83,7 @@
 #include <perfmon_icelake.h>
 #include <perfmon_neon1.h>
 #include <perfmon_a64fx.h>
+#include <perfmon_applem1.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -806,13 +807,16 @@ perfmon_check_counter_map(int cpu_id)
         }
 #else
         char* path = translate_types[counter_map[i].type];
+        if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO) {
+            path = translate_types[FPMC];
+        }
         struct stat st;
         if (path == NULL || stat(path, &st) != 0)
         {
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;
         }
-        if (counter_map[i].type != PMC && counter_map[i].type != FIXED && counter_map[i].type != PERF)
+        if (counter_map[i].type != PMC && counter_map[i].type != FIXED && counter_map[i].type != PERF && counter_map[i].type != IPMC && counter_map[i].type != FPMC)
         {
             if (perfevent_paranoid_value() > 0 && getuid() != 0)
             {
@@ -1414,6 +1418,23 @@ perfmon_init_maps(void)
                             break;
                     }
                     break;
+		case APPLE_M1:
+		case APPLE:
+		    switch (cpuid_info.model)
+		    {
+                        case APPLE_M1_STUDIO:
+			    eventHash = applem1_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsAppleM1;
+                            counter_map = applem1_counter_map;
+                            box_map = applem1_box_map;
+                            perfmon_numCounters = perfmon_numCountersAppleM1;
+                            translate_types = applem1_translate_types;
+                            break;
+                        default:
+                            ERROR_PLAIN_PRINT(Unsupported Apple Processor);
+                            break;
+		    }
+		    break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported ARMv8 Processor);
                     break;
@@ -2300,6 +2321,10 @@ perfmon_addEventSet(const char* eventCString)
             }
 #else
             char* path = translate_types[counter_map[event->index].type];
+            if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO)
+            {
+                path = translate_types[FPMC];
+            }
             struct stat st;
             if (path == NULL || stat(path, &st) != 0)
             {

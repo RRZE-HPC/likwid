@@ -1,0 +1,132 @@
+# =======================================================================================
+#
+#      Filename:  perfmon_applem1_events.txt
+#
+#      Description:  Event list for Apple M1
+#
+#      Version:   <VERSION>
+#      Released:  <DATE>
+#
+#      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
+#      Project:  likwid
+#
+#      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+#
+#      This program is free software: you can redistribute it and/or modify it under
+#      the terms of the GNU General Public License as published by the Free Software
+#      Foundation, either version 3 of the License, or (at your option) any later
+#      version.
+#
+#      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+#      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+#      You should have received a copy of the GNU General Public License along with
+#      this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# =======================================================================================
+
+EVENT_UNKNOWN_01            0x01 PMC
+UMASK_UNKNOWN_01            0x00
+
+EVENT_CPU_CYCLES            0x02 PMC0
+UMASK_CPU_CYCLES            0x00
+
+EVENT_INSTR_RETIRED         0x8C PMC1
+UMASK_INSTR_RETIRED         0x00
+
+EVENT_INST_RETIRED          0x8C PMC1
+UMASK_INST_RETIRED          0x00
+
+EVENT_BRANCHES_RETIRED      0x8D PMC
+UMASK_BRANCHES_RETIRED      0x00
+
+EVENT_UNKNOWN_8E            0x8E PMC
+UMASK_UNKNOWN_8E            0x00
+
+EVENT_UNKNOWN_8F            0x8F PMC
+UMASK_UNKNOWN_8F            0x00
+
+EVENT_UNKNOWN_90            0x90 PMC
+UMASK_UNKNOWN_90            0x00
+
+EVENT_UNKNOWN_93            0x93 PMC
+UMASK_UNKNOWN_93            0x00
+
+EVENT_UNKNOWN_94            0x94 PMC
+UMASK_UNKNOWN_94            0x00
+
+EVENT_UNKNOWN_95            0x95 PMC
+UMASK_UNKNOWN_95            0x00
+
+EVENT_UNKNOWN_96            0x96 PMC
+UMASK_UNKNOWN_96            0x00
+
+EVENT_UNKNOWN_97            0x97 PMC
+UMASK_UNKNOWN_97            0x00
+
+EVENT_UNKNOWN_98            0x98 PMC
+UMASK_UNKNOWN_90            0x00
+
+EVENT_UNKNOWN_99            0x99 PMC
+UMASK_UNKNOWN_90            0x00
+
+EVENT_UNKNOWN_9A            0x9A PMC
+UMASK_UNKNOWN_9A            0x00
+
+EVENT_UNKNOWN_9B            0x9B PMC
+UMASK_UNKNOWN_9B            0x00
+
+EVENT_UNKNOWN_9C            0x9C PMC
+UMASK_UNKNOWN_9C            0x00
+
+EVENT_UNKNOWN_9F            0x9F PMC
+UMASK_UNKNOWN_9F            0x00
+
+EVENT_DATA_CACHE_LOAD_MISS  0xBF PMC
+UMASK_DATA_CACHE_LOAD_MISS  0x00
+
+EVENT_DATA_CACHE_STORE_MISS 0xC0 PMC 
+UMASK_DATA_CACHE_STORE_MISS 0x00
+
+EVENT_DTLB_MISS             0xC1 PMC
+UMASK_DTLB_MISS             0x00
+
+EVENT_ST_HIT_YNGR_LD        0xC4 PMC
+UMASK_ST_HIT_YNGR_LD        0x00
+
+EVENT_UNKNOWN_C5            0xC5 PMC
+UMASK_UNKNOWN_C5            0x00
+
+EVENT_UNKNOWN_C6            0xC6 PMC
+UMASK_UNKNOWN_C6            0x00
+
+EVENT_UNKNOWN_C8            0xC8 PMC
+UMASK_UNKNOWN_C8            0x00
+
+EVENT_UNKNOWN_CA            0xCA PMC
+UMASK_UNKNOWN_CA            0x00
+
+EVENT_BRANCHES_RETIRED_MISP 0xCB PMC
+UMASK_BRANCHES_RETIRED_MISP 0x00
+
+EVENT_ITLB_MISS             0xD4 PMC
+UMASK_ITLB_MISS             0x00
+
+EVENT_IC_MISS_DEM           0xD3 PMC
+UMASK_IC_MISS_DEM           0x00
+
+EVENT_UNKNOWN_F5            0xF5 PMC
+UMASK_UNKNOWN_F5            0x00
+
+EVENT_UNKNOWN_F6            0xF6 PMC
+UMASK_UNKNOWN_F6            0x00
+
+EVENT_UNKNOWN_F7            0xF7 PMC
+UMASK_UNKNOWN_F7            0x00
+
+EVENT_UNKNOWN_F8            0xF8 PMC
+UMASK_UNKNOWN_F8            0x00
+
+EVENT_UNKNOWN_FD            0xFD PMC
+UMASK_UNKNOWN_FD            0x00

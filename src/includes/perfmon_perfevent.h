@@ -82,6 +82,49 @@ int perfevent_paranoid_value()
     return paranoid;
 }
 
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+enum pmc_type {
+    M1_UNKNOWN = 0,
+    M1_ICESTORM,
+    M1_FIRESTORM,
+};
+
+int perfevent_apple_m1_pmc_type_select(int cpu_id, enum pmc_type *type)
+{
+    FILE* fd;
+    char buff[100];
+    *type = M1_UNKNOWN;
+    bstring fname = bformat("/sys/devices/system/cpu/cpu%d/of_node/compatible", cpu_id);
+    fd = fopen(bdata(fname), "r");
+    if (fd == NULL)
+    {
+        ERROR_PRINT(Failed to detect PMU type for Apple M1);
+        bdestroy(fname);
+        return errno;
+    }
+    size_t read = fread(buff, sizeof(char), 100, fd);
+    if (read > 0)
+    {
+        if (strncmp("apple,icestorm", buff, 14) == 0)
+        {
+            *type = M1_ICESTORM;
+        }
+        else if (strncmp("apple,firestorm", buff, 15) == 0)
+        {
+            *type = M1_FIRESTORM;
+        }
+        bdestroy(fname);
+        return 0;
+    }
+    else
+    {
+        ERROR_PRINT(Cannot read %s, bdata(fname));
+    }
+    bdestroy(fname);
+    return -1;
+}
+#endif
+
 int perfmon_init_perfevent(int cpu_id)
 {
     perf_event_paranoid = perfevent_paranoid_value();
@@ -161,7 +204,7 @@ static char* perfEventOptionNames[] = {
 
 int getEventOptionConfig(char* base, EventOptionType type, PERF_EVENT_PMC_OPT_REGS *reg, int* start, int* end)
 {
-    PERF_EVENT_PMC_OPT_REGS r;
+    PERF_EVENT_PMC_OPT_REGS r = 0;
     int s = 0;
     int e = 0;
     if (!base || !reg || !start || !end)
@@ -349,7 +392,7 @@ int perf_perf_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEv
     return 0;
 }
 
-int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
+int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterType type, PerfmonEvent *event)
 {
     uint64_t offcore_flags = 0x0ULL;
     PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
@@ -358,6 +401,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     //attr->config = (event->umask<<8) + event->eventId;
     attr->exclude_kernel = 1;
     attr->exclude_hv = 1;
+    attr->exclude_guest = 1;
     attr->disabled = 1;
     attr->inherit = 1;
     //attr->exclusive = 1;
@@ -371,7 +415,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     else
     {
 #endif
-        getEventOptionConfig(translate_types[PMC], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
+        getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
 #if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
     }
 #endif
@@ -392,7 +436,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     start = 8;
     end = 15;
 #else
-    getEventOptionConfig(translate_types[PMC], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
+    getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
 #endif
     switch(reg)
     {
@@ -422,7 +466,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
                 case EVENT_OPTION_INVERT:
                 case EVENT_OPTION_IN_TRANS:
                 case EVENT_OPTION_IN_TRANS_ABORT:
-                    getEventOptionConfig(translate_types[PMC], event->options[j].type, &reg, &start, &end);
+                    getEventOptionConfig(translate_types[type], event->options[j].type, &reg, &start, &end);
                     switch(reg)
                     {
                         case PERF_EVENT_CONFIG_REG:
@@ -459,7 +503,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
         {
             offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
         }
-        getEventOptionConfig(translate_types[PMC], EVENT_OPTION_MATCH0, &reg, &start, &end);
+        getEventOptionConfig(translate_types[type], EVENT_OPTION_MATCH0, &reg, &start, &end);
         switch(reg)
         {
             case PERF_EVENT_CONFIG_REG:
@@ -474,7 +518,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
         }
     }
 #ifdef _ARCH_PPC
-    getEventOptionConfig(translate_types[PMC], EVENT_OPTION_PMC, &reg, &start, &end);
+    getEventOptionConfig(translate_types[type], EVENT_OPTION_PMC, &reg, &start, &end);
     switch(reg)
     {
         case PERF_EVENT_CONFIG_REG:
@@ -674,6 +718,7 @@ int perfmon_setupCountersThread_perfevent(
     }
     if (groupSet->activeGroup >= 0)
     {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Already active measurements for group %d, groupSet->activeGroup);
         for (int j = 0; j < perfmon_numCounters; j++)
         {
             if (cpu_event_fds[cpu_id][j] != -1)
@@ -722,7 +767,7 @@ int perfmon_setupCountersThread_perfevent(
                 break;
             case PMC:
                 pmc_lock = 1;
-#if defined(__ARM_ARCH_8A)
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
                 if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
                 {
                     if (event->eventId == 0x3E8 ||
@@ -737,10 +782,38 @@ int perfmon_setupCountersThread_perfevent(
                         }
                     }
                 }
+                else if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO)
+                {
+                    enum pmc_type ptype = M1_UNKNOWN;
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Getting real perf_event type for HWThread %d, cpu_id);
+                    ret = perfevent_apple_m1_pmc_type_select(cpu_id, &ptype);
+                    if (ret == 0)
+                    {
+                        switch (ptype)
+                        {
+                            case M1_ICESTORM:
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, HWThread %d is an icestorm core, cpu_id);
+                                type = IPMC;
+                                break;
+                            case M1_FIRESTORM:
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, HWThread %d is an firestorm core, cpu_id);
+                                type = FPMC;
+                                break;
+                            default:
+                                pmc_lock = 0;
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        ERROR_PRINT(Failed getting real perf_event type for HWThread %d, cpu_id);
+                        pmc_lock = 0;
+                    }
+                }
 #endif
                 if (pmc_lock)
                 {
-                    ret = perf_pmc_setup(&attr, index, event);
+                    ret = perf_pmc_setup(&attr, index, type, event);
                     VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
                 }
                 break;
@@ -892,7 +965,7 @@ int perfmon_setupCountersThread_perfevent(
             if (cpu_event_fds[cpu_id][index] < 0)
             {
                 ERROR_PRINT(Setup of event %s on CPU %d failed: %s, event->name, cpu_id, strerror(errno));
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, open error: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, open error: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
             }
             if (group_fd < 0)
             {

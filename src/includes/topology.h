@@ -166,6 +166,7 @@ struct topology_functions {
 #define  APP_XGENE1	0x00U
 #define  ARM_NEOVERSE_N1 0xD0CU
 #define  FUJITSU_A64FX 0x001U
+#define APPLE_M1_STUDIO 0x02U
 
 /* ARM vendors */
 #define DEFAULT_ARM	0x41U
@@ -176,6 +177,7 @@ struct topology_functions {
 #define QUALCOMM	0x51U
 #define SAMSUNG		0x53U
 #define APPLE		0x67U
+#define APPLE_M1	0x61U
 #define MARVELL		0x56U
 #define INTEL_ARM	0x69U
 #define FUJITSU_ARM 0x46U

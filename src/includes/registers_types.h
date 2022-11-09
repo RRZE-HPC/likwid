@@ -151,11 +151,14 @@ typedef enum {
     EDBOX2, EDBOX2FIX, EDBOX3, EDBOX3FIX,
     EDBOX4, EDBOX4FIX, EDBOX5, EDBOX5FIX,
     EDBOX6, EDBOX6FIX, EDBOX7, EDBOX7FIX,
+    IPMC, FPMC,
     NUM_UNITS, NOTYPE, MAX_UNITS
 } RegisterType;
 
 static char* RegisterTypeNames[MAX_UNITS] = {
     [PMC] = "Core-local general purpose counters",
+    [IPMC] = "Core-local general purpose counters (Icestorm)",
+    [FPMC] = "Core-local general purpose counters (Firestorm)",
     [FIXED] = "Fixed counters",
     [PERF] = "Perf counters",
     [THERMAL] = "Thermal",

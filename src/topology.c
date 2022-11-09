@@ -124,6 +124,7 @@ static char* arm_cortex_a72 = "ARM Cortex A72";
 static char* arm_cortex_a73 = "ARM Cortex A73";
 static char* arm_neoverse_n1 = "ARM Neoverse N1";
 static char* fujitsu_a64fx = "Fujitsu A64FX";
+static char* apple_m1_studio = "Apple M1";
 static char* power7_str = "POWER7 architecture";
 static char* power8_str = "POWER8 architecture";
 static char* power9_str = "POWER9 architecture";
@@ -178,6 +179,7 @@ static char* short_arm8_cav_tx2 = "arm8_tx2";
 static char* short_arm8_cav_tx = "arm8_tx";
 static char* short_arm8_neo_n1 = "arm8_n1";
 static char* short_a64fx = "arm64fx";
+static char* short_apple_m1 = "apple_m1";
 
 static char* short_power7 = "power7";
 static char* short_power8 = "power8";
@@ -1225,6 +1227,21 @@ topology_setName(void)
                             return EXIT_FAILURE;
                             break;
                     }
+		    break;
+		case APPLE_M1:
+		case APPLE:
+		    switch (cpuid_info.model)
+		    {
+			case APPLE_M1_STUDIO:
+		            cpuid_info.name = apple_m1_studio;
+                            cpuid_info.short_name = short_apple_m1;
+                            break;
+                        default:
+                            return EXIT_FAILURE;
+                            break;
+
+		    }
+		    break;
                 default:
                     return EXIT_FAILURE;
                     break;
@@ -1450,6 +1467,26 @@ standard_init:
                                     break;
                             }
                             break;
+/*                        case APPLE_M1:*/
+/*                            switch(cpuid_info.model) {*/
+/*                                case APPLE_M1_STUDIO:*/
+/*                                    cachePool = (CacheLevel*) malloc(2 * sizeof(CacheLevel));*/
+/*                                    for(int i=0;i < 2; i++)*/
+/*                                    {*/
+/*                                        cachePool[i].level = apple_m1_caches[i].level;*/
+/*                                        cachePool[i].size = apple_m1_caches[i].size;*/
+/*                                        cachePool[i].lineSize = apple_m1_caches[i].lineSize;*/
+/*                                        cachePool[i].threads = apple_m1_caches[i].threads;*/
+/*                                        cachePool[i].inclusive = apple_m1_caches[i].inclusive;*/
+/*                                        cachePool[i].sets = apple_m1_caches[i].sets;*/
+/*                                        cachePool[i].associativity = apple_m1_caches[i].associativity;*/
+/*                                    }*/
+/*                                    cpuid_topology.cacheLevels = cachePool;*/
+/*                                    cpuid_topology.numCacheLevels = 2;*/
+/*                                    break;*/
+/*                                default:*/
+/*                                    break;*/
+/*                            }*/
                         default:
                             break;
                     }
