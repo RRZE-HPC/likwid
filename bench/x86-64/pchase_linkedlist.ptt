@@ -4,7 +4,7 @@ INIT LINKED_LIST 64
 FLOPS 0
 BYTES 4
 DESC Linked list pointer chase with 64 byte-sized list items
-LOADS 4
+LOADS 1
 STORES 0
 INSTR_LOOP 1
 XOR  R12,  R12
