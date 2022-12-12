@@ -7,7 +7,6 @@ Group: Development/Tools
 Packager: Holger Obermaier <holger.obermaier@kit.edu>
 Summary: Performance tools for the Linux console
 URL: https://github.com/RRZE-HPC/likwid/
-Icon: likwid.png
 %if 0%{?fedora}
 BuildRequires: gcc-gfortran
 %if %{fedora} > 0
