@@ -10,6 +10,7 @@ PWR0  PWR_PKG_ENERGY
 PWR1  PWR_PP0_ENERGY
 PWR3  PWR_DRAM_ENERGY
 PWR4  PWR_PLATFORM_ENERGY
+UBOXFIX UNCORE_CLOCKTICKS
 
 
 
@@ -17,6 +18,7 @@ METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+Uncore Clock [MHz] 1.E-06*UBOXFIX/time
 CPI  FIXC1/FIXC0
 Temperature [C]  TMP0
 Energy [J]  PWR0

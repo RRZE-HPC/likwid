@@ -357,6 +357,7 @@ EVENT_INST_RETIRED                      0xC0 PMC
 UMASK_INST_RETIRED_ANY                  0x00
 UMASK_INST_RETIRED_ANY_P                0x00
 UMASK_INST_RETIRED_STALL_CYCLES         0x01
+UMASK_INST_RETIRED_NOP                  0x02
 
 EVENT_ASSISTS                           0xC1 PMC
 UMASK_ASSISTS_FP                        0x02

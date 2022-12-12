@@ -1973,20 +1973,41 @@ lua_likwid_send_signal(lua_State* L)
 int
 parse(char *line, char **argv, int maxlen)
 {
-     int len = 0;
-     while (*line != '\0' && len < maxlen) {       /* if not the end of line ....... */
-          if (*line == ' ' || *line == '\t' || *line == '\n')
-               *line++ = '\0';     /* replace white spaces with 0    */
-          *argv++ = line;          /* save the argument position     */
-          len++;
-          while (*line != '\0' && *line != ' ' &&
-                 *line != '\t' && *line != '\n')
-               line++;             /* skip the argument until ...    */
-     }
-     *argv = (char *)'\0';                 /* mark the end of argument list  */
-     if (len < maxlen || *line == '\0')
-         return len;
-     return -1;
+    int pos = 0;
+    int len = 0;
+    int in_string = 0;
+    while (*line != '\0' && len < maxlen)
+    {
+        if (*line == '"' || *line == '\'')
+        {
+            in_string = (!in_string);
+            line++;
+            pos++;
+            continue;
+        }
+        if (!in_string)
+        {
+            if ((*line == ' ' || *line == '\t' || *line == '\n'))
+            {
+                *line++ = '\0';     /* replace white spaces with 0    */
+                pos++;
+            }
+            *argv++ = line;          /* save the argument position     */
+            len++;
+        }
+        else if ((*line == ' ' || *line == '\t' || *line == '\n'))
+        {
+            line++;
+            pos++;
+        }
+        while (*line != '\0' && *line != ' ' && *line != '\t' && *line != '\n' && *line != '"' && *line != '\'')
+        {
+            line++;
+            pos++;
+        }
+    }
+    *argv = (char *)'\0';
+    return (len < maxlen || *line == '\0' ? len : -1);
 }
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */

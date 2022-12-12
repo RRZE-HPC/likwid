@@ -348,8 +348,6 @@ static int
 getEvent(bstring event_str, bstring counter_str, PerfmonEvent* event)
 {
     int ret = FALSE;
-    int (*ownstrncmp)(const char *, const char *, size_t);
-    ownstrncmp = &strncmp;
     for (int i=0; i< perfmon_numArchEvents; i++)
     {
         if (biseqcstr(event_str, eventHash[i].name))
@@ -863,7 +861,6 @@ perfmon_check_counter_map(int cpu_id)
 void
 perfmon_init_maps(void)
 {
-    uint32_t eax, ebx, ecx, edx;
     if (eventHash != NULL && counter_map != NULL && box_map != NULL && perfmon_numCounters > 0 && perfmon_numArchEvents > 0)
         return;
     switch ( cpuid_info.family )
@@ -1287,7 +1284,7 @@ perfmon_init_maps(void)
 #endif
 
         case ARMV7_FAMILY:
-            switch ( cpuid_info.model )
+            switch ( cpuid_info.part )
             {
                 case ARMV7L:
                 case ARM7L:
@@ -1438,7 +1435,7 @@ perfmon_init_maps(void)
             memset(tmp + perfmon_numArchEvents, '\0', 10*sizeof(PerfmonEvent));
             eventHash = tmp;
             eventHash[perfmon_numArchEvents].name = "GENERIC_EVENT";
-            bstring bsep = bfromcstr("|");
+            struct tagbstring bsep = bsStatic ("|");
             struct bstrList* outlist = bstrListCreate();
             for (int i = 0; i < perfmon_numArchEvents; i++)
             {
@@ -1459,7 +1456,8 @@ perfmon_init_maps(void)
                     {
                         for (int k = 0; k < perfmon_numCounters; k++)
                         {
-                            if (strncmp(bdata(xlist->entry[j]), counter_map[k].key, blength(xlist->entry[j])) == 0)
+                            bstring bkey = bfromcstr(counter_map[k].key);
+                            if (bstrcmp(xlist->entry[j], bkey) == BSTR_OK)
                             {
 #ifndef LIKWID_USE_PERFEVENT
                                 if (HPMcheck(counter_map[k].device, cpu_id))
@@ -1468,9 +1466,11 @@ perfmon_init_maps(void)
 #endif
                                 {
                                     bstrListAdd(outlist, xlist->entry[j]);
+                                    bdestroy(bkey);
                                     break;
                                 }
                             }
+                            bdestroy(bkey);
                         }
                     }
                 }
@@ -1478,7 +1478,7 @@ perfmon_init_maps(void)
                 bstrListDestroy(xlist);
             }
 
-            bstring blim = bjoin(outlist, bsep);
+            bstring blim = bjoin(outlist, &bsep);
             eventHash[perfmon_numArchEvents].limit = malloc((blength(blim)+2)*sizeof(char));
             int ret = snprintf(eventHash[perfmon_numArchEvents].limit,
                                blength(blim)+1, "%s", bdata(blim));
@@ -2063,12 +2063,21 @@ perfmon_finalize(void)
         groupSet->groups[group].state = STATE_NONE;
     }
     if (groupSet->groups != NULL)
+    {
         free(groupSet->groups);
+        groupSet->groups = NULL;
+    }
     if (groupSet->threads != NULL)
+    {
         free(groupSet->threads);
+        groupSet->threads = NULL;
+    }
     groupSet->activeGroup = -1;
     if (groupSet)
+    {
         free(groupSet);
+        groupSet = NULL;
+    }
     if (currentConfig)
     {
         for (group=0; group < cpuid_topology.numHWThreads; group++)
@@ -2102,7 +2111,6 @@ perfmon_finalize(void)
         added_generic_event = 0;
     }
     perfmon_initialized = 0;
-    groupSet = NULL;
     return;
 }
 
@@ -3205,10 +3213,7 @@ perfmon_getMaxCounterValue(RegisterType type)
     {
         width = box_map[type].regWidth;
     }
-    for(int i=0;i<width;i++)
-    {
-        tmp |= (1ULL<<i);
-    }
+    tmp = (1ULL << width) - 1;
     return tmp;
 }
 
@@ -3732,6 +3737,11 @@ perfmon_readMarkerFile(const char* filename)
     int nr_regions = 0;
     int cpus = 0, groups = 0, regions = 0;
 
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
     if (filename == NULL)
     {
         return -EINVAL;
@@ -3750,6 +3760,7 @@ perfmon_readMarkerFile(const char* filename)
     if (ret != 3)
     {
         fprintf(stderr, "Marker file missformatted.\n");
+        fclose(fp);
         return -EINVAL;
     }
     //markerResults = malloc(regions * sizeof(LikwidResults));
@@ -3757,12 +3768,14 @@ perfmon_readMarkerFile(const char* filename)
     if (markerResults == NULL)
     {
         fprintf(stderr, "Failed to allocate %lu bytes for the marker results storage\n", regions * sizeof(LikwidResults));
+        fclose(fp);
         return -ENOMEM;
     }
     int* regionCPUs = (int*)malloc(regions * sizeof(int));
     if (regionCPUs == NULL)
     {
         fprintf(stderr, "Failed to allocate %lu bytes for temporal cpu count storage\n", regions * sizeof(int));
+        fclose(fp);
         return -ENOMEM;
     }
     markerRegions = regions;
@@ -3775,24 +3788,54 @@ perfmon_readMarkerFile(const char* filename)
         if (!markerResults[i].time)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the time storage\n", cpus * sizeof(double));
+            for (int j = 0; j < i; j++) {
+                free(markerResults[j].time);
+                free(markerResults[j].count);
+                free(markerResults[j].cpulist);
+                free(markerResults[j].counters);
+            }
             break;
         }
         markerResults[i].count = (uint32_t*) malloc(cpus * sizeof(uint32_t));
         if (!markerResults[i].count)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the count storage\n", cpus * sizeof(uint32_t));
+            free(markerResults[i].time);
+            for (int j = 0; j < i; j++) {
+                free(markerResults[j].time);
+                free(markerResults[j].count);
+                free(markerResults[j].cpulist);
+                free(markerResults[j].counters);
+            }
             break;
         }
         markerResults[i].cpulist = (int*) malloc(cpus * sizeof(int));
         if (!markerResults[i].count)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n", cpus * sizeof(int));
+            free(markerResults[i].time);
+            free(markerResults[i].count);
+            for (int j = 0; j < i; j++) {
+                free(markerResults[j].time);
+                free(markerResults[j].count);
+                free(markerResults[j].cpulist);
+                free(markerResults[j].counters);
+            }
             break;
         }
         markerResults[i].counters = (double**) malloc(cpus * sizeof(double*));
         if (!markerResults[i].counters)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the counter result storage\n", cpus * sizeof(double*));
+            free(markerResults[i].time);
+            free(markerResults[i].count);
+            free(markerResults[i].cpulist);
+            for (int j = 0; j < i; j++) {
+                free(markerResults[j].time);
+                free(markerResults[j].count);
+                free(markerResults[j].cpulist);
+                free(markerResults[j].counters);
+            }
             break;
         }
     }
