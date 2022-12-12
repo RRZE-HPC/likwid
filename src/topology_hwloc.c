@@ -70,7 +70,7 @@ int parse_cpuinfo(uint32_t* count, uint32_t* family, uint32_t* variant, uint32_t
     struct tagbstring vendString = bsStatic("CPU implementer");
     struct tagbstring procString = bsStatic("processor");
 
-    if (NULL != (fp = fopen ("cpuinfo", "r")))
+    if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
     {
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
