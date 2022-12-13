@@ -83,7 +83,7 @@ jobs:
     - name: Save SRPM as artifact
       uses: actions/upload-artifact@v2
       with:
-        name: LIKWIDr SRPM for AlmaLinux 8.5
+        name: LIKWID SRPM for AlmaLinux 8.5
         path: ${{ steps.rpmrename.outputs.SRPM }}
 
   #
