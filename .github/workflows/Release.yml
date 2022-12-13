@@ -4,7 +4,10 @@
 name: Release
 
 # Run on tag push
-on: push
+on:
+ push:
+  tags:
+  - '**'
 
 jobs:
 
@@ -138,7 +141,7 @@ jobs:
     - name: Install development packages
       run: |
           apt update && apt --assume-yes upgrade
-          apt --assume-yes install build-essential sed git wget bash
+          apt --assume-yes install build-essential sed git wget bash sudo
     # Checkout git repository and submodules
     # fetch-depth must be 0 to use git describe
     # See: https://github.com/marketplace/actions/checkout
