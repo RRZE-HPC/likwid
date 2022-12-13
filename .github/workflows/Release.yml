@@ -256,7 +256,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        name: LIKWID-${{steps.get_version.outputs.VERSION}}
+        name: likwid-${{steps.get_version.outputs.VERSION}}
         files: |
          ${{ steps.files.outputs.ALMA_85_RPM }}
          ${{ steps.files.outputs.ALMA_85_SRPM }}
