@@ -109,9 +109,8 @@ jobs:
     - name: Enable powertools repository
       run: |
         dnf --assumeyes --disableplugin=subscription-manager install dnf-plugins-core
-        subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
         dnf --assumeyes --disableplugin=subscription-manager install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-        dnf config-manager --set-enabled powertools
+        subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
 
     # Checkout git repository and submodules
     # fetch-depth must be 0 to use git describe
