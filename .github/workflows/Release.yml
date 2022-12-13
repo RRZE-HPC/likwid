@@ -4,10 +4,7 @@
 name: Release
 
 # Run on tag push
-on:
- push:
-  tags:
-  - '**'
+on: push
 
 jobs:
 
@@ -30,6 +27,7 @@ jobs:
       run: |
           dnf --assumeyes group install "Development Tools" "RPM Development Tools"
           dnf --assumeyes install wget openssl-devel diffutils delve which perl
+          dnf --assumeyes install 'dnf-command(builddep)'
 
     # Checkout git repository and submodules
     # fetch-depth must be 0 to use git describe
@@ -92,7 +90,9 @@ jobs:
 
     # Use dnf to install development packages
     - name: Install development packages
-      run: dnf --assumeyes --disableplugin=subscription-manager install rpm-build go-srpm-macros rpm-build-libs rpm-libs gcc make python38 git wget openssl-devel diffutils delve which
+      run: |
+        dnf --assumeyes --disableplugin=subscription-manager install rpm-build rpm-build-libs rpm-libs gcc make python38 git wget openssl-devel diffutils delve which
+        dnf --assumeyes install 'dnf-command(builddep)'
 
     # Checkout git repository and submodules
     # fetch-depth must be 0 to use git describe

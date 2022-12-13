@@ -808,6 +808,7 @@ DEB: packaging/deb/likwid.deb.control
 	@ARCH=$$(uname -m)
 	@ARCH=$$(echo $$ARCH | sed -e s+'_'+'-'+g)
 	@if [ "$${ARCH}" = "x86-64" ]; then ARCH=amd64; fi
+	@if [ "$${VERS}" = "" ]; then VERS="$(VERSION).$(RELEASE).$(MINOR)"; fi
 	@PREFIX="$${NAME}-$${VERSION}_$${ARCH}"
 	@SIZE_BYTES=$$(du -bcs --exclude=.dpkgbuild "$$WORKSPACE"/ | awk '{print $$1}' | head -1 | sed -e 's/^0\+//')
 	@SIZE="$$(awk -v size="$$SIZE_BYTES" 'BEGIN {print (size/1024)+1}' | awk '{print int($$0)}')"
