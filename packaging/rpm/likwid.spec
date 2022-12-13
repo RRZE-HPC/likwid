@@ -1,7 +1,7 @@
 Name: likwid
-Version: 5.0.0
-Release: 1
-Source: likwid-5.0.0.tar.gz
+Version: %{VERS}
+Release: 1%{?dist}
+Source: likwid-%{VERS}.tar.gz
 License: GPL-3.0+
 Group: Development/Tools
 Packager: Holger Obermaier <holger.obermaier@kit.edu>
