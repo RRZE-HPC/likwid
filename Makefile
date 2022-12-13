@@ -771,7 +771,7 @@ RPM: packaging/rpm/likwid.spec
 	@mkdir --parents --verbose "$${RPMDIR}" "$${SOURCEDIR}" "$${SPECDIR}" "$${SRPMDIR}" "$${BUILDDIR}"
 	# Create source tarball
 	@COMMITISH="HEAD"
-	@VERS=$$(git describe --tags $${COMMITISH})
+	@VERS=$$(git describe --tags --abbrev=0 $${COMMITISH})
 	@VERS=$${VERS#v}
 	@VERS=$$(echo $$VERS | sed -e s+'-'+'_'+g)
 	@if [ "$${VERS}" = "" ]; then VERS="$(VERSION).$(RELEASE).$(MINOR)"; fi

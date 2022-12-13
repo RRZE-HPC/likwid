@@ -109,7 +109,6 @@ jobs:
     - name: Enable powertools repository
       run: |
         dnf --assumeyes --disableplugin=subscription-manager install dnf-plugins-core
-        dnf --assumeyes --disableplugin=subscription-manager install epel-release epel-next-release
         dnf config-manager --set-enabled powertools
 
     # Checkout git repository and submodules
