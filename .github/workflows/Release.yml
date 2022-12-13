@@ -44,7 +44,10 @@ jobs:
     # Use dnf to install build dependencies
     - name: Install build dependencies
       run: |
-        dnf --enablerepo=powertools install lua-devel
+        dnf --assumeyes install dnf-plugins-core
+        dnf --assumeyes install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+        dnf config-manager --enable epel
+        dnf config-manager --set-enabled powertools
         dnf --assumeyes builddep packaging/rpm/likwid.spec
 
     - name: RPM build LIKWID
@@ -98,7 +101,6 @@ jobs:
       run: |
         dnf --assumeyes --disableplugin=subscription-manager install rpm-build rpm-build-libs rpm-libs gcc make python38 git wget openssl-devel diffutils delve which
         dnf --assumeyes install 'dnf-command(builddep)'
-        dnf --enablerepo=powertools install lua-devel
 
     # Checkout git repository and submodules
     # fetch-depth must be 0 to use git describe
@@ -111,7 +113,12 @@ jobs:
 
     # Use dnf to install build dependencies
     - name: Install build dependencies
-      run: dnf --assumeyes builddep packaging/rpm/likwid.spec
+      run: |
+        dnf --assumeyes install dnf-plugins-core
+        dnf --assumeyes install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+        dnf config-manager --enable epel
+        dnf config-manager --set-enabled powertools
+        dnf --assumeyes builddep packaging/rpm/likwid.spec
 
     - name: RPM build LIKWID
       id: rpmbuild
