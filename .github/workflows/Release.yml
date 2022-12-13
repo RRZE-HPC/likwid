@@ -249,7 +249,7 @@ jobs:
       id: get_version
       run: |
         VERSION=${{github.ref_name}}
-        echo ::set-output name=VERSION::$${VERSION#v}
+        echo ::set-output name=VERSION::${VERSION#v}
 
     # See: https://github.com/softprops/action-gh-release
     - name: Release
