@@ -61,7 +61,7 @@ jobs:
     # so the created RPM both contain the substring 'el8' in the RPM file names
     # This step replaces the substring 'el8' to 'alma85'. It uses the move operation
     # because it is unclear whether the default AlmaLinux 8.5 container contains the 
-    # 'rename' command. This way we also get the new names for output.
+    # 'rename' command. This way we also get the new names for output. 
     - name: Rename RPMs (s/el8/alma85/)
       id: rpmrename
       run: |

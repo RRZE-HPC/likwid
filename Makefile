@@ -774,6 +774,7 @@ RPM: packaging/rpm/likwid.spec
 	@VERS=$$(git describe --tags $${COMMITISH})
 	@VERS=$${VERS#v}
 	@VERS=$$(echo $$VERS | sed -e s+'-'+'_'+g)
+	@if [ "$${VERS}" = "" ]; then VERS="$(VERSION).$(RELEASE).$(MINOR)"; fi
 	@eval $$(rpmspec --query --queryformat "NAME='%{name}' VERSION='%{version}' RELEASE='%{release}' NVR='%{NVR}' NVRA='%{NVRA}'" --define="VERS $${VERS}" "$${SPECFILE}")
 	@PREFIX="$${NAME}-$${VERSION}"
 	@FORMAT="tar.gz"
@@ -798,7 +799,7 @@ DEB: packaging/deb/likwid.deb.control
 	@DEBIANDIR=$${WORKSPACE}/debian
 	@DEBIANBINDIR=$${WORKSPACE}/DEBIAN
 	@mkdir --parents --verbose $$WORKSPACE $$DEBIANBINDIR
-	@make PREFIX=$$WORKSPACE INSTALLED_PREFIX=/usr/local/bin
+	@make PREFIX=$$WORKSPACE INSTALLED_PREFIX=$(PREFIX)
 	#@mkdir --parents --verbose $$DEBIANDIR
 	@CONTROLFILE="$${BASEDIR}/packaging/deb/likwid.deb.control"
 	@COMMITISH="HEAD"
@@ -814,7 +815,7 @@ DEB: packaging/deb/likwid.deb.control
 	@SIZE="$$(awk -v size="$$SIZE_BYTES" 'BEGIN {print (size/1024)+1}' | awk '{print int($$0)}')"
 	#@sed -e s+"{VERSION}"+"$$VERS"+g -e s+"{INSTALLED_SIZE}"+"$$SIZE"+g -e s+"{ARCH}"+"$$ARCH"+g $$CONTROLFILE > $${DEBIANDIR}/control
 	@sed -e s+"{VERSION}"+"$$VERS"+g -e s+"{INSTALLED_SIZE}"+"$$SIZE"+g -e s+"{ARCH}"+"$$ARCH"+g $$CONTROLFILE > $${DEBIANBINDIR}/control
-	@sudo make PREFIX=$$WORKSPACE INSTALLED_PREFIX=/usr/local/bin install
+	@sudo make PREFIX=$$WORKSPACE INSTALLED_PREFIX=$(PREFIX) install
 	@DEB_FILE="likwid_$${VERS}_$${ARCH}.deb"
 	@dpkg-deb -b $${WORKSPACE} "$$DEB_FILE"
 	@sudo rm -r "$${WORKSPACE}"

@@ -152,7 +152,7 @@ COMPILER="GCC"
     INSTALLED_BINPREFIX="%{_bindir}" \
     INSTALLED_LIBPREFIX="%{_libdir}" \
     COMPILER="${COMPILER}" \
-    INSTALL_CHOWN="-o $USER" \
+    INSTALL_CHOWN="-o $USER -g $USER" \
     INSTRUMENT_BENCH="true" \
     FC="gfortran" \
     FCFLAGS="-J ./  -fsyntax-only" \
@@ -180,8 +180,9 @@ COMPILER="GCC"
     INSTALLED_PREFIX="%{_prefix}" \
     INSTALLED_BINPREFIX="%{_bindir}" \
     INSTALLED_LIBPREFIX="%{_libdir}" \
+    INSTALLED_MANPREFIX="%{_mandir}" \
     COMPILER="${COMPILER}" \
-    INSTALL_CHOWN="-o $USER" \
+    INSTALL_CHOWN="-o $USER -g $USER" \
     INSTRUMENT_BENCH="true" \
     FC="gfortran" \
     FCFLAGS="-J ./  -fsyntax-only" \
@@ -190,15 +191,15 @@ COMPILER="GCC"
 chmod 755 $RPM_BUILD_ROOT/%{_prefix}/sbin/likwid-accessD
 chmod 755 $RPM_BUILD_ROOT/%{_prefix}/sbin/likwid-setFreq
 
-%post -n likwid
+%post
 /sbin/ldconfig
+chown root:root $RPM_BUILD_ROOT/%{_prefix}/sbin/likwid-accessD
 chmod u+s $RPM_BUILD_ROOT/%{_prefix}/sbin/likwid-accessD
-
-%postun -n likwid
-/sbin/ldconfig
-
-%post setFrequencies
+chown root:root $RPM_BUILD_ROOT/%{_prefix}/sbin/likwid-setFreq
 chmod u+s $RPM_BUILD_ROOT/%{_prefix}/sbin/likwid-setFreq
+
+%postun
+/sbin/ldconfig
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -213,13 +214,21 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/likwid-pin
 %{_bindir}/likwid-powermeter
 %{_bindir}/likwid-topology
+%{_bindir}/likwid-bench
+%{_bindir}/likwid-mpirun
+%{_bindir}/feedGnuplot
+%{_bindir}/likwid-perfscope
+%{_bindir}/likwid-setFrequencies
+%{_sbindir}/likwid-setFreq
 %{_sbindir}/likwid-accessD
 %{_libdir}/*
 %{_datadir}/likwid/docs
 %{_datadir}/likwid/perfgroups
 %{_datadir}/likwid/filter
-%{_datadir}/likwid/*
+%{_datadir}/likwid/*.cmake
+%{_datadir}/likwid/examples
 %{_datadir}/lua/likwid.lua
+%{_includedir}/*
 %doc COPYING README.md INSTALL
 %doc %{_mandir}/man*/likwid-features*
 %doc %{_mandir}/man*/likwid-genTopoCfg*
@@ -230,35 +239,12 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_mandir}/man*/likwid-powermeter*
 %doc %{_mandir}/man*/likwid-topology*
 %doc %{_mandir}/man*/likwid-accessD*
-
-
-%files bench
-%defattr(-,root,root)
-%{_bindir}/likwid-bench
 %doc %{_mandir}/man*/likwid-bench*
-
-%files perfscope
-%defattr(-,root,root)
-%{_bindir}/feedGnuplot
-%{_bindir}/likwid-perfscope
 %doc %{_mandir}/man*/likwid-perfscope*
 %doc %{_mandir}/man*/feedGnuplot*
-
-%files setFrequencies
-%{_bindir}/likwid-setFrequencies
-%{_sbindir}/likwid-setFreq
 %doc %{_mandir}/man*/likwid-setFrequencies*
 %doc %{_mandir}/man*/likwid-setFreq*
-
-%files mpirun
-%defattr(-,root,root)
-%{_bindir}/likwid-mpirun
 %doc %{_mandir}/man*/likwid-mpirun*
 
-%files devel
-%defattr(-,root,root)
-%{_includedir}/*
 
-%files examples
-%defattr(-,root,root)
-%{_datadir}/likwid/examples
+
