@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_zen3.h
+ *      Filename:  perfmon_zen4.h
  *
- *      Description:  Header file of perfmon module for AMD Family 19 (ZEN3)
+ *      Description:  Header file of perfmon module for AMD Family 19 (ZEN4)
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -28,17 +28,17 @@
  * =======================================================================================
  */
 
-#include <perfmon_zen3_events.h>
-#include <perfmon_zen3_counters.h>
+#include <perfmon_zen4_events.h>
+#include <perfmon_zen4_counters.h>
 #include <error.h>
 #include <affinity.h>
 
 
 
-static int perfmon_numCountersZen3 = NUM_COUNTERS_ZEN3;
-static int perfmon_numArchEventsZen3 = NUM_ARCH_EVENTS_ZEN3;
+static int perfmon_numCountersZen4 = NUM_COUNTERS_ZEN4;
+static int perfmon_numArchEventsZen4 = NUM_ARCH_EVENTS_ZEN4;
 
-int perfmon_init_zen3(int cpu_id)
+int perfmon_init_zen4(int cpu_id)
 {
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &core_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
@@ -48,7 +48,7 @@ int perfmon_init_zen3(int cpu_id)
     return 0;
 }
 
-int zen3_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+int zen4_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags = 0x0ULL;
     cpu_id++;
@@ -69,7 +69,7 @@ int zen3_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     return flags;
 }
 
-int zen3_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+int zen4_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags = 0x0ULL;
 
@@ -79,6 +79,7 @@ int zen3_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     flags |= ((event->eventId & AMD_K17_PMC_EVSEL_MASK) << AMD_K17_PMC_EVSEL_SHIFT);
     flags |= (((event->eventId >> 8) & AMD_K17_PMC_EVSEL_MASK2) << AMD_K17_PMC_EVSEL_SHIFT2);
 
+    // Currently no option for host/guest counting
     if (event->numberOfOptions > 0)
     {
         for(int j=0;j<event->numberOfOptions;j++)
@@ -111,7 +112,7 @@ int zen3_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     return 0;
 }
 
-int zen3_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+int zen4_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags = 0x0ULL;
     int has_tid = 0;
@@ -164,7 +165,7 @@ int zen3_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     return 0;
 }
 
-int zen3_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+int zen4_datafabric_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags = 0x0ULL;
 
@@ -189,7 +190,8 @@ int zen3_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     return 0;
 }
 
-int perfmon_setupCounterThread_zen3(int thread_id, PerfmonEventSet* eventSet)
+
+int perfmon_setupCounterThread_zen4(int thread_id, PerfmonEventSet* eventSet)
 {
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t fixed_flags = 0x0ULL;
@@ -206,18 +208,18 @@ int perfmon_setupCounterThread_zen3(int thread_id, PerfmonEventSet* eventSet)
         switch (type)
         {
             case PMC:
-                zen3_pmc_setup(cpu_id, index, event);
+                zen4_pmc_setup(cpu_id, index, event);
                 break;
             case CBOX0:
-                zen3_cache_setup(cpu_id, index, event);
+                zen4_cache_setup(cpu_id, index, event);
                 break;
             case POWER:
                 break;
             case FIXED:
-                fixed_flags |= zen3_fixed_setup(cpu_id, index, event);
+                fixed_flags |= zen4_fixed_setup(cpu_id, index, event);
                 break;
             case MBOX0:
-                zen3_uncore_setup(cpu_id, index, event);
+                zen4_datafabric_setup(cpu_id, index, event);
                 break;
             default:
                 break;
@@ -236,8 +238,7 @@ int perfmon_setupCounterThread_zen3(int thread_id, PerfmonEventSet* eventSet)
     return 0;
 }
 
-
-int perfmon_startCountersThread_zen3(int thread_id, PerfmonEventSet* eventSet)
+int perfmon_startCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveSLock = 0;
     int haveL3Lock = 0;
@@ -296,6 +297,8 @@ int perfmon_startCountersThread_zen3(int thread_id, PerfmonEventSet* eventSet)
                     continue;
                 if (counter == MSR_AMD17_RAPL_CORE_STATUS && (!haveCLock))
                     continue;
+                if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock))
+                    continue;
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &flags));
                 eventSet->events[i].threadCounter[thread_id].startData = field64(flags, 0, box_map[type].regWidth);
                 VERBOSEPRINTREG(cpu_id, counter, LLU_CAST field64(flags, 0, box_map[type].regWidth), START_POWER);
@@ -312,7 +315,7 @@ int perfmon_startCountersThread_zen3(int thread_id, PerfmonEventSet* eventSet)
     return 0;
 }
 
-int perfmon_stopCountersThread_zen3(int thread_id, PerfmonEventSet* eventSet)
+int perfmon_stopCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
 {
     uint64_t flags = 0x0ULL;
     int haveSLock = 0;
@@ -402,7 +405,7 @@ int perfmon_stopCountersThread_zen3(int thread_id, PerfmonEventSet* eventSet)
 }
 
 
-int perfmon_readCountersThread_zen3(int thread_id, PerfmonEventSet* eventSet)
+int perfmon_readCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveSLock = 0;
     int haveL3Lock = 0;
@@ -485,7 +488,7 @@ int perfmon_readCountersThread_zen3(int thread_id, PerfmonEventSet* eventSet)
 }
 
 
-int perfmon_finalizeCountersThread_zen3(int thread_id, PerfmonEventSet* eventSet)
+int perfmon_finalizeCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveSLock = 0;
     int haveMLock = 0;
