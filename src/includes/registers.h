@@ -3253,6 +3253,7 @@
 #define MSR_AMD17_RAPL_PKG_STATUS       0xC001029B
 
 /* AMD 0x17 Models 0x01 (Zen2) additional to Zen regs */
+/* AMD 0x19 (Zen4) additional to Zen regs */
 
 #define MSR_AMD17_2_PERFEVTSEL4        0xC0010208
 #define MSR_AMD17_2_PMC4               0xC0010209
@@ -3267,6 +3268,8 @@
 #define MSR_AMD17_2_DF_PMC2               0xC0010245
 #define MSR_AMD17_2_DF_PERFEVTSEL3        0xC0010246
 #define MSR_AMD17_2_DF_PMC3               0xC0010247
+
+#define MSR_AMD19_RAPL_L3_STATUS      0xC001029B
 
 /* ARM Cortex A15 */
 #define A15_PMC0                        0x0000
