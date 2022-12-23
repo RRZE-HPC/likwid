@@ -1624,6 +1624,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",amd_zen_str);
     printf("\t%s\n",amd_zen2_str);
     printf("\t%s\n",amd_zen3_str);
+    printf("\t%s\n",amd_zen4_str);
     printf("\n");
     printf("Supported ARMv8 processors:\n");
     printf("\t%s\n",arm_cortex_a53);
