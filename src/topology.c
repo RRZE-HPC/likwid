@@ -1119,14 +1119,9 @@ topology_setName(void)
             switch (cpuid_info.model)
             {
                 case ZEN3_RYZEN:
-                    cpuid_info.name = amd_zen3_str;
-                    cpuid_info.short_name = short_zen3;
-                    break;
                 case ZEN3_RYZEN2:
-                    cpuid_info.name = amd_zen3_str;
-                    cpuid_info.short_name = short_zen3;
-                    break;
                 case ZEN3_RYZEN3:
+                case ZEN3_EPYC_TRENTO:
                     cpuid_info.name = amd_zen3_str;
                     cpuid_info.short_name = short_zen3;
                     break;
