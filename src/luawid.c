@@ -212,12 +212,13 @@ static int
 lua_likwid_getAccessMode(lua_State* L)
 {
 #ifdef LIKWID_USE_PERFEVENT
-    return ACCESSMODE_PERF;
+    lua_pushinteger(L, ACCESSMODE_PERF);
 #else
     init_configuration();
     Configuration_t config = get_configuration();
-    return config->daemonMode;
+    lua_pushinteger(L, config->daemonMode);
 #endif
+    return 1;
 }
 
 static int

@@ -119,6 +119,11 @@ if listFeatures and #hwtlist == 0 then
     print_stderr("HWThread selection (-c) required for listing the state of all features")
     os.exit(1)
 end
+local access_mode = likwid.getAccessClientMode()
+if access_mode < 0 or access_mode > 1 then
+    print_stderr("Manipulation of HW features only for access mode 'direct' or 'accessdaemon'")
+    os.exit(1)
+end
 local err = likwid.initHWFeatures()
 if err < 0 then
     print_stderr("Cannot initialize HW features module")
