@@ -179,6 +179,11 @@ likwid.seteuid = likwid_seteuid
 likwid.setresuid = likwid_setresuid
 likwid.setresuser = likwid_setresuser
 
+likwid.initHWFeatures = likwid_initHWFeatures
+likwid.hwFeatures_list = likwid_hwFeatures_list
+likwid.hwFeatures_get = likwid_hwFeatures_get
+likwid.hwFeatures_set = likwid_hwFeatures_set
+likwid.finalizeHWFeatures = likwid_finalizeHWFeatures
 
 likwid.getGpuTopology = likwid_getGpuTopology
 likwid.putGpuTopology = likwid_putGpuTopology
