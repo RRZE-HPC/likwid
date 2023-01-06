@@ -139,8 +139,35 @@ static _HWFeatureList* intel_8f_arch_feature_inputs[] = {
 
 
 static _HWArchFeatures intel_arch_features[] = {
+    {P6_FAMILY, SANDYBRIDGE, intel_arch_feature_inputs},
+    {P6_FAMILY, SANDYBRIDGE_EP, intel_arch_feature_inputs},
+    {P6_FAMILY, IVYBRIDGE, intel_arch_feature_inputs},
+    {P6_FAMILY, IVYBRIDGE_EP, intel_arch_feature_inputs},
+    {P6_FAMILY, HASWELL, intel_arch_feature_inputs},
+    {P6_FAMILY, HASWELL_EP, intel_arch_feature_inputs},
+    {P6_FAMILY, HASWELL_M1, intel_arch_feature_inputs},
+    {P6_FAMILY, HASWELL_M2, intel_arch_feature_inputs},
+    {P6_FAMILY, BROADWELL, intel_arch_feature_inputs},
+    {P6_FAMILY, BROADWELL_E, intel_arch_feature_inputs},
+    {P6_FAMILY, BROADWELL_D, intel_arch_feature_inputs},
+    {P6_FAMILY, BROADWELL_E3, intel_arch_feature_inputs},
     {P6_FAMILY, SKYLAKE1, intel_arch_feature_inputs},
+    {P6_FAMILY, SKYLAKE2, intel_arch_feature_inputs},
+    {P6_FAMILY, SKYLAKEX, intel_arch_feature_inputs},
     {P6_FAMILY, 0x8F, intel_8f_arch_feature_inputs},
+    {P6_FAMILY, KABYLAKE1, intel_arch_feature_inputs},
+    {P6_FAMILY, KABYLAKE2, intel_arch_feature_inputs},
+    {P6_FAMILY, CANNONLAKE, intel_arch_feature_inputs},
+    {P6_FAMILY, ICELAKE1, intel_arch_feature_inputs},
+    {P6_FAMILY, ICELAKE2, intel_arch_feature_inputs},
+    {P6_FAMILY, ROCKETLAKE, intel_arch_feature_inputs},
+    {P6_FAMILY, COMETLAKE1, intel_arch_feature_inputs},
+    {P6_FAMILY, COMETLAKE2, intel_arch_feature_inputs},
+    {P6_FAMILY, ICELAKEX1, intel_arch_feature_inputs},
+    {P6_FAMILY, ICELAKEX2, intel_arch_feature_inputs},
+    {P6_FAMILY, SNOWRIDGEX, intel_arch_feature_inputs},
+    {P6_FAMILY, TIGERLAKE1, intel_arch_feature_inputs},
+    {P6_FAMILY, TIGERLAKE2, intel_arch_feature_inputs},
     {-1, -1, NULL},
 };
 
@@ -207,6 +234,7 @@ int hwFeatures_init_x86_intel(int* num_features, _HWFeature **features)
             out[c].description = feature_list[j]->features[i].description;
             out[c].setter = feature_list[j]->features[i].setter;
             out[c].getter = feature_list[j]->features[i].getter;
+            out[c].scope = feature_list[j]->features[i].scope;
             c++;
         }
         j++;
