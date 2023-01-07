@@ -8,6 +8,7 @@
 
 #include <hwFeatures.h>
 #include <hwFeatures_types.h>
+#include <hwFeatures_common.h>
 #include <hwFeatures_x86_intel.h>
 #include <hwFeatures_x86_amd.h>
 
