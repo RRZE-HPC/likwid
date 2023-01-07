@@ -147,16 +147,18 @@ if allFeatures then
         table.insert(scopes, f["Scope"])
         table.insert(descs, f["Description"])
         if f["ReadOnly"] then
-            table.insert(access, "ro")
+            table.insert(access, "rdonly")
         elseif f["WriteOnly"] then
-            table.insert(access, "wo")
+            table.insert(access, "wronly")
         else
             table.insert(access, "rw")
         end
     end
+    setmetatable(names, {align = "left"})
     table.insert(all, names)
     table.insert(all, scopes)
     table.insert(all, access)
+    setmetatable(descs, {align = "left"})
     table.insert(all, descs)
     if output_csv then
         likwid.printcsv(all, #all)
@@ -175,6 +177,7 @@ if (not allFeatures) and listFeatures and #hwtlist > 0 then
     for _,f in pairs(list) do
         table.insert(first, f["Name"])
     end
+    setmetatable(first, {align = "left"})
     table.insert(all, first)
     for i, c in pairs(hwtlist) do
         local tab = {}

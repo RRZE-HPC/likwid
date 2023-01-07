@@ -414,6 +414,9 @@ end
 likwid.calculate_metric = calculate_metric
 
 local function printtable(tab)
+    printline = function(linetab)
+        print("| " .. table.concat(linetab, " | ") .. " |")
+    end
     local nr_columns = tablelength(tab)
     if nr_columns == 0 then
         print("Table has no columns. Empty table?")
@@ -446,23 +449,25 @@ local function printtable(tab)
     end
     hline = hline .. "+"
     print(hline)
-    str = "| "
+    local strtab = {}
     for i=1,nr_columns do
         front, back = get_spaces(tostring(tab[i][1]), min_lengths[i], max_lengths[i])
-        str = str .. front.. tostring(tab[i][1]) ..back
-        if i<nr_columns then
-            str = str .. " | "
-        else
-            str = str .. " |"
-        end
+        table.insert(strtab, front.. tostring(tab[i][1]) ..back)
     end
-    print(str)
+    printline(strtab)
     print(hline)
     for j=2,nr_lines do
         str = "| "
         for i=1,nr_columns do
+            local mtab = getmetatable(tab[i])
             front, back = get_spaces(tostring(tab[i][j]), min_lengths[i],max_lengths[i])
-            str = str .. front.. tostring(tab[i][j]) ..back
+            if mtab and mtab["align"] and mtab["align"] == "left" then
+                str = str .. tostring(tab[i][j]) .. back .. front
+            elseif mtab and mtab["align"] and mtab["align"] == "right" then
+                str = str .. front .. back .. tostring(tab[i][j]) 
+            else
+                str = str .. front.. tostring(tab[i][j]) ..back
+            end
             if i<nr_columns then
                 str = str .. " | "
             else
