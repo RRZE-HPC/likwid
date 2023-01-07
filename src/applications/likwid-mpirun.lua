@@ -110,9 +110,10 @@ local hosts = {}
 local perf = {}
 local mpitype = nil
 local slurm_involved = false
+local slurm_no_tasks_per_node = false
 local omptype = nil
 local skipStr = ""
-local executable = {}
+local execList = {}
 local envsettings = {}
 local mpiopts = nil
 local debug = false
@@ -650,7 +651,9 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
     end
     opts["nodes"] = string.format("%d", nrNodes)
     opts["ntasks"] = string.format("%d", np)
-    opts["ntasks-per-node"] = string.format("%d", ppn)
+    if not slurm_no_tasks_per_node then
+        opts["ntasks-per-node"] = string.format("%d", ppn)
+    end
     opts["cpu_bind"] = "none"
     opts["cpus-per-task"] = string.format("%d", threads)
     supported_types = _srun_get_mpi_types()
@@ -884,10 +887,10 @@ local function getMpiExec(mpitype)
 end
 
 local function getOmpType()
-    local cmd = string.format("ldd %s 2>/dev/null", executable[1])
+    local cmd = string.format("ldd %s 2>/dev/null", execList[1])
     local f = io.popen(cmd, 'r')
     if f == nil then
-        cmd = string.format("ldd $(basename %s) 2>/dev/null", executable[1])
+        cmd = string.format("ldd $(basename %s) 2>/dev/null", execList[1])
         f = io.popen(cmd, 'r')
     end
     omptype = nil
@@ -1025,6 +1028,12 @@ local function assignHosts(hosts, np, ppn, tpp)
                 break
             elseif tmp < ppn*tpp then
                 ppn = tmp
+                if tpp > 1 then
+                    ppn = math.tointeger(tmp/tpp)
+                end
+                if slurm_involved then
+                    slurm_no_tasks_per_node = true
+                end
             end
         end
         if break_while then
@@ -2213,11 +2222,11 @@ if use_marker and #perf == 0 then
     mpirun_exit(1)
 end
 
-for i,x in pairs(arg) do
+for i = 1, #arg do
     if i > 0 then
-        table.insert(executable, )
+        local x = arg[i]
         local t = abspath(x) or x
-        if string.find(arg[i], " ") then
+        if string.find(x, " ") then
             table.insert(execList, "\""..t.."\"")
         else
             table.insert(execList, t)
@@ -2225,16 +2234,16 @@ for i,x in pairs(arg) do
     end
 end
 
-if #executable == 0 then
+if #execList == 0 then
     print_stderr("ERROR: No executable given on commandline")
     mpirun_exit(1)
 end
 
 if debug then
-    print_stdout("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
+    print_stdout("DEBUG: Executable given on commandline: "..table.concat(execList, " "))
 end
 local gotExecutable = false
-for i,x in pairs(executable) do
+for i,x in pairs(execList) do
     if likwid.access(x, "x") == 0 then
         gotExecutable = true
         break
@@ -2242,7 +2251,7 @@ for i,x in pairs(executable) do
 end
 if not gotExecutable then
     print_stderr("ERROR: Cannot find an executable on commandline")
-    print_stderr(table.concat(executable, " "))
+    print_stderr(table.concat(execList, " "))
     mpirun_exit(1)
 end
 
@@ -2511,7 +2520,7 @@ if writeHostfile == nil or getEnvironment == nil or executeCommand == nil then
 end
 
 writeHostfile(newhosts, hostfilename)
-local skipped_ranks = writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, envsettings, outfilename)
+local skipped_ranks = writeWrapperScript(scriptfilename, table.concat(execList, " "), newhosts, envsettings, outfilename)
 local env = getEnvironment()
 local exitvalue = executeCommand(scriptfilename, hostfilename, env, nrNodes)
 

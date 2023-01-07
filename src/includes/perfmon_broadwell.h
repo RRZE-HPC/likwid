@@ -1279,6 +1279,22 @@ int perfmon_startCountersThread_broadwell(int thread_id, PerfmonEventSet* eventS
                         }
                     }
                     break;
+                case MBOX1:
+                case MBOX2:
+                case MBOX3:
+                case MBOX4:
+                case MBOX5:
+                case MBOX6:
+                case MBOX7:
+                    if (haveLock)
+                    {
+                        if (!cpuid_info.supportClientmem)
+                        {
+                            VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, CLEAR_BOX)
+                            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
+                        }
+                    }
+                    break;
                 case WBOX0FIX:
                     if (haveLock)
                     {

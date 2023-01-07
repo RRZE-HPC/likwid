@@ -356,6 +356,16 @@ freq_client_startDaemon()
     address_length = sizeof(address);
     snprintf(address.sun_path, sizeof(address.sun_path), TOSTRING(LIKWIDSOCKETBASE) "-freq-%d", pid);
     filepath = strdup(address.sun_path);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Waiting for socket file %s, address.sun_path);
+    while (access(address.sun_path, F_OK) && timeout > 0)
+    {
+        usleep(1000);
+        timeout--;
+    }
+    if (!access(address.sun_path, F_OK))
+    {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Socket file %s exists, address.sun_path);
+    }
 
     res = connect(socket_fd, (struct sockaddr *) &address, address_length);
     while (res && timeout > 0)
