@@ -3270,6 +3270,7 @@
 #define MSR_AMD17_2_DF_PMC3               0xC0010247
 
 #define MSR_AMD19_RAPL_L3_STATUS      0xC001029B
+#define MSR_AMD19_PREFETCH_CONTROL    0xC0000108
 
 /* ARM Cortex A15 */
 #define A15_PMC0                        0x0000
