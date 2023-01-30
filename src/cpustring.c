@@ -963,7 +963,7 @@ sockstr_to_socklist(const char* sockstr, int* sockets, int length)
 
 #ifdef LIKWID_WITH_NVMON
 
-static int valid_gpu(GpuTopology_t topo, int id)
+static int valid_gpu_nvmon(GpuTopology_t topo, int id)
 {
     for (int i = 0; i < topo->numDevices; i++)
     {
@@ -994,7 +994,7 @@ gpustr_to_gpulist(const char* gpustr, int* gpulist, int length)
             {
                 for (int k = start; k <= end; k++)
                 {
-                    if (valid_gpu(gpu_topology, k) && insert < length)
+                    if (valid_gpu_nvmon(gpu_topology, k) && insert < length)
                     {
                         gpulist[insert] = k;
                         insert++;
@@ -1005,7 +1005,7 @@ gpustr_to_gpulist(const char* gpustr, int* gpulist, int length)
         else
         {
             int id = check_and_atoi(bdata(commalist->entry[i]));
-            if (valid_gpu(gpu_topology, id) && insert < length)
+            if (valid_gpu_nvmon(gpu_topology, id) && insert < length)
             {
                 gpulist[insert] = id;
                 insert++;
@@ -1019,7 +1019,7 @@ gpustr_to_gpulist(const char* gpustr, int* gpulist, int length)
 
 #ifdef LIKWID_WITH_ROCMON
 
-static int valid_gpu(GpuTopology_rocm_t topo, int id)
+static int valid_gpu_rocmon(GpuTopology_rocm_t topo, int id)
 {
     for (int i = 0; i < topo->numDevices; i++)
     {
@@ -1050,7 +1050,7 @@ gpustr_to_gpulist_rocm(const char* gpustr, int* gpulist, int length)
             {
                 for (int k = start; k <= end; k++)
                 {
-                    if (valid_gpu(gpu_topology, k) && insert < length)
+                    if (valid_gpu_rocmon(gpu_topology, k) && insert < length)
                     {
                         gpulist[insert] = k;
                         insert++;
@@ -1061,7 +1061,7 @@ gpustr_to_gpulist_rocm(const char* gpustr, int* gpulist, int length)
         else
         {
             int id = check_and_atoi(bdata(commalist->entry[i]));
-            if (valid_gpu(gpu_topology, id) && insert < length)
+            if (valid_gpu_rocmon(gpu_topology, id) && insert < length)
             {
                 gpulist[insert] = id;
                 insert++;

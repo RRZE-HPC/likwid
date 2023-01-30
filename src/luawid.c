@@ -3106,6 +3106,7 @@ lua_likwid_gpustr_to_gpulist(lua_State* L)
     return 2;
 }
 
+
 static int
 lua_likwid_getGpuEventsAndCounters(lua_State* L)
 {
@@ -3830,7 +3831,11 @@ lua_likwid_getGpuEventsAndCounters_rocm(lua_State* L)
                 rocmon_freeEventsOfGpu(l);
             }
         }
+	//Only pop values if stack is big enough
+	if(lua_gettop(L) >= 3) 
+	{
         lua_settable(L,-3);
+	}
     }
     if (glist)
     {
@@ -3838,7 +3843,6 @@ lua_likwid_getGpuEventsAndCounters_rocm(lua_State* L)
     }
     return 1;
 }
-
 
 static int
 lua_likwid_getShortInfoOfGroup_rocm(lua_State* L)

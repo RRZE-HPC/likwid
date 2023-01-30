@@ -57,6 +57,12 @@ local function examples()
         io.stdout:write("It is possible to combine CPU and GPU measurements (with MarkerAPI and NVMarkerAPI):\n")
         io.stdout:write("likwid-perfctr -C 2 -g CLOCK -G 1 -W FLOPS_DP -m ./a.out\n")
     end
+    if likwid.rocmSupported() then
+        io.stdout:write("Run command and measure on GPU 1 the performance group PCI (Only with ROCmMarkerAPI):\n")
+        io.stdout:write("likwid-perfctr -I 1 -R PCI -m ./a.out\n")
+        io.stdout:write("It is possible to combine CPU and GPU measurements (with MarkerAPI and ROCmMarkerAPI):\n")
+        io.stdout:write("likwid-perfctr -C 2 -g CLOCK -I 1 -R PCI -m ./a.out\n")
+    end
 end
 
 local function usage()
@@ -70,11 +76,17 @@ local function usage()
     io.stdout:write("-C <list>\t\t Processor ids to pin threads and measure, e.g. 1,2-4,8\n")
     io.stdout:write("\t\t\t For information about the <list> syntax, see likwid-pin\n")
     if likwid.nvSupported() then
-        io.stdout:write("-G, --gpus <list>\t List of GPUs to monitor\n")
+        io.stdout:write("-G, --gpus <list>\t List of CUDA GPUs to monitor\n")
+    end
+    if likwid.rocmSupported() then
+        io.stdout:write("-I <list>\t\t List of ROCm GPUs to monitor\n")
     end
     io.stdout:write("-g, --group <string>\t Performance group or custom event set string for CPU monitoring\n")
     if likwid.nvSupported() then
         io.stdout:write("-W, --gpugroup <string>\t Performance group or custom event set string for GPU monitoring\n")
+    end
+    if likwid.rocmSupported() then
+        io.stdout:write("-R <string>\t\t Performance group or custom event set string for ROCm GPU monitoring\n")
     end
     io.stdout:write("-H\t\t\t Get group help (together with -g switch)\n")
     io.stdout:write("-s, --skip <hex>\t Bitmask with threads to skip\n")
