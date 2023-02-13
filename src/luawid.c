@@ -3801,6 +3801,7 @@ lua_likwid_getGpuEventsAndCounters_rocm(lua_State* L)
         lua_newtable(L);
 
         int ret = rocmon_getEventsOfGpu(gpu->devid, &l);
+	printf("GPU Events: %d\n",ret);
         if (ret == 0)
         {
             for (int j = 0; j < l->numEvents; j++)
@@ -3831,12 +3832,8 @@ lua_likwid_getGpuEventsAndCounters_rocm(lua_State* L)
                 rocmon_freeEventsOfGpu(l);
             }
         }
-	//Only pop values if stack is big enough
-	if(lua_gettop(L) >= 3) 
-	{
-        lua_settable(L,-3);
-	}
     }
+    lua_settable(L,-3);
     if (glist)
     {
         free(glist);
