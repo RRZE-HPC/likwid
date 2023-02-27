@@ -5,7 +5,7 @@ ROCM0 ROCP_SQ_WAVES
 
 
 METRICS
-GPU wavefronts SQ_WAVES
+GPU wavefronts ROCM0
 
 
 LONG
