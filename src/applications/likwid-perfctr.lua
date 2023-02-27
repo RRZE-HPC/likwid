@@ -1093,9 +1093,10 @@ if rocmSupported then
         local hiplib = string.format("%s/hip/lib", rocmhome)
         local hsalib = string.format("%s/hsa/lib", rocmhome)
         local rocproflib = string.format("%s/rocprofiler/lib", rocmhome)
-        likwid.setenv("LD_LIBRARY_PATH", hiplib..":"..hsalib..":"..rocproflib..":"..ldpath)
-        likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so.1")
         local metrics_xml = string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)
+        local likwidlib = "<LIBPREFIX>"
+        likwid.setenv("LD_LIBRARY_PATH", hiplib..":"..hsalib..":"..rocproflib..":"..likwidlib..":"..ldpath)
+        likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so.1")
         likwid.setenv("ROCP_METRICS", metrics_xml)
     end
 end
