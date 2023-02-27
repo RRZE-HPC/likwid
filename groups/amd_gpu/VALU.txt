@@ -1,0 +1,13 @@
+SHORT VALU Instructions
+
+EVENTSET
+ROCM0 ROCP_SQ_INSTS_VALU
+ROCM1 ROCP_SQ_WAVES
+
+METRICS
+GPU VALU insts per work-item SQ_INSTS_VALU/SQ_WAVES
+
+LONG
+--
+The average number of vector ALU instructions executed per work-item 
+(affected by flow control).
