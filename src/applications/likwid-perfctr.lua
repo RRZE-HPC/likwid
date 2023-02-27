@@ -607,7 +607,7 @@ if print_events == true then
             local hiplib = string.format("%s/hip/lib", rocmhome)
             local hsalib = string.format("%s/hsa/lib", rocmhome)
             local rocproflib = string.format("%s/rocprofiler/lib", rocmhome)
-            local metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
+            local metrics_xml = string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)
             likwid.setenv("LD_LIBRARY_PATH", hiplib..":"..hsalib..":"..rocproflib..":"..ldpath)
             likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so.1")
             likwid.setenv("ROCP_METRICS", metrics_xml)
@@ -694,9 +694,9 @@ if print_event ~= nil then
             local hiplib = string.format("%s/hip/lib", rocmhome)
             local hsalib = string.format("%s/hsa/lib", rocmhome)
             local rocproflib = string.format("%s/rocprofiler/lib", rocmhome)
+            local metrics_xml = string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)
             likwid.setenv("LD_LIBRARY_PATH", hiplib..":"..hsalib..":"..rocproflib..":"..ldpath)
             likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so.1")
-            local metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
             likwid.setenv("ROCP_METRICS", metrics_xml)
         end
         if rocmhome then
@@ -1011,7 +1011,7 @@ if use_marker == true then
         likwid.setenv("LIKWID_ROCMON_FILEPATH", rocmMarkerFile)
         local rocmhome = os.getenv("ROCM_HOME")
         if rocmhome then
-            local metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
+            local metrics_xml = string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)
             likwid.setenv("ROCP_METRICS", metrics_xml)
         end
         if verbose > 0 then
@@ -1095,7 +1095,7 @@ if rocmSupported then
         local rocproflib = string.format("%s/rocprofiler/lib", rocmhome)
         likwid.setenv("LD_LIBRARY_PATH", hiplib..":"..hsalib..":"..rocproflib..":"..ldpath)
         likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so.1")
-        local metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
+        local metrics_xml = string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)
         likwid.setenv("ROCP_METRICS", metrics_xml)
     end
 end
