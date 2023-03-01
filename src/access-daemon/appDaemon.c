@@ -555,10 +555,11 @@ int __libc_start_main(int (*main) (int,char **,char **),
     char* outputFilename = getenv("LIKWID_OUTPUTFILE");
     if (outputFilename == NULL)
     {
-        fprintf(stderr, "No output filename given\n");
-        return -1;
+        output_file = stderr;
+    } else {
+        output_file = fopen(outputFilename,"w");
     }
-    output_file = fopen(outputFilename,"w");
+
     if (output_file == NULL)
     {
         fprintf(stderr, "Cannot open file %s\n", outputFilename);
