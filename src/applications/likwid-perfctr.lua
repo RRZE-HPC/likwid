@@ -1019,6 +1019,28 @@ if use_marker == true then
         end
     end
 end
+
+if use_timeline == true then
+    if nvSupported and #gpulist > 0 and #gpu_event_string_list > 0 then
+        if outfile then
+            likwid.setenv("LIKWID_OUTPUTFILE", outfile)
+        end
+        likwid.setenv("LIKWID_INTERVAL", duration/1000)
+        likwid.setenv("LIKWID_NVMON_GPUS", table.concat(gpulist,","))
+        str = table.concat(gpu_event_string_list, "|")
+        likwid.setenv("LIKWID_NVMON_EVENTS", str)
+    end
+    if rocmSupported and #gpulist_rocm > 0 and #rocm_event_string_list > 0 then
+        if outfile then
+            likwid.setenv("LIKWID_OUTPUTFILE", outfile)
+        end
+        likwid.setenv("LIKWID_INTERVAL", duration/1000)
+        likwid.setenv("LIKWID_ROCMON_GPUS", table.concat(gpulist_rocm,","))
+        str = table.concat(rocm_event_string_list, "|")
+        likwid.setenv("LIKWID_ROCMON_EVENTS", str)
+    end
+end
+
 local likwid_hwthreads = {}
 for i=1,#cpulist do
     table.insert(likwid_hwthreads, tostring(math.tointeger(cpulist[i])))
@@ -1057,11 +1079,15 @@ if nvSupported and #gpu_event_string_list > 0 then
 end
 ---------------------------
 if rocmSupported and #rocm_event_string_list > 0 then
-    if likwid.init_rocm(num_rocm_gpus, gpulist_rocm) < 0 then
-        rocmInitialized = true
-        perfctr_exit(1)
+    if not use_timeline then
+        if likwid.init_rocm(num_rocm_gpus, gpulist_rocm) < 0 then
+            rocmInitialized = true
+            perfctr_exit(1)
+        end
+    else
+        likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
     end
-end
+end 
 ---------------------------
 
 if verbose > 0 then
