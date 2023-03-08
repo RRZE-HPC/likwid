@@ -317,7 +317,9 @@ for opt,arg in likwid.getopt(arg, cliopts) do
     elseif opt == "f" or opt == "force" then
         forceOverwrite = 1
     elseif opt == "g" or opt == "group" then
-        table.insert(event_string_list, arg)
+        if arg ~= nil then
+            table.insert(event_string_list, arg)
+        end
     elseif (opt == "H") then
         print_group_help = true
     elseif opt == "s" or opt == "skip" then
