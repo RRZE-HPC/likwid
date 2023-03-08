@@ -89,7 +89,7 @@ __rdpmc(int cpu_id, int counter, uint64_t* value)
 void
 segfault_sigaction_rdpmc(int signal, siginfo_t *si, void *arg)
 {
-    exit(1);
+    _exit(1);
 }
 
 static int
@@ -106,6 +106,10 @@ test_rdpmc(int cpu_id, uint64_t value, int flag)
     }
     if (!pid)
     {
+        // Note: when exiting the child process we use _exit() instead of exit()
+        // to avoid calling exit handlers registered by the parent process
+        // (e.g. libuv functions from Julia), which can cause crashes.
+
         uint64_t tmp;
         struct sigaction sa;
         memset(&sa, 0, sizeof(struct sigaction));
@@ -118,7 +122,7 @@ test_rdpmc(int cpu_id, uint64_t value, int flag)
             __rdpmc(cpu_id, value, &tmp);
             usleep(100);
         }
-        exit(0);
+        _exit(0);
     }
     else
     {
