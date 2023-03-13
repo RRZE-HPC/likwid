@@ -1092,7 +1092,12 @@ if rocmSupported and #rocm_event_string_list > 0 then
             perfctr_exit(1)
         end
     else
-        likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
+        local preload = os.getenv("LD_PRELOAD")
+        if preload == nil then
+            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
+        else
+            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so" .. ":" .. preload)
+        end
     end
 end 
 ---------------------------
@@ -1127,7 +1132,7 @@ if rocmSupported then
         local hsalib = string.format("%s/hsa/lib", rocmhome)
         local rocproflib = string.format("%s/lib/rocprofiler", rocmhome)
         local metrics_xml = string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)
-        local likwidlib = "<LIBPREFIX>"
+        local likwidlib = "<INSTALLED_PREFIX>/lib"
         likwid.setenv("LD_LIBRARY_PATH", hiplib..":"..hsalib..":"..rocproflib..":"..likwidlib..":"..ldpath)
         likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so.1")
         likwid.setenv("ROCP_METRICS", metrics_xml)
