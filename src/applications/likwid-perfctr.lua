@@ -1197,7 +1197,7 @@ if nvSupported then
     end
 end
 ---------------------------
-if rocmSupported then
+if rocmSupported and use_timeline == false then
     for i, event_string in pairs(rocm_event_string_list) do
         if event_string:len() > 0 then
             local gid = likwid.addEventSet_rocm(event_string)
@@ -1210,7 +1210,7 @@ if rocmSupported then
     end
 end
 ---------------------------
-if #group_ids == 0 and #gpugroups == 0 and #rocmgroups == 0 then
+if #group_ids == 0 and #gpugroups == 0 and #rocmgroups == 0 and use_timeline == false then
     print_stderr("ERROR: No valid eventset given on commandline. Exiting...")
     likwid.finalize()
     perfctr_exit(1)
@@ -1333,7 +1333,7 @@ if use_wrapper or use_timeline then
             end
         end
 
-        if use_timeline == true then
+        if use_timeline == true and #event_string_list > 0 then
 
             stop = likwid.stopClock()
             xstart = likwid.startClock()
