@@ -583,7 +583,7 @@ int __libc_start_main(int (*main) (int,char **,char **),
 
 #ifdef LIKWID_ROCMON
     char* rocmonEventStr = getenv("LIKWID_ROCMON_EVENTS");
-    char* rocmonGpuStr = getenv("LIKWUD_ROCMON_GPUS");
+    char* rocmonGpuStr = getenv("LIKWID_ROCMON_GPUS");
     if (rocmonEventStr && rocmonGpuStr)
     {
         ret = appdaemon_setup_rocmon(rocmonGpuStr, rocmonEventStr);
