@@ -930,6 +930,11 @@ if use_marker then
         print_stderr(string.format("Please purge all GPUMarkerAPI files from %s.", markerFolder))
         perfctr_exit(1)
     end
+    if rocmSupported and #gpulist_rocm and likwid.access(rocmMarkerFile, "rw") ~= -1 then
+        print_stderr(string.format("ERROR: GPUMarkerAPI file %s not accessible. Maybe a remaining file of another user.", rocmMarkerFile))
+        print_stderr(string.format("Please purge all GPUMarkerAPI files from %s.", markerFolder))
+        perfctr_exit(1)
+    end
     if not pin_cpus and #cpulist > 0 and #event_string_list > 0 then
         print_stderr("Warning: The Marker API requires the application to run on the selected CPUs.")
         print_stderr("Warning: likwid-perfctr pins the application only when using the -C command line option.")
