@@ -50,7 +50,7 @@ CFLAGS    += -std=c99 -fPIC -pie -fPIE -fstack-protector
 ifeq ($(COMPILER),GCCX86)
 CFLAGS    +=  -m32
 endif
-CPPFLAGS :=  $(DEFINES) $(INCLUDES) -L$(PREFIX)/lib
+CPPFLAGS :=  $(DEFINES) $(INCLUDES) -L$(PREFIX)/lib -L../../
 
 ifeq ($(COMPILER),GCCARMv8)
 all:
