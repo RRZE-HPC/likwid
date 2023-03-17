@@ -1421,6 +1421,12 @@ _rocmon_setupCounters_smi(RocmonDevice* device, const char** events, int numEven
     int ret;
     const int instanceNumLen = 5;
 
+    // Delete previous events
+    if (device->activeSmiEvents)
+    {
+        device->activeSmiEvents = NULL;
+    }
+
     // Look if the are any events
     if (numEvents <= 0)
     {
