@@ -77,6 +77,7 @@
 #include <perfmon_zen.h>
 #include <perfmon_zen2.h>
 #include <perfmon_zen3.h>
+#include <perfmon_zen4.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
 #include <perfmon_tigerlake.h>
@@ -1255,6 +1256,15 @@ perfmon_init_maps(void)
                     perfmon_numCounters = perfmon_numCountersZen3;
                     translate_types = zen3_translate_types;
                     break;
+                case ZEN4_RYZEN:
+                case ZEN4_EPYC:
+                    eventHash = zen4_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsZen4;
+                    counter_map = zen4_counter_map;
+                    box_map = zen4_box_map;
+                    perfmon_numCounters = perfmon_numCountersZen4;
+                    translate_types = zen4_translate_types;
+                    break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
             }
@@ -1816,7 +1826,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen2;
                     break;
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported AMD Zen2 Processor);
+                    ERROR_PLAIN_PRINT(Unsupported AMD K17 Processor);
                     break;
             }
             break;
@@ -1835,8 +1845,18 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_setupCountersThread = perfmon_setupCounterThread_zen3;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen3;
                     break;
+                case ZEN4_RYZEN:
+                case ZEN4_EPYC:
+                    initThreadArch = perfmon_init_zen4;
+                    initialize_power = TRUE;
+                    perfmon_startCountersThread = perfmon_startCountersThread_zen4;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_zen4;
+                    perfmon_readCountersThread = perfmon_readCountersThread_zen4;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_zen4;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen4;
+                    break;
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported AMD Zen3 Processor);
+                    ERROR_PLAIN_PRINT(Unsupported AMD K19 Processor);
                     break;
             }
             break;

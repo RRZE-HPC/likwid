@@ -1172,6 +1172,21 @@ allowed_amd17_zen2(uint32_t reg)
 }
 
 static int
+allowed_amd19_zen4(uint32_t reg)
+{
+    if (allowed_amd17_zen2(reg))
+    {
+        return 1;
+    }
+    else if ((reg == 0xC0000108) ||
+             (reg == 0x00000048) ||
+	     (reg == 0x0000010B))
+    {
+        return 1;
+    }
+    return 0;
+}
+static int
 clientmem_getStartAddr(uint64_t* startAddr)
 {
     uint64_t imcbar = 0;
@@ -2793,6 +2808,10 @@ int main(void)
                     case ZEN3_RYZEN3:
                         allowed = allowed_amd17_zen2;
                         break;
+		    case ZEN4_RYZEN:
+		    case ZEN4_EPYC:
+			allowed = allowed_amd19_zen4;
+			break;
                     default:
                         allowed = allowed_amd17;
                         break;

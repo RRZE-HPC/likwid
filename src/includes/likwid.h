@@ -2301,6 +2301,43 @@ int nvmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** lo
 
 #endif /* LIKWID_WITH_NVMON */
 
+typedef enum {
+    HWFEATURE_SCOPE_INVALID = 0,
+    HWFEATURE_SCOPE_HWTHREAD,
+    MAX_HWFEATURE_SCOPE,
+} HWFeatureScope;
+
+static char* HWFeatureScopeNames[MAX_HWFEATURE_SCOPE] = {
+    [HWFEATURE_SCOPE_INVALID] = "invalid",
+    [HWFEATURE_SCOPE_HWTHREAD] = "hwthread",
+};
+
+typedef struct {
+    char* name;
+    char* description;
+    HWFeatureScope scope;
+    unsigned int readonly:1;
+    unsigned int writeonly:1;
+} HWFeature;
+
+typedef struct {
+    int num_features;
+    HWFeature* features;
+} HWFeatureList;
+
+int hwFeatures_init() __attribute__ ((visibility ("default") ));
+
+int hwFeatures_list(HWFeatureList* list) __attribute__ ((visibility ("default") ));
+void hwFeatures_list_return(HWFeatureList* list) __attribute__ ((visibility ("default") ));
+
+int hwFeatures_get(HWFeature* feature, int hwthread, uint64_t* value) __attribute__ ((visibility ("default") ));
+int hwFeatures_getByName(char* name, int hwthread, uint64_t* value) __attribute__ ((visibility ("default") ));
+int hwFeatures_modify(HWFeature* feature, int hwthread, uint64_t value) __attribute__ ((visibility ("default") ));
+int hwFeatures_modifyByName(char* name, int hwthread, uint64_t value) __attribute__ ((visibility ("default") ));
+
+void hwFeatures_finalize() __attribute__ ((visibility ("default") ));
+
+
 #ifdef __cplusplus
 }
 #endif
