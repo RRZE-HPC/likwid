@@ -1425,6 +1425,7 @@ _rocmon_setupCounters_smi(RocmonDevice* device, const char** events, int numEven
     if (device->activeSmiEvents)
     {
         device->activeSmiEvents = NULL;
+        device->numActiveSmiEvents = 0;
     }
 
     // Look if the are any events
