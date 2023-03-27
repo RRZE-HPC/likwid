@@ -113,18 +113,29 @@ int _uint64_to_string(uint64_t value, char** str)
         *str = s;
         return 0;
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Conversion of uint64_t %lld failed: %s, value, strerror(errno));
+    ERROR_PRINT(Conversion of uint64_t %lld failed: %s, value, strerror(errno));
     return len;
 }
 
 int _string_to_uint64(char* str, uint64_t* value)
 {
     char* ptr = NULL;
+    if ((strncmp(str, "true", 4) == 0) || (strncmp(str, "TRUE", 4) == 0))
+    {
+        *value = 0x1ULL;
+        return 0;
+    }
+    else if ((strncmp(str, "false", 5) == 0) || (strncmp(str, "FALSE", 5) == 0))
+    {
+        *value = 0x0ULL;
+        return 0;
+    }
     uint64_t v = strtoull(str, &ptr, 10);
     if (v == 0 && errno != 0)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Conversion of string %s to uint64_t failed: %s, str, strerror(errno));
         return -errno;
     }
+    *value = v;
     return 0;
 }

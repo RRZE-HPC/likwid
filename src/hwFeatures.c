@@ -141,7 +141,8 @@ static int _hwFeatures_get_feature_index(char* name)
     {
         return -EINVAL;
     }
-    for (int i = 0; i < strlen(name); i++)
+    int namelen = strlen(name);
+    for (int i = 0; i < namelen; i++)
     {
         if (name[i] == '.')
         {
@@ -149,15 +150,17 @@ static int _hwFeatures_get_feature_index(char* name)
             break;
         }
     }
-    //DEBUG_PRINT(DEBUGLEV_DEVELOP, Features real name with dot at %d, dot);
     if (dot < 0)
     {
         int out = -1;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Features name has no dot -> compare with name, dot);
         for (int i = 0; i < _feature_list.num_features; i++)
         {
-            if (strncmp(name, _feature_list.features[i].name, strlen(_feature_list.features[i].name)) == 0)
+            int featlen = strlen(_feature_list.features[i].name);
+            int checklen = (namelen < featlen ? featlen : namelen);
+            if (strncmp(name, _feature_list.features[i].name, checklen) == 0)
             {
+                printf("'%s' vs. '%s' -> %d\n",name, _feature_list.features[i].name, strncmp(name, _feature_list.features[i].name, strlen(name)));
                 if (out < 0)
                 {
                     out = i;
@@ -175,14 +178,15 @@ static int _hwFeatures_get_feature_index(char* name)
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Features name contains dot at offset %d -> compare with category.name, dot);
         for (int i = 0; i < _feature_list.num_features; i++)
         {
-            int len = strlen(_feature_list.features[i].name) + strlen(_feature_list.features[i].category) + 2;
-            char real[len];
-            int ret = snprintf(real, len, "%s.%s", _feature_list.features[i].category, _feature_list.features[i].name);
+            int featlen = strlen(_feature_list.features[i].name) + strlen(_feature_list.features[i].category) + 2;
+            char real[featlen];
+            int ret = snprintf(real, featlen, "%s.%s", _feature_list.features[i].category, _feature_list.features[i].name);
             if (ret > 0)
             {
                 real[ret] = '\0';
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Comparing '%s' to '%s': %d, name, real, strncmp(name, real, strlen(real)));
-                if (strncmp(name, real, strlen(real)) == 0)
+                int checklen = (namelen < featlen ? featlen : namelen);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Comparing '%s' to '%s': %d, name, real, strncmp(name, real, checklen));
+                if (strncmp(name, real, checklen) == 0)
                 {
                     return i;
                 }
