@@ -2301,21 +2301,72 @@ int nvmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** lo
 
 #endif /* LIKWID_WITH_NVMON */
 
-typedef enum {
-    HWFEATURE_SCOPE_INVALID = 0,
+/*typedef enum {
+    HWFEATURE_SCOPE_INVALID,
     HWFEATURE_SCOPE_HWTHREAD,
+    HWFEATURE_SCOPE_CORE,
+    HWFEATURE_SCOPE_LLC,
+    HWFEATURE_SCOPE_NUMA,
+    HWFEATURE_SCOPE_DIE,
+    HWFEATURE_SCOPE_SOCKET,
+    HWFEATURE_SCOPE_NODE,
+#ifdef LIKWID_WITH_NVMON
+    HWFEATURE_SCOPE_NVIDIA_GPU,
+#endif
+#ifdef LIKWID_WITH_ROCMON
+    HWFEATURE_SCOPE_AMD_GPU,
+#endif
+#ifdef LIKWID_WITH_XEMON
+    HWFEATURE_SCOPE_INTEL_GPU,
+#endif
     MAX_HWFEATURE_SCOPE,
-} HWFeatureScope;
+} LikwidDeviceType;
+#define MIN_HWFEATURE_SCOPE HWFEATURE_SCOPE_HWTHREAD
 
-static char* HWFeatureScopeNames[MAX_HWFEATURE_SCOPE] = {
+typedef struct {
+    LikwidDeviceType scope;
+    union {
+        struct {
+            int id;
+        } simple;
+        struct {
+            int16_t pci_domain;
+            int8_t pci_bus;
+            int8_t pci_dev;
+            int8_t pci_func;
+        } pci;
+    } _data;
+    int internal_id;
+} _HWFeatureDevice;
+typedef _HWFeatureDevice* LikwidDevice_t;
+
+static char* LikwidDeviceTypeNames[MAX_HWFEATURE_SCOPE] = {
     [HWFEATURE_SCOPE_INVALID] = "invalid",
     [HWFEATURE_SCOPE_HWTHREAD] = "hwthread",
-};
+    [HWFEATURE_SCOPE_CORE] = "core",
+    [HWFEATURE_SCOPE_LLC] = "LLC",
+    [HWFEATURE_SCOPE_NUMA] = "numa",
+    [HWFEATURE_SCOPE_DIE] = "die",
+    [HWFEATURE_SCOPE_SOCKET] = "socket",
+    [HWFEATURE_SCOPE_NODE] = "node",
+#ifdef LIKWID_WITH_NVMON
+    [HWFEATURE_SCOPE_NVIDIA_GPU] = "nvidia_gpu",
+#endif
+#ifdef LIKWID_WITH_ROCMON
+    [HWFEATURE_SCOPE_AMD_GPU] = "amd_gpu",
+#endif
+#ifdef LIKWID_WITH_XEMON
+    [HWFEATURE_SCOPE_INTEL_GPU] = "intel_gpu",
+#endif
+};*/
+
+#include <likwid_device.h>
 
 typedef struct {
     char* name;
+    char* category;
     char* description;
-    HWFeatureScope scope;
+    LikwidDeviceType type;
     unsigned int readonly:1;
     unsigned int writeonly:1;
 } HWFeature;
@@ -2325,15 +2376,28 @@ typedef struct {
     HWFeature* features;
 } HWFeatureList;
 
+
+#define HWFEATURE_PCI_DEVICE_TO_ID(domain, bus, slot, func) \
+    ((((uint16_t)(domain))<<16)|(((uint8_t)(bus))<<8)|(((((uint8_t)(slot)) & 0x1f) << 3) | (((uint8_t)(func)) & 0x07)))
+#define HWFEATURES_ID_TO_PCI_DOMAIN(id) (((id) >> 16) & 0xFFFF)
+#define HWFEATURES_ID_TO_PCI_BUS(id) (((id) >> 8) & 0xFF)
+#define HWFEATURES_ID_TO_PCI_SLOT(id) (((id) >> 3) & 0x1F)
+#define HWFEATURES_ID_TO_PCI_FUNC(id) ((id) & 0x07)
+
+
+
+/*int hwFeatures_create_device(LikwidDeviceType scope, int id, LikwidDevice_t* device) __attribute__ ((visibility ("default") ));*/
+/*void hwFeatures_destroy_device(LikwidDevice_t device) __attribute__ ((visibility ("default") ));*/
+
 int hwFeatures_init() __attribute__ ((visibility ("default") ));
 
 int hwFeatures_list(HWFeatureList* list) __attribute__ ((visibility ("default") ));
 void hwFeatures_list_return(HWFeatureList* list) __attribute__ ((visibility ("default") ));
 
-int hwFeatures_get(HWFeature* feature, int hwthread, uint64_t* value) __attribute__ ((visibility ("default") ));
-int hwFeatures_getByName(char* name, int hwthread, uint64_t* value) __attribute__ ((visibility ("default") ));
-int hwFeatures_modify(HWFeature* feature, int hwthread, uint64_t value) __attribute__ ((visibility ("default") ));
-int hwFeatures_modifyByName(char* name, int hwthread, uint64_t value) __attribute__ ((visibility ("default") ));
+int hwFeatures_get(HWFeature* feature, LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
+int hwFeatures_getByName(char* name, LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
+int hwFeatures_modify(HWFeature* feature, LikwidDevice_t device, char* value) __attribute__ ((visibility ("default") ));
+int hwFeatures_modifyByName(char* name, LikwidDevice_t device, char* value) __attribute__ ((visibility ("default") ));
 
 void hwFeatures_finalize() __attribute__ ((visibility ("default") ));
 

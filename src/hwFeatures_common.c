@@ -1,0 +1,130 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+
+#include <registers.h>
+#include <cpuid.h>
+#include <pci_types.h>
+#include <hwFeatures_types.h>
+#include <likwid_device_types.h>
+#include <error.h>
+#include <hwFeatures_common.h>
+
+int register_features(_HWFeatureList *features, _HWFeatureList* in)
+{
+    int err = 0;
+    if (in->tester)
+    {
+        if (!in->tester())
+        {
+            return -ENOTSUP;
+        }
+    }
+    for (int i = 0; i < in->num_features; i++)
+    {
+        _HWFeature *f = &in->features[i];
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering feature %s.%s, f->category, f->name);
+        if (f->tester)
+        {
+            if (f->tester())
+            {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Running test for feature %s.%s, f->category, f->name);
+                err = _add_to_feature_list(features, f);
+                if (err < 0)
+                {
+                    ERROR_PRINT(Failed to add HW feature %s.%s to feature list, f->category, f->name);
+                }
+            }
+            else
+            {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Test function for feature %s.%s failed, f->category, f->name);
+            }
+        }
+        else
+        {
+            err = _add_to_feature_list(features, f);
+            if (err < 0)
+            {
+                ERROR_PRINT(Failed to add HW feature %s.%s to feature list, f->category, f->name);
+            }
+        }
+    }
+    return 0;
+}
+
+int hwFeatures_init_generic(_HWArchFeatures* infeatures, _HWFeatureList *list)
+{
+    int i = 0;
+    int j = 0;
+    int c = 0;
+    int err = 0;
+    CpuInfo_t cpuinfo = NULL;
+    _HWFeatureList** feature_list = NULL;
+    _HWFeature* out = NULL;
+    err = topology_init();
+    if (err < 0)
+    {
+        ERROR_PRINT(Failed to initialize topology module);
+        return err;
+    }
+    cpuinfo = get_cpuInfo();
+
+    c = 0;
+    while (infeatures[c].family >= 0 && infeatures[c].model >= 0)
+    {
+        if (infeatures[c].family == cpuinfo->family && infeatures[c].model == cpuinfo->model)
+        {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Using feature list for CPU family 0x%X and model 0x%X, cpuinfo->family, cpuinfo->model);
+            feature_list = infeatures[c].features;
+            break;
+        }
+        c++;
+    }
+    if (!feature_list)
+    {
+        ERROR_PRINT(No feature list found for current architecture);
+        return -ENOTSUP;
+    }
+
+    j = 0;
+    //_HWFeatureList newlist = {0, NULL, NULL};
+    while (feature_list[j] != NULL)
+    {
+        register_features(list, feature_list[j]);
+        j++;
+    }
+    return 0;
+}
+
+
+
+
+int _uint64_to_string(uint64_t value, char** str)
+{
+    char* s = malloc(HWFEATURES_MAX_VALUE_LENGTH * sizeof(char));
+    if (!s)
+    {
+        return -ENOMEM;
+    }
+    int len = snprintf(s, HWFEATURES_MAX_VALUE_LENGTH-1, "%lld", (uint64_t) value);
+    if (len >= 0)
+    {
+        s[len] = '\0';
+        *str = s;
+        return 0;
+    }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Conversion of uint64_t %lld failed: %s, value, strerror(errno));
+    return len;
+}
+
+int _string_to_uint64(char* str, uint64_t* value)
+{
+    char* ptr = NULL;
+    uint64_t v = strtoull(str, &ptr, 10);
+    if (v == 0 && errno != 0)
+    {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Conversion of string %s to uint64_t failed: %s, str, strerror(errno));
+        return -errno;
+    }
+    return 0;
+}

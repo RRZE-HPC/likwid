@@ -3593,8 +3593,8 @@ lua_likwid_getHwFeatureList(lua_State *L)
         lua_pushstring(L, "WriteOnly");
         lua_pushboolean(L, list.features[i].writeonly);
         lua_settable(L,-3);
-        lua_pushstring(L, "Scope");
-        lua_pushstring(L, HWFeatureScopeNames[list.features[i].scope]);
+        lua_pushstring(L, "Type");
+        lua_pushstring(L, LikwidDeviceTypeNames[list.features[i].type]);
         lua_settable(L,-3);
         lua_settable(L,-3);
     }
@@ -3608,12 +3608,12 @@ lua_likwid_getHwFeature(lua_State *L)
     if (hwfeatures_inititalized)
     {
         char* feature = (char *)luaL_checkstring(L, 1);
-        int hwt = luaL_checknumber(L,2);
-        uint64_t value = 0;
-        int err = hwFeatures_getByName(feature, hwt, &value);
+        LikwidDevice_t dev = lua_touserdata(L, 2);
+        char* value = NULL;
+        int err = hwFeatures_getByName(feature, dev, &value);
         if (err == 0)
         {
-            lua_pushinteger(L, value);
+            lua_pushstring(L, value);
             return 1;
         }
     }
@@ -3627,9 +3627,9 @@ lua_likwid_setHwFeature(lua_State *L)
     if (hwfeatures_inititalized)
     {
         char* feature = (char *)luaL_checkstring(L, 1);
-        int hwt = luaL_checknumber(L,2);
-        int value = luaL_checknumber(L,3);
-        int err = hwFeatures_modifyByName(feature, hwt, value);
+        LikwidDevice_t dev = lua_touserdata(L, 2);
+        char* value = (char *)luaL_checkstring(L,3);
+        int err = hwFeatures_modifyByName(feature, dev, value);
         if (err == 0)
         {
             lua_pushboolean(L, 1);
@@ -3638,6 +3638,86 @@ lua_likwid_setHwFeature(lua_State *L)
     }
     lua_pushboolean(L, 0);
     return 1;
+}
+
+static int
+lua_likwid_createDevice(lua_State *L)
+{
+    LikwidDevice_t dev = NULL;
+    int err = 0;
+    char *type = (char *)luaL_checkstring(L, 1);
+    int id = luaL_checknumber(L,2);
+    LikwidDeviceType _type = DEVICE_TYPE_INVALID;
+    for (int i = MIN_DEVICE_TYPE; i < MAX_DEVICE_TYPE; i++)
+    {
+        if (strncmp(LikwidDeviceTypeNames[i], type, strlen(LikwidDeviceTypeNames[i])) == 0)
+        {
+            _type = i;
+            break;
+        }
+    }
+    if ((!(((_type) >= MIN_DEVICE_TYPE) && ((_type) < MAX_DEVICE_TYPE))) || (id < 0))
+    {
+        lua_pushnil(L);
+    }
+    else
+    {
+        err = likwid_device_create(_type, id, &dev);
+        if (err < 0)
+        {
+            lua_pushnil(L);
+        }
+        else
+        {
+            dev = lua_newuserdata (L, sizeof(_LikwidDevice));
+            dev->type = _type;
+            dev->internal_id = id;
+            switch (dev->type)
+            {
+                case DEVICE_TYPE_HWTHREAD:
+                case DEVICE_TYPE_CORE:
+                case DEVICE_TYPE_DIE:
+                case DEVICE_TYPE_LLC:
+                case DEVICE_TYPE_NUMA:
+                case DEVICE_TYPE_SOCKET:
+                    dev->id.simple.id = id;
+                    break;
+#ifdef LIKWID_WITH_NVMON
+                case DEVICE_TYPE_NVIDIA_GPU:
+#endif
+#ifdef LIKWID_WITH_ROCMON
+                case DEVICE_TYPE_AMD_GPU:
+#endif
+#ifdef LIKWID_WITH_XEMON
+                case DEVICE_TYPE_INTEL_GPU:
+#endif
+#if defined(LIKWID_WITH_NVMON)||defined(LIKWID_WITH_NVMON)||defined(LIKWID_WITH_NVMON)
+                    dev->id.pci.pci_domain = HWFEATURES_ID_TO_PCI_DOMAIN(id);
+                    dev->id.pci.pci_bus = HWFEATURES_ID_TO_PCI_BUS(id);
+                    dev->id.pci.pci_dev = HWFEATURES_ID_TO_PCI_SLOT(id);
+                    dev->id.pci.pci_func = HWFEATURES_ID_TO_PCI_FUNC(id);
+                    break;
+#endif
+                default:
+                    lua_pushnil(L);
+                    break;
+            }
+        }
+    }
+    return 1;
+}
+
+static int
+lua_likwid_destroyDevice(lua_State *L)
+{
+    LikwidDevice_t dev = lua_touserdata(L, 1);
+    if (dev)
+    {
+        dev->type = DEVICE_TYPE_INVALID;
+        dev->id.simple.id = -1;
+        dev->internal_id = -1;
+    }
+    return 0;
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -3827,6 +3907,8 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_hwFeatures_list",lua_likwid_getHwFeatureList);
     lua_register(L, "likwid_hwFeatures_get",lua_likwid_getHwFeature);
     lua_register(L, "likwid_hwFeatures_set",lua_likwid_setHwFeature);
+    lua_register(L, "likwid_createDevice",lua_likwid_createDevice);
+    lua_register(L, "likwid_destroyDevice",lua_likwid_destroyDevice);
 #ifdef __MIC__
     setuid(0);
     seteuid(0);

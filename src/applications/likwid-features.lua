@@ -31,7 +31,7 @@
 package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
-local cpuinfo = likwid.getCpuInfo()
+
 
 print_stdout = print
 print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
@@ -66,6 +66,9 @@ local num_hwts = 0
 local hwtlist = {}
 local enableList = {}
 local disableList = {}
+local cpuinfo = likwid.getCpuInfo()
+local cputopo = likwid.getCpuTopology()
+local deviceTree = {}
 
 local output_csv = false
 
@@ -132,19 +135,46 @@ end
 
 local list = likwid.hwFeatures_list()
 
+--[[deviceTree[likwid.node] = {{likwid.createDevice(likwid.node, hwtlist[0]), hwtlist[0]}}
+deviceTree[likwid.hwthread] = {}
+for _, c in pairs(hwtlist) do
+    table.insert(deviceTree[likwid.hwthread], {likwid.createDevice(likwid.hwthread, c), c})
+end
+deviceTree[likwid.socket] = {}
+for sid=0, cputopo.numSockets do
+    for _, c in pairs(hwtlist) do
+        for _, t in pairs(cputopo.threadPool) do
+            if t.apicId == c and t.packageId == sid then
+                table.insert(deviceTree[likwid.socket], {likwid.createDevice(likwid.socket, sid), c})
+            end
+        end
+    end
+end
+deviceTree[likwid.core] = {}
+for cid=0, cputopo.numCores do
+    for _, c in pairs(hwtlist) do
+        for _, t in pairs(cputopo.threadPool) do
+            if t.apicId == c and t.coreId == cid then
+                table.insert(deviceTree[likwid.socket], {likwid.createDevice(likwid.socket, sid), c})
+            end
+        end
+    end
+end
+]]
+
 if allFeatures then
     local all = {}
     local names = {}
-    local scopes = {}
+    local types = {}
     local access = {}
     local descs = {}
     table.insert(names, "Feature")
-    table.insert(scopes, "Scope")
+    table.insert(types, "Scope")
     table.insert(access, "Access")
     table.insert(descs, "Description")
     for _,f in pairs(list) do
         table.insert(names, f["Name"])
-        table.insert(scopes, f["Scope"])
+        table.insert(types, f["Type"])
         table.insert(descs, f["Description"])
         if f["ReadOnly"] then
             table.insert(access, "rdonly")
@@ -156,7 +186,7 @@ if allFeatures then
     end
     setmetatable(names, {align = "left"})
     table.insert(all, names)
-    table.insert(all, scopes)
+    table.insert(all, types)
     table.insert(all, access)
     setmetatable(descs, {align = "left"})
     table.insert(all, descs)
@@ -181,18 +211,25 @@ if (not allFeatures) and listFeatures and #hwtlist > 0 then
     table.insert(all, first)
     for i, c in pairs(hwtlist) do
         local tab = {}
+        print_stdout(string.format("%d", c))
+        local dev = likwid.createDevice("hwthread", c)
         table.insert(tab, string.format("%d", c))
         for _,f in pairs(list) do
-            local v = likwid.hwFeatures_get(f["Name"], c)
+            local v = likwid.hwFeatures_get(f["Name"], dev)
             if v == nil then
-                table.insert(tab, "wronly")
-            elseif v == 1 then
-                table.insert(tab, "on")
+                if f["ReadOnly"] then
+                    table.insert(tab, "rdonly")
+                elseif f["WriteOnly"] then
+                    table.insert(tab, "wronly")
+                else
+                    table.insert(tab, "fail")
+                end
             else
-                table.insert(tab, "off")
+                table.insert(tab, v)
             end
         end
         table.insert(all, tab)
+        likwid.destroyDevice(dev)
     end
     
     if output_csv then
@@ -243,27 +280,31 @@ if (not (listFeatures or allFeatures)) or #enableList > 0 or #disableList > 0 th
     -- First enable all features for all selected hardware threads
     if #realEnableList > 0 then
         for i, c in pairs(hwtlist) do
+            local dev = likwid.createDevice(likwid.hwthread, c)
             for j, f in pairs(realEnableList) do
-                local ret = likwid.hwFeatures_set(f, c, 1)
+                local ret = likwid.hwFeatures_set(f, dev, 1)
                 if ret == true then
                     print_stdout(string.format("Enabled %s for HWThread %d", f, c))
                 else
                     print_stdout(string.format("Failed %s for HWThread %d", f, c))
                 end
             end
+            likwid.destroyDevice(dev)
         end
     end
     -- Next disable all features for all selected hardware threads
     if #realDisableList > 0 then
         for i, c in pairs(hwtlist) do
+            local dev = likwid.createDevice(likwid.hwthread, c)
             for j, f in pairs(realDisableList) do
-                local ret = likwid.hwFeatures_set(f, c, 0)
+                local ret = likwid.hwFeatures_set(f, dev, 0)
                 if ret == true then
                     print_stdout(string.format("Disabled %s for HWThread %d", f, c))
                 else
                     print_stdout(string.format("Failed %s for HWThread %d", f, c))
                 end
             end
+            likwid.destroyDevice(dev)
         end
     end
 end
