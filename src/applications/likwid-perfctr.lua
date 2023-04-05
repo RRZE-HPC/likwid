@@ -1118,8 +1118,11 @@ if nvSupported then
     if cudahome then
         ldpath = os.getenv("LD_LIBRARY_PATH")
         local cuptilib = string.format("%s/extras/CUPTI/lib64", cudahome)
+        local likwidlib = "<INSTALLED_PREFIX>/lib"
         if not ldpath:match(cuptilib) then
-            likwid.setenv("LD_LIBRARY_PATH", cuptilib..":"..ldpath)
+            likwid.setenv("LD_LIBRARY_PATH", cuptilib..":"..likwidlib..":"..ldpath)
+        else
+            likwid.setenv("LD_LIBRARY_PATH", likwidlib..":"..ldpath)
         end
     end
 end
