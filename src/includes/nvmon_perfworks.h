@@ -175,7 +175,7 @@ DECLARE_NVPWFUNC(NVPW_MetricsContext_GetMetricNames_End, (NVPW_MetricsContext_Ge
 DECLARE_NVPWFUNC(NVPW_InitializeHost, (NVPW_InitializeHost_Params* params));
 DECLARE_NVPWFUNC(NVPW_MetricsContext_GetMetricProperties_Begin, (NVPW_MetricsContext_GetMetricProperties_Begin_Params* p));
 DECLARE_NVPWFUNC(NVPW_MetricsContext_GetMetricProperties_End, (NVPW_MetricsContext_GetMetricProperties_End_Params* p));
-DECLARE_NVPWFUNC(NVPA_RawMetricsConfig_Create, (const NVPA_RawMetricsConfigOptions*, NVPA_RawMetricsConfig**));
+DECLARE_NVPWFUNC(NVPW_CUDA_RawMetricsConfig_Create, (NVPW_CUDA_RawMetricsConfig_Create_Params*));
 DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_Destroy, (NVPW_RawMetricsConfig_Destroy_Params* params));
 DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_BeginPassGroup, (NVPW_RawMetricsConfig_BeginPassGroup_Params* params));
 DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_EndPassGroup, (NVPW_RawMetricsConfig_EndPassGroup_Params* params));
@@ -217,6 +217,7 @@ DECLARE_CUPTIFUNC(cuptiProfilerFlushCounterData, (CUpti_Profiler_FlushCounterDat
 DECLARE_CUPTIFUNC(cuptiProfilerUnsetConfig, (CUpti_Profiler_UnsetConfig_Params* params));
 DECLARE_CUPTIFUNC(cuptiProfilerEndSession, (CUpti_Profiler_EndSession_Params* params));
 DECLARE_CUPTIFUNC(cuptiProfilerGetCounterAvailability, (CUpti_Profiler_GetCounterAvailability_Params* params));
+DECLARE_CUPTIFUNC(cuptiGetResultString, (CUptiResult result, const char **str));
 
 
 #ifndef DLSYM_AND_CHECK
@@ -287,7 +288,7 @@ link_perfworks_libraries(void)
     NVPW_MetricsContext_GetMetricProperties_BeginPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_MetricsContext_GetMetricProperties_Begin");
     NVPW_MetricsContext_GetMetricProperties_EndPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_MetricsContext_GetMetricProperties_End");
 
-    NVPA_RawMetricsConfig_CreatePtr = DLSYM_AND_CHECK(dl_libhost, "NVPA_RawMetricsConfig_Create");
+    NVPW_CUDA_RawMetricsConfig_CreatePtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_CUDA_RawMetricsConfig_Create");
     NVPW_RawMetricsConfig_DestroyPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_Destroy");
     NVPW_RawMetricsConfig_BeginPassGroupPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_BeginPassGroup");
     NVPW_RawMetricsConfig_EndPassGroupPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_EndPassGroup")
@@ -331,6 +332,7 @@ link_perfworks_libraries(void)
     cuptiProfilerFlushCounterDataPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiProfilerFlushCounterData");
     cuptiProfilerUnsetConfigPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiProfilerUnsetConfig");
     cuptiProfilerEndSessionPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiProfilerEndSession");
+    cuptiGetResultStringPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiGetResultString");
     
     dlerror();
     int curDeviceId = -1;
@@ -946,7 +948,6 @@ static int nvmon_perfworks_createConfigImage(char* chip, struct bstrList* events
     int ierr = 0;
     uint8_t* cimage = NULL;
     NVPA_RawMetricRequest* reqs = NULL;
-    NVPA_RawMetricsConfig* pRawMetricsConfig = NULL;
 
     NVPW_CUDA_MetricsContext_Create_Params metricsContextCreateParams = { NVPW_CUDA_MetricsContext_Create_Params_STRUCT_SIZE };
     metricsContextCreateParams.pChipName = chip;
@@ -958,39 +959,42 @@ static int nvmon_perfworks_createConfigImage(char* chip, struct bstrList* events
     int num_reqs = nvmon_perfworks_getMetricRequests3(metricsContextCreateParams.pMetricsContext, events, &reqs);
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Create config image for chip %s with %d metric requests, chip, num_reqs);
 
-    NVPA_RawMetricsConfigOptions metricsConfigOptions = { NVPA_RAW_METRICS_CONFIG_OPTIONS_STRUCT_SIZE };
-    metricsConfigOptions.activityKind = NVPA_ACTIVITY_KIND_PROFILER;
-    metricsConfigOptions.pChipName = chip;
     
-    LIKWID_NVPW_API_CALL((*NVPA_RawMetricsConfig_CreatePtr)(&metricsConfigOptions, &pRawMetricsConfig), ierr = -1; goto nvmon_perfworks_createConfigImage_out);
+    NVPW_CUDA_RawMetricsConfig_Create_Params nvpw_metricsConfigCreateParams;
+    nvpw_metricsConfigCreateParams.structSize = NVPW_CUDA_RawMetricsConfig_Create_Params_STRUCT_SIZE;
+    nvpw_metricsConfigCreateParams.pPriv = NULL;
+    nvpw_metricsConfigCreateParams.activityKind = NVPA_ACTIVITY_KIND_PROFILER;
+    nvpw_metricsConfigCreateParams.pChipName = chip;
+
+    LIKWID_NVPW_API_CALL((*NVPW_CUDA_RawMetricsConfig_CreatePtr)(&nvpw_metricsConfigCreateParams), ierr = -1; goto nvmon_perfworks_createConfigImage_out);
     NVPW_RawMetricsConfig_Destroy_Params rawMetricsConfigDestroyParams = { NVPW_RawMetricsConfig_Destroy_Params_STRUCT_SIZE };
-    rawMetricsConfigDestroyParams.pRawMetricsConfig = pRawMetricsConfig;
+    rawMetricsConfigDestroyParams.pRawMetricsConfig = nvpw_metricsConfigCreateParams.pRawMetricsConfig;
 
     if(availImage)
     {
         NVPW_RawMetricsConfig_SetCounterAvailability_Params setCounterAvailabilityParams = {NVPW_RawMetricsConfig_SetCounterAvailability_Params_STRUCT_SIZE};
-        setCounterAvailabilityParams.pRawMetricsConfig = pRawMetricsConfig;
+        setCounterAvailabilityParams.pRawMetricsConfig = nvpw_metricsConfigCreateParams.pRawMetricsConfig;
         setCounterAvailabilityParams.pCounterAvailabilityImage = availImage;
         LIKWID_NVPW_API_CALL((*NVPW_RawMetricsConfig_SetCounterAvailabilityPtr)(&setCounterAvailabilityParams), ierr = -1; goto nvmon_perfworks_createConfigImage_out);
     }
 
     NVPW_RawMetricsConfig_BeginPassGroup_Params beginPassGroupParams = { NVPW_RawMetricsConfig_BeginPassGroup_Params_STRUCT_SIZE };
-    beginPassGroupParams.pRawMetricsConfig = pRawMetricsConfig;
+    beginPassGroupParams.pRawMetricsConfig = nvpw_metricsConfigCreateParams.pRawMetricsConfig;
     LIKWID_NVPW_API_CALL((*NVPW_RawMetricsConfig_BeginPassGroupPtr)(&beginPassGroupParams), ierr = -1; goto nvmon_perfworks_createConfigImage_out;);
 
 
     NVPW_RawMetricsConfig_AddMetrics_Params addMetricsParams = { NVPW_RawMetricsConfig_AddMetrics_Params_STRUCT_SIZE };
-    addMetricsParams.pRawMetricsConfig = pRawMetricsConfig;
+    addMetricsParams.pRawMetricsConfig = nvpw_metricsConfigCreateParams.pRawMetricsConfig;
     addMetricsParams.pRawMetricRequests = reqs;
     addMetricsParams.numMetricRequests = num_reqs;
     LIKWID_NVPW_API_CALL((*NVPW_RawMetricsConfig_AddMetricsPtr)(&addMetricsParams), ierr = -1; goto nvmon_perfworks_createConfigImage_out;);
 
     NVPW_RawMetricsConfig_EndPassGroup_Params endPassGroupParams = { NVPW_RawMetricsConfig_EndPassGroup_Params_STRUCT_SIZE };
-    endPassGroupParams.pRawMetricsConfig = pRawMetricsConfig;
+    endPassGroupParams.pRawMetricsConfig = nvpw_metricsConfigCreateParams.pRawMetricsConfig;
     LIKWID_NVPW_API_CALL((*NVPW_RawMetricsConfig_EndPassGroupPtr)(&endPassGroupParams), ierr = -1; goto nvmon_perfworks_createConfigImage_out);
 
     NVPW_RawMetricsConfig_GetNumPasses_Params getNumPassesParams = { NVPW_RawMetricsConfig_GetNumPasses_Params_STRUCT_SIZE };
-    getNumPassesParams.pRawMetricsConfig = pRawMetricsConfig;
+    getNumPassesParams.pRawMetricsConfig = nvpw_metricsConfigCreateParams.pRawMetricsConfig;
     LIKWID_NVPW_API_CALL((*NVPW_RawMetricsConfig_GetNumPassesPtr)(&getNumPassesParams), ierr = -1; goto nvmon_perfworks_createConfigImage_out);
     if (getNumPassesParams.numPipelinedPasses + getNumPassesParams.numIsolatedPasses > 1)
     {
@@ -1001,11 +1005,11 @@ static int nvmon_perfworks_createConfigImage(char* chip, struct bstrList* events
     }
 
     NVPW_RawMetricsConfig_GenerateConfigImage_Params generateConfigImageParams = { NVPW_RawMetricsConfig_GenerateConfigImage_Params_STRUCT_SIZE };
-    generateConfigImageParams.pRawMetricsConfig = pRawMetricsConfig;
+    generateConfigImageParams.pRawMetricsConfig = nvpw_metricsConfigCreateParams.pRawMetricsConfig;
     LIKWID_NVPW_API_CALL((*NVPW_RawMetricsConfig_GenerateConfigImagePtr)(&generateConfigImageParams), ierr = -1; goto nvmon_perfworks_createConfigImage_out);
 
     NVPW_RawMetricsConfig_GetConfigImage_Params getConfigImageParams = { NVPW_RawMetricsConfig_GetConfigImage_Params_STRUCT_SIZE };
-    getConfigImageParams.pRawMetricsConfig = pRawMetricsConfig;
+    getConfigImageParams.pRawMetricsConfig = nvpw_metricsConfigCreateParams.pRawMetricsConfig;
     getConfigImageParams.bytesAllocated = 0;
     getConfigImageParams.pBuffer = NULL;
     LIKWID_NVPW_API_CALL((*NVPW_RawMetricsConfig_GetConfigImagePtr)(&getConfigImageParams), ierr = -1; goto nvmon_perfworks_createConfigImage_out);
