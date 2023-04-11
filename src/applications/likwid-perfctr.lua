@@ -587,6 +587,17 @@ if print_events == true then
             local cuptilib = string.format("%s/extras/CUPTI/lib64", cudahome)
             likwid.setenv("LD_LIBRARY_PATH", cuptilib..":"..ldpath)
         end
+        -- we need the gpulist to initialize nvmon
+        newgpulist = {}
+        for g=1,gputopo["numDevices"] do
+            num_gpus = num_gpus + 1
+            table.insert(newgpulist, gputopo["devices"][g]["id"])
+        end
+        gpulist = newgpulist
+        -- nvmon has be initialized to initialize nvml which provides the smi events
+        if likwid.nvInit(num_gpus, gpulist) < 0 then
+            perfctr_exit(1)
+        end
         tab = likwid.getGpuEventsAndCounters()
         for d=0,tab["numDevices"],1 do
             if tab["devices"][d] then
