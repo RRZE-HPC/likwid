@@ -637,7 +637,7 @@ if print_events == true then
                 metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
             end
             likwid.setenv("LD_LIBRARY_PATH", hiplib..":"..hsalib..":"..rocproflib..":"..ldpath)
-            likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so.1")
+            likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so")
             likwid.setenv("ROCP_METRICS", metrics_xml)
         end
         tab = likwid.getGpuEventsAndCounters_rocm()
@@ -730,7 +730,7 @@ if print_event ~= nil then
                 metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
             end
             likwid.setenv("LD_LIBRARY_PATH", hiplib..":"..hsalib..":"..rocproflib..":"..ldpath)
-            likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so.1")
+            likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so")
             likwid.setenv("ROCP_METRICS", metrics_xml)
         end
         if rocmhome then
@@ -1181,7 +1181,7 @@ if rocmSupported then
         end
         local likwidlib = "<INSTALLED_PREFIX>/lib"
         likwid.setenv("LD_LIBRARY_PATH", hiplib..":"..hsalib..":"..rocproflib..":"..likwidlib..":"..ldpath)
-        likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so.1")
+        likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so")
         likwid.setenv("ROCP_METRICS", metrics_xml)
     end
 end
