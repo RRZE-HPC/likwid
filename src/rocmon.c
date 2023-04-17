@@ -488,6 +488,7 @@ _rocmon_iterate_agents_callback(hsa_agent_t agent, void* argv)
     // Count number of callback invocations as the devices id
     static int nextDeviceId = 0;
     int deviceId = nextDeviceId;
+    bool noAgent = false;
 
     iterate_agents_cb_arg *arg = (iterate_agents_cb_arg*) argv;
 
@@ -531,6 +532,12 @@ _rocmon_iterate_agents_callback(hsa_agent_t agent, void* argv)
     ROCM_CALL(rocprofiler_iterate_info, (&agent, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_count, device), return HSA_STATUS_ERROR);
     ROCMON_DEBUG_PRINT(DEBUGLEV_INFO, RocProfiler provides %d events, device->numRocMetrics);
 
+    // workaround for bug in ROCm 5.4.0
+    if(device->numRocMetrics == 0) {
+        ROCM_CALL(rocprofiler_iterate_info, (NULL, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_count, device), return HSA_STATUS_ERROR);
+        noAgent = true;
+    }
+
     // Allocate memory for metrics
     device->rocMetrics = (rocprofiler_info_data_t*) malloc(device->numRocMetrics * sizeof(rocprofiler_info_data_t));
     if (device->rocMetrics == NULL)
@@ -552,7 +559,14 @@ _rocmon_iterate_agents_callback(hsa_agent_t agent, void* argv)
         .currIndex = 0,
     };
     ROCMON_DEBUG_PRINT(DEBUGLEV_INFO, Read %d RocProfiler events for device %d, device->numRocMetrics, device->deviceId);
-    ROCM_CALL(rocprofiler_iterate_info, (&agent, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_add, &info_arg), return HSA_STATUS_ERROR);
+
+    // If the call fails with agent, call rocprofiler_iterate_info without agent
+    if(noAgent)
+    {
+        ROCM_CALL(rocprofiler_iterate_info, (NULL, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_add, &info_arg), return HSA_STATUS_ERROR);
+    } else {
+        ROCM_CALL(rocprofiler_iterate_info, (&agent, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_add, &info_arg), return HSA_STATUS_ERROR);
+    }
 
     return HSA_STATUS_SUCCESS;
 }
