@@ -1156,7 +1156,7 @@ if nvSupported then
     if cudahome then
         ldpath = os.getenv("LD_LIBRARY_PATH")
         local cuptilib = string.format("%s/extras/CUPTI/lib64", cudahome)
-        local likwidlib = "<INSTALLED_PREFIX>/lib"
+        local likwidlib = "<INSTALLED_LIBPREFIX>"
         if not ldpath:match(cuptilib) then
             likwid.setenv("LD_LIBRARY_PATH", cuptilib..":"..likwidlib..":"..ldpath)
         else
@@ -1179,7 +1179,7 @@ if rocmSupported then
             -- fall back to old location for backwards compatibility
             metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
         end
-        local likwidlib = "<INSTALLED_PREFIX>/lib"
+        local likwidlib = "<INSTALLED_LIBPREFIX>"
         likwid.setenv("LD_LIBRARY_PATH", hiplib..":"..hsalib..":"..rocproflib..":"..likwidlib..":"..ldpath)
         likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so")
         likwid.setenv("ROCP_METRICS", metrics_xml)

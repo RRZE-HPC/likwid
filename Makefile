@@ -199,6 +199,7 @@ $(L_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$(L_APPS)))
 	@echo "===>  ADJUSTING  $@"
 	@if [ "$(ACCESSMODE)" = "direct" ]; then sed -i -e s/"access_mode = 1"/"access_mode = 0"/g $(SRC_DIR)/applications/$@.lua;fi
 	@sed -e s/'<INSTALLED_BINPREFIX>'/$(subst /,\\/,$(INSTALLED_BINPREFIX))/g \
+		-e s/'<INSTALLED_LIBPREFIX>'/$(subst /,\\/,$(INSTALLED_LIBPREFIX))/g \
 		-e s/'<INSTALLED_PREFIX>'/$(subst /,\\/,$(INSTALLED_PREFIX))/g \
 		-e s/'<VERSION>'/$(VERSION).$(RELEASE).$(MINOR)/g \
 		-e s/'<DATE>'/$(DATE)/g \
