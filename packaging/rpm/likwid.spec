@@ -228,10 +228,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/likwid-mpirun
 %{_bindir}/feedGnuplot
 %{_bindir}/likwid-perfscope
-%{_bindir}/likwid-setFrequencies
 %ifarch %{x86_64} %{ix86} 
+%{_bindir}/likwid-setFrequencies
 %{_sbindir}/likwid-setFreq
 %{_sbindir}/likwid-accessD
+%endif
 %{_libdir}/*
 %{_datadir}/likwid/docs
 %{_datadir}/likwid/perfgroups
