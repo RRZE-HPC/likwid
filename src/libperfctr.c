@@ -187,7 +187,7 @@ likwid_markerInit(void)
     if (!lock_check())
     {
         fprintf(stderr,"Access to performance counters is locked.\n");
-        exit(EXIT_FAILURE);
+        return;
     }
 
     topology_init();
@@ -260,7 +260,9 @@ likwid_markerInit(void)
     {
         fprintf(stderr,"Cannot allocate space for group handling.\n");
         bstrListDestroy(eventStrings);
-        exit(EXIT_FAILURE);
+        bdestroy(bEventStr);
+        perfmon_finalize();
+        return;
     }
     for (i=0; i<eventStrings->qty; i++)
     {

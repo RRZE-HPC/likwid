@@ -122,7 +122,7 @@ use_hardcoded:
         if (getenv("LIKWID_NO_ACCESS") == NULL)
         {
             ERROR_PLAIN_PRINT(Unable to get path to access daemon. Maybe your PATH environment variable does not contain the folder where you installed it or the file was moved away / not copied to that location?);
-            exit(EXIT_FAILURE);
+            return -1;
         }
     }
     return 0;
@@ -231,7 +231,11 @@ init_configuration(void)
                 if (default_configuration() < 0)
                 {
                     ERROR_PLAIN_PRINT(Unable to get path to access daemon);
-                    exit(EXIT_FAILURE);
+                    fclose(fp);
+                    if (config.topologyCfgFileName) free(config.topologyCfgFileName);
+                    if (config.configFileName) free(config.configFileName);
+                    if (config.groupPath) free(config.groupPath);
+                    return -1;
                 }
             }
         }
@@ -248,7 +252,11 @@ init_configuration(void)
             else
             {
                 ERROR_PRINT(Path to group files %s is not a directory, value);
-                exit(EXIT_FAILURE);
+                fclose(fp);
+                if (config.topologyCfgFileName) free(config.topologyCfgFileName);
+                if (config.configFileName) free(config.configFileName);
+                if (config.groupPath) free(config.groupPath);
+                return -1;
             }
         }
         else if (strcmp(name, "daemon_mode") == 0)
