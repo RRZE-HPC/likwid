@@ -333,6 +333,18 @@ int perf_perf_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEv
     return 0;
 }
 
+int perf_metrics_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
+{
+    attr->type = 4;
+    attr->exclude_kernel = 1;
+    attr->exclude_hv = 1;
+    attr->exclude_guest = 1;
+    //attr->disabled = 1;
+    //attr->inherit = 1;
+    attr->config = (event->umask<<8) + event->eventId;
+    return 0;
+}
+
 int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t offcore_flags = 0x0ULL;
@@ -704,6 +716,14 @@ int perfmon_setupCountersThread_perfevent(
                 }
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PERF);
                 break;
+            case METRICS:
+                ret = perf_metrics_setup(&attr, index, event);
+                if (ret < 0)
+                {
+                    continue;
+                }
+                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_METRICS);
+                break;
             case PMC:
                 pmc_lock = 1;
 #if defined(__ARM_ARCH_8A)
@@ -774,6 +794,38 @@ int perfmon_setupCountersThread_perfevent(
             case CBOX25:
             case CBOX26:
             case CBOX27:
+            case CBOX28:
+            case CBOX29:
+            case CBOX30:
+            case CBOX31:
+            case CBOX32:
+            case CBOX33:
+            case CBOX34:
+            case CBOX35:
+            case CBOX36:
+            case CBOX37:
+            case CBOX38:
+            case CBOX39:
+            case CBOX40:
+            case CBOX41:
+            case CBOX42:
+            case CBOX43:
+            case CBOX44:
+            case CBOX45:
+            case CBOX46:
+            case CBOX47:
+            case CBOX48:
+            case CBOX49:
+            case CBOX50:
+            case CBOX51:
+            case CBOX52:
+            case CBOX53:
+            case CBOX54:
+            case CBOX55:
+            case CBOX56:
+            case CBOX57:
+            case CBOX58:
+            case CBOX59:
             case UBOX:
             case UBOXFIX:
             case SBOX0:
