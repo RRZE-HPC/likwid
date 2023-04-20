@@ -75,6 +75,7 @@ static void *dl_perfworks_libcudart = NULL;
         CUptiResult _status = (call);                                         \
         if (_status != CUPTI_SUCCESS) {                                            \
             ERROR_PRINT(Function %s failed with error %d, #call, _status); \
+            if (cuptiGetResultStringPtr) { const char* es = NULL; (*cuptiGetResultStringPtr)(_status, &es); if (es) ERROR_PRINT(%s, es); } \
             handleerror;                                                             \
         }                                                                          \
     } while (0)
@@ -308,6 +309,7 @@ DECLARE_CUPTIFUNC(cuptiProfilerFlushCounterData, (CUpti_Profiler_FlushCounterDat
 DECLARE_CUPTIFUNC(cuptiProfilerUnsetConfig, (CUpti_Profiler_UnsetConfig_Params* params));
 DECLARE_CUPTIFUNC(cuptiProfilerEndSession, (CUpti_Profiler_EndSession_Params* params));
 DECLARE_CUPTIFUNC(cuptiProfilerGetCounterAvailability, (CUpti_Profiler_GetCounterAvailability_Params* params));
+DECLARE_CUPTIFUNC(cuptiGetResultString, (CUptiResult result, const char **str));
 
 
 #ifndef DLSYM_AND_CHECK
@@ -485,6 +487,7 @@ link_perfworks_libraries(void)
     cuptiProfilerFlushCounterDataPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiProfilerFlushCounterData");
     cuptiProfilerUnsetConfigPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiProfilerUnsetConfig");
     cuptiProfilerEndSessionPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiProfilerEndSession");
+    cuptiGetResultStringPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiGetResultString");
     
     dlerror();
     int curDeviceId = -1;
@@ -733,9 +736,76 @@ void nvmon_perfworks_freeDevice(NvmonDevice_t dev)
             free(dev->chip);
             dev->chip = NULL;
         }
+        if (dev->nvEventSets)
+        {
+            for (int i = 0; i < dev->numNvEventSets; i++)
+            {
+                NvmonEventSet* evset = &dev->nvEventSets[i];
+                bstrListDestroy(evset->events);
+                if (evset->nvEvents)
+                {
+                    free(evset->nvEvents);
+                    evset->nvEvents = NULL;
+                }
+                if (evset->results)
+                {
+                    free(evset->results);
+                    evset->results = NULL;
+                }
+                if (evset->configImage)
+                {
+                    free(evset->configImage);
+                    evset->configImage = NULL;
+                    evset->configImageSize = 0;
+                }
+                if (evset->counterDataImage)
+                {
+                    free(evset->counterDataImage);
+                    evset->counterDataImage = NULL;
+                    evset->counterDataImageSize = 0;
+                }
+                if (evset->counterDataScratchBuffer)
+                {
+                    free(evset->counterDataScratchBuffer);
+                    evset->counterDataScratchBuffer = NULL;
+                    evset->counterDataScratchBufferSize = 0;
+                }
+                if (evset->counterDataImagePrefix)
+                {
+                    free(evset->counterDataImagePrefix);
+                    evset->counterDataImagePrefix = NULL;
+                    evset->counterDataImagePrefixSize = 0;
+                }
+                if (evset->counterAvailabilityImage)
+                {
+                    free(evset->counterAvailabilityImage);
+                    evset->counterAvailabilityImage = NULL;
+                    evset->counterAvailabilityImageSize = 0;
+                }
+            }
+            free(dev->nvEventSets);
+            dev->nvEventSets = NULL;
+            dev->numNvEventSets = 0;
+            dev->activeEventSet = -1;
+        }
         if (dev->allevents)
         {
             int i = 0;
+            if (dev->nvEventSets != NULL)
+            {
+                for (i = 0; i < dev->numNvEventSets; i++)
+                {
+                    NvmonEventSet* ev = &dev->nvEventSets[i];
+                    if (ev->results)
+                    {
+                        free(ev->results);
+                    }
+                    if (ev->nvEvents)
+                    {
+                        free(ev->nvEvents);
+                    }
+                }
+            }
             for (i = 0; i < dev->numAllEvents; i++)
             {
                 free(dev->allevents[i]);
@@ -1163,6 +1233,68 @@ static int nvmon_perfworks_getMetricRequests3(NVPA_MetricsContext* context,
 }
 
 
+static int nvmon_perfworks_getMetricRequests(NVPA_MetricsContext* context, struct bstrList* events, NVPA_RawMetricRequest** requests)
+{
+    int i = 0;
+    int isolated = 1;
+    int keepInstances = 1;
+    struct bstrList* temp = bstrListCreate();
+    const char ** raw_events = NULL;
+    int num_raw = 0;
+    for (i = 0; i < events->qty; i++)
+    {
+        //nvmon_perfworks_parse_metric(events->entry[i], &isolated, &keepInstances);
+        keepInstances = 1; /* Bug in Nvidia API */
+        NVPW_MetricsContext_GetMetricProperties_Begin_Params getMetricPropertiesBeginParams = { NVPW_MetricsContext_GetMetricProperties_Begin_Params_STRUCT_SIZE };
+        NVPW_MetricsContext_GetMetricProperties_End_Params getMetricPropertiesEndParams = { NVPW_MetricsContext_GetMetricProperties_End_Params_STRUCT_SIZE };
+        getMetricPropertiesBeginParams.pMetricsContext = context;
+        getMetricPropertiesBeginParams.pMetricName = bdata(events->entry[i]);
+        getMetricPropertiesEndParams.pMetricsContext = context;
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Metric %s, bdata(events->entry[i]));
+        LIKWID_NVPW_API_CALL((*NVPW_MetricsContext_GetMetricProperties_BeginPtr)(&getMetricPropertiesBeginParams), bstrListDestroy(temp); return -EFAULT);
+
+        int count = 0;
+        for (const char** dep = getMetricPropertiesBeginParams.ppRawMetricDependencies; *dep ; ++dep)
+        {
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Metric depend %s, *dep);
+            bstrListAddChar(temp, (char*)*dep);
+        }
+        
+        LIKWID_NVPW_API_CALL((*NVPW_MetricsContext_GetMetricProperties_EndPtr)(&getMetricPropertiesEndParams), bstrListDestroy(temp); return -EFAULT);
+
+    }
+    int num_reqs = 0;
+    NVPA_RawMetricRequest* reqs = malloc((temp->qty+1) * NVPA_RAW_METRIC_REQUEST_STRUCT_SIZE);
+    if (!reqs)
+    {
+        bstrListDestroy(temp);
+        return -ENOMEM;
+    }
+    for (i = 0; i < temp->qty; i++)
+    {
+        NVPA_RawMetricRequest* req = &reqs[num_reqs];
+        char* s = malloc((blength(temp->entry[i])+2) * sizeof(char));
+        if (s)
+        {
+            int ret = snprintf(s, blength(temp->entry[i])+1, "%s", bdata(temp->entry[i]));
+            if (ret > 0)
+            {
+                s[ret] = '\0';
+            }
+            req->structSize = NVPA_RAW_METRIC_REQUEST_STRUCT_SIZE;
+            req->pMetricName = s;
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Metric Request %s, s);
+            req->isolated = isolated;
+            req->keepInstances = keepInstances;
+            num_reqs++;
+        }
+        
+    }
+    bstrListDestroy(temp);
+    *requests = reqs;
+    return num_reqs;
+}
+
 static int nvmon_perfworks_createConfigImage(char* chip, struct bstrList* events, uint8_t **configImage, uint8_t* availImage)
 {
     int i = 0;
@@ -1414,6 +1546,12 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
     tmp = bsplit(eventBString, ',');
     bdestroy(eventBString);
 
+    NvmonEvent_t* nvEvents = malloc(tmp->qty * sizeof(NvmonEvent_t));
+    if (!nvEvents)
+    {
+        bstrListDestroy(tmp);
+        return -ENOMEM;
+    }
     eventtokens = bstrListCreate();
 
     for (i = 0; i < tmp->qty; i++)
@@ -1426,11 +1564,13 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
             if (bstrcmp(parts->entry[0], bname) == BSTR_OK)
             {
                 bstrListAddChar(eventtokens, device->allevents[j]->real);
+                nvEvents[i] = device->allevents[j];
                 GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Adding real event %s, device->allevents[j]->real);
             }
         }
         bstrListDestroy(parts);
     }
+    bstrListDestroy(tmp);
     if (eventtokens->qty == 0)
     {
         ERROR_PRINT(No event in eventset);
@@ -1453,6 +1593,7 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
     if (!tmpEventSet)
     {
         ERROR_PRINT(Cannot enlarge GPU %d eventSet list, device->deviceId);
+        bstrListDestroy(eventtokens);
         return -ENOMEM;
     }
     device->nvEventSets = tmpEventSet;
@@ -1469,6 +1610,7 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
         availImage = malloc(getCounterAvailabilityParams.counterAvailabilityImageSize);
         if (!availImage)
         {
+            bstrListDestroy(eventtokens);
             return -ENOMEM;
         }
         getCounterAvailabilityParams.ctx = device->context;
@@ -1495,23 +1637,38 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
         newEventSet->counterAvailabilityImage = availImage;
         newEventSet->counterAvailabilityImageSize = availImageSize;
         newEventSet->events = eventtokens;
-        newEventSet->numberOfEvents = tmp->qty;
+        newEventSet->numberOfEvents = eventtokens->qty;
         newEventSet->id = device->numNvEventSets;
         gid = device->numNvEventSets;
-        newEventSet->results = malloc(tmp->qty * sizeof(NvmonEventResult));
+        newEventSet->nvEvents = malloc(eventtokens->qty * sizeof(NvmonEvent_t));
+        if (newEventSet->nvEvents == NULL)
+        {
+            ERROR_PRINT(Cannot allocate event list for group %d\n, gid);
+            return -ENOMEM;
+        }
+        memset(newEventSet->nvEvents, 0, eventtokens->qty * sizeof(NvmonEvent_t));
+        for (i = 0; i < eventtokens->qty; i++)
+        {
+            for (j = 0; j < device->numAllEvents; j++)
+            {
+                bstring brealname = bfromcstr(device->allevents[j]->real);
+                if (bstrcmp(eventtokens->entry[i], brealname) == BSTR_OK)
+                {
+                    newEventSet->nvEvents[i] = device->allevents[j];
+                }
+            }
+        }
+        newEventSet->results = malloc(eventtokens->qty * sizeof(NvmonEventResult));
         if (newEventSet->results == NULL)
         {
             ERROR_PRINT(Cannot allocate result list for group %d\n, gid);
             return -ENOMEM;
         }
-        memset(newEventSet->results, 0, tmp->qty * sizeof(NvmonEventResult));
+        memset(newEventSet->results, 0, eventtokens->qty * sizeof(NvmonEventResult));
+        newEventSet->nvEvents = nvEvents;
         device->numNvEventSets++;
         GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Adding eventset %d, gid);
     }
-
-    bstrListDestroy(tmp);
-    //bstrListDestroy(eventtokens);
-    
 
     if(popContext > 0)
     {
@@ -1867,7 +2024,6 @@ int nvmon_perfworks_stopCounters(NvmonDevice_t device)
     nvmon_perfworks_getMetricValue(device->chip, eventSet->counterDataImage, eventSet->events, &values);
 
     int i = 0, j = 0;
-/*    for (j = 0; j < eventSet->events->qty; j++)*/
     for (j = 0; j < eventSet->numberOfEvents; j++)
     {
         double res = values[j];

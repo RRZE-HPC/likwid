@@ -113,6 +113,10 @@ calculateMarkerResult(RegisterIndex index, uint64_t start, uint64_t stop, int ov
 {
     double result = 0.0;
     uint64_t maxValue = 0ULL;
+    if (start > stop)
+    {
+        overflows++;
+    }
     if (overflows == 0)
     {
         result = (double) (stop - start);
@@ -183,7 +187,7 @@ likwid_markerInit(void)
     if (!lock_check())
     {
         fprintf(stderr,"Access to performance counters is locked.\n");
-        exit(EXIT_FAILURE);
+        return;
     }
 
     topology_init();
@@ -256,7 +260,9 @@ likwid_markerInit(void)
     {
         fprintf(stderr,"Cannot allocate space for group handling.\n");
         bstrListDestroy(eventStrings);
-        exit(EXIT_FAILURE);
+        bdestroy(bEventStr);
+        perfmon_finalize();
+        return;
     }
     for (i=0; i<eventStrings->qty; i++)
     {
@@ -490,8 +496,9 @@ likwid_markerClose(void)
     {
         free(results);
     }
-    likwid_init = 0;
+    perfmon_finalize();
     HPMfinalize();
+    likwid_init = 0;
 }
 
 int
@@ -626,12 +633,12 @@ likwid_markerStopRegion(const char* regionTag)
     {
         if (groupSet->groups[groupSet->activeGroup].events[i].type != NOTYPE)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu, regionTag, thread_id, cpu_id, i,
-                            LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
             result = calculateMarkerResult(groupSet->groups[groupSet->activeGroup].events[i].index, results->StartPMcounters[i],
                                             groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData,
                                             groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows -
                                             results->StartOverflows[i]);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu DIFF %f, regionTag, thread_id, cpu_id, i,
+                            LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData, result);
             if ((counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != THERMAL) &&
                 (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != VOLTAGE) &&
                 (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != MBOX0TMP))

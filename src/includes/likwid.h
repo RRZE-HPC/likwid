@@ -2178,7 +2178,7 @@ Get the metric result of all measurement cycles. It reads all raw results for th
 @param [in] gpuId ID of the GPU that should be read
 @return The metric result
 */
-double nvmon_getMetric(int groupId, int metricId, int gpuId);
+double nvmon_getMetric(int groupId, int metricId, int gpuId) __attribute__ ((visibility ("default") ));
 /*! \brief Get the last metric result of the specified group, counter and GPU (Nvmon)
 
 Get the metric result of the last measurement cycle. It reads all raw results for the given groupId and gpuId.
@@ -2187,7 +2187,7 @@ Get the metric result of the last measurement cycle. It reads all raw results fo
 @param [in] gpuId ID of the GPU that should be read
 @return The metric result
 */
-double nvmon_getLastMetric(int groupId, int metricId, int gpuId);
+double nvmon_getLastMetric(int groupId, int metricId, int gpuId) __attribute__ ((visibility ("default") ));
 /*! \brief Get the number of configured event groups (Nvmon)
 
 @return Number of groups
@@ -2300,6 +2300,43 @@ int nvmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** lo
 /** @}*/
 
 #endif /* LIKWID_WITH_NVMON */
+
+typedef enum {
+    HWFEATURE_SCOPE_INVALID = 0,
+    HWFEATURE_SCOPE_HWTHREAD,
+    MAX_HWFEATURE_SCOPE,
+} HWFeatureScope;
+
+static char* HWFeatureScopeNames[MAX_HWFEATURE_SCOPE] = {
+    [HWFEATURE_SCOPE_INVALID] = "invalid",
+    [HWFEATURE_SCOPE_HWTHREAD] = "hwthread",
+};
+
+typedef struct {
+    char* name;
+    char* description;
+    HWFeatureScope scope;
+    unsigned int readonly:1;
+    unsigned int writeonly:1;
+} HWFeature;
+
+typedef struct {
+    int num_features;
+    HWFeature* features;
+} HWFeatureList;
+
+int hwFeatures_init() __attribute__ ((visibility ("default") ));
+
+int hwFeatures_list(HWFeatureList* list) __attribute__ ((visibility ("default") ));
+void hwFeatures_list_return(HWFeatureList* list) __attribute__ ((visibility ("default") ));
+
+int hwFeatures_get(HWFeature* feature, int hwthread, uint64_t* value) __attribute__ ((visibility ("default") ));
+int hwFeatures_getByName(char* name, int hwthread, uint64_t* value) __attribute__ ((visibility ("default") ));
+int hwFeatures_modify(HWFeature* feature, int hwthread, uint64_t value) __attribute__ ((visibility ("default") ));
+int hwFeatures_modifyByName(char* name, int hwthread, uint64_t value) __attribute__ ((visibility ("default") ));
+
+void hwFeatures_finalize() __attribute__ ((visibility ("default") ));
+
 
 #ifdef __cplusplus
 }

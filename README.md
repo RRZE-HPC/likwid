@@ -10,7 +10,7 @@ our hands to test them properly.
 
 [LIKWID Playlist (YouTube)](https://www.youtube.com/playlist?list=PLxVedhmuwLq2CqJpAABDMbZG8Whi7pKsk)
 
-[![Build Status](https://gitlab.rrze.fau.de/ub55yzis/likwid/badges/master/pipeline.svg)](https://gitlab.rrze.fau.de/ub55yzis/likwid/-/commits/master) [![General LIKWID DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4275676.svg)](https://doi.org/10.5281/zenodo.4275676)
+[![Build Status](https://gitos.rrze.fau.de/ub55yzis/likwid/badges/master/pipeline.svg)](https://gitos.rrze.fau.de/ub55yzis/likwid/-/commits/master) [![General LIKWID DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4275676.svg)](https://doi.org/10.5281/zenodo.4275676)
 
 It consists of:
 

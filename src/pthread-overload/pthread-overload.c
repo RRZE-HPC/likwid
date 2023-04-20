@@ -42,6 +42,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/syscall.h>
+#include <pthread.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -81,12 +82,14 @@ static int *pin_ids = NULL;
 static int ncpus = 0;
 static uint64_t skipMask = 0x0;
 static int silent = 0;
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 void __attribute__((constructor (103))) init_pthread_overload(void)
 {
-    char *str = NULL;
+    char *str = NULL, *pinstr = NULL;
     char *token = NULL, *saveptr = NULL;
     char *delimiter = ",";
-    int i = 0;
+    int i = 0, ret = 0;
     static long avail_cpus = 0;
     avail_cpus = sysconf(_SC_NPROCESSORS_CONF);
     pin_ids = malloc(avail_cpus * sizeof(int));
@@ -94,17 +97,33 @@ void __attribute__((constructor (103))) init_pthread_overload(void)
     str = getenv("LIKWID_PIN");
     if (str != NULL)
     {
-        token = str;
+        pinstr = malloc((strlen(str)+2) * sizeof(char));
+        if (!pinstr)
+        {
+            free(pin_ids);
+            pin_ids = NULL;
+            return;
+        }
+        ret = snprintf(pinstr, (strlen(str)+1), "%s", str);
+        if (ret <= 0)
+        {
+            free(pin_ids);
+            pin_ids = NULL;
+            return;
+        }
+        pinstr[ret] = '\0';
+        saveptr = pinstr;
+        token = pinstr;
         while (token)
         {
-            token = strtok_r(str,delimiter,&saveptr);
-            str = NULL;
+            token = strtok_r(saveptr, delimiter ,&saveptr);
             if (token)
             {
                 ncpus++;
                 pin_ids[i++] = strtoul(token, &token, 10);
             }
         }
+        free(pinstr);
     }
     str = getenv("LIKWID_SKIP");
     if (str != NULL)
@@ -136,6 +155,7 @@ pthread_create(pthread_t* thread,
     static long online_cpus = 0;
     static int shepard = 0;
     online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    pthread_mutex_lock(&mutex);
 
     /* On first entry: Get Evironment Variable and initialize pin_ids */
     if (ncalled == 0 && pin_ids != NULL)
@@ -238,6 +258,7 @@ pthread_create(pthread_t* thread,
     if (!handle)
     {
         color_print("%s\n", dlerror());
+        pthread_mutex_unlock(&mutex);
         return -1;
     }
 
@@ -247,6 +268,7 @@ pthread_create(pthread_t* thread,
     if ((error = dlerror()) != NULL)
     {
         color_print("%s\n", error);
+        pthread_mutex_unlock(&mutex);
         return -2;
     }
 
@@ -309,6 +331,7 @@ pthread_create(pthread_t* thread,
     fflush(stdout);
     ncalled++;
     dlclose(handle);
+    pthread_mutex_unlock(&mutex);
 
     return ret;
 }

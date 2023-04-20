@@ -351,8 +351,8 @@ proc_init_cpuFeatures(void)
 #ifdef _ARCH_PPC
     return;
 #endif
-    const_bstring flagString = bformat("flags");
-    const_bstring featString = bformat("Features");
+    struct tagbstring flagString = bsStatic ("flags");
+    struct tagbstring featString = bsStatic ("Features");
     bstring flagline = bfromcstr("");
 
     bstring cpuinfo = read_file("/proc/cpuinfo");
@@ -361,11 +361,11 @@ proc_init_cpuFeatures(void)
     for (int i = 0; i < cpulines->qty; i++)
     {
 #if defined(__x86_64__) || defined(__i386__)
-        if (bstrncmp(cpulines->entry[i], flagString, 5) == BSTR_OK ||
-            bstrncmp(cpulines->entry[i], featString, 8) == BSTR_OK)
+        if (bstrncmp(cpulines->entry[i], &flagString, 5) == BSTR_OK ||
+            bstrncmp(cpulines->entry[i], &featString, 8) == BSTR_OK)
 #endif
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__) || defined(__ARM_ARCH_8A)
-        if (bstrncmp(cpulines->entry[i], featString, 8) == BSTR_OK)
+        if (bstrncmp(cpulines->entry[i], &featString, 8) == BSTR_OK)
 #endif
 #ifdef _ARCH_PPC
 	if (ret != 1)
@@ -379,6 +379,7 @@ proc_init_cpuFeatures(void)
     bstrListDestroy(cpulines);
 
     struct bstrList* flaglist = bsplit(flagline, ' ');
+    bdestroy(flagline);
     bstring bfeatures = bfromcstr("");
 
     cpuid_info.featureFlags = 0;
@@ -721,42 +722,62 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     int hidx = 0;
     for (int i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-	    int pid = hwThreadPool[i].packageId;
-	    int found = 0;
-	    for (int j = 0; j < hidx; j++)
-	    {
-		    if (pid == helper[j])
-		    {
-			    found = 1;
-			    break;
-		    }
-	    }
-	    if (!found)
-	    {
-		    helper[hidx++] = pid;
+        int pid = hwThreadPool[i].packageId;
+        int found = 0;
+        for (int j = 0; j < hidx; j++)
+        {
+            if (pid == helper[j])
+            {
+                found = 1;
+                break;
             }
+        }
+        if (!found)
+        {
+            helper[hidx++] = pid;
+        }
     }
     cpuid_topology.numSockets = hidx;
+    /* Traverse all sockets to get maximal thread count per socket.
+     * This should fix the code for architectures with "empty" sockets.
+     */
+    int num_threads_per_socket = 0;
+    for (int i = 0; i < cpuid_topology.numSockets; i++)
+    {
+        int threadCount = 0;
+        for (int j = 0; j < cpuid_topology.numHWThreads; j++)
+        {
+            if (helper[i] == hwThreadPool[j].packageId)
+            {
+                threadCount++;
+            }
+        }
+        if (threadCount > num_threads_per_socket)
+        {
+            num_threads_per_socket = threadCount;
+        }
+    }
+
     int first_socket_id = helper[0];
     hidx = 0;
     for (int i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-	    int did = hwThreadPool[i].dieId;
-	    int pid = hwThreadPool[i].packageId;
-	    if (pid != first_socket_id) continue;
-	    int found = 0;
-	    for (int j = 0; j < hidx; j++)
-	    {
-		    if (did == helper[j])
-		    {
-			    found = 1;
-			    break;
-		    }
-	    }
-	    if (!found)
-	    {
-		    helper[hidx++] = did;
+        int did = hwThreadPool[i].dieId;
+        int pid = hwThreadPool[i].packageId;
+        if (pid != first_socket_id) continue;
+        int found = 0;
+        for (int j = 0; j < hidx; j++)
+        {
+            if (did == helper[j])
+            {
+                found = 1;
+                break;
             }
+        }
+        if (!found)
+        {
+            helper[hidx++] = did;
+        }
     }
 
     cpuid_topology.numDies = hidx * cpuid_topology.numSockets;
@@ -764,19 +785,15 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     {
         cpuid_topology.numDies = 0;
     }
-    num_threads_per_core = 0;
-    int test_core_id = hwThreadPool[0].coreId;
-    int test_socket_id = hwThreadPool[0].packageId;
-    int num_threads_per_socket = 0;
+    int max_thread_sibling_id = 0;
     for (int i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-	    if (hwThreadPool[i].packageId == test_socket_id)
-	    {
-		    num_threads_per_socket++;
-		    if (hwThreadPool[i].coreId == test_core_id)
-			    num_threads_per_core++;
-	    }
+        if (hwThreadPool[i].threadId > max_thread_sibling_id)
+        {
+            max_thread_sibling_id = hwThreadPool[i].threadId;
+        }
     }
+    num_threads_per_core = max_thread_sibling_id + 1;
     cpuid_topology.numCoresPerSocket = num_threads_per_socket/num_threads_per_core;
     cpuid_topology.numThreadsPerCore = num_threads_per_core;
     free(helper);

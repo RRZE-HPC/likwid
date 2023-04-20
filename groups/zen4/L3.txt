@@ -1,0 +1,26 @@
+SHORT L3 cache bandwidth in MBytes/s
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  CPU_CLOCKS_UNHALTED
+PMC2  L2_PF_HIT_IN_L3
+PMC3  L2_PF_MISS_IN_L3
+PMC4  L2_CACHE_MISS_AFTER_L1_MISS
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  PMC1/PMC0
+L3 bandwidth [MBytes/s] 1.0E-06*(PMC2+PMC3+PMC4)*64.0/time
+L3 data volume [GBytes] 1.0E-09*(PMC2+PMC3+PMC4)*64.0
+
+LONG
+Formulas:
+L3 bandwidth [MBytes/s] = 1.0E-06*(L2_PF_HIT_IN_L3+L2_PF_MISS_IN_L3+L2_CACHE_MISS_AFTER_L1_MISS)*64.0/time
+L3 data volume [GBytes] = 1.0E-09*(L2_PF_HIT_IN_L3+L2_PF_MISS_IN_L3+L2_CACHE_MISS_AFTER_L1_MISS)*64.0
+--
+Profiling group to measure L3 cache bandwidth. It measures only loads from L3.
+There is no performance event to measure the stores to L3.

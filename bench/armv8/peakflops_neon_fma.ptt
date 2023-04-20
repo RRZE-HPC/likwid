@@ -1,0 +1,67 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 56
+BYTES 8
+DESC Double-precision multiplications and additions with a single load, optimized for NEON FMAs
+LOADS 1
+STORES 0
+INSTR_LOOP 29
+UOPS 29
+ldr    q1, [STR0]
+ldr    q2, [STR0]
+ldr    q3, [STR0]
+ldr    q4, [STR0]
+ldr    q5, [STR0]
+ldr    q6, [STR0]
+ldr    q7, [STR0]
+ldr    q8, [STR0]
+ldr    q9, [STR0]
+ldr    q10, [STR0]
+ldr    q11, [STR0]
+ldr    q12, [STR0]
+ldr    q13, [STR0]
+ldr    q14, [STR0]
+ldr    q15, [STR0]
+ldr    q16, [STR0]
+ldr    q17, [STR0]
+ldr    q18, [STR0]
+ldr    q19, [STR0]
+ldr    q20, [STR0]
+ldr    q21, [STR0]
+ldr    q22, [STR0]
+ldr    q23, [STR0]
+ldr    q24, [STR0]
+ldr    q25, [STR0]
+ldr    q26, [STR0]
+ldr    q27, [STR0]
+ldr    q28, [STR0]
+LOOP 2
+ldr      q16, [STR0], #8
+fmla  v1.2d, v1.2d, v1.2d
+fmla  v2.2d, v2.2d, v2.2d
+fmla  v3.2d, v3.2d, v3.2d
+fmla  v4.2d, v4.2d, v4.2d
+fmla  v5.2d, v5.2d, v5.2d
+fmla  v6.2d, v6.2d, v6.2d
+fmla  v7.2d, v7.2d, v7.2d
+fmla  v8.2d, v8.2d, v8.2d
+fmla  v9.2d, v9.2d, v9.2d
+fmla  v10.2d, v10.2d, v10.2d
+fmla  v11.2d, v11.2d, v11.2d
+fmla  v12.2d, v12.2d, v12.2d
+fmla  v13.2d, v13.2d, v13.2d
+fmla  v14.2d, v14.2d, v14.2d
+fmla  v15.2d, v15.2d, v15.2d
+fmla  v16.2d, v16.2d, v16.2d
+fmla  v17.2d, v17.2d, v17.2d
+fmla  v18.2d, v18.2d, v18.2d
+fmla  v19.2d, v19.2d, v19.2d
+fmla  v20.2d, v20.2d, v20.2d
+fmla  v21.2d, v21.2d, v21.2d
+fmla  v22.2d, v22.2d, v22.2d
+fmla  v23.2d, v23.2d, v23.2d
+fmla  v24.2d, v24.2d, v24.2d
+fmla  v25.2d, v25.2d, v25.2d
+fmla  v26.2d, v26.2d, v26.2d
+fmla  v27.2d, v27.2d, v27.2d
+fmla  v28.2d, v28.2d, v28.2d

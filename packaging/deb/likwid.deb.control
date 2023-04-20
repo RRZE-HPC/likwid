@@ -1,0 +1,12 @@
+Package: likwid
+Version: {VERSION}
+Installed-Size: {INSTALLED_SIZE}
+Architecture: {ARCH}
+Maintainer: thomas.gruber@fau.de
+Depends: libc6 (>= 2.2.1)
+Build-Depends: debhelper-compat (= 13)
+Description: Performance tools for the Linux console
+Homepage: https://github.com/RRZE-HPC/likwid/
+Source: likwid
+Rules-Requires-Root: no
+

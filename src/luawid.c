@@ -212,12 +212,13 @@ static int
 lua_likwid_getAccessMode(lua_State* L)
 {
 #ifdef LIKWID_USE_PERFEVENT
-    return ACCESSMODE_PERF;
+    lua_pushinteger(L, ACCESSMODE_PERF);
 #else
     init_configuration();
     Configuration_t config = get_configuration();
-    return config->daemonMode;
+    lua_pushinteger(L, config->daemonMode);
 #endif
+    return 1;
 }
 
 static int
@@ -718,6 +719,12 @@ lua_likwid_getCpuInfo(lua_State* L)
     lua_pushstring(L,"stepping");
     lua_pushinteger(L, (lua_Integer)(cpuinfo->stepping));
     lua_settable(L,-3);
+    lua_pushstring(L,"vendor");
+    lua_pushinteger(L, (lua_Integer)(cpuinfo->vendor));
+    lua_settable(L,-3);
+    lua_pushstring(L,"part");
+    lua_pushinteger(L, (lua_Integer)(cpuinfo->part));
+    lua_settable(L,-3);
     lua_pushstring(L,"clock");
     lua_pushinteger(L, (lua_Integer)(cpuinfo->clock));
     lua_settable(L,-3);
@@ -756,6 +763,12 @@ lua_likwid_getCpuInfo(lua_State* L)
     lua_settable(L,-3);
     lua_pushstring(L,"perf_num_fixed_ctr");
     lua_pushinteger(L, (lua_Integer)(cpuinfo->perf_num_fixed_ctr));
+    lua_settable(L,-3);
+    lua_pushstring(L,"supportUncore");
+    lua_pushinteger(L, (lua_Integer)(cpuinfo->supportUncore));
+    lua_settable(L,-3);
+    lua_pushstring(L,"supportClientmem");
+    lua_pushinteger(L, (lua_Integer)(cpuinfo->supportClientmem));
     lua_settable(L,-3);
     return 1;
 }
@@ -805,6 +818,10 @@ lua_likwid_getCpuTopology(lua_State* L)
 
     lua_pushstring(L,"numSockets");
     lua_pushinteger(L, (lua_Integer)(cputopo->numSockets));
+    lua_settable(L,-3);
+
+    lua_pushstring(L,"numDies");
+    lua_pushinteger(L, (lua_Integer)(cputopo->numDies));
     lua_settable(L,-3);
 
     lua_pushstring(L,"numCoresPerSocket");
@@ -1957,20 +1974,41 @@ lua_likwid_send_signal(lua_State* L)
 int
 parse(char *line, char **argv, int maxlen)
 {
-     int len = 0;
-     while (*line != '\0' && len < maxlen) {       /* if not the end of line ....... */
-          if (*line == ' ' || *line == '\t' || *line == '\n')
-               *line++ = '\0';     /* replace white spaces with 0    */
-          *argv++ = line;          /* save the argument position     */
-          len++;
-          while (*line != '\0' && *line != ' ' &&
-                 *line != '\t' && *line != '\n')
-               line++;             /* skip the argument until ...    */
-     }
-     *argv = (char *)'\0';                 /* mark the end of argument list  */
-     if (len < maxlen || *line == '\0')
-         return len;
-     return -1;
+    int pos = 0;
+    int len = 0;
+    int in_string = 0;
+    while (*line != '\0' && len < maxlen)
+    {
+        if (*line == '"' || *line == '\'')
+        {
+            in_string = (!in_string);
+            line++;
+            pos++;
+            continue;
+        }
+        if (!in_string)
+        {
+            if ((*line == ' ' || *line == '\t' || *line == '\n'))
+            {
+                *line++ = '\0';     /* replace white spaces with 0    */
+                pos++;
+            }
+            *argv++ = line;          /* save the argument position     */
+            len++;
+        }
+        else if ((*line == ' ' || *line == '\t' || *line == '\n'))
+        {
+            line++;
+            pos++;
+        }
+        while (*line != '\0' && *line != ' ' && *line != '\t' && *line != '\n' && *line != '"' && *line != '\'')
+        {
+            line++;
+            pos++;
+        }
+    }
+    *argv = (char *)'\0';
+    return (len < maxlen || *line == '\0' ? len : -1);
 }
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -2037,6 +2075,7 @@ lua_likwid_startProgram(lua_State* L)
     {
         lua_pushstring(L,"Number of CLI args greater than configured");
         lua_error(L);
+        free(cpus);
         return 0;
     }
     ppid = getpid();
@@ -3500,6 +3539,106 @@ lua_likwid_nvSupported(lua_State *L)
 }
 #endif /* LIKWID_WITH_NVMON */
 
+static int hwfeatures_inititalized = 0;
+static int
+lua_likwid_initHWFeatures(lua_State *L)
+{
+    int err = 0;
+    if (!hwfeatures_inititalized)
+    {
+        err = hwFeatures_init();
+        if (err == 0)
+        {
+            hwfeatures_inititalized = 1;
+        }
+    }
+    lua_pushnumber(L, err);
+    return 1;
+}
+
+static int
+lua_likwid_finalizeHWFeatures(lua_State *L)
+{
+    if (hwfeatures_inititalized)
+    {
+        hwFeatures_finalize();
+        hwfeatures_inititalized = 0;
+    }
+    return 0;
+}
+static int
+lua_likwid_getHwFeatureList(lua_State *L)
+{
+    if (!hwfeatures_inititalized)
+    {
+        lua_newtable(L);
+        return 1;
+    }
+    HWFeatureList list = {0, NULL};
+    hwFeatures_list(&list);
+    lua_newtable(L);
+    for (int i = 0; i < list.num_features; i++)
+    {
+        lua_pushinteger(L, (lua_Integer)( i+1));
+        lua_newtable(L);
+        lua_pushstring(L, "Name");
+        lua_pushstring(L, list.features[i].name);
+        lua_settable(L,-3);
+        lua_pushstring(L, "Description");
+        lua_pushstring(L, list.features[i].description);
+        lua_settable(L,-3);
+        lua_pushstring(L, "ReadOnly");
+        lua_pushboolean(L, list.features[i].readonly);
+        lua_settable(L,-3);
+        lua_pushstring(L, "WriteOnly");
+        lua_pushboolean(L, list.features[i].writeonly);
+        lua_settable(L,-3);
+        lua_pushstring(L, "Scope");
+        lua_pushstring(L, HWFeatureScopeNames[list.features[i].scope]);
+        lua_settable(L,-3);
+        lua_settable(L,-3);
+    }
+    hwFeatures_list_return(&list);
+    return 1;
+}
+
+static int
+lua_likwid_getHwFeature(lua_State *L)
+{
+    if (hwfeatures_inititalized)
+    {
+        char* feature = (char *)luaL_checkstring(L, 1);
+        int hwt = luaL_checknumber(L,2);
+        uint64_t value = 0;
+        int err = hwFeatures_getByName(feature, hwt, &value);
+        if (err == 0)
+        {
+            lua_pushinteger(L, value);
+            return 1;
+        }
+    }
+    lua_pushnil(L);
+    return 1;
+}
+
+static int
+lua_likwid_setHwFeature(lua_State *L)
+{
+    if (hwfeatures_inititalized)
+    {
+        char* feature = (char *)luaL_checkstring(L, 1);
+        int hwt = luaL_checknumber(L,2);
+        int value = luaL_checknumber(L,3);
+        int err = hwFeatures_modifyByName(feature, hwt, value);
+        if (err == 0)
+        {
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+    }
+    lua_pushboolean(L, 0);
+    return 1;
+}
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -3683,6 +3822,11 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_nvGetNameOfMetric",lua_likwid_nvGetNameOfMetric);
     lua_register(L, "likwid_nvGetNameOfGroup",lua_likwid_nvGetNameOfGroup);
 #endif /* LIKWID_WITH_NVMON */
+    lua_register(L, "likwid_initHWFeatures", lua_likwid_initHWFeatures);
+    lua_register(L, "likwid_finalizeHWFeatures", lua_likwid_finalizeHWFeatures);
+    lua_register(L, "likwid_hwFeatures_list",lua_likwid_getHwFeatureList);
+    lua_register(L, "likwid_hwFeatures_get",lua_likwid_getHwFeature);
+    lua_register(L, "likwid_hwFeatures_set",lua_likwid_setHwFeature);
 #ifdef __MIC__
     setuid(0);
     seteuid(0);

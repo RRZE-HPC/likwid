@@ -44,6 +44,7 @@ int perfmon_init_zen3(int cpu_id)
     lock_acquire((int*) &core_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &numa_lock[affinity_thread2numa_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &die_lock[affinity_thread2die_lookup[cpu_id]], cpu_id);
     return 0;
 }
 
@@ -205,18 +206,18 @@ int perfmon_setupCounterThread_zen3(int thread_id, PerfmonEventSet* eventSet)
         switch (type)
         {
             case PMC:
-                zen2_pmc_setup(cpu_id, index, event);
+                zen3_pmc_setup(cpu_id, index, event);
                 break;
             case CBOX0:
-                zen2_cache_setup(cpu_id, index, event);
+                zen3_cache_setup(cpu_id, index, event);
                 break;
             case POWER:
                 break;
             case FIXED:
-                fixed_flags |= zen2_fixed_setup(cpu_id, index, event);
+                fixed_flags |= zen3_fixed_setup(cpu_id, index, event);
                 break;
             case MBOX0:
-                zen2_uncore_setup(cpu_id, index, event);
+                zen3_uncore_setup(cpu_id, index, event);
                 break;
             default:
                 break;

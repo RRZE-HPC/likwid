@@ -63,54 +63,54 @@ int parse_cpuinfo(uint32_t* count, uint32_t* family, uint32_t* variant, uint32_t
     uint32_t c = 0;
     int (*ownatoi)(const char*);
     ownatoi = &atoi;
+    struct tagbstring familyString = bsStatic("CPU architecture");
+    struct tagbstring variantString = bsStatic("CPU variant");
+    struct tagbstring steppingString = bsStatic("CPU revision");
+    struct tagbstring partString = bsStatic("CPU part");
+    struct tagbstring vendString = bsStatic("CPU implementer");
+    struct tagbstring procString = bsStatic("processor");
 
     if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
     {
-        const_bstring familyString = bformat("CPU architecture");
-        const_bstring variantString = bformat("CPU variant");
-        const_bstring steppingString = bformat("CPU revision");
-        const_bstring partString = bformat("CPU part");
-        const_bstring vendString = bformat("CPU implementer");
-        const_bstring procString = bformat("processor");
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
         bdestroy(src);
         fclose(fp);
         for (i=0;i<tokens->qty;i++)
         {
-            if ((f == 0) && (binstr(tokens->entry[i],0,procString) != BSTR_ERR))
+            if ((binstr(tokens->entry[i],0,&procString) != BSTR_ERR))
             {
                 c++;
             }
-            else if ((f == 0) && (binstr(tokens->entry[i],0,familyString) != BSTR_ERR))
+            else if ((f == 0) && (binstr(tokens->entry[i],0,&familyString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 f = ownatoi(bdata(subtokens->entry[1]));
                 bstrListDestroy(subtokens);
             }
-            else if ((s == 0) && (binstr(tokens->entry[i],0,steppingString) != BSTR_ERR))
+            else if ((s == 0) && (binstr(tokens->entry[i],0,&steppingString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 s = ownatoi(bdata(subtokens->entry[1]));
                 bstrListDestroy(subtokens);
             }
-            else if ((v == 0) && (binstr(tokens->entry[i],0,variantString) != BSTR_ERR))
+            else if ((v == 0) && (binstr(tokens->entry[i],0,&variantString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 v = strtol(bdata(subtokens->entry[1]), NULL, 0);
                 bstrListDestroy(subtokens);
             }
-            else if ((p == 0) && (binstr(tokens->entry[i],0,partString) != BSTR_ERR))
+            else if ((p == 0) && (binstr(tokens->entry[i],0,&partString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 p = strtol(bdata(subtokens->entry[1]), NULL, 0);
                 bstrListDestroy(subtokens);
             }
-            else if ((p == 0) && (binstr(tokens->entry[i],0,vendString) != BSTR_ERR))
+            else if ((vend == 0) && (binstr(tokens->entry[i],0,&vendString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
@@ -119,9 +119,6 @@ int parse_cpuinfo(uint32_t* count, uint32_t* family, uint32_t* variant, uint32_t
             }
         }
         bstrListDestroy(tokens);
-        /*bdestroy(familyString);
-        bdestroy(variantString);
-        bdestroy(steppingString);*/
     }
     else
     {
@@ -284,24 +281,15 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
         cpuid_info.stepping = atoi(info);
     snprintf(cpuid_info.architecture, 19, "x86_64");
 #endif
-#ifdef __ARM_ARCH_7A__
-    if ((info = LIKWID_HWLOC_NAME(obj_get_info_by_name)(obj, "CPUArchitecture")))
-       cpuid_info.family = atoi(info);
-    if ((info = LIKWID_HWLOC_NAME(obj_get_info_by_name)(obj, "CPURevision")))
-        cpuid_info.model = atoi(info);
-    if (cpuid_info.family == 0 || cpuid_info.model == 0)
-    {
-        uint32_t part = 0;
-        parse_cpuinfo(&count, &cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
-        parse_cpuname(cpuid_info.osname);
-    }
-    snprintf(cpuid_info.architecture, 19, "armv7");
-#endif
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
-    uint32_t part = 0;
     parse_cpuinfo(&count, &cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
     parse_cpuname(cpuid_info.osname);
+#ifdef __ARM_ARCH_7A__
+    snprintf(cpuid_info.architecture, 19, "armv7");
+#endif
+#ifdef __ARM_ARCH_8A
     snprintf(cpuid_info.architecture, 19, "armv8");
+#endif
 #endif
 
 #ifndef _ARCH_PPC
@@ -344,8 +332,26 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
 
     cpuid_topology.numHWThreads = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_PU);
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+    if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
+    {
+        int max_id = 0;
+        for (int i = 0; i < LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_PU); i++)
+        {
+            obj = LIKWID_HWLOC_NAME(get_obj_by_type)(hwloc_topology, HWLOC_OBJ_PU, i);
+            if (obj->os_index > max_id)
+            {
+                max_id = obj->os_index;
+            }
+        }
+        if (max_id + 1 > count)
+        {
+            count = max_id + 1;
+        }
+    }
     if (count > cpuid_topology.numHWThreads)
+    {
         cpuid_topology.numHWThreads = count;
+    }
 #endif
     count = likwid_sysfs_list_len("/sys/devices/system/cpu/online");
     if (count > cpuid_topology.numHWThreads)
