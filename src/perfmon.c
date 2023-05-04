@@ -859,11 +859,12 @@ perfmon_check_counter_map(int cpu_id)
         HPMfinalize();
 }
 
-void
+int
 perfmon_init_maps(void)
 {
+    int err = 0;
     if (eventHash != NULL && counter_map != NULL && box_map != NULL && perfmon_numCounters > 0 && perfmon_numArchEvents > 0)
-        return;
+        return -EINVAL;
     switch ( cpuid_info.family )
     {
         case P6_FAMILY:
@@ -922,6 +923,7 @@ perfmon_init_maps(void)
 
                 case CORE_DUO:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
+                    err = -EINVAL;
                     break;
 
                 case XEON_MP:
@@ -1158,6 +1160,7 @@ perfmon_init_maps(void)
 
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
@@ -1176,6 +1179,7 @@ perfmon_init_maps(void)
 
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
@@ -1241,6 +1245,8 @@ perfmon_init_maps(void)
                     break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
+                    err = -EINVAL;
+                    break;
             }
             break;
         case ZEN3_FAMILY:
@@ -1267,6 +1273,8 @@ perfmon_init_maps(void)
                     break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
+                    err = -EINVAL;
+                    break;
             }
             break;
 #ifdef _ARCH_PPC
@@ -1288,6 +1296,10 @@ perfmon_init_maps(void)
                     translate_types = power9_translate_types;
                     perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER9;
                     perfmon_numCounters = NUM_COUNTERS_POWER9;
+                    break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported PPC Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
@@ -1330,6 +1342,7 @@ perfmon_init_maps(void)
                     break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported ARMv7 Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
@@ -1373,6 +1386,7 @@ perfmon_init_maps(void)
                             break;
                         default:
                             ERROR_PLAIN_PRINT(Unsupported ARMv8 Processor);
+                            err = -EINVAL;
                             break;
                     }
                     break;
@@ -1389,6 +1403,7 @@ perfmon_init_maps(void)
                             break;
                         default:
                             ERROR_PLAIN_PRINT(Unsupported Cavium/Marvell Processor);
+                            err = -EINVAL;
                             break;
                     }
                     break;
@@ -1405,6 +1420,7 @@ perfmon_init_maps(void)
                             break;
                         default:
                             ERROR_PLAIN_PRINT(Unsupported Cavium/Marvell Processor);
+                            err = -EINVAL;
                             break;
                     }
                     break;
@@ -1421,20 +1437,23 @@ perfmon_init_maps(void)
                             break;
                         default:
                             ERROR_PLAIN_PRINT(Unsupported Fujitsu Processor);
+                            err = -EINVAL;
                             break;
                     }
                     break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported ARMv8 Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
 
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);
+            err = -EINVAL;
             break;
     }
-    if (eventHash)
+    if (eventHash && err == 0)
     {
         int cpu_id = sched_getcpu();
         HPMaddThread(cpu_id);
@@ -1508,12 +1527,13 @@ perfmon_init_maps(void)
         }
     }
 
-    return;
+    return err;
 }
 
-void
+int
 perfmon_init_funcs(int* init_power, int* init_temp)
 {
+    int err = 0;
     int initialize_power = FALSE;
     int initialize_thermal = FALSE;
 #ifndef LIKWID_USE_PERFEVENT
@@ -1577,6 +1597,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 
                 case CORE_DUO:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
+                    err = -EINVAL;
                     break;
 
                 case XEON_MP:
@@ -1741,6 +1762,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
@@ -1760,6 +1782,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
@@ -1827,6 +1850,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported AMD K17 Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
@@ -1857,12 +1881,14 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported AMD K19 Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
 
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);
+            err = -EINVAL;
             break;
     }
 #else
@@ -1875,6 +1901,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 #endif
     *init_power = initialize_power;
     *init_temp = initialize_thermal;
+    return err;
 }
 
 char**
@@ -1998,10 +2025,22 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     affinity_init();
 
     /* Initialize maps pointer to current architecture maps */
-    perfmon_init_maps();
+    ret = perfmon_init_maps();
+    if (ret < 0)
+    {
+        ERROR_PRINT(Failed to initialize event and counter lists for %s, cpuid_info.name);
+        HPMfinalize();
+        return ret;
+    }
 
     /* Initialize function pointer to current architecture functions */
-    perfmon_init_funcs(&initialize_power, &initialize_thermal);
+    ret = perfmon_init_funcs(&initialize_power, &initialize_thermal);
+    if (ret < 0)
+    {
+        ERROR_PRINT(Failed to initialize event and counter lists for %s, cpuid_info.name);
+        HPMfinalize();
+        return ret;
+    }
 
     /* Store thread information and reset counters for processor*/
     /* If the arch supports it, initialize power and thermal measurements */
