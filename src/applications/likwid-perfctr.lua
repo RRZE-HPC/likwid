@@ -1118,8 +1118,17 @@ if #event_string_list > 0 then
 end
 ---------------------------
 if nvSupported and #gpu_event_string_list > 0 then
-    if likwid.nvInit(num_gpus, gpulist) < 0 then
-        perfctr_exit(1)
+    if not use_timeline then
+        if likwid.nvInit(num_gpus, gpulist) < 0 then
+            perfctr_exit(1)
+        end
+    else
+        local preload = os.getenv("LD_PRELOAD")
+        if preload == nil then
+            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
+        else
+            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so" .. ":" .. preload)
+        end
     end
 end
 ---------------------------
@@ -1231,7 +1240,7 @@ for i, event_string in pairs(event_string_list) do
     end
 end
 ---------------------------
-if nvSupported then
+if nvSupported and use_timeline == false then
     for i, event_string in pairs(gpu_event_string_list) do
         if event_string:len() > 0 then
             local gid = likwid.nvAddEventSet(event_string)

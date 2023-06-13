@@ -432,7 +432,7 @@ static void appdaemon_close_rocmon(void)
         {
             for (int j = 0; j < rocmon_numgpus; j++)
             {
-                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(gid, i, j), rocmon_getLastResult(gid, i, j));
+                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(j, gid, i), rocmon_getLastResult(j, gid, i));
             }
         }
     }
@@ -475,7 +475,7 @@ static void appdaemon_read_rocmon(void)
         {
             for (int j = 0; j < rocmon_numgpus; j++)
             {
-                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeToLastReadOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(gid, i, j), rocmon_getLastResult(gid, i, j));
+                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeToLastReadOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(j, gid, i), rocmon_getLastResult(j, gid, i));
             }
         }
     }
