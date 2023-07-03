@@ -1062,12 +1062,12 @@ int perfmon_setupCountersThread_perfevent(
             case EUBOX7:
                 if (cpuid_info.family == ZEN_FAMILY && type == MBOX0)
                 {
-                    if (numa_lock[affinity_thread2numa_lookup[cpu_id]] == cpu_id)
+                    if (die_lock[affinity_thread2die_lookup[cpu_id]] == cpu_id)
                     {
                         has_lock = 1;
                     }
                 }
-                else if (cpuid_info.family == ZEN_FAMILY && type == CBOX0)
+                else if ((cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY) && type == CBOX0)
                 {
                     if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id)
                     {
