@@ -495,7 +495,7 @@ EVENT_CPU_CLOCK_UNHALTED_DISTRIBUTED    0xEC PMC
 UMASK_CPU_CLOCK_UNHALTED_DISTRIBUTED    0x02
 
 # The only officially released event is L2_TRANS_L2_WB
-# All others count something but no guarantees
+# All others count something but no guarantees, taken from Haswell micro-architecture (https://perfmon-events.intel.com/haswell.html#)
 EVENT_L2_TRANS                0xF0  PMC
 UMASK_L2_TRANS_DEMAND_DATA_RD 0x01
 UMASK_L2_TRANS_RFO            0x02
