@@ -18,14 +18,14 @@ CPI  PMC1/PMC0
 DP [MFLOP/s]   1.0E-06*(PMC2)/time
 Memory bandwidth [MBytes/s] 1.0E-06*(DFC0+DFC1)*64.0/time
 Memory data volume [GBytes] 1.0E-09*(DFC0+DFC1)*64.0
-Operational intensity PMC2/((DFC0+DFC1)*64.0)
+Operational intensity [FLOP/Byte] PMC2/((DFC0+DFC1)*64.0)
 
 LONG
 Formulas:
 DP [MFLOP/s] = 1.0E-06*(RETIRED_SSE_AVX_FLOPS_DOUBLE_ALL)/time
 Memory bandwidth [MBytes/s] = 1.0E-06*(DRAM_CHANNEL_0+DRAM_CHANNEL_1)*64.0/runtime
 Memory data volume [GBytes] = 1.0E-09*(DRAM_CHANNEL_0+DRAM_CHANNEL_1)*64.0
-Operational intensity = RETIRED_SSE_AVX_FLOPS_DOUBLE_ALL/((DRAM_CHANNEL_0+DRAM_CHANNEL_1)*64.0)
+Operational intensity [FLOP/Byte] = RETIRED_SSE_AVX_FLOPS_DOUBLE_ALL/((DRAM_CHANNEL_0+DRAM_CHANNEL_1)*64.0)
 -
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
 Since this group is based on Uncore events it is only possible to measure on a
