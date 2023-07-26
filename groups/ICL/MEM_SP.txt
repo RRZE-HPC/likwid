@@ -35,6 +35,7 @@ Memory evict data volume [GBytes]  1.0E-09*MBOX0C2*64.0
 Memory bandwidth [MBytes/s] 1.0E-06*(MBOX0C1+MBOX0C2)*64.0/time
 Memory data volume [GBytes] 1.0E-09*(MBOX0C1+MBOX0C2)*64.0
 Operational intensity (PMC0*4.0+PMC1+PMC2*8.0+PMC3*16.0)/((MBOX0C1+MBOX0C2)*64.0)
+Vectorization ratio 100*(PMC0+PMC2+PMC3)/(PMC0+PMC1+PMC2+PMC3)
 
 LONG
 Formulas:
@@ -52,6 +53,7 @@ Memory write data volume [GBytes] = 1.0E-09*DRAM_WRITES*64.0
 Memory bandwidth [MBytes/s] = 1.0E-06*(DRAM_READS+DRAM_WRITES)*64.0/runtime
 Memory data volume [GBytes] = 1.0E-09*(DRAM_READS+DRAM_WRITES)*64.0
 Operational intensity = (FP_ARITH_INST_RETIRED_128B_PACKED_SINGLE*4+FP_ARITH_INST_RETIRED_SCALAR_SINGLE+FP_ARITH_INST_RETIRED_256B_PACKED_SINGLE*8+FP_ARITH_INST_RETIRED_512B_PACKED_SINGLE*16)/(DRAM_READS+DRAM_WRITES)*64.0)
+Vectorization ratio = 100*(FP_ARITH_INST_RETIRED_128B_PACKED_SINGLE+FP_ARITH_INST_RETIRED_256B_PACKED_SINGLE+FP_ARITH_INST_RETIRED_512B_PACKED_SINGLE)/(FP_ARITH_INST_RETIRED_SCALAR_SINGLE+FP_ARITH_INST_RETIRED_128B_PACKED_SINGLE+FP_ARITH_INST_RETIRED_256B_PACKED_SINGLE+FP_ARITH_INST_RETIRED_512B_PACKED_SINGLE)
 -
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
 Since this group is based on Uncore events it is only possible to measure on
