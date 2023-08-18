@@ -161,6 +161,7 @@ static AllowedPciPrototype allowedPci = NULL;
 /*static int FD_PCI[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];*/
 static int* FD_MSR = NULL;
 static int** FD_PCI = NULL;
+static int* socket_map = NULL;
 static int isPCIUncore = 0;
 static int isPCI64 = 0;
 static int isIntelUncoreDiscovery = 0;
@@ -319,6 +320,8 @@ void __attribute__((constructor (101))) init_accessdaemon(void)
     FILE *rdpmc_file = NULL;
     FILE *nmi_watchdog_file = NULL;
     int retries = 10;
+    char fname[1024];
+    char buf[256];
 
     do {
         avail_cpus = getNumberOfCPUs();
@@ -340,13 +343,61 @@ void __attribute__((constructor (101))) init_accessdaemon(void)
 
     FD_MSR = malloc(avail_cpus * sizeof(int));
     if (!FD_MSR)
+    {
         return;
+    }
+
+    socket_map = malloc(avail_sockets * sizeof(int));
+    if (!socket_map)
+    {
+        free(FD_MSR);
+        FD_MSR = NULL;
+        return;
+    }
+    memset(socket_map, -1, avail_sockets * sizeof(int));
 
     FD_PCI = malloc(avail_sockets * sizeof(int*));
     if (!FD_PCI)
+    {
+        free(socket_map);
+        socket_map = NULL;
+        free(FD_MSR);
+        FD_MSR = NULL;
         return;
+    }
+
     for (int i = 0; i < avail_sockets; i++)
     {
+        for (int j = 0; j < avail_cpus; j++)
+        {
+            int ret = snprintf(fname, 1023, "/sys/devices/system/cpu/cpu%d/topology/physical_package_id", j);
+            if (ret < 0)
+            {
+                continue;
+            }
+            fname[ret] = '\0';
+            if (!access(fname, R_OK))
+            {
+                FILE* fp = fopen(fname, "r");
+                if (fp)
+                {
+                    ret = fread(buf, sizeof(char), 255, fp);
+                    if (ret >= 0)
+                    {
+                        buf[ret] = '\0';
+                        int tmp = atoi(buf);
+                        if (tmp >= 0 && tmp == i && socket_map[tmp] < 0)
+                        {
+                            socket_map[tmp] = j;
+                            break;
+                        }
+                    }
+                    fclose(fp);
+                    buf[0] = '\0';
+                }
+            }
+            fname[0] = '\0';
+        }
         FD_PCI[i] = malloc(MAX_NUM_PCI_DEVICES * sizeof(int));
         if (!FD_PCI[i])
         {
@@ -355,9 +406,15 @@ void __attribute__((constructor (101))) init_accessdaemon(void)
                 free(FD_PCI[j]);
             }
             free(FD_PCI);
+            FD_PCI = NULL;
+            free(FD_MSR);
+            FD_MSR = NULL;
+            free(socket_map);
+            socket_map = NULL;
             return;
         }
     }
+
     // Explicitly allow RDPMC instruction
     rdpmc_file = fopen("/sys/bus/event_source/devices/cpu/rdpmc", "wb");
     if (rdpmc_file)
@@ -376,6 +433,11 @@ void __attribute__((constructor (101))) init_accessdaemon(void)
 
 void __attribute__((destructor (101))) close_accessdaemon(void)
 {
+    if (socket_map)
+    {
+        free(socket_map);
+        socket_map = NULL;
+    }
     if (FD_PCI)
     {
         for (int i = 0; i < avail_sockets; i++)
@@ -2719,17 +2781,14 @@ static void handle_record_default(AccessDataRecord* record)
         {
             if (record->device >= MMIO_IMC_DEVICE_0_CH_0 && record->device <= MMIO_IMC_DEVICE_3_CH_1)
             {
-                fprintf(stderr, "servermem_check\n");
                 servermem_check(record);
             }
             else if (record->device >= MMIO_IMC_DEVICE_0_FREERUN && record->device <= MMIO_IMC_DEVICE_3_FREERUN)
             {
-                fprintf(stderr, "servermem_freerun_check\n");
                 servermem_freerun_check(record);
             }
             else if (pci_devices_daemon != NULL)
             {
-                fprintf(stderr, "pci_check\n");
                 pci_check(record);
             }
         }
@@ -2747,6 +2806,7 @@ static void handle_record_default(AccessDataRecord* record)
 
 static void spr_check(AccessDataRecord *record)
 {
+    record->errorcode = ERR_UNKNOWN;
     if (perfmon_discovery && record->cpu >= 0 && record->cpu < perfmon_discovery->num_sockets)
     {
         PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[record->cpu];
@@ -2755,10 +2815,12 @@ static void spr_check(AccessDataRecord *record)
             if (cur->units[record->device].num_regs > 0)
             {
                 record->errorcode = ERR_NOERROR;
+                return;
             }
             else
             {
                 record->errorcode = ERR_NODEV;
+                return;
             }
         }
     }
@@ -2798,33 +2860,43 @@ static int spr_open_unit(PerfmonDiscoveryUnit* unit)
 {
     int err = 0;
     int PAGE_SIZE = sysconf (_SC_PAGESIZE);
-    int pcihandle = 0;
     if (!unit)
     {
+        printf("No unit\n");
         return -EINVAL;
     }
-    if ((unit->access_type == ACCESS_TYPE_MMIO)|| (unit->access_type == ACCESS_TYPE_PCI))
+    int pcihandle = open("/dev/mem", O_RDWR);
+    if (pcihandle < 0)
     {
-        open("/dev/mem", O_RDWR);
-        if (pcihandle < 0)
-        {
-            err = errno;
-            printf("Failed opening /dev/mem\n");
-            return -err;
-        }
+        err = errno;
+        return -err;
+    }
+    if (unit->access_type == ACCESS_TYPE_MMIO)
+    {
         void* io_addr = mmap(NULL, unit->mmap_size, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, unit->mmap_addr);
         if (io_addr == MAP_FAILED)
         {
             err = errno;
             close(pcihandle);
-            printf("Failed mmapping offset 0x%lX\n", unit->box_ctl);
             return -err;
         }
         unit->io_addr = io_addr;
-        close(pcihandle);
     }
+    else if (unit->access_type == ACCESS_TYPE_PCI)
+    {
+        void* io_addr = mmap(NULL, unit->mmap_size, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, unit->mmap_addr );
+        if (io_addr == MAP_FAILED)
+        {
+            err = errno;
+            close(pcihandle);
+            return -err;
+        }
+        unit->io_addr = io_addr;
+    }
+    close(pcihandle);
     return 0;
 }
+
 
 static void spr_read_global(AccessDataRecord *record)
 {
@@ -2832,10 +2904,10 @@ static void spr_read_global(AccessDataRecord *record)
     if (perfmon_discovery && record->cpu >= 0 && record->cpu < perfmon_discovery->num_sockets && record->device == MSR_UBOX_DEVICE)
     {
         PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[record->cpu];
-        if (cur->socket_id == record->cpu && cur->global.global_ctl && cur->global.access_type == ACCESS_TYPE_MSR)
+        if (cur && cur->socket_id == record->cpu && cur->global.global_ctl && cur->global.access_type == ACCESS_TYPE_MSR && socket_map[record->cpu] >= 0)
         {
             AccessDataRecord msr_record = {
-                .cpu = record->cpu,
+                .cpu = socket_map[record->cpu],
                 .data = record->data,
                 .device = MSR_DEV,
                 .type = DAEMON_READ,
@@ -2867,7 +2939,7 @@ static void spr_read_unit(AccessDataRecord *record)
             int offset = 0;
             int reg_offset = 0;
             AccessDataRecord msr_record = {
-                .cpu = record->cpu,
+                .cpu = socket_map[record->cpu],
                 .data = 0x00,
                 .device = MSR_DEV,
                 .type = DAEMON_READ,
@@ -3092,11 +3164,12 @@ static void spr_write_global(AccessDataRecord *record)
     if (perfmon_discovery && record->cpu >= 0 && record->cpu < perfmon_discovery->num_sockets && record->device == MSR_UBOX_DEVICE)
     {
         PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[record->cpu];
-        if (cur->socket_id == record->cpu && cur->global.global_ctl && cur->global.access_type == ACCESS_TYPE_MSR)
+        if (cur && cur->socket_id == record->cpu && cur->global.global_ctl && cur->global.access_type == ACCESS_TYPE_MSR && socket_map[record->cpu] >= 0)
         {
             AccessDataRecord msr_record = {
-                .cpu = record->cpu,
+                .cpu = socket_map[record->cpu],
                 .data = record->data,
+                .reg = 0x0,
                 .device = MSR_DEV,
                 .type = DAEMON_WRITE,
                 .errorcode = ERR_NOERROR,
@@ -3109,8 +3182,11 @@ static void spr_write_global(AccessDataRecord *record)
             {
                 msr_record.reg = cur->global.global_ctl + cur->global.status_offset + ((record->reg - FAKE_UNC_GLOBAL_STATUS0));
             }
-            msr_write(&msr_record);
-            record->errorcode = msr_record.errorcode;
+            if (msr_record.reg != 0x0)
+            {
+                msr_write(&msr_record);
+                record->errorcode = msr_record.errorcode;
+            }
         }
     }
 }
@@ -3127,7 +3203,7 @@ static void spr_write_unit(AccessDataRecord *record)
             int offset = 0;
             int reg_offset = 0;
             AccessDataRecord msr_record = {
-                .cpu = record->cpu,
+                .cpu = socket_map[record->cpu],
                 .data = record->data,
                 .device = MSR_DEV,
                 .type = DAEMON_WRITE,
@@ -3353,6 +3429,8 @@ static void spr_write(AccessDataRecord *record)
         spr_write_unit(record);
     }
 }
+
+
 
 static void handle_record_spr(AccessDataRecord *record)
 {

@@ -167,17 +167,13 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
         if (cur->socket_id == socket_id)
         {
             uint64_t newreg = 0x0;
-            switch (reg)
+            if (reg == FAKE_UNC_GLOBAL_CTRL)
             {
-                case FAKE_UNC_GLOBAL_CTRL:
-                    newreg = cur->global.global_ctl;
-                    break;
-                case FAKE_UNC_GLOBAL_STATUS0:
-                    if (cur->global.num_status > (reg - FAKE_UNC_GLOBAL_STATUS0))
-                    {
-                        newreg = cur->global.global_ctl + cur->global.status_offset + ((reg - FAKE_UNC_GLOBAL_STATUS0) * 8);
-                    }
-                    break;
+                newreg = cur->global.global_ctl;
+            }
+            else if ((reg >= FAKE_UNC_GLOBAL_STATUS0) && (reg <= FAKE_UNC_GLOBAL_STATUS3))
+            {
+                newreg = cur->global.global_ctl + cur->global.status_offset + ((reg - FAKE_UNC_GLOBAL_STATUS0));
             }
             uint64_t tmp = 0x0;
             err = access_x86_msr_read(cpu_id, newreg, &tmp);
@@ -396,18 +392,13 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
         if (cur->socket_id == socket_id && cur->global.global_ctl && cur->global.access_type == ACCESS_TYPE_MSR)
         {
             uint64_t newreg = 0x0;
-            switch (reg)
+            if (reg == FAKE_UNC_GLOBAL_CTRL)
             {
-                case FAKE_UNC_GLOBAL_CTRL:
-                    newreg = cur->global.global_ctl;
-                    break;
-                case FAKE_UNC_GLOBAL_STATUS0:
-                    reg_offset = (reg - FAKE_UNC_GLOBAL_STATUS0);
-                    if (cur->global.num_status > reg_offset)
-                    {
-                        newreg = cur->global.global_ctl + cur->global.status_offset + (reg_offset * 8);
-                    }
-                    break;
+                newreg = cur->global.global_ctl;
+            }
+            else if ((reg >= FAKE_UNC_GLOBAL_STATUS0) && (reg <= FAKE_UNC_GLOBAL_STATUS3))
+            {
+                newreg = cur->global.global_ctl + cur->global.status_offset + ((reg - FAKE_UNC_GLOBAL_STATUS0));
             }
             if (newreg != 0x0)
             {

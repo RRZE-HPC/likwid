@@ -209,6 +209,8 @@ uint64_t spr_pmc_start(int thread_id, RegisterIndex index, PerfmonEvent* event, 
 uint64_t spr_power_start(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
     int cpu_id = groupSet->threads[thread_id].processorId;
+    data[thread_id].startData = 0x0ULL;
+    data[thread_id].counterData = 0x0ULL;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         uint64_t counter1 = counter_map[index].counterRegister;
@@ -283,7 +285,8 @@ int spr_start_uncore(int thread_id, RegisterIndex index, PerfmonEvent* event, Pe
     uint64_t counter1 = counter_map[index].counterRegister;
     PciDeviceIndex dev = counter_map[index].device;
     VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_UNCORE);
-    data[thread_id].startData = 0x0;
+    data[thread_id].startData = 0x0ULL;
+    data[thread_id].counterData = 0x0ULL;
     return HPMwrite(cpu_id, dev, counter1, 0x0ULL);
 }
 
@@ -530,12 +533,14 @@ int perfmon_setupCounterThread_sapphirerapids(
             case HBM29FIX:
             case HBM30FIX:
             case HBM31FIX:
-
-                spr_setup_uncore_fixed(thread_id, index, event);
+                if (haveLock)
+                {
+                    spr_setup_uncore_fixed(thread_id, index, event);
+                }
                 break;
-            case MDEV0:
-                spr_setup_uncore_freerun(thread_id, index, event);
-                break;
+/*            case MDEV0:*/
+/*                spr_setup_uncore_freerun(thread_id, index, event);*/
+/*                break;*/
 
             case MBOX0:
             case MBOX1:
@@ -761,7 +766,6 @@ int perfmon_setupCounterThread_sapphirerapids(
             case HBM29:
             case HBM30:
             case HBM31:
-
                 if (haveLock) {
                     err = spr_setup_uncore(thread_id, index, event);
                     if (err < 0)
@@ -877,11 +881,14 @@ int perfmon_startCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* e
                 case HBM29FIX:
                 case HBM30FIX:
                 case HBM31FIX:
-                    spr_start_uncore_fixed(thread_id, index, event, data);
+                    if (haveLock)
+                    {
+                        spr_start_uncore_fixed(thread_id, index, event, data);
+                    }
                     break;
-                case MDEV0:
-                    spr_start_uncore_freerun(thread_id, index, event, data);
-                    break;
+/*                case MDEV0:*/
+/*                    spr_start_uncore_freerun(thread_id, index, event, data);*/
+/*                    break;*/
                 case MBOX0:
                 case MBOX1:
                 case MBOX2:
@@ -1106,7 +1113,10 @@ int perfmon_startCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* e
                 case HBM29:
                 case HBM30:
                 case HBM31:
-                    spr_start_uncore(thread_id, index, event, data);
+                    if (haveLock)
+                    {
+                        spr_start_uncore(thread_id, index, event, data);
+                    }
                     break;
                 default:
                     break;
@@ -1360,11 +1370,14 @@ int perfmon_stopCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
                 case HBM29FIX:
                 case HBM30FIX:
                 case HBM31FIX:
-                    spr_stop_uncore_fixed(thread_id, index, event, data);
+                    if (haveLock)
+                    {
+                        spr_stop_uncore_fixed(thread_id, index, event, data);
+                    }
                     break;
-                case MDEV0:
-                    spr_stop_uncore_freerun(thread_id, index, event, data);
-                    break;
+/*                case MDEV0:*/
+/*                    spr_stop_uncore_freerun(thread_id, index, event, data);*/
+/*                    break;*/
                 case MBOX0:
                 case MBOX1:
                 case MBOX2:
@@ -1595,7 +1608,10 @@ int perfmon_stopCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
                 case HBM29:
                 case HBM30:
                 case HBM31:
-                    spr_stop_uncore(thread_id, index, event, data);
+                    if (haveLock)
+                    {
+                        spr_stop_uncore(thread_id, index, event, data);
+                    }
                     break;
             }
         }
@@ -1706,12 +1722,30 @@ int perfmon_readCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
     uint64_t tmp = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
+    {
+        haveLock = 1;
+    }
+
     if (MEASURE_CORE(eventSet))
     {
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, &flags));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, SAFE_PMC_FLAGS)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, RESET_PMC_FLAGS)
+    }
+    if (haveLock && MEASURE_UNCORE(eventSet))
+    {
+        for (int i = MSR_DEV + 1; i < MAX_NUM_PCI_DEVICES; i++)
+        {
+            if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV)
+            {
+                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST (1ULL<<0), FREEZE_UNIT);
+                HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, (1ULL<<0));
+            }
+        }
+        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST (1ULL<<0), FREEZE_UNCORE);
+        HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, (1ULL<<0));
     }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -1805,7 +1839,10 @@ int perfmon_readCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
                 case HBM29FIX:
                 case HBM30FIX:
                 case HBM31FIX:
-                    spr_read_uncore_fixed(thread_id, index, event, data);
+                    if (haveLock)
+                    {
+                        spr_read_uncore_fixed(thread_id, index, event, data);
+                    }
                     break;
 
                 case MBOX0:
@@ -1874,7 +1911,6 @@ int perfmon_readCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
                 case MDF47:
                 case MDF48:
                 case MDF49:
-
                 case CBOX0:
                 case CBOX1:
                 case CBOX2:
@@ -2040,10 +2076,26 @@ int perfmon_readCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
                 case HBM29:
                 case HBM30:
                 case HBM31:
-                    spr_read_uncore(thread_id, index, event, data);
+                    if (haveLock)
+                    {
+                        spr_read_uncore(thread_id, index, event, data);
+                    }
                     break;
             }
         }
+    }
+    if (haveLock && MEASURE_UNCORE(eventSet))
+    {
+        for (int i = MSR_DEV + 1; i < MAX_NUM_PCI_DEVICES; i++)
+        {
+            if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV)
+            {
+                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST 0x0ULL, UNFREEZE_UNIT);
+                HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
+            }
+        }
+        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, UNFREEZE_UNCORE);
+        HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, 0x0ULL);
     }
     if (MEASURE_CORE(eventSet))
     {

@@ -402,7 +402,9 @@ int perfmon_uncore_discovery(PerfmonDiscovery** perfmon)
 
     while ((dev = pci_get_device(0x8086, UNCORE_DISCOVERY_TABLE_DEVICE, dev)) != NULL) {
         socket_id++;
-        if (socket_id >= max_sockets) break;
+        if (socket_id > max_sockets) {
+            break;
+        }
         PerfmonDiscoverySocket* tmp = realloc(perf->sockets, (num + 1) * sizeof(PerfmonDiscoverySocket));
         if (!tmp)
         {
