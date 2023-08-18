@@ -55,6 +55,7 @@
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static PerfmonDiscovery* perfmon_discovery = NULL;
+static int perfmon_discovery_inits = 0;
 
 
 
@@ -147,6 +148,7 @@ access_x86_translate_init(const int cpu_id)
             return ret;
         }
     }
+    perfmon_discovery_inits++;
     return 0;
 }
 
@@ -203,7 +205,7 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
                 ERROR_PRINT(Failed to find unit %s, pci_device_names[dev]);
                 return -ENODEV;
             }
-        
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Read Uncore counter 0x%X (%s) on CPU %d (socket %d), reg, pci_device_names[dev], cpu_id, socket_id);
             switch(reg)
             {
                 case FAKE_UNC_UNIT_CTRL:
@@ -427,6 +429,7 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
                 ERROR_PRINT(Failed to find unit %s, pci_device_names[dev]);
                 return -ENODEV;
             }
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Write Uncore counter 0x%X (%s) on CPU %d (socket %d): 0x%lX, reg, pci_device_names[dev], cpu_id, socket_id, data);
             switch(reg)
             {
                 case FAKE_UNC_UNIT_CTRL:
@@ -589,8 +592,12 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
 int
 access_x86_translate_finalize(int cpu_id)
 {
-    perfmon_uncore_discovery_free(perfmon_discovery);
-    perfmon_discovery = NULL;
+    perfmon_discovery_inits--;
+    if (perfmon_discovery_inits == 0 && perfmon_discovery != NULL)
+    {
+        perfmon_uncore_discovery_free(perfmon_discovery);
+        perfmon_discovery = NULL;
+    }
     return 0;
 }
 
