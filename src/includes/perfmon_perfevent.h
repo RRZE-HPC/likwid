@@ -1327,7 +1327,7 @@ int perfmon_setupCountersThread_perfevent(
                     DEBUG_PRINT(DEBUGLEV_INFO, Cannot measure Uncore with perf_event_paranoid value = %d, perf_event_paranoid);
                     perf_disable_uncore = 1;
                 }
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, perf_event_open: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, perf_event_open: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
                 cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, -1, allflags);
             }
             else
@@ -1337,7 +1337,7 @@ int perfmon_setupCountersThread_perfevent(
             if (cpu_event_fds[cpu_id][index] < 0)
             {
                 ERROR_PRINT(Setup of event %s on CPU %d failed: %s, event->name, cpu_id, strerror(errno));
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, open error: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, open error: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
             }
             if (group_fd < 0)
             {
