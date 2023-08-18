@@ -1004,6 +1004,11 @@ lua_likwid_getEventsAndCounters(lua_State* L)
     {
         cpuinfo = get_cpuInfo();
     }
+    if (affinity_isInitialized == 0)
+    {
+        affinity_init();
+        affinity_isInitialized = 1;
+    }
     perfmon_init_maps();
     perfmon_check_counter_map(0);
     char** archTypeNames = getArchRegisterTypeNames();

@@ -262,7 +262,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
             }
             type = NOTYPE;
         }
-        else if (tmp == 0x0ULL)
+        else if (tmp == 0x0ULL && check_settings)
         {
             err = HPMwrite(testcpu, counter_map[index].device, reg, 0x0ULL);
             if (err != 0)
@@ -1165,6 +1165,7 @@ perfmon_init_maps(void)
                     perfmon_numCounters = perfmon_numCountersSapphireRapids;
                     perfmon_numCoreCounters = perfmon_numCoreCountersSapphireRapids;
                     translate_types = sapphirerapids_translate_types;
+                    archRegisterTypeNames = registerTypeNamesSapphireRapids;
                     break;
 
                 default:

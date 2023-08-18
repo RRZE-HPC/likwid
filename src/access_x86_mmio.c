@@ -399,10 +399,14 @@ access_x86_mmio_init(const int socket)
 {
     int i = 0;
     uint64_t startAddr = 0;
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, access_x86_mmio_init for socket %d, socket);
+    if (access_mmio_initialized)
+    {
+        return 0;
+    }
 
     if (!access_mmio_initialized)
     {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, access_x86_mmio_init for socket %d, socket);
         topology_init();
         if (cpuid_info.family != P6_FAMILY)
         {
@@ -492,7 +496,9 @@ access_x86_mmio_init(const int socket)
 
             int ret = mmio_fillFreerunBox(mmio_config, sbox->pci_bus, i, handle);
             if (ret < 0)
+            {
                 return ret;
+            }
         }
 
         access_mmio_initialized = 1;

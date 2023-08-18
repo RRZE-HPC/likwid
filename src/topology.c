@@ -969,6 +969,8 @@ topology_setName(void)
                     break;
 
                 case SAPPHIRERAPIDS:
+                    cpuid_info.supportUncore = 1;
+                    cpuid_info.supportClientmem = 0;
                     cpuid_info.name = sapphire_rapids_str;
                     cpuid_info.short_name = short_sapphire_rapids;
                     break;

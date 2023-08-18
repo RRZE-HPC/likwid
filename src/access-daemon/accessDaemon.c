@@ -62,6 +62,8 @@
 #include <perfmon_knl_counters.h>
 #include <perfmon_skylakeX_counters.h>
 #include <perfmon_icelakeX_counters.h>
+#include <intel_perfmon_uncore_discovery.h>
+#include <perfmon_sapphirerapids_counters.h>
 #include <topology.h>
 #include <cpuid.h>
 #include <lock.h>
@@ -161,6 +163,7 @@ static int* FD_MSR = NULL;
 static int** FD_PCI = NULL;
 static int isPCIUncore = 0;
 static int isPCI64 = 0;
+static int isIntelUncoreDiscovery = 0;
 static PciDevice* pci_devices_daemon = NULL;
 static char pci_filepath[MAX_PATH_LENGTH];
 static int num_pmc_counters = 0;
@@ -172,6 +175,8 @@ static int isClientMem = 0;
 static int isServerMem = 0;
 static void *** servermem_addrs = NULL;
 static void *** servermem_freerun_addrs = NULL;
+
+static PerfmonDiscovery* perfmon_discovery = NULL;
 
 /* Socket to bus mapping -- will be determined at runtime;
  * typical mappings are:
@@ -412,6 +417,12 @@ void __attribute__((destructor (101))) close_accessdaemon(void)
     if (isServerMem)
     {
         servermem_finalize();
+    }
+    if (perfmon_discovery)
+    {
+        perfmon_uncore_discovery_free(perfmon_discovery);
+        perfmon_discovery = NULL;
+
     }
 }
 
@@ -1092,6 +1103,15 @@ static int allowed_icl(uint32_t reg)
     return 0;
 }
 
+static int allowed_spr(uint32_t reg)
+{
+    return allowed_icx(reg);
+}
+
+static int allowed_pci_spr(PciDeviceType type, uint32_t reg)
+{
+    return 1;
+}
 
 static int allowed_amd(uint32_t reg)
 {
@@ -2631,6 +2651,756 @@ daemonize(int* parentPid)
     }
 }
 
+static void handle_record_default(AccessDataRecord* record)
+{
+    if (record->type == DAEMON_READ)
+    {
+        if (record->device == MSR_DEV)
+        {
+            msr_read(record);
+        }
+        else if (isClientMem)
+        {
+            clientmem_read(record);
+        }
+        else
+        {
+            if (record->device >= MMIO_IMC_DEVICE_0_CH_0 && record->device <= MMIO_IMC_DEVICE_3_CH_1)
+            {
+                servermem_read(record);
+            }
+            else if (record->device >= MMIO_IMC_DEVICE_0_FREERUN && record->device <= MMIO_IMC_DEVICE_3_FREERUN)
+            {
+                servermem_freerun_read(record);
+            }
+            else if (pci_devices_daemon != NULL)
+            {
+                pci_read(record);
+            }
+        }
+    }
+    else if (record->type == DAEMON_WRITE)
+    {
+        if (record->device == MSR_DEV)
+        {
+            msr_write(record);
+            record->data = 0x0ULL;
+        }
+        else
+        {
+            if (record->device >= MMIO_IMC_DEVICE_0_CH_0 && record->device <= MMIO_IMC_DEVICE_3_CH_1)
+            {
+                servermem_write(record);
+                record->data = 0x0ULL;
+            }
+            else if (record->device >= MMIO_IMC_DEVICE_0_FREERUN && record->device <= MMIO_IMC_DEVICE_3_FREERUN)
+            {
+                servermem_freerun_write(record);
+                record->data = 0x0ULL;
+            }
+            else if (pci_devices_daemon != NULL)
+            {
+                pci_write(record);
+                record->data = 0x0ULL;
+            }
+        }
+    }
+    else if (record->type == DAEMON_CHECK)
+    {
+        if (record->device == MSR_DEV)
+        {
+            msr_check(record);
+        }
+        else if (isClientMem)
+        {
+            clientmem_check(record);
+        }
+        else
+        {
+            if (record->device >= MMIO_IMC_DEVICE_0_CH_0 && record->device <= MMIO_IMC_DEVICE_3_CH_1)
+            {
+                fprintf(stderr, "servermem_check\n");
+                servermem_check(record);
+            }
+            else if (record->device >= MMIO_IMC_DEVICE_0_FREERUN && record->device <= MMIO_IMC_DEVICE_3_FREERUN)
+            {
+                fprintf(stderr, "servermem_freerun_check\n");
+                servermem_freerun_check(record);
+            }
+            else if (pci_devices_daemon != NULL)
+            {
+                fprintf(stderr, "pci_check\n");
+                pci_check(record);
+            }
+        }
+    }
+    else if (record->type == DAEMON_EXIT)
+    {
+        stop_daemon();
+    }
+    else
+    {
+        syslog(LOG_ERR, "unknown daemon access type  %d", record->type);
+        record->errorcode = ERR_UNKNOWN;
+    }
+}
+
+static void spr_check(AccessDataRecord *record)
+{
+    if (perfmon_discovery && record->cpu >= 0 && record->cpu < perfmon_discovery->num_sockets)
+    {
+        PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[record->cpu];
+        if (cur->units)
+        {
+            if (cur->units[record->device].num_regs > 0)
+            {
+                record->errorcode = ERR_NOERROR;
+            }
+            else
+            {
+                record->errorcode = ERR_NODEV;
+            }
+        }
+    }
+}
+
+static int spr_get_register_offset(PerfmonDiscoveryUnit* unit)
+{
+    switch (unit->access_type)
+    {
+        case ACCESS_TYPE_MSR:
+            return 1;
+            break;
+        case ACCESS_TYPE_MMIO:
+        case ACCESS_TYPE_PCI:
+            if (unit->bit_width <= 8)
+            {
+                return 1;
+            }
+            else if (unit->bit_width <= 16)
+            {
+                return 2;
+            }
+            else if (unit->bit_width <= 32)
+            {
+                return 4;
+            }
+            else if (unit->bit_width <= 64)
+            {
+                return 8;
+            }
+            break;
+    }
+    return 0;
+}
+
+static int spr_open_unit(PerfmonDiscoveryUnit* unit)
+{
+    int err = 0;
+    int PAGE_SIZE = sysconf (_SC_PAGESIZE);
+    int pcihandle = 0;
+    if (!unit)
+    {
+        return -EINVAL;
+    }
+    if ((unit->access_type == ACCESS_TYPE_MMIO)|| (unit->access_type == ACCESS_TYPE_PCI))
+    {
+        open("/dev/mem", O_RDWR);
+        if (pcihandle < 0)
+        {
+            err = errno;
+            printf("Failed opening /dev/mem\n");
+            return -err;
+        }
+        void* io_addr = mmap(NULL, unit->mmap_size, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, unit->mmap_addr);
+        if (io_addr == MAP_FAILED)
+        {
+            err = errno;
+            close(pcihandle);
+            printf("Failed mmapping offset 0x%lX\n", unit->box_ctl);
+            return -err;
+        }
+        unit->io_addr = io_addr;
+        close(pcihandle);
+    }
+    return 0;
+}
+
+static void spr_read_global(AccessDataRecord *record)
+{
+    record->errorcode = ERR_OPENFAIL;
+    if (perfmon_discovery && record->cpu >= 0 && record->cpu < perfmon_discovery->num_sockets && record->device == MSR_UBOX_DEVICE)
+    {
+        PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[record->cpu];
+        if (cur->socket_id == record->cpu && cur->global.global_ctl && cur->global.access_type == ACCESS_TYPE_MSR)
+        {
+            AccessDataRecord msr_record = {
+                .cpu = record->cpu,
+                .data = record->data,
+                .device = MSR_DEV,
+                .type = DAEMON_READ,
+                .errorcode = ERR_NOERROR,
+            };
+            if (record->reg == FAKE_UNC_GLOBAL_CTRL)
+            {
+                msr_record.reg = cur->global.global_ctl;
+            }
+            else if ((record->reg >= FAKE_UNC_GLOBAL_STATUS0) && (record->reg <= FAKE_UNC_GLOBAL_STATUS3) && (cur->global.num_status > (record->reg-FAKE_UNC_GLOBAL_STATUS0)))
+            {
+                msr_record.reg = cur->global.global_ctl + cur->global.status_offset + ((record->reg - FAKE_UNC_GLOBAL_STATUS0));
+            }
+            msr_read(&msr_record);
+            record->errorcode = msr_record.errorcode;
+        }
+    }
+}
+
+static void spr_read_unit(AccessDataRecord *record)
+{
+    record->errorcode = ERR_OPENFAIL;
+    if (perfmon_discovery && record->cpu >= 0 && record->cpu < perfmon_discovery->num_sockets)
+    {
+        PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[record->cpu];
+        if (cur->units && cur->socket_id == record->cpu && cur->units[record->device].num_regs > 0)
+        {
+            PerfmonDiscoveryUnit* unit = &cur->units[record->device];
+            int offset = 0;
+            int reg_offset = 0;
+            AccessDataRecord msr_record = {
+                .cpu = record->cpu,
+                .data = 0x00,
+                .device = MSR_DEV,
+                .type = DAEMON_READ,
+                .errorcode = ERR_NOERROR,
+            };
+            if ((!unit->io_addr) && (unit->mmap_addr))
+            {
+                int err = spr_open_unit(unit);
+                if (err < 0)
+                {
+                    record->errorcode = ERR_OPENFAIL;
+                    return;
+                }
+            }
+            else if (!unit->mmap_addr)
+            {
+                record->errorcode = ERR_NODEV;
+                return;
+            }
+          
+            switch(record->reg)
+            {
+                case FAKE_UNC_UNIT_CTRL:
+                    switch (unit->access_type)
+                    {
+                        case ACCESS_TYPE_MMIO:
+                            record->data = (uint64_t)*((uint64_t *)(unit->io_addr + unit->mmap_offset));
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_PCI:
+                            if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                            {
+                                uint32_t lo = 0ULL, hi = 0ULL;
+                                lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset));
+                                hi = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + sizeof(uint32_t)));
+                                record->data = (((uint64_t)hi)<<32)|((uint64_t)lo);
+                            }
+                            else
+                            {
+                                record->data = (uint64_t)*((uint64_t *)(unit->io_addr + unit->mmap_offset));
+                            }
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_MSR:
+                            msr_record.reg = unit->box_ctl;
+                            msr_read(&msr_record);
+                            record->errorcode = msr_record.errorcode;
+                            record->data = msr_record.data;
+                            break;
+                    }
+                    break;
+                case FAKE_UNC_UNIT_STATUS:
+                    switch (unit->access_type)
+                    {
+                        case ACCESS_TYPE_MMIO:
+                            record->data = (uint64_t)*((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset));
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_PCI:
+                            if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                            {
+                                uint32_t lo = 0ULL, hi = 0ULL;
+                                lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset));
+                                hi = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset + sizeof(uint32_t)));
+                                record->data = (((uint64_t)hi)<<32)|((uint64_t)lo);
+                            }
+                            else
+                            {
+                                record->data = (uint64_t)*((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset));
+                            }
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_MSR:
+                            msr_record.reg = unit->box_ctl + unit->status_offset;
+                            msr_read(&msr_record);
+                            record->data = msr_record.data;
+                            record->errorcode = msr_record.errorcode;
+                            break;
+                    }
+                    break;
+                case FAKE_UNC_CTRL0:
+                case FAKE_UNC_CTRL1:
+                case FAKE_UNC_CTRL2:
+                case FAKE_UNC_CTRL3:
+                    offset = (record->reg - FAKE_UNC_CTRL0);
+                    reg_offset = spr_get_register_offset(unit);
+                    switch (unit->access_type)
+                    {
+                        case ACCESS_TYPE_MMIO:
+                            if ((record->device >= MMIO_IMC_DEVICE_0_CH_0 && record->device <= MMIO_IMC_DEVICE_1_CH_7) ||
+                                (record->device >= MMIO_HBM_DEVICE_0 && record->device <= MMIO_HBM_DEVICE_31))
+                            {
+                                record->data = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset)));
+                            }
+                            else
+                            {
+                                record->data = (uint64_t)*((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (reg_offset * offset)));
+                            }
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_PCI:
+                            if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                            {
+                                uint32_t lo = 0ULL, hi = 0ULL;
+                                lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset)));
+                                hi = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset) + sizeof(uint32_t)));
+                                record->data = (((uint64_t)hi)<<32)|((uint64_t)lo);
+                            }
+                            else
+                            {
+                                record->data = (uint64_t)*((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (reg_offset * offset)));
+                            }
+                            
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_MSR:
+                            msr_record.reg = unit->box_ctl + unit->ctrl_offset + (reg_offset * offset);
+                            msr_read(&msr_record);
+                            record->data = msr_record.data;
+                            record->errorcode = msr_record.errorcode;
+                            break;
+                    }
+                    break;
+                case FAKE_UNC_CTR0:
+                case FAKE_UNC_CTR1:
+                case FAKE_UNC_CTR2:
+                case FAKE_UNC_CTR3:
+                    offset = (record->reg - FAKE_UNC_CTR0);
+                    reg_offset = spr_get_register_offset(unit);
+                    switch (unit->access_type)
+                    {
+                        case ACCESS_TYPE_MMIO:
+                            record->data = (uint64_t)*((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (reg_offset * offset)));
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_PCI:
+                            if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                            {
+                                uint32_t lo = 0ULL, hi = 0ULL;
+                                lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset)));
+                                hi = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset) + sizeof(uint32_t)));
+                                record->data = (((uint64_t)hi)<<32)|((uint64_t)lo);
+                            }
+                            else
+                            {
+                                record->data = (uint64_t)*((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (reg_offset * offset)));
+                            }
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_MSR:
+                            msr_record.reg = unit->box_ctl + unit->ctr_offset + (reg_offset * offset);
+                            msr_read(&msr_record);
+                            record->data = msr_record.data;
+                            record->errorcode = msr_record.errorcode;
+                            break;
+                    }
+                    break;
+                case FAKE_UNC_FILTER0:
+                    offset = (record->reg - FAKE_UNC_FILTER0);
+                    reg_offset = unit->filter_offset;
+                    if (reg_offset != 0x0 && unit->access_type == ACCESS_TYPE_MSR)
+                    {
+                        msr_record.reg = unit->box_ctl + reg_offset;
+                        msr_read(&msr_record);
+                        record->data = msr_record.data;
+                        record->errorcode = msr_record.errorcode;
+                    }
+                    break;
+                case FAKE_UNC_FIXED_CTRL:
+                    if (unit->fixed_ctrl_offset != 0)
+                    {
+                        if (unit->access_type == ACCESS_TYPE_MSR)
+                        {
+                            msr_record.reg = unit->box_ctl + unit->fixed_ctrl_offset;
+                            msr_read(&msr_record);
+                            record->data = msr_record.data;
+                            record->errorcode = msr_record.errorcode;
+                        }
+                        else if (unit->access_type == ACCESS_TYPE_MMIO)
+                        {
+                            uint32_t lo = 0ULL, hi = 0ULL;
+                            lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->fixed_ctrl_offset));
+                            hi = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->fixed_ctrl_offset + sizeof(uint32_t)));
+                            record->data = (((uint64_t)hi)<<32)|((uint64_t)lo);
+                            record->errorcode = ERR_NOERROR;
+                        }
+                    }
+                    break;
+               case FAKE_UNC_FIXED_CTR:
+                    if (unit->fixed_ctr_offset != 0)
+                    {
+                        if (unit->access_type == ACCESS_TYPE_MSR)
+                        {
+                            msr_record.reg = unit->box_ctl + unit->fixed_ctr_offset;
+                            msr_read(&msr_record);
+                            record->data = msr_record.data;
+                            record->errorcode = msr_record.errorcode;
+                        }
+                        else if (unit->access_type == ACCESS_TYPE_MMIO)
+                        {
+                            record->data = (uint64_t)*((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->fixed_ctr_offset));
+                            record->errorcode = ERR_NOERROR;
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+}
+
+static void spr_write_global(AccessDataRecord *record)
+{
+    record->errorcode = ERR_OPENFAIL;
+    if (perfmon_discovery && record->cpu >= 0 && record->cpu < perfmon_discovery->num_sockets && record->device == MSR_UBOX_DEVICE)
+    {
+        PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[record->cpu];
+        if (cur->socket_id == record->cpu && cur->global.global_ctl && cur->global.access_type == ACCESS_TYPE_MSR)
+        {
+            AccessDataRecord msr_record = {
+                .cpu = record->cpu,
+                .data = record->data,
+                .device = MSR_DEV,
+                .type = DAEMON_WRITE,
+                .errorcode = ERR_NOERROR,
+            };
+            if (record->reg == FAKE_UNC_GLOBAL_CTRL)
+            {
+                msr_record.reg = cur->global.global_ctl;
+            }
+            else if ((record->reg >= FAKE_UNC_GLOBAL_STATUS0) && (record->reg <= FAKE_UNC_GLOBAL_STATUS3) && (cur->global.num_status > (record->reg-FAKE_UNC_GLOBAL_STATUS0)))
+            {
+                msr_record.reg = cur->global.global_ctl + cur->global.status_offset + ((record->reg - FAKE_UNC_GLOBAL_STATUS0));
+            }
+            msr_write(&msr_record);
+            record->errorcode = msr_record.errorcode;
+        }
+    }
+}
+
+static void spr_write_unit(AccessDataRecord *record)
+{
+    record->errorcode = ERR_OPENFAIL;
+    if (perfmon_discovery && record->cpu >= 0 && record->cpu < perfmon_discovery->num_sockets)
+    {
+        PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[record->cpu];
+        if (cur->units && cur->socket_id == record->cpu && cur->units[record->device].num_regs > 0)
+        {
+            PerfmonDiscoveryUnit* unit = &cur->units[record->device];
+            int offset = 0;
+            int reg_offset = 0;
+            AccessDataRecord msr_record = {
+                .cpu = record->cpu,
+                .data = record->data,
+                .device = MSR_DEV,
+                .type = DAEMON_WRITE,
+                .errorcode = ERR_NOERROR,
+            };
+            if ((!unit->io_addr) && (unit->mmap_addr))
+            {
+                int err = spr_open_unit(unit);
+                if (err < 0)
+                {
+                    record->errorcode = ERR_OPENFAIL;
+                    return;
+                }
+            }
+            else if (!unit->mmap_addr)
+            {
+                record->errorcode = ERR_NODEV;
+                return;
+            }
+            switch(record->reg)
+            {
+                case FAKE_UNC_UNIT_CTRL:
+                    
+                    switch (unit->access_type)
+                    {
+                        case ACCESS_TYPE_MMIO:
+                            *((uint64_t *)(unit->io_addr + unit->mmap_offset)) = record->data;
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_PCI:
+                            if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                            {
+                                *((uint32_t *)(unit->io_addr + unit->mmap_offset)) = (uint32_t)record->data;
+                                *((uint32_t *)(unit->io_addr + unit->mmap_offset + sizeof(uint32_t))) = (uint32_t)(record->data>>32);
+                            }
+                            else
+                            {
+                                *((uint64_t *)(unit->io_addr + unit->mmap_offset)) = (uint64_t)record->data;
+                            }
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_MSR:
+                            msr_record.reg = unit->box_ctl;
+                            msr_write(&msr_record);
+                            record->errorcode = msr_record.errorcode;
+                            break;
+                    }
+                    break;
+                case FAKE_UNC_UNIT_STATUS:
+                    record->data = (uint64_t)*((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset));
+                    switch (unit->access_type)
+                    {
+                        case ACCESS_TYPE_MMIO:
+                            *((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset)) = record->data;
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_PCI:
+                            if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                            {
+                                *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset)) = (uint32_t)record->data;
+                                *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset + sizeof(uint32_t))) = (uint32_t)(record->data>>32);
+                            }
+                            else
+                            {
+                                *((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset)) = (uint64_t)record->data;
+                            }
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_MSR:
+                            msr_record.reg = unit->box_ctl + unit->status_offset;
+                            msr_write(&msr_record);
+                            record->errorcode = msr_record.errorcode;
+                            break;
+                    }
+                    break;
+                case FAKE_UNC_CTRL0:
+                case FAKE_UNC_CTRL1:
+                case FAKE_UNC_CTRL2:
+                case FAKE_UNC_CTRL3:
+                    offset = (record->reg - FAKE_UNC_CTRL0);
+                    reg_offset = spr_get_register_offset(unit);
+                    
+                    switch (unit->access_type)
+                    {
+                        case ACCESS_TYPE_MMIO:
+                            if ((record->device >= MMIO_IMC_DEVICE_0_CH_0 && record->device <= MMIO_IMC_DEVICE_1_CH_7) ||
+                                (record->device >= MMIO_HBM_DEVICE_0 && record->device <= MMIO_HBM_DEVICE_31))
+                            {
+                                *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset))) = (uint32_t)record->data;
+                            }
+                            else
+                            {
+                                *((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (reg_offset * offset))) = (uint64_t)record->data;
+                            }
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_PCI:
+                            if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                            {
+                                *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset))) = (uint32_t)record->data;
+                                *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset) + sizeof(uint32_t))) = (uint32_t)(record->data>>32);
+                            }
+                            else
+                            {
+                                *((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (reg_offset * offset))) = (uint64_t)record->data;
+                            }
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_MSR:
+                            msr_record.reg = unit->box_ctl + unit->ctrl_offset + (reg_offset * offset);
+                            msr_write(&msr_record);
+                            record->errorcode = msr_record.errorcode;
+                            break;
+                    }
+                    break;
+                case FAKE_UNC_CTR0:
+                case FAKE_UNC_CTR1:
+                case FAKE_UNC_CTR2:
+                case FAKE_UNC_CTR3:
+                    offset = (record->reg - FAKE_UNC_CTR0);
+                    reg_offset = spr_get_register_offset(unit);
+                    
+                    switch (unit->access_type)
+                    {
+                        case ACCESS_TYPE_MMIO:
+                            *((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (reg_offset * offset))) = record->data;
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_PCI:
+                            if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                            {
+                                *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset))) = (uint32_t)record->data;
+                                *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset) + sizeof(uint32_t))) = (uint32_t)(record->data>>32);
+                            }
+                            else
+                            {
+                                *((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (reg_offset * offset))) = (uint64_t)record->data;
+                            }
+                            record->errorcode = ERR_NOERROR;
+                            break;
+                        case ACCESS_TYPE_MSR:
+                            msr_record.reg = unit->box_ctl + unit->ctr_offset + (reg_offset * offset);
+                            msr_write(&msr_record);
+                            record->errorcode = msr_record.errorcode;
+                            break;
+                    }
+                    break;
+                case FAKE_UNC_FILTER0:
+                    offset = (record->reg - FAKE_UNC_FILTER0);
+                    if (unit->filter_offset != 0x0 && unit->access_type == ACCESS_TYPE_MSR)
+                    {
+                            msr_record.reg = unit->box_ctl + unit->filter_offset;
+                            msr_write(&msr_record);
+                            record->errorcode = msr_record.errorcode;
+                    }
+                    break;
+                case FAKE_UNC_FIXED_CTRL:
+                    if (unit->fixed_ctrl_offset != 0)
+                    {
+                        if (unit->access_type == ACCESS_TYPE_MSR)
+                        {
+                            msr_record.reg = unit->box_ctl + unit->fixed_ctrl_offset;
+                            msr_write(&msr_record);
+                            record->errorcode = msr_record.errorcode;
+                        }
+                        else if (unit->access_type == ACCESS_TYPE_MMIO)
+                        {
+                            *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->fixed_ctrl_offset)) = (uint32_t)record->data;
+                            *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->fixed_ctrl_offset + sizeof(uint32_t))) = (uint32_t)(record->data>>32);
+                            record->errorcode = ERR_NOERROR;
+                        }
+                    }
+                    break;
+               case FAKE_UNC_FIXED_CTR:
+                    if (unit->fixed_ctr_offset != 0)
+                    {
+                        if (unit->access_type == ACCESS_TYPE_MSR)
+                        {
+                            msr_record.reg = unit->box_ctl + unit->fixed_ctr_offset;
+                            msr_write(&msr_record);
+                            record->errorcode = msr_record.errorcode;
+                        }
+                        else if (unit->access_type == ACCESS_TYPE_MMIO)
+                        {
+                            *((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->fixed_ctr_offset)) = record->data;
+                            record->errorcode = ERR_NOERROR;
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+}
+
+static void spr_read(AccessDataRecord *record)
+{
+    if (record->device == MSR_UBOX_DEVICE && ((record->reg == FAKE_UNC_GLOBAL_CTRL) || ((record->reg >= FAKE_UNC_GLOBAL_STATUS0) && (record->reg <= FAKE_UNC_GLOBAL_STATUS3))))
+    {
+        spr_read_global(record);
+    }
+    else
+    {
+        spr_read_unit(record);
+    }
+}
+
+static void spr_write(AccessDataRecord *record)
+{
+    if (record->device == MSR_UBOX_DEVICE && ((record->reg == FAKE_UNC_GLOBAL_CTRL) || ((record->reg >= FAKE_UNC_GLOBAL_STATUS0) && (record->reg <= FAKE_UNC_GLOBAL_STATUS3))))
+    {
+        spr_write_global(record);
+    }
+    else
+    {
+        spr_write_unit(record);
+    }
+}
+
+static void handle_record_spr(AccessDataRecord *record)
+{
+    if (record->type == DAEMON_READ)
+    {
+        if (record->device == MSR_DEV)
+        {
+            msr_read(record);
+        }
+        else
+        {
+            spr_read(record);
+        }
+    }
+    else if (record->type == DAEMON_WRITE)
+    {
+        if (record->device == MSR_DEV)
+        {
+            msr_write(record);
+            record->data = 0x0ULL;
+        }
+        else
+        {
+            spr_write(record);
+        }
+    }
+    else if (record->type == DAEMON_CHECK)
+    {
+        if (record->device == MSR_DEV)
+        {
+            msr_check(record);
+        }
+        else
+        {
+            spr_check(record);
+        }
+    }
+    else if (record->type == DAEMON_EXIT)
+    {
+        stop_daemon();
+    }
+    else
+    {
+        syslog(LOG_ERR, "unknown daemon access type  %d", record->type);
+        record->errorcode = ERR_UNKNOWN;
+    }
+}
+
 /* #####  MAIN FUNCTION DEFINITION   ################## */
 
 int main(void)
@@ -2760,6 +3530,14 @@ int main(void)
                     allowedPci = allowed_pci_icx;
                     isPCI64 = 1;
                 }
+                else if (model == SAPPHIRERAPIDS)
+                {
+                    isPCIUncore = 1;
+                    allowed = allowed_spr;
+                    isPCI64 = 1;
+                    allowedPci = allowed_pci_spr;
+                    isIntelUncoreDiscovery = 1;
+                }
                 else if ((model == ATOM_SILVERMONT_C) ||
                          (model == ATOM_SILVERMONT_E) ||
                          (model == ATOM_SILVERMONT_Z1) ||
@@ -2813,10 +3591,10 @@ int main(void)
                     case ZEN3_RYZEN3:
                         allowed = allowed_amd17_zen2;
                         break;
-		    case ZEN4_RYZEN:
-		    case ZEN4_EPYC:
-			allowed = allowed_amd19_zen4;
-			break;
+                    case ZEN4_RYZEN:
+                    case ZEN4_EPYC:
+                        allowed = allowed_amd19_zen4;
+                        break;
                     default:
                         allowed = allowed_amd17;
                         break;
@@ -2961,13 +3739,22 @@ int main(void)
             {
                 pci_devices_daemon = knl_pci_devices;
             }
+            else if (isIntelUncoreDiscovery)
+            {
+                pci_devices_daemon = NULL;
+                int err = perfmon_uncore_discovery(&perfmon_discovery);
+                if (err < 0)
+                {
+                    syslog(LOG_ERR, "Failed to run uncore discovery");
+                }
+            }
             else
             {
                 //testDevice = 0;
                 syslog(LOG_NOTICE, "PCI Uncore not supported on this system");
                 goto LOOP;
             }
-            if (!pci_devices_daemon)
+            if ((!pci_devices_daemon) && (!perfmon_discovery))
             {
                 syslog(LOG_NOTICE, "PCI Uncore not supported on this system");
                 goto LOOP;
@@ -3032,94 +3819,13 @@ LOOP:
             stop_daemon();
         }
 
-
-        if (dRecord.type == DAEMON_READ)
+        if (!isIntelUncoreDiscovery)
         {
-            if (dRecord.device == MSR_DEV)
-            {
-                msr_read(&dRecord);
-            }
-            else if (isClientMem)
-            {
-                clientmem_read(&dRecord);
-            }
-            else
-            {
-                if (dRecord.device >= MMIO_IMC_DEVICE_0_CH_0 && dRecord.device <= MMIO_IMC_DEVICE_3_CH_1)
-                {
-                    servermem_read(&dRecord);
-                }
-                else if (dRecord.device >= MMIO_IMC_DEVICE_0_FREERUN && dRecord.device <= MMIO_IMC_DEVICE_3_FREERUN)
-                {
-                    servermem_freerun_read(&dRecord);
-                }
-                else if (pci_devices_daemon != NULL)
-                {
-                    pci_read(&dRecord);
-                }
-            }
-        }
-        else if (dRecord.type == DAEMON_WRITE)
-        {
-            if (dRecord.device == MSR_DEV)
-            {
-                msr_write(&dRecord);
-                dRecord.data = 0x0ULL;
-            }
-            else
-            {
-                if (dRecord.device >= MMIO_IMC_DEVICE_0_CH_0 && dRecord.device <= MMIO_IMC_DEVICE_3_CH_1)
-                {
-                    servermem_write(&dRecord);
-                    dRecord.data = 0x0ULL;
-                }
-                else if (dRecord.device >= MMIO_IMC_DEVICE_0_FREERUN && dRecord.device <= MMIO_IMC_DEVICE_3_FREERUN)
-                {
-                    servermem_freerun_write(&dRecord);
-                    dRecord.data = 0x0ULL;
-                }
-                else if (pci_devices_daemon != NULL)
-                {
-                    pci_write(&dRecord);
-                    dRecord.data = 0x0ULL;
-                }
-            }
-        }
-        else if (dRecord.type == DAEMON_CHECK)
-        {
-            if (dRecord.device == MSR_DEV)
-            {
-                msr_check(&dRecord);
-            }
-            else if (isClientMem)
-            {
-                clientmem_check(&dRecord);
-            }
-            else
-            {
-                if (dRecord.device >= MMIO_IMC_DEVICE_0_CH_0 && dRecord.device <= MMIO_IMC_DEVICE_3_CH_1)
-                {
-                    servermem_check(&dRecord);
-                }
-                else if (dRecord.device >= MMIO_IMC_DEVICE_0_FREERUN && dRecord.device <= MMIO_IMC_DEVICE_3_FREERUN)
-                {
-                    servermem_freerun_check(&dRecord);
-                }
-                else if (pci_devices_daemon != NULL)
-                {
-                    pci_check(&dRecord);
-                }
-                
-            }
-        }
-        else if (dRecord.type == DAEMON_EXIT)
-        {
-            stop_daemon();
+            handle_record_default(&dRecord);
         }
         else
         {
-            syslog(LOG_ERR, "unknown daemon access type  %d", dRecord.type);
-            dRecord.errorcode = ERR_UNKNOWN;
+            handle_record_spr(&dRecord);
         }
 
         LOG_AND_EXIT_IF_ERROR(write(connfd, (void*) &dRecord, sizeof(AccessDataRecord)), write failed);

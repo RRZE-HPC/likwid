@@ -823,6 +823,10 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                         }
                         free(formats);
                     }
+                    if (cpuid_info.model == SAPPHIRERAPIDS && event->options[j].type == EVENT_OPTION_MATCH0)
+                    {
+                        attr->config |= (((uint64_t)event->options[j].value) & 0x3ffffff) << 32;
+                    }
                     break;
                 default:
                     break;
@@ -1083,6 +1087,56 @@ int perfmon_setupCountersThread_perfevent(
             case CBOX57:
             case CBOX58:
             case CBOX59:
+            case MDF0:
+            case MDF1:
+            case MDF2:
+            case MDF3:
+            case MDF4:
+            case MDF5:
+            case MDF6:
+            case MDF7:
+            case MDF8:
+            case MDF9:
+            case MDF10:
+            case MDF11:
+            case MDF12:
+            case MDF13:
+            case MDF14:
+            case MDF15:
+            case MDF16:
+            case MDF17:
+            case MDF18:
+            case MDF19:
+            case MDF20:
+            case MDF21:
+            case MDF22:
+            case MDF23:
+            case MDF24:
+            case MDF25:
+            case MDF26:
+            case MDF27:
+            case MDF28:
+            case MDF29:
+            case MDF30:
+            case MDF31:
+            case MDF32:
+            case MDF33:
+            case MDF34:
+            case MDF35:
+            case MDF36:
+            case MDF37:
+            case MDF38:
+            case MDF39:
+            case MDF40:
+            case MDF41:
+            case MDF42:
+            case MDF43:
+            case MDF44:
+            case MDF45:
+            case MDF46:
+            case MDF47:
+            case MDF48:
+            case MDF49:
             case UBOX:
             case UBOXFIX:
             case SBOX0:
@@ -1092,11 +1146,45 @@ int perfmon_setupCountersThread_perfevent(
             case QBOX0:
             case QBOX1:
             case QBOX2:
+            case QBOX3:
             case WBOX:
             case PBOX:
             case RBOX0:
             case RBOX1:
+            case RBOX2:
+            case RBOX3:
             case BBOX0:
+            case BBOX1:
+            case BBOX2:
+            case BBOX3:
+            case BBOX4:
+            case BBOX5:
+            case BBOX6:
+            case BBOX7:
+            case BBOX8:
+            case BBOX9:
+            case BBOX10:
+            case BBOX11:
+            case BBOX12:
+            case BBOX13:
+            case BBOX14:
+            case BBOX15:
+            case BBOX16:
+            case BBOX17:
+            case BBOX18:
+            case BBOX19:
+            case BBOX20:
+            case BBOX21:
+            case BBOX22:
+            case BBOX23:
+            case BBOX24:
+            case BBOX25:
+            case BBOX26:
+            case BBOX27:
+            case BBOX28:
+            case BBOX29:
+            case BBOX30:
+            case BBOX31:
             case EDBOX0:
             case EDBOX1:
             case EDBOX2:
@@ -1113,6 +1201,70 @@ int perfmon_setupCountersThread_perfevent(
             case EUBOX5:
             case EUBOX6:
             case EUBOX7:
+            case IBOX0:
+            case IBOX1:
+            case IBOX2:
+            case IBOX3:
+            case IBOX4:
+            case IBOX5:
+            case IBOX6:
+            case IBOX7:
+            case IBOX8:
+            case IBOX9:
+            case IBOX10:
+            case IBOX11:
+            case IBOX12:
+            case IBOX13:
+            case IBOX14:
+            case IBOX15:
+            case IRP0:
+            case IRP1:
+            case IRP2:
+            case IRP3:
+            case IRP4:
+            case IRP5:
+            case IRP6:
+            case IRP7:
+            case IRP8:
+            case IRP9:
+            case IRP10:
+            case IRP11:
+            case IRP12:
+            case IRP13:
+            case IRP14:
+            case IRP15:
+            case HBM0:
+            case HBM1:
+            case HBM2:
+            case HBM3:
+            case HBM4:
+            case HBM5:
+            case HBM6:
+            case HBM7:
+            case HBM8:
+            case HBM9:
+            case HBM10:
+            case HBM11:
+            case HBM12:
+            case HBM13:
+            case HBM14:
+            case HBM15:
+            case HBM16:
+            case HBM17:
+            case HBM18:
+            case HBM19:
+            case HBM20:
+            case HBM21:
+            case HBM22:
+            case HBM23:
+            case HBM24:
+            case HBM25:
+            case HBM26:
+            case HBM27:
+            case HBM28:
+            case HBM29:
+            case HBM30:
+            case HBM31:
                 if (cpuid_info.family == ZEN_FAMILY && type == MBOX0)
                 {
                     if (numa_lock[affinity_thread2numa_lookup[cpu_id]] == cpu_id)
