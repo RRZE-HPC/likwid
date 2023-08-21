@@ -431,7 +431,9 @@ static char* RegisterTypeNames[MAX_UNITS] = {
         (((type) >= 0 && (type) <= 63 ? eventset->regTypeMask1 & (1ULL<<(type)) : \
         ((type) >= 64 && (type) <= 127 ? eventset->regTypeMask2 & (1ULL<<((type)-64)) : \
         ((type) >= 128 && (type) <= 191 ? eventset->regTypeMask3 & (1ULL<<((type)-128)) : \
-        ((type) >= 192 && (type) <= 255 ? eventset->regTypeMask4 & (1ULL<<((type)-192)) : 0x0ULL)))))
+        ((type) >= 192 && (type) <= 255 ? eventset->regTypeMask4 & (1ULL<<((type)-192)) : \
+        ((type) >= 256 && (type) <= 319 ? eventset->regTypeMask5 & (1ULL<<((type)-256)) : \
+        ((type) >= 320 && (type) <= 383 ? eventset->regTypeMask6 & (1ULL<<((type)-320)) : 0x0ULL)))))))
 
 #define SETTYPE(eventset, type) \
         if ((type) >= 0 && (type) <= 63) \
@@ -450,6 +452,14 @@ static char* RegisterTypeNames[MAX_UNITS] = {
         { \
             eventset->regTypeMask4 |= (1ULL<<((type)-192)); \
         } \
+        else if ((type) >= 256 && (type) <= 319) \
+        { \
+            eventset->regTypeMask5 |= (1ULL<<((type)-256)); \
+        } \
+        else if ((type) >= 320 && (type) <= 383) \
+        { \
+            eventset->regTypeMask6 |= (1ULL<<((type)-320)); \
+        } \
         else \
         { \
             ERROR_PRINT(Cannot set out-of-bounds type %d, (type)); \
@@ -460,7 +470,7 @@ static char* RegisterTypeNames[MAX_UNITS] = {
 #define MEASURE_METRICS(eventset) ((eventset)->regTypeMask1 & (REG_TYPE_MASK(METRICS))
 
 #define MEASURE_UNCORE(eventset) \
-        (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(PERF)|REG_TYPE_MASK(POWER)|REG_TYPE_MASK(METRICS)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4)
+        (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(PERF)|REG_TYPE_MASK(POWER)|REG_TYPE_MASK(METRICS)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4 || eventset->regTypeMask5 || eventset->regTypeMask6 )
 
 
 typedef struct {
