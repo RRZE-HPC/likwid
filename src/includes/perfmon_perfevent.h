@@ -810,6 +810,10 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                         }
                         free(formats);
                     }
+                    if (event->options[j].type == EVENT_OPTION_MATCH0 && cpuid_info.family ==  P6_FAMILY && ((cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2)))
+                    {
+                        attr->config |= create_mask(event->options[j].value, 32, 57);
+                    }
                     break;
                 default:
                     break;
