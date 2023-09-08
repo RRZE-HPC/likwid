@@ -3903,7 +3903,7 @@ perfmon_readMarkerFile(const char* filename)
         if (strchr(buf,':'))
         {
             int regionid = 0, groupid = -1;
-            char regiontag[100];
+            char regiontag[140];
             char* ptr = NULL;
             char* colonptr = NULL;
             // zero out ALL of regiontag due to replacing %s with %Nc
