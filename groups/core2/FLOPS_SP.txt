@@ -14,14 +14,14 @@ CPI  FIXC1/FIXC0
 SP [MFLOP/s] 1.0E-06*(PMC0*4.0+PMC1)/time
 Packed [MUOPS/s]   1.0E-06*PMC0/time
 Scalar [MUOPS/s] 1.0E-06*PMC1/time
-Vectorization ratio 100*PMC0/PMC1
+Vectorization ratio [%] 100*PMC0/PMC1
 
 LONG
 Formulas:
 SP [MFLOP/s] = 1.0E-06*(SIMD_COMP_INST_RETIRED_PACKED_SINGLE*4+SIMD_COMP_INST_RETIRED_SCALAR_SINGLE)/time
 Packed [MUOPS/s] = 1.0E-06*SIMD_COMP_INST_RETIRED_PACKED_SINGLE/runtime
 Scalar [MUOPS/s] = 1.0E-06*SIMD_COMP_INST_RETIRED_SCALAR_SINGLE/runtime
-Vectorization ratio [%] = 100*SIMD_COMP_INST_RETIRED_PACKED_SINGLE/SIMD_COMP_INST_RETIRED_SCALAR_SINGLE
+Vectorization ratio [%] [%] = 100*SIMD_COMP_INST_RETIRED_PACKED_SINGLE/SIMD_COMP_INST_RETIRED_SCALAR_SINGLE
 -
 Profiling group to measure single precision SSE FLOPs. Don't forget that your code might also execute X87 FLOPs.
 On the number of SIMD_COMP_INST_RETIRED_PACKED_SINGLE you can see how well your code was vectorized.
