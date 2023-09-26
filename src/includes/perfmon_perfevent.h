@@ -337,6 +337,7 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
     attr->type = PERF_TYPE_HARDWARE;
     attr->disabled = 1;
     attr->inherit = 1;
+    attr->pinned = 1;
     if (translate_types[FIXED] != NULL &&
         strcmp(translate_types[PMC], translate_types[FIXED]) == 0)
     {
@@ -1411,7 +1412,7 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                 continue;
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
-            tmp = 0;
+            tmp = 0x0LL;
             ret = read(cpu_event_fds[cpu_id][index], &tmp, sizeof(long long));
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
             if (ret == sizeof(long long))
@@ -1462,7 +1463,7 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                 continue;
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
-            tmp = 0;
+            tmp = 0x0LL;
             ret = read(cpu_event_fds[cpu_id][index], &tmp, sizeof(long long));
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
             if (ret == sizeof(long long))
