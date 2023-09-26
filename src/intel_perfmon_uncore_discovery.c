@@ -6,9 +6,9 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <string.h>
-#include <errno.h>
 
 
+#include <error.h>
 #include <pci_types.h>
 #include <intel_perfmon_uncore_discovery.h>
 
@@ -33,7 +33,7 @@ static int pci_test_bus(int domain, int bus)
     }
     else
     {
-        printf("Cannot format path to PCI bus directory for domain %d and bus %d\n", domain, bus);
+        ERROR_PRINT(Cannot format path to PCI bus directory for domain %d and bus %d, domain, bus);
     }
     return !access(fname, R_OK);
 }
@@ -45,6 +45,7 @@ static int pci_read_config_dword(const struct pci_dev *dev, int where, uint32_t 
     ret = snprintf(path, 1024, "/sys/bus/pci/devices/%.04x:%.02x:%.02x.%.01x/config", dev->domain, dev->bus, dev->device, dev->func);
     if (ret > 0) {
         path[ret] = '\0';
+        ret = -1;
         if (!access(path, R_OK))
         {
             //printf("%s\n", path);
@@ -53,6 +54,7 @@ static int pci_read_config_dword(const struct pci_dev *dev, int where, uint32_t 
             {
                 ret = pread(fp, val, sizeof(uint32_t), where);
                 close(fp);
+                ret = 0;
             }
         }
     }
@@ -159,7 +161,6 @@ struct pci_dev * pci_get_device(unsigned int vendor, unsigned int device, struct
                     {
                         continue;
                     }
-                    //printf("Checking %s\n", devbase);
                     if (vendor != PCI_ANY_ID)
                     {
                         unsigned int hVend = 0x0;
@@ -211,6 +212,7 @@ struct pci_dev * pci_get_device(unsigned int vendor, unsigned int device, struct
                     // Reuse space
                     if (from)
                     {
+                       DEBUG_PRINT(DEBUGLEV_DEVELOP, Using discovery entry device %s, devbase);
                         from->domain = dom;
                         from->bus = bus;
                         from->device = devid;
@@ -223,6 +225,7 @@ struct pci_dev * pci_get_device(unsigned int vendor, unsigned int device, struct
                         // First find, allocate a new PCI device
                         struct pci_dev* next = malloc(sizeof(struct pci_dev));
                         if (next) {
+                           DEBUG_PRINT(DEBUGLEV_DEVELOP, Using discovery entry device %s, devbase);
                             next->domain = dom;
                             next->bus = bus;
                             next->device = devid;
@@ -230,6 +233,10 @@ struct pci_dev * pci_get_device(unsigned int vendor, unsigned int device, struct
                             next->numa_node = node;
                             return next;
                         }
+                       else
+                       {
+                           ERROR_PRINT(Failed to allocate space for PCI device info);
+                       }
                     }
                 }
             }
@@ -244,29 +251,37 @@ PciDeviceIndex get_likwid_device(int type, int id)
     switch (type)
     {
         case DEVICE_ID_CHA:
-            //printf("%d\n", MSR_CBOX_DEVICE_C0 + id);
             return MSR_CBOX_DEVICE_C0 + id;
             break;
         case DEVICE_ID_iMC:
             if (id < 0 || id > 15)
             {
-                fprintf(stderr, "ERROR: Cannot transform IMC device with ID %d\n", id);
+                ERROR_PRINT(Cannot transform IMC device with ID %d, id);
             }
-            return MMIO_IMC_DEVICE_0_CH_0 + id;
+           else
+           {
+                return MMIO_IMC_DEVICE_0_CH_0 + id;
+           }
             break;
         case DEVICE_ID_M2PCIe:
             if (id < 0 || id > 11)
             {
-                fprintf(stderr, "ERROR: Cannot transform M2PCI device with ID %d\n", id);
+                ERROR_PRINT(Cannot transform M2PCIe device with ID %d, id);
             }
-            return PCI_R2PCIE_DEVICE0 + id;
+           else
+            {
+                return PCI_R2PCIE_DEVICE0 + id;
+           }
             break;
         case DEVICE_ID_PCU:
             if (id < 0 || id > 1)
             {
-                fprintf(stderr, "ERROR: Cannot transform PCU device with ID %d\n", id);
+                ERROR_PRINT(Cannot transform PCU device with ID %d, id);
             }
-            return MSR_PCU_DEVICE;
+           else
+            {
+                return MSR_PCU_DEVICE;
+           }
             break;
         case DEVICE_ID_IRP:
             if (id >= 0 && id <= 12)
@@ -275,7 +290,7 @@ PciDeviceIndex get_likwid_device(int type, int id)
             }
             else
             {
-                printf("Bad IRP device offset %d\n", id);
+                ERROR_PRINT(Cannot transform IRP device with ID %d, id);
             }
             break;
         case DEVICE_ID_IIO:
@@ -285,7 +300,7 @@ PciDeviceIndex get_likwid_device(int type, int id)
             }
             else
             {
-                printf("Bad IIO device offset %d\n", id);
+                ERROR_PRINT(Cannot transform IIO device with ID %d, id);
             }
             break;
         case DEVICE_ID_UPI:
@@ -295,43 +310,51 @@ PciDeviceIndex get_likwid_device(int type, int id)
             }
             else
             {
-                printf("Bad UPI device offset %d\n", id);
+                ERROR_PRINT(Cannot transform UPI device with ID %d, id);
             }
             break;
         case DEVICE_ID_MDF:
             if (id < 0 || id > 49)
             {
-                fprintf(stderr, "ERROR: Cannot transform MDF device with ID %d\n", id);
+                ERROR_PRINT(Cannot transform MDF device with ID %d, id);
             }
-            //printf("%d\n", MSR_MDF_DEVICE_0 + id);
-            return MSR_MDF_DEVICE_0 + id;
+           else
+            {
+                return MSR_MDF_DEVICE_0 + id;
+           }
             break;
         case DEVICE_ID_M2M:
             if (id < 0 || id > 31)
             {
-                fprintf(stderr, "ERROR: Cannot transform M2M device with ID %d\n", id);
+                ERROR_PRINT(Cannot transform M2M device with ID %d, id);
                 return MAX_NUM_PCI_DEVICES;
             }
-            //printf("%d\n", PCI_HA_DEVICE_0 + id);
-            return PCI_HA_DEVICE_0 + id;
+           else
+            {
+                return PCI_HA_DEVICE_0 + id;
+           }
             break;
         case DEVICE_ID_M3UPI:
             if (id < 0 || id > 3)
             {
-                fprintf(stderr, "ERROR: Cannot transform M3UPI device with ID %d\n", id);
+                ERROR_PRINT(Cannot transform M3UPI device with ID %d, id);
             }
-            //printf("%d\n", PCI_R3QPI_DEVICE_LINK_0 + id);
-            return PCI_R3QPI_DEVICE_LINK_0 + id;
+           else
+            {
+                return PCI_R3QPI_DEVICE_LINK_0 + id;
+           }
             break;
         case DEVICE_ID_HBM:
             if (id < 0 || id > 31)
             {
-                fprintf(stderr, "ERROR: Cannot transform HBM device with ID %d\n", id);
+                ERROR_PRINT(Cannot transform HBM device with ID %d, id);
             }
-            return MMIO_HBM_DEVICE_0 + id;
+           else
+            {
+                return MMIO_HBM_DEVICE_0 + id;
+           }
             break;
         default:
-            //printf("Unknown\n");
             return MAX_NUM_PCI_DEVICES;
             break;
     }
@@ -340,7 +363,7 @@ PciDeviceIndex get_likwid_device(int type, int id)
 
 void print_unit(PciDeviceIndex idx, PerfmonDiscoveryUnit* unit)
 {
-    fprintf(stderr, "PCIIDX %d Access %s NumRegs %d ID %d Type %s(%d) box_ctl 0x%X ctrl_offset 0x%X ctr_offset 0x%X mmap_addr 0x%X mmap_offset 0x%X\n", idx, AccessTypeNames[unit->access_type], unit->num_regs, unit->box_id, uncore_discovery_box_type_names[unit->box_type], unit->box_type, unit->box_ctl, unit->ctrl_offset, unit->ctr_offset, unit->mmap_addr, unit->mmap_offset);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, PCIIDX %d Access %s NumRegs %d ID %d Type %s(%d) box_ctl 0x%X ctrl_offset 0x%X ctr_offset 0x%X mmap_addr 0x%X mmap_offset 0x%X, idx, AccessTypeNames[unit->access_type], unit->num_regs, unit->box_id, uncore_discovery_box_type_names[unit->box_type], unit->box_type, unit->box_ctl, unit->ctrl_offset, unit->ctr_offset, unit->mmap_addr, unit->mmap_offset);
 }
 
 int max_socket_id(int* max_socket)
@@ -364,6 +387,7 @@ int max_socket_id(int* max_socket)
             }
         }
     }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Found max socket ID %d, cur_max);
     *max_socket = cur_max;
     return 0;
 }
@@ -382,6 +406,7 @@ int perfmon_uncore_discovery(PerfmonDiscovery** perfmon)
 
     if (max_socket_id(&max_sockets) < 0)
     {
+       ERROR_PRINT(Failed to determine number of sockets);
         return -1;
     }
 
@@ -389,12 +414,14 @@ int perfmon_uncore_discovery(PerfmonDiscovery** perfmon)
     int pcihandle = open("/dev/mem", O_RDWR);
     if (pcihandle < 0)
     {
+       ERROR_PRINT(Cannot open /dev/mem);
         return -errno;
     }
     PerfmonDiscovery* perf = malloc(sizeof(PerfmonDiscovery));
     if (!perf)
     {
         close(pcihandle);
+       ERROR_PRINT(Cannot allocate space for device tables);
         return -ENOMEM;
     }
     perf->sockets = NULL;
@@ -403,11 +430,13 @@ int perfmon_uncore_discovery(PerfmonDiscovery** perfmon)
     while ((dev = pci_get_device(0x8086, UNCORE_DISCOVERY_TABLE_DEVICE, dev)) != NULL) {
         socket_id++;
         if (socket_id > max_sockets) {
+           ERROR_PRINT(Socket_id too large);
             break;
         }
         PerfmonDiscoverySocket* tmp = realloc(perf->sockets, (num + 1) * sizeof(PerfmonDiscoverySocket));
         if (!tmp)
         {
+           ERROR_PRINT(Cannot enlarge socket device table to %d, num);
             if (perf->sockets) free(perf->sockets);
             free(perf);
             close(pcihandle);
@@ -454,6 +483,7 @@ int perfmon_uncore_discovery(PerfmonDiscovery** perfmon)
                 for (int i = 0; i < global.max_units; i++)
                 {
                     struct uncore_unit_discovery unit;
+                    if ((i + 1) * (global.stride * 8) > UNCORE_DISCOVERY_MAP_SIZE) continue;
                     memcpy(&unit, io_addr + (i + 1) * (global.stride * 8), sizeof(struct uncore_unit_discovery));
                     // record stuff from unit struct in cur->units[likwid-device-id]
                     if (unit.num_regs == 0) continue;
@@ -493,12 +523,16 @@ int perfmon_uncore_discovery(PerfmonDiscovery** perfmon)
                         cur->units[idx].mmap_offset = cur->units[idx].box_ctl - cur->units[idx].mmap_addr;
                         cur->units[idx].mmap_size = PAGE_SIZE;
                         cur->units[idx].io_addr = NULL;
-                        //print_unit(idx, &cur->units[idx]);
+                        print_unit(idx, &cur->units[idx]);
                     }
                 }
                 /* Unmap PCI config space */
-                munmap(io_addr, PAGE_SIZE);
+                munmap(io_addr, UNCORE_DISCOVERY_MAP_SIZE);
             }
+           else
+            {
+                   DEBUG_PRINT(DEBUGLEV_DEVELOP, not the right dvsec);
+           }
         }
 /*        printf("Add M2IOSF devices \n");*/
 /*        for (int i = 0; i < 8; i++)*/
@@ -520,6 +554,11 @@ int perfmon_uncore_discovery(PerfmonDiscovery** perfmon)
 /*            print_unit(idx, &cur->units[idx]);*/
 /*        }*/
         num++;
+    }
+    if (num == 0)
+    {
+         ERROR_PRINT(Failed to get any socket device tables);
+        return -EFAULT;
     }
     close(pcihandle);
     perf->num_sockets = num;
