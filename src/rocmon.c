@@ -2099,7 +2099,7 @@ rocmon_getNumberOfEvents(int groupId)
 int
 rocmon_getNumberOfMetrics(int groupId)
 {
-    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId > rocmon_context->numActiveGroups)
     {
         return -EFAULT;
     }
@@ -2113,7 +2113,7 @@ rocmon_getTimeOfGroup(int groupId)
 {
     int i = 0;
     double t = 0;
-    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId > rocmon_context->numActiveGroups)
     {
         return -EFAULT;
     }
@@ -2131,7 +2131,7 @@ rocmon_getLastTimeOfGroup(int groupId)
 {
     int i = 0;
     double t = 0;
-    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId > rocmon_context->numActiveGroups)
     {
         return -EFAULT;
     }
@@ -2149,7 +2149,7 @@ rocmon_getTimeToLastReadOfGroup(int groupId)
 {
     int i = 0;
     double t = 0;
-    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId >= rocmon_context->numActiveGroups)
+    if (!rocmon_context || !rocmon_initialized || (groupId < 0) || groupId > rocmon_context->numActiveGroups)
     {
         return -EFAULT;
     }
