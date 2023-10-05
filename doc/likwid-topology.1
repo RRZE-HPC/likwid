@@ -1,6 +1,6 @@
 .TH LIKWID-TOPOLOGY 1 <DATE> likwid\-<VERSION>
 .SH NAME
-likwid-topology \- print thread, cache, NUMA and Nvidia GPU topology
+likwid-topology \- print thread, cache, NUMA and Nvidia/AMD GPU topology
 .SH SYNOPSIS
 .B likwid-topology
 .RB [\-hvgcCG]
@@ -11,12 +11,12 @@ likwid-topology \- print thread, cache, NUMA and Nvidia GPU topology
 .SH DESCRIPTION
 .B likwid-topology
 is a command line application to print the thread and cache
-topology on multicore x86, ARM and POWER processors and Nvidia GPUs.
+topology on multicore x86, ARM and POWER processors and Nvidia/AMD GPUs.
 Used with mono spaced fonts it can draw the processor topology of a
 machine in ASCII art. Beyond topology likwid-topology determines the
 clock of a processor and prints detailed informations about the caches hierarchy.
 When compiled with NVIDIA_INTERFACE=true in config.mk and the CUDA/CUPTI library reachable
-at runtime, likwid-topology prints information about the Nvidia GPUs in the system.
+at runtime, likwid-topology prints information about the Nvidia GPUs in the system. The same is possible for AMD GPUs with ROCM_INTERFACE=TRUE and the required ROCm libraries.
 .SH OPTIONS
 .TP
 .B \-h, \-\-\^help
@@ -38,7 +38,7 @@ prints detailed information about cache hierarchy
 measures and output the processor clock. This involves a longer run time of likwid-topology.
 .TP
 .B \-G, \-\-\^gpus
-prints detailed information about the Nvidia GPUs in the system (if compiled with Nvidia support)
+prints detailed information about the Nvidia/AMD GPUs in the system (if compiled with Nvidia or AMD support)
 .TP
 .B \-o, \-\-\^output <file>
 write the output to file instead of stdout.
