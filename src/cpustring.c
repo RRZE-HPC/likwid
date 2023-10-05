@@ -963,7 +963,7 @@ sockstr_to_socklist(const char* sockstr, int* sockets, int length)
 
 #ifdef LIKWID_WITH_NVMON
 
-static int valid_gpu(GpuTopology_t topo, int id)
+static int valid_gpu_nvmon(GpuTopology_t topo, int id)
 {
     for (int i = 0; i < topo->numDevices; i++)
     {
@@ -994,7 +994,7 @@ gpustr_to_gpulist(const char* gpustr, int* gpulist, int length)
             {
                 for (int k = start; k <= end; k++)
                 {
-                    if (valid_gpu(gpu_topology, k) && insert < length)
+                    if (valid_gpu_nvmon(gpu_topology, k) && insert < length)
                     {
                         gpulist[insert] = k;
                         insert++;
@@ -1005,7 +1005,7 @@ gpustr_to_gpulist(const char* gpustr, int* gpulist, int length)
         else
         {
             int id = check_and_atoi(bdata(commalist->entry[i]));
-            if (valid_gpu(gpu_topology, id) && insert < length)
+            if (valid_gpu_nvmon(gpu_topology, id) && insert < length)
             {
                 gpulist[insert] = id;
                 insert++;
@@ -1016,3 +1016,59 @@ gpustr_to_gpulist(const char* gpustr, int* gpulist, int length)
 }
 
 #endif /* LIKWID_WITH_NVMON */
+
+#ifdef LIKWID_WITH_ROCMON
+
+static int valid_gpu_rocmon(GpuTopology_rocm_t topo, int id)
+{
+    for (int i = 0; i < topo->numDevices; i++)
+    {
+        if (topo->devices[i].devid == id)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int
+gpustr_to_gpulist_rocm(const char* gpustr, int* gpulist, int length)
+{
+    int insert = 0;
+    topology_gpu_init_rocm();
+    GpuTopology_rocm_t gpu_topology = get_gpuTopology_rocm();
+    bstring bgpustr = bfromcstr(gpustr);
+    struct bstrList* commalist = bsplit(bgpustr, ',');
+    for (int i = 0; i < commalist->qty; i++)
+    {
+        if (bstrchrp(commalist->entry[i], '-', 0) != BSTR_ERR)
+        {
+            struct bstrList* indexlist = bsplit(commalist->entry[i], '-');
+            int start = check_and_atoi(bdata(indexlist->entry[0]));
+            int end = check_and_atoi(bdata(indexlist->entry[1]));
+            if (start <= end)
+            {
+                for (int k = start; k <= end; k++)
+                {
+                    if (valid_gpu_rocmon(gpu_topology, k) && insert < length)
+                    {
+                        gpulist[insert] = k;
+                        insert++;
+                    }
+                }
+            }
+        }
+        else
+        {
+            int id = check_and_atoi(bdata(commalist->entry[i]));
+            if (valid_gpu_rocmon(gpu_topology, id) && insert < length)
+            {
+                gpulist[insert] = id;
+                insert++;
+            }
+        }
+    }
+    return insert;
+}
+
+#endif /* LIKWID_WITH_ROCMON */

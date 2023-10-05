@@ -294,8 +294,6 @@ endif
 
 ifeq ($(strip $(NVIDIA_INTERFACE)),true)
 DEFINES += -DLIKWID_WITH_NVMON
-else
-BUILDAPPDAEMON := false
 endif
 
 ifeq ($(strip $(ROCM_INTERFACE)),true)

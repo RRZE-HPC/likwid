@@ -3,7 +3,7 @@
  *
  *      Filename:  libnvctr.c
  *
- *      Description:  Marker API interface of module nvmon
+ *      Description:  Marker API interface of module rocmon
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -35,11 +35,21 @@
 #include <bstrlib.h>
 #include <error.h>
 #include <map.h>
+#include <perfgroup.h>
+#include <types.h>
 
 #include <likwid.h>
 #include <rocmon_types.h>
 
 #define gettid() syscall(SYS_gettid)
+
+#ifndef NAN
+#define NAN (0.0/0.0)
+#endif
+
+#ifndef INFINITY
+#define INFINITY (1.0/0.0)
+#endif
 
 static int rocmon_marker_initialized = 0;
 static pid_t main_tid = -1;
@@ -234,6 +244,7 @@ rocmon_markerInit(void)
     char* eventStr = getenv("LIKWID_ROCMON_EVENTS");
     char* gpuStr = getenv("LIKWID_ROCMON_GPUS");
     char* gpuFileStr = getenv("LIKWID_ROCMON_FILEPATH");
+    char* verbosityStr = getenv("LIKWID_ROCMON_VERBOSITY");
 
     // Validate environment variables are set
     if ((eventStr == NULL) || (gpuStr == NULL) || (gpuFileStr == NULL))
@@ -241,8 +252,10 @@ rocmon_markerInit(void)
         fprintf(stderr, "Running without GPU Marker API. Activate GPU Marker API with -m, -G and -W on commandline.\n");
         return;
     }
-
-    // TODO: Verbosity
+    if (verbosityStr != NULL) {
+        int v = atoi(verbosityStr);
+        rocmon_setVerbosity(v);
+    }
 
     // Init timer module
     timer_init();
@@ -452,6 +465,7 @@ rocmon_markerStartRegion(const char* regionTag)
 
     // Read counters (for all devices)
     TimerData timestamp;
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DETAIL, START REGION '%s' (group %d), regionTag, active_group);
     timer_start(&timestamp);
     rocmon_readCounters();
 
@@ -510,6 +524,7 @@ rocmon_markerStopRegion(const char* regionTag)
 
     // Read counters (for all devices)
     TimerData timestamp;
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DETAIL, STOP REGION '%s' (group %d), regionTag, active_group);
     timer_stop(&timestamp);
     rocmon_readCounters();
 
@@ -652,6 +667,410 @@ rocmon_markerNextGroup(void)
     {
         rocmon_switchActiveGroup(nextGroup);
     }
+}
+
+
+LikwidRocmResults* rocmMarkerResults = NULL;
+int rocmMarkerRegions = 0;
+
+int
+rocmon_readMarkerFile(const char* filename)
+{
+    int ret = 0, i = 0;
+    FILE* fp = NULL;
+    char buf[2048];
+    buf[0] = '\0';
+    char *ptr = NULL;
+    int gpus = 0, groups = 0, regions = 0;
+    int nr_regions = 0;
+
+    if (filename == NULL)
+    {
+        return -EINVAL;
+    }
+    if (access(filename, R_OK))
+    {
+        return -EINVAL;
+    }
+    fp = fopen(filename, "r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Error opening file %s\n", filename);
+    }
+    ptr = fgets(buf, sizeof(buf), fp);
+    ret = sscanf(buf, "%d %d %d", &gpus, &regions, &groups);
+    if (ret != 3)
+    {
+        fprintf(stderr, "ROCMMarker file missformatted.\n");
+        return -EINVAL;
+    }
+    rocmMarkerResults = realloc(rocmMarkerResults, regions * sizeof(LikwidRocmResults));
+    if (rocmMarkerResults == NULL)
+    {
+        fprintf(stderr, "Failed to allocate %lu bytes for the marker results storage\n", regions * sizeof(LikwidRocmResults));
+        return -ENOMEM;
+    }
+    int* regionGPUs = (int*)malloc(regions * sizeof(int));
+    if (regionGPUs == NULL)
+    {
+        fprintf(stderr, "Failed to allocate %lu bytes for temporal gpu count storage\n", regions * sizeof(int));
+        return -ENOMEM;
+    }
+    rocmMarkerRegions = regions;
+    for ( uint32_t i=0; i < regions; i++ )
+    {
+        regionGPUs[i] = 0;
+        rocmMarkerResults[i].gpuCount = gpus;
+        rocmMarkerResults[i].time = (double*) malloc(gpus * sizeof(double));
+        if (!rocmMarkerResults[i].time)
+        {
+            fprintf(stderr, "Failed to allocate %lu bytes for the time storage\n", gpus * sizeof(double));
+            break;
+        }
+        rocmMarkerResults[i].count = (uint32_t*) malloc(gpus * sizeof(uint32_t));
+        if (!rocmMarkerResults[i].count)
+        {
+            fprintf(stderr, "Failed to allocate %lu bytes for the count storage\n", gpus * sizeof(uint32_t));
+            break;
+        }
+        rocmMarkerResults[i].gpulist = (int*) malloc(gpus * sizeof(int));
+        if (!rocmMarkerResults[i].gpulist)
+        {
+            fprintf(stderr, "Failed to allocate %lu bytes for the gpulist storage\n", gpus * sizeof(int));
+            break;
+        }
+        rocmMarkerResults[i].counters = (double**) malloc(gpus * sizeof(double*));
+        if (!rocmMarkerResults[i].counters)
+        {
+            fprintf(stderr, "Failed to allocate %lu bytes for the counter result storage\n", gpus * sizeof(double*));
+            break;
+        }
+    }
+    while (fgets(buf, sizeof(buf), fp))
+    {
+        if (strchr(buf,':'))
+        {
+            int regionid = 0, groupid = -1;
+            char regiontag[100];
+            char* ptr = NULL;
+            char* colonptr = NULL;
+            regiontag[0] = '\0';
+            ret = sscanf(buf, "%d:%s", &regionid, regiontag);
+
+            ptr = strrchr(regiontag,'-');
+            colonptr = strchr(buf,':');
+            if (ret != 2 || ptr == NULL || colonptr == NULL)
+            {
+                fprintf(stderr, "Line %s not a valid region description\n", buf);
+                continue;
+            }
+            groupid = atoi(ptr+1);
+            snprintf(regiontag, strlen(regiontag)-strlen(ptr)+1, "%s", &(buf[colonptr-buf+1]));
+            rocmMarkerResults[regionid].groupID = groupid;
+            rocmMarkerResults[regionid].tag = bfromcstr(regiontag);
+            nr_regions++;
+        }
+        else
+        {
+            int regionid = 0, groupid = 0, gpu = 0, count = 0, nevents = 0;
+            int gpuidx = 0, eventidx = 0;
+            double time = 0;
+            char remain[1024];
+            remain[0] = '\0';
+            ret = sscanf(buf, "%d %d %d %d %lf %d %[^\t\n]", &regionid, &groupid, &gpu, &count, &time, &nevents, remain);
+            if (ret != 7)
+            {
+                fprintf(stderr, "Line %s not a valid region values line\n", buf);
+                continue;
+            }
+            if (gpu >= 0)
+            {
+                gpuidx = regionGPUs[regionid];
+                rocmMarkerResults[regionid].gpulist[gpuidx] = gpu;
+                rocmMarkerResults[regionid].eventCount = nevents;
+                rocmMarkerResults[regionid].time[gpuidx] = time;
+                rocmMarkerResults[regionid].count[gpuidx] = count;
+                rocmMarkerResults[regionid].counters[gpuidx] = malloc(nevents * sizeof(double));
+
+                eventidx = 0;
+                ptr = strtok(remain, " ");
+                while (ptr != NULL && eventidx < nevents)
+                {
+                    sscanf(ptr, "%lf", &(rocmMarkerResults[regionid].counters[gpuidx][eventidx]));
+                    ptr = strtok(NULL, " ");
+                    eventidx++;
+                }
+                regionGPUs[regionid]++;
+            }
+        }
+    }
+    for ( uint32_t i=0; i < regions; i++ )
+    {
+        rocmMarkerResults[i].gpuCount = regionGPUs[i];
+    }
+    free(regionGPUs);
+    fclose(fp);
+    return nr_regions;
+}
+
+void
+rocmon_destroyMarkerResults()
+{
+    int i = 0, j = 0;
+    if (rocmMarkerResults != NULL)
+    {
+        for (i = 0; i < rocmMarkerRegions; i++)
+        {
+            free(rocmMarkerResults[i].time);
+            free(rocmMarkerResults[i].count);
+            free(rocmMarkerResults[i].gpulist);
+            for (j = 0; j < rocmMarkerResults[i].gpuCount; j++)
+            {
+                free(rocmMarkerResults[i].counters[j]);
+            }
+            free(rocmMarkerResults[i].counters);
+            bdestroy(rocmMarkerResults[i].tag);
+        }
+        free(rocmMarkerResults);
+        rocmMarkerResults = NULL;
+        rocmMarkerRegions = 0;
+    }
+}
+
+
+int
+rocmon_getCountOfRegion(int region, int gpu)
+{
+    if (rocmMarkerResults == NULL)
+    {
+        ERROR_PLAIN_PRINT(Rocmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= rocmMarkerRegions)
+    {
+        return -EINVAL;
+    }
+    if (gpu < 0 || gpu >= rocmMarkerResults[region].gpuCount)
+    {
+        return -EINVAL;
+    }
+    if (rocmMarkerResults[region].count == NULL)
+    {
+        return 0;
+    }
+    return rocmMarkerResults[region].count[gpu];
+}
+
+double
+rocmon_getTimeOfRegion(int region, int gpu)
+{
+    if (rocmMarkerResults == NULL)
+    {
+        ERROR_PLAIN_PRINT(Rocmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= rocmMarkerRegions)
+    {
+        return -EINVAL;
+    }
+    if (gpu < 0 || gpu >= rocmMarkerResults[region].gpuCount)
+    {
+        return -EINVAL;
+    }
+    if (rocmMarkerResults[region].time == NULL)
+    {
+        return 0.0;
+    }
+    return rocmMarkerResults[region].time[gpu];
+}
+
+int
+rocmon_getGpulistOfRegion(int region, int count, int* gpulist)
+{
+    int i;
+    if (rocmMarkerResults == NULL)
+    {
+        ERROR_PLAIN_PRINT(Rocmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= rocmMarkerRegions)
+    {
+        return -EINVAL;
+    }
+    if (gpulist == NULL)
+    {
+        return -EINVAL;
+    }
+    for (i=0; i< MIN(count, rocmMarkerResults[region].gpuCount); i++)
+    {
+        gpulist[i] = rocmMarkerResults[region].gpulist[i];
+    }
+    return MIN(count, rocmMarkerResults[region].gpuCount);
+}
+
+int
+rocmon_getGpusOfRegion(int region)
+{
+    if (rocmMarkerResults == NULL)
+    {
+        ERROR_PLAIN_PRINT(Rocmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= rocmMarkerRegions)
+    {
+        return -EINVAL;
+    }
+    return rocmMarkerResults[region].gpuCount;
+}
+
+int
+rocmon_getMetricsOfRegion(int region)
+{
+    if (rocmMarkerResults == NULL)
+    {
+        ERROR_PLAIN_PRINT(Rocmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= rocmMarkerRegions)
+    {
+        return -EINVAL;
+    }
+    return rocmon_getNumberOfMetrics(rocmMarkerResults[region].groupID);
+}
+
+int
+rocmon_getNumberOfRegions()
+{
+    if (rocmMarkerResults == NULL)
+    {
+        ERROR_PLAIN_PRINT(Rocmon module not properly initialized);
+        return -EINVAL;
+    }
+    return rocmMarkerRegions;
+}
+
+int
+rocmon_getGroupOfRegion(int region)
+{
+    if (rocmMarkerResults == NULL)
+    {
+        ERROR_PLAIN_PRINT(Rocmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= rocmMarkerRegions)
+    {
+        return -EINVAL;
+    }
+    return rocmMarkerResults[region].groupID;
+}
+
+char*
+rocmon_getTagOfRegion(int region)
+{
+    if (rocmMarkerResults == NULL)
+    {
+        ERROR_PLAIN_PRINT(Rocmon module not properly initialized);
+        return NULL;
+    }
+    if (region < 0 || region >= rocmMarkerRegions)
+    {
+        return NULL;
+    }
+    return bdata(rocmMarkerResults[region].tag);
+}
+
+int
+rocmon_getEventsOfRegion(int region)
+{
+    if (rocmMarkerResults == NULL)
+    {
+        ERROR_PLAIN_PRINT(Rocmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= rocmMarkerRegions)
+    {
+        return -EINVAL;
+    }
+    return rocmMarkerResults[region].eventCount;
+}
+
+double
+rocmon_getResultOfRegionGpu(int region, int eventId, int gpuId)
+{
+    if (rocmMarkerResults == NULL)
+    {
+        ERROR_PLAIN_PRINT(Rocmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= rocmMarkerRegions)
+    {
+        return -EINVAL;
+    }
+    if (gpuId < 0 || gpuId >= rocmMarkerResults[region].gpuCount)
+    {
+        return -EINVAL;
+    }
+    if (eventId < 0 || eventId >= rocmMarkerResults[region].eventCount)
+    {
+        return -EINVAL;
+    }
+    if (rocmMarkerResults[region].counters[gpuId] == NULL)
+    {
+        return 0.0;
+    }
+    return rocmMarkerResults[region].counters[gpuId][eventId];
+}
+
+double
+rocmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
+{
+    int e = 0, err = 0;
+    double result = 0.0;
+    CounterList clist;
+    if (rocmMarkerResults == NULL)
+    {
+        ERROR_PLAIN_PRINT(Rocmon module not properly initialized);
+        return NAN;
+    }
+    if (region < 0 || region >= rocmMarkerRegions)
+    {
+        return NAN;
+    }
+    if (rocmMarkerResults == NULL)
+    {
+        return NAN;
+    }
+    if (gpuId < 0 || gpuId >= rocmMarkerResults[region].gpuCount)
+    {
+        return NAN;
+    }
+    GroupInfo* ginfo = &rocmon_context->groups[rocmMarkerResults[region].groupID];
+    if (metricId < 0 || metricId >= ginfo->nmetrics)
+    {
+        return NAN;
+    }
+    char *f = ginfo->metricformulas[metricId];
+    timer_init();
+    init_clist(&clist);
+    for (e = 0; e < rocmMarkerResults[region].eventCount; e++)
+    {
+        double res = rocmon_getResultOfRegionGpu(region, e, gpuId);
+        char* ctr = ginfo->counters[e];
+        add_to_clist(&clist, ctr, res);
+    }
+    add_to_clist(&clist, "time", rocmon_getTimeOfRegion(rocmMarkerResults[region].groupID, gpuId));
+    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
+    add_to_clist(&clist, "true", 1);
+    add_to_clist(&clist, "false", 0);
+
+    err = calc_metric(f, &clist, &result);
+    if (err < 0)
+    {
+        ERROR_PRINT(Cannot calculate formula %s, f);
+        return NAN;
+    }
+    destroy_clist(&clist);
+    return result;
 }
 
 #endif /* LIKWID_WITH_ROCMON */

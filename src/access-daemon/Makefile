@@ -65,4 +65,4 @@ $(SETFREQ_TARGET): setFreqDaemon.c
 	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(SETFREQ_TARGET) setFreqDaemon.c
 
 $(APPDAEMON_TARGET): $(GOTCHA_TARGET) appDaemon.c
-	$(Q)$(CC) -shared -fPIC $(CPPFLAGS) -Wl,-soname,$(APPDAEMON_TARGET).$(VERSION).$(RELEASE) -fstack-protector -I. ../bstrlib.c appDaemon.c -o ../../$(APPDAEMON_TARGET) -llikwid
+	$(Q)$(CC) -shared -fPIC $(CPPFLAGS) -Wl,-soname,$(APPDAEMON_TARGET).$(VERSION).$(RELEASE) -fstack-protector -I. ../bstrlib.c appDaemon.c -o ../../$(APPDAEMON_TARGET) -llikwid -L../../

@@ -432,7 +432,7 @@ static void appdaemon_close_rocmon(void)
         {
             for (int j = 0; j < rocmon_numgpus; j++)
             {
-                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(gid, i, j), rocmon_getLastResult(gid, i, j));
+                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(j, gid, i), rocmon_getLastResult(j, gid, i));
             }
         }
     }
@@ -475,7 +475,7 @@ static void appdaemon_read_rocmon(void)
         {
             for (int j = 0; j < rocmon_numgpus; j++)
             {
-                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeToLastReadOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(gid, i, j), rocmon_getLastResult(gid, i, j));
+                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeToLastReadOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(j, gid, i), rocmon_getLastResult(j, gid, i));
             }
         }
     }
@@ -555,10 +555,11 @@ int __libc_start_main(int (*main) (int,char **,char **),
     char* outputFilename = getenv("LIKWID_OUTPUTFILE");
     if (outputFilename == NULL)
     {
-        fprintf(stderr, "No output filename given\n");
-        return -1;
+        output_file = stderr;
+    } else {
+        output_file = fopen(outputFilename,"w");
     }
-    output_file = fopen(outputFilename,"w");
+
     if (output_file == NULL)
     {
         fprintf(stderr, "Cannot open file %s\n", outputFilename);
@@ -568,8 +569,8 @@ int __libc_start_main(int (*main) (int,char **,char **),
     fprintf(output_file, "Backend, GPU, Time, Event, Full Value, Last Value\n");
 
 #ifdef LIKWID_NVMON
-    char* nvEventStr = getenv("NVMON_EVENTS");
-    char* nvGpuStr = getenv("NVMON_GPULIST");
+    char* nvEventStr = getenv("LIKWID_NVMON_EVENTS");
+    char* nvGpuStr = getenv("LIKWID_NVMON_GPUS");
     if (nvEventStr && nvGpuStr)
     {
         ret = appdaemon_setup_nvmon(nvGpuStr, nvEventStr);
@@ -581,8 +582,8 @@ int __libc_start_main(int (*main) (int,char **,char **),
 #endif
 
 #ifdef LIKWID_ROCMON
-    char* rocmonEventStr = getenv("ROCMON_EVENTS");
-    char* rocmonGpuStr = getenv("ROCMON_GPULIST");
+    char* rocmonEventStr = getenv("LIKWID_ROCMON_EVENTS");
+    char* rocmonGpuStr = getenv("LIKWID_ROCMON_GPUS");
     if (rocmonEventStr && rocmonGpuStr)
     {
         ret = appdaemon_setup_rocmon(rocmonGpuStr, rocmonEventStr);

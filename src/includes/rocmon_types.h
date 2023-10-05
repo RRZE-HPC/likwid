@@ -34,7 +34,9 @@
 
 #include <likwid.h>
 // #include <hsa.h>
+#ifndef ROCPROFILER_VERSION_MAJOR
 #include <rocprofiler.h>
+#endif
 #include <map.h>
 
 typedef struct {
@@ -46,6 +48,8 @@ typedef struct {
     RocmonEventResult* results; // First rocprofiler results, then SMI results
     int numResults;
 } RocmonEventResultList;
+
+
 
 struct RocmonSmiEvent_struct;
 typedef int (*RocmonSmiMeasureFunc)(int deviceId, struct RocmonSmiEvent_struct* event, RocmonEventResult* result);
@@ -125,4 +129,15 @@ typedef struct {
 
 extern RocmonContext *rocmon_context;
 
+
+typedef struct {
+    bstring  tag;
+    int groupID;
+    int gpuCount;
+    int eventCount;
+    double*  time;
+    uint32_t*  count;
+    int* gpulist;
+    double** counters;
+} LikwidRocmResults;
 #endif /* LIKWID_ROCMON_TYPES_H */
