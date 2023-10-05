@@ -342,6 +342,7 @@ _rocmon_link_libraries()
 {
     #define DLSYM_AND_CHECK( dllib, name ) name##_ptr = dlsym( dllib, #name ); if ( dlerror() != NULL ) { ERROR_PRINT(Failed to link  #name); return -1; }
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Linking AMD ROCMm libraries);
+  
     // Need to link in the ROCm HSA libraries
     dl_hsa_lib = dlopen("libhsa-runtime64.so", RTLD_NOW | RTLD_GLOBAL);
     if (!dl_hsa_lib)
