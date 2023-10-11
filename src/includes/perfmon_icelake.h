@@ -66,7 +66,7 @@ int perfmon_init_icelake(int cpu_id)
 
     uint64_t misc_enable = 0x0;
     ret = HPMread(cpu_id, MSR_DEV, MSR_IA32_MISC_ENABLE, &misc_enable);
-    if (ret == 0 && testBit(misc_enable, 7) && (testBit(misc_enable, 12) == 0))
+    if (ret == 0 && (testBit(misc_enable, 7) == 1) && (testBit(misc_enable, 12) == 0))
     {
         ret = HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL);
         if (ret != 0)
@@ -81,11 +81,21 @@ int perfmon_init_icelake(int cpu_id)
     }
     if (!icl_did_cbox_check)
     {
+        uint64_t data = 0x0ULL;
         switch(cpuid_info.model)
         {
             case ICELAKE1:
             case ICELAKE2:
-                icelake_cbox_setup = icl_cbox_setup;
+            case ROCKETLAKE:
+                ret = HPMread(cpu_id, MSR_DEV, MSR_UNC_CBO_CONFIG, &data);
+                if ((ret == 0) && ((data & 0xF) > 0))
+                {
+                    icelake_cbox_setup = icl_cbox_setup;
+                }
+                else
+                {
+                    icelake_cbox_setup = icl_cbox_nosetup;
+                }
                 break;
             case ICELAKEX1:
             case ICELAKEX2:
@@ -164,15 +174,34 @@ int icl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (1ULL<<33);
                     break;
                 case EVENT_OPTION_MATCH0:
-                    offcore_flags |= (event->options[j].value & 0x8FFFULL);
+                    offcore_flags |= (event->options[j].value & 0xAFB7ULL);
                     break;
                 case EVENT_OPTION_MATCH1:
-                    offcore_flags |= (event->options[j].value<< 16);
+                    offcore_flags |= ((event->options[j].value & 0x3FFFDDULL) << 16);
                     break;
                 default:
                     break;
             }
         }
+    }
+
+    if (event->eventId == 0xB7)
+    {
+        if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
+        {
+            offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
+        }
+        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE0);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, offcore_flags));
+    }
+    else if (event->eventId == 0xBB)
+    {
+        if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
+        {
+            offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
+        }
+        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE1);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, offcore_flags));
     }
 
     if (flags != currentConfig[cpu_id][index])
@@ -727,7 +756,7 @@ int perfmon_setupCounterThread_icelake(
             case MBOX5FIX:
             case MBOX6FIX:
             case MBOX7FIX:
-		if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+                if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
                 {
                     icx_setup_mboxfix(cpu_id, index, event);
                 }
@@ -973,7 +1002,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                 case MBOX5FIX:
                 case MBOX6FIX:
                 case MBOX7FIX:
-		    if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+                    if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
                     {
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_MBOXFIX);
                         CHECK_MMIO_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
@@ -1008,7 +1037,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                     }
                     break;
                 case MBOX0TMP:
-                    if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2))
+                    if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE))
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
                         eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
@@ -1168,7 +1197,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
                 case CBOX37:
                 case CBOX38:
                 case CBOX39:
-                    if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+                    if (haveLock)
                     {
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, CLEAR_CBOX);
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
@@ -1182,7 +1211,7 @@ int perfmon_startCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet
     }
     if (haveLock && MEASURE_UNCORE(eventSet))
     {
-        if ((cpuid_info.model == ICELAKE1) || (cpuid_info.model == ICELAKE2))
+        if ((cpuid_info.model == ICELAKE1) || (cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE))
         {
             VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29), UNFREEZE_UNCORE);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29)));
@@ -1343,7 +1372,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
     }
     if (haveLock && MEASURE_UNCORE(eventSet))
     {
-        if ((cpuid_info.model == ICELAKE1) || (cpuid_info.model == ICELAKE2))
+        if (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE)
         {
             VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_UNCORE);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL));
@@ -1463,7 +1492,7 @@ int perfmon_stopCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     }
                     break;
                 case MBOX0TMP:
-                    if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2))
+                    if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE))
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, PCI_IMC_DEVICE_0_CH_0, counter1, &counter_result));
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
@@ -1697,7 +1726,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
     }
     if (haveLock && MEASURE_UNCORE(eventSet))
     {
-        if ((cpuid_info.model == ICELAKE1) && (cpuid_info.model == ICELAKE2))
+        if (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE)
         {
             VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_UNCORE);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL));
@@ -1820,7 +1849,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                     }
                     break;
                 case MBOX0TMP:
-                    if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2))
+                    if (haveLock && (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE))
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_MBOX);
@@ -1968,7 +1997,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
                 case CBOX37:
                 case CBOX38:
                 case CBOX39:
-                    if (haveLock && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+                    if (haveLock)
                     {
                         icx_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index));
                         counter_result = *current;
@@ -2027,7 +2056,7 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
     }
     if (haveLock && MEASURE_UNCORE(eventSet))
     {
-        if ((cpuid_info.model == ICELAKE1) || (cpuid_info.model == ICELAKE2))
+        if (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ROCKETLAKE)
         {
             VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29), UNFREEZE_UNCORE);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29)));

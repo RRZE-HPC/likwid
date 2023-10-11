@@ -1,0 +1,182 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG
+
+
+build-x86-daemon:
+    stage: build
+    variables:
+      LIKWID_COMPILER: "GCC"
+      LIKWID_ACCESSMODE: "accessdaemon"
+      LIKWID_MODULE: "likwid/5.2-dev"
+    script:
+      - mkdir /tmp/$CI_JOB_NAME
+      - module load "$LIKWID_MODULE"
+      - export LIKWID_PREFIX=$(realpath $(dirname $(which likwid-topology))/..)
+      - module unload "$LIKWID_MODULE"
+      - sed -e s+"INSTALLED_ACCESSDAEMON = .*"+"INSTALLED_ACCESSDAEMON=$LIKWID_PREFIX/sbin/likwid-accessD"+g -i config.mk
+      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
+      - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/$CI_JOB_NAME"+g -i config.mk
+      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
+      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
+      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
+      - make
+      - make BUILDDAEMON=false BUILDFREQ=false install
+      - cp -r /tmp/$CI_JOB_NAME $CI_PROJECT_DIR/$CI_JOB_NAME
+      - if [ -e $CI_JOB_NAME/sbin/likwid-accessD ]; then rm $CI_JOB_NAME/sbin/likwid-accessD; fi
+      - if [ -e $CI_JOB_NAME/sbin/likwid-setFreq ]; then rm $CI_JOB_NAME/sbin/likwid-setFreq; fi
+      - rm -rf /tmp/$CI_JOB_NAME
+    before_script:
+      - rm -rf /tmp/$CI_JOB_NAME
+    after_script:
+      - rm -rf /tmp/$CI_JOB_NAME
+    artifacts:
+      paths:
+        - $CI_JOB_NAME/
+    tags:
+      - testcluster
+
+
+build-x86-perf:
+    stage: build
+    variables:
+      LIKWID_COMPILER: "GCC"
+      LIKWID_ACCESSMODE: "perf_event"
+    script:
+      - mkdir /tmp/$CI_JOB_NAME
+      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
+      - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/$CI_JOB_NAME"+g -i config.mk
+      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
+      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
+      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
+      - make
+      - make BUILDDAEMON=false BUILDFREQ=false install
+      - cp -r /tmp/$CI_JOB_NAME $CI_PROJECT_DIR/$CI_JOB_NAME
+      - if [ -e $CI_JOB_NAME/sbin/likwid-accessD ]; then rm $CI_JOB_NAME/sbin/likwid-accessD; fi
+      - if [ -e $CI_JOB_NAME/sbin/likwid-setFreq ]; then rm $CI_JOB_NAME/sbin/likwid-setFreq; fi
+      - rm -rf /tmp/$CI_JOB_NAME
+    before_script:
+      - rm -rf /tmp/$CI_JOB_NAME
+    after_script:
+      - rm -rf /tmp/$CI_JOB_NAME
+    artifacts:
+      paths:
+        - $CI_JOB_NAME/
+    tags:
+      - testcluster
+
+build-arm8-perf:
+    stage: build
+    variables:
+      LIKWID_COMPILER: "GCCARMv8"
+      LIKWID_ACCESSMODE: "perf_event"
+      SLURM_NODELIST: warmup
+    script:
+      - mkdir /tmp/$CI_JOB_NAME
+      - sed -e s+"ACCESSMODE = .*"+"ACCESSMODE=$LIKWID_ACCESSMODE"+g -i config.mk
+      - sed -e s+"COMPILER = .*"+"COMPILER=$LIKWID_COMPILER"+g -i config.mk
+      - sed -e s+"PREFIX ?= .*"+"PREFIX=/tmp/$CI_JOB_NAME"+g -i config.mk
+      - sed -e s+"INSTRUMENT_BENCH = .*"+"INSTRUMENT_BENCH=true"+g -i config.mk
+      - sed -e s+"BUILDDAEMON = .*"+"BUILDDAEMON=false"+g -i config.mk
+      - sed -e s+"BUILDFREQ = .*"+"BUILDFREQ=false"+g -i config.mk
+      - make
+      - make BUILDDAEMON=false BUILDFREQ=false install
+      - cp -r /tmp/$CI_JOB_NAME $CI_PROJECT_DIR/$CI_JOB_NAME
+      - if [ -e $CI_JOB_NAME/sbin/likwid-accessD ]; then rm $CI_JOB_NAME/sbin/likwid-accessD; fi
+      - if [ -e $CI_JOB_NAME/sbin/likwid-setFreq ]; then rm $CI_JOB_NAME/sbin/likwid-setFreq; fi
+      - rm -rf /tmp/$CI_JOB_NAME
+    before_script:
+      - rm -rf /tmp/$CI_JOB_NAME
+    after_script:
+      - rm -rf /tmp/$CI_JOB_NAME
+    artifacts:
+      paths:
+        - $CI_JOB_NAME/
+    tags:
+      - testcluster
+
+check-event-files:
+    stage: .pre
+    tags:
+      - testcluster
+    script:
+      - module load python
+      - test/check_data_files.py events
+#      - test/check_data_files.py groups
+
+notify-github-pending:
+  stage: .pre
+  tags:
+    - testcluster
+  variables:
+    NO_SLURM_SUBMIT: 1
+  when: always
+  script:
+    - test/gitlab-ci/notify_github.sh pending
+
+arch-gen:
+  stage: build
+  tags:
+    - testcluster
+  variables:
+    NO_SLURM_SUBMIT: 1
+  script: 
+   - test/gitlab-ci/generate_arch_jobs.sh > arch-pipeline.yml
+  artifacts:
+    paths:
+      - arch-pipeline.yml
+
+arch-pipeline:
+  stage: test
+  trigger:
+    include:
+      - artifact: arch-pipeline.yml
+        job: arch-gen
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+cuda-gen:
+  stage: build
+  tags:
+    - testcluster
+  variables:
+    SLURM_NODELIST: medusa
+  script: 
+   - test/gitlab-ci/generate_cuda_jobs.sh > cuda-pipeline.yml
+  artifacts:
+    paths:
+      - cuda-pipeline.yml
+
+cuda-pipeline:
+  stage: test
+  trigger:
+    include:
+      - artifact: cuda-pipeline.yml
+        job: cuda-gen
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+notify-github-success:
+  stage: .post
+  tags:
+    - testcluster
+  variables:
+    NO_SLURM_SUBMIT: 1
+  when: on_success
+  script:
+    - test/gitlab-ci/notify_github.sh success
+
+notify-github-failure:
+  stage: .post
+  tags:
+    - testcluster
+  variables:
+    NO_SLURM_SUBMIT: 1
+  when: on_failure
+  script:
+    - test/gitlab-ci/notify_github.sh failure

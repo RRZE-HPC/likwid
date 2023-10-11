@@ -1,0 +1,28 @@
+SHORT Double Precision MFLOP/s
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  CPU_CLOCKS_UNHALTED
+PMC2  RETIRED_SSE_AVX_FLOPS_ALL
+PMC3  MERGE
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s]   FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI   PMC1/PMC0
+DP [MFLOP/s]   1.0E-06*(PMC2)/time
+
+LONG
+Formulas:
+CPI = CPU_CLOCKS_UNHALTED/RETIRED_INSTRUCTIONS
+DP [MFLOP/s] = 1.0E-06*(RETIRED_SSE_AVX_FLOPS_ALL)/time
+-
+Profiling group to measure (double-precisision) FLOP rate. The event might
+have a higher per-cycle increment than 15, so the MERGE event is required. In
+contrast to AMD Zen, the Zen2 microarchitecture does not provide events to
+differentiate between single- and double-precision.
+
+

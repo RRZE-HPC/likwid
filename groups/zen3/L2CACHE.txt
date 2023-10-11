@@ -10,7 +10,6 @@ PMC5  RETIRED_INSTRUCTIONS
 
 METRICS
 Runtime (RDTSC) [s] time
-Runtime unhalted [s] FIXC1*inverseClock
 L2 request rate (PMC0+PMC1+PMC2+PMC3)/PMC5
 L2 miss rate ((PMC0+PMC1+PMC2+PMC3)-(PMC4+PMC1))/PMC5
 L2 miss ratio ((PMC0+PMC1+PMC2+PMC3)-(PMC4+PMC1))/(PMC0+PMC1+PMC2+PMC3)

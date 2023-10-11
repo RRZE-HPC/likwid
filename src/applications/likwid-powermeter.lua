@@ -279,7 +279,11 @@ if #arg == 0 then
     end
 else
     for i=1, likwid.tablelength(arg)-2 do
-        table.insert(execList, arg[i])
+        if string.find(arg[i], " ") then
+            table.insert(execList, "\""..arg[i].."\"")
+        else
+            table.insert(execList, arg[i])
+        end
     end
     execString = execString .. table.concat(execList," ")
 end

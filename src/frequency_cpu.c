@@ -319,7 +319,7 @@ freq_client_startDaemon()
     if (access(exeprog, X_OK))
     {
         fprintf(stderr, "Failed to find the daemon '%s'\n", exeprog);
-        exit(EXIT_FAILURE);
+        return -1;
     }
     DEBUG_PRINT(DEBUGLEV_INFO, Starting daemon %s, exeprog);
     pid = fork();
@@ -341,7 +341,7 @@ freq_client_startDaemon()
         {
             //ERRNO_PRINT;
             fprintf(stderr, "Failed to execute the daemon '%s'\n", exeprog);
-            exit(EXIT_FAILURE);
+            return -1;
         }
     }
     else if (pid < 0)
@@ -350,12 +350,27 @@ freq_client_startDaemon()
         return pid;
     }
 
-    EXIT_IF_ERROR(socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0), socket() failed);
+    socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+    if (socket_fd < 0)
+    {
+        ERROR_PRINT(socket() failed);
+        return -1;
+    }
 
     address.sun_family = AF_LOCAL;
     address_length = sizeof(address);
     snprintf(address.sun_path, sizeof(address.sun_path), TOSTRING(LIKWIDSOCKETBASE) "-freq-%d", pid);
     filepath = strdup(address.sun_path);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Waiting for socket file %s, address.sun_path);
+    while (access(address.sun_path, F_OK) && timeout > 0)
+    {
+        usleep(1000);
+        timeout--;
+    }
+    if (!access(address.sun_path, F_OK))
+    {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Socket file %s exists, address.sun_path);
+    }
 
     res = connect(socket_fd, (struct sockaddr *) &address, address_length);
     while (res && timeout > 0)
@@ -379,7 +394,10 @@ freq_client_startDaemon()
         fprintf(stderr, "opened within 10 seconds. Consult the error message above\n");
         fprintf(stderr, "this to find out why. If the error is 'no such file or directoy',\n");
         fprintf(stderr, "it usually means that likwid-accessD just failed to start.\n");
-        exit(EXIT_FAILURE);
+        free(filepath);
+        close(socket_fd);
+        socket_fd = -1;
+        return -1;
     }
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Successfully opened socket %s to daemon, filepath);
     free(filepath);

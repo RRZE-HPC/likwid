@@ -69,6 +69,7 @@ static int registered_cpus = 0;
 static pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 static int use_locks = 0;
 static pthread_mutex_t threadLocks[MAX_NUM_THREADS] = { [ 0 ... (MAX_NUM_THREADS-1)] = PTHREAD_MUTEX_INITIALIZER};
+static int maxRegionNameLength = 100;
 
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
@@ -113,6 +114,10 @@ calculateMarkerResult(RegisterIndex index, uint64_t start, uint64_t stop, int ov
 {
     double result = 0.0;
     uint64_t maxValue = 0ULL;
+    if (start > stop)
+    {
+        overflows++;
+    }
     if (overflows == 0)
     {
         result = (double) (stop - start);
@@ -183,7 +188,7 @@ likwid_markerInit(void)
     if (!lock_check())
     {
         fprintf(stderr,"Access to performance counters is locked.\n");
-        exit(EXIT_FAILURE);
+        return;
     }
 
     topology_init();
@@ -256,7 +261,9 @@ likwid_markerInit(void)
     {
         fprintf(stderr,"Cannot allocate space for group handling.\n");
         bstrListDestroy(eventStrings);
-        exit(EXIT_FAILURE);
+        bdestroy(bEventStr);
+        perfmon_finalize();
+        return;
     }
     for (i=0; i<eventStrings->qty; i++)
     {
@@ -490,8 +497,9 @@ likwid_markerClose(void)
     {
         free(results);
     }
-    likwid_init = 0;
+    perfmon_finalize();
     HPMfinalize();
+    likwid_init = 0;
 }
 
 int
@@ -504,13 +512,15 @@ likwid_markerRegisterRegion(const char* regionTag)
     TimerData timer;
     int ret = 0;
     uint64_t tmp = 0x0ULL;
-    bstring tag = bfromcstralloc(100, regionTag);
-    LikwidThreadResults* results;
-    char groupSuffix[10];
-    sprintf(groupSuffix, "-%d", groupSet->activeGroup);
-    bcatcstr(tag, groupSuffix);
+    LikwidThreadResults* results = NULL;
+    bstring tag = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
     int cpu_id = hashTable_get(tag, &results);
     bdestroy(tag);
+    if (!results)
+    {
+        fprintf(stderr, "ERROR: Failed to get thread data for tag %s\n", regionTag);
+        return -EFAULT;
+    }
 
 #ifndef LIKWID_USE_PERFEVENT
     // Add CPU to access layer if ACCESSMODE is direct or accessdaemon
@@ -525,6 +535,7 @@ likwid_markerRegisterRegion(const char* regionTag)
 int
 likwid_markerStartRegion(const char* regionTag)
 {
+    LikwidThreadResults* results = NULL;
     if ( ! likwid_init )
     {
         return -EFAULT;
@@ -535,13 +546,13 @@ likwid_markerStartRegion(const char* regionTag)
         return -EFAULT;
     }
 
-    bstring tag = bfromcstralloc(100, regionTag);
-    LikwidThreadResults* results;
-    char groupSuffix[10];
-    sprintf(groupSuffix, "-%d", groupSet->activeGroup);
-    bcatcstr(tag, groupSuffix);
-
+    bstring tag = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
     int cpu_id = hashTable_get(tag, &results);
+    if (!results)
+    {
+        fprintf(stderr, "ERROR: Failed to get thread data for tag %s\n", regionTag);
+        return -EFAULT;
+    }
     int thread_id = getThreadID(cpu_id);
     if (results->state == MARKER_STATE_START)
     {
@@ -584,6 +595,7 @@ likwid_markerStopRegion(const char* regionTag)
     }
 
     TimerData timestamp;
+    LikwidThreadResults* results = NULL;
     timer_stop(&timestamp);
     double result = 0.0;
     int cpu_id;
@@ -593,17 +605,22 @@ likwid_markerStopRegion(const char* regionTag)
         return -EFAULT;
     }
     int thread_id;
-    bstring tag = bfromcstr(regionTag);
-    char groupSuffix[100];
-    LikwidThreadResults* results;
-    sprintf(groupSuffix, "-%d", groupSet->activeGroup);
-    bcatcstr(tag, groupSuffix);
+    bstring tag = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
     if (use_locks == 1)
     {
         pthread_mutex_lock(&threadLocks[myCPU]);
     }
 
     cpu_id = hashTable_get(tag, &results);
+    if (!results)
+    {
+        fprintf(stderr, "ERROR: Failed to get thread data for tag %s\n", regionTag);
+        if (use_locks == 1)
+        {
+            pthread_mutex_unlock(&threadLocks[myCPU]);
+        }
+        return -EFAULT;
+    }
     thread_id = getThreadID(cpu_id);
     if (results->state != MARKER_STATE_START)
     {
@@ -626,12 +643,12 @@ likwid_markerStopRegion(const char* regionTag)
     {
         if (groupSet->groups[groupSet->activeGroup].events[i].type != NOTYPE)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu, regionTag, thread_id, cpu_id, i,
-                            LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
             result = calculateMarkerResult(groupSet->groups[groupSet->activeGroup].events[i].index, results->StartPMcounters[i],
                                             groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData,
                                             groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows -
                                             results->StartOverflows[i]);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu DIFF %f, regionTag, thread_id, cpu_id, i,
+                            LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData, result);
             if ((counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != THERMAL) &&
                 (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != VOLTAGE) &&
                 (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != MBOX0TMP))
@@ -675,13 +692,15 @@ likwid_markerGetRegion(
     int cpu_id;
     int myCPU = likwid_getProcessorId();
     int thread_id;
-    bstring tag = bfromcstr(regionTag);
-    char groupSuffix[100];
-    LikwidThreadResults* results;
-    sprintf(groupSuffix, "-%d", groupSet->activeGroup);
-    bcatcstr(tag, groupSuffix);
+    LikwidThreadResults* results = NULL;
+    bstring tag = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
 
     cpu_id = hashTable_get(tag, &results);
+    if (!results)
+    {
+        fprintf(stderr, "ERROR: Failed to get thread data for tag %s\n", regionTag);
+        return;
+    }
     thread_id = getThreadID(myCPU);
     if (count != NULL)
     {
@@ -708,6 +727,7 @@ likwid_markerGetRegion(
 int
 likwid_markerResetRegion(const char* regionTag)
 {
+    LikwidThreadResults* results = NULL;
     if (! likwid_init)
     {
         return -EFAULT;
@@ -718,13 +738,14 @@ likwid_markerResetRegion(const char* regionTag)
     {
         return -EFAULT;
     }
-    bstring tag = bfromcstr(regionTag);
-    char groupSuffix[100];
-    LikwidThreadResults* results;
-    sprintf(groupSuffix, "-%d", groupSet->activeGroup);
-    bcatcstr(tag, groupSuffix);
+    bstring tag = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
 
     cpu_id = hashTable_get(tag, &results);
+    if (!results)
+    {
+        fprintf(stderr, "ERROR: Failed to get thread data for tag %s\n", regionTag);
+        return -EFAULT;
+    }
     if (results->state != MARKER_STATE_STOP)
     {
         fprintf(stderr, "ERROR: Can only reset stopped regions\n");

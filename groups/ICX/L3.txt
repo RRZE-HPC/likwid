@@ -4,6 +4,7 @@ EVENTSET
 FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
+FIXC3 TOPDOWN_SLOTS
 PMC0  L2_LINES_IN_ALL
 PMC1  L2_TRANS_L2_WB
 PMC2  L2_LINES_OUT_SILENT
@@ -33,8 +34,8 @@ L3 evict bandwidth [MBytes/s] = 1.0E-06*L2_LINES_OUT_NON_SILENT*64.0/time
 L3 evict data volume [GBytes] = 1.0E-09*L2_LINES_OUT_NON_SILENT*64.0
 L3|MEM evict bandwidth [MBytes/s] = 1.0E-06*L2_TRANS_L2_WB*64.0/time
 L3|MEM evict data volume [GBytes] = 1.0E-09*L2_TRANS_L2_WB*64.0
-Dropped CLs bandwidth [MBytes/s] 1.0E-6*L2_LINES_OUT_SILENT*64.0/time
-Dropped CLs data volume [GBytes] 1.0E-9*L2_LINES_OUT_SILENT*64.0
+Dropped CLs bandwidth [MBytes/s] = 1.0E-6*L2_LINES_OUT_SILENT*64.0/time
+Dropped CLs data volume [GBytes] = 1.0E-9*L2_LINES_OUT_SILENT*64.0
 L3 bandwidth [MBytes/s] = 1.0E-06*(L2_LINES_IN_ALL+L2_TRANS_L2_WB)*64/time
 L3 data volume [GBytes] = 1.0E-09*(L2_LINES_IN_ALL+L2_TRANS_L2_WB)*64
 -

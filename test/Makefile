@@ -88,10 +88,10 @@ testmarker-omp: testmarker-omp.c
 testmarkerF90: chaos.F90
 	ifort -O3 $(LIKWID_INC) $(LIKWID_DEFINES) $(LIKWID_LIB) -o $@ chaos.F90 -lpthread -llikwid
 
-test-mpi: MPI_pin_test.c$
+test-mpi: MPI_pin_test.c
 	mpicc -O2 -fopenmp -D_GNU_SOURCE  -o $@ MPI_pin_test.c
 
-test-mpi-pthreads: MPI_pin_test.c$
+test-mpi-pthreads: MPI_pin_test.c
 	mpicc -O2 -pthread -DPTHREADS -D_GNU_SOURCE  -o $@ MPI_pin_test.c
 
 stream_cilk: stream_cilk.c
@@ -104,14 +104,14 @@ testTBBICC:
 	@if [ $(TBB_AVAILABLE) -ne 0 -a $(ICPC_AVAILABLE) -ne 0 ]; then icpc -O3 $(LIKWID_INC) $(LIKWID_DEFINES) $(LIKWID_LIB) -o $@ testTBB.cc -ltbb -llikwid; else echo "Either TBB or ICPC missing"; fi
 
 streamCU: stream.cu
-	nvcc -O3 -I. $(LIKWID_INC) $(LIKWID_LIB) -DLIKWID_NVMON stream.cu -o $@ -lm -llikwid
+	nvcc -O3 -Xcompiler -fopenmp -I. $(LIKWID_INC) $(LIKWID_LIB) -DLIKWID_NVMON stream.cu -o $@ -lm -llikwid
 
 triadCU: triad.cu
-	nvcc -O3 -I. $(LIKWID_INC) $(LIKWID_LIB) -DLIKWID_NVMON triad.cu -o $@ -lm -llikwid
+	nvcc -O3 -Xcompiler -fopenmp -I. $(LIKWID_INC) $(LIKWID_LIB) -DLIKWID_NVMON -Xcompiler -fopenmp triad.cu -o $@ -lm -llikwid
 
 .PHONY: clean distclean streamGCC streamICC streamGCC_C11 streamICC_C11 testmarker-cnt testmarker-omp testmarkerF90 test-mpi test-mpi-pthreads stream_cilk serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul marker_overhead
 
 clean:
-	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker-cnt testmarkerF90 test-mpi test-mpi-pthreads testmarker-omp serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul marker_overhead test-topology-gpu-rocm test-rocmon test-rocmon-triad test-rocmon-triad-marker
+	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker-cnt testmarkerF90 test-mpi test-mpi-pthreads testmarker-omp serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul marker_overhead streamCU test-topology-gpu-rocm test-rocmon test-rocmon-triad test-rocmon-triad-marker
 
 distclean: clean

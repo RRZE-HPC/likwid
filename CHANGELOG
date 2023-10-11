@@ -1,3 +1,46 @@
+# Changelog 5.2.2
+- Add mutex to pinning library
+- Fix pin string parsing in pinning library
+- Make SBIN path configurable in build system
+- Add PKGBUILD for ArchLinux package builds
+- Remove accessDaemon double-fork in systemd environements
+- Group updates for L2/L3 (mainly AMD Zen)
+- Fix multi-initialization in MarkerAPI
+- Add energy event scaling for Fujitsu A64FX
+- Nvmon: Use Cupti error string to get better warning/error messages
+- Nvmon: Store events internally to re-use event strings in stopCounters
+- AccessLayer: Catch SIGCHLD to stop sending requests to accessDaemon if it was killed
+- likwid-genTopoCfg: Update writing and reading of topology file
+- Add INST_RETIRED_NOP event for Intel Icelake (desktop & server)
+- Removed some memory leaks
+- Improved checks for RDPMC availability
+- Add TOPDOWN_SLOTS for perf_event
+- Fix for systems with CPU sockets without hwthreads (A64FX FX1000)
+- Fix if HOME environment variable is not set (systemd)
+- Reader function for perf_event_paranoid in Lua to get state early
+- likwid-mpirun: Sanitize np and ppn values to avoid crashes
+
+
+# Changelog 5.2.1
+- Add support for Intel Rocketlake and AMD Zen3 variant (Family 19, Model 0x50)
+- Fix for perf_event multiplexing (important!)
+- Fix for potential deadlock in MarkerAPI (thx @jenny-cheung)
+- Build and runtime fixes for Nvidia GPU backend, updates for CUDA test codes
+- peakflops kernel for ARMv8
+- Updates for AMD Zen1/2/3 event lists and groups
+- Support spaces in MarkerAPI region tags (thx @jrmadsen)
+- Use 'online' cpulist instead of 'present'
+- Switch CI from Travis-CI to NHR@FAU Cx services
+- Document -reset and -ureset for likwid-setFrequencies
+- Reset cpuset in unpinned runs
+- Remove destructor in frequency module
+- Check PID if given through --perfpid
+- Intel Icelake: OFFCORE_RESPONSE events
+- AccessDaemon: Check PCI init state before using it
+- likwid-mpirun: Set mpi type for SLURM automatically
+- likwid-mpirun: Fix for skip mask for OpenMPI
+
+
 # Changelog 5.2.0
 - Support for AMD Zen3 (Core + Uncore)
 - Support for Intel IcelakeSP (Core + Uncore)

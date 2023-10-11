@@ -72,6 +72,7 @@ static pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t *cpuLocks = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+void __attribute__((destructor (104))) close_access_client(void);
 
 static char*
 access_client_strerror(AccessErrorType det)
@@ -106,6 +107,21 @@ access_client_errno(AccessErrorType det)
     }
 }
 
+static void access_client_signal_catcher(int sig) {
+    close_access_client();
+}
+
+static int
+access_client_catch_signal()
+{
+    struct sigaction sia;
+    sia.sa_handler = access_client_signal_catcher;
+    sigemptyset(&sia.sa_mask);
+    sia.sa_flags = SA_ONSTACK;
+    sigaction(SIGCHLD, &sia, NULL);
+    return 0;
+}
+
 static int
 access_client_startDaemon(int cpu_id)
 {
@@ -136,7 +152,7 @@ access_client_startDaemon(int cpu_id)
     if (access(exeprog, X_OK))
     {
         ERROR_PRINT(Failed to find the daemon '%s'\n, exeprog);
-        exit(EXIT_FAILURE);
+        return -1;
     }
     DEBUG_PRINT(DEBUGLEV_INFO, Starting daemon %s, exeprog);
     pid = fork();
@@ -158,7 +174,7 @@ access_client_startDaemon(int cpu_id)
         {
             //ERRNO_PRINT;
             ERROR_PRINT(Failed to execute the daemon '%s'\n, exeprog);
-            exit(EXIT_FAILURE);
+            return ret;
         }
     }
     else if (pid < 0)
@@ -167,12 +183,28 @@ access_client_startDaemon(int cpu_id)
         return pid;
     }
 
-    EXIT_IF_ERROR(socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0), socket() failed);
+    socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+    if (socket_fd < 0)
+    {
+        ERROR_PRINT(socket() failed);
+        return -1;
+    }
 
     address.sun_family = AF_LOCAL;
     address_length = sizeof(address);
     snprintf(address.sun_path, sizeof(address.sun_path), TOSTRING(LIKWIDSOCKETBASE) "-%d", pid);
     filepath = strdup(address.sun_path);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Waiting for socket file %s, address.sun_path);
+    while (access(address.sun_path, F_OK) && timeout > 0)
+    {
+        usleep(2500);
+        timeout--;
+    }
+    if (!access(address.sun_path, F_OK))
+    {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Socket file %s exists, address.sun_path);
+    }
+    timeout = 1000;
 
     res = connect(socket_fd, (struct sockaddr *) &address, address_length);
     while (res && timeout > 0)
@@ -196,7 +228,9 @@ access_client_startDaemon(int cpu_id)
         fprintf(stderr, "opened within 10 seconds. Consult the error message above\n");
         fprintf(stderr, "this to find out why. If the error is 'no such file or directoy',\n");
         fprintf(stderr, "it usually means that likwid-accessD just failed to start.\n");
-        exit(EXIT_FAILURE);
+        free(filepath);
+        close(socket_fd);
+        return -1;
     }
     DEBUG_PRINT(DEBUGLEV_INFO, Successfully opened socket %s to daemon for CPU %d, filepath, cpu_id);
     free(filepath);
