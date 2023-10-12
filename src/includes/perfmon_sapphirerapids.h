@@ -766,6 +766,22 @@ int perfmon_setupCounterThread_sapphirerapids(
             case HBM29:
             case HBM30:
             case HBM31:
+            case PBOX0:
+            case PBOX1:
+            case PBOX2:
+            case PBOX3:
+            case PBOX4:
+            case PBOX5:
+            case PBOX6:
+            case PBOX7:
+            case PBOX8:
+            case PBOX9:
+            case PBOX10:
+            case PBOX11:
+            case PBOX12:
+            case PBOX13:
+            case PBOX14:
+            case PBOX15:
                 if (haveLock) {
                     err = spr_setup_uncore(thread_id, index, event);
                     if (err < 0)
@@ -1113,6 +1129,22 @@ int perfmon_startCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* e
                 case HBM29:
                 case HBM30:
                 case HBM31:
+                case PBOX0:
+                case PBOX1:
+                case PBOX2:
+                case PBOX3:
+                case PBOX4:
+                case PBOX5:
+                case PBOX6:
+                case PBOX7:
+                case PBOX8:
+                case PBOX9:
+                case PBOX10:
+                case PBOX11:
+                case PBOX12:
+                case PBOX13:
+                case PBOX14:
+                case PBOX15:
                     if (haveLock)
                     {
                         spr_start_uncore(thread_id, index, event, data);
@@ -1608,6 +1640,22 @@ int perfmon_stopCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
                 case HBM29:
                 case HBM30:
                 case HBM31:
+                case PBOX0:
+                case PBOX1:
+                case PBOX2:
+                case PBOX3:
+                case PBOX4:
+                case PBOX5:
+                case PBOX6:
+                case PBOX7:
+                case PBOX8:
+                case PBOX9:
+                case PBOX10:
+                case PBOX11:
+                case PBOX12:
+                case PBOX13:
+                case PBOX14:
+                case PBOX15:
                     if (haveLock)
                     {
                         spr_stop_uncore(thread_id, index, event, data);
@@ -2076,6 +2124,22 @@ int perfmon_readCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
                 case HBM29:
                 case HBM30:
                 case HBM31:
+                case PBOX0:
+                case PBOX1:
+                case PBOX2:
+                case PBOX3:
+                case PBOX4:
+                case PBOX5:
+                case PBOX6:
+                case PBOX7:
+                case PBOX8:
+                case PBOX9:
+                case PBOX10:
+                case PBOX11:
+                case PBOX12:
+                case PBOX13:
+                case PBOX14:
+                case PBOX15:
                     if (haveLock)
                     {
                         spr_read_uncore(thread_id, index, event, data);

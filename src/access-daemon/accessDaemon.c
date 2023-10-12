@@ -177,6 +177,7 @@ static int isServerMem = 0;
 static void *** servermem_addrs = NULL;
 static void *** servermem_freerun_addrs = NULL;
 
+int perfmon_verbosity = 0;
 static PerfmonDiscovery* perfmon_discovery = NULL;
 
 /* Socket to bus mapping -- will be determined at runtime;
@@ -2804,6 +2805,76 @@ static void handle_record_default(AccessDataRecord* record)
     }
 }
 
+static void
+msr_read_spr(AccessDataRecord * dRecord)
+{
+    uint64_t data;
+    uint32_t cpu = dRecord->cpu;
+    uint32_t reg = dRecord->reg;
+
+    dRecord->errorcode = ERR_NOERROR;
+    dRecord->data = 0;
+
+    if (!lock_check())
+    {
+        syslog(LOG_ERR,"Access to performance counters is locked.\n");
+        dRecord->errorcode = ERR_LOCKED;
+        return;
+    }
+
+    if (FD_MSR[cpu] <= 0)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+
+    if (pread(FD_MSR[cpu], &data, sizeof(data), reg) != sizeof(data))
+    {
+#ifdef DEBUG_LIKWID
+        syslog(LOG_ERR, "Failed to read data from register 0x%x on core %u", reg, cpu);
+        syslog(LOG_ERR, "%s", strerror(errno));
+#endif
+        dRecord->errorcode = ERR_RWFAIL;
+        return;
+    }
+    dRecord->data = data;
+}
+
+static void
+msr_write_spr(AccessDataRecord * dRecord)
+{
+    uint32_t cpu = dRecord->cpu;
+    uint32_t reg = dRecord->reg;
+    uint64_t data = dRecord->data;
+
+    dRecord->errorcode = ERR_NOERROR;
+
+    if (!lock_check())
+    {
+        syslog(LOG_ERR,"Access to performance counters is locked.\n");
+        dRecord->errorcode = ERR_LOCKED;
+        return;
+    }
+
+    if (FD_MSR[cpu] <= 0)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+
+
+    if (pwrite(FD_MSR[cpu], &data, sizeof(data), reg) != sizeof(data))
+    {
+#ifdef DEBUG_LIKWID
+        syslog(LOG_ERR, "Failed to write data to register 0x%x on core %u", reg, cpu);
+        syslog(LOG_ERR, "%s", strerror(errno));
+#endif
+        dRecord->errorcode = ERR_RWFAIL;
+        return;
+    }
+}
+
+
 static void spr_check(AccessDataRecord *record)
 {
     record->errorcode = ERR_UNKNOWN;
@@ -2822,6 +2893,11 @@ static void spr_check(AccessDataRecord *record)
                 record->errorcode = ERR_NODEV;
                 return;
             }
+        }
+        else
+        {
+            record->errorcode = ERR_NODEV;
+            return;
         }
     }
 }
@@ -2862,7 +2938,6 @@ static int spr_open_unit(PerfmonDiscoveryUnit* unit)
     int PAGE_SIZE = sysconf (_SC_PAGESIZE);
     if (!unit)
     {
-        printf("No unit\n");
         return -EINVAL;
     }
     int pcihandle = open("/dev/mem", O_RDWR);
@@ -2921,7 +2996,7 @@ static void spr_read_global(AccessDataRecord *record)
             {
                 msr_record.reg = cur->global.global_ctl + cur->global.status_offset + ((record->reg - FAKE_UNC_GLOBAL_STATUS0));
             }
-            msr_read(&msr_record);
+            msr_read_spr(&msr_record);
             record->errorcode = msr_record.errorcode;
         }
     }
@@ -2959,7 +3034,6 @@ static void spr_read_unit(AccessDataRecord *record)
                 record->errorcode = ERR_NODEV;
                 return;
             }
-          
             switch(record->reg)
             {
                 case FAKE_UNC_UNIT_CTRL:
@@ -2987,7 +3061,7 @@ static void spr_read_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_MSR:
                             msr_record.reg = unit->box_ctl;
-                            msr_read(&msr_record);
+                            msr_read_spr(&msr_record);
                             record->errorcode = msr_record.errorcode;
                             record->data = msr_record.data;
                             break;
@@ -3018,7 +3092,7 @@ static void spr_read_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_MSR:
                             msr_record.reg = unit->box_ctl + unit->status_offset;
-                            msr_read(&msr_record);
+                            msr_read_spr(&msr_record);
                             record->data = msr_record.data;
                             record->errorcode = msr_record.errorcode;
                             break;
@@ -3063,7 +3137,7 @@ static void spr_read_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_MSR:
                             msr_record.reg = unit->box_ctl + unit->ctrl_offset + (reg_offset * offset);
-                            msr_read(&msr_record);
+                            msr_read_spr(&msr_record);
                             record->data = msr_record.data;
                             record->errorcode = msr_record.errorcode;
                             break;
@@ -3099,7 +3173,7 @@ static void spr_read_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_MSR:
                             msr_record.reg = unit->box_ctl + unit->ctr_offset + (reg_offset * offset);
-                            msr_read(&msr_record);
+                            msr_read_spr(&msr_record);
                             record->data = msr_record.data;
                             record->errorcode = msr_record.errorcode;
                             break;
@@ -3111,7 +3185,7 @@ static void spr_read_unit(AccessDataRecord *record)
                     if (reg_offset != 0x0 && unit->access_type == ACCESS_TYPE_MSR)
                     {
                         msr_record.reg = unit->box_ctl + reg_offset;
-                        msr_read(&msr_record);
+                        msr_read_spr(&msr_record);
                         record->data = msr_record.data;
                         record->errorcode = msr_record.errorcode;
                     }
@@ -3122,7 +3196,7 @@ static void spr_read_unit(AccessDataRecord *record)
                         if (unit->access_type == ACCESS_TYPE_MSR)
                         {
                             msr_record.reg = unit->box_ctl + unit->fixed_ctrl_offset;
-                            msr_read(&msr_record);
+                            msr_read_spr(&msr_record);
                             record->data = msr_record.data;
                             record->errorcode = msr_record.errorcode;
                         }
@@ -3142,7 +3216,7 @@ static void spr_read_unit(AccessDataRecord *record)
                         if (unit->access_type == ACCESS_TYPE_MSR)
                         {
                             msr_record.reg = unit->box_ctl + unit->fixed_ctr_offset;
-                            msr_read(&msr_record);
+                            msr_read_spr(&msr_record);
                             record->data = msr_record.data;
                             record->errorcode = msr_record.errorcode;
                         }
@@ -3184,7 +3258,7 @@ static void spr_write_global(AccessDataRecord *record)
             }
             if (msr_record.reg != 0x0)
             {
-                msr_write(&msr_record);
+                msr_write_spr(&msr_record);
                 record->errorcode = msr_record.errorcode;
             }
         }
@@ -3249,7 +3323,7 @@ static void spr_write_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_MSR:
                             msr_record.reg = unit->box_ctl;
-                            msr_write(&msr_record);
+                            msr_write_spr(&msr_record);
                             record->errorcode = msr_record.errorcode;
                             break;
                     }
@@ -3278,7 +3352,7 @@ static void spr_write_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_MSR:
                             msr_record.reg = unit->box_ctl + unit->status_offset;
-                            msr_write(&msr_record);
+                            msr_write_spr(&msr_record);
                             record->errorcode = msr_record.errorcode;
                             break;
                     }
@@ -3320,7 +3394,7 @@ static void spr_write_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_MSR:
                             msr_record.reg = unit->box_ctl + unit->ctrl_offset + (reg_offset * offset);
-                            msr_write(&msr_record);
+                            msr_write_spr(&msr_record);
                             record->errorcode = msr_record.errorcode;
                             break;
                     }
@@ -3354,7 +3428,7 @@ static void spr_write_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_MSR:
                             msr_record.reg = unit->box_ctl + unit->ctr_offset + (reg_offset * offset);
-                            msr_write(&msr_record);
+                            msr_write_spr(&msr_record);
                             record->errorcode = msr_record.errorcode;
                             break;
                     }
@@ -3364,7 +3438,7 @@ static void spr_write_unit(AccessDataRecord *record)
                     if (unit->filter_offset != 0x0 && unit->access_type == ACCESS_TYPE_MSR)
                     {
                             msr_record.reg = unit->box_ctl + unit->filter_offset;
-                            msr_write(&msr_record);
+                            msr_write_spr(&msr_record);
                             record->errorcode = msr_record.errorcode;
                     }
                     break;
@@ -3374,7 +3448,7 @@ static void spr_write_unit(AccessDataRecord *record)
                         if (unit->access_type == ACCESS_TYPE_MSR)
                         {
                             msr_record.reg = unit->box_ctl + unit->fixed_ctrl_offset;
-                            msr_write(&msr_record);
+                            msr_write_spr(&msr_record);
                             record->errorcode = msr_record.errorcode;
                         }
                         else if (unit->access_type == ACCESS_TYPE_MMIO)
@@ -3391,7 +3465,7 @@ static void spr_write_unit(AccessDataRecord *record)
                         if (unit->access_type == ACCESS_TYPE_MSR)
                         {
                             msr_record.reg = unit->box_ctl + unit->fixed_ctr_offset;
-                            msr_write(&msr_record);
+                            msr_write_spr(&msr_record);
                             record->errorcode = msr_record.errorcode;
                         }
                         else if (unit->access_type == ACCESS_TYPE_MMIO)

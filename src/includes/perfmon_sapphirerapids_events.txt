@@ -1392,3 +1392,10 @@ EVENT_PCU_CLOCKTICKS                    0x01 PCU
 UMASK_PCU_CLOCKTICKS                    0x00
 
 
+#######################################################
+#                   PBOX == M2PCIe                    #
+#######################################################
+
+EVENT_PBOX_CLOCKTICKS                   0x01 PBOX
+UMASK_PBOX_CLOCKTICKS                   0x00
+

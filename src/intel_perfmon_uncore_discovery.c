@@ -263,14 +263,14 @@ PciDeviceIndex get_likwid_device(int type, int id)
            }
             break;
         case DEVICE_ID_M2PCIe:
-            if (id < 0 || id > 11)
+            if (id < 0 || id > 15)
             {
                 ERROR_PRINT(Cannot transform M2PCIe device with ID %d, id);
             }
            else
             {
                 return PCI_R2PCIE_DEVICE0 + id;
-           }
+            }
             break;
         case DEVICE_ID_PCU:
             if (id < 0 || id > 1)
