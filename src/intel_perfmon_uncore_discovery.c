@@ -54,7 +54,6 @@ static int pci_read_config_dword(const struct pci_dev *dev, int where, uint32_t 
             {
                 ret = pread(fp, val, sizeof(uint32_t), where);
                 close(fp);
-                ret = 0;
             }
         }
     }
