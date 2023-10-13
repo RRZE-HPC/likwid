@@ -3,38 +3,47 @@
 
 // Data structures provided by Intel
 
-#define PCI_EXT_CAP_BASE_OFFSET 0x100
-#define PCI_EXT_CAP_ID_MASK 0xffff
-#define PCI_EXT_CAP_NEXT_OFFSET 0x2
-#define PCI_EXT_CAP_NEXT_SHIFT   4
-#define PCI_EXT_CAP_NEXT_MASK   0xfff
+#define PCI_EXT_CAP_BASE_OFFSET                 0x100
+#define PCI_EXT_CAP_ID_MASK                     0xffff
+#define PCI_EXT_CAP_NEXT_OFFSET                 0x2
+#define PCI_EXT_CAP_NEXT_SHIFT                  4
+#define PCI_EXT_CAP_NEXT_MASK                   0xfff
+#define  PCI_BASE_ADDRESS_MEM_MASK              (~0x0fUL)
+#define  PCI_BASE_ADDRESS_MEM_TYPE_64           0x04    /* 64 bit address */
+#define  PCI_BASE_ADDRESS_MEM_TYPE_MASK         0x06
 
-#define UNCORE_DISCOVERY_TABLE_DEVICE 0x09a7
+
+#define UNCORE_DISCOVERY_TABLE_DEVICE           0x09a7
 
 /* Capability ID for discovery table device */
-#define UNCORE_EXT_CAP_ID_DISCOVERY 0x23
+#define UNCORE_EXT_CAP_ID_DISCOVERY             0x23
 /* First DVSEC offset */
-#define UNCORE_DISCOVERY_DVSEC_OFFSET		0x8
+#define UNCORE_DISCOVERY_DVSEC_OFFSET           0x8
 /* Mask of the supported discovery entry type */
-#define UNCORE_DISCOVERY_DVSEC_ID_MASK		0xffff
+#define UNCORE_DISCOVERY_DVSEC_ID_MASK          0xffff
 /* PMON discovery entry type ID */
-#define UNCORE_DISCOVERY_DVSEC_ID_PMON		0x1
+#define UNCORE_DISCOVERY_DVSEC_ID_PMON          0x1
 /* Second DVSEC offset */
-#define UNCORE_DISCOVERY_DVSEC2_OFFSET		0xc
+#define UNCORE_DISCOVERY_DVSEC2_OFFSET          0xC
 /* Mask of the discovery table BAR offset */
-#define UNCORE_DISCOVERY_DVSEC2_BIR_MASK	0x7
+#define UNCORE_DISCOVERY_DVSEC2_BIR_MASK        0x7
 /* Discovery table BAR base offset */
-#define UNCORE_DISCOVERY_BIR_BASE		0x10
+#define UNCORE_DISCOVERY_BIR_BASE               0x10
 /* Discovery table BAR step */
-#define UNCORE_DISCOVERY_BIR_STEP		0x4
+#define UNCORE_DISCOVERY_BIR_STEP               0x4
 /* Global discovery table size */
-#define UNCORE_DISCOVERY_GLOBAL_MAP_SIZE	0x20
-#define UNCORE_DISCOVERY_MAP_SIZE 0x80000
+#define UNCORE_DISCOVERY_GLOBAL_MAP_SIZE        0x20
+#define UNCORE_DISCOVERY_MAP_SIZE               0x80000
 
 
 #define UNCORE_DISCOVERY_PCI_BOX_CTRL(data)	(data & 0xfff)
 
 #define PCI_ANY_ID (-1)
+
+#define uncore_discovery_invalid_unit(unit)                    \
+       (!unit.table1 || \
+        unit.table1 == -1ULL ||        \
+        unit.table3 == -1ULL)
 
 
 struct uncore_global_discovery {
