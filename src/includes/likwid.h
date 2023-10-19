@@ -709,7 +709,7 @@ for the current architecture. topology_init() and numa_init() must be called bef
 perfmon_init_maps()
 \sa RegisterMap list, PerfmonEvent list and BoxMap list
 */
-extern void perfmon_init_maps(void) __attribute__ ((visibility ("default") ));
+extern int perfmon_init_maps(void) __attribute__ ((visibility ("default") ));
 /*! \brief Check the performance monitoring maps whether counters and events are available
 
 Checks each counter and event in the performance monitoring maps for their availibility on

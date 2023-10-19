@@ -152,7 +152,7 @@ access_client_startDaemon(int cpu_id)
     if (access(exeprog, X_OK))
     {
         ERROR_PRINT(Failed to find the daemon '%s'\n, exeprog);
-        exit(EXIT_FAILURE);
+        return -1;
     }
     DEBUG_PRINT(DEBUGLEV_INFO, Starting daemon %s, exeprog);
     pid = fork();
@@ -174,7 +174,7 @@ access_client_startDaemon(int cpu_id)
         {
             //ERRNO_PRINT;
             ERROR_PRINT(Failed to execute the daemon '%s'\n, exeprog);
-            exit(EXIT_FAILURE);
+            return ret;
         }
     }
     else if (pid < 0)
@@ -183,7 +183,12 @@ access_client_startDaemon(int cpu_id)
         return pid;
     }
 
-    EXIT_IF_ERROR(socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0), socket() failed);
+    socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+    if (socket_fd < 0)
+    {
+        ERROR_PRINT(socket() failed);
+        return -1;
+    }
 
     address.sun_family = AF_LOCAL;
     address_length = sizeof(address);
@@ -223,7 +228,9 @@ access_client_startDaemon(int cpu_id)
         fprintf(stderr, "opened within 10 seconds. Consult the error message above\n");
         fprintf(stderr, "this to find out why. If the error is 'no such file or directoy',\n");
         fprintf(stderr, "it usually means that likwid-accessD just failed to start.\n");
-        exit(EXIT_FAILURE);
+        free(filepath);
+        close(socket_fd);
+        return -1;
     }
     DEBUG_PRINT(DEBUGLEV_INFO, Successfully opened socket %s to daemon for CPU %d, filepath, cpu_id);
     free(filepath);
