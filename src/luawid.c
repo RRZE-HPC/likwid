@@ -1615,7 +1615,7 @@ lua_likwid_getPowerInfo(lua_State* L)
 
     lua_pushstring(L,"domains");
     lua_newtable(L);
-    for(i=0;i<NUM_POWER_DOMAINS;i++)
+    for(i=0;i<power->numDomains;i++)
     {
         lua_pushstring(L,power_names[i]);
         lua_newtable(L);

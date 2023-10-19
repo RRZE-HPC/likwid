@@ -1396,6 +1396,8 @@ typedef struct {
     double uncoreMinFreq; /*!< \brief Minimal uncore frequency */
     double uncoreMaxFreq; /*!< \brief Maximal uncore frequency */
     uint8_t perfBias; /*!< \brief Performance energy bias */
+    int statusRegWidth;
+    int numDomains; /*!< \brief Number of RAPL domains */
     PowerDomain domains[NUM_POWER_DOMAINS]; /*!< \brief List of power domains */
 } PowerInfo;
 

@@ -6,8 +6,7 @@ FIXC2 MAX_CPU_CLOCK
 PMC0  RETIRED_INSTRUCTIONS
 PMC1  CPU_CLOCKS_UNHALTED
 PWR0  RAPL_CORE_ENERGY
-PWR1  RAPL_PKG_ENERGY
-PWR2  RAPL_DRAM_ENERGY
+PWR2  RAPL_L3_ENERGY
 
 
 
@@ -18,19 +17,16 @@ Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI   PMC1/PMC0
 Energy Core [J]  PWR0
 Power Core [W] PWR0/time
-Energy PKG [J]  PWR1
-Power PKG [W] PWR1/time
-Energy DRAM [J]  PWR2
-Power DRAM [W] PWR2/time
+Energy L3 [J]  PWR2
+Power L3 [W] PWR2/time
 
 LONG
 Formulas:
 Power Core [W] = RAPL_CORE_ENERGY/time
-Power PKG [W] = RAPL_PKG_ENERGY/time
-Power DRAM [W] = RAPL_DRAM_ENERGY/time
+Power L3 [W] = RAPL_L3_ENERGY/time
 -
 Ryzen implements the RAPL interface previously introduced by Intel.
-This interface enables to monitor the consumed energy on the core and package
+This interface enables to monitor the consumed energy on the core and L3
 domain.
 It is not documented by AMD which parts of the CPU are in which domain.
 
