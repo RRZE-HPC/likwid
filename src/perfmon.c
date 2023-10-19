@@ -204,6 +204,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
     ownstrcmp = &strcmp;
     int testcpu = groupSet->threads[0].processorId;
     int firstpmcindex = -1;
+    bstring checkName;
 
     for (int i=0; i< perfmon_numCounters; i++)
     {
@@ -226,11 +227,14 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
         DEBUG_PRINT(DEBUGLEV_INFO, WARNING: Counter %s not available on the current system. Counter results defaults to 0.,bdata(reg));
         return NOTYPE;
     }
-    if (ownstrcmp(bdata(reg), counter_map[index].key) != 0)
+    checkName = bfromcstr(counter_map[index].key);
+    if (bstrcmp(reg, checkName) != BSTR_OK)
     {
         DEBUG_PRINT(DEBUGLEV_INFO, WARNING: Counter %s does not exist ,bdata(reg));
+        bdestroy(checkName);
         return NOTYPE;
     }
+    bdestroy(checkName);
     err = HPMcheck(counter_map[index].device, 0);
     if (!err)
     {
