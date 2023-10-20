@@ -7,8 +7,7 @@ for L in $(sinfo -t idle -h --partition=work -o "%n %t" | grep "idle" | cut -d '
         continue
     fi
     if [ "$L" = "applem1studio" ]; then
-        arch="arm8"
-        depend="build-arm8-perf"
+        continue
     fi
     if [ "$L" = "warmup" ]; then
         arch="arm8"

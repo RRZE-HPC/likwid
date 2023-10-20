@@ -1145,7 +1145,7 @@ if use_marker == true then
             end
             os.remove(markerFile)
         else
-            print_stderr("Marker API result file does not exist. This may happen if the application has not called LIKWID_MARKER_CLOSE.")
+            print_stderr("MMarker API result file does not exist. This may happen if the application was not compiled with LIKWID_PERFMON macro or the application has not called LIKWID_MARKER_CLOSE.")
         end
     end
     if gpusSupported and #gpu_event_string_list > 0 then
@@ -1163,7 +1163,7 @@ if use_marker == true then
             likwid.destroyNvMarkerFile()
             os.remove(nvMarkerFile)
         else
-            print_stderr("GPU Marker API result file does not exist. This may happen if the application has not called LIKWID_GPUMARKER_CLOSE.")
+            print_stderr("GPU Marker API result file does not exist. This may happen if the application was not compiled with LIKWID_NVMON macro or the application has not called LIKWID_GPUMARKER_CLOSE.")
         end
     end
 elseif use_timeline == false then
