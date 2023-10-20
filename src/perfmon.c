@@ -84,6 +84,7 @@
 #include <perfmon_icelake.h>
 #include <perfmon_neon1.h>
 #include <perfmon_a64fx.h>
+#include <perfmon_graviton3.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -1388,6 +1389,14 @@ perfmon_init_maps(void)
                             box_map = neon1_box_map;
                             perfmon_numCounters = perfmon_numCountersNeoN1;
                             translate_types = neon1_translate_types;
+                            break;
+                        case AWS_GRAVITON3:
+                            eventHash = graviton3_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsGraviton3;
+                            counter_map = graviton3_counter_map;
+                            box_map = graviton3_box_map;
+                            perfmon_numCounters = perfmon_numCountersGraviton3;
+                            translate_types = graviton3_translate_types;
                             break;
                         default:
                             ERROR_PLAIN_PRINT(Unsupported ARMv8 Processor);

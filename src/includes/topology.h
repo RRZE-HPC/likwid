@@ -171,6 +171,7 @@ struct topology_functions {
 #define  APP_XGENE1	0x00U
 #define  ARM_NEOVERSE_N1 0xD0CU
 #define  FUJITSU_A64FX 0x001U
+#define  AWS_GRAVITON3 0xD40U
 
 /* ARM vendors */
 #define DEFAULT_ARM	0x41U
