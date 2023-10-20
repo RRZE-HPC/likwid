@@ -52,8 +52,8 @@ else
 all: $(DAEMON_TARGET) $(SETFREQ_TARGET) $(APPDAEMON_TARGET)
 endif
 
-$(DAEMON_TARGET): accessDaemon.c
-	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) accessDaemon.c
+$(DAEMON_TARGET): accessDaemon.c ../intel_perfmon_uncore_discovery.c
+	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) accessDaemon.c ../intel_perfmon_uncore_discovery.c
 
 $(SETFREQ_TARGET): setFreqDaemon.c
 	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(SETFREQ_TARGET) setFreqDaemon.c

@@ -106,6 +106,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage icelake
 - \subpage icelakesp
 - \subpage tigerlake
+- \subpage sapphirerapids
 
 \subsubsection Architectures_AMD AMD&reg;
 - \subpage k8

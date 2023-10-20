@@ -67,6 +67,7 @@ power_init(int cpuId)
     {
         return 0;
     }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Init power);
     if (!lock_check())
     {
         ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
@@ -86,6 +87,7 @@ power_init(int cpuId)
     power_info.uncoreMinFreq = 0;
     power_info.uncoreMaxFreq = 0;
     power_info.perfBias = 0;
+    power_info.statusRegWidth = 32;
     if (config->daemonMode == ACCESSMODE_PERF)
     {
         ERROR_PRINT(RAPL in access mode 'perf_event' only available with perfmon);
@@ -138,6 +140,7 @@ power_init(int cpuId)
                 case SKYLAKEX:
                 case ICELAKEX1:
                 case ICELAKEX2:
+                case SAPPHIRERAPIDS:
                     core_limits = 1;
                     power_info.hasRAPL = 1;
                     numDomains = NUM_POWER_DOMAINS;
@@ -162,7 +165,11 @@ power_init(int cpuId)
                 cpuid_info.model == ZENPLUS_RYZEN2 ||
                 cpuid_info.model == ZEN2_RYZEN ||
                 cpuid_info.model == ZEN2_RYZEN2 ||
-                cpuid_info.model == ZEN2_RYZEN3)
+                cpuid_info.model == ZEN2_RYZEN3 ||
+                cpuid_info.model == ZEN3_RYZEN ||
+                cpuid_info.model == ZEN3_RYZEN2 ||
+                cpuid_info.model == ZEN3_RYZEN3 ||
+                cpuid_info.model == ZEN3_EPYC_TRENTO)
             {
                 cpuid_info.turbo = 0;
                 power_info.hasRAPL = 1;
@@ -209,6 +216,7 @@ power_init(int cpuId)
                 case ZEN4_EPYC:
                     cpuid_info.turbo = 0;
                     power_info.hasRAPL = 1;
+                    power_info.statusRegWidth = 64;
                     numDomains = 2;
                     unit_reg = MSR_AMD17_RAPL_POWER_UNIT;
                     power_names[0] = "CORE";
@@ -379,7 +387,7 @@ power_init(int cpuId)
                 power_info.domains[i].maxPower = 0.0;
                 power_info.domains[i].maxTimeWindow = 0.0;
             }
-            if ((cpuid_info.model == HASWELL_EP) ||
+            if (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == HASWELL_EP) ||
                 (cpuid_info.model == HASWELL_M1) ||
                 (cpuid_info.model == HASWELL_M2) ||
                 (cpuid_info.model == BROADWELL_D) ||
@@ -387,8 +395,9 @@ power_init(int cpuId)
                 (cpuid_info.model == SKYLAKEX) ||
                 (cpuid_info.model == ICELAKEX1) ||
                 (cpuid_info.model == ICELAKEX2) ||
+                (cpuid_info.model == SAPPHIRERAPIDS) ||
                 (cpuid_info.model == XEON_PHI_KNL) ||
-                (cpuid_info.model == XEON_PHI_KML))
+                (cpuid_info.model == XEON_PHI_KML)))
             {
                 power_info.domains[DRAM].energyUnit = 15.3E-6;
             }
@@ -488,6 +497,17 @@ power_init(int cpuId)
                 power_info.perfBias = flags & 0xF;
             }
         }
+
+        if (cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_EPYC))
+        {
+            err = HPMread(cpuId, MSR_DEV, MSR_AMD19_RAPL_L3_UNIT, &flags);
+            if (err == 0)
+            {
+                DEBUG_PRINT(DEBUGLEV_DETAIL, Reading energy unit for Zen4 L3 RAPL domain);
+                power_info.domains[1].energyUnit = 1.0 / (1 << ((flags >> 8) & 0x1F));
+            }
+        }
+        power_info.numDomains = numDomains;
         power_initialized = 1;
         return power_info.hasRAPL;
     }

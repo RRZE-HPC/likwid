@@ -56,6 +56,41 @@ extern "C" {
 #include <likwid-marker.h>
 #endif
 
+
+/*
+################################################################################
+# Library information
+################################################################################
+*/
+
+/** \addtogroup LibInfo Information about the library
+*  @{
+*/
+/*! \brief Get the major version of the LIKWID library
+
+@return Major version
+*/
+extern int likwid_getMajorVersion(void) __attribute__ ((visibility ("default") ));
+/*! \brief Get the minor version of the LIKWID library
+
+@return Minor version
+*/
+extern int likwid_getMinorVersion(void) __attribute__ ((visibility ("default") ));
+/*! \brief Get the bugfix version of the LIKWID library
+
+@return Bugfix version
+*/
+extern int likwid_getBugfixVersion(void) __attribute__ ((visibility ("default") ));
+/*! \brief Check whether the LIKWID library was built with Nvidia GPU support */
+extern int likwid_getNvidiaSupport(void) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the maximal count of supported HW threads */
+extern int likwid_getMaxSupportedThreads(void) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the maximal count of supported CPU sockets */
+extern int likwid_getMaxSupportedSockets(void) __attribute__ ((visibility ("default") ));
+/** @}*/
+
 /*
 ################################################################################
 # Marker API related functions
@@ -1396,6 +1431,8 @@ typedef struct {
     double uncoreMinFreq; /*!< \brief Minimal uncore frequency */
     double uncoreMaxFreq; /*!< \brief Maximal uncore frequency */
     uint8_t perfBias; /*!< \brief Performance energy bias */
+    int statusRegWidth;
+    int numDomains; /*!< \brief Number of RAPL domains */
     PowerDomain domains[NUM_POWER_DOMAINS]; /*!< \brief List of power domains */
 } PowerInfo;
 

@@ -1004,6 +1004,11 @@ lua_likwid_getEventsAndCounters(lua_State* L)
     {
         cpuinfo = get_cpuInfo();
     }
+    if (affinity_isInitialized == 0)
+    {
+        affinity_init();
+        affinity_isInitialized = 1;
+    }
     perfmon_init_maps();
     perfmon_check_counter_map(0);
     char** archTypeNames = getArchRegisterTypeNames();
@@ -1615,7 +1620,7 @@ lua_likwid_getPowerInfo(lua_State* L)
 
     lua_pushstring(L,"domains");
     lua_newtable(L);
-    for(i=0;i<NUM_POWER_DOMAINS;i++)
+    for(i=0;i<power->numDomains;i++)
     {
         lua_pushstring(L,power_names[i]);
         lua_newtable(L);

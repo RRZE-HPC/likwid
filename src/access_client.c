@@ -376,12 +376,12 @@ access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t 
             if (dev == MSR_DEV)
             {
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon reading reg 0x%X at CPU %d,
-                            access_client_strerror(record.errorcode), reg, cpu_id);
+                            access_client_strerror(record.errorcode), reg, record.cpu);
             }
             else
             {
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon reading reg 0x%X on socket %d,
-                            access_client_strerror(record.errorcode), reg, cpu_id);
+                            access_client_strerror(record.errorcode), reg, record.cpu);
             }
             *data = 0;
             return access_client_errno(record.errorcode);
@@ -466,12 +466,12 @@ access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t
             if (dev == MSR_DEV)
             {
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon writing reg 0x%X at CPU %d,
-                            access_client_strerror(record.errorcode), reg, cpu_id);
+                            access_client_strerror(record.errorcode), reg, record.cpu);
             }
             else
             {
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon writing reg 0x%X on socket %d,
-                            access_client_strerror(record.errorcode), reg, cpu_id);
+                            access_client_strerror(record.errorcode), reg, record.cpu);
             }
             return access_client_errno(record.errorcode);
         }
@@ -552,7 +552,16 @@ access_client_check(PciDeviceIndex dev, int cpu_id)
         }
         else
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Device check for dev %d on CPU %d with accessDaemon failed: %s\n, dev, cpu_id, access_client_strerror(record.errorcode));
+            if (dev == MSR_DEV)
+            {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Device check for dev %d on CPU %d with accessDaemon failed,
+                            dev, record.cpu, access_client_strerror(record.errorcode));
+            }
+            else
+            {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Device check for dev %d on socket %d with accessDaemon failed,
+                            dev, record.cpu, access_client_strerror(record.errorcode));
+            }
         }
     }
     return 0;
