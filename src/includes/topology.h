@@ -148,6 +148,7 @@ struct topology_functions {
 #define ZEN3_RYZEN      0x01
 #define ZEN3_RYZEN2     0x21
 #define ZEN3_RYZEN3     0x50
+#define ZEN3_EPYC_TRENTO 0x30
 #define ZEN4_RYZEN      0x61
 #define ZEN4_EPYC       0x11
 
