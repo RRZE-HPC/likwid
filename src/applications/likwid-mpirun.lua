@@ -2280,6 +2280,19 @@ if (mpiexecutable == nil) then
     mpirun_exit(1)
 end
 
+if mpitype == "slurm" then
+    local scontrol = abspath("scontrol")
+    if scontrol == nil
+        print_stderr("Cannot find SLURM's scontrol command")
+        mpirun_exit(1)
+    end
+    local srun = abspath("srun")
+    if srun == nil
+        print_stderr("Cannot find SLURM's srun command")
+        mpirun_exit(1)
+    end
+end
+
 if omptype == nil then
     omptype = getOmpType()
     if debug and omptype ~= nil then
@@ -2310,6 +2323,10 @@ if not hostfile then
     end
 else
     hosts = readHostfile(hostfile)
+end
+if #hosts == 0 then
+    print_stderr("Cannot read list of hosts from environment or hostfile")
+    mpirun_exit(1)
 end
 
 local givenNrNodes = getNumberOfNodes(hosts)
