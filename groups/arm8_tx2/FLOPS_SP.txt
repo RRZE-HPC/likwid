@@ -14,7 +14,7 @@ SP [MFLOP/s]  1.0E-06*(PMC3*4.0+PMC2)/time
 NEON SP [MFLOP/s]  1.0E-06*(PMC3*4.0)/time
 Packed [MUOPS/s]   1.0E-06*(PMC3)/time
 Scalar [MUOPS/s] 1.0E-06*PMC2/time
-Vectorization ratio 100*(PMC3)/(PMC2+PMC3)
+Vectorization ratio [%] 100*(PMC3)/(PMC2+PMC3)
 
 LONG
 Formulas:
@@ -22,7 +22,7 @@ SP [MFLOP/s] = 1.0E-06*(ASE_SPEC*4+VFP_SPEC)/runtime
 NEON SP [MFLOP/s] = 1.0E-06*(ASE_SPEC*4)/runtime
 Packed [MUOPS/s] = 1.0E-06*(ASE_SPEC)/runtime
 Scalar [MUOPS/s] = 1.0E-06*VFP_SPEC/runtime
-Vectorization ratio = 100*(ASE_SPEC)/(ASE_SPEC+VFP_SPEC)
+Vectorization ratio [%] = 100*(ASE_SPEC)/(ASE_SPEC+VFP_SPEC)
 -
 NEON scalar and packed single precision FLOP rates.
 The VFP_SPEC and ASE_SPEC count all instructions, not only FP
