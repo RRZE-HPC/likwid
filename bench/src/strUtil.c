@@ -154,7 +154,7 @@ parse_workgroup(Workgroup* group, const_bstring str, DataType type)
         }
         else
         {
-            fprintf(stderr, "Unknown affinity domain %s\n", bdata(tokens->entry[2]));
+            fprintf(stderr, "Unknown affinity domain %s\n", bdata(tokens->entry[0]));
             bstrListDestroy(tokens);
             return NULL;
         }

@@ -112,7 +112,7 @@ likwid_gpuMarkerInit(void)
         fprintf(stderr,"Cannot allocate space for GPU list.\n");
         bdestroy(bGpuStr);
         bstrListDestroy(gpuTokens);
-        exit(EXIT_FAILURE);
+        return;
     }
     gpu_maps = malloc(num_gpus * sizeof(Map_t));
     if (!gpu_maps)
@@ -121,7 +121,7 @@ likwid_gpuMarkerInit(void)
         free(id2Gpu);
         bdestroy(bGpuStr);
         bstrListDestroy(gpuTokens);
-        exit(EXIT_FAILURE);
+        return;
     }
     for (i=0; i<num_gpus; i++)
     {
@@ -141,7 +141,7 @@ likwid_gpuMarkerInit(void)
         free(id2Gpu);
         free(gpu_maps);
         bdestroy(bGeventStr);
-        exit(EXIT_FAILURE);
+        return;
     }
     
     i = nvmon_init(num_gpus, id2Gpu);
@@ -153,7 +153,7 @@ likwid_gpuMarkerInit(void)
         free(gpu_groups);
         bstrListDestroy(gEventStrings);
         bdestroy(bGeventStr);
-        exit(EXIT_FAILURE);
+        return;
     }
 
     for (i=0; i<gEventStrings->qty; i++)

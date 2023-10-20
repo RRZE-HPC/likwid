@@ -179,6 +179,11 @@ likwid.seteuid = likwid_seteuid
 likwid.setresuid = likwid_setresuid
 likwid.setresuser = likwid_setresuser
 
+likwid.initHWFeatures = likwid_initHWFeatures
+likwid.hwFeatures_list = likwid_hwFeatures_list
+likwid.hwFeatures_get = likwid_hwFeatures_get
+likwid.hwFeatures_set = likwid_hwFeatures_set
+likwid.finalizeHWFeatures = likwid_finalizeHWFeatures
 
 likwid.getGpuTopology = likwid_getGpuTopology
 likwid.putGpuTopology = likwid_putGpuTopology
@@ -409,6 +414,9 @@ end
 likwid.calculate_metric = calculate_metric
 
 local function printtable(tab)
+    printline = function(linetab)
+        print("| " .. table.concat(linetab, " | ") .. " |")
+    end
     local nr_columns = tablelength(tab)
     if nr_columns == 0 then
         print("Table has no columns. Empty table?")
@@ -441,23 +449,25 @@ local function printtable(tab)
     end
     hline = hline .. "+"
     print(hline)
-    str = "| "
+    local strtab = {}
     for i=1,nr_columns do
         front, back = get_spaces(tostring(tab[i][1]), min_lengths[i], max_lengths[i])
-        str = str .. front.. tostring(tab[i][1]) ..back
-        if i<nr_columns then
-            str = str .. " | "
-        else
-            str = str .. " |"
-        end
+        table.insert(strtab, front.. tostring(tab[i][1]) ..back)
     end
-    print(str)
+    printline(strtab)
     print(hline)
     for j=2,nr_lines do
         str = "| "
         for i=1,nr_columns do
+            local mtab = getmetatable(tab[i])
             front, back = get_spaces(tostring(tab[i][j]), min_lengths[i],max_lengths[i])
-            str = str .. front.. tostring(tab[i][j]) ..back
+            if mtab and mtab["align"] and mtab["align"] == "left" then
+                str = str .. tostring(tab[i][j]) .. back .. front
+            elseif mtab and mtab["align"] and mtab["align"] == "right" then
+                str = str .. front .. back .. tostring(tab[i][j]) 
+            else
+                str = str .. front.. tostring(tab[i][j]) ..back
+            end
             if i<nr_columns then
                 str = str .. " | "
             else
@@ -1221,6 +1231,18 @@ local function gethostname()
 end
 
 likwid.gethostname = gethostname
+
+local function get_perf_event_paranoid()
+    local f = io.open("/proc/sys/kernel/perf_event_paranoid")
+    if f then
+        value = f:read("*l")
+        f:close()
+        return tonumber(value)
+    end
+    return 4
+end
+
+likwid.perf_event_paranoid = get_perf_event_paranoid
 
 local function getjid()
     jid = "X"

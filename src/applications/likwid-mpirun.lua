@@ -110,9 +110,10 @@ local hosts = {}
 local perf = {}
 local mpitype = nil
 local slurm_involved = false
+local slurm_no_tasks_per_node = false
 local omptype = nil
 local skipStr = ""
-local executable = {}
+local execList = {}
 local envsettings = {}
 local mpiopts = nil
 local debug = false
@@ -269,9 +270,7 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
         elseif ver2 == "6" then
             bindstr = "--bind-to-none"
         end
-    elseif ver1 == 2 then
-        bindstr = "--bind-to none"
-    elseif ver1 == 3 then
+    elseif ver1 >= 2 then
         bindstr = "--bind-to none"
     end
 
@@ -401,7 +400,7 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
             print_stdout(string.format("EXEC: %s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
             print_stdout(string.format("EXEC: %s/mpdallexit", path))
         else
-            print_stdout(string.format("%s %s -f %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
+            print_stdout(string.format("%s %s -machinefile %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
         end
     end
 
@@ -412,7 +411,7 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
         ret = os.execute(string.format("%s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
         ret = os.execute(string.format("%s/mpdallexit", path))
     else
-        ret = os.execute(string.format("%s %s -f %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
+        ret = os.execute(string.format("%s %s -machinefile %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
     end
     return ret
 end
@@ -652,9 +651,11 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
     end
     opts["nodes"] = string.format("%d", nrNodes)
     opts["ntasks"] = string.format("%d", np)
-    opts["ntasks-per-node"] = string.format("%d", ppn)
+    if not slurm_no_tasks_per_node then
+        opts["ntasks-per-node"] = string.format("%d", ppn)
+    end
     opts["cpu_bind"] = "none"
-    opts["cpus-per-task"] = string.format("%d", threads)
+    opts["cpus-per-task"] = string.format("%d", tpp)
     supported_types = _srun_get_mpi_types()
     if supported_types["pmi2"] then
         opts["mpi"] = "pmi2"
@@ -886,10 +887,10 @@ local function getMpiExec(mpitype)
 end
 
 local function getOmpType()
-    local cmd = string.format("ldd %s 2>/dev/null", executable[1])
+    local cmd = string.format("ldd %s 2>/dev/null", execList[1])
     local f = io.popen(cmd, 'r')
     if f == nil then
-        cmd = string.format("ldd $(basename %s) 2>/dev/null", executable[1])
+        cmd = string.format("ldd $(basename %s) 2>/dev/null", execList[1])
         f = io.popen(cmd, 'r')
     end
     omptype = nil
@@ -1027,6 +1028,12 @@ local function assignHosts(hosts, np, ppn, tpp)
                 break
             elseif tmp < ppn*tpp then
                 ppn = tmp
+                if tpp > 1 then
+                    ppn = math.tointeger(tmp/tpp)
+                end
+                if slurm_involved then
+                    slurm_no_tasks_per_node = true
+                end
             end
         end
         if break_while then
@@ -1435,22 +1442,30 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
         end
     end
 
+    if np == nil then np = 1 end
+    local i_np = math.tointeger(np)
+    if i_np == nil then i_np = 1 end
+
+    if ppn == nil then ppn = 1 end
+    local i_ppn = math.tointeger(ppn)
+    if i_ppn == nil then i_ppn = 1 end
+
     if mpitype == "openmpi" then
         glsize_var = "$OMPI_COMM_WORLD_SIZE"
         glrank_var = "${OMPI_COMM_WORLD_RANK:-$(($GLOBALSIZE * 2))}"
         losize_var = "$OMPI_COMM_WORLD_LOCAL_SIZE"
     elseif mpitype == "intelmpi" then
         glrank_var = "${PMI_RANK:-$(($GLOBALSIZE * 2))}"
-        glsize_var = tostring(math.tointeger(np))
-        losize_var = tostring(math.tointeger(ppn))
+        glsize_var = tostring(i_np)
+        losize_var = tostring(i_ppn)
     elseif mpitype == "mvapich2" then
         glrank_var = "${PMI_RANK:-$(($GLOBALSIZE * 2))}"
-        glsize_var = tostring(math.tointeger(np))
-        losize_var = tostring(math.tointeger(ppn))
+        glsize_var = tostring(i_np)
+        losize_var = tostring(i_ppn)
     elseif mpitype == "slurm" then
         glrank_var = "${SLURM_PROCID:-$(($GLOBALSIZE * 2))}"
-        glsize_var = tostring(math.tointeger(np))
-        losize_var = string.format("${SLURM_NTASKS_PER_NODE:-%d}", math.tointeger(ppn))
+        glsize_var = tostring(i_np)
+        losize_var = string.format("${SLURM_NTASKS_PER_NODE:-%d}", i_ppn)
     else
         print_stderr("Invalid MPI vendor "..mpitype)
         return
@@ -1523,6 +1538,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     f:write("GLOBALSIZE="..glsize_var.."\n")
     f:write("GLOBALRANK="..glrank_var.."\n")
     if os.getenv("OMP_NUM_THREADS") == nil then
+        if tpp == nil then tpp = 1 end
         f:write(string.format("export OMP_NUM_THREADS=%d\n", tpp))
     else
         f:write(string.format("export OMP_NUM_THREADS=%s\n", os.getenv("OMP_NUM_THREADS")))
@@ -2206,22 +2222,28 @@ if use_marker and #perf == 0 then
     mpirun_exit(1)
 end
 
-for i,x in pairs(arg) do
+for i = 1, #arg do
     if i > 0 then
-        table.insert(executable, abspath(x) or x)
+        local x = arg[i]
+        local t = abspath(x) or x
+        if string.find(x, " ") then
+            table.insert(execList, "\""..t.."\"")
+        else
+            table.insert(execList, t)
+        end
     end
 end
 
-if #executable == 0 then
+if #execList == 0 then
     print_stderr("ERROR: No executable given on commandline")
     mpirun_exit(1)
 end
 
 if debug then
-    print_stdout("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
+    print_stdout("DEBUG: Executable given on commandline: "..table.concat(execList, " "))
 end
 local gotExecutable = false
-for i,x in pairs(executable) do
+for i,x in pairs(execList) do
     if likwid.access(x, "x") == 0 then
         gotExecutable = true
         break
@@ -2229,7 +2251,7 @@ for i,x in pairs(executable) do
 end
 if not gotExecutable then
     print_stderr("ERROR: Cannot find an executable on commandline")
-    print_stderr(table.concat(executable, " "))
+    print_stderr(table.concat(execList, " "))
     mpirun_exit(1)
 end
 
@@ -2465,24 +2487,20 @@ if skipStr == "" then
             skipStr = '-s 0x7'
         end
     elseif mpitype == "openmpi" then
-        if omptype == "intel" and nrNodes > 1 then
+        if omptype == "intel" then
             skipStr = '-s 0x7'
-        elseif omptype == "intel" and nrNodes == 1 then
-            skipStr = '-s 0x1'
-            if tpp > 1 then
-                skipStr = '-s 0x3'
-            end
-        elseif omptype == "gnu" and nrNodes > 1 then
+        elseif omptype == "gnu" then
             skipStr = '-s 0x7'
-        elseif omptype == "gnu" and nrNodes == 1 then
-            skipStr = '-s 0x0'
-            if tpp > 0 then
-                skipStr = '-s 0x1'
-            end
         end
     elseif mpitype == "slurm" then
-        if omptype == "intel" and nrNodes > 1 then
-            if nrNodes == 1 then
+        if omptype == "intel" then
+            if nrNodes == 1 and tpp == 1 then
+                skipStr = '-s 0x1'
+            else
+                skipStr = '-s 0x3'
+            end
+        elseif omptype == "gnu" then
+            if nrNodes == 1 and tpp == 1 then
                 skipStr = '-s 0x1'
             else
                 skipStr = '-s 0x3'
@@ -2502,7 +2520,7 @@ if writeHostfile == nil or getEnvironment == nil or executeCommand == nil then
 end
 
 writeHostfile(newhosts, hostfilename)
-local skipped_ranks = writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, envsettings, outfilename)
+local skipped_ranks = writeWrapperScript(scriptfilename, table.concat(execList, " "), newhosts, envsettings, outfilename)
 local env = getEnvironment()
 local exitvalue = executeCommand(scriptfilename, hostfilename, env, nrNodes)
 

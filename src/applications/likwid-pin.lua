@@ -159,7 +159,11 @@ for opt,arg in likwid.getopt(arg, {"c:", "C:", "d:", "h", "i", "m", "p", "q", "s
 end
 local execList = {}
 for i=1, likwid.tablelength(arg)-2 do
-    table.insert(execList, arg[i])
+    if string.find(arg[i], " ") then
+        table.insert(execList, "\""..arg[i].."\"")
+    else
+        table.insert(execList, arg[i])
+    end
 end
 
 likwid.setenv("LIKWID_NO_ACCESS", "1")

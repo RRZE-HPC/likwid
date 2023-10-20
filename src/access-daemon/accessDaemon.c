@@ -1172,6 +1172,21 @@ allowed_amd17_zen2(uint32_t reg)
 }
 
 static int
+allowed_amd19_zen4(uint32_t reg)
+{
+    if (allowed_amd17_zen2(reg))
+    {
+        return 1;
+    }
+    else if ((reg == 0xC0000108) ||
+             (reg == 0x00000048) ||
+	     (reg == 0x0000010B))
+    {
+        return 1;
+    }
+    return 0;
+}
+static int
 clientmem_getStartAddr(uint64_t* startAddr)
 {
     uint64_t imcbar = 0;
@@ -2580,10 +2595,12 @@ daemonize(int* parentPid)
         syslog(LOG_ERR, "fork failed: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
+    signal(SIGCHLD, SIG_IGN);
 
     /* If we got a good PID, then we can exit the parent process. */
     if (pid > 0)
     {
+        syslog(LOG_ERR, "Closing parent process %d", *parentPid);
         exit(EXIT_SUCCESS);
     }
 
@@ -2619,13 +2636,14 @@ daemonize(int* parentPid)
 int main(void)
 {
     int ret;
-    pid_t pid;
+    pid_t pid = getpid();
     struct sockaddr_un  addr1;
     socklen_t socklen;
     AccessDataRecord dRecord;
     mode_t oldumask;
     uint32_t numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
     uint32_t model;
+    struct stat stats;
     for (int i=0;i<avail_cpus;i++)
     {
         FD_MSR[i] = -1;
@@ -2644,7 +2662,10 @@ int main(void)
         stop_daemon();
     }
 
-    daemonize(&pid);
+    stat("/run/systemd/system", &stats);
+    if (!S_ISDIR(stats.st_mode)) {
+        daemonize(&pid);
+    }
 #ifdef DEBUG_LIKWID
     syslog(LOG_INFO, "AccessDaemon runs with UID %d, eUID %d\n", getuid(), geteuid());
 #endif
@@ -2785,8 +2806,13 @@ int main(void)
                     case ZEN3_RYZEN:
                     case ZEN3_RYZEN2:
                     case ZEN3_RYZEN3:
+                    case ZEN3_EPYC_TRENTO:
                         allowed = allowed_amd17_zen2;
                         break;
+		    case ZEN4_RYZEN:
+		    case ZEN4_EPYC:
+			allowed = allowed_amd19_zen4;
+			break;
                     default:
                         allowed = allowed_amd17;
                         break;

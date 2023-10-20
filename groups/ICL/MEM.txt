@@ -1,4 +1,4 @@
-SHORT  L3 cache bandwidth in MBytes/s
+SHORT  Memory bandwidth in MBytes/s
 
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
@@ -22,16 +22,14 @@ Memory data volume [GBytes] 1.0E-09*(MBOX0C1+MBOX0C2)*64.0
 
 LONG
 Formulas:
-L3 load bandwidth [MBytes/s] = 1.0E-06*L2_LINES_IN_ALL*64.0/time
-L3 load data volume [GBytes] = 1.0E-09*L2_LINES_IN_ALL*64.0
-L3 evict bandwidth [MBytes/s] = 1.0E-06*L2_TRANS_L2_WB*64.0/time
-L3 evict data volume [GBytes] = 1.0E-09*L2_TRANS_L2_WB*64.0
-L3 bandwidth [MBytes/s] = 1.0E-06*(L2_LINES_IN_ALL+L2_TRANS_L2_WB)*64/time
-L3 data volume [GBytes] = 1.0E-09*(L2_LINES_IN_ALL+L2_TRANS_L2_WB)*64
+Memory load bandwidth [MBytes/s] = 1.0E-06*DRAM_READS*64.0/time
+Memory load data volume [GBytes] = 1.0E-09*DRAM_READS*64.0
+Memory evict bandwidth [MBytes/s] = 1.0E-06*DRAM_WRITES*64.0/time
+Memory evict data volume [GBytes] = 1.0E-09*DRAM_WRITES*64.0
+Memory bandwidth [MBytes/s] = 1.0E-06*(DRAM_READS+DRAM_WRITES)*64/time
+Memory data volume [GBytes] = 1.0E-09*(DRAM_READS+DRAM_WRITES)*64
 -
-Profiling group to measure L3 cache bandwidth. The bandwidth is computed by the
-number of cache line allocated in the L2 and the number of modified cache lines
-evicted from the L2. This group also output data volume transferred between the
-L3 and  measured cores L2 caches. Note that this bandwidth also includes data
-transfers due to a write allocate load on a store miss in L2.
+Profiling group to measure memory cache bandwidth. The desktop-class Intel
+chips provide free-running memory counters in the MMIO space. Since they are
+free-running, it might overflow without notice if the read intervals are too long.
 

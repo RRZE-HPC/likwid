@@ -115,6 +115,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage zen
 - \subpage zen2
 - \subpage zen3
+- \subpage zen4
 
 \subsection Architectures_ARM ARM architectures
 - \subpage armA15

@@ -77,6 +77,7 @@
 #include <perfmon_zen.h>
 #include <perfmon_zen2.h>
 #include <perfmon_zen3.h>
+#include <perfmon_zen4.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
 #include <perfmon_tigerlake.h>
@@ -84,6 +85,7 @@
 #include <perfmon_neon1.h>
 #include <perfmon_a64fx.h>
 #include <perfmon_hisilicon.h>
+#include <perfmon_graviton3.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -204,6 +206,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
     ownstrcmp = &strcmp;
     int testcpu = groupSet->threads[0].processorId;
     int firstpmcindex = -1;
+    bstring checkName;
 
     for (int i=0; i< perfmon_numCounters; i++)
     {
@@ -226,11 +229,14 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
         DEBUG_PRINT(DEBUGLEV_INFO, WARNING: Counter %s not available on the current system. Counter results defaults to 0.,bdata(reg));
         return NOTYPE;
     }
-    if (ownstrcmp(bdata(reg), counter_map[index].key) != 0)
+    checkName = bfromcstr(counter_map[index].key);
+    if (bstrcmp(reg, checkName) != BSTR_OK)
     {
         DEBUG_PRINT(DEBUGLEV_INFO, WARNING: Counter %s does not exist ,bdata(reg));
+        bdestroy(checkName);
         return NOTYPE;
     }
+    bdestroy(checkName);
     err = HPMcheck(counter_map[index].device, 0);
     if (!err)
     {
@@ -349,8 +355,6 @@ static int
 getEvent(bstring event_str, bstring counter_str, PerfmonEvent* event)
 {
     int ret = FALSE;
-    int (*ownstrncmp)(const char *, const char *, size_t);
-    ownstrncmp = &strncmp;
     for (int i=0; i< perfmon_numArchEvents; i++)
     {
         if (biseqcstr(event_str, eventHash[i].name))
@@ -861,12 +865,12 @@ perfmon_check_counter_map(int cpu_id)
         HPMfinalize();
 }
 
-void
+int
 perfmon_init_maps(void)
 {
-    uint32_t eax, ebx, ecx, edx;
+    int err = 0;
     if (eventHash != NULL && counter_map != NULL && box_map != NULL && perfmon_numCounters > 0 && perfmon_numArchEvents > 0)
-        return;
+        return -EINVAL;
     switch ( cpuid_info.family )
     {
         case P6_FAMILY:
@@ -925,6 +929,7 @@ perfmon_init_maps(void)
 
                 case CORE_DUO:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
+                    err = -EINVAL;
                     break;
 
                 case XEON_MP:
@@ -1161,6 +1166,7 @@ perfmon_init_maps(void)
 
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
@@ -1179,6 +1185,7 @@ perfmon_init_maps(void)
 
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
@@ -1244,6 +1251,8 @@ perfmon_init_maps(void)
                     break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
+                    err = -EINVAL;
+                    break;
             }
             break;
         case ZEN3_FAMILY:
@@ -1252,6 +1261,7 @@ perfmon_init_maps(void)
                 case ZEN3_RYZEN:
                 case ZEN3_RYZEN2:
                 case ZEN3_RYZEN3:
+                case ZEN3_EPYC_TRENTO:
                     eventHash = zen3_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen3;
                     counter_map = zen3_counter_map;
@@ -1259,8 +1269,19 @@ perfmon_init_maps(void)
                     perfmon_numCounters = perfmon_numCountersZen3;
                     translate_types = zen3_translate_types;
                     break;
+                case ZEN4_RYZEN:
+                case ZEN4_EPYC:
+                    eventHash = zen4_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsZen4;
+                    counter_map = zen4_counter_map;
+                    box_map = zen4_box_map;
+                    perfmon_numCounters = perfmon_numCountersZen4;
+                    translate_types = zen4_translate_types;
+                    break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
+                    err = -EINVAL;
+                    break;
             }
             break;
 #ifdef _ARCH_PPC
@@ -1283,12 +1304,16 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER9;
                     perfmon_numCounters = NUM_COUNTERS_POWER9;
                     break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported PPC Processor);
+                    err = -EINVAL;
+                    break;
             }
             break;
 #endif
 
         case ARMV7_FAMILY:
-            switch ( cpuid_info.model )
+            switch ( cpuid_info.part )
             {
                 case ARMV7L:
                 case ARM7L:
@@ -1324,6 +1349,7 @@ perfmon_init_maps(void)
                     break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported ARMv7 Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
@@ -1365,8 +1391,17 @@ perfmon_init_maps(void)
                             perfmon_numCounters = perfmon_numCountersNeoN1;
                             translate_types = neon1_translate_types;
                             break;
+                        case AWS_GRAVITON3:
+                            eventHash = graviton3_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsGraviton3;
+                            counter_map = graviton3_counter_map;
+                            box_map = graviton3_box_map;
+                            perfmon_numCounters = perfmon_numCountersGraviton3;
+                            translate_types = graviton3_translate_types;
+                            break;
                         default:
                             ERROR_PLAIN_PRINT(Unsupported ARMv8 Processor);
+                            err = -EINVAL;
                             break;
                     }
                     break;
@@ -1383,6 +1418,7 @@ perfmon_init_maps(void)
                             break;
                         default:
                             ERROR_PLAIN_PRINT(Unsupported Cavium/Marvell Processor);
+                            err = -EINVAL;
                             break;
                     }
                     break;
@@ -1399,6 +1435,7 @@ perfmon_init_maps(void)
                             break;
                         default:
                             ERROR_PLAIN_PRINT(Unsupported Cavium/Marvell Processor);
+                            err = -EINVAL;
                             break;
                     }
                     break;
@@ -1415,6 +1452,7 @@ perfmon_init_maps(void)
                             break;
                         default:
                             ERROR_PLAIN_PRINT(Unsupported Fujitsu Processor);
+                            err = -EINVAL;
                             break;
                     }
                     break;
@@ -1436,15 +1474,17 @@ perfmon_init_maps(void)
                     break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported ARMv8 Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
 
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);
+            err = -EINVAL;
             break;
     }
-    if (eventHash)
+    if (eventHash && err == 0)
     {
         int cpu_id = sched_getcpu();
         HPMaddThread(cpu_id);
@@ -1455,7 +1495,7 @@ perfmon_init_maps(void)
             memset(tmp + perfmon_numArchEvents, '\0', 10*sizeof(PerfmonEvent));
             eventHash = tmp;
             eventHash[perfmon_numArchEvents].name = "GENERIC_EVENT";
-            bstring bsep = bfromcstr("|");
+            struct tagbstring bsep = bsStatic ("|");
             struct bstrList* outlist = bstrListCreate();
             for (int i = 0; i < perfmon_numArchEvents; i++)
             {
@@ -1476,7 +1516,8 @@ perfmon_init_maps(void)
                     {
                         for (int k = 0; k < perfmon_numCounters; k++)
                         {
-                            if (strncmp(bdata(xlist->entry[j]), counter_map[k].key, blength(xlist->entry[j])) == 0)
+                            bstring bkey = bfromcstr(counter_map[k].key);
+                            if (bstrcmp(xlist->entry[j], bkey) == BSTR_OK)
                             {
 #ifndef LIKWID_USE_PERFEVENT
                                 if (HPMcheck(counter_map[k].device, cpu_id))
@@ -1485,9 +1526,11 @@ perfmon_init_maps(void)
 #endif
                                 {
                                     bstrListAdd(outlist, xlist->entry[j]);
+                                    bdestroy(bkey);
                                     break;
                                 }
                             }
+                            bdestroy(bkey);
                         }
                     }
                 }
@@ -1495,7 +1538,7 @@ perfmon_init_maps(void)
                 bstrListDestroy(xlist);
             }
 
-            bstring blim = bjoin(outlist, bsep);
+            bstring blim = bjoin(outlist, &bsep);
             eventHash[perfmon_numArchEvents].limit = malloc((blength(blim)+2)*sizeof(char));
             int ret = snprintf(eventHash[perfmon_numArchEvents].limit,
                                blength(blim)+1, "%s", bdata(blim));
@@ -1515,12 +1558,13 @@ perfmon_init_maps(void)
         }
     }
 
-    return;
+    return err;
 }
 
-void
+int
 perfmon_init_funcs(int* init_power, int* init_temp)
 {
+    int err = 0;
     int initialize_power = FALSE;
     int initialize_thermal = FALSE;
 #ifndef LIKWID_USE_PERFEVENT
@@ -1584,6 +1628,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 
                 case CORE_DUO:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
+                    err = -EINVAL;
                     break;
 
                 case XEON_MP:
@@ -1748,6 +1793,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
@@ -1767,6 +1813,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
@@ -1833,7 +1880,8 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen2;
                     break;
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported AMD Zen2 Processor);
+                    ERROR_PLAIN_PRINT(Unsupported AMD K17 Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
@@ -1844,6 +1892,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                 case ZEN3_RYZEN:
                 case ZEN3_RYZEN2:
                 case ZEN3_RYZEN3:
+                case ZEN3_EPYC_TRENTO:
                     initThreadArch = perfmon_init_zen3;
                     initialize_power = TRUE;
                     perfmon_startCountersThread = perfmon_startCountersThread_zen3;
@@ -1852,14 +1901,26 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_setupCountersThread = perfmon_setupCounterThread_zen3;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen3;
                     break;
+                case ZEN4_RYZEN:
+                case ZEN4_EPYC:
+                    initThreadArch = perfmon_init_zen4;
+                    initialize_power = TRUE;
+                    perfmon_startCountersThread = perfmon_startCountersThread_zen4;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_zen4;
+                    perfmon_readCountersThread = perfmon_readCountersThread_zen4;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_zen4;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen4;
+                    break;
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported AMD Zen3 Processor);
+                    ERROR_PLAIN_PRINT(Unsupported AMD K19 Processor);
+                    err = -EINVAL;
                     break;
             }
             break;
 
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);
+            err = -EINVAL;
             break;
     }
 #else
@@ -1872,6 +1933,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 #endif
     *init_power = initialize_power;
     *init_temp = initialize_thermal;
+    return err;
 }
 
 char**
@@ -1995,10 +2057,22 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     affinity_init();
 
     /* Initialize maps pointer to current architecture maps */
-    perfmon_init_maps();
+    ret = perfmon_init_maps();
+    if (ret < 0)
+    {
+        ERROR_PRINT(Failed to initialize event and counter lists for %s, cpuid_info.name);
+        HPMfinalize();
+        return ret;
+    }
 
     /* Initialize function pointer to current architecture functions */
-    perfmon_init_funcs(&initialize_power, &initialize_thermal);
+    ret = perfmon_init_funcs(&initialize_power, &initialize_thermal);
+    if (ret < 0)
+    {
+        ERROR_PRINT(Failed to initialize event and counter lists for %s, cpuid_info.name);
+        HPMfinalize();
+        return ret;
+    }
 
     /* Store thread information and reset counters for processor*/
     /* If the arch supports it, initialize power and thermal measurements */
@@ -2080,12 +2154,21 @@ perfmon_finalize(void)
         groupSet->groups[group].state = STATE_NONE;
     }
     if (groupSet->groups != NULL)
+    {
         free(groupSet->groups);
+        groupSet->groups = NULL;
+    }
     if (groupSet->threads != NULL)
+    {
         free(groupSet->threads);
+        groupSet->threads = NULL;
+    }
     groupSet->activeGroup = -1;
     if (groupSet)
+    {
         free(groupSet);
+        groupSet = NULL;
+    }
     if (currentConfig)
     {
         for (group=0; group < cpuid_topology.numHWThreads; group++)
@@ -2119,7 +2202,6 @@ perfmon_finalize(void)
         added_generic_event = 0;
     }
     perfmon_initialized = 0;
-    groupSet = NULL;
     return;
 }
 
@@ -3222,10 +3304,7 @@ perfmon_getMaxCounterValue(RegisterType type)
     {
         width = box_map[type].regWidth;
     }
-    for(int i=0;i<width;i++)
-    {
-        tmp |= (1ULL<<i);
-    }
+    tmp = (1ULL << width) - 1;
     return tmp;
 }
 
@@ -3749,6 +3828,11 @@ perfmon_readMarkerFile(const char* filename)
     int nr_regions = 0;
     int cpus = 0, groups = 0, regions = 0;
 
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
     if (filename == NULL)
     {
         return -EINVAL;
@@ -3767,6 +3851,7 @@ perfmon_readMarkerFile(const char* filename)
     if (ret != 3)
     {
         fprintf(stderr, "Marker file missformatted.\n");
+        fclose(fp);
         return -EINVAL;
     }
     //markerResults = malloc(regions * sizeof(LikwidResults));
@@ -3774,12 +3859,14 @@ perfmon_readMarkerFile(const char* filename)
     if (markerResults == NULL)
     {
         fprintf(stderr, "Failed to allocate %lu bytes for the marker results storage\n", regions * sizeof(LikwidResults));
+        fclose(fp);
         return -ENOMEM;
     }
     int* regionCPUs = (int*)malloc(regions * sizeof(int));
     if (regionCPUs == NULL)
     {
         fprintf(stderr, "Failed to allocate %lu bytes for temporal cpu count storage\n", regions * sizeof(int));
+        fclose(fp);
         return -ENOMEM;
     }
     markerRegions = regions;
@@ -3792,24 +3879,54 @@ perfmon_readMarkerFile(const char* filename)
         if (!markerResults[i].time)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the time storage\n", cpus * sizeof(double));
+            for (int j = 0; j < i; j++) {
+                free(markerResults[j].time);
+                free(markerResults[j].count);
+                free(markerResults[j].cpulist);
+                free(markerResults[j].counters);
+            }
             break;
         }
         markerResults[i].count = (uint32_t*) malloc(cpus * sizeof(uint32_t));
         if (!markerResults[i].count)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the count storage\n", cpus * sizeof(uint32_t));
+            free(markerResults[i].time);
+            for (int j = 0; j < i; j++) {
+                free(markerResults[j].time);
+                free(markerResults[j].count);
+                free(markerResults[j].cpulist);
+                free(markerResults[j].counters);
+            }
             break;
         }
         markerResults[i].cpulist = (int*) malloc(cpus * sizeof(int));
         if (!markerResults[i].count)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n", cpus * sizeof(int));
+            free(markerResults[i].time);
+            free(markerResults[i].count);
+            for (int j = 0; j < i; j++) {
+                free(markerResults[j].time);
+                free(markerResults[j].count);
+                free(markerResults[j].cpulist);
+                free(markerResults[j].counters);
+            }
             break;
         }
         markerResults[i].counters = (double**) malloc(cpus * sizeof(double*));
         if (!markerResults[i].counters)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the counter result storage\n", cpus * sizeof(double*));
+            free(markerResults[i].time);
+            free(markerResults[i].count);
+            free(markerResults[i].cpulist);
+            for (int j = 0; j < i; j++) {
+                free(markerResults[j].time);
+                free(markerResults[j].count);
+                free(markerResults[j].cpulist);
+                free(markerResults[j].counters);
+            }
             break;
         }
     }
@@ -3818,7 +3935,7 @@ perfmon_readMarkerFile(const char* filename)
         if (strchr(buf,':'))
         {
             int regionid = 0, groupid = -1;
-            char regiontag[100];
+            char regiontag[140];
             char* ptr = NULL;
             char* colonptr = NULL;
             // zero out ALL of regiontag due to replacing %s with %Nc

@@ -9,14 +9,14 @@
  *                   sys interface of the Linux 2.6 kernel. This module
  *                   is based on the msr-util tools.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.2.2
+ *      Released:  26.07.2022
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com.
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -182,18 +182,26 @@ void
 access_x86_msr_finalize(const int cpu_id)
 {
     int i = 0;
-
+    access_x86_rdpmc_finalize(cpu_id);
     if (FD && FD[cpu_id] > 0)
     {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Closing FD for CPU %d, cpu_id);
         close(FD[cpu_id]);
-        FD[cpu_id] = 0;
+        FD[cpu_id] = -1;
     }
-    if (FD)
+    int c = 0;
+    for (i = 0; i < cpuid_topology.numHWThreads; i++)
     {
+        if (FD[i] >= 0) c++;
+    }
+    if (c == 0 && FD)
+    {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Free FD space);
+        memset(FD, -1, cpuid_topology.numHWThreads * sizeof(int));
         free(FD);
         FD = NULL;
     }
-    access_x86_rdpmc_finalize(cpu_id);
+    
 }
 
 int
