@@ -171,6 +171,7 @@ struct topology_functions {
 #define  APP_XGENE1	0x00U
 #define  ARM_NEOVERSE_N1 0xD0CU
 #define  FUJITSU_A64FX 0x001U
+#define  HUAWEI_TSV110 0xD01U
 #define  AWS_GRAVITON3 0xD40U
 
 /* ARM vendors */
@@ -185,6 +186,7 @@ struct topology_functions {
 #define MARVELL		0x56U
 #define INTEL_ARM	0x69U
 #define FUJITSU_ARM 0x46U
+#define HUAWEI_ARM  0x48U
 
 /* POWER */
 #define POWER7          0x7U

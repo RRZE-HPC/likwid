@@ -124,6 +124,7 @@ static char* arm_cortex_a53 = "ARM Cortex A53";
 static char* arm_cortex_a72 = "ARM Cortex A72";
 static char* arm_cortex_a73 = "ARM Cortex A73";
 static char* arm_neoverse_n1 = "ARM Neoverse N1";
+static char* arm_huawei_tsv110 = "Huawei TSV110 (ARMv8)";
 static char* fujitsu_a64fx = "Fujitsu A64FX";
 static char* power7_str = "POWER7 architecture";
 static char* power8_str = "POWER8 architecture";
@@ -1223,6 +1224,17 @@ topology_setName(void)
                         case FUJITSU_A64FX:
                             cpuid_info.name = fujitsu_a64fx;
                             cpuid_info.short_name = short_a64fx;
+                            break;
+                        default:
+                            return EXIT_FAILURE;
+                            break;
+                    }
+                case HUAWEI_ARM:
+                    switch (cpuid_info.part)
+                    {
+                        case HUAWEI_TSV110:
+                            cpuid_info.name = arm_huawei_tsv110;
+                            cpuid_info.short_name = short_arm8;
                             break;
                         default:
                             return EXIT_FAILURE;

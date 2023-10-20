@@ -84,6 +84,7 @@
 #include <perfmon_icelake.h>
 #include <perfmon_neon1.h>
 #include <perfmon_a64fx.h>
+#include <perfmon_hisilicon.h>
 #include <perfmon_graviton3.h>
 
 #ifdef LIKWID_USE_PERFEVENT
@@ -1452,6 +1453,22 @@ perfmon_init_maps(void)
                         default:
                             ERROR_PLAIN_PRINT(Unsupported Fujitsu Processor);
                             err = -EINVAL;
+                            break;
+                    }
+                    break;
+                case HUAWEI_ARM:
+                    switch (cpuid_info.part)
+                    {
+                        case HUAWEI_TSV110:
+                            eventHash = a57_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsHiSiliconTsv110;
+                            counter_map = tsv110_counter_map;
+                            box_map = tsv110_box_map;
+                            perfmon_numCounters = perfmon_numCountersHiSiliconTsv110;
+                            translate_types = tsv110_translate_types;
+                            break;
+                        default:
+                            ERROR_PLAIN_PRINT(Unsupported Huawei Processor);
                             break;
                     }
                     break;
