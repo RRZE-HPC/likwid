@@ -824,9 +824,13 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                         }
                         free(formats);
                     }
-                    if (cpuid_info.model == SAPPHIRERAPIDS && event->options[j].type == EVENT_OPTION_MATCH0)
+                    if (cpuid_info.family == P6_FAMILY && cpuid_info.model == SAPPHIRERAPIDS && event->options[j].type == EVENT_OPTION_MATCH0)
                     {
                         attr->config |= (((uint64_t)event->options[j].value) & 0x3ffffff) << 32;
+                    }
+                    if (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2)) && event->options[j].type == EVENT_OPTION_MATCH0)
+                    {
+                        attr->config |= create_mask(event->options[j].value, 32, 57);
                     }
                     break;
                 default:
@@ -1268,12 +1272,12 @@ int perfmon_setupCountersThread_perfevent(
             case HBM31:
                 if (cpuid_info.family == ZEN_FAMILY && type == MBOX0)
                 {
-                    if (numa_lock[affinity_thread2numa_lookup[cpu_id]] == cpu_id)
+                    if (die_lock[affinity_thread2die_lookup[cpu_id]] == cpu_id)
                     {
                         has_lock = 1;
                     }
                 }
-                else if (cpuid_info.family == ZEN_FAMILY && type == CBOX0)
+                else if ((cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY) && type == CBOX0)
                 {
                     if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id)
                     {

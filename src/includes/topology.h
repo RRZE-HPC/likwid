@@ -152,6 +152,7 @@ struct topology_functions {
 #define ZEN3_RYZEN      0x01
 #define ZEN3_RYZEN2     0x21
 #define ZEN3_RYZEN3     0x50
+#define ZEN3_EPYC_TRENTO 0x30
 #define ZEN4_RYZEN      0x61
 #define ZEN4_EPYC       0x11
 
@@ -174,6 +175,8 @@ struct topology_functions {
 #define  APP_XGENE1	0x00U
 #define  ARM_NEOVERSE_N1 0xD0CU
 #define  FUJITSU_A64FX 0x001U
+#define  HUAWEI_TSV110 0xD01U
+#define  AWS_GRAVITON3 0xD40U
 
 /* ARM vendors */
 #define DEFAULT_ARM	0x41U
@@ -187,6 +190,7 @@ struct topology_functions {
 #define MARVELL		0x56U
 #define INTEL_ARM	0x69U
 #define FUJITSU_ARM 0x46U
+#define HUAWEI_ARM  0x48U
 
 /* POWER */
 #define POWER7          0x7U

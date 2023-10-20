@@ -354,10 +354,16 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     }
 #endif
     count = likwid_sysfs_list_len("/sys/devices/system/cpu/online");
-    if (count > cpuid_topology.numHWThreads)
+    if ((count > cpuid_topology.numHWThreads) && (!getenv("HWLOC_FSROOT")))
+    {
+        
         cpuid_topology.numHWThreads = count;
-    if (cpuid_topology.activeHWThreads > cpuid_topology.numHWThreads)
+    }
+    if ((cpuid_topology.activeHWThreads > cpuid_topology.numHWThreads)  && (!getenv("HWLOC_FSROOT")))
+    {
+        
         cpuid_topology.numHWThreads = cpuid_topology.activeHWThreads;
+    }
     DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d Vendor 0x%X Part 0x%X isIntel %d numHWThreads %d activeHWThreads %d,
                             cpuid_info.family,
                             cpuid_info.model,
@@ -578,6 +584,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
 
     int socket_nums[MAX_NUM_NODES];
     int num_sockets = 0;
+    int has_zero_id = 0;
     for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
     {
         int found = 0;
@@ -594,14 +601,22 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             socket_nums[num_sockets] = hwThreadPool[i].packageId;
             num_sockets++;
         }
-    }
-    for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
-    {
-        for (uint32_t j=0; j < num_sockets; j++)
+        if (hwThreadPool[i].packageId == 0)
         {
-            if (hwThreadPool[i].packageId == socket_nums[j])
+            has_zero_id = 1;
+        }
+    }
+    if (!has_zero_id)
+    {
+        for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
+        {
+            HWThread* t = &hwThreadPool[i];
+            for (uint32_t j=0; j < num_sockets; j++)
             {
-                hwThreadPool[i].packageId = j;
+                if (hwThreadPool[i].packageId == socket_nums[j])
+                {
+                    hwThreadPool[i].packageId = j;
+                }
             }
         }
     }

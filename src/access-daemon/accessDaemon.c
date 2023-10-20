@@ -3741,6 +3741,7 @@ int main(void)
                     case ZEN3_RYZEN:
                     case ZEN3_RYZEN2:
                     case ZEN3_RYZEN3:
+                    case ZEN3_EPYC_TRENTO:
                         allowed = allowed_amd17_zen2;
                         break;
                     case ZEN4_RYZEN:

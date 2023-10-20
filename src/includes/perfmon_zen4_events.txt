@@ -654,11 +654,9 @@ UMASK_L3_XI_SAMPLED_LATENCY_REQUESTS_EXT_FAR                     0x20
 EVENT_RAPL_CORE_ENERGY                    0x01 PWR0
 UMASK_RAPL_CORE_ENERGY                    0x00
 
-#EVENT_RAPL_PKG_ENERGY                     0x02 PWR1
-#UMASK_RAPL_PKG_ENERGY                     0x00
+EVENT_RAPL_L3_ENERGY                     0x02 PWR2
+UMASK_RAPL_L3_ENERGY                     0x00
 
-EVENT_RAPL_DRAM_ENERGY                    0x03 PWR2
-UMASK_RAPL_DRAM_ENERGY                    0x00
 
 # Data fabric events
 

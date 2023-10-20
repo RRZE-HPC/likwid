@@ -95,7 +95,7 @@ power_start(PowerData* data, int cpuId, PowerType type)
             uint64_t result = 0;
             data->before = 0;
             CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, power_regs[type], &result))
-            data->before = field64(result, 0, 32);
+            data->before = field64(result, 0, power_info.statusRegWidth);
             data->domain = type;
             return 0;
         }
@@ -122,7 +122,7 @@ power_stop(PowerData* data, int cpuId, PowerType type)
             uint64_t result = 0;
             data->after = 0;
             CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, power_regs[type], &result))
-            data->after = field64(result, 0, 32);
+            data->after = field64(result, 0, power_info.statusRegWidth);
             data->domain = type;
             return 0;
         }
@@ -147,7 +147,7 @@ power_read(int cpuId, uint64_t reg, uint32_t *data)
 
     if (power_info.hasRAPL)
     {
-        for (i = 0; i < NUM_POWER_DOMAINS; i++)
+        for (i = 0; i < power_info.numDomains; i++)
         {
             if (reg == power_regs[i])
             {
@@ -160,7 +160,7 @@ power_read(int cpuId, uint64_t reg, uint32_t *data)
             uint64_t result = 0;
             *data = 0;
             CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, reg, &result))
-            *data = field64(result, 0, 32);
+            *data = field64(result, 0, power_info.statusRegWidth);
             return 0;
         }
         else
@@ -196,7 +196,7 @@ power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
             uint64_t result = 0;
             *data = 0;
             CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, reg, &result))
-            *data = field64(result, 0, 32);
+            *data = field64(result, 0, power_info.statusRegWidth);
             return 0;
         }
         else
