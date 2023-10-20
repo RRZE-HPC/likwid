@@ -82,6 +82,7 @@
 #include <perfmon_a15.h>
 #include <perfmon_tigerlake.h>
 #include <perfmon_icelake.h>
+#include <perfmon_sapphirerapids.h>
 #include <perfmon_neon1.h>
 #include <perfmon_a64fx.h>
 #include <perfmon_hisilicon.h>
@@ -267,7 +268,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
             }
             type = NOTYPE;
         }
-        else if (tmp == 0x0ULL)
+        else if (tmp == 0x0ULL && check_settings)
         {
             err = HPMwrite(testcpu, counter_map[index].device, reg, 0x0ULL);
             if (err != 0)
@@ -1164,6 +1165,17 @@ perfmon_init_maps(void)
                     archRegisterTypeNames = registerTypeNamesIcelakeX;
                     break;
 
+                case SAPPHIRERAPIDS:
+                    box_map = sapphirerapids_box_map;
+                    eventHash = sapphirerapids_arch_events;
+                    counter_map = sapphirerapids_counter_map;
+                    perfmon_numArchEvents = perfmon_numArchEventsSapphireRapids;
+                    perfmon_numCounters = perfmon_numCountersSapphireRapids;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersSapphireRapids;
+                    translate_types = sapphirerapids_translate_types;
+                    archRegisterTypeNames = registerTypeNamesSapphireRapids;
+                    break;
+
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
                     err = -EINVAL;
@@ -1791,6 +1803,17 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_tigerlake;
                     break;
 
+                case SAPPHIRERAPIDS:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    initThreadArch = perfmon_init_sapphirerapids;
+                    perfmon_startCountersThread = perfmon_startCountersThread_sapphirerapids;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_sapphirerapids;
+                    perfmon_readCountersThread = perfmon_readCountersThread_sapphirerapids;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_sapphirerapids;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_sapphirerapids;
+                    break;
+
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
                     err = -EINVAL;
@@ -2336,6 +2359,7 @@ perfmon_addEventSet(const char* eventCString)
             strcat(evstr, perf_pid);
         }
     }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Eventstring %s, evstr);
     free(cstringcopy);
     eventBString = bfromcstr(evstr);
     eventtokens = bsplit(eventBString,',');
