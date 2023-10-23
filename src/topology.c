@@ -1138,6 +1138,7 @@ topology_setName(void)
                     cpuid_info.short_name = short_zen3;
                     break;
                 case ZEN4_RYZEN:
+                case ZEN4_RYZEN2:
                 case ZEN4_EPYC:
                     cpuid_info.name = amd_zen4_str;
                     cpuid_info.short_name = short_zen4;
