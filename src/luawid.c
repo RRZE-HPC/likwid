@@ -47,11 +47,12 @@
 #include <lua.h>     /* Always include this */
 #include <lualib.h>  /* Always include this */
 
+#include <likwid.h>
+#include <tree.h>
+
 #include <access.h>
 #include <bstrlib.h>
-#include <likwid.h>
 #include <perfmon.h>
-#include <tree.h>
 
 #ifdef COLOR
 #include <textcolor.h>
