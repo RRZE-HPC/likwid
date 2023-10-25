@@ -242,6 +242,8 @@ typedef struct {
     uint64_t              regTypeMask2; /*!< \brief Bitmask2 for easy checks which types are included in the eventSet */
     uint64_t              regTypeMask3; /*!< \brief Bitmask3 for easy checks which types are included in the eventSet */
     uint64_t              regTypeMask4; /*!< \brief Bitmask4 for easy checks which types are included in the eventSet */
+    uint64_t              regTypeMask5; /*!< \brief Bitmask5 for easy checks which types are included in the eventSet */
+    uint64_t              regTypeMask6; /*!< \brief Bitmask6 for easy checks which types are included in the eventSet */
     GroupState            state; /*!< \brief Current state of the event group (configured, started, none) */
     GroupInfo             group; /*!< \brief Structure holding the performance group information */
 } PerfmonEventSet;

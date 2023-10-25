@@ -82,8 +82,11 @@
 #include <perfmon_a15.h>
 #include <perfmon_tigerlake.h>
 #include <perfmon_icelake.h>
+#include <perfmon_sapphirerapids.h>
 #include <perfmon_neon1.h>
 #include <perfmon_a64fx.h>
+#include <perfmon_hisilicon.h>
+#include <perfmon_graviton3.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -204,6 +207,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
     ownstrcmp = &strcmp;
     int testcpu = groupSet->threads[0].processorId;
     int firstpmcindex = -1;
+    bstring checkName;
 
     for (int i=0; i< perfmon_numCounters; i++)
     {
@@ -226,11 +230,14 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
         DEBUG_PRINT(DEBUGLEV_INFO, WARNING: Counter %s not available on the current system. Counter results defaults to 0.,bdata(reg));
         return NOTYPE;
     }
-    if (ownstrcmp(bdata(reg), counter_map[index].key) != 0)
+    checkName = bfromcstr(counter_map[index].key);
+    if (bstrcmp(reg, checkName) != BSTR_OK)
     {
         DEBUG_PRINT(DEBUGLEV_INFO, WARNING: Counter %s does not exist ,bdata(reg));
+        bdestroy(checkName);
         return NOTYPE;
     }
+    bdestroy(checkName);
     err = HPMcheck(counter_map[index].device, 0);
     if (!err)
     {
@@ -261,7 +268,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
             }
             type = NOTYPE;
         }
-        else if (tmp == 0x0ULL)
+        else if (tmp == 0x0ULL && check_settings)
         {
             err = HPMwrite(testcpu, counter_map[index].device, reg, 0x0ULL);
             if (err != 0)
@@ -1158,6 +1165,17 @@ perfmon_init_maps(void)
                     archRegisterTypeNames = registerTypeNamesIcelakeX;
                     break;
 
+                case SAPPHIRERAPIDS:
+                    box_map = sapphirerapids_box_map;
+                    eventHash = sapphirerapids_arch_events;
+                    counter_map = sapphirerapids_counter_map;
+                    perfmon_numArchEvents = perfmon_numArchEventsSapphireRapids;
+                    perfmon_numCounters = perfmon_numCountersSapphireRapids;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersSapphireRapids;
+                    translate_types = sapphirerapids_translate_types;
+                    archRegisterTypeNames = registerTypeNamesSapphireRapids;
+                    break;
+
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
                     err = -EINVAL;
@@ -1255,6 +1273,7 @@ perfmon_init_maps(void)
                 case ZEN3_RYZEN:
                 case ZEN3_RYZEN2:
                 case ZEN3_RYZEN3:
+                case ZEN3_EPYC_TRENTO:
                     eventHash = zen3_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen3;
                     counter_map = zen3_counter_map;
@@ -1384,6 +1403,14 @@ perfmon_init_maps(void)
                             perfmon_numCounters = perfmon_numCountersNeoN1;
                             translate_types = neon1_translate_types;
                             break;
+                        case AWS_GRAVITON3:
+                            eventHash = graviton3_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsGraviton3;
+                            counter_map = graviton3_counter_map;
+                            box_map = graviton3_box_map;
+                            perfmon_numCounters = perfmon_numCountersGraviton3;
+                            translate_types = graviton3_translate_types;
+                            break;
                         default:
                             ERROR_PLAIN_PRINT(Unsupported ARMv8 Processor);
                             err = -EINVAL;
@@ -1438,6 +1465,22 @@ perfmon_init_maps(void)
                         default:
                             ERROR_PLAIN_PRINT(Unsupported Fujitsu Processor);
                             err = -EINVAL;
+                            break;
+                    }
+                    break;
+                case HUAWEI_ARM:
+                    switch (cpuid_info.part)
+                    {
+                        case HUAWEI_TSV110:
+                            eventHash = a57_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsHiSiliconTsv110;
+                            counter_map = tsv110_counter_map;
+                            box_map = tsv110_box_map;
+                            perfmon_numCounters = perfmon_numCountersHiSiliconTsv110;
+                            translate_types = tsv110_translate_types;
+                            break;
+                        default:
+                            ERROR_PLAIN_PRINT(Unsupported Huawei Processor);
                             break;
                     }
                     break;
@@ -1760,6 +1803,17 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_tigerlake;
                     break;
 
+                case SAPPHIRERAPIDS:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    initThreadArch = perfmon_init_sapphirerapids;
+                    perfmon_startCountersThread = perfmon_startCountersThread_sapphirerapids;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_sapphirerapids;
+                    perfmon_readCountersThread = perfmon_readCountersThread_sapphirerapids;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_sapphirerapids;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_sapphirerapids;
+                    break;
+
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
                     err = -EINVAL;
@@ -1861,6 +1915,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                 case ZEN3_RYZEN:
                 case ZEN3_RYZEN2:
                 case ZEN3_RYZEN3:
+                case ZEN3_EPYC_TRENTO:
                     initThreadArch = perfmon_init_zen3;
                     initialize_power = TRUE;
                     perfmon_startCountersThread = perfmon_startCountersThread_zen3;
@@ -2304,6 +2359,7 @@ perfmon_addEventSet(const char* eventCString)
             strcat(evstr, perf_pid);
         }
     }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Eventstring %s, evstr);
     free(cstringcopy);
     eventBString = bfromcstr(evstr);
     eventtokens = bsplit(eventBString,',');

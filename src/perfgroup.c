@@ -148,6 +148,7 @@ perfgroup_getGroups(
     bstring LONG = bformat("LONG");
     bstring REQUIRE = bformat("REQUIRE_NOHT");
     char* Home = getenv("HOME");
+    if (!Home) Home = "";
 
     int read_long = 0;
     if ((grouppath == NULL)||(architecture == NULL)||(groupnames == NULL)||(Home == NULL))
@@ -774,7 +775,7 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
             i++;
         }
         if ((!has_fix3) && cpuid_info.perf_num_fixed_ctr > 3 && 
-            (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 || cpuid_info.model == ROCKETLAKE))
+            (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 || cpuid_info.model == ROCKETLAKE || cpuid_info.model == SAPPHIRERAPIDS))
         {
             ginfo->events[i] = malloc(14 * sizeof(char));
             ginfo->counters[i] = malloc(6 * sizeof(char));
@@ -844,6 +845,7 @@ perfgroup_readGroup(
     GroupFileSections sec = GROUP_NONE;
     bstring REQUIRE = bformat("REQUIRE_NOHT");
     char* Home = getenv("HOME");
+    if (!Home) Home = "";
     if ((grouppath == NULL)||(architecture == NULL)||(groupname == NULL)||(ginfo == NULL)||(Home == NULL))
         return -EINVAL;
 

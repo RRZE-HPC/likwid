@@ -47,6 +47,7 @@
 #include <access_x86_pci.h>
 #include <access_x86_clientmem.h>
 #include <access_x86_mmio.h>
+#include <access_x86_translate.h>
 #include <affinity.h>
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -59,10 +60,21 @@ access_x86_init(int cpu_id)
     {
         if (cpuid_info.supportUncore)
         {
-            ret = access_x86_pci_init(affinity_thread2socket_lookup[cpu_id]);
-            if (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
+            if (!((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS)))
+            {
+                ret = access_x86_pci_init(affinity_thread2socket_lookup[cpu_id]);
+            }
+            if ((cpuid_info.family == P6_FAMILY) && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
             {
                 ret = access_x86_mmio_init(affinity_thread2socket_lookup[cpu_id]);
+                if (ret < 0)
+                {
+                    ERROR_PRINT(Initialization of MMIO access failed);
+                }
+            }
+            else if ((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS))
+            {
+                ret = access_x86_translate_init(cpu_id);
             }
         }
         else if (cpuid_info.supportClientmem)
@@ -87,12 +99,21 @@ access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *da
     {
         if (cpuid_info.supportUncore)
         {
-            if ((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1) ||
-                (dev >= MMIO_IMC_DEVICE_0_FREERUN && dev <= MMIO_IMC_DEVICE_3_FREERUN))
+            if (((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1) ||
+                (dev >= MMIO_IMC_DEVICE_0_FREERUN && dev <= MMIO_IMC_DEVICE_3_FREERUN)) &&
+                (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2))))
             {
                 if (access_x86_mmio_check(dev, affinity_thread2socket_lookup[cpu_id]))
                 {
                     err = access_x86_mmio_read(dev, affinity_thread2socket_lookup[cpu_id], reg, &tmp);
+                    *data = tmp;
+                }
+            }
+            else if ((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS))
+            {
+                if (access_x86_translate_check(dev, cpu_id))
+                {
+                    err = access_x86_translate_read(dev, cpu_id, reg, &tmp);
                     *data = tmp;
                 }
             }
@@ -128,12 +149,20 @@ access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t da
     {
         if (cpuid_info.supportUncore)
         {
-            if ((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1) ||
-                (dev >= MMIO_IMC_DEVICE_0_FREERUN && dev <= MMIO_IMC_DEVICE_3_FREERUN))
+            if (((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1) ||
+                (dev >= MMIO_IMC_DEVICE_0_FREERUN && dev <= MMIO_IMC_DEVICE_3_FREERUN)) &&
+                (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2))))
             {
                 if (access_x86_mmio_check(dev, affinity_thread2socket_lookup[cpu_id]))
                 {
                     err = access_x86_mmio_write(dev, affinity_thread2socket_lookup[cpu_id], reg, data);
+                }
+            }
+            else if ((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS))
+            {
+                if (access_x86_translate_check(dev, cpu_id))
+                {
+                    err = access_x86_translate_write(dev, cpu_id, reg, data);
                 }
             }
             else
@@ -160,10 +189,19 @@ access_x86_finalize(int cpu_id)
     access_x86_msr_finalize(cpu_id);
     if (cpuid_info.supportUncore)
     {
-        access_x86_pci_finalize(affinity_thread2socket_lookup[cpu_id]);
+        if (!((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS)))
+        {
+            access_x86_pci_finalize(affinity_thread2socket_lookup[cpu_id]);
+        }
         if (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
         {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Finalize of MMIO access);
             access_x86_mmio_finalize(affinity_thread2socket_lookup[cpu_id]);
+        }
+        else if ((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS))
+        {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Finalize of Fake access);
+            access_x86_translate_finalize(cpu_id);
         }
     }
     if (cpuid_info.supportClientmem)
@@ -183,10 +221,15 @@ access_x86_check(PciDeviceIndex dev, int cpu_id)
     {
         if (cpuid_info.supportUncore)
         {
-            if ((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1) ||
-                (dev >= MMIO_IMC_DEVICE_0_FREERUN && dev <= MMIO_IMC_DEVICE_3_FREERUN))
+            if (((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_3_CH_1) ||
+                (dev >= MMIO_IMC_DEVICE_0_FREERUN && dev <= MMIO_IMC_DEVICE_3_FREERUN)) &&
+                (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2))))
             {
                 return access_x86_mmio_check(dev, affinity_thread2socket_lookup[cpu_id]);
+            }
+            else if ((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS))
+            {
+                return access_x86_translate_check(dev, cpu_id);
             }
             else
             {
