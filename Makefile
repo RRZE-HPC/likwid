@@ -84,6 +84,7 @@ OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_rdpmc.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_clientmem.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_translate.o,$(OBJ))
 else
 OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
@@ -95,6 +96,7 @@ OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_rdpmc.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_clientmem.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_translate.o,$(OBJ))
 else
 OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
@@ -106,6 +108,7 @@ OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_rdpmc.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_clientmem.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_translate.o,$(OBJ))
 else
 OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
@@ -117,6 +120,7 @@ OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_clientmem.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_rdpmc.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_translate.o,$(OBJ))
 else
 OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
@@ -132,6 +136,7 @@ OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_clientmem.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_rdpmc.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_translate.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/loadData.o,$(OBJ))
 endif
 ifeq ($(COMPILER),XLC)
@@ -141,6 +146,7 @@ OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_clientmem.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_rdpmc.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_translate.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/loadData.o,$(OBJ))
 endif
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
