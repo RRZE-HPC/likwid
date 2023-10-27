@@ -63,7 +63,7 @@ FORTRAN_REMOVE_MOVED =
 else
 FORTRAN_IF := $(strip $(FORTRAN_IF_NAME))
 FORTRAN_INSTALL = @echo "===> INSTALL fortran interface to $(PREFIX)/include/"; \
-                  cp -f likwid.mod  $(strip $(PREFIX))/include/$(strip $(FORTRAN_IF_NAME))
+                  cp -f $(BASE_DIR)/likwid.mod  $(strip $(PREFIX))/include/$(strip $(FORTRAN_IF_NAME))
 FORTRAN_REMOVE = @echo "===> REMOVING fortran interface from $(PREFIX)/include/"; \
                  rm -f $(strip $(PREFIX))/include/$(strip $(FORTRAN_IF_NAME))
 FORTRAN_REMOVE_MOVED = @echo "===> REMOVING fortran interface from $(INSTALLED_PREFIX)/include/"; \
