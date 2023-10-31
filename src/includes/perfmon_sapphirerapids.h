@@ -258,6 +258,18 @@ int spr_setup_uncore(int thread_id, RegisterIndex index, PerfmonEvent *event)
                 case EVENT_OPTION_INVERT:
                     flags |= (1ULL<<23);
                     break;
+                case EVENT_OPTION_TID:
+                    if (counter_map[index].type >= CBOX0 && counter_map[index].index <= CBOX55)
+                    {
+                        uint64_t reg = box_map[counter_map[index].type].filterRegister1;
+                        uint64_t val = event->options[j].value & 0x3FF;
+                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, val));
+                        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_CBOX_FILTER);
+                        flags |= (1ULL << 16);
+                    }
+                case EVENT_OPTION_MATCH0:
+                    flags |= (event->options[j].value & 0xFFFFFF) << 32;
+                    break;
                 case EVENT_OPTION_THRESHOLD:
                     flags |= (event->options[j].value & 0xFFULL) << 24;
                     break;
@@ -2218,6 +2230,11 @@ int perfmon_finalizeCountersThread_sapphirerapids(int thread_id, PerfmonEventSet
             }
             VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, CLEAR_CTR);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
+            if (box_map[type].filterRegister1 != 0x0)
+            {
+                VERBOSEPRINTPCIREG(cpu_id, dev, box_map[type].filterRegister1, 0x0ULL, CLEAR_FILTER);
+                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, box_map[type].filterRegister1, 0x0ULL));
+            }
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
