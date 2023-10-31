@@ -285,10 +285,10 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
     elseif (opt == "H") then
         print_group_help = true
     elseif opt == "s" or opt == "skip" then
-        if arg:match("0x[0-9A-F]") then
+        if arg:match("0x[0-9A-Fa-f]") then
             skip_mask = arg
         else
-            if arg:match("[0-9A-F]") then
+            if arg:match("[0-9A-Fa-f]") then
                 print_stderr("Given skip mask looks like hex, sanitizing arg to 0x"..arg)
                 skip_mask = "0x"..arg
             else
