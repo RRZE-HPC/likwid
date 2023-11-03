@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  topology_static.h
+ *      Filename:  perfmon_applem1.h
  *
- *      Description:  Header File for hardcoded cache information
+ *      Description:  Header File of perfmon module for Apple M1
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -11,7 +11,7 @@
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,24 +28,8 @@
  * =======================================================================================
  */
 
-#ifndef TOPOLOGY_STATIC_H
-#define TOPOLOGY_STATIC_H
+#include <perfmon_applem1_events.h>
+#include <perfmon_applem1_counters.h>
 
-CacheLevel caviumTX2_caches[3] = {
-    {1, DATACACHE, 32, 4, 64, 32768, 2, 1},
-    {2, DATACACHE, 1, 8, 64, 262144, 2, 1},
-    {3, DATACACHE, 0, 8, 64, 29360128, 112, 1},
-};
-
-CacheLevel a64fx_caches[2] = {
-    {1, DATACACHE, 4, 64, 256, 65536, 1, 1},
-    {2, DATACACHE, 16, 2048, 256, 8388608, 12, 1},
-};
-
-CacheLevel apple_m1_caches[2] = {
-    {1, DATACACHE, 4, 64, 256, 131072, 1, 1},
-    {2, DATACACHE, 16, 2048, 256, 12582912, 4, 1},
-};
-
-
-#endif
+static int perfmon_numCountersAppleM1 = NUM_COUNTERS_APPLEM1;
+static int perfmon_numArchEventsAppleM1 = NUM_ARCH_EVENTS_APPLEM1;

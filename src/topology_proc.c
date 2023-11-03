@@ -716,10 +716,69 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     int* helper = malloc(cpuid_topology.numHWThreads * sizeof(int));
     if (!helper)
     {
-	    return;
+        return;
     }
     cpuid_topology.threadPool = hwThreadPool;
     int hidx = 0;
+    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    {
+        int pid = hwThreadPool[i].packageId;
+        int found = 0;
+        for (int j = 0; j < hidx; j++)
+        {
+            if (pid == helper[j])
+            {
+                found = 1;
+                break;
+            }
+        }
+        if (!found)
+        {
+            helper[hidx++] = pid;
+        }
+    }
+    int tmp_numSockets = hidx;
+    hidx = 0;
+    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    {
+        int pid = hwThreadPool[i].dieId;
+        int found = 0;
+        for (int j = 0; j < hidx; j++)
+        {
+            if (pid == helper[j])
+            {
+                found = 1;
+                break;
+            }
+        }
+        if (!found)
+        {
+            helper[hidx++] = pid;
+        }
+    }
+    int tmp_numDies = hidx;
+    if (tmp_numSockets == 1 && tmp_numDies == 1)
+    {
+        for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
+        {
+            cpudir = bformat("/sys/devices/system/cpu/cpu%d/topology",i);
+            file = bformat("%s/cluster_id", bdata(cpudir));
+            if (NULL != (fp = fopen (bdata(file), "r")))
+            {
+                bstring src = bread ((bNread) fread, fp);
+                int packageId = ownatoi(bdata(src));
+                hwThreadPool[i].packageId = packageId;
+                if (packageId > last_socket)
+                {
+                    num_sockets++;
+                    last_socket = packageId;
+                }
+                fclose(fp);
+            }
+            bdestroy(file);
+        }
+    }
+    hidx = 0;
     for (int i = 0; i < cpuid_topology.numHWThreads; i++)
     {
         int pid = hwThreadPool[i].packageId;

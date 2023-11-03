@@ -116,6 +116,50 @@ int perfevent_paranoid_value()
     return paranoid;
 }
 
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+enum apple_m1_pmc_type {
+    M1_UNKNOWN = 0,
+    M1_ICESTORM,
+    M1_FIRESTORM,
+};
+
+int perfevent_apple_m1_pmc_type_select(int cpu_id, enum apple_m1_pmc_type *type)
+{
+    FILE* fd;
+    char buff[100];
+    *type = M1_UNKNOWN;
+    bstring fname = bformat("/sys/devices/system/cpu/cpu%d/of_node/compatible", cpu_id);
+    fd = fopen(bdata(fname), "r");
+    if (fd == NULL)
+    {
+        ERROR_PRINT(Failed to detect PMU type for Apple M1);
+        bdestroy(fname);
+        return errno;
+    }
+    size_t read = fread(buff, sizeof(char), 100, fd);
+    if (read > 0)
+    {
+        if (strncmp("apple,icestorm", buff, 14) == 0)
+        {
+            *type = M1_ICESTORM;
+        }
+        else if (strncmp("apple,firestorm", buff, 15) == 0)
+        {
+            *type = M1_FIRESTORM;
+        }
+        bdestroy(fname);
+        return 0;
+    }
+    else
+    {
+        ERROR_PRINT(Cannot read %s, bdata(fname));
+    }
+    bdestroy(fname);
+    return -1;
+}
+#endif
+
+
 int perfmon_init_perfevent(int cpu_id)
 {
     perf_event_paranoid = perfevent_paranoid_value();
@@ -448,7 +492,7 @@ int perf_metrics_setup(struct perf_event_attr *attr, RegisterIndex index, Perfmo
     return 0;
 }
 
-int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
+int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterType type, PerfmonEvent *event)
 {
     int ret = 0;
     uint64_t offcore_flags = 0x0ULL;
@@ -460,6 +504,8 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     attr->exclude_hv = 1;
     attr->disabled = 1;
     attr->inherit = 1;
+    attr->exclude_guest = 1;
+
 
     num_formats = 0;
     formats = NULL;
@@ -477,10 +523,10 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     }
     else
     {
-        ret = parse_event_config(translate_types[PMC], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
+        ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
     }
 #else
-    ret = parse_event_config(translate_types[PMC], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
+    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
 #endif
     if (ret == 0)
     {
@@ -517,7 +563,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
         num_formats = 1;
     }
 #else
-    ret = parse_event_config(translate_types[PMC], perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], &num_formats, &formats);
+    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], &num_formats, &formats);
 #endif
     if (ret == 0)
     {
@@ -560,7 +606,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
                     ret = 0;
                     num_formats = 0;
                     formats = NULL;
-                    ret = parse_event_config(translate_types[PMC], perfEventOptionNames[event->options[j].type], &num_formats, &formats);
+                    ret = parse_event_config(translate_types[type], perfEventOptionNames[event->options[j].type], &num_formats, &formats);
                     if (ret == 0)
                     {
                         uint64_t optval = event->options[j].value;
@@ -609,7 +655,8 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
         ret = 0;
         num_formats = 0;
         formats = NULL;
-        ret = parse_event_config(translate_types[PMC], perfEventOptionNames[EVENT_OPTION_MATCH0], &num_formats, &formats);
+        ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_MATCH0], &num_formats, &formats);
+
         if (ret == 0)
         {
             uint64_t optval = offcore_flags;
@@ -636,7 +683,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     ret = 0;
     num_formats = 0;
     formats = NULL;
-    ret = parse_event_config(translate_types[PMC], perfEventOptionNames[EVENT_OPTION_PMC], &num_formats, &formats);
+    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_PMC], &num_formats, &formats);
     if (ret == 0)
     {
         uint64_t optval = getCounterTypeOffset(index)+1;
@@ -1002,10 +1049,38 @@ int perfmon_setupCountersThread_perfevent(
                         }
                     }
                 }
+                else if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO)
+                {
+                    enum apple_m1_pmc_type ptype = M1_UNKNOWN;
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Getting real perf_event type for HWThread %d, cpu_id);
+                    ret = perfevent_apple_m1_pmc_type_select(cpu_id, &ptype);
+                    if (ret == 0)
+                    {
+                        switch (ptype)
+                        {
+                            case M1_ICESTORM:
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, HWThread %d is an icestorm core, cpu_id);
+                                type = IPMC;
+                                break;
+                            case M1_FIRESTORM:
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, HWThread %d is an firestorm core, cpu_id);
+                                type = FPMC;
+                                break;
+                            default:
+                                pmc_lock = 0;
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        ERROR_PRINT(Failed getting real perf_event type for HWThread %d, cpu_id);
+                        pmc_lock = 0;
+                    }
+                }
 #endif
                 if (pmc_lock)
                 {
-                    ret = perf_pmc_setup(&attr, index, event);
+                    ret = perf_pmc_setup(&attr, index, type, event);
                     VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
                 }
                 break;
