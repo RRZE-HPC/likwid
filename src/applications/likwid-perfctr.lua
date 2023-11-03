@@ -351,12 +351,12 @@ for opt, arg in likwid.getopt(arg, cliopts) do
     elseif (opt == "H") then
         print_group_help = true
     elseif opt == "s" or opt == "skip" then
-        if arg:match("0x[0-9A-F]") then
+        if arg:match("0x[0-9A-Fa-f]") then
             skip_mask = arg
         else
-            if arg:match("[0-9A-F]") then
-                print_stderr("Given skip mask looks like hex, sanitizing arg to 0x" .. arg)
-                skip_mask = "0x" .. arg
+            if arg:match("[0-9A-Fa-f]") then
+                print_stderr("Given skip mask looks like hex, sanitizing arg to 0x"..arg)
+                skip_mask = "0x"..arg
             else
                 print_stderr("Skip mask must be given in hex")
             end
@@ -513,6 +513,11 @@ elseif num_cpus == 0 and
     not print_group_help and
     not print_info then
     print_stderr("CPUs given on commandline are not valid in current environment, maybe it's limited by a cpuset.")
+    perfctr_exit(1)
+end
+
+if use_timeline and outfile then
+    print_stderr("Redirecting output in timeline mode not supported")
     perfctr_exit(1)
 end
 

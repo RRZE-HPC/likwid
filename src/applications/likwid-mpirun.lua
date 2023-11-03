@@ -2197,7 +2197,20 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         outfile = arg
         print_stderr("WARN: The output file option is currently ignored. Will be available in upcoming releases")
     elseif opt == "s" or opt == "skip" then
-        skipStr = "-s "..arg
+        local skip_mask = nil
+        if arg:match("0x[0-9A-Fa-f]") then
+            skip_mask = arg
+        else
+            if arg:match("[0-9A-Fa-f]") then
+                print_stderr("Given skip mask looks like hex, sanitizing arg to 0x"..arg)
+                skip_mask = "0x"..arg
+            else
+                print_stderr("Skip mask must be given in hex, ignoring setting")
+            end
+        end
+        if skip_mask ~= nil then
+            skipStr = "-s "..skip_mask
+        end
     elseif opt == "mpiopts" then
         mpiopts = tostring(arg)
     elseif opt == "?" then

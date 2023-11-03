@@ -402,7 +402,7 @@ int icx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         case 0x36:
         case 0x35:
-            umask_ext_mask = 0x1FFFFF;
+            umask_ext_mask = 0xFFFFFF;
             break;
         case 0x34:
             umask_ext_mask = 0x1FFF;

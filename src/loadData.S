@@ -1,5 +1,5 @@
 .intel_syntax noprefix
-
+.section    .note.GNU-stack,"",@progbits
 .text
 .globl _loadData
 .type _loadData, @function

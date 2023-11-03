@@ -112,9 +112,9 @@ DEBUG = false#NO SPACE
 
 # Basic configuration for some internal arrays.
 # Maximal number of hardware threads
-MAX_NUM_THREADS = 300
+MAX_NUM_THREADS = 500
 # Maximal number of sockets
-MAX_NUM_NODES = 64
+MAX_NUM_NODES = 128
 # Maximal number of CLI parameters
 MAX_NUM_CLIARGS = 16384
 
@@ -128,8 +128,8 @@ TOPO_FILE_PATH = /etc/likwid_topo.cfg
 # Versioning Information
 # The libraries are named liblikwid.<VERSION>.<RELEASE>
 VERSION = 5
-RELEASE = 2
-MINOR = 3
+RELEASE = 3
+MINOR = 0
 # Date when the release is published
 DATE    = 12.12.2022
 

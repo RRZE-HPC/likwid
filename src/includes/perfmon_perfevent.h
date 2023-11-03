@@ -172,7 +172,6 @@ struct perf_event_config_format {
 };
 
 
-
 int parse_event_config(char* base, char* option, int* num_formats, struct perf_event_config_format **formats)
 {
     int err = 0;
@@ -288,6 +287,7 @@ int read_perf_event_type(char* folder)
     bdestroy(path);
     return type;
 }
+
 
 int apply_event_config(struct perf_event_attr *attr, uint64_t optval, int num_formats, struct perf_event_config_format *formats)
 {
@@ -759,11 +759,27 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
         if (ret == 0)
         {
             uint64_t umask = event->umask;
+            if (type >= CBOX0 && type <= CBOX59 && cpuid_info.isIntel && num_formats > 1
+                && (cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 || cpuid_info.model == SAPPHIRERAPIDS))
+            {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Applying special umask handling for CBOXes of Intel ICX and SPR chips);
+                for(int j = 0; j < event->numberOfOptions; j++)
+                {
+                    if (event->options[j].type == EVENT_OPTION_MATCH0)
+                    {
+                        DEBUG_PRINT(DEBUGLEV_DEVELOP, 0x%lX (0x%lX | (0x%lX << (%d - %d))), umask | (event->options[j].value << (formats[0].end - formats[0].start)), umask, event->options[j].value, formats[0].end, formats[0].start);
+                        umask |= (event->options[j].value << (formats[0].end - formats[0].start + 1));
+                        break;
+                    }
+                }
+            }
             for (int i = 0; i < num_formats && umask != 0x0; i++)
             {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Format %s from %d-%d with value 0x%lX, perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], formats[i].start, formats[i].end, umask);
                 switch(formats[i].reg)
                 {
                     case CONFIG:
+                        DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding 0x%lX to 0x%X, create_mask(umask, formats[i].start, formats[i].end), attr->config);
                         attr->config |= create_mask(umask, formats[i].start, formats[i].end);
                         break;
                     case CONFIG1:
@@ -824,14 +840,14 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                         }
                         free(formats);
                     }
-                    if (cpuid_info.family == P6_FAMILY && cpuid_info.model == SAPPHIRERAPIDS && event->options[j].type == EVENT_OPTION_MATCH0)
+                    /*if (cpuid_info.family == P6_FAMILY && cpuid_info.model == SAPPHIRERAPIDS && event->options[j].type == EVENT_OPTION_MATCH0)
                     {
                         attr->config |= (((uint64_t)event->options[j].value) & 0x3ffffff) << 32;
                     }
                     if (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2)) && event->options[j].type == EVENT_OPTION_MATCH0)
                     {
                         attr->config |= create_mask(event->options[j].value, 32, 57);
-                    }
+                    }*/
                     break;
                 default:
                     break;

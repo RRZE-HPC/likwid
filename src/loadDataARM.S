@@ -4,6 +4,7 @@
 .fpu    neon-vfpv4
 .globl  loadDataARM
 .align  2
+.section    .note.GNU-stack,"",@progbits
 .type   loadDataARM,%function
 loadDataARM:
 

@@ -70,7 +70,7 @@ power_init(int cpuId)
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Init power);
     if (!lock_check())
     {
-        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        ERROR_PRINT(Access to performance monitoring registers locked);
         return -ENOLCK;
     }
     init_configuration();
@@ -243,7 +243,7 @@ power_init(int cpuId)
         err = HPMaddThread(cpuId);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to RAPL counters)
+            ERROR_PRINT(Cannot get access to RAPL counters)
             return err;
         }
     }
@@ -280,7 +280,7 @@ power_init(int cpuId)
             err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT, &flags);
             if (err)
             {
-                fprintf(stderr,"Cannot gather values from MSR_TURBO_RATIO_LIMIT\n");
+                ERROR_PRINT(Cannot gather values from %s, "MSR_TURBO_RATIO_LIMIT");
             }
             else
             {
@@ -295,6 +295,7 @@ power_init(int cpuId)
                         err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT1, &flag_vals[1]);
                         if (err)
                         {
+                            ERROR_PRINT(Cannot read core limits from %s, "MSR_TURBO_RATIO_LIMIT1");
                             flag_vals[1] = 0;
                         }
                     }
@@ -303,6 +304,7 @@ power_init(int cpuId)
                         err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT2, &flag_vals[2]);
                         if (err)
                         {
+                            ERROR_PRINT(Cannot read core limits from %s, "MSR_TURBO_RATIO_LIMIT2");
                             flag_vals[2] = 0;
                         }
                     }
@@ -311,6 +313,7 @@ power_init(int cpuId)
                         err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT3, &flag_vals[3]);
                         if (err)
                         {
+                            ERROR_PRINT(Cannot read core limits from %s, "MSR_TURBO_RATIO_LIMIT3");
                             flag_vals[3] = 0;
                         }
                     }
@@ -335,7 +338,7 @@ power_init(int cpuId)
                     err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT_CORES, &flags_cores);
                     if (err)
                     {
-                        ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT_CORES);
+                        ERROR_PRINT(Cannot read core limits from %s, "MSR_TURBO_RATIO_LIMIT_CORES");
                         flags_cores = 0;
                     }
                     for (int i = 0; i < 8; i++)
@@ -356,7 +359,7 @@ power_init(int cpuId)
         }
         else
         {
-            fprintf(stderr,"Cannot gather values from MSR_PLATFORM_INFO\n");
+            ERROR_PRINT(Cannot gather values from %s, "MSR_PLATFORM_INFO");
         }
     }
 
@@ -479,7 +482,7 @@ power_init(int cpuId)
         }
         else
         {
-            fprintf(stderr,"Cannot gather values from unit register 0x%X, deactivating RAPL support\n", unit_reg);
+            DEBUG_PRINT(DEBUGLEV_INFO, Cannot gather values from unit register 0x%X. deactivating RAPL support, unit_reg);
             power_info.hasRAPL =  0;
         }
 
@@ -548,8 +551,7 @@ power_limitSet(int cpuId, PowerType domain, double power, double time, int doCla
     {
         return -EINVAL;
     }
-    fprintf(stderr, "Not implemented\n");
-    return 0;
+
 
     uint32_t X = (log(time) - log(power_info.timeUnit))/log(2);
     uint32_t powerField = (uint32_t)(power/(power_info.domains[domain].energyUnit));
@@ -564,7 +566,7 @@ power_limitSet(int cpuId, PowerType domain, double power, double time, int doCla
         err = HPMwrite(cpuId, MSR_DEV, limit_regs[domain], flags);
         if (err)
         {
-            fprintf(stderr, "Failed to set power limit for domain %s on CPU %d\n",power_names[domain], cpuId);
+            ERROR_PRINT(Failed to set power limit for domain %s on CPU %d,power_names[domain], cpuId);
             return -EFAULT;
         }
     }
@@ -588,7 +590,7 @@ power_limitGet(int cpuId, PowerType domain, double* power, double* time)
         err = HPMread(cpuId, MSR_DEV, limit_regs[domain], &flags);
         if (err)
         {
-            fprintf(stderr, "Failed to set power limit for domain %s on CPU %d\n",power_names[domain], cpuId);
+            ERROR_PRINT(Failed to set power limit for domain %s on CPU %d,power_names[domain], cpuId);
             return -EFAULT;
         }
         *power = ((double)extractBitField(flags, 15, 0)) * power_info.domains[domain].energyUnit;
