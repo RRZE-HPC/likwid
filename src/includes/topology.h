@@ -113,6 +113,7 @@ struct topology_functions {
 #define SNOWRIDGEX           0x86U
 #define TIGERLAKE1           0x8CU
 #define TIGERLAKE2           0x8DU
+#define SAPPHIRERAPIDS       0x8FU
 
 /* Intel MIC */
 #define XEON_PHI           0x01U
@@ -146,6 +147,8 @@ struct topology_functions {
 #define ZEN3_RYZEN      0x01
 #define ZEN3_RYZEN2     0x21
 #define ZEN3_RYZEN3     0x50
+#define ZEN4_RYZEN      0x61
+#define ZEN4_EPYC       0x11
 
 /* ARM */
 #define  ARM7L          0x3U
