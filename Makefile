@@ -122,8 +122,14 @@ OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
 ifneq ($(NVIDIA_INTERFACE), true)
 OBJ := $(filter-out $(BUILD_DIR)/nvmon.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/nvmon_nvml.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/topology_gpu.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/libnvctr.o,$(OBJ))
+endif
+ifneq ($(ROCM_INTERFACE), true)
+OBJ := $(filter-out $(BUILD_DIR)/rocmon.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/rocmon-marker.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/topology_gpu_rocm.o,$(OBJ))
 endif
 ifeq ($(COMPILER),GCCPOWER)
 OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
@@ -195,6 +201,7 @@ $(L_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$(L_APPS)))
 	@echo "===>  ADJUSTING  $@"
 	@if [ "$(ACCESSMODE)" = "direct" ]; then sed -i -e s/"access_mode = 1"/"access_mode = 0"/g $(SRC_DIR)/applications/$@.lua;fi
 	@sed -e s/'<INSTALLED_BINPREFIX>'/$(subst /,\\/,$(INSTALLED_BINPREFIX))/g \
+		-e s/'<INSTALLED_LIBPREFIX>'/$(subst /,\\/,$(INSTALLED_LIBPREFIX))/g \
 		-e s/'<INSTALLED_PREFIX>'/$(subst /,\\/,$(INSTALLED_PREFIX))/g \
 		-e s/'<VERSION>'/$(VERSION).$(RELEASE).$(MINOR)/g \
 		-e s/'<DATE>'/$(DATE)/g \
@@ -236,6 +243,7 @@ $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB)
 	@ln -sf $(TARGET_LIB) $(TARGET_LIB).$(VERSION).$(RELEASE)
 	@sed -e s+'@PREFIX@'+$(INSTALLED_PREFIX)+g \
 		-e s+'@NVIDIA_INTERFACE@'+$(NVIDIA_INTERFACE)+g \
+		-e s+'@ROCM_INTERFACE@'+$(ROCM_INTERFACE)+g \
 		-e s+'@FORTRAN_INTERFACE@'+$(FORTRAN_INTERFACE)+g \
 		-e s+'@LIBPREFIX@'+$(INSTALLED_LIBPREFIX)+g \
 		-e s+'@BINPREFIX@'+$(INSTALLED_BINPREFIX)+g \
@@ -302,6 +310,11 @@ $(BUILD_DIR)/%.o:  %.c
 	@echo "===>  COMPILE  $@"
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
+
+$(BUILD_DIR)/rocmon_marker.o:  rocmon_marker.c
+	@echo "===>  COMPILE $@"
+	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
+	$(Q)objcopy --redefine-sym HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE=HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE2 $@
 
 $(BUILD_DIR)/%.o:  %.cc
 	@echo "===>  COMPILE  $@"

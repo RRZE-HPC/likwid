@@ -1,0 +1,13 @@
+SHORT SALU Instructions
+
+EVENTSET
+ROCM0 ROCP_SQ_INSTS_SALU
+ROCM1 ROCP_SQ_WAVES
+
+METRICS
+GPU SALU insts per work-item ROCM0/ROCM1
+
+LONG
+--
+The average number of scalar ALU instructions executed per work-item 
+(affected by flow control).
