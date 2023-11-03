@@ -506,6 +506,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
     attr->inherit = 1;
     attr->exclude_guest = 1;
 
+
     num_formats = 0;
     formats = NULL;
 #if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
@@ -655,6 +656,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
         num_formats = 0;
         formats = NULL;
         ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_MATCH0], &num_formats, &formats);
+
         if (ret == 0)
         {
             uint64_t optval = offcore_flags;
@@ -804,7 +806,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
         if (ret == 0)
         {
             uint64_t umask = event->umask;
-            if (type >= CBOX0 && type <= CBOX39 && cpuid_info.isIntel && num_formats > 1
+            if (type >= CBOX0 && type <= CBOX59 && cpuid_info.isIntel && num_formats > 1
                 && (cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 || cpuid_info.model == SAPPHIRERAPIDS))
             {
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, Applying special umask handling for CBOXes of Intel ICX and SPR chips);
@@ -1149,6 +1151,216 @@ int perfmon_setupCountersThread_perfevent(
             case CBOX25:
             case CBOX26:
             case CBOX27:
+            case CBOX28:
+            case CBOX29:
+            case CBOX30:
+            case CBOX31:
+            case CBOX32:
+            case CBOX33:
+            case CBOX34:
+            case CBOX35:
+            case CBOX36:
+            case CBOX37:
+            case CBOX38:
+            case CBOX39:
+            case CBOX40:
+            case CBOX41:
+            case CBOX42:
+            case CBOX43:
+            case CBOX44:
+            case CBOX45:
+            case CBOX46:
+            case CBOX47:
+            case CBOX48:
+            case CBOX49:
+            case CBOX50:
+            case CBOX51:
+            case CBOX52:
+            case CBOX53:
+            case CBOX54:
+            case CBOX55:
+            case CBOX56:
+            case CBOX57:
+            case CBOX58:
+            case CBOX59:
+            case MDF0:
+            case MDF1:
+            case MDF2:
+            case MDF3:
+            case MDF4:
+            case MDF5:
+            case MDF6:
+            case MDF7:
+            case MDF8:
+            case MDF9:
+            case MDF10:
+            case MDF11:
+            case MDF12:
+            case MDF13:
+            case MDF14:
+            case MDF15:
+            case MDF16:
+            case MDF17:
+            case MDF18:
+            case MDF19:
+            case MDF20:
+            case MDF21:
+            case MDF22:
+            case MDF23:
+            case MDF24:
+            case MDF25:
+            case MDF26:
+            case MDF27:
+            case MDF28:
+            case MDF29:
+            case MDF30:
+            case MDF31:
+            case MDF32:
+            case MDF33:
+            case MDF34:
+            case MDF35:
+            case MDF36:
+            case MDF37:
+            case MDF38:
+            case MDF39:
+            case MDF40:
+            case MDF41:
+            case MDF42:
+            case MDF43:
+            case MDF44:
+            case MDF45:
+            case MDF46:
+            case MDF47:
+            case MDF48:
+            case MDF49:
+            case UBOX:
+            case UBOXFIX:
+            case SBOX0:
+            case SBOX1:
+            case SBOX2:
+            case SBOX3:
+            case QBOX0:
+            case QBOX1:
+            case QBOX2:
+            case QBOX3:
+            case WBOX:
+            case PBOX:
+            case RBOX0:
+            case RBOX1:
+            case RBOX2:
+            case RBOX3:
+            case BBOX0:
+            case BBOX1:
+            case BBOX2:
+            case BBOX3:
+            case BBOX4:
+            case BBOX5:
+            case BBOX6:
+            case BBOX7:
+            case BBOX8:
+            case BBOX9:
+            case BBOX10:
+            case BBOX11:
+            case BBOX12:
+            case BBOX13:
+            case BBOX14:
+            case BBOX15:
+            case BBOX16:
+            case BBOX17:
+            case BBOX18:
+            case BBOX19:
+            case BBOX20:
+            case BBOX21:
+            case BBOX22:
+            case BBOX23:
+            case BBOX24:
+            case BBOX25:
+            case BBOX26:
+            case BBOX27:
+            case BBOX28:
+            case BBOX29:
+            case BBOX30:
+            case BBOX31:
+            case EDBOX0:
+            case EDBOX1:
+            case EDBOX2:
+            case EDBOX3:
+            case EDBOX4:
+            case EDBOX5:
+            case EDBOX6:
+            case EDBOX7:
+            case EUBOX0:
+            case EUBOX1:
+            case EUBOX2:
+            case EUBOX3:
+            case EUBOX4:
+            case EUBOX5:
+            case EUBOX6:
+            case EUBOX7:
+            case IBOX0:
+            case IBOX1:
+            case IBOX2:
+            case IBOX3:
+            case IBOX4:
+            case IBOX5:
+            case IBOX6:
+            case IBOX7:
+            case IBOX8:
+            case IBOX9:
+            case IBOX10:
+            case IBOX11:
+            case IBOX12:
+            case IBOX13:
+            case IBOX14:
+            case IBOX15:
+            case IRP0:
+            case IRP1:
+            case IRP2:
+            case IRP3:
+            case IRP4:
+            case IRP5:
+            case IRP6:
+            case IRP7:
+            case IRP8:
+            case IRP9:
+            case IRP10:
+            case IRP11:
+            case IRP12:
+            case IRP13:
+            case IRP14:
+            case IRP15:
+            case HBM0:
+            case HBM1:
+            case HBM2:
+            case HBM3:
+            case HBM4:
+            case HBM5:
+            case HBM6:
+            case HBM7:
+            case HBM8:
+            case HBM9:
+            case HBM10:
+            case HBM11:
+            case HBM12:
+            case HBM13:
+            case HBM14:
+            case HBM15:
+            case HBM16:
+            case HBM17:
+            case HBM18:
+            case HBM19:
+            case HBM20:
+            case HBM21:
+            case HBM22:
+            case HBM23:
+            case HBM24:
+            case HBM25:
+            case HBM26:
+            case HBM27:
+            case HBM28:
+            case HBM29:
+            case HBM30:
+            case HBM31:
                 if (cpuid_info.family == ZEN_FAMILY && type == MBOX0)
                 {
                     if (die_lock[affinity_thread2die_lookup[cpu_id]] == cpu_id)

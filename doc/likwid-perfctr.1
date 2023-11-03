@@ -1,6 +1,6 @@
 .TH LIKWID-PERFCTR 1 <DATE> likwid\-<VERSION>
 .SH NAME
-likwid-perfctr \- configure and read out hardware performance counters on x86, ARM and POWER CPUs and Nvidia GPUs
+likwid-perfctr \- configure and read out hardware performance counters on x86, ARM and POWER CPUs and Nvidia/AMD GPUs
 .SH SYNOPSIS
 .B likwid-perfctr
 .RB [\-vhHmaiefO]
@@ -34,6 +34,12 @@ or
 .IR gpu_performance_group
 or
 .IR gpu_performance_event_string (*) ]
+.RB [ \-I
+.IR gpu_list (**) ]
+.RB [ \-R
+.IR gpu_performance_group
+or
+.IR gpu_performance_event_string (**) ]
 .RB [ \-\-stats ]
 .SH DESCRIPTION
 .B likwid-perfctr
@@ -44,6 +50,7 @@ There are preconfigured performance groups with useful event sets and derived me
 events can be measured with custom event sets. The marker API can measure mulitple named regions and the
 results are accumulated over multiple region calls.
 .IR (*) Option only available if built with Nvidia GPU support
+.IR (**) Option only available if built with AMD GPU support
 
 .SH OPTIONS
 .TP
@@ -66,7 +73,7 @@ run in marker API mode
 print available performance groups for current processor, then exit.
 .TP
 .B \-\^e
-print available counters and performance events of current processor and (if available) Nvidia GPUs.
+print available counters and performance events of current processor and (if available) Nvidia or AMD GPUs.
 .TP
 .B \-\^o, \-\-\^output <filename>
 store all ouput to a file instead of stdout. For the filename the following placeholders are supported:
@@ -116,11 +123,21 @@ Force writing of registers even if they are in use.
 Print only events and corresponding counters matching <search_str>
 .TP
 .B \-\^G, \-\-\^gpus <gpu_list>
-specify a numerical list of GPU IDs. The list may contain multiple
+specify a numerical list of Nvidia GPU IDs. The list may contain multiple
 items, separated by comma, and ranges. For example 0,3,9-11.
 .TP
 .B \-\^W, \-\-\^gpugroup <gpu performance group> or <gpu performance event set string>
 specify which performance group to measure on the specified Nvidia GPUs.
+This can be one of the tags output with the -a flag in the GPU section.
+Also a custom event set can be specified by a comma separated list of events. Each event has the format
+eventId:GPUx (x=0,1,2,...). You can add as many events to the string until you hit an error.
+.TP
+.B \-\^I, \-\-\^gpus <gpu_list>
+specify a numerical list of AMD GPU IDs. The list may contain multiple
+items, separated by comma, and ranges. For example 0,3,9-11.
+.TP
+.B \-\^R, \-\-\^gpugroup <gpu performance group> or <gpu performance event set string>
+specify which performance group to measure on the specified AMD GPUs.
 This can be one of the tags output with the -a flag in the GPU section.
 Also a custom event set can be specified by a comma separated list of events. Each event has the format
 eventId:GPUx (x=0,1,2,...). You can add as many events to the string until you hit an error.

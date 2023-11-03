@@ -160,14 +160,14 @@ after = {}
 sock_cpulist = {}
 if #sockets == 0 then
     for i, domain in pairs(affinity["domains"]) do
-        if domain["tag"]:match("S%d+") then
+        if domain["tag"]:match("S%d+") and domain["numberOfProcessors"] > 0 then
             sid = domain["tag"]:match("S(%d+)")
             table.insert(sockets, sid)
         end
     end
 end
 for i, sid in pairs(sockets) do
-    pin = string.format("S%s:0-%d", tostring(sid), cputopo["numCoresPerSocket"]-1)
+    pin = string.format("S%s", tostring(sid))
     _, sock_cpulist[sid] = likwid.cpustr_to_cpulist(pin)
     before[sock_cpulist[sid][1]] = {}
     after[sock_cpulist[sid][1]] = {}

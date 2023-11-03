@@ -140,12 +140,17 @@ for opt,arg in likwid.getopt(arg, {"c:", "C:", "d:", "h", "i", "m", "p", "q", "s
     elseif (opt == "p") then
         print_domains = true
     elseif opt == "s" or opt == "skip" then
-        local s,e = arg:find("0x")
-        if s == nil then
-            print_stderr("Skip mask must be given in hex, hence start with 0x")
-            close_and_exit(1)
+        if arg:match("0x[0-9A-Fa-f]") then
+            skip_mask = arg
+        else
+            if arg:match("[0-9A-Fa-f]") then
+                print_stderr("Given skip mask looks like hex, sanitizing arg to 0x"..arg)
+                skip_mask = "0x"..arg
+            else
+                print_stderr("Skip mask must be given in hex")
+                close_and_exit(1)
+            end
         end
-        skip_mask = arg
     elseif opt == "q" or opt == "quiet" then
         likwid.setenv("LIKWID_SILENT","true")
         quiet = 1

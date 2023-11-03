@@ -26,11 +26,13 @@
 #
 # =======================================================================================
 
-SRC_DIR     = ./src
-DOC_DIR     = ./doc
-GROUP_DIR   = ./groups
-FILTER_DIR  = ./filters
-MAKE_DIR    = ./make
+BASE_DIR    = $(shell pwd)
+SRC_DIR     = $(BASE_DIR)/src
+DOC_DIR     = $(BASE_DIR)/doc
+GROUP_DIR   = $(BASE_DIR)/groups
+FILTER_DIR  = $(BASE_DIR)/filters
+MAKE_DIR    = $(BASE_DIR)/make
+EXAMPLES_DIR    = $(BASE_DIR)/examples
 
 Q         ?= @
 
@@ -120,8 +122,14 @@ OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
 ifneq ($(NVIDIA_INTERFACE), true)
 OBJ := $(filter-out $(BUILD_DIR)/nvmon.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/nvmon_nvml.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/topology_gpu.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/libnvctr.o,$(OBJ))
+endif
+ifneq ($(ROCM_INTERFACE), true)
+OBJ := $(filter-out $(BUILD_DIR)/rocmon.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/rocmon-marker.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/topology_gpu_rocm.o,$(OBJ))
 endif
 ifeq ($(COMPILER),GCCPOWER)
 OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
@@ -145,7 +153,7 @@ PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildc
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
 OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)
 OBJ_GOTCHA = $(wildcard ./ext/GOTCHA/$(COMPILER)/*.o)
-FILTERS := $(filter-out ./filters/README,$(wildcard ./filters/*))
+FILTERS := $(filter-out $(FILTER_DIR)/README,$(wildcard $(FILTER_DIR)/*))
 
 
 L_APPS      =   likwid-perfctr \
@@ -193,6 +201,7 @@ $(L_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$(L_APPS)))
 	@echo "===>  ADJUSTING  $@"
 	@if [ "$(ACCESSMODE)" = "direct" ]; then sed -i -e s/"access_mode = 1"/"access_mode = 0"/g $(SRC_DIR)/applications/$@.lua;fi
 	@sed -e s/'<INSTALLED_BINPREFIX>'/$(subst /,\\/,$(INSTALLED_BINPREFIX))/g \
+		-e s/'<INSTALLED_LIBPREFIX>'/$(subst /,\\/,$(INSTALLED_LIBPREFIX))/g \
 		-e s/'<INSTALLED_PREFIX>'/$(subst /,\\/,$(INSTALLED_PREFIX))/g \
 		-e s/'<VERSION>'/$(VERSION).$(RELEASE).$(MINOR)/g \
 		-e s/'<DATE>'/$(DATE)/g \
@@ -234,6 +243,7 @@ $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB)
 	@ln -sf $(TARGET_LIB) $(TARGET_LIB).$(VERSION).$(RELEASE)
 	@sed -e s+'@PREFIX@'+$(INSTALLED_PREFIX)+g \
 		-e s+'@NVIDIA_INTERFACE@'+$(NVIDIA_INTERFACE)+g \
+		-e s+'@ROCM_INTERFACE@'+$(ROCM_INTERFACE)+g \
 		-e s+'@FORTRAN_INTERFACE@'+$(FORTRAN_INTERFACE)+g \
 		-e s+'@LIBPREFIX@'+$(INSTALLED_LIBPREFIX)+g \
 		-e s+'@BINPREFIX@'+$(INSTALLED_BINPREFIX)+g \
@@ -301,6 +311,11 @@ $(BUILD_DIR)/%.o:  %.c
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
+$(BUILD_DIR)/rocmon_marker.o:  rocmon_marker.c
+	@echo "===>  COMPILE $@"
+	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
+	$(Q)objcopy --redefine-sym HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE=HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE2 $@
+
 $(BUILD_DIR)/%.o:  %.cc
 	@echo "===>  COMPILE  $@"
 	$(Q)$(CXX) -c $(DEBUG_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
@@ -364,7 +379,7 @@ ifneq ($(COMPILER),MIC)
 install_daemon:
 	@echo "===> INSTALL access daemon to $(ACCESSDAEMON)"
 	@mkdir -p `dirname $(ACCESSDAEMON)`
-	@install -m 4755 $(INSTALL_CHOWN) $(DAEMON_TARGET) $(ACCESSDAEMON)
+	install -m 4755 $(INSTALL_CHOWN) $(DAEMON_TARGET) $(ACCESSDAEMON)
 move_daemon:
 	@echo "===> MOVE access daemon from $(ACCESSDAEMON) to $(INSTALLED_ACCESSDAEMON)"
 	@mkdir -p `dirname $(INSTALLED_ACCESSDAEMON)`
@@ -528,25 +543,25 @@ install: install_daemon install_freq install_appdaemon
 	@echo "===> INSTALL headers to $(PREFIX)/include"
 	@mkdir -p $(PREFIX)/include
 	@chmod 755 $(PREFIX)/include
-	@install -m 644 src/includes/likwid.h  $(PREFIX)/include/
+	@install -m 644 $(SRC_DIR)/includes/likwid.h  $(PREFIX)/include/
 	@sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<GITCOMMIT>/$(GITCOMMIT)/g" -e "s/<MINOR>/$(MINOR)/g" $(PREFIX)/include/likwid.h
-	@install -m 644 src/includes/likwid-marker.h  $(PREFIX)/include/
-	@install -m 644 src/includes/bstrlib.h  $(PREFIX)/include/
+	@install -m 644 $(SRC_DIR)/includes/likwid-marker.h  $(PREFIX)/include/
+	@install -m 644 $(SRC_DIR)/includes/bstrlib.h  $(PREFIX)/include/
 	$(FORTRAN_INSTALL)
 	@echo "===> INSTALL groups to $(PREFIX)/share/likwid/perfgroups"
 	@mkdir -p $(PREFIX)/share/likwid/perfgroups
 	@chmod 755 $(PREFIX)/share/likwid
 	@chmod 755 $(PREFIX)/share/likwid/perfgroups
-	@cp -rf groups/* $(PREFIX)/share/likwid/perfgroups
+	@cp -rf $(GROUP_DIR)/* $(PREFIX)/share/likwid/perfgroups
 	@chmod 755 $(PREFIX)/share/likwid/perfgroups/*
 	@find $(PREFIX)/share/likwid/perfgroups -name "*.txt" -exec chmod 644 {} \;
 	@echo "===> INSTALL docs and examples to $(PREFIX)/share/likwid/docs"
 	@mkdir -p $(PREFIX)/share/likwid/docs
 	@chmod 755 $(PREFIX)/share/likwid/docs
-	@install -m 644 doc/bstrlib.txt $(PREFIX)/share/likwid/docs
+	@install -m 644 $(DOC_DIR)/bstrlib.txt $(PREFIX)/share/likwid/docs
 	@mkdir -p $(PREFIX)/share/likwid/examples
 	@chmod 755 $(PREFIX)/share/likwid/examples
-	@install -m 644 examples/* $(PREFIX)/share/likwid/examples
+	@install -m 644 $(EXAMPLES_DIR)/* $(PREFIX)/share/likwid/examples
 	@echo "===> INSTALL filters to $(abspath $(PREFIX)/share/likwid/filter)"
 	@mkdir -p $(abspath $(PREFIX)/share/likwid/filter)
 	@chmod 755 $(abspath $(PREFIX)/share/likwid/filter)
@@ -554,7 +569,7 @@ install: install_daemon install_freq install_appdaemon
 		install -m 755 $$F  $(abspath $(PREFIX)/share/likwid/filter); \
 	done
 	@echo "===> INSTALL cmake to $(abspath $(PREFIX)/share/likwid)"
-	@install -m 644 likwid-config.cmake $(PREFIX)/share/likwid
+	@install -m 644 $(PWD)/likwid-config.cmake $(PREFIX)/share/likwid
 
 move: move_daemon move_freq move_appdaemon
 	@echo "===> MOVE applications from $(BINPREFIX) to $(INSTALLED_BINPREFIX)"
@@ -614,7 +629,7 @@ move: move_daemon move_freq move_appdaemon
 	@install -m 644 $(PREFIX)/share/likwid/docs/bstrlib.txt $(INSTALLED_PREFIX)/share/likwid/docs
 	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/examples
 	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/examples
-	@install -m 644 examples/* $(INSTALLED_PREFIX)/share/likwid/examples
+	@install -m 644 $(EXAMPLES_DIR)/* $(INSTALLED_PREFIX)/share/likwid/examples
 	@echo "===> MOVE filters from $(abspath $(PREFIX)/share/likwid/filter) to $(LIKWIDFILTERPATH)"
 	@mkdir -p $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)
@@ -758,3 +773,65 @@ help:
 	@echo "The common configuration is INSTALLED_PREFIX = PREFIX, so changing PREFIX is enough."
 	@echo "If PREFIX and INSTALLED_PREFIX differ, you have to move anything after 'make install' to"
 	@echo "the INSTALLED_PREFIX. You can also use 'make move' which does the job for you."
+
+.ONESHELL:
+.PHONY: RPM
+RPM: packaging/rpm/likwid.spec
+	@WORKSPACE="$${PWD}"
+	@SPECFILE="$${WORKSPACE}/packaging/rpm/likwid.spec"
+	# Setup RPM build tree
+	@eval $$(rpm --eval "ARCH='%{_arch}' RPMDIR='%{_rpmdir}' SOURCEDIR='%{_sourcedir}' SPECDIR='%{_specdir}' SRPMDIR='%{_srcrpmdir}' BUILDDIR='%{_builddir}'")
+	@mkdir --parents --verbose "$${RPMDIR}" "$${SOURCEDIR}" "$${SPECDIR}" "$${SRPMDIR}" "$${BUILDDIR}"
+	# Create source tarball
+	@COMMITISH="HEAD"
+	@VERS=$$(git describe --tags --abbrev=0 $${COMMITISH})
+	@VERS=$${VERS#v}
+	@VERS=$$(echo $$VERS | sed -e s+'-'+'_'+g)
+	@if [ "$${VERS}" = "" ]; then VERS="$(VERSION).$(RELEASE).$(MINOR)"; fi
+	@eval $$(rpmspec --query --queryformat "NAME='%{name}' VERSION='%{version}' RELEASE='%{release}' NVR='%{NVR}' NVRA='%{NVRA}'" --define="VERS $${VERS}" "$${SPECFILE}")
+	@PREFIX="$${NAME}-$${VERSION}"
+	@FORMAT="tar.gz"
+	@SRCFILE="$${SOURCEDIR}/$${PREFIX}.$${FORMAT}"
+	@git archive --verbose --format "$${FORMAT}" --prefix="$${PREFIX}/" --output="$${SRCFILE}" $${COMMITISH}
+	# Build RPM and SRPM
+	@rpmbuild -ba --define="VERS $${VERS}" --rmsource --clean "$${SPECFILE}"
+	# Report RPMs and SRPMs when in GitHub Workflow
+	@if [[ "$${GITHUB_ACTIONS}" == true ]]; then
+	@     RPMFILE="$${RPMDIR}/$${ARCH}/$${NVRA}.rpm"
+	@     SRPMFILE="$${SRPMDIR}/$${NVR}.src.rpm"
+	@     echo "RPM: $${RPMFILE}"
+	@     echo "SRPM: $${SRPMFILE}"
+	@     echo "::set-output name=SRPM::$${SRPMFILE}"
+	@     echo "::set-output name=RPM::$${RPMFILE}"
+	@fi
+
+.PHONY: DEB
+DEB: packaging/deb/likwid.deb.control
+	@BASEDIR=$${PWD}
+	@WORKSPACE=$${PWD}/.dpkgbuild
+	@DEBIANDIR=$${WORKSPACE}/debian
+	@DEBIANBINDIR=$${WORKSPACE}/DEBIAN
+	@mkdir --parents --verbose $$WORKSPACE $$DEBIANBINDIR
+	@make PREFIX=$$WORKSPACE INSTALLED_PREFIX=$(PREFIX)
+	#@mkdir --parents --verbose $$DEBIANDIR
+	@CONTROLFILE="$${BASEDIR}/packaging/deb/likwid.deb.control"
+	@COMMITISH="HEAD"
+	@VERS=$$(git describe --tags --abbrev=0 $${COMMITISH})
+	@VERS=$${VERS#v}
+	@VERS=$$(echo $$VERS | sed -e s+'-'+'_'+g)
+	@ARCH=$$(uname -m)
+	@ARCH=$$(echo $$ARCH | sed -e s+'_'+'-'+g)
+	@if [ "$${ARCH}" = "x86-64" ]; then ARCH=amd64; fi
+	@if [ "$${VERS}" = "" ]; then VERS="$(VERSION).$(RELEASE).$(MINOR)"; fi
+	@PREFIX="$${NAME}-$${VERSION}_$${ARCH}"
+	@SIZE_BYTES=$$(du -bcs --exclude=.dpkgbuild "$$WORKSPACE"/ | awk '{print $$1}' | head -1 | sed -e 's/^0\+//')
+	@SIZE="$$(awk -v size="$$SIZE_BYTES" 'BEGIN {print (size/1024)+1}' | awk '{print int($$0)}')"
+	#@sed -e s+"{VERSION}"+"$$VERS"+g -e s+"{INSTALLED_SIZE}"+"$$SIZE"+g -e s+"{ARCH}"+"$$ARCH"+g $$CONTROLFILE > $${DEBIANDIR}/control
+	@sed -e s+"{VERSION}"+"$$VERS"+g -e s+"{INSTALLED_SIZE}"+"$$SIZE"+g -e s+"{ARCH}"+"$$ARCH"+g $$CONTROLFILE > $${DEBIANBINDIR}/control
+	@sudo make PREFIX=$$WORKSPACE INSTALLED_PREFIX=$(PREFIX) install
+	@DEB_FILE="likwid_$${VERS}_$${ARCH}.deb"
+	@dpkg-deb -b $${WORKSPACE} "$$DEB_FILE"
+	@sudo rm -r "$${WORKSPACE}"
+	@if [ "$${GITHUB_ACTIONS}" = "true" ]; then
+	@     echo "::set-output name=DEB::$${DEB_FILE}"
+	@fi

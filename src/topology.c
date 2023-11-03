@@ -93,6 +93,7 @@ static char* icelake_str = "Intel Icelake processor";
 static char* tigerlake_str = "Intel Tigerlake processor";
 static char* icelakesp_str = "Intel Icelake SP processor";
 static char* rocketlake_str = "Intel Rocketlake processor";
+static char* sapphire_rapids_str = "Intel SapphireRapids processor";
 //static char* snowridgex_str = "Intel SnowridgeX processor";
 
 static char* barcelona_str = "AMD K10 (Barcelona) processor";
@@ -114,6 +115,7 @@ static char* amd_zen_str = "AMD K17 (Zen) architecture";
 static char* amd_zenplus_str = "AMD K17 (Zen+) architecture";
 static char* amd_zen2_str = "AMD K17 (Zen2) architecture";
 static char* amd_zen3_str = "AMD K19 (Zen3) architecture";
+static char* amd_zen4_str = "AMD K19 (Zen4) architecture";
 static char* armv7l_str = "ARM 7l architecture";
 static char* armv8_str = "ARM 8 architecture";
 static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
@@ -123,6 +125,8 @@ static char* arm_cortex_a53 = "ARM Cortex A53";
 static char* arm_cortex_a72 = "ARM Cortex A72";
 static char* arm_cortex_a73 = "ARM Cortex A73";
 static char* arm_neoverse_n1 = "ARM Neoverse N1";
+static char* arm_neoverse_v1 = "ARM Neoverse V1";
+static char* arm_huawei_tsv110 = "Huawei TSV110 (ARMv8)";
 static char* fujitsu_a64fx = "Fujitsu A64FX";
 static char* apple_m1_studio = "Apple M1";
 static char* power7_str = "POWER7 architecture";
@@ -158,6 +162,7 @@ static char* short_kabylake = "skylake";
 static char* short_cascadelakeX = "CLX";
 static char* short_cannonlake = "cannonlake";
 static char* short_tigerlake = "TGL";
+static char* short_sapphire_rapids = "SPR";
 static char* short_phi = "phi";
 static char* short_phi2 = "knl";
 static char* short_icelake = "ICL";
@@ -172,12 +177,14 @@ static char* short_k16 = "kabini";
 static char* short_zen = "zen";
 static char* short_zen2 = "zen2";
 static char* short_zen3 = "zen3";
+static char* short_zen4 = "zen4";
 
 static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
 static char* short_arm8_cav_tx2 = "arm8_tx2";
 static char* short_arm8_cav_tx = "arm8_tx";
 static char* short_arm8_neo_n1 = "arm8_n1";
+static char* short_arm8_neo_v1 = "arm8_v1";
 static char* short_a64fx = "arm64fx";
 static char* short_apple_m1 = "apple_m1";
 
@@ -966,6 +973,13 @@ topology_setName(void)
                     cpuid_info.short_name = short_tigerlake;
                     break;
 
+                case SAPPHIRERAPIDS:
+                    cpuid_info.supportUncore = 1;
+                    cpuid_info.supportClientmem = 0;
+                    cpuid_info.name = sapphire_rapids_str;
+                    cpuid_info.short_name = short_sapphire_rapids;
+                    break;
+
                 default:
                     cpuid_info.name = unknown_intel_str;
                     cpuid_info.short_name = short_unknown;
@@ -1121,17 +1135,18 @@ topology_setName(void)
             switch (cpuid_info.model)
             {
                 case ZEN3_RYZEN:
-                    cpuid_info.name = amd_zen3_str;
-                    cpuid_info.short_name = short_zen3;
-                    break;
                 case ZEN3_RYZEN2:
-                    cpuid_info.name = amd_zen3_str;
-                    cpuid_info.short_name = short_zen3;
-                    break;
                 case ZEN3_RYZEN3:
+                case ZEN3_EPYC_TRENTO:
                     cpuid_info.name = amd_zen3_str;
                     cpuid_info.short_name = short_zen3;
                     break;
+                case ZEN4_RYZEN:
+                case ZEN4_EPYC:
+                    cpuid_info.name = amd_zen4_str;
+                    cpuid_info.short_name = short_zen4;
+                    break;
+
             }
             break;
 
@@ -1190,6 +1205,10 @@ topology_setName(void)
                             cpuid_info.name = arm_neoverse_n1;
                             cpuid_info.short_name = short_arm8_neo_n1;
                             break;
+                        case AWS_GRAVITON3:
+                            cpuid_info.name = arm_neoverse_v1;
+                            cpuid_info.short_name = short_arm8_neo_v1;
+                            break;
                         default:
                             return EXIT_FAILURE;
                             break;
@@ -1227,21 +1246,33 @@ topology_setName(void)
                             return EXIT_FAILURE;
                             break;
                     }
-		    break;
-		case APPLE_M1:
-		case APPLE:
-		    switch (cpuid_info.model)
-		    {
-			case APPLE_M1_STUDIO:
-		            cpuid_info.name = apple_m1_studio;
+                    break;
+                case APPLE_M1:
+                case APPLE:
+                    switch (cpuid_info.model)
+                    {
+                        case APPLE_M1_STUDIO:
+                            cpuid_info.name = apple_m1_studio;
                             cpuid_info.short_name = short_apple_m1;
                             break;
                         default:
                             return EXIT_FAILURE;
                             break;
+                    }
+                    break;
+                case HUAWEI_ARM:
+                    switch (cpuid_info.part)
+                    {
+                        case HUAWEI_TSV110:
+                            cpuid_info.name = arm_huawei_tsv110;
+                            cpuid_info.short_name = short_arm8;
+                            break;
+                        default:
+                            return EXIT_FAILURE;
+                            break;
 
-		    }
-		    break;
+                    }
+                    break;
                 default:
                     return EXIT_FAILURE;
                     break;
@@ -1653,6 +1684,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",amd_zen_str);
     printf("\t%s\n",amd_zen2_str);
     printf("\t%s\n",amd_zen3_str);
+    printf("\t%s\n",amd_zen4_str);
     printf("\n");
     printf("Supported ARMv8 processors:\n");
     printf("\t%s\n",arm_cortex_a53);

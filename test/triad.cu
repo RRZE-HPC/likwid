@@ -13,21 +13,21 @@
  *
  *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
  *
- *      This program is free software: you can redistribute it and/or modify it under
- *      the terms of the GNU General Public License as published by the Free Software
- *      Foundation, either version 3 of the License, or (at your option) any later
- *      version.
+ *      This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
  *
- *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
- *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *      This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
  *
- *      You should have received a copy of the GNU General Public License along with
- *      this program.  If not, see <http://www.gnu.org/licenses/>.
+ *      You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * =======================================================================================
  */
-
 
 #include <iomanip>
 #include <iostream>
@@ -80,10 +80,9 @@ __global__ void sch_triad_kernel(T *A, const T *__restrict__ B,
 
 int main(int argc, char **argv) {
 
-    const size_t buffer_size = 128 * 1024 * 1024;
+  const size_t buffer_size = 128 * 1024 * 1024;
   const int iters = 10;
   const int block_size = 512;
-
 
   int deviceCount = 0;
   GPU_ERROR(cudaGetDeviceCount(&deviceCount));
@@ -91,59 +90,60 @@ int main(int argc, char **argv) {
   LIKWID_NVMARKER_INIT;
   LIKWID_NVMARKER_REGISTER("triad");
 
-  #pragma omp parallel num_threads(deviceCount)
+#pragma omp parallel num_threads(deviceCount)
   {
-      GPU_ERROR(cudaSetDevice(omp_get_thread_num()));
+    GPU_ERROR(cudaSetDevice(omp_get_thread_num()));
 
-      double *dA, *dB, *dC, *dD;
+    double *dA, *dB, *dC, *dD;
 
-      GPU_ERROR(cudaMalloc(&dA, buffer_size * sizeof(double)));
-      GPU_ERROR(cudaMalloc(&dB, buffer_size * sizeof(double)));
-      GPU_ERROR(cudaMalloc(&dC, buffer_size * sizeof(double)));
-      GPU_ERROR(cudaMalloc(&dD, buffer_size * sizeof(double)));
+    GPU_ERROR(cudaMalloc(&dA, buffer_size * sizeof(double)));
+    GPU_ERROR(cudaMalloc(&dB, buffer_size * sizeof(double)));
+    GPU_ERROR(cudaMalloc(&dC, buffer_size * sizeof(double)));
+    GPU_ERROR(cudaMalloc(&dD, buffer_size * sizeof(double)));
 
-      init_kernel<<<256, 400>>>(dA, dA, dA, dA, buffer_size);
-      init_kernel<<<256, 400>>>(dB, dB, dB, dB, buffer_size);
-      init_kernel<<<256, 400>>>(dC, dC, dC, dC, buffer_size);
-      init_kernel<<<256, 400>>>(dD, dD, dD, dD, buffer_size);
-      GPU_ERROR(cudaDeviceSynchronize());
+    init_kernel<<<256, 400>>>(dA, dA, dA, dA, buffer_size);
+    init_kernel<<<256, 400>>>(dB, dB, dB, dB, buffer_size);
+    init_kernel<<<256, 400>>>(dC, dC, dC, dC, buffer_size);
+    init_kernel<<<256, 400>>>(dD, dD, dD, dD, buffer_size);
+    GPU_ERROR(cudaDeviceSynchronize());
 
-      cudaDeviceProp prop;
-      int deviceId;
-      GPU_ERROR(cudaGetDevice(&deviceId));
-      GPU_ERROR(cudaGetDeviceProperties(&prop, deviceId));
-      int smCount = prop.multiProcessorCount;
-      int maxActiveBlocks = 0;
-      GPU_ERROR(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
-                    &maxActiveBlocks, sch_triad_kernel<double>, block_size, 0));
+    cudaDeviceProp prop;
+    int deviceId;
+    GPU_ERROR(cudaGetDevice(&deviceId));
+    GPU_ERROR(cudaGetDeviceProperties(&prop, deviceId));
+    int smCount = prop.multiProcessorCount;
+    int maxActiveBlocks = 0;
+    GPU_ERROR(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+        &maxActiveBlocks, sch_triad_kernel<double>, block_size, 0));
 
-      int max_blocks = maxActiveBlocks * smCount;
+    int max_blocks = maxActiveBlocks * smCount;
 
+    sch_triad_kernel<double>
+        <<<max_blocks, block_size>>>(dA, dB, dC, dD, buffer_size);
 
+    GPU_ERROR(cudaDeviceSynchronize());
+    double t1 = dtime();
+    for (int i = 0; i < iters; i++) {
+      LIKWID_NVMARKER_START("triad");
       sch_triad_kernel<double>
           <<<max_blocks, block_size>>>(dA, dB, dC, dD, buffer_size);
+      LIKWID_NVMARKER_STOP("triad");
+    }
+    GPU_ERROR(cudaGetLastError());
+    GPU_ERROR(cudaDeviceSynchronize());
+    double t2 = dtime();
 
-      GPU_ERROR(cudaDeviceSynchronize());
-      double t1 = dtime();
-      for (int i = 0; i < iters; i++) {
-          LIKWID_NVMARKER_START("triad");
-          sch_triad_kernel<double>
-              <<<max_blocks, block_size>>>(dA, dB, dC, dD, buffer_size);
-          LIKWID_NVMARKER_STOP("triad");
-      }
-      GPU_ERROR(cudaGetLastError());
-      GPU_ERROR(cudaDeviceSynchronize());
-      double t2 = dtime();
-
-      double dt = (t2 - t1) / iters;
+    double dt = (t2 - t1) / iters;
 #pragma omp critical
-      cout << deviceId << " " << setw(40) << prop.name << fixed << setprecision(1) << "   " << setw(6) << dt * 1000 << "ms " << setw(5)
-           << 4 * buffer_size * sizeof(double) / dt * 1e-9 << "GB/s " << setw(2) << 2*buffer_size /dt*1e-6 << "MFLOP/s\n";
+    cout << deviceId << " " << setw(40) << prop.name << fixed << setprecision(1)
+         << "   " << setw(6) << dt * 1000 << "ms " << setw(5)
+         << 4 * buffer_size * sizeof(double) / dt * 1e-9 << "GB/s " << setw(2)
+         << 2 * buffer_size / dt * 1e-6 << "MFLOP/s\n";
 
-      GPU_ERROR(cudaFree(dA));
-      GPU_ERROR(cudaFree(dB));
-      GPU_ERROR(cudaFree(dC));
-      GPU_ERROR(cudaFree(dD));
+    GPU_ERROR(cudaFree(dA));
+    GPU_ERROR(cudaFree(dB));
+    GPU_ERROR(cudaFree(dC));
+    GPU_ERROR(cudaFree(dD));
   }
   LIKWID_NVMARKER_CLOSE;
   return 0;
