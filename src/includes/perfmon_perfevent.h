@@ -39,6 +39,8 @@
 #include <sys/ioctl.h>
 #include <asm/unistd.h>
 #include <string.h>
+#include <bstrlib.h>
+#include <bstrlib_helper.h>
 
 extern char** translate_types;
 static int** cpu_event_fds = NULL;
@@ -49,6 +51,38 @@ static int running_group = -1;
 static int perf_event_num_cpus = 0;
 static int perf_disable_uncore = 0;
 static int perf_event_paranoid = -1;
+
+static char* perfEventOptionNames[] = {
+    [EVENT_OPTION_EDGE] = "edge",
+    [EVENT_OPTION_ANYTHREAD] = "any",
+    [EVENT_OPTION_THRESHOLD] = "cmask",
+    [EVENT_OPTION_INVERT] = "inv",
+    [EVENT_OPTION_IN_TRANS] = "in_tx",
+    [EVENT_OPTION_IN_TRANS_ABORT] = "in_tx_cp",
+    [EVENT_OPTION_MATCH0] = "offcore_rsp",
+    [EVENT_OPTION_MATCH1] = "offcore_rsp",
+    [EVENT_OPTION_TID] = "tid_en",
+    [EVENT_OPTION_CID] = "cid",
+    [EVENT_OPTION_SLICE] = "slice",
+    [EVENT_OPTION_STATE] = "filter_state",
+    [EVENT_OPTION_NID] = "filter_nid",
+    [EVENT_OPTION_OPCODE] = "filter_opc",
+    [EVENT_OPTION_OCCUPANCY] = "occ_sel",
+    [EVENT_OPTION_OCCUPANCY_FILTER] = "occ_band0",
+    [EVENT_OPTION_OCCUPANCY_EDGE] = "occ_edge",
+    [EVENT_OPTION_OCCUPANCY_INVERT] = "occ_inv",
+#ifdef _ARCH_PPC
+    [EVENT_OPTION_GENERIC_CONFIG] = "pmcxsel",
+    [EVENT_OPTION_UNCORE_CONFIG] = "event",
+#else
+    [EVENT_OPTION_GENERIC_CONFIG] = "event",
+#endif
+    [EVENT_OPTION_GENERIC_UMASK] = "umask",
+#ifdef _ARCH_PPC
+    [EVENT_OPTION_PMC] = "pmc",
+    [EVENT_OPTION_PMCXSEL] = "pmcxsel",
+#endif
+};
 
 static long
 perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
@@ -83,13 +117,13 @@ int perfevent_paranoid_value()
 }
 
 #if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
-enum pmc_type {
+enum apple_m1_pmc_type {
     M1_UNKNOWN = 0,
     M1_ICESTORM,
     M1_FIRESTORM,
 };
 
-int perfevent_apple_m1_pmc_type_select(int cpu_id, enum pmc_type *type)
+int perfevent_apple_m1_pmc_type_select(int cpu_id, enum apple_m1_pmc_type *type)
 {
     FILE* fd;
     char buff[100];
@@ -125,6 +159,7 @@ int perfevent_apple_m1_pmc_type_select(int cpu_id, enum pmc_type *type)
 }
 #endif
 
+
 int perfmon_init_perfevent(int cpu_id)
 {
     perf_event_paranoid = perfevent_paranoid_value();
@@ -140,6 +175,7 @@ int perfmon_init_perfevent(int cpu_id)
     lock_acquire((int*) &numa_lock[affinity_thread2numa_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &die_lock[affinity_thread2die_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &core_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     if (cpu_event_fds == NULL)
     {
         cpu_event_fds = malloc(cpuid_topology.numHWThreads * sizeof(int*));
@@ -157,116 +193,108 @@ int perfmon_init_perfevent(int cpu_id)
         active_cpus += 1;
     }
     perf_event_num_cpus = cpuid_topology.numHWThreads;
+    if (cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_EPYC))
+    {
+        perfEventOptionNames[EVENT_OPTION_TID] = "threadmask";
+        perfEventOptionNames[EVENT_OPTION_CID] = "coreid";
+        perfEventOptionNames[EVENT_OPTION_SLICE] = "sliceid";
+    }
     perf_event_initialized = 1;
     return 0;
 }
 
 
-
-typedef enum {
-    PERF_EVENT_INVAL_REG = 0,
-    PERF_EVENT_CONFIG_REG,
-    PERF_EVENT_CONFIG1_REG,
-    PERF_EVENT_CONFIG2_REG,
-} PERF_EVENT_PMC_OPT_REGS;
-
-static char* perfEventOptionNames[] = {
-    [EVENT_OPTION_EDGE] = "edge",
-    [EVENT_OPTION_ANYTHREAD] = "any",
-    [EVENT_OPTION_THRESHOLD] = "cmask",
-    [EVENT_OPTION_INVERT] = "inv",
-    [EVENT_OPTION_IN_TRANS] = "in_tx",
-    [EVENT_OPTION_IN_TRANS_ABORT] = "in_tx_cp",
-    [EVENT_OPTION_MATCH0] = "offcore_rsp",
-    [EVENT_OPTION_MATCH1] = "offcore_rsp",
-    [EVENT_OPTION_TID] = "tid_en",
-    [EVENT_OPTION_CID] = "cid",
-    [EVENT_OPTION_SLICE] = "slice",
-    [EVENT_OPTION_STATE] = "filter_state",
-    [EVENT_OPTION_NID] = "filter_nid",
-    [EVENT_OPTION_OPCODE] = "filter_opc",
-    [EVENT_OPTION_OCCUPANCY] = "occ_sel",
-    [EVENT_OPTION_OCCUPANCY_FILTER] = "occ_band0",
-    [EVENT_OPTION_OCCUPANCY_EDGE] = "occ_edge",
-    [EVENT_OPTION_OCCUPANCY_INVERT] = "occ_inv",
-#ifdef _ARCH_PPC
-    [EVENT_OPTION_GENERIC_CONFIG] = "pmcxsel",
-    [EVENT_OPTION_UNCORE_CONFIG] = "event",
-#else
-    [EVENT_OPTION_GENERIC_CONFIG] = "event",
-#endif
-    [EVENT_OPTION_GENERIC_UMASK] = "umask",
-#ifdef _ARCH_PPC
-    [EVENT_OPTION_PMC] = "pmc",
-    [EVENT_OPTION_PMCXSEL] = "pmcxsel",
-#endif
+struct perf_event_config_format {
+    enum {
+        INVALID = 0,
+        CONFIG,
+        CONFIG1,
+        CONFIG2
+    } reg;
+    int start;
+    int end;
 };
 
-int getEventOptionConfig(char* base, EventOptionType type, PERF_EVENT_PMC_OPT_REGS *reg, int* start, int* end)
+
+int parse_event_config(char* base, char* option, int* num_formats, struct perf_event_config_format **formats)
 {
-    PERF_EVENT_PMC_OPT_REGS r = 0;
-    int s = 0;
-    int e = 0;
-    if (!base || !reg || !start || !end)
+    int err = 0;
+    struct tagbstring config_reg = bsStatic("config:");
+    struct tagbstring config1_reg = bsStatic("config1:");
+    struct tagbstring config2_reg = bsStatic("config2:");
+    if (!base || !option || !num_formats || !formats)
     {
         return -EINVAL;
     }
-    if (strlen(base) > 0 && strlen(perfEventOptionNames[type]) > 0)
+    *num_formats = 0;
+    *formats = NULL;
+    if (strlen(base) > 0 && strlen(option) > 0)
     {
-        char path[1024];
-        char buff[1024];
-        int ret = snprintf(path, 1023, "%s/format/%s", base, perfEventOptionNames[type]);
-        FILE *fp = fopen(path, "r");
+        bstring path = bformat("%s/format/%s", base, option);
+        FILE *fp = fopen(bdata(path), "r");
         if (fp)
         {
-            ret = fread(buff, sizeof(char), 1023, fp);
-            buff[ret] = '\0';
-            if (strncmp(buff, "config:", 7) == 0)
+            bstring src = bread ((bNread) fread, fp);
+            struct bstrList* formatList = bsplit(src, ',');
+            struct perf_event_config_format *flist = malloc(formatList->qty * sizeof(struct perf_event_config_format));
+            if (flist)
             {
-                r = PERF_EVENT_CONFIG_REG;
-            }
-            else if (strncmp(buff, "config1", 7) == 0)
-            {
-                r = PERF_EVENT_CONFIG1_REG;
-            }
-            else if (strncmp(buff, "config2", 7) == 0)
-            {
-                r = PERF_EVENT_CONFIG2_REG;
-            }
-            while(buff[s] != ':' && e < strlen(buff)) {
-                s++;
-            }
-            s++;
-            e = s;
-            while(buff[e] != '-' && e < strlen(buff)) {
-                e++;
-            }
-            e++;
-            sscanf(&buff[s], "%d", &s);
-            if (e < strlen(buff))
-            {
-                sscanf(&buff[e], "%d", &e);
+                int nf = 0;
+                for (int i = 0; i < formatList->qty; i++)
+                {
+                    flist[nf].reg = INVALID;
+                    flist[nf].start = -1;
+                    flist[nf].end = -1;
+                    if (bstrncmp(formatList->entry[i], &config_reg, blength(&config_reg)) == BSTR_OK)
+                    {
+                        flist[nf].reg = CONFIG;
+                        bdelete(formatList->entry[i], 0, blength(&config_reg));
+                    }
+                    else if (bstrncmp(formatList->entry[i], &config1_reg, blength(&config1_reg)) == BSTR_OK)
+                    {
+                        flist[nf].reg = CONFIG1;
+                        bdelete(formatList->entry[i], 0, blength(&config1_reg));
+                    }
+                    else if (bstrncmp(formatList->entry[i], &config2_reg, blength(&config2_reg)) == BSTR_OK)
+                    {
+                        flist[nf].reg = CONFIG2;
+                        bdelete(formatList->entry[i], 0, blength(&config2_reg));
+                    }
+                    else
+                    {
+                        if (nf > 0)
+                        {
+                            flist[nf].reg = flist[0].reg;
+                        }
+                    }
+                    int s = -1;
+                    int e = -1;
+                    int c = sscanf(bdata(formatList->entry[i]), "%d-%d", &s, &e);
+                    flist[nf].start = (c >= 1 ? s : -1);
+                    flist[nf].end = (c == 2 ? e : -1);
+                    nf++;
+                }
+                *formats = flist;
+                *num_formats = nf;
             }
             else
             {
-                e = -1;
+                err = -ENOMEM;
             }
-            *reg = r;
-            *start = s;
-            *end = e;
+            bstrListDestroy(formatList);
+            bdestroy(src);
             fclose(fp);
         }
-        else
-        {
-            *reg = PERF_EVENT_INVAL_REG;
-            *start = -1;
-            *end = -1;
-        }
+        bdestroy(path);
     }
-    return 0;
+    else
+    {
+        err = -ENOENT;
+    }
+    return err;
 }
 
-uint64_t create_mask(uint32_t value, int start, int end)
+uint64_t create_mask(uint64_t value, int start, int end)
 {
     if (end < 0)
     {
@@ -282,12 +310,78 @@ uint64_t create_mask(uint32_t value, int start, int end)
     return 0x0ULL;
 }
 
+int read_perf_event_type(char* folder)
+{
+    if (!folder || strlen(folder) == 0)
+    {
+        return -1;
+    }
+    int type = -1;
+    bstring path = bformat("%s/type", folder);
+    FILE *fp = fopen(bdata(path), "r");
+    if (fp)
+    {
+        int t = -1;
+        bstring src = bread ((bNread) fread, fp);
+        int c = sscanf(bdata(src), "%d", &t);
+        type = (c == 1 ? t : -1);
+        bdestroy(src);
+        fclose(fp);
+    }
+    bdestroy(path);
+    return type;
+}
+
+
+int apply_event_config(struct perf_event_attr *attr, uint64_t optval, int num_formats, struct perf_event_config_format *formats)
+{
+    if (!attr || num_formats <= 0 || !formats)
+    {
+        return -EINVAL;
+    }
+    for (int i = 0; i < num_formats && optval != 0x0; i++)
+    {
+        switch(formats[i].reg)
+        {
+            case CONFIG:
+                attr->config |= create_mask(optval, formats[i].start, formats[i].end);
+                break;
+            case CONFIG1:
+                attr->config1 |= create_mask(optval, formats[i].start, formats[i].end);
+                break;
+            case CONFIG2:
+                attr->config2 |= create_mask(optval, formats[i].start, formats[i].end);
+                break;
+        }
+        optval = (optval >> ((formats[i].end - formats[i].start)+1));
+    }
+    return 0;
+}
+
+int parse_and_apply_event_config(char* base, char* optname, uint64_t optval, struct perf_event_attr *attr)
+{
+    int num_formats = 0;
+    struct perf_event_config_format *formats = NULL;
+    int ret = parse_event_config(base, optname, &num_formats, &formats);
+    if (ret == 0)
+    {
+        ret = apply_event_config(attr, optval, num_formats, formats);
+        free(formats);
+    }
+    return ret;
+}
+
+
 int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
 {
-    int ret = -1;
+    int err = -1;
+    int ret = 0;
+    int num_formats = 0;
+    struct perf_event_config_format* formats = NULL;
     attr->type = PERF_TYPE_HARDWARE;
     attr->disabled = 1;
     attr->inherit = 1;
+    attr->pinned = 1;
     if (translate_types[FIXED] != NULL &&
         strcmp(translate_types[PMC], translate_types[FIXED]) == 0)
     {
@@ -296,20 +390,20 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
         if (strncmp(event->name, "INSTR_RETIRED_ANY", 18) == 0)
         {
             attr->config = PERF_COUNT_HW_INSTRUCTIONS;
-            ret = 0;
+            err = 0;
         }
         if (strncmp(event->name, "CPU_CLK_UNHALTED_CORE", 22) == 0 ||
             strncmp(event->name, "ACTUAL_CPU_CLOCK", 17) == 0 ||
             strncmp(event->name, "APERF", 5) == 0)
         {
             attr->config = PERF_COUNT_HW_CPU_CYCLES;
-            ret = 0;
+            err = 0;
         }
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
         if (strncmp(event->name, "CPU_CLK_UNHALTED_REF", 21) == 0)
         {
             attr->config = PERF_COUNT_HW_REF_CPU_CYCLES;
-            ret = 0;
+            err = 0;
         }
 #endif
         if (cpuid_info.isIntel)
@@ -326,59 +420,53 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
                 case TIGERLAKE1:
                 case TIGERLAKE2:
                 case SNOWRIDGEX:
+                case SAPPHIRERAPIDS:
                     if (strncmp(event->name, "TOPDOWN_SLOTS", 13) == 0)
                     {
                         attr->config = 0x0400;
                         attr->type = PERF_TYPE_RAW;
-                        ret = 0;
+                        err = 0;
                     }
             }
         }
     }
     else
     {
-        char checkfolder[1024];
-        int perf_type = PERF_TYPE_HARDWARE;
-        int start = 0, end = 0;
-        PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
-        int err = snprintf(checkfolder, 1023, "%s/type", translate_types[FIXED]);
-        if (err > 0)
+        int perf_type = read_perf_event_type(translate_types[FIXED]);
+        if (perf_type >= 0)
         {
-            checkfolder[err] = '\0';
-        }
-        FILE* fp = fopen(checkfolder, "r");
-        if (fp != NULL)
-        {
-            ret = fread(checkfolder, sizeof(char), 1024, fp);
-            fclose(fp);
-            perf_type = atoi(checkfolder);
-            if (perf_type >= 0)
+            attr->type = perf_type;
+            ret = parse_event_config(translate_types[FIXED], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
+            if (ret == 0)
             {
-                attr->type = perf_type;
-                getEventOptionConfig(translate_types[FIXED], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
-                switch(reg)
+                uint64_t eventConfig = event->eventId;
+                for (int i = 0; i < num_formats && eventConfig != 0x0; i++)
                 {
-                    case PERF_EVENT_CONFIG_REG:
-                        attr->config |= create_mask(event->eventId, start, end);
-                        ret = 0;
-                        break;
-                    case PERF_EVENT_CONFIG1_REG:
-                        attr->config1 |= create_mask(event->eventId, start, end);
-                        ret = 0;
-                        break;
-                    case PERF_EVENT_CONFIG2_REG:
-                        attr->config2 |= create_mask(event->eventId, start, end);
-                        ret = 0;
-                        break;
-                    default:
-                        ret = -1;
-                        break;
+                    switch(formats[i].reg)
+                    {
+                        case CONFIG:
+                            attr->config |= create_mask(eventConfig, formats[i].start, formats[i].end);
+                            break;
+                        case CONFIG1:
+                            attr->config1 |= create_mask(eventConfig, formats[i].start, formats[i].end);
+                            break;
+                        case CONFIG2:
+                            attr->config2 |= create_mask(eventConfig, formats[i].start, formats[i].end);
+                            break;
+                    }
+                    eventConfig = (eventConfig >> ((formats[i].end - formats[i].start)+1));
                 }
+                free(formats);
+                err = 0;
             }
+        }
+        else
+        {
+            err = perf_type;
         }
     }
 
-    return ret;
+    return err;
 }
 
 int perf_perf_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
@@ -392,64 +480,112 @@ int perf_perf_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEv
     return 0;
 }
 
-int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterType type, PerfmonEvent *event)
+int perf_metrics_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
 {
-    uint64_t offcore_flags = 0x0ULL;
-    PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
-    int start = 0, end = -1;
-    attr->type = PERF_TYPE_RAW;
-    //attr->config = (event->umask<<8) + event->eventId;
+    attr->type = 4;
     attr->exclude_kernel = 1;
     attr->exclude_hv = 1;
     attr->exclude_guest = 1;
+    //attr->disabled = 1;
+    //attr->inherit = 1;
+    attr->config = (event->umask<<8) + event->eventId;
+    return 0;
+}
+
+int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterType type, PerfmonEvent *event)
+{
+    int ret = 0;
+    uint64_t offcore_flags = 0x0ULL;
+    int num_formats = 0;
+    struct perf_event_config_format* formats = NULL;
+
+    attr->type = PERF_TYPE_RAW;
+    attr->exclude_kernel = 1;
+    attr->exclude_hv = 1;
     attr->disabled = 1;
     attr->inherit = 1;
-    //attr->exclusive = 1;
+    attr->exclude_guest = 1;
+
+    num_formats = 0;
+    formats = NULL;
 #if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
     if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
     {
-        reg = PERF_EVENT_CONFIG_REG;
-        start = 0;
-        end = 31;
+        formats = malloc(sizeof(struct perf_event_config_format));
+        if (formats)
+        {
+            formats[0].reg = CONFIG;
+            formats[0].start = 0;
+            formats[0].end = 31;
+            num_formats = 1;
+        }
     }
     else
     {
-#endif
-        getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
-#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+        ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
     }
-#endif
-    switch(reg)
-    {
-        case PERF_EVENT_CONFIG_REG:
-            attr->config |= create_mask(event->eventId, start, end);
-            break;
-        case PERF_EVENT_CONFIG1_REG:
-            attr->config1 |= create_mask(event->eventId, start, end);
-            break;
-        case PERF_EVENT_CONFIG2_REG:
-            attr->config2 |= create_mask(event->eventId, start, end);
-            break;
-    }
-#ifdef _ARCH_PPC
-    reg = PERF_EVENT_CONFIG_REG;
-    start = 8;
-    end = 15;
 #else
-    getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
+    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
 #endif
-    switch(reg)
+    if (ret == 0)
     {
-        case PERF_EVENT_CONFIG_REG:
-            attr->config |= create_mask(event->umask, start, end);
-            break;
-        case PERF_EVENT_CONFIG1_REG:
-            attr->config1 |= create_mask(event->umask, start, end);
-            break;
-        case PERF_EVENT_CONFIG2_REG:
-            attr->config2 |= create_mask(event->umask, start, end);
-            break;
+        uint64_t eventConfig = event->eventId;
+        for (int i = 0; i < num_formats && eventConfig != 0x0; i++)
+        {
+            switch(formats[i].reg)
+            {
+                case CONFIG:
+                    attr->config |= create_mask(eventConfig, formats[i].start, formats[i].end);
+                    break;
+                case CONFIG1:
+                    attr->config1 |= create_mask(eventConfig, formats[i].start, formats[i].end);
+                    break;
+                case CONFIG2:
+                    attr->config2 |= create_mask(eventConfig, formats[i].start, formats[i].end);
+                    break;
+            }
+            eventConfig = (eventConfig >> ((formats[i].end - formats[i].start)+1));
+        }
+        free(formats);
     }
+
+    ret = 0;
+    num_formats = 0;
+    formats = NULL;
+#ifdef _ARCH_PPC
+    formats = malloc(sizeof(struct perf_event_config_format));
+    if (formats)
+    {
+        formats[0].reg = CONFIG;
+        formats[0].start = 0;
+        formats[0].end = 31;
+        num_formats = 1;
+    }
+#else
+    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], &num_formats, &formats);
+#endif
+    if (ret == 0)
+    {
+        uint64_t umask = event->umask;
+        for (int i = 0; i < num_formats && umask != 0x0; i++)
+        {
+            switch(formats[i].reg)
+            {
+                case CONFIG:
+                    attr->config |= create_mask(umask, formats[i].start, formats[i].end);
+                    break;
+                case CONFIG1:
+                    attr->config1 |= create_mask(umask, formats[i].start, formats[i].end);
+                    break;
+                case CONFIG2:
+                    attr->config2 |= create_mask(umask, formats[i].start, formats[i].end);
+                    break;
+            }
+            umask = (umask >> ((formats[i].end - formats[i].start)+1));
+        }
+        free(formats);
+    }
+
     if (event->numberOfOptions > 0)
     {
         for(int j = 0; j < event->numberOfOptions; j++)
@@ -466,28 +602,40 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
                 case EVENT_OPTION_INVERT:
                 case EVENT_OPTION_IN_TRANS:
                 case EVENT_OPTION_IN_TRANS_ABORT:
-                    getEventOptionConfig(translate_types[type], event->options[j].type, &reg, &start, &end);
-                    switch(reg)
+                    ret = 0;
+                    num_formats = 0;
+                    formats = NULL;
+                    ret = parse_event_config(translate_types[type], perfEventOptionNames[event->options[j].type], &num_formats, &formats);
+                    if (ret == 0)
                     {
-                        case PERF_EVENT_CONFIG_REG:
-                            attr->config |= create_mask(event->options[j].value, start, end);
-                            break;
-                        case PERF_EVENT_CONFIG1_REG:
-                            attr->config1 |= create_mask(event->options[j].value, start, end);
-                            break;
-                        case PERF_EVENT_CONFIG2_REG:
-                            attr->config2 |= create_mask(event->options[j].value, start, end);
-                            break;
+                        uint64_t optval = event->options[j].value;
+                        for (int i = 0; i < num_formats && optval != 0x0; i++)
+                        {
+                            switch(formats[i].reg)
+                            {
+                                case CONFIG:
+                                    attr->config |= create_mask(optval, formats[i].start, formats[i].end);
+                                    break;
+                                case CONFIG1:
+                                    attr->config1 |= create_mask(optval, formats[i].start, formats[i].end);
+                                    break;
+                                case CONFIG2:
+                                    attr->config2 |= create_mask(optval, formats[i].start, formats[i].end);
+                                    break;
+                            }
+                            optval = (optval >> ((formats[i].end - formats[i].start)+1));
+                        }
+                        free(formats);
                     }
                     break;
                 case EVENT_OPTION_MATCH0:
-                    if (event->eventId == 0xB7 || event->eventId == 0xBB)
+                    if (cpuid_info.isIntel && (event->eventId == 0xB7 || event->eventId == 0xBB))
                     {
                         offcore_flags |= (event->options[j].value & 0xFFFFULL);
                     }
                     break;
                 case EVENT_OPTION_MATCH1:
-                    if (event->eventId == 0xB7 || event->eventId == 0xBB)
+                    if (cpuid_info.isIntel && (event->eventId == 0xB7 || event->eventId == 0xBB))
                     {
                         offcore_flags |= (event->options[j].value & 0x3FFFFFFFULL)<<16;
                     }
@@ -497,41 +645,63 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
             }
         }
     }
-    if (event->eventId == 0xB7 || event->eventId == 0xBB)
+    if (cpuid_info.isIntel && (event->eventId == 0xB7 || event->eventId == 0xBB))
     {
         if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
         {
             offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
         }
-        getEventOptionConfig(translate_types[type], EVENT_OPTION_MATCH0, &reg, &start, &end);
-        switch(reg)
+        ret = 0;
+        num_formats = 0;
+        formats = NULL;
+        ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_MATCH0], &num_formats, &formats);
+        if (ret == 0)
         {
-            case PERF_EVENT_CONFIG_REG:
-                attr->config |= create_mask(offcore_flags, start, end);
-                break;
-            case PERF_EVENT_CONFIG1_REG:
-                attr->config1 |= create_mask(offcore_flags, start, end);
-                break;
-            case PERF_EVENT_CONFIG2_REG:
-                attr->config2 |= create_mask(offcore_flags, start, end);
-                break;
+            uint64_t optval = offcore_flags;
+            for (int i = 0; i < num_formats && optval != 0x0; i++)
+            {
+                switch(formats[i].reg)
+                {
+                    case CONFIG:
+                        attr->config |= create_mask(optval, formats[i].start, formats[i].end);
+                        break;
+                    case CONFIG1:
+                        attr->config1 |= create_mask(optval, formats[i].start, formats[i].end);
+                        break;
+                    case CONFIG2:
+                        attr->config2 |= create_mask(optval, formats[i].start, formats[i].end);
+                        break;
+                }
+                optval = (optval >> ((formats[i].end - formats[i].start)+1));
+            }
+            free(formats);
         }
     }
 #ifdef _ARCH_PPC
-    getEventOptionConfig(translate_types[type], EVENT_OPTION_PMC, &reg, &start, &end);
-    switch(reg)
+    ret = 0;
+    num_formats = 0;
+    formats = NULL;
+    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_PMC], &num_formats, &formats);
+    if (ret == 0)
     {
-        case PERF_EVENT_CONFIG_REG:
-            attr->config |= create_mask(getCounterTypeOffset(index)+1,start, end);
-            break;
-        case PERF_EVENT_CONFIG1_REG:
-            attr->config1 |= create_mask(getCounterTypeOffset(index)+1,start, end);
-            break;
-        case PERF_EVENT_CONFIG2_REG:
-            attr->config2 |= create_mask(getCounterTypeOffset(index)+1,start, end);
-            break;
-        default:
-            break;
+        uint64_t optval = getCounterTypeOffset(index)+1;
+        for (int i = 0; i < num_formats && offcore_flags != 0x0; i++)
+        {
+            switch(formats[i].reg)
+            {
+                case CONFIG:
+                    attr->config |= create_mask(optval, formats[i].start, formats[i].end);
+                    break;
+                case CONFIG1:
+                    attr->config1 |= create_mask(optval, formats[i].start, formats[i].end);
+                    break;
+                case CONFIG2:
+                    attr->config2 |= create_mask(optval, formats[i].start, formats[i].end);
+                    break;
+            }
+            optval = (optval >> ((formats[i].end - formats[i].start)+1));
+        }
+        free(formats);
     }
 #endif
     return 0;
@@ -539,45 +709,32 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
 
 int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEvent *event)
 {
-
+    int num_formats = 0;
+    struct perf_event_config_format* formats = NULL;
     char checkfolder[1024];
     int ret = 0;
     FILE* fp = NULL;
     int perf_type = 0;
-    PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
-    int start = 0, end = -1;
     uint64_t eventConfig = 0x0;
     if (perf_event_paranoid > 0 && getuid() != 0)
     {
         return EPERM;
     }
     attr->type = 0;
-    ret = sprintf(checkfolder, "%s", translate_types[type]);
-    if (access(checkfolder, F_OK))
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Get information for uncore counters from folder %s, translate_types[type]);
+    perf_type = read_perf_event_type(translate_types[type]);
+    if (perf_type < 0)
     {
         if ((type == UBOX)||(type == UBOXFIX))
         {
-            ret = sprintf(checkfolder, "%s", "/sys/bus/event_source/devices/uncore_arb");
-            if (access(checkfolder, F_OK))
-            {
-                return 1;
-            }
-        }
-        else
-        {
-            return 1;
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Get information for uncore counters from folder /sys/bus/event_source/devices/uncore_arb);
+            perf_type = read_perf_event_type("/sys/bus/event_source/devices/uncore_arb");
         }
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Get information for uncore counters from folder %s, checkfolder);
-    ret = sprintf(&(checkfolder[ret]), "/type");
-    fp = fopen(checkfolder, "r");
-    if (fp == NULL)
+    if (perf_type < 0)
     {
         return 1;
     }
-    ret = fread(checkfolder, sizeof(char), 1024, fp);
-    perf_type = atoi(checkfolder);
-    fclose(fp);
     attr->type = perf_type;
     attr->disabled = 1;
     attr->inherit = 1;
@@ -586,64 +743,108 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
 #else
     eventConfig = event->eventId;
 #endif
-    //attr->config = (event->umask<<8) + event->eventId;
-    getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
-    switch(reg)
-    {
-        case PERF_EVENT_CONFIG_REG:
-            attr->config |= create_mask(eventConfig, start, end);
-            break;
-        case PERF_EVENT_CONFIG1_REG:
-            attr->config1 |= create_mask(eventConfig, start, end);
-            break;
-        case PERF_EVENT_CONFIG2_REG:
-            attr->config2 |= create_mask(eventConfig, start, end);
-            break;
-
-    }
+    ret = parse_and_apply_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], eventConfig, attr);
+/*    num_formats = 0;*/
+/*    formats = NULL;*/
+/*    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);*/
+/*    if (ret == 0)*/
+/*    {*/
+/*        apply_event_config(attr, eventConfig, num_formats, formats);*/
+/*        for (int i = 0; i < num_formats && eventConfig != 0x0; i++)*/
+/*        {*/
+/*            switch(formats[i].reg)*/
+/*            {*/
+/*                case CONFIG:*/
+/*                    attr->config |= create_mask(eventConfig, formats[i].start, formats[i].end);*/
+/*                    break;*/
+/*                case CONFIG1:*/
+/*                    attr->config1 |= create_mask(eventConfig, formats[i].start, formats[i].end);*/
+/*                    break;*/
+/*                case CONFIG2:*/
+/*                    attr->config2 |= create_mask(eventConfig, formats[i].start, formats[i].end);*/
+/*                    break;*/
+/*            }*/
+/*            eventConfig = (eventConfig >> ((formats[i].end - formats[i].start)+1));*/
+/*        }*/
+/*        free(formats);*/
+/*    }*/
 #ifdef _ARCH_PPC
-    if (reg == PERF_EVENT_INVAL_REG)
+    if (ret == 0 && reg == INVALID)
     {
-	uint64_t config = (event->umask<<8)|event->eventId;
-        getEventOptionConfig(translate_types[type], EVENT_OPTION_UNCORE_CONFIG, &reg, &start, &end);
-        switch(reg)
+        num_formats = 0;
+        formats = NULL;
+        ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_UNCORE_CONFIG], &num_formats, &formats);
+        if (ret == 0)
         {
-            case PERF_EVENT_CONFIG_REG:
-                attr->config |= create_mask(eventConfig, start, end);
-                break;
-            case PERF_EVENT_CONFIG1_REG:
-                attr->config1 |= create_mask(eventConfig, start, end);
-                break;
-            case PERF_EVENT_CONFIG2_REG:
-                attr->config2 |= create_mask(eventConfig, start, end);
-                break;
+            for (int i = 0; i < num_formats && umask != 0x0; i++)
+            {
+                switch(formats[i].reg)
+                {
+                    case CONFIG:
+                        attr->config |= create_mask(eventConfig, formats[i].start, formats[i].end);
+                        break;
+                    case CONFIG1:
+                        attr->config1 |= create_mask(eventConfig, formats[i].start, formats[i].end);
+                        break;
+                    case CONFIG2:
+                        attr->config2 |= create_mask(eventConfig, formats[i].start, formats[i].end);
+                        break;
+                }
+                eventConfig = (eventConfig >> ((formats[i].end - formats[i].start)+1));
+            }
+            free(formats);
         }
     }
 #else
     if (event->umask != 0x0)
     {
-        getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
-        switch(reg)
+        num_formats = 0;
+        formats = NULL;
+        ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], &num_formats, &formats);
+        if (ret == 0)
         {
-            case PERF_EVENT_CONFIG_REG:
-                attr->config |= create_mask(event->umask, start, end);
-                break;
-            case PERF_EVENT_CONFIG1_REG:
-                attr->config1 |= create_mask(event->umask, start, end);
-                break;
-            case PERF_EVENT_CONFIG2_REG:
-                attr->config2 |= create_mask(event->umask, start, end);
-                break;
+            uint64_t umask = event->umask;
+            if (type >= CBOX0 && type <= CBOX39 && cpuid_info.isIntel && num_formats > 1
+                && (cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 || cpuid_info.model == SAPPHIRERAPIDS))
+            {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Applying special umask handling for CBOXes of Intel ICX and SPR chips);
+                for(int j = 0; j < event->numberOfOptions; j++)
+                {
+                    if (event->options[j].type == EVENT_OPTION_MATCH0)
+                    {
+                        DEBUG_PRINT(DEBUGLEV_DEVELOP, 0x%lX (0x%lX | (0x%lX << (%d - %d))), umask | (event->options[j].value << (formats[0].end - formats[0].start)), umask, event->options[j].value, formats[0].end, formats[0].start);
+                        umask |= (event->options[j].value << (formats[0].end - formats[0].start + 1));
+                        break;
+                    }
+                }
+            }
+            for (int i = 0; i < num_formats && umask != 0x0; i++)
+            {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Format %s from %d-%d with value 0x%lX, perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], formats[i].start, formats[i].end, umask);
+                switch(formats[i].reg)
+                {
+                    case CONFIG:
+                        DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding 0x%lX to 0x%X, create_mask(umask, formats[i].start, formats[i].end), attr->config);
+                        attr->config |= create_mask(umask, formats[i].start, formats[i].end);
+                        break;
+                    case CONFIG1:
+                        attr->config1 |= create_mask(umask, formats[i].start, formats[i].end);
+                        break;
+                    case CONFIG2:
+                        attr->config2 |= create_mask(umask, formats[i].start, formats[i].end);
+                        break;
+                }
+                umask = (umask >> ((formats[i].end - formats[i].start)+1));
+            }
+            free(formats);
         }
     }
 #endif
 
-    //attr->exclusive = 1;
     if (event->numberOfOptions > 0)
     {
         for(int j = 0; j < event->numberOfOptions; j++)
         {
-
             switch (event->options[j].type)
             {
                 case EVENT_OPTION_COUNT_KERNEL:
@@ -658,23 +859,80 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                 case EVENT_OPTION_MATCH0:
                 case EVENT_OPTION_MATCH1:
                 case EVENT_OPTION_TID:
-                    getEventOptionConfig(translate_types[type], event->options[j].type, &reg, &start, &end);
-                    switch(reg)
+                case EVENT_OPTION_CID:
+                case EVENT_OPTION_SLICE:
+                    num_formats = 0;
+                    formats = NULL;
+                    ret = parse_event_config(translate_types[type], perfEventOptionNames[event->options[j].type], &num_formats, &formats);
+                    if (ret == 0)
                     {
-                        case PERF_EVENT_CONFIG_REG:
-                            attr->config |= create_mask(event->options[j].value, start, end);
-                            break;
-                        case PERF_EVENT_CONFIG1_REG:
-                            attr->config1 |= create_mask(event->options[j].value, start, end);
-                            break;
-                        case PERF_EVENT_CONFIG2_REG:
-                            attr->config2 |= create_mask(event->options[j].value, start, end);
-                            break;
+                        uint64_t optval = event->options[j].value;
+                        for (int i = 0; i < num_formats && optval != 0x0; i++)
+                        {
+                            switch(formats[i].reg)
+                            {
+                                case CONFIG:
+                                    attr->config |= create_mask(optval, formats[i].start, formats[i].end);
+                                    break;
+                                case CONFIG1:
+                                    attr->config1 |= create_mask(optval, formats[i].start, formats[i].end);
+                                    break;
+                                case CONFIG2:
+                                    attr->config2 |= create_mask(optval, formats[i].start, formats[i].end);
+                                    break;
+                            }
+                            optval = (optval >> ((formats[i].end - formats[i].start)+1));
+                        }
+                        free(formats);
                     }
+                    /*if (cpuid_info.family == P6_FAMILY && cpuid_info.model == SAPPHIRERAPIDS && event->options[j].type == EVENT_OPTION_MATCH0)
+                    {
+                        attr->config |= (((uint64_t)event->options[j].value) & 0x3ffffff) << 32;
+                    }
+                    if (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2)) && event->options[j].type == EVENT_OPTION_MATCH0)
+                    {
+                        attr->config |= create_mask(event->options[j].value, 32, 57);
+                    }*/
                     break;
                 default:
                     break;
             }
+        }
+    }
+    if (type != POWER && cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_EPYC))
+    {
+        int got_cid = 0;
+        int got_slices = 0;
+        int got_tid = 0;
+        for(int j = 0; j < event->numberOfOptions; j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_CID:
+                    got_cid = 1;
+                    break;
+                case EVENT_OPTION_TID:
+                    got_tid = 1;
+                    break;
+                case EVENT_OPTION_SLICE:
+                    got_slices = 1;
+                    break;
+            }
+        }
+        if (!got_cid)
+        {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, AMD Zen4 L3: activate counting for all cores);
+            attr->config |= (1ULL<<47);
+        }
+        if (!got_tid)
+        {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, AMD Zen4 L3: activate counting for all SMT threads);
+            attr->config |= (0x3ULL<<56);
+        }
+        if (!got_slices)
+        {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, AMD Zen4 L3: activate counting for all L3 slices);
+            attr->config |= (1ULL<<46);
         }
     }
     return 0;
@@ -718,7 +976,6 @@ int perfmon_setupCountersThread_perfevent(
     }
     if (groupSet->activeGroup >= 0)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Already active measurements for group %d, groupSet->activeGroup);
         for (int j = 0; j < perfmon_numCounters; j++)
         {
             if (cpu_event_fds[cpu_id][j] != -1)
@@ -765,9 +1022,17 @@ int perfmon_setupCountersThread_perfevent(
                 }
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PERF);
                 break;
+            case METRICS:
+                ret = perf_metrics_setup(&attr, index, event);
+                if (ret < 0)
+                {
+                    continue;
+                }
+                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_METRICS);
+                break;
             case PMC:
                 pmc_lock = 1;
-#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+#if defined(__ARM_ARCH_8A)
                 if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
                 {
                     if (event->eventId == 0x3E8 ||
@@ -784,7 +1049,7 @@ int perfmon_setupCountersThread_perfevent(
                 }
                 else if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO)
                 {
-                    enum pmc_type ptype = M1_UNKNOWN;
+                    enum apple_m1_pmc_type ptype = M1_UNKNOWN;
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, Getting real perf_event type for HWThread %d, cpu_id);
                     ret = perfevent_apple_m1_pmc_type_select(cpu_id, &ptype);
                     if (ret == 0)
@@ -818,11 +1083,32 @@ int perfmon_setupCountersThread_perfevent(
                 }
                 break;
             case POWER:
-                if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
+                if (cpuid_info.isIntel && socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
                 {
                     has_lock = 1;
                     VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
                     ret = perf_uncore_setup(&attr, type, event);
+                }
+                else if ((cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY))
+                {
+                    if (event->eventId == 0x01 && core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
+                    {
+                        has_lock = 1;
+                        VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
+                        ret = perf_uncore_setup(&attr, type, event);
+                    }
+                    else if (event->eventId == 0x02 && socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
+                    {
+                        has_lock = 1;
+                        VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
+                        ret = perf_uncore_setup(&attr, type, event);
+                    }
+                    else if (event->eventId == 0x03 && sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id)
+                    {
+                        has_lock = 1;
+                        VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
+                        ret = perf_uncore_setup(&attr, type, event);
+                    }
                 }
                 is_uncore = 1;
                 break;
@@ -863,44 +1149,14 @@ int perfmon_setupCountersThread_perfevent(
             case CBOX25:
             case CBOX26:
             case CBOX27:
-            case UBOX:
-            case UBOXFIX:
-            case SBOX0:
-            case SBOX1:
-            case SBOX2:
-            case SBOX3:
-            case QBOX0:
-            case QBOX1:
-            case QBOX2:
-            case WBOX:
-            case PBOX:
-            case RBOX0:
-            case RBOX1:
-            case BBOX0:
-            case EDBOX0:
-            case EDBOX1:
-            case EDBOX2:
-            case EDBOX3:
-            case EDBOX4:
-            case EDBOX5:
-            case EDBOX6:
-            case EDBOX7:
-            case EUBOX0:
-            case EUBOX1:
-            case EUBOX2:
-            case EUBOX3:
-            case EUBOX4:
-            case EUBOX5:
-            case EUBOX6:
-            case EUBOX7:
                 if (cpuid_info.family == ZEN_FAMILY && type == MBOX0)
                 {
-                    if (numa_lock[affinity_thread2numa_lookup[cpu_id]] == cpu_id)
+                    if (die_lock[affinity_thread2die_lookup[cpu_id]] == cpu_id)
                     {
                         has_lock = 1;
                     }
                 }
-                else if (cpuid_info.family == ZEN_FAMILY && type == CBOX0)
+                else if ((cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY) && type == CBOX0)
                 {
                     if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id)
                     {
@@ -955,7 +1211,7 @@ int perfmon_setupCountersThread_perfevent(
                     DEBUG_PRINT(DEBUGLEV_INFO, Cannot measure Uncore with perf_event_paranoid value = %d, perf_event_paranoid);
                     perf_disable_uncore = 1;
                 }
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, perf_event_open: cpu_id=%d pid=%d flags=%d, cpu_id, curpid, allflags);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, perf_event_open: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
                 cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, -1, allflags);
             }
             else
@@ -1039,7 +1295,7 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                 continue;
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
-            tmp = 0;
+            tmp = 0x0LL;
             ret = read(cpu_event_fds[cpu_id][index], &tmp, sizeof(long long));
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
             if (ret == sizeof(long long))
@@ -1090,7 +1346,7 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                 continue;
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
-            tmp = 0;
+            tmp = 0x0LL;
             ret = read(cpu_event_fds[cpu_id][index], &tmp, sizeof(long long));
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
             if (ret == sizeof(long long))
