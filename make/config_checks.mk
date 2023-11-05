@@ -82,3 +82,8 @@ ifeq ($(strip $(NVIDIA_INTERFACE)), true)
 INCLUDES += -I$(CUDAINCLUDE) -I$(CUPTIINCLUDE)
 #CPPFLAGS += -L$(CUDALIBDIR) -L$(CUPTILIBDIR)
 endif
+
+ifeq ($(strip $(ROCM_INTERFACE)), true)
+# HSA includes 'hsa/xxx.h' and rocprofiler 'xxx.h'
+INCLUDES += -I$(HIPINCLUDE) -I$(HSAINCLUDE) -I$(HSAINCLUDE)/hsa -I$(ROCPROFILERINCLUDE) -I$(RSMIINCLUDE)
+endif

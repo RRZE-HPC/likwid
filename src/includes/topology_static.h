@@ -42,5 +42,10 @@ CacheLevel a64fx_caches[2] = {
     {2, DATACACHE, 16, 2048, 256, 8388608, 12, 1},
 };
 
+CacheLevel apple_m1_caches[2] = {
+    {1, DATACACHE, 4, 64, 256, 131072, 1, 1},
+    {2, DATACACHE, 16, 2048, 256, 12582912, 4, 1},
+};
+
 
 #endif

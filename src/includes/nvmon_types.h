@@ -175,6 +175,15 @@ typedef struct {
 } NvmonFunctions;
 
 
+#define NVMON_SOURCE_BACKEND 0
+#define NVMON_SOURCE_NVML 1
+typedef struct {
+    int numEvents;
+    int* sourceTypes;
+    int* sourceIds;
+} NvmonGroupSourceInfo;
+
+
 /*! \brief Structure specifying all performance monitoring event groups
 
 The global NvmonGroupSet structure holds all eventSets and threads that are
@@ -192,6 +201,9 @@ typedef struct {
     NvmonDevice*     gpus; /*!< \brief List of GPUs */
     int              numberOfBackends;
     NvmonFunctions*  backends[3];
+
+    int                   numGroupSources;
+    NvmonGroupSourceInfo* groupSources;
 } NvmonGroupSet;
 
 extern NvmonGroupSet* nvGroupSet;

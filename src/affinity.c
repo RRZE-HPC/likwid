@@ -526,12 +526,20 @@ affinity_init()
     }
     topology_init();
     CpuTopology_t cputopo = get_cpuTopology();
+    CpuInfo_t cpuinfo = get_cpuInfo();
     numa_init();
     NumaTopology_t numatopo = get_numaTopology();
 
+    int doCacheDomains = 1;
     int numberOfCacheDomains = 0;
     int numberOfCoresPerCache = 0;
     int numberOfProcessorsPerCache = 0;
+
+    /* check system and remove domains if needed */
+    if (cpuinfo->vendor == APPLE_M1 && cpuinfo->model == APPLE_M1_STUDIO)
+    {
+        doCacheDomains = 0;
+    }
 
     /* determine total number of domains */
     numberOfDomains = 1;
@@ -539,7 +547,7 @@ affinity_init()
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Socket domains %d, cputopo->numSockets);
     numberOfDomains += (cputopo->numDies > 0 ? cputopo->numDies : cputopo->numSockets);
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPU die domains %d, (cputopo->numDies > 0 ? cputopo->numDies : cputopo->numSockets));
-    if (cputopo->numCacheLevels > 0)
+    if (doCacheDomains && cputopo->numCacheLevels > 0)
     {
         numberOfProcessorsPerCache = cputopo->cacheLevels[cputopo->numCacheLevels-1].threads;
         numberOfCoresPerCache = numberOfProcessorsPerCache / cputopo->numThreadsPerCore;
@@ -602,7 +610,7 @@ affinity_init()
         }
     }
     /* Last level cache domains */
-    if (cputopo->numCacheLevels > 0)
+    if (doCacheDomains && cputopo->numCacheLevels > 0)
     {
         for (int i = 0; i < cputopo->numSockets; i++)
         {

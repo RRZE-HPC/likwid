@@ -3,6 +3,7 @@ include ../config.mk
 LIKWID_LIB ?= -L$(PREFIX)/lib
 LIKWID_INC ?= -I$(PREFIX)/include
 LIKWID_DEFINES ?= -DLIKWID_PERFMON
+HIPCC ?= $(ROCM_HOME)/hip/bin/hipcc
 
 all:  targets
 
@@ -56,6 +57,15 @@ test-likwidAPI: test-likwidAPI.c
 test-msr-access: test-msr-access.c
 	gcc -o $@  test-msr-access.c
 
+test-topology-gpu-rocm: test-topology-gpu-rocm.c
+	gcc -O3 -std=c99 $(LIKWID_INC) $(LIKWID_DEFINES) $(LIKWID_LIB) -DLIKWID_WITH_ROCMON -o $@  test-topology-gpu-rocm.c -lm -llikwid
+
+test-rocmon-triad: test-rocmon-triad.cpp
+	$(HIPCC) -O3 -std=c++11 $(LIKWID_INC) $(LIKWID_DEFINES) $(LIKWID_LIB) -I$(RSMIINCLUDE) -L$(ROCM_HOME)/rocm_smi/lib -lrocm_smi64 -DLIKWID_WITH_ROCMON test-rocmon-triad.cpp -o $@ -lm -llikwid
+
+test-rocmon-triad-marker: test-rocmon-triad-marker.cpp
+	$(HIPCC) -O3 -std=c++11 $(LIKWID_INC) $(LIKWID_DEFINES) $(LIKWID_LIB) -DLIKWID_WITH_ROCMON -DLIKWID_ROCMON test-rocmon-triad-marker.cpp -o $@ -lm -llikwid
+
 streamICC: stream.c
 	if [ $(ICC_AVAILABLE) -ne 0 ]; then icc -O3 -xHost -std=c99 -qopenmp $(LIKWID_INC) $(LIKWID_DEFINES) $(LIKWID_LIB) -o $@ stream.c -lm -llikwid; fi
 
@@ -102,6 +112,6 @@ triadCU: triad.cu
 .PHONY: clean distclean streamGCC streamICC streamGCC_C11 streamICC_C11 testmarker-cnt testmarker-omp testmarkerF90 test-mpi test-mpi-pthreads stream_cilk serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul marker_overhead
 
 clean:
-	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker-cnt testmarkerF90 test-mpi test-mpi-pthreads testmarker-omp serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul marker_overhead streamCU
+	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker-cnt testmarkerF90 test-mpi test-mpi-pthreads testmarker-omp serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul marker_overhead streamCU test-topology-gpu-rocm test-rocmon test-rocmon-triad test-rocmon-triad-marker
 
 distclean: clean

@@ -1,17 +1,17 @@
 /*
  * =======================================================================================
  *
- *      Filename:  nvmon_nvml.h
+ *      Filename:  perfmon_applem1.h
  *
- *      Description:  Header File of nvmon module (NVML backend).
+ *      Description:  Header File of perfmon module for Apple M1
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:   Thomas Gruber (tg), thomas.gruber@googlemail.com
+ *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,25 +27,9 @@
  *
  * =======================================================================================
  */
-#ifndef LIKWID_NVMON_NVML_H
-#define LIKWID_NVMON_NVML_H
 
-#include <nvmon_types.h>
+#include <perfmon_applem1_events.h>
+#include <perfmon_applem1_counters.h>
 
-int nvml_init();
-void nvml_finalize();
-int nvml_getEventsOfGpu(int gpuId, NvmonEventList_t* output);
-void nvml_returnEventsOfGpu(NvmonEventList_t list);
-int nvml_addEventSet(char** events, int numEvents);
-int nvml_setupCounters(int gid);
-int nvml_startCounters();
-int nvml_stopCounters();
-int nvml_readCounters();
-int nvml_getNumberOfEvents(int groupId);
-double nvml_getResult(int gpuIdx, int groupId, int eventId);
-double nvml_getLastResult(int gpuIdx, int groupId, int eventId);
-double nvml_getTimeOfGroup(int groupId);
-double nvml_getLastTimeOfGroup(int groupId);
-double nvml_getTimeToLastReadOfGroup(int groupId);
-
-#endif /* LIKWID_NVMON_NVML_H */
+static int perfmon_numCountersAppleM1 = NUM_COUNTERS_APPLEM1;
+static int perfmon_numArchEventsAppleM1 = NUM_ARCH_EVENTS_APPLEM1;

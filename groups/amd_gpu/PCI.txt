@@ -1,0 +1,18 @@
+SHORT PCI Transfers
+
+EVENTSET
+ROCM0 RSMI_PCI_THROUGHPUT_SENT
+ROCM1 RSMI_PCI_THROUGHPUT_RECEIVED
+
+
+METRICS
+Runtime time
+PCI sent ROCM0
+PCI received ROCM1
+PCI send bandwidth 1E-6*ROCM0/time
+PCI recv bandwidth 1E-6*ROCM1/time
+
+LONG
+--
+Currently not usable since the RSMI_PCI_THROUGHPUT_* events require
+one second per call, so 2 seconds for both of them.
