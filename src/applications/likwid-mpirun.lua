@@ -2295,12 +2295,12 @@ end
 
 if mpitype == "slurm" then
     local scontrol = abspath("scontrol")
-    if scontrol == nil
+    if scontrol == nil then
         print_stderr("Cannot find SLURM's scontrol command")
         mpirun_exit(1)
     end
     local srun = abspath("srun")
-    if srun == nil
+    if srun == nil then
         print_stderr("Cannot find SLURM's srun command")
         mpirun_exit(1)
     end
