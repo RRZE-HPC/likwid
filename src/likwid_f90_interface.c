@@ -175,7 +175,7 @@ likwid_nvmarkerclose_(void)
 void __attribute__ ((visibility ("default") ))
 likwid_nvmarkernextgroup_(void)
 {
-    likwid_markerNextGroup();
+    likwid_gpuMarkerNextGroup();
 }
 
 void __attribute__ ((visibility ("default") ))
