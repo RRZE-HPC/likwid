@@ -279,7 +279,7 @@ $(GENGROUPLOCK): $(foreach directory,$(shell ls $(GROUP_DIR)), $(wildcard $(GROU
 	$(Q)$(GEN_GROUPS) ./groups  $(BUILD_DIR) ./perl/templates
 	$(Q)touch $(GENGROUPLOCK)
 
-$(FORTRAN_IF): $(SRC_DIR)/likwid.f90
+$(FORTRAN_IF): $(SRC_DIR)/likwid.F90
 	@echo "===>  COMPILE FORTRAN INTERFACE  $@"
 	$(Q)$(FC) -c  $(FCFLAGS) $<
 	@rm -f likwid.o
