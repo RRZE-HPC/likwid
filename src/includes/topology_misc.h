@@ -31,7 +31,7 @@
 #define TOPOLOGY_MISC_H
 
 int num_nvidia_devices();
-int fill_nvidia_device(int id, GpuDevice* device);
+int fill_nvidia_device(int id, CudaDevice* device);
 
 
 #endif /* TOPOLOGY_MISC_H */

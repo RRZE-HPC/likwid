@@ -127,13 +127,13 @@ endif
 ifneq ($(NVIDIA_INTERFACE), true)
 OBJ := $(filter-out $(BUILD_DIR)/nvmon.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/nvmon_nvml.o,$(OBJ))
-OBJ := $(filter-out $(BUILD_DIR)/topology_gpu.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/topology_cuda.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/libnvctr.o,$(OBJ))
 endif
 ifneq ($(ROCM_INTERFACE), true)
 OBJ := $(filter-out $(BUILD_DIR)/rocmon.o,$(OBJ))
-OBJ := $(filter-out $(BUILD_DIR)/rocmon-marker.o,$(OBJ))
-OBJ := $(filter-out $(BUILD_DIR)/topology_gpu_rocm.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/rocmon_marker.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/topology_rocm.o,$(OBJ))
 endif
 ifeq ($(COMPILER),GCCPOWER)
 OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
@@ -318,7 +318,7 @@ $(BUILD_DIR)/%.o:  %.c
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 $(BUILD_DIR)/rocmon_marker.o:  rocmon_marker.c
-	@echo "===>  COMPILE $@"
+	@echo "===>  COMPILE  $@"
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)objcopy --redefine-sym HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE=HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE2 $@
 

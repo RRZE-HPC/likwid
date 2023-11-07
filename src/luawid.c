@@ -63,7 +63,6 @@
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int topology_isInitialized = 0;
-static int gputopology_isInitialized = 0;
 static int numa_isInitialized = 0;
 static int affinity_isInitialized = 0;
 static int perfmon_isInitialized = 0;
@@ -73,6 +72,7 @@ static int power_hasRAPL = 0;
 static int config_isInitialized = 0;
 
 static int nvmon_initialized = 0;
+static int cudatopology_isInitialized = 0;
 static int rocmon_initialized = 0;
 
 /* #####   VARIABLES  -  EXPORTED VARIABLES   ############################# */
@@ -2532,13 +2532,13 @@ static int lua_likwid_setresuser(lua_State *L) {
 
 #ifdef LIKWID_WITH_NVMON
 
-GpuTopology_t gputopo = NULL;
+CudaTopology_t cudatopo = NULL;
 
-static int lua_likwid_getGpuTopology(lua_State *L) {
-  if (!gputopology_isInitialized) {
-    if (topology_gpu_init() == EXIT_SUCCESS) {
-      gputopo = get_gpuTopology();
-      gputopology_isInitialized = 1;
+static int lua_likwid_getCudaTopology(lua_State *L) {
+  if (!cudatopology_isInitialized) {
+    if (topology_cuda_init() == EXIT_SUCCESS) {
+      cudatopo = get_cudaTopology();
+      cudatopology_isInitialized = 1;
     } else {
       lua_pushnil(L);
       return 1;
@@ -2546,13 +2546,13 @@ static int lua_likwid_getGpuTopology(lua_State *L) {
   }
   lua_newtable(L);
   lua_pushstring(L, "numDevices");
-  lua_pushinteger(L, (lua_Integer)(gputopo->numDevices));
+  lua_pushinteger(L, (lua_Integer)(cudatopo->numDevices));
   lua_settable(L, -3);
 
   lua_pushstring(L, "devices");
   lua_newtable(L);
-  for (int i = 0; i < gputopo->numDevices; i++) {
-    GpuDevice *gpu = &gputopo->devices[i];
+  for (int i = 0; i < cudatopo->numDevices; i++) {
+    CudaDevice *gpu = &cudatopo->devices[i];
     lua_pushinteger(L, i + 1);
     lua_newtable(L);
     lua_pushstring(L, "id");
@@ -2670,32 +2670,32 @@ static int lua_likwid_getGpuTopology(lua_State *L) {
   return 1;
 }
 
-static int lua_likwid_putGpuTopology(lua_State *L) {
-  if (gputopology_isInitialized) {
-    topology_gpu_finalize();
+static int lua_likwid_putCudaTopology(lua_State *L) {
+  if (cudatopology_isInitialized) {
+    topology_cuda_finalize();
   }
   return 0;
 }
 
-static int lua_likwid_gpustr_to_gpulist(lua_State *L) {
+static int lua_likwid_gpustr_to_gpulist_cuda(lua_State *L) {
   int ret = 0;
   char *gpustr = (char *)luaL_checkstring(L, 1);
-  if (!gputopology_isInitialized) {
-    if (topology_gpu_init() == EXIT_SUCCESS) {
-      gputopo = get_gpuTopology();
-      gputopology_isInitialized = 1;
+  if (!cudatopology_isInitialized) {
+    if (topology_cuda_init() == EXIT_SUCCESS) {
+      cudatopo = get_cudaTopology();
+      cudatopology_isInitialized = 1;
     } else {
       lua_pushnumber(L, 0);
       lua_pushnil(L);
       return 2;
     }
   }
-  int *gpulist = (int *)malloc(gputopo->numDevices * sizeof(int));
+  int *gpulist = (int *)malloc(cudatopo->numDevices * sizeof(int));
   if (gpulist == NULL) {
     lua_pushstring(L, "Cannot allocate data for the GPU list");
     lua_error(L);
   }
-  ret = gpustr_to_gpulist(gpustr, gpulist, gputopo->numDevices);
+  ret = gpustr_to_gpulist_cuda(gpustr, gpulist, cudatopo->numDevices);
   if (ret <= 0) {
     lua_pushstring(L, "Cannot parse GPU string");
     lua_error(L);
@@ -2711,11 +2711,11 @@ static int lua_likwid_gpustr_to_gpulist(lua_State *L) {
   return 2;
 }
 
-static int lua_likwid_getGpuEventsAndCounters(lua_State *L) {
-  if (!gputopology_isInitialized) {
-    if (topology_gpu_init() == EXIT_SUCCESS) {
-      gputopo = get_gpuTopology();
-      gputopology_isInitialized = 1;
+static int lua_likwid_getCudaEventsAndCounters(lua_State *L) {
+  if (!cudatopology_isInitialized) {
+    if (topology_cuda_init() == EXIT_SUCCESS) {
+      cudatopo = get_cudaTopology();
+      cudatopology_isInitialized = 1;
     } else {
       lua_pushnil(L);
       return 1;
@@ -2724,14 +2724,14 @@ static int lua_likwid_getGpuEventsAndCounters(lua_State *L) {
 
   lua_newtable(L);
   lua_pushstring(L, "numDevices");
-  lua_pushinteger(L, (lua_Integer)(gputopo->numDevices));
+  lua_pushinteger(L, (lua_Integer)(cudatopo->numDevices));
   lua_settable(L, -3);
 
   lua_pushstring(L, "devices");
   lua_newtable(L);
-  for (int i = 0; i < gputopo->numDevices; i++) {
+  for (int i = 0; i < cudatopo->numDevices; i++) {
     NvmonEventList_t l;
-    GpuDevice *gpu = &gputopo->devices[i];
+    CudaDevice *gpu = &cudatopo->devices[i];
     lua_pushinteger(L, gpu->devid);
     lua_newtable(L);
 
@@ -2761,14 +2761,14 @@ static int lua_likwid_getGpuEventsAndCounters(lua_State *L) {
   return 1;
 }
 
-static int lua_likwid_getGpuGroups(lua_State *L) {
+static int lua_likwid_getCudaGroups(lua_State *L) {
   int i, ret;
   char **tmp, **infos, **longs;
   int gpuId = lua_tonumber(L, 1);
-  if (!gputopology_isInitialized) {
-    if (topology_gpu_init() == EXIT_SUCCESS) {
-      gputopo = get_gpuTopology();
-      gputopology_isInitialized = 1;
+  if (!cudatopology_isInitialized) {
+    if (topology_cuda_init() == EXIT_SUCCESS) {
+      cudatopo = get_cudaTopology();
+      cudatopology_isInitialized = 1;
     } else {
       lua_pushnil(L);
       return 1;
@@ -2900,19 +2900,19 @@ static int lua_likwid_nvMarkerRegionGpulist(lua_State *L) {
   int region = lua_tointeger(L, -1);
   int *gpulist;
   int regionGPUs = 0;
-  if (gputopology_isInitialized == 0) {
-    topology_gpu_init();
+  if (cudatopology_isInitialized == 0) {
+    topology_cuda_init();
   }
-  if ((gputopology_isInitialized) && (gputopo == NULL)) {
-    gputopo = get_gpuTopology();
+  if ((cudatopology_isInitialized) && (cudatopo == NULL)) {
+    cudatopo = get_cudaTopology();
   }
 
-  gpulist = (int *)malloc(gputopo->numDevices * sizeof(int));
+  gpulist = (int *)malloc(cudatopo->numDevices * sizeof(int));
   if (gpulist == NULL) {
     return 0;
   }
   regionGPUs =
-      nvmon_getGpulistOfRegion(region - 1, gputopo->numDevices, gpulist);
+      nvmon_getGpulistOfRegion(region - 1, cudatopo->numDevices, gpulist);
   if (regionGPUs > 0) {
     lua_newtable(L);
     for (i = 0; i < regionGPUs; i++) {
@@ -2974,11 +2974,11 @@ static int lua_likwid_nvInit(lua_State *L) {
 #endif
     lua_pop(L, 1);
   }
-  if (gputopology_isInitialized == 0) {
-    topology_gpu_init();
+  if (cudatopology_isInitialized == 0) {
+    topology_cuda_init();
   }
-  if ((gputopology_isInitialized) && (gputopo == NULL)) {
-    gputopo = get_gpuTopology();
+  if ((cudatopology_isInitialized) && (cudatopo == NULL)) {
+    cudatopo = get_cudaTopology();
   }
   if (nvmon_initialized == 0) {
     ret = nvmon_init(nrGpus, gpus);
@@ -3025,7 +3025,7 @@ static int lua_likwid_nvSupported(lua_State *L) {
 }
 #else
 static int lua_likwid_nvSupported(lua_State *L) {
-  lua_pushboolean(L, 1);
+  lua_pushboolean(L, 0);
   return 0;
 }
 #endif /* LIKWID_WITH_NVMON */
@@ -3114,19 +3114,19 @@ static int lua_likwid_setHwFeature(lua_State *L) {
 
 #ifdef LIKWID_WITH_ROCMON
 
-GpuTopology_rocm_t gputopo_rocm = NULL;
-int gputopology_isInitialized_rocm = 0;
+RocmTopology_t rocmtopo = NULL;
+int rocmtopology_isInitialized = 0;
 
 static int lua_likwid_rocmSupported(lua_State *L) {
   lua_pushboolean(L, TRUE);
   return 1;
 }
 
-static int lua_likwid_getGpuTopology_rocm(lua_State *L) {
-  if (!gputopology_isInitialized_rocm) {
-    if (topology_gpu_init_rocm() == EXIT_SUCCESS) {
-      gputopo_rocm = get_gpuTopology_rocm();
-      gputopology_isInitialized_rocm = 1;
+static int lua_likwid_getRocmTopology(lua_State *L) {
+  if (!rocmtopology_isInitialized) {
+    if (topology_rocm_init() == EXIT_SUCCESS) {
+      rocmtopo = get_rocmTopology();
+      rocmtopology_isInitialized = 1;
     } else {
       lua_pushnil(L);
       return 1;
@@ -3136,13 +3136,13 @@ static int lua_likwid_getGpuTopology_rocm(lua_State *L) {
   lua_newtable(L);
 
   lua_pushstring(L, "numDevices");
-  lua_pushinteger(L, (lua_Integer)(gputopo_rocm->numDevices));
+  lua_pushinteger(L, (lua_Integer)(rocmtopo->numDevices));
   lua_settable(L, -3);
 
   lua_pushstring(L, "devices");
   lua_newtable(L);
-  for (int i = 0; i < gputopo_rocm->numDevices; i++) {
-    GpuDevice_rocm *gpu = &gputopo_rocm->devices[i];
+  for (int i = 0; i < rocmtopo->numDevices; i++) {
+    RocmDevice *gpu = &rocmtopo->devices[i];
     lua_pushinteger(L, i + 1);
     lua_newtable(L);
     lua_pushstring(L, "id");
@@ -3246,9 +3246,9 @@ static int lua_likwid_getGpuTopology_rocm(lua_State *L) {
   return 1;
 }
 
-static int lua_likwid_putGpuTopology_rocm(lua_State *L) {
-  if (gputopology_isInitialized_rocm) {
-    topology_gpu_finalize_rocm();
+static int lua_likwid_putRocmTopology(lua_State *L) {
+  if (rocmtopology_isInitialized) {
+    topology_rocm_finalize();
   }
   return 0;
 }
@@ -3271,11 +3271,11 @@ static int lua_likwid_init_rocm(lua_State *L) {
 #endif
     lua_pop(L, 1);
   }
-  if (gputopology_isInitialized_rocm == 0) {
-    topology_gpu_init_rocm();
+  if (rocmtopology_isInitialized == 0) {
+    topology_rocm_init();
   }
-  if ((gputopology_isInitialized_rocm) && (gputopo_rocm == NULL)) {
-    gputopo_rocm = get_gpuTopology_rocm();
+  if ((rocmtopology_isInitialized) && (rocmtopo == NULL)) {
+    rocmtopo = get_rocmTopology();
   }
   if (rocmon_initialized == 0) {
     ret = rocmon_init(nrGpus, gpus);
@@ -3294,22 +3294,22 @@ static int lua_likwid_init_rocm(lua_State *L) {
 static int lua_likwid_gpustr_to_gpulist_rocm(lua_State *L) {
   int ret = 0;
   char *gpustr = (char *)luaL_checkstring(L, 1);
-  if (!gputopology_isInitialized_rocm) {
-    if (topology_gpu_init_rocm() == EXIT_SUCCESS) {
-      gputopo_rocm = get_gpuTopology_rocm();
-      gputopology_isInitialized = 1;
+  if (!rocmtopology_isInitialized) {
+    if (topology_rocm_init() == EXIT_SUCCESS) {
+      rocmtopo = get_rocmTopology();
+      rocmtopology_isInitialized = 1;
     } else {
       lua_pushnumber(L, 0);
       lua_pushnil(L);
       return 2;
     }
   }
-  int *gpulist = (int *)malloc(gputopo_rocm->numDevices * sizeof(int));
+  int *gpulist = (int *)malloc(rocmtopo->numDevices * sizeof(int));
   if (gpulist == NULL) {
     lua_pushstring(L, "Cannot allocate data for the GPU list");
     lua_error(L);
   }
-  ret = gpustr_to_gpulist_rocm(gpustr, gpulist, gputopo_rocm->numDevices);
+  ret = gpustr_to_gpulist_rocm(gpustr, gpulist, rocmtopo->numDevices);
   if (ret <= 0) {
     lua_pushstring(L, "Cannot parse GPU string");
     lua_error(L);
@@ -3325,28 +3325,28 @@ static int lua_likwid_gpustr_to_gpulist_rocm(lua_State *L) {
   return 2;
 }
 
-static int lua_likwid_getGpuEventsAndCounters_rocm(lua_State *L) {
+static int lua_likwid_getRocmEventsAndCounters(lua_State *L) {
   int *glist = NULL;
-  if (!gputopology_isInitialized_rocm) {
-    if (topology_gpu_init_rocm() == EXIT_SUCCESS) {
-      gputopo_rocm = get_gpuTopology_rocm();
-      gputopology_isInitialized_rocm = 1;
+  if (!rocmtopology_isInitialized) {
+    if (topology_rocm_init() == EXIT_SUCCESS) {
+      rocmtopo = get_rocmTopology();
+      rocmtopology_isInitialized = 1;
     } else {
       lua_pushnil(L);
       return 1;
     }
   }
   if (!rocmon_initialized) {
-    glist = malloc(gputopo_rocm->numDevices * sizeof(int));
+    glist = malloc(rocmtopo->numDevices * sizeof(int));
     if (!glist) {
       lua_pushnil(L);
       return 1;
     }
-    for (int i = 0; i < gputopo_rocm->numDevices; i++) {
-      GpuDevice_rocm *gpu = &gputopo_rocm->devices[i];
+    for (int i = 0; i < rocmtopo->numDevices; i++) {
+      RocmDevice *gpu = &rocmtopo->devices[i];
       glist[i] = gpu->devid;
     }
-    int ret = rocmon_init(gputopo_rocm->numDevices, glist);
+    int ret = rocmon_init(rocmtopo->numDevices, glist);
     if (ret != 0) {
       lua_pushnil(L);
       return 1;
@@ -3354,14 +3354,14 @@ static int lua_likwid_getGpuEventsAndCounters_rocm(lua_State *L) {
   }
   lua_newtable(L);
   lua_pushstring(L, "numDevices");
-  lua_pushinteger(L, (lua_Integer)(gputopo_rocm->numDevices));
+  lua_pushinteger(L, (lua_Integer)(rocmtopo->numDevices));
   lua_settable(L, -3);
 
   lua_pushstring(L, "devices");
   lua_newtable(L);
-  for (int i = 0; i < gputopo_rocm->numDevices; i++) {
+  for (int i = 0; i < rocmtopo->numDevices; i++) {
     EventList_rocm_t l = NULL;
-    GpuDevice_rocm *gpu = &gputopo_rocm->devices[i];
+    RocmDevice *gpu = &rocmtopo->devices[i];
     lua_pushinteger(L, gpu->devid);
     lua_newtable(L);
 
@@ -3425,14 +3425,14 @@ static int lua_likwid_getLongInfoOfGroup_rocm(lua_State *L) {
   return 1;
 }
 
-static int lua_likwid_getGpuGroups_rocm(lua_State *L) {
+static int lua_likwid_getRocmGroups(lua_State *L) {
   int i, ret;
   char **tmp, **infos, **longs;
   int gpuId = lua_tonumber(L, 1);
-  if (!gputopology_isInitialized_rocm) {
-    if (topology_gpu_init_rocm() == EXIT_SUCCESS) {
-      gputopo_rocm = get_gpuTopology_rocm();
-      gputopology_isInitialized_rocm = 1;
+  if (!rocmtopology_isInitialized) {
+    if (topology_rocm_init() == EXIT_SUCCESS) {
+      rocmtopo = get_rocmTopology();
+      rocmtopology_isInitialized = 1;
     } else {
       lua_pushnil(L);
       return 1;
@@ -3564,20 +3564,20 @@ static int lua_likwid_markerRegionGpulist_rocm(lua_State *L) {
   int region = lua_tointeger(L, -1);
   int *gpulist;
   int regionGPUs = 0;
-  if (gputopology_isInitialized_rocm == 0) {
-    topology_gpu_init_rocm();
-    gputopology_isInitialized_rocm = 1;
+  if (rocmtopology_isInitialized == 0) {
+    topology_rocm_init();
+    rocmtopology_isInitialized = 1;
   }
-  if ((gputopology_isInitialized_rocm) && (gputopo_rocm == NULL)) {
-    gputopo_rocm = get_gpuTopology_rocm();
+  if ((rocmtopology_isInitialized) && (rocmtopo == NULL)) {
+    rocmtopo = get_rocmTopology();
   }
 
-  gpulist = (int *)malloc(gputopo_rocm->numDevices * sizeof(int));
+  gpulist = (int *)malloc(rocmtopo->numDevices * sizeof(int));
   if (gpulist == NULL) {
     return 0;
   }
   regionGPUs =
-      rocmon_getGpulistOfRegion(region - 1, gputopo_rocm->numDevices, gpulist);
+      rocmon_getGpulistOfRegion(region - 1, rocmtopo->numDevices, gpulist);
   if (regionGPUs > 0) {
     lua_newtable(L);
     for (i = 0; i < regionGPUs; i++) {
@@ -3942,12 +3942,12 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
   // Nvidia GPU functions
   lua_register(L, "likwid_nvSupported", lua_likwid_nvSupported);
 #ifdef LIKWID_WITH_NVMON
-  lua_register(L, "likwid_getGpuTopology", lua_likwid_getGpuTopology);
-  lua_register(L, "likwid_putGpuTopology", lua_likwid_putGpuTopology);
-  lua_register(L, "likwid_getGpuEventsAndCounters",
-               lua_likwid_getGpuEventsAndCounters);
-  lua_register(L, "likwid_getGpuGroups", lua_likwid_getGpuGroups);
-  lua_register(L, "likwid_gpustr_to_gpulist", lua_likwid_gpustr_to_gpulist);
+  lua_register(L, "likwid_getCudaTopology", lua_likwid_getCudaTopology);
+  lua_register(L, "likwid_putCudaTopology", lua_likwid_putCudaTopology);
+  lua_register(L, "likwid_getCudaEventsAndCounters",
+               lua_likwid_getCudaEventsAndCounters);
+  lua_register(L, "likwid_getCudaGroups", lua_likwid_getCudaGroups);
+  lua_register(L, "likwid_gpustr_to_gpulist_cuda", lua_likwid_gpustr_to_gpulist_cuda);
   lua_register(L, "likwid_readNvMarkerFile", lua_likwid_nvMarkerFile_read);
   lua_register(L, "likwid_destroyNvMarkerFile",
                lua_likwid_nvMarkerFile_destroy);
@@ -3978,11 +3978,11 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
   // ROCm GPU functions
   lua_register(L, "likwid_rocmSupported", lua_likwid_rocmSupported);
 #ifdef LIKWID_WITH_ROCMON
-  lua_register(L, "likwid_getGpuTopology_rocm", lua_likwid_getGpuTopology_rocm);
-  lua_register(L, "likwid_putGpuTopology_rocm", lua_likwid_putGpuTopology_rocm);
-  lua_register(L, "likwid_getGpuEventsAndCounters_rocm",
-               lua_likwid_getGpuEventsAndCounters_rocm);
-  lua_register(L, "likwid_getGpuGroups_rocm", lua_likwid_getGpuGroups_rocm);
+  lua_register(L, "likwid_getRocmTopology", lua_likwid_getRocmTopology);
+  lua_register(L, "likwid_putRocmTopology", lua_likwid_putRocmTopology);
+  lua_register(L, "likwid_getRocmEventsAndCounters",
+               lua_likwid_getRocmEventsAndCounters);
+  lua_register(L, "likwid_getRocmGroups", lua_likwid_getRocmGroups);
   lua_register(L, "likwid_gpustr_to_gpulist_rocm",
                lua_likwid_gpustr_to_gpulist_rocm);
   lua_register(L, "likwid_init_rocm", lua_likwid_init_rocm);

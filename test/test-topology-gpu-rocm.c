@@ -7,7 +7,7 @@ int main()
     printf("Init\n");
 
     // Init
-    int ret = topology_gpu_init_rocm();
+    int ret = topology_rocm_init();
     if (ret != 0)
     {
         printf("Oops! Failed to initialize ROCm GPU topology.");
@@ -15,12 +15,12 @@ int main()
     }
 
     // Use
-    GpuTopology_rocm_t topo = get_gpuTopology_rocm();
+    RocmTopology_t topo = get_rocmTopology();
     printf("Number of devices: %d\n\n", topo->numDevices);
 
     for (int i = 0; i < topo->numDevices; i++)
     {
-        GpuDevice_rocm *device = &topo->devices[i];
+        RocmDevice *device = &topo->devices[i];
 
         printf("---\n");
         printf("devid: %d\n", device->devid);
@@ -55,7 +55,7 @@ int main()
     }
 
     // Finalize
-    topology_gpu_finalize_rocm();
+    topology_rocm_finalize();
 
     printf("Finalized\n");
     return 0;
