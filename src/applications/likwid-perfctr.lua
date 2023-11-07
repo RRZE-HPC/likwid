@@ -87,10 +87,10 @@ local function usage(config)
     end
     io.stdout:write("-g, --group <string>\t Performance group or custom event set string for CPU monitoring\n")
     if likwid.nvSupported() then
-        io.stdout:write("-W, --gpugroup <string>\t Performance group or custom event set string for GPU monitoring\n")
+        io.stdout:write("-W, --cudagroup <string>\t Performance group or custom event set string for GPU monitoring\n")
     end
     if likwid.rocmSupported() then
-        io.stdout:write("-R <string>\t\t Performance group or custom event set string for ROCm GPU monitoring\n")
+        io.stdout:write("-R, --rocmgroup <string>\t\t Performance group or custom event set string for ROCm GPU monitoring\n")
     end
     io.stdout:write("-H\t\t\t Get group help (together with -g switch)\n")
     io.stdout:write("-s, --skip <hex>\t Bitmask with threads to skip\n")
@@ -216,7 +216,7 @@ cudatopo = nil
 if nvSupported then
     table.insert(cliopts, "W:")
     table.insert(cliopts, "G:")
-    table.insert(cliopts, "gpugroup:")
+    table.insert(cliopts, "cudagroup:")
 end
 ---------------------------
 rocmSupported = likwid.rocmSupported()
@@ -434,7 +434,7 @@ for opt, arg in likwid.getopt(arg, cliopts) do
             perfctr_exit(1)
         end
         gotCudaG = true
-    elseif nvSupported and (opt == "W" or opt == "gpugroup") then
+    elseif nvSupported and (opt == "W" or opt == "cudagroup") then
         if arg ~= nil then
             table.insert(cuda_event_string_list, arg)
         else
