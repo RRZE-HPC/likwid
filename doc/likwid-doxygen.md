@@ -73,6 +73,8 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 
 \subsection Fortran90_Interface Fortran90 Interface
 - \ref Fortran_Interface
+- \ref Fortran_RocmGPU_Interface
+- \ref Fortran_NvGPU_Interface
 
 \section Architectures Supported Architectures
 \subsection Architectures_X86 X86 Architectures

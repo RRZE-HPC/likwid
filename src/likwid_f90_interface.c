@@ -162,20 +162,20 @@ likwid_markerresetregion_(char* regionTag, int len)
 void __attribute__ ((visibility ("default") ))
 likwid_nvmarkerinit_(void)
 {
-    likwid_gpuMarkerInit();
+    nvmon_markerInit();
 }
 
 
 void __attribute__ ((visibility ("default") ))
 likwid_nvmarkerclose_(void)
 {
-    likwid_gpuMarkerClose();
+    nvmon_markerClose();
 }
 
 void __attribute__ ((visibility ("default") ))
 likwid_nvmarkernextgroup_(void)
 {
-    likwid_gpuMarkerNextGroup();
+    nvmon_markerNextGroup();
 }
 
 void __attribute__ ((visibility ("default") ))
@@ -192,7 +192,7 @@ likwid_nvmarkerregisterregion_(char* regionTag, int len)
         }
     }
 
-    likwid_gpuMarkerRegisterRegion( tmp );
+    nvmon_markerRegisterRegion( tmp );
     free(tmp);
 }
 
@@ -210,7 +210,7 @@ likwid_nvmarkerstartregion_(char* regionTag, int len)
         }
     }
 
-    likwid_gpuMarkerStartRegion( tmp );
+    nvmon_markerStartRegion( tmp );
     free(tmp);
 }
 
@@ -228,7 +228,7 @@ likwid_nvmarkerstopregion_(char* regionTag, int len)
         }
     }
 
-    likwid_gpuMarkerStopRegion( tmp );
+    nvmon_markerStopRegion( tmp );
     free(tmp);
 }
 
@@ -245,7 +245,99 @@ likwid_nvmarkerresetregion_(char* regionTag, int len)
             break;
         }
     }
-    likwid_gpuMarkerResetRegion( tmp);
+    nvmon_markerResetRegion( tmp);
     free(tmp);
 }
 #endif
+
+#ifdef LIKWID_WITH_ROCMON
+void __attribute__ ((visibility ("default") ))
+likwid_rocmmarkerinit_(void)
+{
+    rocmon_markerInit();
+}
+
+
+void __attribute__ ((visibility ("default") ))
+likwid_rocmmarkerclose_(void)
+{
+    rocmon_markerClose();
+}
+
+void __attribute__ ((visibility ("default") ))
+likwid_rocmmarkernextgroup_(void)
+{
+    rocmon_markerNextGroup();
+}
+
+void __attribute__ ((visibility ("default") ))
+likwid_rocmmarkerregisterregion_(char* regionTag, int len)
+{
+    char* tmp = (char*) malloc((len+1) * sizeof(char) );
+    strncpy(tmp, regionTag, len * sizeof(char) );
+
+    for (int i=(len-1); len > 0; len--)
+    {
+        if (tmp[i] != ' ') {
+            tmp[i+1] = 0;
+            break;
+        }
+    }
+
+    rocmon_markerRegisterRegion( tmp );
+    free(tmp);
+}
+
+void __attribute__ ((visibility ("default") ))
+likwid_rocmmarkerstartregion_(char* regionTag, int len)
+{
+    char* tmp = (char*) malloc((len+1) * sizeof(char) );
+    strncpy(tmp, regionTag, len * sizeof(char) );
+
+    for (int i=(len-1); len > 0; len--)
+    {
+        if (tmp[i] != ' ') {
+            tmp[i+1] = 0;
+            break;
+        }
+    }
+
+    rocmon_markerStartRegion( tmp );
+    free(tmp);
+}
+
+void __attribute__ ((visibility ("default") ))
+likwid_rocmmarkerstopregion_(char* regionTag, int len)
+{
+    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    strncpy(tmp, regionTag, len * sizeof(char) );
+
+    for (int i=(len-1); len > 0; len--)
+    {
+        if (tmp[i] != ' ') {
+            tmp[i+1] = 0;
+            break;
+        }
+    }
+
+    rocmon_markerStopRegion( tmp );
+    free(tmp);
+}
+
+void __attribute__ ((visibility ("default") ))
+likwid_rocmmarkerresetregion_(char* regionTag, int len)
+{
+    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    strncpy(tmp, regionTag, len * sizeof(char) );
+
+    for (int i=(len-1); len > 0; len--)
+    {
+        if (tmp[i] != ' ') {
+            tmp[i+1] = 0;
+            break;
+        }
+    }
+    rocmon_markerResetRegion( tmp);
+    free(tmp);
+}
+#endif /* LIKWID_WITH_ROCMON */
