@@ -86,7 +86,7 @@ nvmon_init(int nrGpus, const int* gpuIds)
 {
     int idx = 0;
     int ret = 0;
-    GpuTopology_t gtopo = NULL;
+    CudaTopology_t gtopo = NULL;
     if (nvmon_initialized == 1)
     {
         return 0;
@@ -109,12 +109,12 @@ nvmon_init(int nrGpus, const int* gpuIds)
         return -EEXIST;
     }
 
-    ret = topology_gpu_init();
+    ret = topology_cuda_init();
     if (ret != EXIT_SUCCESS)
     {
         return -ENODEV;
     }
-    gtopo = get_gpuTopology();
+    gtopo = get_cudaTopology();
 
     init_configuration();
 
@@ -307,12 +307,12 @@ int
 nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
 {
     int err = 0;
-    int ret = topology_gpu_init();
+    int ret = topology_cuda_init();
     if (ret != EXIT_SUCCESS)
     {
         return -ENODEV;
     }
-    GpuTopology_t gtopo = get_gpuTopology();
+    CudaTopology_t gtopo = get_cudaTopology();
     int available = -1;
     for (int i = 0; i < gtopo->numDevices; i++)
     {
@@ -1114,12 +1114,12 @@ int nvmon_getGroups(int gpuId, char*** groups, char*** shortinfos, char*** longi
     init_configuration();
     int ccapMajor = 0;
     Configuration_t config = get_configuration();
-    ret = topology_gpu_init();
+    ret = topology_cuda_init();
     if (ret != EXIT_SUCCESS)
     {
         return -ENODEV;
     }
-    GpuTopology_t gtopo = get_gpuTopology();
+    CudaTopology_t gtopo = get_cudaTopology();
     if (gpuId < 0 || gpuId >= gtopo->numDevices)
     {
         return -ENODEV;

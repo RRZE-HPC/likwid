@@ -269,16 +269,16 @@ else
 end
 
 if likwid.nvSupported() then
-    gputopo = likwid.getGpuTopology()
-    if gputopo then
+    local cudatopo = likwid.getCudaTopology()
+    if cudatopo then
         table.insert(output_csv, likwid.sline)
         table.insert(output_csv, "GPU Topology")
         table.insert(output_csv, likwid.sline)
-        table.insert(output_csv, string.format("GPU count:\t\t%d", gputopo["numDevices"]))
+        table.insert(output_csv, string.format("GPU count:\t\t%d", cudatopo["numDevices"]))
         table.insert(output_csv, likwid.hline)
 
-        for i=1, gputopo["numDevices"] do
-            gpu = gputopo["devices"][i]
+        for i=1, cudatopo["numDevices"] do
+            gpu = cudatopo["devices"][i]
             table.insert(output_csv, string.format("STRUCT,GPU Topology %d,9", gpu["id"]))
             table.insert(output_csv, string.format("ID:\t\t\t%d", gpu["id"]))
             table.insert(output_csv, string.format("Name:\t\t\t%s", gpu["name"]))
@@ -326,20 +326,20 @@ if likwid.nvSupported() then
             table.insert(output_csv, likwid.hline)
         end
     end
-    likwid.putGpuTopology()
+    likwid.putCudaTopology()
 end
 
 if likwid.rocmSupported() then
-    gputopo_rocm = likwid.getGpuTopology_rocm()
-    if gputopo_rocm then
+    local rocmtopo = likwid.getRocmTopology()
+    if rocmtopo then
         table.insert(output_csv, likwid.sline)
         table.insert(output_csv, "ROCm GPU Topology")
         table.insert(output_csv, likwid.sline)
-        table.insert(output_csv, string.format("GPU count:\t\t%d", gputopo_rocm["numDevices"]))
+        table.insert(output_csv, string.format("GPU count:\t\t%d", rocmtopo["numDevices"]))
         table.insert(output_csv, likwid.hline)
 
-        for i=1, gputopo_rocm["numDevices"] do
-            gpu = gputopo_rocm["devices"][i]
+        for i=1, rocmtopo["numDevices"] do
+            gpu = rocmtopo["devices"][i]
             table.insert(output_csv, string.format("STRUCT,GPU Topology %d,9", gpu["id"]))
             table.insert(output_csv, string.format("ID:\t\t\t%d", gpu["id"]))
             table.insert(output_csv, string.format("Name:\t\t\t%s", gpu["name"]))
@@ -385,7 +385,7 @@ if likwid.rocmSupported() then
             table.insert(output_csv, likwid.hline)
         end
     end
-    likwid.putGpuTopology_rocm()
+    likwid.putRocmTopology()
 end
 
 if print_csv then

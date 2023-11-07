@@ -49,8 +49,8 @@
 
 // Variables
 static void *topo_dl_libhip = NULL;
-static int topo_gpu_initialized = 0;
-static GpuTopology_rocm topo_gpuTopology = {0, NULL};
+static int topo_rocm_initialized = 0;
+static RocmTopology _rocmTopology = {0, NULL};
 
 
 // HIP function declarations
@@ -117,22 +117,22 @@ topo_get_numNode(int pci_bus, int pci_dev, int pci_domain)
 }
 
 static void
-topo_gpu_cleanup(int numDevices)
+topo_rocm_cleanup(int numDevices)
 {
 #define FREE_IF_NOT_NULL(var) if ( var ) { free( var ); }
 
     for (int i = 0; i < numDevices; i++)
     {
-        GpuDevice_rocm *device = &topo_gpuTopology.devices[i];
+        RocmDevice *device = &_rocmTopology.devices[i];
 
         FREE_IF_NOT_NULL(device->name)
     }
 
-    FREE_IF_NOT_NULL(topo_gpuTopology.devices)
+    FREE_IF_NOT_NULL(_rocmTopology.devices)
 }
 
 static int
-topo_gpu_init(GpuDevice_rocm *device, int deviceId)
+topo_gpu_init(RocmDevice *device, int deviceId)
 {
     hipError_t err;
     hipDeviceProp_t props;
@@ -199,12 +199,12 @@ topo_gpu_init(GpuDevice_rocm *device, int deviceId)
 }
 
 int
-topology_gpu_init_rocm()
+topology_rocm_init()
 {
     int ret = 0;
 
     // Do not initialize twice
-    if (topo_gpu_initialized)
+    if (topo_rocm_initialized)
     {
         return EXIT_SUCCESS;
     }
@@ -228,8 +228,8 @@ topology_gpu_init_rocm()
     // Allocate memory for device information
     if (num_devs > 0)
     {
-        topo_gpuTopology.devices = malloc(num_devs * sizeof(GpuDevice_rocm));
-        if (!topo_gpuTopology.devices)
+        _rocmTopology.devices = malloc(num_devs * sizeof(RocmDevice));
+        if (!_rocmTopology.devices)
         {
             return -ENOMEM;
         }
@@ -238,35 +238,35 @@ topology_gpu_init_rocm()
     // Initialize devices
     for (int i = 0; i < num_devs; i++)
     {
-        ret = topo_gpu_init(&topo_gpuTopology.devices[i], i);
+        ret = topo_gpu_init(&_rocmTopology.devices[i], i);
         if (ret != 0)
         {
-            topo_gpu_cleanup(i+1);
+            topo_rocm_cleanup(i+1);
             return ret;
         }
     }
 
     // Finished
-    topo_gpuTopology.numDevices = num_devs;
-    topo_gpu_initialized = 1;
+    _rocmTopology.numDevices = num_devs;
+    topo_rocm_initialized = 1;
     return EXIT_SUCCESS;
 }
 
 void
-topology_gpu_finalize_rocm(void)
+topology_rocm_finalize(void)
 {
-    if (topo_gpu_initialized)
+    if (topo_rocm_initialized)
     {
-        topo_gpu_cleanup(topo_gpuTopology.numDevices);
+        topo_rocm_cleanup(_rocmTopology.numDevices);
     }
 }
 
-GpuTopology_rocm_t
-get_gpuTopology_rocm(void)
+RocmTopology_t
+get_rocmTopology(void)
 {
-    if (topo_gpu_initialized)
+    if (topo_rocm_initialized)
     {
-        return &topo_gpuTopology;
+        return &_rocmTopology;
     }
 }
 

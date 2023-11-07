@@ -782,7 +782,7 @@ defined in the selection string.
 @return error code (>0 on success for the returned list length, -ERRORCODE on
 failure)
 */
-extern int gpustr_to_gpulist(const char *gpustr, int *gpulist, int length)
+extern int gpustr_to_gpulist_cuda(const char *gpustr, int *gpulist, int length)
     __attribute__((visibility("default")));
 
 #endif /* LIKWID_WITH_NVMON */
@@ -1672,15 +1672,7 @@ extern PowerInfo_t get_powerInfo(void) __attribute__((visibility("default")));
 */
 extern int power_read(int cpuId, uint64_t reg, uint32_t *data)
     __attribute__((visibility("default")));
-/*! \brief Read the current energy value using a specific communication socket
 
-@param [in] socket_fd Communication socket for the read operation
-@param [in] cpuId Read energy facility for this CPU
-@param [in] reg Energy register
-@param [out] data Energy data
-*/
-extern int power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
-    __attribute__((visibility("default")));
 /*! \brief Start energy measurements
 
 @param [in,out] data Data structure holding start and stop values for energy
@@ -2160,40 +2152,40 @@ typedef struct {
                      address space */
   int integrated; /*!< \brief 1 if the device is an integrated (motherboard) GPU
                      and 0 if it is a discrete (card) component */
-} GpuDevice;
+} CudaDevice;
 
 /*! \brief Structure holding information of all GPUs
 
 */
 typedef struct {
   int numDevices;     /*!< \brief Number of detected devices */
-  GpuDevice *devices; /*!< \brief List with GPU-specific topology information */
-} GpuTopology;
+  CudaDevice *devices; /*!< \brief List with GPU-specific topology information */
+} CudaTopology;
 
 /*! \brief Variable holding the global gpu information structure */
-extern GpuTopology gpuTopology;
-/** \brief Pointer for exporting the GpuTopology data structure */
-typedef GpuTopology *GpuTopology_t;
+extern CudaTopology cudaTopology;
+/** \brief Pointer for exporting the CudaTopology data structure */
+typedef CudaTopology *CudaTopology_t;
 
 /*! \brief Initialize GPU topology information
 
 Reads in the topology information from the CUDA library (if found).
-\sa GpuTopology_t
+\sa CudaTopology_t
 @return 0 or -errno in case of error
 */
-extern int topology_gpu_init(void) __attribute__((visibility("default")));
-/*! \brief Destroy GPU topology structure GpuTopology_t
+extern int topology_cuda_init(void) __attribute__((visibility("default")));
+/*! \brief Destroy GPU topology structure CudaTopology_t
 
 Retrieved pointers to the structures are not valid anymore after this function
-call \sa GpuTopology_t
+call \sa CudaTopology_t
 */
-extern void topology_gpu_finalize(void) __attribute__((visibility("default")));
+extern void topology_cuda_finalize(void) __attribute__((visibility("default")));
 /*! \brief Retrieve GPU topology of the current machine
 
-\sa GpuTopology_t
-@return GpuTopology_t (pointer to internal gpuTopology structure)
+\sa CudaTopology_t
+@return CudaTopology_t (pointer to internal cudaTopology structure)
 */
-extern GpuTopology_t get_gpuTopology(void)
+extern CudaTopology_t get_cudaTopology(void)
     __attribute__((visibility("default")));
 
 /*
@@ -2212,13 +2204,13 @@ structures of LIKWID. Reads environment variables:
 - LIKWID_GPUS (GPU list separated by ,)
 - LIKWID_GPUFILEPATH (Outputpath for NvMarkerAPI file)
 */
-extern void likwid_gpuMarkerInit(void) __attribute__((visibility("default")));
+extern void nvmon_markerInit(void) __attribute__((visibility("default")));
 /*! \brief Select next group to measure
 
 Must be called in parallel region of the application to switch group on every
 CPU.
 */
-extern void likwid_gpuMarkerNextGroup(void)
+extern void nvmon_markerNextGroup(void)
     __attribute__((visibility("default")));
 /*! \brief Close LIKWID's NvMarker API
 
@@ -2226,15 +2218,15 @@ Must be called in serial region of the application. It gathers all data of
 regions and writes them out to a file (filepath in env variable
 LIKWID_FILEPATH).
 */
-extern void likwid_gpuMarkerClose(void) __attribute__((visibility("default")));
+extern void nvmon_markerClose(void) __attribute__((visibility("default")));
 /*! \brief Register a measurement region
 
 Initializes the hashTable entry in order to reduce execution time of
-likwid_gpuMarkerStartRegion()
+nvmon_markerStartRegion()
 @param regionTag [in] Initialize data using this string
 @return Error code
 */
-extern int likwid_gpuMarkerRegisterRegion(const char *regionTag)
+extern int nvmon_markerRegisterRegion(const char *regionTag)
     __attribute__((visibility("default")));
 /*! \brief Start a measurement region
 
@@ -2243,7 +2235,7 @@ given in regionTag.
 @param regionTag [in] Store data using this string
 @return Error code of start operation
 */
-extern int likwid_gpuMarkerStartRegion(const char *regionTag)
+extern int nvmon_markerStartRegion(const char *regionTag)
     __attribute__((visibility("default")));
 /*! \brief Stop a measurement region
 
@@ -2253,7 +2245,7 @@ global region counters.
 @param regionTag [in] Store data using this string
 @return Error code of stop operation
 */
-extern int likwid_gpuMarkerStopRegion(const char *regionTag)
+extern int nvmon_markerStopRegion(const char *regionTag)
     __attribute__((visibility("default")));
 /*! \brief Reset a measurement region
 
@@ -2261,7 +2253,7 @@ Reset the values of all configured counters and timers.
 @param regionTag [in] Reset data using this string
 @return Error code of reset operation
 */
-extern int likwid_gpuMarkerResetRegion(const char *regionTag)
+extern int nvmon_markerResetRegion(const char *regionTag)
     __attribute__((visibility("default")));
 /*! \brief Get accumulated data of a code region
 
@@ -2277,7 +2269,7 @@ events in the second dimension of events.
 @param time [out] Accumulated measurement times per GPU
 @param count [out] Call counts of the code region per GPU
 */
-extern void likwid_gpuMarkerGetRegion(const char *regionTag, int *nr_gpus,
+extern void nvmon_markerGetRegion(const char *regionTag, int *nr_gpus,
                                       int *nr_events, double **events,
                                       double *time, int *count)
     __attribute__((visibility("default")));
@@ -2710,23 +2702,23 @@ typedef struct {
   int mapHostMem; /*!< \brief 1 if the device can map host memory */
   int integrated; /*!< \brief 1 if the device is an integrated (motherboard) GPU
                      and 0 if it is a discrete (card) component */
-} GpuDevice_rocm;
+} RocmDevice;
 
 /*! \brief Structure holding information of all GPUs
 
 */
 typedef struct {
   int numDevices; /*!< \brief Number of detected devices */
-  GpuDevice_rocm
+  RocmDevice
       *devices; /*!< \brief List with GPU-specific topology information */
-} GpuTopology_rocm;
+} RocmTopology;
 
 /** \brief Pointer for exporting the GpuTopology data structure */
-typedef GpuTopology_rocm *GpuTopology_rocm_t;
+typedef RocmTopology *RocmTopology_t;
 
-int topology_gpu_init_rocm() __attribute__((visibility("default")));
-void topology_gpu_finalize_rocm(void) __attribute__((visibility("default")));
-GpuTopology_rocm_t get_gpuTopology_rocm(void)
+int topology_rocm_init() __attribute__((visibility("default")));
+void topology_rocm_finalize(void) __attribute__((visibility("default")));
+RocmTopology_t get_rocmTopology(void)
     __attribute__((visibility("default")));
 
 /*

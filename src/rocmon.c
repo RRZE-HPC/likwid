@@ -347,7 +347,7 @@ _rocmon_link_libraries()
     dl_hsa_lib = dlopen("libhsa-runtime64.so", RTLD_NOW | RTLD_GLOBAL);
     if (!dl_hsa_lib)
     {
-        ERROR_PRINT(ROCm HSA library libhsa-runtime64.so not found);
+        ERROR_PRINT(ROCm HSA library libhsa-runtime64.so not found: %s, dlerror());
         return -1;
     }
 
@@ -355,15 +355,19 @@ _rocmon_link_libraries()
     dl_profiler_lib = dlopen("librocprofiler64.so", RTLD_NOW | RTLD_GLOBAL);
     if (!dl_profiler_lib)
     {
-        ERROR_PRINT(Rocprofiler library librocprofiler64.so not found);
-        return -1;
+        dl_profiler_lib = dlopen("librocprofiler64.so.1", RTLD_NOW | RTLD_GLOBAL);
+        if (!dl_profiler_lib)
+        {
+            ERROR_PRINT(Rocprofiler library librocprofiler64.so not found: %s, dlerror());
+            return -1;
+        }
     }
 
     // Need to link in the Rocprofiler libraries
     dl_rsmi_lib = dlopen("librocm_smi64.so", RTLD_NOW | RTLD_GLOBAL);
     if (!dl_rsmi_lib)
     {
-        ERROR_PRINT(ROCm SMI library librocm_smi64.so not found);
+        ERROR_PRINT(ROCm SMI library librocm_smi64.so not found: %s, dlerror());
         return -1;
     }
 
