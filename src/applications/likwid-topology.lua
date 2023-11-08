@@ -160,7 +160,14 @@ for cntr=0,cputopo["numHWThreads"]-1 do
     else
         table.insert(line, "")
     end
-    table.insert(output_csv, likwid.printTextTable(header, line, cntr == 0))
+    if print_csv then
+        if cntr == 0 then
+            table.insert(output_csv, table.concat(header, ","))
+        end
+        table.insert(output_csv, table.concat(line, ","))
+    else
+        table.insert(output_csv, likwid.printTextTable(header, line, cntr == 0))
+    end
 end
 table.insert(output_csv, likwid.hline)
 
