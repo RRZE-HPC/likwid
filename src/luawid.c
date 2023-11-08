@@ -3584,6 +3584,9 @@ lua_likwid_getHwFeatureList(lua_State *L)
         lua_pushstring(L, "Name");
         lua_pushstring(L, list.features[i].name);
         lua_settable(L,-3);
+        lua_pushstring(L, "Category");
+        lua_pushstring(L, list.features[i].category);
+        lua_settable(L,-3);
         lua_pushstring(L, "Description");
         lua_pushstring(L, list.features[i].description);
         lua_settable(L,-3);
@@ -3595,6 +3598,9 @@ lua_likwid_getHwFeatureList(lua_State *L)
         lua_settable(L,-3);
         lua_pushstring(L, "Type");
         lua_pushstring(L, LikwidDeviceTypeNames[list.features[i].type]);
+        lua_settable(L,-3);
+        lua_pushstring(L, "TypeID");
+        lua_pushinteger(L, list.features[i].type);
         lua_settable(L,-3);
         lua_settable(L,-3);
     }
@@ -3645,24 +3651,16 @@ lua_likwid_createDevice(lua_State *L)
 {
     LikwidDevice_t dev = NULL;
     int err = 0;
-    char *type = (char *)luaL_checkstring(L, 1);
+    int type = luaL_checknumber(L,1);
     int id = luaL_checknumber(L,2);
     LikwidDeviceType _type = DEVICE_TYPE_INVALID;
-    for (int i = MIN_DEVICE_TYPE; i < MAX_DEVICE_TYPE; i++)
-    {
-        if (strncmp(LikwidDeviceTypeNames[i], type, strlen(LikwidDeviceTypeNames[i])) == 0)
-        {
-            _type = i;
-            break;
-        }
-    }
-    if ((!(((_type) >= MIN_DEVICE_TYPE) && ((_type) < MAX_DEVICE_TYPE))) || (id < 0))
+    if ((!(((type) >= MIN_DEVICE_TYPE) && ((type) < MAX_DEVICE_TYPE))) || (id < 0))
     {
         lua_pushnil(L);
     }
     else
     {
-        err = likwid_device_create(_type, id, &dev);
+        err = likwid_device_create(type, id, &dev);
         if (err < 0)
         {
             lua_pushnil(L);
@@ -3670,7 +3668,7 @@ lua_likwid_createDevice(lua_State *L)
         else
         {
             dev = lua_newuserdata (L, sizeof(_LikwidDevice));
-            dev->type = _type;
+            dev->type = type;
             dev->internal_id = id;
             switch (dev->type)
             {
@@ -3688,10 +3686,7 @@ lua_likwid_createDevice(lua_State *L)
 #ifdef LIKWID_WITH_ROCMON
                 case DEVICE_TYPE_AMD_GPU:
 #endif
-#ifdef LIKWID_WITH_XEMON
-                case DEVICE_TYPE_INTEL_GPU:
-#endif
-#if defined(LIKWID_WITH_NVMON)||defined(LIKWID_WITH_NVMON)||defined(LIKWID_WITH_NVMON)
+#if defined(LIKWID_WITH_NVMON)||defined(LIKWID_WITH_ROCMON)
                     dev->id.pci.pci_domain = HWFEATURES_ID_TO_PCI_DOMAIN(id);
                     dev->id.pci.pci_bus = HWFEATURES_ID_TO_PCI_BUS(id);
                     dev->id.pci.pci_dev = HWFEATURES_ID_TO_PCI_SLOT(id);

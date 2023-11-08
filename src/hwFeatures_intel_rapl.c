@@ -144,7 +144,6 @@ static int hwFeatures_intel_rapl_energy_limit_1_enable_setter(LikwidDevice_t dev
     }
     data &= ~(1ULL << 15);
     data |= ((limit & 0x1ULL) << 15);
-
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
@@ -235,7 +234,6 @@ static int hwFeatures_intel_rapl_energy_limit_1_setter(LikwidDevice_t device, ch
     data &= ~(0x7FFF);
     limit = (uint64_t)(((double)limit) / info->powerUnit);
     data |= (limit & 0x7FFF);
-
     err = HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
     if (err < 0)
     {
@@ -822,6 +820,7 @@ int intel_rapl_dram_test()
                         (info->model == SKYLAKEX) ||
                         (info->model == ICELAKEX1) ||
                         (info->model == ICELAKEX2) ||
+                        (info->model == SAPPHIRERAPIDS) ||
                         (info->model == XEON_PHI_KNL) ||
                         (info->model == XEON_PHI_KML))
                     {
@@ -832,7 +831,6 @@ int intel_rapl_dram_test()
             }
         }
     }
-    printf("MSR_RAPL_POWER_UNIT returns %d\n", valid == topo->numSockets);
     return valid == topo->numSockets;
 }
 
@@ -948,13 +946,16 @@ int intel_rapl_psys_test()
                 {
                     intel_rapl_psys_info.powerUnit = 1000000 / (1 << (data & 0xF));
                     intel_rapl_psys_info.energyUnit = 1.0 / (1 << ((data >> 8) & 0x1F));
+                    if (info->model == SAPPHIRERAPIDS)
+                    {
+                        intel_rapl_psys_info.energyUnit = 1000000000;
+                    }
                     intel_rapl_psys_info.timeUnit = 1000000 / (1 << ((data >> 16) & 0xF));
                 }
                 break;
             }
         }
     }
-    printf("MSR_RAPL_POWER_UNIT returns %d\n", valid == topo->numSockets);
     return valid == topo->numSockets;
 }
 
@@ -1084,7 +1085,6 @@ int intel_rapl_pp0_test()
             }
         }
     }
-    printf("MSR_RAPL_POWER_UNIT returns %d\n", valid == topo->numSockets);
     return valid == topo->numSockets;
 }
 
@@ -1195,7 +1195,6 @@ int intel_rapl_pp1_test()
             }
         }
     }
-    printf("MSR_RAPL_POWER_UNIT returns %d\n", valid == topo->numSockets);
     return valid == topo->numSockets;
 }
 
@@ -1274,10 +1273,10 @@ int hwFeatures_init_intel_rapl(_HWFeatureList* out)
     int err = 0;
     if (intel_rapl_pkg_test())
     {
-        printf("Register Intel RAPL PKG domain\n");
+        DEBUG_PRINT(DEBUGLEV_INFO, Register Intel RAPL PKG domain);
         if (intel_rapl_pkg_limit_test_lock() > 0)
         {
-            printf("Intel RAPL PKG domain locked\n");
+            DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL PKG domain locked);
             for (int i = 0; i < intel_rapl_pkg_feature_list.num_features; i++)
             {
                 intel_rapl_pkg_feature_list.features[i].setter = NULL;
@@ -1286,15 +1285,15 @@ int hwFeatures_init_intel_rapl(_HWFeatureList* out)
         err = register_features(out, &intel_rapl_pkg_feature_list);
         if (err < 0)
         {
-            printf("RAPL domain PKG not supported\n");
+            DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PKG not supported);
         }
     }
     if (intel_rapl_dram_test())
     {
-        printf("Register Intel RAPL DRAM domain\n");
+        DEBUG_PRINT(DEBUGLEV_INFO, Register Intel RAPL DRAM domain);
         if (intel_rapl_dram_limit_test_lock() > 0)
         {
-            printf("Intel RAPL DRAM domain locked\n");
+            DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL DRAM domain locked);
             for (int i = 0; i < intel_rapl_dram_feature_list.num_features; i++)
             {
                 intel_rapl_dram_feature_list.features[i].setter = NULL;
@@ -1303,15 +1302,15 @@ int hwFeatures_init_intel_rapl(_HWFeatureList* out)
         err = register_features(out, &intel_rapl_dram_feature_list);
         if (err < 0)
         {
-            printf("RAPL domain DRAM not supported\n");
+            DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain DRAM not supported);
         }
     }
     if (intel_rapl_pp0_test())
     {
-        printf("Register Intel RAPL PP0 domain\n");
+        DEBUG_PRINT(DEBUGLEV_INFO, Register Intel RAPL PP0 domain);
         if (intel_rapl_pp0_limit_test_lock() > 0)
         {
-            printf("Intel RAPL PP0 domain locked\n");
+            DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL PP0 domain locked);
             for (int i = 0; i < intel_rapl_pp0_feature_list.num_features; i++)
             {
                 intel_rapl_pp0_feature_list.features[i].setter = NULL;
@@ -1320,15 +1319,15 @@ int hwFeatures_init_intel_rapl(_HWFeatureList* out)
         err = register_features(out, &intel_rapl_pp0_feature_list);
         if (err < 0)
         {
-            printf("RAPL domain PP0 not supported\n");
+            DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PP0 not supported);
         }
     }
     if (intel_rapl_pp1_test())
     {
-        printf("Register Intel RAPL PP1 domain\n");
+        DEBUG_PRINT(DEBUGLEV_INFO, Register Intel RAPL PP1 domain);
         if (intel_rapl_pp1_limit_test_lock() > 0)
         {
-            printf("Intel RAPL PP1 domain locked\n");
+            DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL PP1 domain locked);
             for (int i = 0; i < intel_rapl_pp1_feature_list.num_features; i++)
             {
                 intel_rapl_pp1_feature_list.features[i].setter = NULL;
@@ -1337,15 +1336,15 @@ int hwFeatures_init_intel_rapl(_HWFeatureList* out)
         err = register_features(out, &intel_rapl_pp1_feature_list);
         if (err < 0)
         {
-            printf("RAPL domain PP1 not supported\n");
+            DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PP1 not supported);
         }
     }
     if (intel_rapl_psys_test())
     {
-        printf("Register Intel RAPL PSYS domain\n");
+        DEBUG_PRINT(DEBUGLEV_INFO, Register Intel RAPL PSYS domain);
         if (intel_rapl_psys_limit_test_lock() > 0)
         {
-            printf("Intel RAPL PSYS domain locked\n");
+            DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL PSYS domain locked);
             for (int i = 0; i < intel_rapl_psys_feature_list.num_features; i++)
             {
                 intel_rapl_psys_feature_list.features[i].setter = NULL;
@@ -1354,7 +1353,7 @@ int hwFeatures_init_intel_rapl(_HWFeatureList* out)
         err = register_features(out, &intel_rapl_psys_feature_list);
         if (err < 0)
         {
-            printf("RAPL domain PSYS not supported\n");
+            DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PSYS not supported);
         }
     }
     return 0;

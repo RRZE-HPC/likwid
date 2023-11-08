@@ -30,6 +30,9 @@ INSTRUMENT_BENCH = true#NO SPACE
 # For configuring include paths, go to CUDA section
 NVIDIA_INTERFACE = false#NO SPACE
 
+# Build experimental sysfeatures interface and Lua CLI application
+BUILD_SYSFEATURES = true#NO SPACE
+
 #################################################################
 #################################################################
 # Advanced configuration options                                #

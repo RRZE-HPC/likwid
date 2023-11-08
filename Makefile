@@ -164,6 +164,9 @@ L_HELPER    =   likwid.lua
 ifeq ($(BUILDFREQ),true)
 	L_APPS += likwid-setFrequencies
 endif
+ifeq ($(BUILD_SYSFEATURES),true)
+	L_APPS += likwid-sysfeatures
+endif
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 

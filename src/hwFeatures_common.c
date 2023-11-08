@@ -130,10 +130,11 @@ int _string_to_uint64(char* str, uint64_t* value)
         *value = 0x0ULL;
         return 0;
     }
+    errno = 0;
     uint64_t v = strtoull(str, &ptr, 10);
     if (v == 0 && errno != 0)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Conversion of string %s to uint64_t failed: %s, str, strerror(errno));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Conversion of string '%s' to uint64_t failed %d: %s, str, v, strerror(errno));
         return -errno;
     }
     *value = v;

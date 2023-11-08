@@ -80,6 +80,7 @@ static _HWArchFeatures intel_arch_features[] = {
     {P6_FAMILY, COMETLAKE2, intel_arch_feature_inputs},
     {P6_FAMILY, ICELAKEX1, intel_arch_feature_inputs},
     {P6_FAMILY, ICELAKEX2, intel_arch_feature_inputs},
+    {P6_FAMILY, SAPPHIRERAPIDS, intel_arch_feature_inputs},
     {P6_FAMILY, SNOWRIDGEX, intel_arch_feature_inputs},
     {P6_FAMILY, TIGERLAKE1, intel_arch_feature_inputs},
     {P6_FAMILY, TIGERLAKE2, intel_arch_feature_inputs},

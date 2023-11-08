@@ -160,7 +160,6 @@ static int _hwFeatures_get_feature_index(char* name)
             int checklen = (namelen < featlen ? featlen : namelen);
             if (strncmp(name, _feature_list.features[i].name, checklen) == 0)
             {
-                printf("'%s' vs. '%s' -> %d\n",name, _feature_list.features[i].name, strncmp(name, _feature_list.features[i].name, strlen(name)));
                 if (out < 0)
                 {
                     out = i;
@@ -171,6 +170,10 @@ static int _hwFeatures_get_feature_index(char* name)
                     return -EINVAL;
                 }
             }
+        }
+        if (out >= 0)
+        {
+            return out;
         }
     }
     else
@@ -269,11 +272,11 @@ int hwFeatures_modifyByName(char* name, LikwidDevice_t device, char* value)
     f = &_feature_list.features[idx];
     if ((!f) || (!f->setter))
     {
-        return -EINVAL;
+        return -EPERM;
     }
     if (f->type != device->type)
     {
-        return -EINVAL;
+        return -ENODEV;
     }
     
     err = get_device_access(device);

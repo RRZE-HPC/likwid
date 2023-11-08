@@ -6,13 +6,13 @@
  *
  *      Description:  A application to retrieve and manipulate CPU features.
  *
- *      Version:   4.0
- *      Released:  28.04.2015
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
  *
- *      Author:   Thomas Gruber (tr), thomas.roehl@gmail.com
+ *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2022 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -31,11 +31,17 @@
 package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
-
+local cpuinfo = likwid.getCpuInfo()
 
 print_stdout = print
 print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
 
+GENERAL_FEATURES = {"HW_PREFETCHER", "CL_PREFETCHER", "DCU_PREFETCHER", "IP_PREFETCHER"}
+KNL_FEATURES = {"HW_PREFETCHER", "DCU_PREFETCHER"}
+FEATURES = GENERAL_FEATURES
+if cpuinfo["short_name"] == "knl" then
+    FEATURES = KNL_FEATURES
+end
 
 function version()
     print_stdout(string.format("likwid-features -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
@@ -52,7 +58,9 @@ function usage()
     print_stdout("-c, --cpus <list>\t Perform operations on given hardware threads")
     print_stdout("-e, --enable <list>\t List of features that should be enabled")
     print_stdout("-d, --disable <list>\t List of features that should be disabled")
-    print_stdout("-O\t\t Output results in CSV")
+    print_stdout()
+    print_stdout("Currently modifiable features:")
+    print_stdout(table.concat(FEATURES, ", "))
 end
 
 if #arg == 0 then
@@ -60,19 +68,14 @@ if #arg == 0 then
     os.exit(0)
 end
 
-local listFeatures = false
-local allFeatures = false
-local num_hwts = 0
-local hwtlist = {}
-local enableList = {}
-local disableList = {}
-local cpuinfo = likwid.getCpuInfo()
-local cputopo = likwid.getCpuTopology()
-local deviceTree = {}
+listFeatures = false
+num_cpus = 0
+cpulist = {}
+enableList = {}
+disableList = {}
+skipList = {}
 
-local output_csv = false
-
-for opt,arg in likwid.getopt(arg, {"h","v","l","c:","e:","d:","a", "O","help","version","list", "enable:", "disable:","all", "cpus:"}) do
+for opt,arg in likwid.getopt(arg, {"h","v","l","c:","e:","d:","a","help","version","list", "enable:", "disable:","all", "cpus:"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -88,17 +91,48 @@ for opt,arg in likwid.getopt(arg, {"h","v","l","c:","e:","d:","a", "O","help","v
         version()
         os.exit(0)
     elseif opt == "c" or opt == "cpus"then
-        num_hwts, hwtlist = likwid.cpustr_to_cpulist(arg)
+        num_cpus, cpulist = likwid.cpustr_to_cpulist(arg)
     elseif opt == "l" or opt == "list" then
         listFeatures = true
-    elseif opt == "O" then
-        output_csv = true
     elseif opt == "a" or opt == "all" then
-        allFeatures = true
+        if cpuinfo["isIntel"] == 0 then
+            print_stdout("INFO: Manipulation of CPU features is only available on Intel platforms")
+        end
+        print_stdout("Available features:")
+        for i=0,likwid.tablelength(likwid.cpuFeatures)-1 do
+            local found = false
+            for j, f in pairs(FEATURES) do
+                if likwid.cpuFeatures[i] == f then
+                    found = true
+                    break
+                end
+            end
+            if found then
+                print_stdout(string.format("\t%s*",likwid.cpuFeatures[i]))
+            else
+                print_stdout(string.format("\t%s",likwid.cpuFeatures[i]))
+            end
+        end
+        print_stdout("Modifiable features are marked with *")
+        os.exit(0)
     elseif opt == "e" or opt == "enable" then
-        enableList = likwid.stringsplit(arg, ",")
+        local tmp = likwid.stringsplit(arg, ",")
+        for i, f in pairs(tmp) do
+            for i=0,likwid.tablelength(likwid.cpuFeatures)-1 do
+                if likwid.cpuFeatures[i] == f then
+                    table.insert(enableList, i)
+                end
+            end
+        end
     elseif opt == "d" or opt == "disable" then
-        disableList = likwid.stringsplit(arg, ",")
+        local tmp = likwid.stringsplit(arg, ",")
+        for i, f in pairs(tmp) do
+            for i=0,likwid.tablelength(likwid.cpuFeatures)-1 do
+                if likwid.cpuFeatures[i] == f then
+                    table.insert(disableList, i)
+                end
+            end
+        end
     elseif opt == "?" then
         print_stderr("Invalid commandline option -"..arg)
         os.exit(1)
@@ -108,205 +142,79 @@ for opt,arg in likwid.getopt(arg, {"h","v","l","c:","e:","d:","a", "O","help","v
     end
 end
 
-
-
-if (not listFeatures) and (not allFeatures) and (#enableList == 0) and (#disableList == 0) then
-    print_stderr("No operations specified, exiting...")
-    os.exit(1)
-end
-if (listFeatures or allFeatures) and (#enableList > 0 or #disableList > 0) then
-    print_stderr("Cannot list features and enable/disable at the same time")
-    os.exit(1)
-end
-if listFeatures and #hwtlist == 0 then
-    print_stderr("HWThread selection (-c) required for listing the state of all features")
-    os.exit(1)
-end
-local access_mode = likwid.getAccessClientMode()
-if access_mode < 0 or access_mode > 1 then
-    print_stderr("Manipulation of HW features only for access mode 'direct' or 'accessdaemon'")
-    os.exit(1)
-end
-local err = likwid.initHWFeatures()
-if err < 0 then
-    print_stderr("Cannot initialize HW features module")
-    os.exit(1)
+if cpuinfo["isIntel"] == 0 then
+    print_stdout("INFO: Manipulation of CPU features is only available on Intel platforms")
+    os.exit(0)
 end
 
-local list = likwid.hwFeatures_list()
+likwid.initCpuFeatures()
 
---[[deviceTree[likwid.node] = {{likwid.createDevice(likwid.node, hwtlist[0]), hwtlist[0]}}
-deviceTree[likwid.hwthread] = {}
-for _, c in pairs(hwtlist) do
-    table.insert(deviceTree[likwid.hwthread], {likwid.createDevice(likwid.hwthread, c), c})
-end
-deviceTree[likwid.socket] = {}
-for sid=0, cputopo.numSockets do
-    for _, c in pairs(hwtlist) do
-        for _, t in pairs(cputopo.threadPool) do
-            if t.apicId == c and t.packageId == sid then
-                table.insert(deviceTree[likwid.socket], {likwid.createDevice(likwid.socket, sid), c})
-            end
+if listFeatures and #cpulist > 0 then
+    if likwid.getCpuFeatures(c, 0) >= 0 then
+        local str = "Feature"..string.rep(" ",string.len("BRANCH_TRACE_STORAGE")-string.len("Feature")+2)
+        for j, c in pairs(cpulist) do
+            str = str..string.format("HWThread %d\t",c)
         end
-    end
-end
-deviceTree[likwid.core] = {}
-for cid=0, cputopo.numCores do
-    for _, c in pairs(hwtlist) do
-        for _, t in pairs(cputopo.threadPool) do
-            if t.apicId == c and t.coreId == cid then
-                table.insert(deviceTree[likwid.socket], {likwid.createDevice(likwid.socket, sid), c})
-            end
-        end
-    end
-end
-]]
-
-if allFeatures then
-    local all = {}
-    local names = {}
-    local types = {}
-    local access = {}
-    local descs = {}
-    table.insert(names, "Feature")
-    table.insert(types, "Scope")
-    table.insert(access, "Access")
-    table.insert(descs, "Description")
-    for _,f in pairs(list) do
-        table.insert(names, f["Name"])
-        table.insert(types, f["Type"])
-        table.insert(descs, f["Description"])
-        if f["ReadOnly"] then
-            table.insert(access, "rdonly")
-        elseif f["WriteOnly"] then
-            table.insert(access, "wronly")
-        else
-            table.insert(access, "rw")
-        end
-    end
-    setmetatable(names, {align = "left"})
-    table.insert(all, names)
-    table.insert(all, types)
-    table.insert(all, access)
-    setmetatable(descs, {align = "left"})
-    table.insert(all, descs)
-    if output_csv then
-        likwid.printcsv(all, #all)
-    else
-        print_stdout("Available features:")
-        likwid.printtable(all)
-    end
-
-end
-
-
-if (not allFeatures) and listFeatures and #hwtlist > 0 then
-    local all = {}
-    local first = {}
-    table.insert(first, "Feature/HWT")
-    for _,f in pairs(list) do
-        table.insert(first, f["Name"])
-    end
-    setmetatable(first, {align = "left"})
-    table.insert(all, first)
-    for i, c in pairs(hwtlist) do
-        local tab = {}
-        print_stdout(string.format("%d", c))
-        local dev = likwid.createDevice("hwthread", c)
-        table.insert(tab, string.format("%d", c))
-        for _,f in pairs(list) do
-            local v = likwid.hwFeatures_get(f["Name"], dev)
-            if v == nil then
-                if f["ReadOnly"] then
-                    table.insert(tab, "rdonly")
-                elseif f["WriteOnly"] then
-                    table.insert(tab, "wronly")
+        print_stdout(str)
+        str = ""
+        for i=0,likwid.tablelength(likwid.cpuFeatures)-1 do
+            str = likwid.cpuFeatures[i]..string.rep(" ",string.len("BRANCH_TRACE_STORAGE")-string.len(likwid.cpuFeatures[i])+2)
+            for j, c in pairs(cpulist) do
+                if (likwid.getCpuFeatures(c, i) == 1) then
+                    str = str .. "on\t"
                 else
-                    table.insert(tab, "fail")
+                    str = str .. "off\t"
                 end
+            end
+            print_stdout(str)
+        end
+    end
+    os.exit(1)
+elseif #cpulist == 0 then
+    print_stderr("Need HWThread to list current feature state")
+    os.exit(1)
+end
+
+if #enableList > 0 and #disableList > 0 then
+    for i,e in pairs(enableList) do
+        for j, d in pairs(disableList) do
+            if (e == d) then
+                print_stderr(string.format("Feature %s is in enable and disable list, doing nothing for feature", e))
+                table.insert(skipList, e)
+            end
+        end
+    end
+    for i, s in pairs(skipList) do
+        for j, e in pairs(enableList) do
+            if (s == e) then table.remove(enableList, j) end
+        end
+        for j, e in pairs(disableList) do
+            if (s == e) then table.remove(disableList, j) end
+        end
+    end
+end
+
+if #enableList > 0 then
+    for i, c in pairs(cpulist) do
+        for j, f in pairs(enableList) do
+            local ret = likwid.enableCpuFeatures(c, f, 1)
+            if ret == 0 then
+                print_stdout(string.format("Enabled %s for HWThread %d", likwid.cpuFeatures[f], c))
             else
-                table.insert(tab, v)
+                print_stdout(string.format("Failed %s for HWThread %d", likwid.cpuFeatures[f], c))
             end
-        end
-        table.insert(all, tab)
-        likwid.destroyDevice(dev)
-    end
-    
-    if output_csv then
-        likwid.printcsv(all, num_hwts + 1)
-    else
-        likwid.printtable(all)
-    end
-end
-
-if (not (listFeatures or allFeatures)) or #enableList > 0 or #disableList > 0 then
-    -- Check whether there are similar entries in enable and distable list and remove them (first add to skip list, then remove from tables)
-    if #enableList > 0 and #disableList > 0 then
-        local skipList = {}
-        for i,e in pairs(enableList) do
-            for j, d in pairs(disableList) do
-                if (e == d) then
-                    print_stderr(string.format("Feature %s is in enable and disable list, doing nothing for feature", e))
-                    table.insert(skipList, e)
-                end
-            end
-        end
-        for i, s in pairs(skipList) do
-            for j, e in pairs(enableList) do
-                if (s == e) then table.remove(enableList, j) end
-            end
-            for j, e in pairs(disableList) do
-                if (s == e) then table.remove(disableList, j) end
-            end
-        end
-    end
-
-    -- Filter enable and disable lists to contain only valid and writable features
-    local realEnableList = {}
-    local realDisableList = {}
-    for _, f in pairs(list) do
-        for _, e in pairs(enableList) do
-            if f["Name"] == e and not f["ReadOnly"] then
-                table.insert(realEnableList, f["Name"])
-            end
-        end
-        for _, e in pairs(disableList) do
-            if f["Name"] == e and not f["ReadOnly"] then
-                table.insert(realDisableList, f["Name"])
-            end
-        end
-    end
-
-    -- First enable all features for all selected hardware threads
-    if #realEnableList > 0 then
-        for i, c in pairs(hwtlist) do
-            local dev = likwid.createDevice(likwid.hwthread, c)
-            for j, f in pairs(realEnableList) do
-                local ret = likwid.hwFeatures_set(f, dev, 1)
-                if ret == true then
-                    print_stdout(string.format("Enabled %s for HWThread %d", f, c))
-                else
-                    print_stdout(string.format("Failed %s for HWThread %d", f, c))
-                end
-            end
-            likwid.destroyDevice(dev)
-        end
-    end
-    -- Next disable all features for all selected hardware threads
-    if #realDisableList > 0 then
-        for i, c in pairs(hwtlist) do
-            local dev = likwid.createDevice(likwid.hwthread, c)
-            for j, f in pairs(realDisableList) do
-                local ret = likwid.hwFeatures_set(f, dev, 0)
-                if ret == true then
-                    print_stdout(string.format("Disabled %s for HWThread %d", f, c))
-                else
-                    print_stdout(string.format("Failed %s for HWThread %d", f, c))
-                end
-            end
-            likwid.destroyDevice(dev)
         end
     end
 end
-likwid.finalizeHWFeatures()
-os.exit(0)
+if #disableList > 0 then
+    for i, c in pairs(cpulist) do
+        for j, f in pairs(disableList) do
+            local ret = likwid.disableCpuFeatures(c, f, 1)
+            if ret == 0 then
+                print_stdout(string.format("Disabled %s for HWThread %d", likwid.cpuFeatures[f], c))
+            else
+                print_stdout(string.format("Failed %s for HWThread %d", likwid.cpuFeatures[f], c))
+            end
+        end
+    end
+end

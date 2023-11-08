@@ -49,6 +49,43 @@ static int cpufreq_sysfs_getter(LikwidDevice_t device, char** value, char* sysfs
     return err;
 }
 
+static int cpufreq_sysfs_setter(LikwidDevice_t device, char* value, char* sysfs_filename)
+{
+    int err = 0;
+    if ((!device) || (!value) || (!sysfs_filename) || (device->type != DEVICE_TYPE_HWTHREAD))
+    {
+        return -EINVAL;
+    }
+    int vallen = strlen(value);
+    bstring filename = bformat("/sys/devices/system/cpu/cpu%d/cpufreq/%s", device->id.simple.id, sysfs_filename);
+    errno = 0;
+    if (!access(bdata(filename), R_OK))
+    {
+        FILE* fp = NULL;
+        errno = 0;
+        fp = fopen(bdata(filename), "w");
+        if (fp == NULL) {
+            err = -errno;
+            ERROR_PRINT("Failed to open file '%s' for writing: %s", bdata(filename), strerror(errno))
+        }
+        else
+        {
+            int ret = fwrite(value, sizeof(char), vallen, fp);
+            if (ret != (sizeof(char) * vallen))
+            {
+                ERROR_PRINT("Failed to open file '%s' for writing: %s", bdata(filename), strerror(errno))
+            }
+            fclose(fp);
+        }
+    }
+    else
+    {
+        err = -errno;
+    }
+    bdestroy(filename);
+    return err;
+}
+
 
 static int cpufreq_driver_test(char* testgovernor)
 {
@@ -104,6 +141,11 @@ int cpufreq_acpi_governor_getter(LikwidDevice_t device, char** value)
     return cpufreq_sysfs_getter(device, value, "scaling_governor");
 }
 
+int cpufreq_acpi_governor_setter(LikwidDevice_t device, char* value)
+{
+    return cpufreq_sysfs_setter(device, value, "scaling_governor");
+}
+
 int cpufreq_acpi_avail_governors_getter(LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_available_governors");
@@ -140,6 +182,11 @@ int cpufreq_intel_pstate_max_cpu_freq_getter(LikwidDevice_t device, char** value
 int cpufreq_intel_pstate_governor_getter(LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_governor");
+}
+
+int cpufreq_intel_pstate_governor_setter(LikwidDevice_t device, char* value)
+{
+    return cpufreq_sysfs_setter(device, value, "scaling_governor");
 }
 
 int cpufreq_intel_pstate_avail_governors_getter(LikwidDevice_t device, char** value)

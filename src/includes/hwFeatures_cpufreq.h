@@ -10,6 +10,7 @@ int cpufreq_acpi_min_cpu_freq_getter(LikwidDevice_t device, char** value);
 int cpufreq_acpi_max_cpu_freq_getter(LikwidDevice_t device, char** value);
 int cpufreq_acpi_avail_cpu_freqs_getter(LikwidDevice_t device, char** value);
 int cpufreq_acpi_governor_getter(LikwidDevice_t device, char** value);
+int cpufreq_acpi_governor_setter(LikwidDevice_t device, char* value);
 int cpufreq_acpi_avail_governors_getter(LikwidDevice_t device, char** value);
 
 
@@ -20,7 +21,7 @@ static _HWFeature cpufreq_acpi_features[] = {
     {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_acpi_min_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
     {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_acpi_max_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
     {"avail_freqs", "cpu_freq", "Available CPU frequencies", cpufreq_acpi_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
-    {"governor", "cpu_freq", "CPU frequency governor", cpufreq_acpi_governor_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"governor", "cpu_freq", "CPU frequency governor", cpufreq_acpi_governor_getter, cpufreq_acpi_governor_setter, DEVICE_TYPE_HWTHREAD},
     {"avail_governors", "cpu_freq", "Available CPU frequency governor", cpufreq_acpi_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
 };
 
@@ -36,6 +37,7 @@ int cpufreq_intel_pstate_cur_cpu_freq_getter(LikwidDevice_t device, char** value
 int cpufreq_intel_pstate_min_cpu_freq_getter(LikwidDevice_t device, char** value);
 int cpufreq_intel_pstate_max_cpu_freq_getter(LikwidDevice_t device, char** value);
 int cpufreq_intel_pstate_governor_getter(LikwidDevice_t device, char** value);
+int cpufreq_intel_pstate_governor_setter(LikwidDevice_t device, char* value);
 int cpufreq_intel_pstate_avail_governors_getter(LikwidDevice_t device, char** value);
 
 
@@ -45,7 +47,7 @@ static _HWFeature cpufreq_pstate_features[] = {
     {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
     {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
     {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
-    {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD},
     {"avail_freqs", "cpu_freq", "Available CPU frequencies", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
 };
 
