@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2018 Inria.  All rights reserved.
+ * Copyright © 2009-2020 Inria.  All rights reserved.
  * Copyright © 2009-2011 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -505,14 +505,16 @@ int hwloc_bitmap_list_sscanf(struct hwloc_bitmap_s *set, const char * __hwloc_re
 
     if (begin != -1) {
       /* finishing a range */
-      hwloc_bitmap_set_range(set, begin, val);
+      if (hwloc_bitmap_set_range(set, begin, val) < 0)
+        goto failed;
       begin = -1;
 
     } else if (*next == '-') {
       /* starting a new range */
       if (*(next+1) == '\0') {
 	/* infinite range */
-	hwloc_bitmap_set_range(set, val, -1);
+	if (hwloc_bitmap_set_range(set, val, -1) < 0)
+	  goto failed;
         break;
       } else {
 	/* normal range */
@@ -816,7 +818,7 @@ int hwloc_bitmap_nr_ulongs(const struct hwloc_bitmap_s *set)
 		return -1;
 
 	last = hwloc_bitmap_last(set);
-	return (last + HWLOC_BITS_PER_LONG-1)/HWLOC_BITS_PER_LONG;
+	return (last + HWLOC_BITS_PER_LONG)/HWLOC_BITS_PER_LONG;
 }
 
 int hwloc_bitmap_only(struct hwloc_bitmap_s * set, unsigned cpu)

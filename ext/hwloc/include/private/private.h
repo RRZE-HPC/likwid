@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009      CNRS
- * Copyright © 2009-2019 Inria.  All rights reserved.
- * Copyright © 2009-2012 Université Bordeaux
+ * Copyright © 2009-2022 Inria.  All rights reserved.
+ * Copyright © 2009-2012, 2020 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  *
  * See COPYING in top-level directory.
@@ -40,7 +40,19 @@
 #endif
 #include <string.h>
 
-#define HWLOC_TOPOLOGY_ABI 0x20100 /* version of the layout of struct topology */
+#define HWLOC_TOPOLOGY_ABI 0x20400 /* version of the layout of struct topology */
+
+struct hwloc_internal_location_s {
+  enum hwloc_location_type_e type;
+  union {
+    struct {
+      hwloc_obj_t obj; /* cached between refreshes */
+      uint64_t gp_index;
+      hwloc_obj_type_t type;
+    } object; /* if type == HWLOC_LOCATION_TYPE_OBJECT */
+    hwloc_cpuset_t cpuset; /* if type == HWLOC_LOCATION_TYPE_CPUSET */
+  } location;
+};
 
 /*****************************************************
  * WARNING:
@@ -154,6 +166,7 @@ struct hwloc_topology {
     unsigned long kind;
 
 #define HWLOC_INTERNAL_DIST_FLAG_OBJS_VALID (1U<<0) /* if the objs array is valid below */
+#define HWLOC_INTERNAL_DIST_FLAG_NOT_COMMITTED (1U<<1) /* if the distances isn't in the list yet */
     unsigned iflags;
 
     /* objects are currently stored in physical_index order */
@@ -162,6 +175,50 @@ struct hwloc_topology {
     struct hwloc_internal_distances_s *prev, *next;
   } *first_dist, *last_dist;
   unsigned next_dist_id;
+
+  /* memory attributes */
+  unsigned nr_memattrs;
+  struct hwloc_internal_memattr_s {
+    /* memattr info */
+    char *name; /* TODO unit is implicit, in the documentation of standard attributes, or in the name? */
+    unsigned long flags;
+#define HWLOC_IMATTR_FLAG_STATIC_NAME (1U<<0) /* no need to free name */
+#define HWLOC_IMATTR_FLAG_CACHE_VALID (1U<<1) /* target and initiator are valid */
+#define HWLOC_IMATTR_FLAG_CONVENIENCE (1U<<2) /* convenience attribute reporting values from non-memattr attributes (R/O and no actual targets stored) */
+    unsigned iflags;
+
+    /* array of values */
+    unsigned nr_targets;
+    struct hwloc_internal_memattr_target_s {
+      /* target object */
+      hwloc_obj_t obj; /* cached between refreshes */
+      hwloc_obj_type_t type;
+      unsigned os_index; /* only used temporarily during discovery when there's no obj/gp_index yet */
+      hwloc_uint64_t gp_index;
+
+      /* value if there are no initiator for this attr */
+      hwloc_uint64_t noinitiator_value;
+      /* initiators otherwise */
+      unsigned nr_initiators;
+      struct hwloc_internal_memattr_initiator_s {
+        struct hwloc_internal_location_s initiator;
+        hwloc_uint64_t value;
+      } *initiators;
+    } *targets;
+  } *memattrs;
+
+  /* hybridcpus */
+  unsigned nr_cpukinds;
+  unsigned nr_cpukinds_allocated;
+  struct hwloc_internal_cpukind_s {
+    hwloc_cpuset_t cpuset;
+#define HWLOC_CPUKIND_EFFICIENCY_UNKNOWN -1
+    int efficiency;
+    int forced_efficiency; /* returned by the hardware or OS if any */
+    hwloc_uint64_t ranking_value; /* internal value for ranking */
+    unsigned nr_infos;
+    struct hwloc_info_s *infos;
+  } *cpukinds;
 
   int grouping;
   int grouping_verbose;
@@ -202,6 +259,7 @@ struct hwloc_topology {
     unsigned bus_first, bus_last;
     hwloc_bitmap_t cpuset;
   } * pci_forced_locality;
+  hwloc_uint64_t pci_locality_quirks;
 
   /* component blacklisting */
   unsigned nr_blacklisted_components;
@@ -224,11 +282,13 @@ struct hwloc_topology {
 extern void hwloc_alloc_root_sets(hwloc_obj_t root);
 extern void hwloc_setup_pu_level(struct hwloc_topology *topology, unsigned nb_pus);
 extern int hwloc_get_sysctlbyname(const char *name, int64_t *n);
-extern int hwloc_get_sysctl(int name[], unsigned namelen, int *n);
+extern int hwloc_get_sysctl(int name[], unsigned namelen, int64_t *n);
 
 /* returns the number of CPU from the OS (only valid if thissystem) */
 #define HWLOC_FALLBACK_NBPROCESSORS_INCLUDE_OFFLINE 1 /* by default we try to get only the online CPUs */
 extern int hwloc_fallback_nbprocessors(unsigned flags);
+/* returns the memory size from the OS (only valid if thissystem) */
+extern int64_t hwloc_fallback_memsize(void);
 
 extern int hwloc__object_cpusets_compare_first(hwloc_obj_t obj1, hwloc_obj_t obj2);
 extern void hwloc__reorder_children(hwloc_obj_t parent);
@@ -238,17 +298,13 @@ extern void hwloc_topology_clear(struct hwloc_topology *topology);
 
 /* insert memory object as memory child of normal parent */
 extern struct hwloc_obj * hwloc__attach_memory_object(struct hwloc_topology *topology, hwloc_obj_t parent,
-						      hwloc_obj_t obj,
-						      hwloc_report_error_t report_error);
+                                                      hwloc_obj_t obj, const char *reason);
+
+extern hwloc_obj_t hwloc_get_obj_by_type_and_gp_index(hwloc_topology_t topology, hwloc_obj_type_t type, uint64_t gp_index);
 
 extern void hwloc_pci_discovery_init(struct hwloc_topology *topology);
 extern void hwloc_pci_discovery_prepare(struct hwloc_topology *topology);
 extern void hwloc_pci_discovery_exit(struct hwloc_topology *topology);
-
-/* Look for an object matching the given domain/bus/func,
- * either exactly or return the smallest container bridge
- */
-extern struct hwloc_obj * hwloc_pci_find_by_busid(struct hwloc_topology *topology, unsigned domain, unsigned bus, unsigned dev, unsigned func);
 
 /* Look for an object matching complete cpuset exactly, or insert one.
  * Return NULL on failure.
@@ -259,6 +315,7 @@ extern hwloc_obj_t hwloc_find_insert_io_parent_by_complete_cpuset(struct hwloc_t
 extern int hwloc__add_info(struct hwloc_info_s **infosp, unsigned *countp, const char *name, const char *value);
 extern int hwloc__add_info_nodup(struct hwloc_info_s **infosp, unsigned *countp, const char *name, const char *value, int replace);
 extern int hwloc__move_infos(struct hwloc_info_s **dst_infosp, unsigned *dst_countp, struct hwloc_info_s **src_infosp, unsigned *src_countp);
+extern int hwloc__tma_dup_infos(struct hwloc_tma *tma, struct hwloc_info_s **dst_infosp, unsigned *dst_countp, struct hwloc_info_s *src_infos, unsigned src_count);
 extern void hwloc__free_infos(struct hwloc_info_s *infos, unsigned count);
 
 /* set native OS binding hooks */
@@ -348,9 +405,30 @@ extern void hwloc_internal_distances_prepare(hwloc_topology_t topology);
 extern void hwloc_internal_distances_destroy(hwloc_topology_t topology);
 extern int hwloc_internal_distances_dup(hwloc_topology_t new, hwloc_topology_t old);
 extern void hwloc_internal_distances_refresh(hwloc_topology_t topology);
-extern int hwloc_internal_distances_add(hwloc_topology_t topology, const char *name, unsigned nbobjs, hwloc_obj_t *objs, uint64_t *values, unsigned long kind, unsigned long flags);
-extern int hwloc_internal_distances_add_by_index(hwloc_topology_t topology, const char *name, hwloc_obj_type_t unique_type, hwloc_obj_type_t *different_types, unsigned nbobjs, uint64_t *indexes, uint64_t *values, unsigned long kind, unsigned long flags);
 extern void hwloc_internal_distances_invalidate_cached_objs(hwloc_topology_t topology);
+
+/* these distances_add() functions are higher-level than those in hwloc/plugins.h
+ * but they may change in the future, hence they are not exported to plugins.
+ */
+extern int hwloc_internal_distances_add_by_index(hwloc_topology_t topology, const char *name, hwloc_obj_type_t unique_type, hwloc_obj_type_t *different_types, unsigned nbobjs, uint64_t *indexes, uint64_t *values, unsigned long kind, unsigned long flags);
+extern int hwloc_internal_distances_add(hwloc_topology_t topology, const char *name, unsigned nbobjs, hwloc_obj_t *objs, uint64_t *values, unsigned long kind, unsigned long flags);
+
+extern void hwloc_internal_memattrs_init(hwloc_topology_t topology);
+extern void hwloc_internal_memattrs_prepare(hwloc_topology_t topology);
+extern void hwloc_internal_memattrs_destroy(hwloc_topology_t topology);
+extern void hwloc_internal_memattrs_need_refresh(hwloc_topology_t topology);
+extern void hwloc_internal_memattrs_refresh(hwloc_topology_t topology);
+extern int hwloc_internal_memattrs_dup(hwloc_topology_t new, hwloc_topology_t old);
+extern int hwloc_internal_memattr_set_value(hwloc_topology_t topology, hwloc_memattr_id_t id, hwloc_obj_type_t target_type, hwloc_uint64_t target_gp_index, unsigned target_os_index, struct hwloc_internal_location_s *initiator, hwloc_uint64_t value);
+extern int hwloc_internal_memattrs_guess_memory_tiers(hwloc_topology_t topology);
+
+extern void hwloc_internal_cpukinds_init(hwloc_topology_t topology);
+extern int hwloc_internal_cpukinds_rank(hwloc_topology_t topology);
+extern void hwloc_internal_cpukinds_destroy(hwloc_topology_t topology);
+extern int hwloc_internal_cpukinds_dup(hwloc_topology_t new, hwloc_topology_t old);
+#define HWLOC_CPUKINDS_REGISTER_FLAG_OVERWRITE_FORCED_EFFICIENCY (1<<0)
+extern int hwloc_internal_cpukinds_register(hwloc_topology_t topology, hwloc_cpuset_t cpuset, int forced_efficiency, const struct hwloc_info_s *infos, unsigned nr_infos, unsigned long flags);
+extern void hwloc_internal_cpukinds_restrict(hwloc_topology_t topology);
 
 /* encode src buffer into target buffer.
  * targsize must be at least 4*((srclength+2)/3)+1.
@@ -404,6 +482,7 @@ extern char * hwloc_progname(struct hwloc_topology *topology);
 #define HWLOC_GROUP_KIND_AIX_SDL_UNKNOWN		210	/* subkind is SDL level */
 #define HWLOC_GROUP_KIND_WINDOWS_PROCESSOR_GROUP	220	/* no subkind */
 #define HWLOC_GROUP_KIND_WINDOWS_RELATIONSHIP_UNKNOWN	221	/* no subkind */
+#define HWLOC_GROUP_KIND_LINUX_CLUSTER                  222     /* no subkind */
 /* distance groups */
 #define HWLOC_GROUP_KIND_DISTANCE			900	/* subkind is round of adding these groups during distance based grouping */
 /* finally, hwloc-specific groups required to insert something else, should disappear as soon as possible */

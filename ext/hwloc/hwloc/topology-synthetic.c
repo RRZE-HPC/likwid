@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2019 Inria.  All rights reserved.
+ * Copyright © 2009-2023 Inria.  All rights reserved.
  * Copyright © 2009-2010 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -323,17 +323,29 @@ hwloc_synthetic_parse_memory_attr(const char *attr, const char **endp)
   hwloc_uint64_t size;
   size = strtoull(attr, (char **) &endptr, 0);
   if (!hwloc_strncasecmp(endptr, "TB", 2)) {
+    size *= 1000ULL*1000ULL*1000ULL*1000ULL;
+    endptr += 2;
+  } else if (!hwloc_strncasecmp(endptr, "TiB", 3)) {
     size <<= 40;
-    endptr += 2;
+    endptr += 3;
   } else if (!hwloc_strncasecmp(endptr, "GB", 2)) {
+    size *= 1000ULL*1000ULL*1000ULL;
+    endptr += 2;
+  } else if (!hwloc_strncasecmp(endptr, "GiB", 3)) {
     size <<= 30;
-    endptr += 2;
+    endptr += 3;
   } else if (!hwloc_strncasecmp(endptr, "MB", 2)) {
+    size *= 1000ULL*1000ULL;
+    endptr += 2;
+  } else if (!hwloc_strncasecmp(endptr, "MiB", 3)) {
     size <<= 20;
-    endptr += 2;
+    endptr += 3;
   } else if (!hwloc_strncasecmp(endptr, "kB", 2)) {
-    size <<= 10;
+    size *= 1000ULL;
     endptr += 2;
+  } else if (!hwloc_strncasecmp(endptr, "kiB", 3)) {
+    size <<= 10;
+    endptr += 3;
   }
   *endp = endptr;
   return size;
@@ -375,10 +387,9 @@ hwloc_synthetic_parse_attrs(const char *attrs, const char **next_posp,
       attrs += index_string_length;
 
     } else {
-      if (verbose)
-	fprintf(stderr, "Unknown attribute at '%s'\n", attrs);
-      errno = EINVAL;
-      return -1;
+      size_t length = strcspn(attrs, " )");
+      fprintf(stderr, "hwloc/synthetic: Ignoring unknown attribute at '%s'\n", attrs);
+      attrs += length;
     }
 
     if (' ' == *attrs)
@@ -402,6 +413,32 @@ hwloc_synthetic_parse_attrs(const char *attrs, const char **next_posp,
 
   *next_posp = next_pos+1;
   return 0;
+}
+
+static void
+hwloc_synthetic_set_default_attrs(struct hwloc_synthetic_attr_s *sattr,
+                                  int *type_count)
+{
+  hwloc_obj_type_t type = sattr->type;
+
+  if (type == HWLOC_OBJ_GROUP) {
+    if (sattr->depth == (unsigned)-1)
+      sattr->depth = type_count[HWLOC_OBJ_GROUP]--;
+
+  } else if (hwloc__obj_type_is_cache(type)) {
+    if (!sattr->memorysize) {
+      if (1 == sattr->depth)
+        /* 32KiB in L1 */
+        sattr->memorysize = 32*1024;
+      else
+        /* *4 at each level, starting from 1MiB for L2, unified */
+        sattr->memorysize = 256ULL*1024 << (2*sattr->depth);
+    }
+
+  } else if (type == HWLOC_OBJ_NUMANODE && !sattr->memorysize) {
+    /* 1GiB in memory nodes. */
+    sattr->memorysize = 1024*1024*1024;
+  }
 }
 
 /* frees level until arity = 0 */
@@ -471,7 +508,7 @@ hwloc_backend_synthetic_init(struct hwloc_synthetic_backend_data_s *data,
     /* initialize parent arity to 0 so that the levels are not infinite */
     data->level[count-1].arity = 0;
 
-    while (*pos == ' ')
+    while (*pos == ' ' || *pos == '\n')
       pos++;
 
     if (!*pos)
@@ -589,7 +626,7 @@ hwloc_backend_synthetic_init(struct hwloc_synthetic_backend_data_s *data,
     }
     if (!item) {
       if (verbose)
-	fprintf(stderr,"Synthetic string with disallow 0 number of objects at '%s'\n", pos);
+	fprintf(stderr,"Synthetic string with disallowed 0 number of objects at '%s'\n", pos);
       errno = EINVAL;
       goto error;
     }
@@ -791,30 +828,14 @@ hwloc_backend_synthetic_init(struct hwloc_synthetic_backend_data_s *data,
     count++;
   }
 
+  /* set default attributes that depend on the depth/hierarchy of levels */
   for (i=0; i<count; i++) {
+    struct hwloc_synthetic_attached_s *attached;
     struct hwloc_synthetic_level_data_s *curlevel = &data->level[i];
-    hwloc_obj_type_t type = curlevel->attr.type;
-
-    if (type == HWLOC_OBJ_GROUP) {
-      if (curlevel->attr.depth == (unsigned)-1)
-	curlevel->attr.depth = type_count[HWLOC_OBJ_GROUP]--;
-
-    } else if (hwloc__obj_type_is_cache(type)) {
-      if (!curlevel->attr.memorysize) {
-	if (1 == curlevel->attr.depth)
-	  /* 32Kb in L1 */
-	  curlevel->attr.memorysize = 32*1024;
-	else
-	  /* *4 at each level, starting from 1MB for L2, unified */
-	  curlevel->attr.memorysize = 256ULL*1024 << (2*curlevel->attr.depth);
-      }
-
-    } else if (type == HWLOC_OBJ_NUMANODE && !curlevel->attr.memorysize) {
-      /* 1GB in memory nodes. */
-      curlevel->attr.memorysize = 1024*1024*1024;
-    }
-
-    hwloc_synthetic_process_indexes(data, &data->level[i].indexes, data->level[i].totalwidth, verbose);
+    hwloc_synthetic_set_default_attrs(&curlevel->attr, type_count);
+    for(attached = curlevel->attached; attached != NULL; attached = attached->next)
+      hwloc_synthetic_set_default_attrs(&attached->attr, type_count);
+    hwloc_synthetic_process_indexes(data, &curlevel->indexes, curlevel->totalwidth, verbose);
   }
 
   hwloc_synthetic_process_indexes(data, &data->numa_attached_indexes, data->numa_attached_nr, verbose);
@@ -912,7 +933,7 @@ hwloc_synthetic_insert_attached(struct hwloc_topology *topology,
 
   hwloc_synthetic_set_attr(&attached->attr, child);
 
-  hwloc_insert_object_by_cpuset(topology, child);
+  hwloc__insert_object_by_cpuset(topology, NULL, child, "synthetic:attached");
 
   hwloc_synthetic_insert_attached(topology, data, attached->next, set);
 }
@@ -964,7 +985,7 @@ hwloc__look_synthetic(struct hwloc_topology *topology,
 
     hwloc_synthetic_set_attr(&curlevel->attr, obj);
 
-    hwloc_insert_object_by_cpuset(topology, obj);
+    hwloc__insert_object_by_cpuset(topology, NULL, obj, "synthetic");
   }
 
   hwloc_synthetic_insert_attached(topology, data, curlevel->attached, set);
@@ -1362,11 +1383,22 @@ hwloc__export_synthetic_memory_children(struct hwloc_topology * topology, unsign
      * better attaching of things to describe the hierarchy.
      */
     hwloc_obj_t numanode = mchild;
-    /* only export the first NUMA node leaf of each memory child
-     * FIXME: This assumes mscache aren't shared between nodes, that's true in current platforms
+    /* only export the first NUMA node leaf of each memory child.
+     * memcache are ignored. non-first child of memcaches are also ignored.
      */
     while (numanode && numanode->type != HWLOC_OBJ_NUMANODE) {
-      assert(numanode->arity == 1);
+      if (verbose) {
+        static int warned = 0;
+        if (!warned)
+          fprintf(stderr, "Ignoring memory objects that are not NUMA nodes.\n");
+        warned = 1;
+      }
+      if (verbose && numanode->memory_arity > 1) {
+        static int warned = 0;
+        if (!warned)
+          fprintf(stderr, "Ignoring non-first memory children at non-first level of memory hierarchy.\n");
+        warned = 1;
+      }
       numanode = numanode->memory_first_child;
     }
     assert(numanode); /* there's always a numanode at the bottom of the memory tree */
@@ -1503,6 +1535,7 @@ hwloc_topology_export_synthetic(struct hwloc_topology * topology,
     signed pdepth;
 
     node = hwloc_get_obj_by_type(topology, HWLOC_OBJ_NUMANODE, 0);
+    assert(node);
     assert(hwloc__obj_type_is_normal(node->parent->type)); /* only depth-1 memory children for now */
     pdepth = node->parent->depth;
 

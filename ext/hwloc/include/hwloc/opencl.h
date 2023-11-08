@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2018 Inria.  All rights reserved.
+ * Copyright © 2012-2023 Inria.  All rights reserved.
  * Copyright © 2013, 2018 Université Bordeaux.  All right reserved.
  * See COPYING in top-level directory.
  */
@@ -52,6 +52,7 @@ typedef union {
 /* needs "cl_nv_device_attribute_query" device extension, but not strictly required for clGetDeviceInfo() */
 #define HWLOC_CL_DEVICE_PCI_BUS_ID_NV 0x4008
 #define HWLOC_CL_DEVICE_PCI_SLOT_ID_NV 0x4009
+#define HWLOC_CL_DEVICE_PCI_DOMAIN_ID_NV 0x400A
 
 
 /** \defgroup hwlocality_opencl Interoperability with OpenCL
@@ -68,22 +69,26 @@ typedef union {
 /** \brief Return the domain, bus and device IDs of the OpenCL device \p device.
  *
  * Device \p device must match the local machine.
+ *
+ * \return 0 on success.
+ * \return -1 on error, for instance if device information could not be found.
  */
 static __hwloc_inline int
 hwloc_opencl_get_device_pci_busid(cl_device_id device,
                                unsigned *domain, unsigned *bus, unsigned *dev, unsigned *func)
 {
 	hwloc_cl_device_topology_amd amdtopo;
-	cl_uint nvbus, nvslot;
+	cl_uint nvbus, nvslot, nvdomain;
 	cl_int clret;
 
 	clret = clGetDeviceInfo(device, HWLOC_CL_DEVICE_TOPOLOGY_AMD, sizeof(amdtopo), &amdtopo, NULL);
 	if (CL_SUCCESS == clret
 	    && HWLOC_CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD == amdtopo.raw.type) {
 		*domain = 0; /* can't do anything better */
-		*bus = (unsigned) amdtopo.pcie.bus;
-		*dev = (unsigned) amdtopo.pcie.device;
-		*func = (unsigned) amdtopo.pcie.function;
+		/* cl_device_topology_amd stores bus ID in cl_char, dont convert those signed char directly to unsigned int */
+		*bus = (unsigned) (unsigned char) amdtopo.pcie.bus;
+		*dev = (unsigned) (unsigned char) amdtopo.pcie.device;
+		*func = (unsigned) (unsigned char) amdtopo.pcie.function;
 		return 0;
 	}
 
@@ -91,8 +96,12 @@ hwloc_opencl_get_device_pci_busid(cl_device_id device,
 	if (CL_SUCCESS == clret) {
 		clret = clGetDeviceInfo(device, HWLOC_CL_DEVICE_PCI_SLOT_ID_NV, sizeof(nvslot), &nvslot, NULL);
 		if (CL_SUCCESS == clret) {
-			/* FIXME: PCI bus only uses 8bit, assume nvidia hardcodes the domain in higher bits */
-			*domain = nvbus >> 8;
+			clret = clGetDeviceInfo(device, HWLOC_CL_DEVICE_PCI_DOMAIN_ID_NV, sizeof(nvdomain), &nvdomain, NULL);
+			if (CL_SUCCESS == clret) { /* available since CUDA 10.2 */
+				*domain = nvdomain;
+			} else {
+				*domain = 0;
+			}
 			*bus = nvbus & 0xff;
 			/* non-documented but used in many other projects */
 			*dev = nvslot >> 3;
@@ -104,10 +113,10 @@ hwloc_opencl_get_device_pci_busid(cl_device_id device,
 	return -1;
 }
 
-/** \brief Get the CPU set of logical processors that are physically
+/** \brief Get the CPU set of processors that are physically
  * close to OpenCL device \p device.
  *
- * Return the CPU set describing the locality of the OpenCL device \p device.
+ * Store in \p set the CPU-set describing the locality of the OpenCL device \p device.
  *
  * Topology \p topology and device \p device must match the local machine.
  * I/O devices detection and the OpenCL component are not needed in the topology.
@@ -120,6 +129,9 @@ hwloc_opencl_get_device_pci_busid(cl_device_id device,
  * This function is currently only implemented in a meaningful way for
  * Linux with the AMD or NVIDIA OpenCL implementation; other systems will simply
  * get a full cpuset.
+ *
+ * \return 0 on success.
+ * \return -1 on error, for instance if the device could not be found.
  */
 static __hwloc_inline int
 hwloc_opencl_get_device_cpuset(hwloc_topology_t topology __hwloc_attribute_unused,
@@ -156,10 +168,10 @@ hwloc_opencl_get_device_cpuset(hwloc_topology_t topology __hwloc_attribute_unuse
 /** \brief Get the hwloc OS device object corresponding to the
  * OpenCL device for the given indexes.
  *
- * Return the OS device object describing the OpenCL device
+ * \return The hwloc OS device object describing the OpenCL device
  * whose platform index is \p platform_index,
  * and whose device index within this platform if \p device_index.
- * Return NULL if there is none.
+ * \return \c NULL if there is none.
  *
  * The topology \p topology does not necessarily have to match the current
  * machine. For instance the topology may be an XML import of a remote host.
@@ -186,8 +198,9 @@ hwloc_opencl_get_device_osdev_by_index(hwloc_topology_t topology,
 
 /** \brief Get the hwloc OS device object corresponding to OpenCL device \p deviceX.
  *
- * Use OpenCL device attributes to find the corresponding hwloc OS device object.
- * Return NULL if there is none or if useful attributes are not available.
+ * \return The hwloc OS device object corresponding to the given OpenCL device \p device.
+ * \return \c NULL if none could be found, for instance
+ * if required OpenCL attributes are not available.
  *
  * This function currently only works on AMD and NVIDIA OpenCL devices that support
  * relevant OpenCL extensions. hwloc_opencl_get_device_osdev_by_index()
