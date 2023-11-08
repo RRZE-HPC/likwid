@@ -46,4 +46,4 @@ Operational intensity (FP+SVE512) [FLOP/Byte] = (FP_DP_FIXED_OPS_SPEC+((FP_DP_SC
 -
 Profiling group to measure memory bandwidth and single-precision FP rate for scalar and SVE vector
 operations with different widths. The events for the SVE metrics assumes that all vector elements
-are active. The cache line size is 256 Byte.
+are active. The cache line size for A64FX is 256 Byte.
