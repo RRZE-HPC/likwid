@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2019 Inria.  All rights reserved.
+ * Copyright © 2013-2022 Inria.  All rights reserved.
  * Copyright © 2016 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -17,12 +17,19 @@ struct hwloc_backend;
 
 #ifdef HWLOC_INSIDE_PLUGIN
 /* needed for hwloc_plugin_check_namespace() */
+#ifdef HWLOC_HAVE_LTDL
 #include <ltdl.h>
+#else
+#include <dlfcn.h>
+#endif
 #endif
 
 
 
 /** \defgroup hwlocality_disc_components Components and Plugins: Discovery components
+ *
+ * \note These structures and functions may change when ::HWLOC_COMPONENT_ABI is modified.
+ *
  * @{
  */
 
@@ -89,6 +96,9 @@ struct hwloc_disc_component {
 
 
 /** \defgroup hwlocality_disc_backends Components and Plugins: Discovery backends
+ *
+ * \note These structures and functions may change when ::HWLOC_COMPONENT_ABI is modified.
+ *
  * @{
  */
 
@@ -154,7 +164,7 @@ struct hwloc_disc_status {
    */
   unsigned excluded_phases;
 
-  /** \brief OR'ed set of hwloc_disc_status_flag_e */
+  /** \brief OR'ed set of ::hwloc_disc_status_flag_e */
   unsigned long flags;
 };
 
@@ -237,6 +247,9 @@ HWLOC_DECLSPEC int hwloc_backend_enable(struct hwloc_backend *backend);
 
 
 /** \defgroup hwlocality_generic_components Components and Plugins: Generic components
+ *
+ * \note These structures and functions may change when ::HWLOC_COMPONENT_ABI is modified.
+ *
  * @{
  */
 
@@ -306,10 +319,38 @@ struct hwloc_component {
 
 
 /** \defgroup hwlocality_components_core_funcs Components and Plugins: Core functions to be used by components
+ *
+ * \note These structures and functions may change when ::HWLOC_COMPONENT_ABI is modified.
+ *
  * @{
  */
 
+/** \brief Check whether error messages are hidden.
+ *
+ * Callers should print critical error messages
+ * (e.g. invalid hw topo info, invalid config)
+ * only if this function returns strictly less than 2.
+ *
+ * Callers should print non-critical error messages
+ * (e.g. failure to initialize CUDA)
+ * if this function returns 0.
+ *
+ * This function return 1 by default (show critical only),
+ * 0 in lstopo (show all),
+ * or anything set in HWLOC_HIDE_ERRORS in the environment.
+ *
+ * Use macros HWLOC_SHOW_CRITICAL_ERRORS() and HWLOC_SHOW_ALL_ERRORS()
+ * for clarity.
+ */
+HWLOC_DECLSPEC int hwloc_hide_errors(void);
+
+#define HWLOC_SHOW_CRITICAL_ERRORS() (hwloc_hide_errors() < 2)
+#define HWLOC_SHOW_ALL_ERRORS() (hwloc_hide_errors() == 0)
+
 /** \brief Add an object to the topology.
+ *
+ * Insert new object \p obj in the topology starting under existing object \p root
+ * (if \c NULL, the topology root object is used).
  *
  * It is sorted along the tree of other objects according to the inclusion of
  * cpusets, to eventually be added as a child of the smallest object including
@@ -323,32 +364,20 @@ struct hwloc_component {
  *
  * This shall only be called before levels are built.
  *
- * In case of error, hwloc_report_os_error() is called.
- *
  * The caller should check whether the object type is filtered-out before calling this function.
  *
  * The topology cpuset/nodesets will be enlarged to include the object sets.
+ *
+ * \p reason is a unique string identifying where and why this insertion call was performed
+ * (it will be displayed in case of internal insertion error).
  *
  * Returns the object on success.
  * Returns NULL and frees obj on error.
  * Returns another object and frees obj if it was merged with an identical pre-existing object.
  */
-HWLOC_DECLSPEC struct hwloc_obj *hwloc_insert_object_by_cpuset(struct hwloc_topology *topology, hwloc_obj_t obj);
-
-/** \brief Type of error callbacks during object insertion */
-typedef void (*hwloc_report_error_t)(const char * msg, int line);
-/** \brief Report an insertion error from a backend */
-HWLOC_DECLSPEC void hwloc_report_os_error(const char * msg, int line);
-/** \brief Check whether insertion errors are hidden */
-HWLOC_DECLSPEC int hwloc_hide_errors(void);
-
-/** \brief Add an object to the topology and specify which error callback to use.
- *
- * This function is similar to hwloc_insert_object_by_cpuset() but it allows specifying
- * where to start insertion from (if \p root is NULL, the topology root object is used),
- * and specifying the error callback.
- */
-HWLOC_DECLSPEC struct hwloc_obj *hwloc__insert_object_by_cpuset(struct hwloc_topology *topology, hwloc_obj_t root, hwloc_obj_t obj, hwloc_report_error_t report_error);
+HWLOC_DECLSPEC hwloc_obj_t
+hwloc__insert_object_by_cpuset(struct hwloc_topology *topology, hwloc_obj_t root,
+                               hwloc_obj_t obj, const char *reason);
 
 /** \brief Insert an object somewhere in the topology.
  *
@@ -418,14 +447,22 @@ static __hwloc_inline int
 hwloc_plugin_check_namespace(const char *pluginname __hwloc_attribute_unused, const char *symbol __hwloc_attribute_unused)
 {
 #ifdef HWLOC_INSIDE_PLUGIN
-  lt_dlhandle handle;
   void *sym;
-  handle = lt_dlopen(NULL);
+#ifdef HWLOC_HAVE_LTDL
+  lt_dlhandle handle = lt_dlopen(NULL);
+#else
+  void *handle = dlopen(NULL, RTLD_NOW|RTLD_LOCAL);
+#endif
   if (!handle)
     /* cannot check, assume things will work */
     return 0;
+#ifdef HWLOC_HAVE_LTDL
   sym = lt_dlsym(handle, symbol);
   lt_dlclose(handle);
+#else
+  sym = dlsym(handle, symbol);
+  dlclose(handle);
+#endif
   if (!sym) {
     static int verboseenv_checked = 0;
     static int verboseenv_value = 0;
@@ -449,6 +486,9 @@ hwloc_plugin_check_namespace(const char *pluginname __hwloc_attribute_unused, co
 
 
 /** \defgroup hwlocality_components_filtering Components and Plugins: Filtering objects
+ *
+ * \note These structures and functions may change when ::HWLOC_COMPONENT_ABI is modified.
+ *
  * @{
  */
 
@@ -463,9 +503,12 @@ hwloc_filter_check_pcidev_subtype_important(unsigned classid)
   return (baseclass == 0x03 /* PCI_BASE_CLASS_DISPLAY */
 	  || baseclass == 0x02 /* PCI_BASE_CLASS_NETWORK */
 	  || baseclass == 0x01 /* PCI_BASE_CLASS_STORAGE */
+	  || baseclass == 0x00 /* Unclassified, for Atos/Bull BXI */
 	  || baseclass == 0x0b /* PCI_BASE_CLASS_PROCESSOR */
 	  || classid == 0x0c04 /* PCI_CLASS_SERIAL_FIBER */
 	  || classid == 0x0c06 /* PCI_CLASS_SERIAL_INFINIBAND */
+          || classid == 0x0502 /* PCI_CLASS_MEMORY_CXL */
+          || baseclass == 0x06 /* PCI_BASE_CLASS_BRIDGE with non-PCI downstream. the core will drop the useless ones later */
 	  || baseclass == 0x12 /* Processing Accelerators */);
 }
 
@@ -521,6 +564,9 @@ hwloc_filter_check_keep_object(hwloc_topology_t topology, hwloc_obj_t obj)
 
 
 /** \defgroup hwlocality_components_pcidisc Components and Plugins: helpers for PCI discovery
+ *
+ * \note These structures and functions may change when ::HWLOC_COMPONENT_ABI is modified.
+ *
  * @{
  */
 
@@ -572,17 +618,75 @@ HWLOC_DECLSPEC int hwloc_pcidisc_tree_attach(struct hwloc_topology *topology, st
 
 
 /** \defgroup hwlocality_components_pcifind Components and Plugins: finding PCI objects during other discoveries
+ *
+ * \note These structures and functions may change when ::HWLOC_COMPONENT_ABI is modified.
+ *
  * @{
  */
 
-/** \brief Find the normal parent of a PCI bus ID.
+/** \brief Find the object or a parent of a PCI bus ID.
  *
- * Look at PCI affinity to find out where the given PCI bus ID should be attached.
+ * When attaching a new object (typically an OS device) whose locality
+ * is specified by PCI bus ID, this function returns the PCI object
+ * to use as a parent for attaching.
  *
- * This function should be used to attach an I/O device under the corresponding
- * PCI object (if any), or under a normal (non-I/O) object with same locality.
+ * If the exact PCI device with this bus ID exists, it is returned.
+ * Otherwise (for instance if it was filtered out), the function returns
+ * another object with similar locality (for instance a parent bridge,
+ * or the local CPU Package).
  */
 HWLOC_DECLSPEC struct hwloc_obj * hwloc_pci_find_parent_by_busid(struct hwloc_topology *topology, unsigned domain, unsigned bus, unsigned dev, unsigned func);
+
+/** \brief Find the PCI device or bridge matching a PCI bus ID exactly.
+ *
+ * This is useful for adding specific information about some objects
+ * based on their PCI id. When it comes to attaching objects based on
+ * PCI locality, hwloc_pci_find_parent_by_busid() should be preferred.
+ */
+HWLOC_DECLSPEC struct hwloc_obj * hwloc_pci_find_by_busid(struct hwloc_topology *topology, unsigned domain, unsigned bus, unsigned dev, unsigned func);
+
+/** \brief Handle to a new distances structure during its addition to the topology. */
+typedef void * hwloc_backend_distances_add_handle_t;
+
+/** \brief Create a new empty distances structure.
+ *
+ * This is identical to hwloc_distances_add_create()
+ * but this variant is designed for backend inserting
+ * distances during topology discovery.
+ */
+HWLOC_DECLSPEC hwloc_backend_distances_add_handle_t
+hwloc_backend_distances_add_create(hwloc_topology_t topology,
+                                   const char *name, unsigned long kind,
+                                   unsigned long flags);
+
+/** \brief Specify the objects and values in a new empty distances structure.
+ *
+ * This is similar to hwloc_distances_add_values()
+ * but this variant is designed for backend inserting
+ * distances during topology discovery.
+ *
+ * The only semantical difference is that \p objs and \p values
+ * are not duplicated, but directly attached to the topology.
+ * On success, these arrays are given to the core and should not
+ * ever be freed by the caller anymore.
+ */
+HWLOC_DECLSPEC int
+hwloc_backend_distances_add_values(hwloc_topology_t topology,
+                                   hwloc_backend_distances_add_handle_t handle,
+                                   unsigned nbobjs, hwloc_obj_t *objs,
+                                   hwloc_uint64_t *values,
+                                   unsigned long flags);
+
+/** \brief Commit a new distances structure.
+ *
+ * This is similar to hwloc_distances_add_commit()
+ * but this variant is designed for backend inserting
+ * distances during topology discovery.
+ */
+HWLOC_DECLSPEC int
+hwloc_backend_distances_add_commit(hwloc_topology_t topology,
+                                   hwloc_backend_distances_add_handle_t handle,
+                                   unsigned long flags);
 
 /** @} */
 
