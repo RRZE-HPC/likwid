@@ -4,7 +4,7 @@
 #include <registers.h>
 #include <cpuid.h>
 #include <topology.h>
-#include <hwFeatures_types.h>
+#include <sysFeatures_types.h>
 #include <likwid_device_types.h>
 
 
@@ -12,11 +12,11 @@ int intel_cpu_msr_register_getter(LikwidDevice_t device, uint32_t reg, uint64_t 
 
 int intel_cpu_msr_register_setter(LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, char* value);
 
-#include <hwFeatures_intel_prefetcher.h>
-#include <hwFeatures_intel_turbo.h>
-#include <hwFeatures_intel_uncorefreq.h>
-#include <hwFeatures_intel_spec_ctrl.h>
-#include <hwFeatures_intel_rapl.h>
+#include <sysFeatures_intel_prefetcher.h>
+#include <sysFeatures_intel_turbo.h>
+#include <sysFeatures_intel_uncorefreq.h>
+#include <sysFeatures_intel_spec_ctrl.h>
+#include <sysFeatures_intel_rapl.h>
 
 static _HWFeatureList* intel_arch_feature_inputs[] = {
     &intel_cpu_prefetch_feature_list,
@@ -93,6 +93,6 @@ static _HWArchFeatures intel_arch_features[] = {
 
 
 
-int hwFeatures_init_x86_intel(_HWFeatureList* list);
+int sysFeatures_init_x86_intel(_HWFeatureList* list);
 
 #endif

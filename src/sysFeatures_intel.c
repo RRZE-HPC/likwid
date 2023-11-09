@@ -5,27 +5,27 @@
 #include <registers.h>
 #include <cpuid.h>
 #include <pci_types.h>
-#include <hwFeatures_types.h>
+#include <sysFeatures_types.h>
 #include <likwid_device_types.h>
 #include <error.h>
-#include <hwFeatures_common.h>
+#include <sysFeatures_common.h>
 #include <topology.h>
-#include <hwFeatures_intel.h>
+#include <sysFeatures_intel.h>
 #include <access.h>
 
-#include <hwFeatures_intel_rapl.h>
+#include <sysFeatures_intel_rapl.h>
 
 
-int hwFeatures_init_x86_intel(_HWFeatureList* out)
+int sysFeatures_init_x86_intel(_HWFeatureList* out)
 {
     int err = 0;
-    err = hwFeatures_init_generic(intel_arch_features, out);
+    err = sysFeatures_init_generic(intel_arch_features, out);
     if (err < 0)
     {
         ERROR_PRINT(Failed to init general Intel HWFetures);
         return err;
     }
-    err = hwFeatures_init_intel_rapl(out);
+    err = sysFeatures_init_intel_rapl(out);
     if (err < 0)
     {
         ERROR_PRINT(Failed to init Intel RAPL HWFetures);

@@ -3,11 +3,11 @@
 #include <stdint.h>
 #include <unistd.h>
 
-#include <hwFeatures_types.h>
+#include <sysFeatures_types.h>
 #include <likwid_device_types.h>
 #include <error.h>
-#include <hwFeatures_common.h>
-#include <hwFeatures_linux_numa_balancing.h>
+#include <sysFeatures_common.h>
+#include <sysFeatures_linux_numa_balancing.h>
 #include <bstrlib.h>
 #include <bstrlib_helper.h>
 
@@ -95,7 +95,7 @@ int numa_balancing_scan_size_getter(LikwidDevice_t device, char** value)
 }
 
 
-int hwFeatures_init_linux_numa_balancing(_HWFeatureList* out)
+int sysFeatures_init_linux_numa_balancing(_HWFeatureList* out)
 {
     if (numa_balancing_test())
     {

@@ -1,7 +1,7 @@
 #ifndef HWFEATURES_LIST_H
 #define HWFEATURES_LIST_H
 
-#include <hwFeatures_types.h>
+#include <sysFeatures_types.h>
 #include <likwid.h>
 
 /* External lists with flags etc. */

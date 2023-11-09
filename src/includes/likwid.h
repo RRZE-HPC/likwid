@@ -2386,20 +2386,20 @@ typedef struct {
 
 
 
-/*int hwFeatures_create_device(LikwidDeviceType scope, int id, LikwidDevice_t* device) __attribute__ ((visibility ("default") ));*/
-/*void hwFeatures_destroy_device(LikwidDevice_t device) __attribute__ ((visibility ("default") ));*/
+/*int sysFeatures_create_device(LikwidDeviceType scope, int id, LikwidDevice_t* device) __attribute__ ((visibility ("default") ));*/
+/*void sysFeatures_destroy_device(LikwidDevice_t device) __attribute__ ((visibility ("default") ));*/
 
-int hwFeatures_init() __attribute__ ((visibility ("default") ));
+int sysFeatures_init() __attribute__ ((visibility ("default") ));
 
-int hwFeatures_list(HWFeatureList* list) __attribute__ ((visibility ("default") ));
-void hwFeatures_list_return(HWFeatureList* list) __attribute__ ((visibility ("default") ));
+int sysFeatures_list(HWFeatureList* list) __attribute__ ((visibility ("default") ));
+void sysFeatures_list_return(HWFeatureList* list) __attribute__ ((visibility ("default") ));
 
-int hwFeatures_get(HWFeature* feature, LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
-int hwFeatures_getByName(char* name, LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
-int hwFeatures_modify(HWFeature* feature, LikwidDevice_t device, char* value) __attribute__ ((visibility ("default") ));
-int hwFeatures_modifyByName(char* name, LikwidDevice_t device, char* value) __attribute__ ((visibility ("default") ));
+int sysFeatures_get(HWFeature* feature, LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
+int sysFeatures_getByName(char* name, LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
+int sysFeatures_modify(HWFeature* feature, LikwidDevice_t device, char* value) __attribute__ ((visibility ("default") ));
+int sysFeatures_modifyByName(char* name, LikwidDevice_t device, char* value) __attribute__ ((visibility ("default") ));
 
-void hwFeatures_finalize() __attribute__ ((visibility ("default") ));
+void sysFeatures_finalize() __attribute__ ((visibility ("default") ));
 
 
 #ifdef __cplusplus

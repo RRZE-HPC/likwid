@@ -180,9 +180,9 @@ likwid.setresuid = likwid_setresuid
 likwid.setresuser = likwid_setresuser
 
 likwid.initHWFeatures = likwid_initHWFeatures
-likwid.hwFeatures_list = likwid_hwFeatures_list
-likwid.hwFeatures_get = likwid_hwFeatures_get
-likwid.hwFeatures_set = likwid_hwFeatures_set
+likwid.sysFeatures_list = likwid_sysFeatures_list
+likwid.sysFeatures_get = likwid_sysFeatures_get
+likwid.sysFeatures_set = likwid_sysFeatures_set
 likwid.finalizeHWFeatures = likwid_finalizeHWFeatures
 
 likwid.createDevice = likwid_createDevice

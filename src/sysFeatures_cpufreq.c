@@ -2,15 +2,15 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <hwFeatures_types.h>
+#include <sysFeatures_types.h>
 #include <likwid_device_types.h>
 #include <error.h>
 #include <topology.h>
 
 #include <bstrlib.h>
 #include <bstrlib_helper.h>
-#include <hwFeatures_cpufreq.h>
-#include <hwFeatures_common.h>
+#include <sysFeatures_cpufreq.h>
+#include <sysFeatures_common.h>
 
 
 static int cpufreq_sysfs_getter(LikwidDevice_t device, char** value, char* sysfs_filename)
@@ -224,7 +224,7 @@ int cpufreq_intel_pstate_avail_epps_getter(LikwidDevice_t device, char** value)
 
 /* Init function */
 
-int hwFeatures_init_cpufreq(_HWFeatureList* out)
+int sysFeatures_init_cpufreq(_HWFeatureList* out)
 {
     int err = 0;
     if (cpufreq_intel_pstate_test())

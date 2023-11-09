@@ -5,10 +5,10 @@
 #include <registers.h>
 #include <cpuid.h>
 #include <pci_types.h>
-#include <hwFeatures_types.h>
+#include <sysFeatures_types.h>
 #include <likwid_device_types.h>
 #include <error.h>
-#include <hwFeatures_common.h>
+#include <sysFeatures_common.h>
 
 int register_features(_HWFeatureList *features, _HWFeatureList* in)
 {
@@ -52,7 +52,7 @@ int register_features(_HWFeatureList *features, _HWFeatureList* in)
     return 0;
 }
 
-int hwFeatures_init_generic(_HWArchFeatures* infeatures, _HWFeatureList *list)
+int sysFeatures_init_generic(_HWArchFeatures* infeatures, _HWFeatureList *list)
 {
     int i = 0;
     int j = 0;

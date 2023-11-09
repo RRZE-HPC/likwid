@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <hwFeatures_types.h>
+#include <sysFeatures_types.h>
 #include <likwid_device_types.h>
 #include <error.h>
-#include <hwFeatures_intel.h>
+#include <sysFeatures_intel.h>
 
 /*********************************************************************************************************************/
 /*                          Intel prefetchers                                                                        */
@@ -157,7 +157,7 @@ int intel_core2_ida_setter(LikwidDevice_t device, char* value)
 
 /* Init function */
 
-int hwFeatures_init_intel_prefetchers(_HWFeatureList* out)
+int sysFeatures_init_intel_prefetchers(_HWFeatureList* out)
 {
     return 0;
 }

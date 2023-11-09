@@ -163,7 +163,7 @@ if err < 0 then
 end
 
 -- get a list of all features for the system
-local list = likwid.hwFeatures_list()
+local list = likwid.sysFeatures_list()
 
 -- print the list
 if allFeatures then
@@ -305,7 +305,7 @@ if listFeatures and #hwtlist > 0 then
         for _,f in pairs(list) do
             local dev = getDevice(f.TypeID, c)
             if dev then
-                local v = likwid.hwFeatures_get(f.Name, dev)
+                local v = likwid.sysFeatures_get(f.Name, dev)
                 if v == nil then
                     if f.ReadOnly then
                         table.insert(tab, "rdonly")
@@ -379,7 +379,7 @@ if #setList > 0 and #hwtlist > 0 then
                 if verbose > 0 then
                     print_stdout(string.format("Setting '%s.%s' to '%s' (Type %s, Resp %d)", f.Category, f.Name, f.Value, f.Type, c))
                 end
-                local v = likwid.hwFeatures_set(f.Name, dev, f.Value)
+                local v = likwid.sysFeatures_set(f.Name, dev, f.Value)
                 if not v then
                     print_stderr(string.format("Failed to set feature '%s.%s' to '%s' (Type %s, Resp %d)", f.Category, f.Name, f.Value, f.Type, c))
                 end
@@ -441,7 +441,7 @@ end
         for i, c in pairs(hwtlist) do
             local dev = likwid.createDevice(likwid.hwthread, c)
             for j, f in pairs(realEnableList) do
-                local ret = likwid.hwFeatures_set(f, dev, 1)
+                local ret = likwid.sysFeatures_set(f, dev, 1)
                 if ret == true then
                     print_stdout(string.format("Enabled %s for HWThread %d", f, c))
                 else
@@ -456,7 +456,7 @@ end
         for i, c in pairs(hwtlist) do
             local dev = likwid.createDevice(likwid.hwthread, c)
             for j, f in pairs(realDisableList) do
-                local ret = likwid.hwFeatures_set(f, dev, 0)
+                local ret = likwid.sysFeatures_set(f, dev, 0)
                 if ret == true then
                     print_stdout(string.format("Disabled %s for HWThread %d", f, c))
                 else

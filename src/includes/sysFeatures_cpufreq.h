@@ -1,7 +1,7 @@
 #ifndef HWFEATURES_CPUFREQ_H
 #define HWFEATURES_CPUFREQ_H
 
-int hwFeatures_init_cpufreq(_HWFeatureList* out);
+int sysFeatures_init_cpufreq(_HWFeatureList* out);
 
 
 int cpufreq_acpi_test();

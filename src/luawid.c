@@ -3546,7 +3546,7 @@ lua_likwid_initHWFeatures(lua_State *L)
     int err = 0;
     if (!hwfeatures_inititalized)
     {
-        err = hwFeatures_init();
+        err = sysFeatures_init();
         if (err == 0)
         {
             hwfeatures_inititalized = 1;
@@ -3561,7 +3561,7 @@ lua_likwid_finalizeHWFeatures(lua_State *L)
 {
     if (hwfeatures_inititalized)
     {
-        hwFeatures_finalize();
+        sysFeatures_finalize();
         hwfeatures_inititalized = 0;
     }
     return 0;
@@ -3575,7 +3575,7 @@ lua_likwid_getHwFeatureList(lua_State *L)
         return 1;
     }
     HWFeatureList list = {0, NULL};
-    hwFeatures_list(&list);
+    sysFeatures_list(&list);
     lua_newtable(L);
     for (int i = 0; i < list.num_features; i++)
     {
@@ -3604,7 +3604,7 @@ lua_likwid_getHwFeatureList(lua_State *L)
         lua_settable(L,-3);
         lua_settable(L,-3);
     }
-    hwFeatures_list_return(&list);
+    sysFeatures_list_return(&list);
     return 1;
 }
 
@@ -3616,7 +3616,7 @@ lua_likwid_getHwFeature(lua_State *L)
         char* feature = (char *)luaL_checkstring(L, 1);
         LikwidDevice_t dev = lua_touserdata(L, 2);
         char* value = NULL;
-        int err = hwFeatures_getByName(feature, dev, &value);
+        int err = sysFeatures_getByName(feature, dev, &value);
         if (err == 0)
         {
             lua_pushstring(L, value);
@@ -3635,7 +3635,7 @@ lua_likwid_setHwFeature(lua_State *L)
         char* feature = (char *)luaL_checkstring(L, 1);
         LikwidDevice_t dev = lua_touserdata(L, 2);
         char* value = (char *)luaL_checkstring(L,3);
-        int err = hwFeatures_modifyByName(feature, dev, value);
+        int err = sysFeatures_modifyByName(feature, dev, value);
         if (err == 0)
         {
             lua_pushboolean(L, 1);
@@ -3899,9 +3899,9 @@ luaopen_liblikwid(lua_State* L){
 #endif /* LIKWID_WITH_NVMON */
     lua_register(L, "likwid_initHWFeatures", lua_likwid_initHWFeatures);
     lua_register(L, "likwid_finalizeHWFeatures", lua_likwid_finalizeHWFeatures);
-    lua_register(L, "likwid_hwFeatures_list",lua_likwid_getHwFeatureList);
-    lua_register(L, "likwid_hwFeatures_get",lua_likwid_getHwFeature);
-    lua_register(L, "likwid_hwFeatures_set",lua_likwid_setHwFeature);
+    lua_register(L, "likwid_sysFeatures_list",lua_likwid_getHwFeatureList);
+    lua_register(L, "likwid_sysFeatures_get",lua_likwid_getHwFeature);
+    lua_register(L, "likwid_sysFeatures_set",lua_likwid_setHwFeature);
     lua_register(L, "likwid_createDevice",lua_likwid_createDevice);
     lua_register(L, "likwid_destroyDevice",lua_likwid_destroyDevice);
 #ifdef __MIC__

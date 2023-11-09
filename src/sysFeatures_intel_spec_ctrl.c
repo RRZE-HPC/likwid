@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <hwFeatures_types.h>
+#include <sysFeatures_types.h>
 #include <likwid_device_types.h>
 #include <error.h>
-#include <hwFeatures_intel.h>
+#include <sysFeatures_intel.h>
 #include <cpuid.h>
 #include <bitUtil.h>
 
@@ -117,7 +117,7 @@ int intel_cpu_spec_ctrl()
 
 /* Init function */
 
-int hwFeatures_init_intel_spec_ctrl(_HWFeatureList* out)
+int sysFeatures_init_intel_spec_ctrl(_HWFeatureList* out)
 {
     return 0;
 }

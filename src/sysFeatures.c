@@ -7,14 +7,14 @@
 #include <error.h>
 #include <likwid_device.h>
 
-#include <hwFeatures.h>
-#include <hwFeatures_types.h>
-#include <hwFeatures_common.h>
-#include <hwFeatures_intel.h>
-#include <hwFeatures_cpufreq.h>
-#include <hwFeatures_linux_numa_balancing.h>
+#include <sysFeatures.h>
+#include <sysFeatures_types.h>
+#include <sysFeatures_common.h>
+#include <sysFeatures_intel.h>
+#include <sysFeatures_cpufreq.h>
+#include <sysFeatures_linux_numa_balancing.h>
 
-//#include <hwFeatures_x86_amd.h>
+//#include <sysFeatures_x86_amd.h>
 
 _HWFeature *local_features = NULL;
 int num_local_features = 0;
@@ -75,7 +75,7 @@ static int get_device_access(LikwidDevice_t device)
 }
 
 
-int hwFeatures_init()
+int sysFeatures_init()
 {
     int err = 0;
 
@@ -92,7 +92,7 @@ int hwFeatures_init()
     }
     if (cpuinfo->isIntel)
     {
-        err = hwFeatures_init_x86_intel(&_feature_list);
+        err = sysFeatures_init_x86_intel(&_feature_list);
         if (err < 0)
         {
             ERROR_PRINT(Failed to initialize HWFeatures for Intel architecture);
@@ -101,7 +101,7 @@ int hwFeatures_init()
     }
     else
     {
-        //err = hwFeatures_init_x86_amd(&num_features, &features);
+        //err = sysFeatures_init_x86_amd(&num_features, &features);
         if (err < 0)
         {
             ERROR_PRINT(Failed to initialize HWFeatures for AMD architecture);
@@ -109,21 +109,21 @@ int hwFeatures_init()
         }
     }
     
-    err = hwFeatures_init_cpufreq(&_feature_list);
+    err = sysFeatures_init_cpufreq(&_feature_list);
     if (err < 0)
     {
         ERROR_PRINT(Failed to initialize HWFeatures cpufreq module);
         return err;
     }
 
-    err = hwFeatures_init_linux_numa_balancing(&_feature_list);
+    err = sysFeatures_init_linux_numa_balancing(&_feature_list);
     if (err < 0)
     {
         ERROR_PRINT(Failed to initialize HWFeatures numa_balancing module);
         return err;
     }
     
-    err = hwFeatures_init_linux_numa_balancing(&_feature_list);
+    err = sysFeatures_init_linux_numa_balancing(&_feature_list);
     if (err < 0)
     {
         ERROR_PRINT(Failed to initialize HWFeatures numa_balancing module);
@@ -134,7 +134,7 @@ int hwFeatures_init()
     return 0;
 }
 
-static int _hwFeatures_get_feature_index(char* name)
+static int _sysFeatures_get_feature_index(char* name)
 {
     int dot = -1;
     if (!name)
@@ -202,13 +202,13 @@ static int _hwFeatures_get_feature_index(char* name)
 
 
 
-int hwFeatures_getByName(char* name, LikwidDevice_t device, char** value)
+int sysFeatures_getByName(char* name, LikwidDevice_t device, char** value)
 {
     int err = 0;
     _HWFeature *f = NULL;
     if ((!name) || (!device) || (!value))
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Invalid inputs to hwFeatures_getByName);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Invalid inputs to sysFeatures_getByName);
         return -EINVAL;
     }
     if (device->type == DEVICE_TYPE_INVALID)
@@ -216,7 +216,7 @@ int hwFeatures_getByName(char* name, LikwidDevice_t device, char** value)
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Invalid device type);
         return -EINVAL;
     }
-    int idx = _hwFeatures_get_feature_index(name);
+    int idx = _sysFeatures_get_feature_index(name);
     if (idx < 0)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Failed to get index for %s, name);
@@ -243,15 +243,15 @@ int hwFeatures_getByName(char* name, LikwidDevice_t device, char** value)
     return err;
 }
 
-int hwFeatures_get(HWFeature* feature, LikwidDevice_t device, char** value)
+int sysFeatures_get(HWFeature* feature, LikwidDevice_t device, char** value)
 {
     int len = strlen(feature->name) + strlen(feature->category) + 2;
     char real[len];
     int ret = snprintf(real, len, "%s.%s", feature->category, feature->name);
-    return hwFeatures_getByName(real, device, value);
+    return sysFeatures_getByName(real, device, value);
 }
 
-int hwFeatures_modifyByName(char* name, LikwidDevice_t device, char* value)
+int sysFeatures_modifyByName(char* name, LikwidDevice_t device, char* value)
 {
     int err = 0;
     int dev_id = -1;
@@ -264,7 +264,7 @@ int hwFeatures_modifyByName(char* name, LikwidDevice_t device, char* value)
     {
         return -EINVAL;
     }
-    int idx = _hwFeatures_get_feature_index(name);
+    int idx = _sysFeatures_get_feature_index(name);
     if (idx < 0)
     {
         return -EINVAL;
@@ -287,15 +287,15 @@ int hwFeatures_modifyByName(char* name, LikwidDevice_t device, char* value)
     return f->setter(device, value);
 }
 
-int hwFeatures_modify(HWFeature* feature, LikwidDevice_t device, char* value)
+int sysFeatures_modify(HWFeature* feature, LikwidDevice_t device, char* value)
 {
     int len = strlen(feature->name) + strlen(feature->category) + 2;
     char real[len];
     int ret = snprintf(real, len, "%s.%s", feature->category, feature->name);
-    return hwFeatures_modifyByName(feature->name, device, value);
+    return sysFeatures_modifyByName(feature->name, device, value);
 }
 
-void hwFeatures_finalize()
+void sysFeatures_finalize()
 {
     if (local_features != NULL)
     {
@@ -310,7 +310,7 @@ void hwFeatures_finalize()
     
 }
 
-int hwFeatures_list(HWFeatureList* list)
+int sysFeatures_list(HWFeatureList* list)
 {
     if (!list)
     {
@@ -319,7 +319,7 @@ int hwFeatures_list(HWFeatureList* list)
     return internal_to_external_feature_list(&_feature_list, list);
 }
 
-void hwFeatures_list_return(HWFeatureList* list)
+void sysFeatures_list_return(HWFeatureList* list)
 {
     if (!list || !list->features)
     {

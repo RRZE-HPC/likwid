@@ -57,6 +57,6 @@ static _HWFeatureList intel_cpu_spec_ctrl_feature_list = {
 };
 
 
-int hwFeatures_init_intel_spec_ctrl(_HWFeatureList* out);
+int sysFeatures_init_intel_spec_ctrl(_HWFeatureList* out);
 
 #endif /* HWFEATURES_X86_INTEL_SPEC_CTRL_H */

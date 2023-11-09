@@ -31,7 +31,7 @@ INSTRUMENT_BENCH = true#NO SPACE
 NVIDIA_INTERFACE = false#NO SPACE
 
 # Build experimental sysfeatures interface and Lua CLI application
-BUILD_SYSFEATURES = true#NO SPACE
+BUILD_SYSFEATURES = false#NO SPACE
 
 #################################################################
 #################################################################

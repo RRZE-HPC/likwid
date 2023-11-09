@@ -4,12 +4,12 @@
 #include <registers.h>
 #include <cpuid.h>
 #include <topology.h>
-#include <hwFeatures_types.h>
+#include <sysFeatures_types.h>
 #include <likwid_device_types.h>
 #include <access.h>
-#include <hwFeatures_common.h>
+#include <sysFeatures_common.h>
 
-#include <hwFeatures_amd_rapl.h>
+#include <sysFeatures_amd_rapl.h>
 
 
 #define MSR_AMD19_PREFETCH_CONTROL 0xC0000108
@@ -356,9 +356,9 @@ static _HWArchFeatures amd_arch_features[] = {
 
 
 
-int hwFeatures_init_x86_amd(_HWFeatureList* out)
+int sysFeatures_init_x86_amd(_HWFeatureList* out)
 {
-    return hwFeatures_init_generic(amd_arch_features, out);
+    return sysFeatures_init_generic(amd_arch_features, out);
 }
 
 

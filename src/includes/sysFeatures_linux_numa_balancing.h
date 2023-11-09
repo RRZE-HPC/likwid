@@ -28,7 +28,7 @@ static _HWFeatureList numa_balancing_feature_list = {
 };
 
 
-int hwFeatures_init_linux_numa_balancing(_HWFeatureList* out);
+int sysFeatures_init_linux_numa_balancing(_HWFeatureList* out);
 
 
 #endif /* HWFEATURES_NUMABALANCING_H */

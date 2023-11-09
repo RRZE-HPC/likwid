@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <hwFeatures_types.h>
+#include <sysFeatures_types.h>
 #include <likwid_device_types.h>
 #include <error.h>
-#include <hwFeatures_intel.h>
-#include <hwFeatures_intel_uncorefreq.h>
+#include <sysFeatures_intel.h>
+#include <sysFeatures_intel_uncorefreq.h>
 #include <access.h>
-#include <hwFeatures_common.h>
+#include <sysFeatures_common.h>
 
 int intel_uncorefreq_test()
 {

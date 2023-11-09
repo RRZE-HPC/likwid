@@ -3,12 +3,12 @@
 #include <stdint.h>
 #include <math.h>
 
-#include <hwFeatures_types.h>
+#include <sysFeatures_types.h>
 #include <likwid_device_types.h>
 #include <error.h>
-#include <hwFeatures_intel.h>
-#include <hwFeatures_common.h>
-#include <hwFeatures_intel_rapl.h>
+#include <sysFeatures_intel.h>
+#include <sysFeatures_common.h>
+#include <sysFeatures_intel_rapl.h>
 #include <access.h>
 #include <registers.h>
 
@@ -83,7 +83,7 @@ static int intel_rapl_register_test_bit(uint32_t reg, int bitoffset)
     return valid == topo->numSockets;
 }
 
-static int hwFeatures_intel_rapl_energy_status_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_status_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -103,7 +103,7 @@ static int hwFeatures_intel_rapl_energy_status_getter(LikwidDevice_t device, cha
     return _uint64_to_string(data, value);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_1_enable_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_enable_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -122,7 +122,7 @@ static int hwFeatures_intel_rapl_energy_limit_1_enable_getter(LikwidDevice_t dev
     return _uint64_to_string(newdata, value);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_1_enable_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_enable_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -147,7 +147,7 @@ static int hwFeatures_intel_rapl_energy_limit_1_enable_setter(LikwidDevice_t dev
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -165,7 +165,7 @@ static int hwFeatures_intel_rapl_energy_limit_1_clamp_getter(LikwidDevice_t devi
     return _uint64_to_string(data, value);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -191,7 +191,7 @@ static int hwFeatures_intel_rapl_energy_limit_1_clamp_setter(LikwidDevice_t devi
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_1_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -211,7 +211,7 @@ static int hwFeatures_intel_rapl_energy_limit_1_getter(LikwidDevice_t device, ch
     return _uint64_to_string(data, value);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_1_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -243,7 +243,7 @@ static int hwFeatures_intel_rapl_energy_limit_1_setter(LikwidDevice_t device, ch
     return 0;
 }
 
-static int hwFeatures_intel_rapl_energy_limit_1_time_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_time_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -267,7 +267,7 @@ static int hwFeatures_intel_rapl_energy_limit_1_time_getter(LikwidDevice_t devic
     return _uint64_to_string(data, value);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_1_time_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_time_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -302,7 +302,7 @@ static int hwFeatures_intel_rapl_energy_limit_1_time_setter(LikwidDevice_t devic
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_2_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -322,7 +322,7 @@ static int hwFeatures_intel_rapl_energy_limit_2_getter(LikwidDevice_t device, ch
     return _uint64_to_string(data, value);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_2_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -355,7 +355,7 @@ static int hwFeatures_intel_rapl_energy_limit_2_setter(LikwidDevice_t device, ch
     return 0;
 }
 
-static int hwFeatures_intel_rapl_energy_limit_2_time_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_time_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -379,7 +379,7 @@ static int hwFeatures_intel_rapl_energy_limit_2_time_getter(LikwidDevice_t devic
     return _uint64_to_string(data, value);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_2_time_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_time_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -414,7 +414,7 @@ static int hwFeatures_intel_rapl_energy_limit_2_time_setter(LikwidDevice_t devic
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_2_enable_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_enable_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -433,7 +433,7 @@ static int hwFeatures_intel_rapl_energy_limit_2_enable_getter(LikwidDevice_t dev
     return _uint64_to_string(data, value);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_2_enable_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_enable_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -459,7 +459,7 @@ static int hwFeatures_intel_rapl_energy_limit_2_enable_setter(LikwidDevice_t dev
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_2_clamp_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_clamp_getter(LikwidDevice_t device, char** value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -478,7 +478,7 @@ static int hwFeatures_intel_rapl_energy_limit_2_clamp_getter(LikwidDevice_t devi
     return _uint64_to_string(data, value);
 }
 
-static int hwFeatures_intel_rapl_energy_limit_2_clamp_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_clamp_setter(LikwidDevice_t device, char* value, uint32_t reg, IntelRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -504,7 +504,7 @@ static int hwFeatures_intel_rapl_energy_limit_2_clamp_setter(LikwidDevice_t devi
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int hwFeatures_intel_rapl_info_tdp(LikwidDevice_t device, char** value, uint32_t reg)
+static int sysFeatures_intel_rapl_info_tdp(LikwidDevice_t device, char** value, uint32_t reg)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -523,7 +523,7 @@ static int hwFeatures_intel_rapl_info_tdp(LikwidDevice_t device, char** value, u
     return _uint64_to_string(data, value);
 }
 
-static int hwFeatures_intel_rapl_info_min_power(LikwidDevice_t device, char** value, uint32_t reg)
+static int sysFeatures_intel_rapl_info_min_power(LikwidDevice_t device, char** value, uint32_t reg)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -542,7 +542,7 @@ static int hwFeatures_intel_rapl_info_min_power(LikwidDevice_t device, char** va
     return _uint64_to_string(data, value);
 }
 
-static int hwFeatures_intel_rapl_info_max_power(LikwidDevice_t device, char** value, uint32_t reg)
+static int sysFeatures_intel_rapl_info_max_power(LikwidDevice_t device, char** value, uint32_t reg)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -561,7 +561,7 @@ static int hwFeatures_intel_rapl_info_max_power(LikwidDevice_t device, char** va
     return _uint64_to_string(data, value);
 }
 
-static int hwFeatures_intel_rapl_info_max_time(LikwidDevice_t device, char** value, uint32_t reg)
+static int sysFeatures_intel_rapl_info_max_time(LikwidDevice_t device, char** value, uint32_t reg)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -580,7 +580,7 @@ static int hwFeatures_intel_rapl_info_max_time(LikwidDevice_t device, char** val
     return _uint64_to_string(data, value);
 }
 
-static int hwFeatures_intel_rapl_policy_getter(LikwidDevice_t device, char** value, uint32_t reg)
+static int sysFeatures_intel_rapl_policy_getter(LikwidDevice_t device, char** value, uint32_t reg)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -598,7 +598,7 @@ static int hwFeatures_intel_rapl_policy_getter(LikwidDevice_t device, char** val
     return _uint64_to_string(data, value);
 }
 
-static int hwFeatures_intel_rapl_policy_setter(LikwidDevice_t device, char* value, uint32_t reg)
+static int sysFeatures_intel_rapl_policy_setter(LikwidDevice_t device, char* value, uint32_t reg)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -669,113 +669,113 @@ int intel_rapl_pkg_limit_test_lock()
 }
 
 
-int hwFeatures_intel_pkg_energy_status_test()
+int sysFeatures_intel_pkg_energy_status_test()
 {
     return intel_rapl_register_test(MSR_PKG_ENERGY_STATUS);
 }
 
 
-int hwFeatures_intel_pkg_energy_status_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pkg_energy_status_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_status_getter(device, value, MSR_PKG_ENERGY_STATUS, &intel_rapl_pkg_info);
+    return sysFeatures_intel_rapl_energy_status_getter(device, value, MSR_PKG_ENERGY_STATUS, &intel_rapl_pkg_info);
 }
 
-int hwFeatures_intel_pkg_energy_limit_test()
+int sysFeatures_intel_pkg_energy_limit_test()
 {
     return intel_rapl_register_test(MSR_PKG_RAPL_POWER_LIMIT);
 }
 
-int hwFeatures_intel_pkg_energy_limit_1_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pkg_energy_limit_1_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+    return sysFeatures_intel_rapl_energy_limit_1_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
-int hwFeatures_intel_pkg_energy_limit_1_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pkg_energy_limit_1_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+    return sysFeatures_intel_rapl_energy_limit_1_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
-int hwFeatures_intel_pkg_energy_limit_1_time_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pkg_energy_limit_1_time_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_time_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+    return sysFeatures_intel_rapl_energy_limit_1_time_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
-int hwFeatures_intel_pkg_energy_limit_1_time_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pkg_energy_limit_1_time_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_time_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+    return sysFeatures_intel_rapl_energy_limit_1_time_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
-int hwFeatures_intel_pkg_energy_limit_1_enable_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pkg_energy_limit_1_enable_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_enable_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+    return sysFeatures_intel_rapl_energy_limit_1_enable_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
-int hwFeatures_intel_pkg_energy_limit_1_enable_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pkg_energy_limit_1_enable_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_enable_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+    return sysFeatures_intel_rapl_energy_limit_1_enable_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
-int hwFeatures_intel_pkg_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pkg_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+    return sysFeatures_intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
-int hwFeatures_intel_pkg_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pkg_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
-}
-
-
-
-int hwFeatures_intel_pkg_energy_limit_2_getter(LikwidDevice_t device, char** value)
-{
-    return hwFeatures_intel_rapl_energy_limit_2_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
-}
-int hwFeatures_intel_pkg_energy_limit_2_setter(LikwidDevice_t device, char* value)
-{
-    return hwFeatures_intel_rapl_energy_limit_2_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
-}
-int hwFeatures_intel_pkg_energy_limit_2_time_getter(LikwidDevice_t device, char** value)
-{
-    return hwFeatures_intel_rapl_energy_limit_2_time_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
-}
-int hwFeatures_intel_pkg_energy_limit_2_time_setter(LikwidDevice_t device, char* value)
-{
-    return hwFeatures_intel_rapl_energy_limit_2_time_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
-}
-int hwFeatures_intel_pkg_energy_limit_2_enable_getter(LikwidDevice_t device, char** value)
-{
-    return hwFeatures_intel_rapl_energy_limit_2_enable_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
-}
-int hwFeatures_intel_pkg_energy_limit_2_enable_setter(LikwidDevice_t device, char* value)
-{
-    return hwFeatures_intel_rapl_energy_limit_2_enable_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
-}
-int hwFeatures_intel_pkg_energy_limit_2_clamp_getter(LikwidDevice_t device, char** value)
-{
-    return hwFeatures_intel_rapl_energy_limit_2_clamp_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
-}
-int hwFeatures_intel_pkg_energy_limit_2_clamp_setter(LikwidDevice_t device, char* value)
-{
-    return hwFeatures_intel_rapl_energy_limit_2_clamp_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+    return sysFeatures_intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-int hwFeatures_intel_pkg_info_test()
+
+
+int sysFeatures_intel_pkg_energy_limit_2_getter(LikwidDevice_t device, char** value)
+{
+    return sysFeatures_intel_rapl_energy_limit_2_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+}
+int sysFeatures_intel_pkg_energy_limit_2_setter(LikwidDevice_t device, char* value)
+{
+    return sysFeatures_intel_rapl_energy_limit_2_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+}
+int sysFeatures_intel_pkg_energy_limit_2_time_getter(LikwidDevice_t device, char** value)
+{
+    return sysFeatures_intel_rapl_energy_limit_2_time_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+}
+int sysFeatures_intel_pkg_energy_limit_2_time_setter(LikwidDevice_t device, char* value)
+{
+    return sysFeatures_intel_rapl_energy_limit_2_time_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+}
+int sysFeatures_intel_pkg_energy_limit_2_enable_getter(LikwidDevice_t device, char** value)
+{
+    return sysFeatures_intel_rapl_energy_limit_2_enable_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+}
+int sysFeatures_intel_pkg_energy_limit_2_enable_setter(LikwidDevice_t device, char* value)
+{
+    return sysFeatures_intel_rapl_energy_limit_2_enable_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+}
+int sysFeatures_intel_pkg_energy_limit_2_clamp_getter(LikwidDevice_t device, char** value)
+{
+    return sysFeatures_intel_rapl_energy_limit_2_clamp_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+}
+int sysFeatures_intel_pkg_energy_limit_2_clamp_setter(LikwidDevice_t device, char* value)
+{
+    return sysFeatures_intel_rapl_energy_limit_2_clamp_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
+}
+
+int sysFeatures_intel_pkg_info_test()
 {
     return intel_rapl_register_test(MSR_PKG_POWER_INFO);
 }
 
-int hwFeatures_intel_pkg_info_tdp(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pkg_info_tdp(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_info_tdp(device, value, MSR_PKG_POWER_INFO);
+    return sysFeatures_intel_rapl_info_tdp(device, value, MSR_PKG_POWER_INFO);
 }
 
-int hwFeatures_intel_pkg_info_min_power(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pkg_info_min_power(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_info_min_power(device, value, MSR_PKG_POWER_INFO);
+    return sysFeatures_intel_rapl_info_min_power(device, value, MSR_PKG_POWER_INFO);
 }
 
-int hwFeatures_intel_pkg_info_max_power(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pkg_info_max_power(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_info_max_power(device, value, MSR_PKG_POWER_INFO);
+    return sysFeatures_intel_rapl_info_max_power(device, value, MSR_PKG_POWER_INFO);
 }
 
-int hwFeatures_intel_pkg_info_max_time(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pkg_info_max_time(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_info_max_time(device, value, MSR_PKG_POWER_INFO);
+    return sysFeatures_intel_rapl_info_max_time(device, value, MSR_PKG_POWER_INFO);
 }
 
 
@@ -835,17 +835,17 @@ int intel_rapl_dram_test()
 }
 
 
-int hwFeatures_intel_dram_energy_status_test()
+int sysFeatures_intel_dram_energy_status_test()
 {
     return intel_rapl_register_test(MSR_DRAM_ENERGY_STATUS);
 }
 
-int hwFeatures_intel_dram_energy_status_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_dram_energy_status_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_status_getter(device, value, MSR_DRAM_ENERGY_STATUS, &intel_rapl_dram_info);
+    return sysFeatures_intel_rapl_energy_status_getter(device, value, MSR_DRAM_ENERGY_STATUS, &intel_rapl_dram_info);
 }
 
-int hwFeatures_intel_dram_energy_limit_test()
+int sysFeatures_intel_dram_energy_limit_test()
 {
     return intel_rapl_register_test(MSR_DRAM_RAPL_POWER_LIMIT);
 }
@@ -855,62 +855,62 @@ int intel_rapl_dram_limit_test_lock()
 }
 
 
-int hwFeatures_intel_dram_energy_limit_1_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_dram_energy_limit_1_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
+    return sysFeatures_intel_rapl_energy_limit_1_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
-int hwFeatures_intel_dram_energy_limit_1_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_dram_energy_limit_1_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
+    return sysFeatures_intel_rapl_energy_limit_1_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
-int hwFeatures_intel_dram_energy_limit_1_time_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_dram_energy_limit_1_time_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_time_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
+    return sysFeatures_intel_rapl_energy_limit_1_time_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
-int hwFeatures_intel_dram_energy_limit_1_time_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_dram_energy_limit_1_time_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_time_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
+    return sysFeatures_intel_rapl_energy_limit_1_time_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
-int hwFeatures_intel_dram_energy_limit_1_enable_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_dram_energy_limit_1_enable_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_enable_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
+    return sysFeatures_intel_rapl_energy_limit_1_enable_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
-int hwFeatures_intel_dram_energy_limit_1_enable_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_dram_energy_limit_1_enable_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_enable_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
+    return sysFeatures_intel_rapl_energy_limit_1_enable_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
-int hwFeatures_intel_dram_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_dram_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
+    return sysFeatures_intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
-int hwFeatures_intel_dram_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_dram_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
+    return sysFeatures_intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
 
-int hwFeatures_intel_dram_info_test()
+int sysFeatures_intel_dram_info_test()
 {
     return intel_rapl_register_test(MSR_DRAM_POWER_INFO);
 }
 
-int hwFeatures_intel_dram_info_tdp(LikwidDevice_t device, char** value)
+int sysFeatures_intel_dram_info_tdp(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_info_tdp(device, value, MSR_DRAM_POWER_INFO);
+    return sysFeatures_intel_rapl_info_tdp(device, value, MSR_DRAM_POWER_INFO);
 }
 
-int hwFeatures_intel_dram_info_min_power(LikwidDevice_t device, char** value)
+int sysFeatures_intel_dram_info_min_power(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_info_min_power(device, value, MSR_DRAM_POWER_INFO);
+    return sysFeatures_intel_rapl_info_min_power(device, value, MSR_DRAM_POWER_INFO);
 }
 
-int hwFeatures_intel_dram_info_max_power(LikwidDevice_t device, char** value)
+int sysFeatures_intel_dram_info_max_power(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_info_max_power(device, value, MSR_DRAM_POWER_INFO);
+    return sysFeatures_intel_rapl_info_max_power(device, value, MSR_DRAM_POWER_INFO);
 }
 
-int hwFeatures_intel_dram_info_max_time(LikwidDevice_t device, char** value)
+int sysFeatures_intel_dram_info_max_time(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_info_max_time(device, value, MSR_DRAM_POWER_INFO);
+    return sysFeatures_intel_rapl_info_max_time(device, value, MSR_DRAM_POWER_INFO);
 }
 
 
@@ -960,18 +960,18 @@ int intel_rapl_psys_test()
 }
 
 
-int hwFeatures_intel_psys_energy_status_test()
+int sysFeatures_intel_psys_energy_status_test()
 {
     return intel_rapl_register_test(MSR_PLATFORM_ENERGY_STATUS);
 }
 
 
-int hwFeatures_intel_psys_energy_status_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_psys_energy_status_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_status_getter(device, value, MSR_PLATFORM_ENERGY_STATUS, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_status_getter(device, value, MSR_PLATFORM_ENERGY_STATUS, &intel_rapl_psys_info);
 }
 
-int hwFeatures_intel_psys_energy_limit_test()
+int sysFeatures_intel_psys_energy_limit_test()
 {
     return intel_rapl_register_test(MSR_PLATFORM_POWER_LIMIT);
 }
@@ -980,71 +980,71 @@ int intel_rapl_psys_limit_test_lock()
     return intel_rapl_register_test_bit(MSR_PLATFORM_POWER_LIMIT, 63);
 }
 
-int hwFeatures_intel_psys_energy_limit_1_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_psys_energy_limit_1_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_1_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_1_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_psys_energy_limit_1_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_1_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_1_time_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_psys_energy_limit_1_time_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_time_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_1_time_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_1_time_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_psys_energy_limit_1_time_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_time_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_1_time_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_1_enable_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_psys_energy_limit_1_enable_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_enable_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_1_enable_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_1_enable_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_psys_energy_limit_1_enable_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_enable_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_1_enable_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_psys_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_psys_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
 
-int hwFeatures_intel_psys_energy_limit_2_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_psys_energy_limit_2_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_2_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_2_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_2_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_psys_energy_limit_2_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_2_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_2_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_2_time_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_psys_energy_limit_2_time_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_2_time_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_2_time_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_2_time_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_psys_energy_limit_2_time_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_2_time_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_2_time_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_2_enable_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_psys_energy_limit_2_enable_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_2_enable_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_2_enable_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_2_enable_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_psys_energy_limit_2_enable_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_2_enable_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_2_enable_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_2_clamp_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_psys_energy_limit_2_clamp_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_2_clamp_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_2_clamp_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
-int hwFeatures_intel_psys_energy_limit_2_clamp_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_psys_energy_limit_2_clamp_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_2_clamp_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
+    return sysFeatures_intel_rapl_energy_limit_2_clamp_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
 /*********************************************************************************************************************/
@@ -1089,18 +1089,18 @@ int intel_rapl_pp0_test()
 }
 
 
-int hwFeatures_intel_pp0_energy_status_test()
+int sysFeatures_intel_pp0_energy_status_test()
 {
     return intel_rapl_register_test(MSR_PP0_ENERGY_STATUS);
 }
 
 
-int hwFeatures_intel_pp0_energy_status_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pp0_energy_status_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_status_getter(device, value, MSR_PP0_ENERGY_STATUS, &intel_rapl_pp0_info);
+    return sysFeatures_intel_rapl_energy_status_getter(device, value, MSR_PP0_ENERGY_STATUS, &intel_rapl_pp0_info);
 }
 
-int hwFeatures_intel_pp0_energy_limit_test()
+int sysFeatures_intel_pp0_energy_limit_test()
 {
     return intel_rapl_register_test(MSR_PP0_RAPL_POWER_LIMIT);
 }
@@ -1109,51 +1109,51 @@ int intel_rapl_pp0_limit_test_lock()
     return intel_rapl_register_test_bit(MSR_PP0_RAPL_POWER_LIMIT, 31);
 }
 
-int hwFeatures_intel_pp0_energy_limit_1_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pp0_energy_limit_1_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_getter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
+    return sysFeatures_intel_rapl_energy_limit_1_getter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
-int hwFeatures_intel_pp0_energy_limit_1_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pp0_energy_limit_1_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_setter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
+    return sysFeatures_intel_rapl_energy_limit_1_setter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
-int hwFeatures_intel_pp0_energy_limit_1_time_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pp0_energy_limit_1_time_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_time_getter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
+    return sysFeatures_intel_rapl_energy_limit_1_time_getter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
-int hwFeatures_intel_pp0_energy_limit_1_time_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pp0_energy_limit_1_time_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_time_setter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
+    return sysFeatures_intel_rapl_energy_limit_1_time_setter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
-int hwFeatures_intel_pp0_energy_limit_1_enable_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pp0_energy_limit_1_enable_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_enable_getter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
+    return sysFeatures_intel_rapl_energy_limit_1_enable_getter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
-int hwFeatures_intel_pp0_energy_limit_1_enable_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pp0_energy_limit_1_enable_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_enable_setter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
+    return sysFeatures_intel_rapl_energy_limit_1_enable_setter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
-int hwFeatures_intel_pp0_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pp0_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
+    return sysFeatures_intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
-int hwFeatures_intel_pp0_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pp0_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
+    return sysFeatures_intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
 
 
-int hwFeatures_intel_pp0_policy_test()
+int sysFeatures_intel_pp0_policy_test()
 {
     return intel_rapl_register_test(MSR_PP0_ENERGY_POLICY);
 }
-int hwFeatures_intel_pp0_policy_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pp0_policy_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_policy_getter(device, value, MSR_PP0_ENERGY_POLICY);
+    return sysFeatures_intel_rapl_policy_getter(device, value, MSR_PP0_ENERGY_POLICY);
 }
-int hwFeatures_intel_pp0_policy_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pp0_policy_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_policy_setter(device, value, MSR_PP0_ENERGY_POLICY);
+    return sysFeatures_intel_rapl_policy_setter(device, value, MSR_PP0_ENERGY_POLICY);
 }
 
 
@@ -1199,17 +1199,17 @@ int intel_rapl_pp1_test()
 }
 
 
-int hwFeatures_intel_pp1_energy_status_test()
+int sysFeatures_intel_pp1_energy_status_test()
 {
     return intel_rapl_register_test(MSR_PP1_ENERGY_STATUS);
 }
 
-int hwFeatures_intel_pp1_energy_status_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pp1_energy_status_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_status_getter(device, value, MSR_PP1_ENERGY_STATUS, &intel_rapl_pp1_info);
+    return sysFeatures_intel_rapl_energy_status_getter(device, value, MSR_PP1_ENERGY_STATUS, &intel_rapl_pp1_info);
 }
 
-int hwFeatures_intel_pp1_energy_limit_test()
+int sysFeatures_intel_pp1_energy_limit_test()
 {
     return intel_rapl_register_test(MSR_PP1_RAPL_POWER_LIMIT);
 }
@@ -1218,57 +1218,57 @@ int intel_rapl_pp1_limit_test_lock()
     return intel_rapl_register_test_bit(MSR_PP1_RAPL_POWER_LIMIT, 31);
 }
 
-int hwFeatures_intel_pp1_energy_limit_1_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pp1_energy_limit_1_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_getter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
+    return sysFeatures_intel_rapl_energy_limit_1_getter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
-int hwFeatures_intel_pp1_energy_limit_1_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pp1_energy_limit_1_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_setter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
+    return sysFeatures_intel_rapl_energy_limit_1_setter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
-int hwFeatures_intel_pp1_energy_limit_1_time_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pp1_energy_limit_1_time_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_time_getter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
+    return sysFeatures_intel_rapl_energy_limit_1_time_getter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
-int hwFeatures_intel_pp1_energy_limit_1_time_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pp1_energy_limit_1_time_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_time_setter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
+    return sysFeatures_intel_rapl_energy_limit_1_time_setter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
-int hwFeatures_intel_pp1_energy_limit_1_enable_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pp1_energy_limit_1_enable_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_enable_getter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
+    return sysFeatures_intel_rapl_energy_limit_1_enable_getter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
-int hwFeatures_intel_pp1_energy_limit_1_enable_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pp1_energy_limit_1_enable_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_enable_setter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
+    return sysFeatures_intel_rapl_energy_limit_1_enable_setter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
-int hwFeatures_intel_pp1_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pp1_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
+    return sysFeatures_intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
-int hwFeatures_intel_pp1_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pp1_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
+    return sysFeatures_intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
 
 
-int hwFeatures_intel_pp1_policy_test()
+int sysFeatures_intel_pp1_policy_test()
 {
     return intel_rapl_register_test(MSR_PP1_ENERGY_POLICY);
 }
-int hwFeatures_intel_pp1_policy_getter(LikwidDevice_t device, char** value)
+int sysFeatures_intel_pp1_policy_getter(LikwidDevice_t device, char** value)
 {
-    return hwFeatures_intel_rapl_policy_getter(device, value, MSR_PP1_ENERGY_POLICY);
+    return sysFeatures_intel_rapl_policy_getter(device, value, MSR_PP1_ENERGY_POLICY);
 }
-int hwFeatures_intel_pp1_policy_setter(LikwidDevice_t device, char* value)
+int sysFeatures_intel_pp1_policy_setter(LikwidDevice_t device, char* value)
 {
-    return hwFeatures_intel_rapl_policy_setter(device, value, MSR_PP1_ENERGY_POLICY);
+    return sysFeatures_intel_rapl_policy_setter(device, value, MSR_PP1_ENERGY_POLICY);
 }
 
 
 /* Init function */
 
-int hwFeatures_init_intel_rapl(_HWFeatureList* out)
+int sysFeatures_init_intel_rapl(_HWFeatureList* out)
 {
     int err = 0;
     if (intel_rapl_pkg_test())

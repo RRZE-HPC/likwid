@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <hwFeatures.h>
+#include <sysFeatures.h>
 #include <likwid.h>
 #include <error.h>
 
