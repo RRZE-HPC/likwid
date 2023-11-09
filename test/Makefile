@@ -35,6 +35,7 @@ targets:
 	@echo " - testTBBGCC (Intel TBB test code compiled with GCC)"
 	@echo " - testTBBICC (Intel TBB test code compiled with Intel C++ Compiler)"
 	@echo " - triadCU (Vector triad benchmark code in CUDA implementation and NvMarkerAPI)"
+	@echo " - test_sysFeatures (Test experimental sysFeatures API if configured)"
 	@echo ""
 	@echo " - clean (Clean all compiled files)"
 
@@ -98,6 +99,14 @@ streamCU: stream.cu
 
 triadCU: triad.cu
 	nvcc -O3 -I. $(LIKWID_INC) $(LIKWID_LIB) -DLIKWID_NVMON -Xcompiler -fopenmp triad.cu -o $@ -lm -llikwid
+
+ifeq ($(BUILD_SYSFEATURES),true)
+test_sysFeatures: test_sysFeatures.c
+	$(CC) -DLIKWID_WITH_SYSFEATURES -I../src/includes -L.. test_sysFeatures.c -o $@ -llikwid
+else
+test_sysFeatures: test_sysFeatures.c
+	@echo "Support for sysFeatures not enabled"
+endif
 
 .PHONY: clean distclean streamGCC streamICC streamGCC_C11 streamICC_C11 testmarker-cnt testmarker-omp testmarkerF90 test-mpi test-mpi-pthreads stream_cilk serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul marker_overhead
 

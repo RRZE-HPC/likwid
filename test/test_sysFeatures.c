@@ -7,7 +7,7 @@
 int main(int argc, char* argv[])
 {
 	int err = 0;
-	HWFeatureList list = {0, NULL};
+	SysFeatureList list = {0, NULL};
 	err = topology_init();
 	if (err != 0)
 	{
@@ -27,16 +27,16 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 	
-	err = hwFeatures_init();
+	err = sysFeatures_init();
 	if (err != 0)
 	{
-		printf("Error hwfeatures_init\n");
+		printf("Error sysFeatures_init\n");
 		return 1;
 	}
-	err = hwFeatures_list(&list);
+	err = sysFeatures_list(&list);
 	if (err != 0)
 	{
-		printf("Error hwfeatures_list\n");
+		printf("Error sysFeatures_list\n");
 		return 1;
 	}
 	printf("Feature list:\n");
@@ -49,21 +49,21 @@ int main(int argc, char* argv[])
 	err = likwid_device_create(DEVICE_TYPE_HWTHREAD, 0, &hwtdevice);
 	if (err != 0)
 	{
-		printf("Error hwFeatures_create_device (hwt)\n");
+		printf("Error sysFeatures_create_device (hwt)\n");
 		return 1;
 	}
 	LikwidDevice_t nodedevice = NULL;
 	err = likwid_device_create(DEVICE_TYPE_NODE, 0, &nodedevice);
 	if (err != 0)
 	{
-		printf("Error hwFeatures_create_device (node)\n");
+		printf("Error sysFeatures_create_device (node)\n");
 		return 1;
 	}
 	LikwidDevice_t socketdevice = NULL;
 	err = likwid_device_create(DEVICE_TYPE_SOCKET, 0, &socketdevice);
 	if (err != 0)
 	{
-		printf("Error hwFeatures_create_device (socket)\n");
+		printf("Error sysFeatures_create_device (socket)\n");
 		return 1;
 	}
 	//perfmon_setVerbosity(3);
@@ -71,26 +71,26 @@ int main(int argc, char* argv[])
 	{
 		char* val = NULL;
 		if (list.features[i].type == DEVICE_TYPE_HWTHREAD)
-		    hwFeatures_get(&list.features[i], hwtdevice, &val);
+		    sysFeatures_get(&list.features[i], hwtdevice, &val);
 		else if (list.features[i].type == DEVICE_TYPE_NODE)
-		    hwFeatures_get(&list.features[i], nodedevice, &val);
+		    sysFeatures_get(&list.features[i], nodedevice, &val);
 		else if (list.features[i].type == DEVICE_TYPE_SOCKET)
-		    hwFeatures_get(&list.features[i], socketdevice, &val);
+		    sysFeatures_get(&list.features[i], socketdevice, &val);
 		printf("%s.%s : %s\n", list.features[i].category, list.features[i].name, val);
 		/*uint64_t new = !val;
 		uint64_t newread = 0;
-		hwFeatures_modify(&list.features[i], 0, new);
-		hwFeatures_get(&list.features[i], 0, &newread);
+		sysFeatures_modify(&list.features[i], 0, new);
+		sysFeatures_get(&list.features[i], 0, &newread);
 		printf("%s : %d\n", list.features[i].name, newread);
-		hwFeatures_modify(&list.features[i], 0, val);*/
+		sysFeatures_modify(&list.features[i], 0, val);*/
 
 	}
 	perfmon_setVerbosity(0);
 	likwid_device_destroy(hwtdevice);
 	likwid_device_destroy(nodedevice);
 	likwid_device_destroy(socketdevice);
-	hwFeatures_list_return(&list);
-	hwFeatures_finalize();
+	sysFeatures_list_return(&list);
+	sysFeatures_finalize();
 	HPMfinalize();
 	return 0;
 }
