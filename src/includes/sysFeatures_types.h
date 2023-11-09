@@ -25,18 +25,18 @@ typedef struct {
     LikwidDeviceType type;
     hwfeature_test_function tester;
     char* unit;
-} _HWFeature;
+} _SysFeature;
 
 typedef struct {
     int num_features;
-    _HWFeature* features;
+    _SysFeature* features;
     hwfeature_test_function tester;
-} _HWFeatureList;
+} _SysFeatureList;
 
 typedef struct {
     int family;
     int model;
-    _HWFeatureList** features;
+    _SysFeatureList** features;
     int max_stepping;
 } _HWArchFeatures;
 

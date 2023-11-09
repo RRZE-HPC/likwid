@@ -2,10 +2,11 @@
 #include <stdio.h>
 
 #include <sysFeatures.h>
+#include <sysFeatures_types.h>
 #include <likwid.h>
 #include <error.h>
 
-int add_to_feature_list(HWFeatureList *list, HWFeature* feature)
+int add_to_feature_list(SysFeatureList *list, SysFeature* feature)
 {
     if ((!list) || (!feature))
     {
@@ -13,7 +14,7 @@ int add_to_feature_list(HWFeatureList *list, HWFeature* feature)
         return -EINVAL;
     }
 
-    HWFeature* flist = realloc(list->features, (list->num_features + 1) * sizeof(HWFeature));
+    SysFeature* flist = realloc(list->features, (list->num_features + 1) * sizeof(SysFeature));
     if (!flist)
     {
         ERROR_PRINT(Cannot allocate space for extended feature list);
@@ -21,7 +22,7 @@ int add_to_feature_list(HWFeatureList *list, HWFeature* feature)
     }
     list->features = flist;
 
-    HWFeature* iof = &(list->features[list->num_features]);
+    SysFeature* iof = &(list->features[list->num_features]);
     iof->name = malloc((strlen(feature->name) + 1) * sizeof(char));
     if (!iof->name)
     {
@@ -57,7 +58,7 @@ int add_to_feature_list(HWFeatureList *list, HWFeature* feature)
 }
 
 
-int merge_feature_lists(HWFeatureList *inout, HWFeatureList *in)
+int merge_feature_lists(SysFeatureList *inout, SysFeatureList *in)
 {
     if ((!inout) || (!in))
     {
@@ -65,7 +66,7 @@ int merge_feature_lists(HWFeatureList *inout, HWFeatureList *in)
         return -EINVAL;
     }
 
-    HWFeature* flist = realloc(inout->features, (inout->num_features + in->num_features) * sizeof(HWFeature));
+    SysFeature* flist = realloc(inout->features, (inout->num_features + in->num_features) * sizeof(SysFeature));
     if (!flist)
     {
         ERROR_PRINT(Cannot allocate space for extended feature list);
@@ -75,7 +76,7 @@ int merge_feature_lists(HWFeatureList *inout, HWFeatureList *in)
 
     for (int i = 0; i < in->num_features; i++)
     {
-        HWFeature* ifeat = &(in->features[i]);
+        SysFeature* ifeat = &(in->features[i]);
         add_to_feature_list(inout, ifeat);
     }
 
@@ -83,25 +84,25 @@ int merge_feature_lists(HWFeatureList *inout, HWFeatureList *in)
     return 0;
 }
 
-void free_feature_list(HWFeatureList *list)
+void free_feature_list(SysFeatureList *list)
 {
     if (list)
     {
         for (int i = 0; i < list->num_features; i++)
         {
-            HWFeature* f = &(list->features[i]);
+            SysFeature* f = &(list->features[i]);
             if (f->name) free(f->name);
             if (f->category) free(f->category);
             if (f->description) free(f->description);
         }
-        memset(list->features, 0, list->num_features * sizeof(HWFeature));
+        memset(list->features, 0, list->num_features * sizeof(SysFeature));
         free(list->features);
         list->features = NULL;
         list->num_features = 0;
     }
 }
 
-int _add_to_feature_list(_HWFeatureList *list, _HWFeature* feature)
+int _add_to_feature_list(_SysFeatureList *list, _SysFeature* feature)
 {
     if ((!list) || (!feature))
     {
@@ -109,7 +110,7 @@ int _add_to_feature_list(_HWFeatureList *list, _HWFeature* feature)
         return -EINVAL;
     }
 
-    _HWFeature* flist = realloc(list->features, (list->num_features + 1) * sizeof(_HWFeature));
+    _SysFeature* flist = realloc(list->features, (list->num_features + 1) * sizeof(_SysFeature));
     if (!flist)
     {
         ERROR_PRINT(Cannot allocate space for extended feature list);
@@ -117,7 +118,7 @@ int _add_to_feature_list(_HWFeatureList *list, _HWFeature* feature)
     }
     list->features = flist;
 
-    _HWFeature* iof = &(list->features[list->num_features]);
+    _SysFeature* iof = &(list->features[list->num_features]);
     iof->name = feature->name;
     iof->category = feature->category;
     iof->description = feature->description;
@@ -130,7 +131,7 @@ int _add_to_feature_list(_HWFeatureList *list, _HWFeature* feature)
     return 0;
 }
 
-int _merge_feature_lists(_HWFeatureList *inout, _HWFeatureList *in)
+int _merge_feature_lists(_SysFeatureList *inout, _SysFeatureList *in)
 {
     if ((!inout) || (!in))
     {
@@ -138,7 +139,7 @@ int _merge_feature_lists(_HWFeatureList *inout, _HWFeatureList *in)
         return -EINVAL;
     }
 
-    _HWFeature* flist = realloc(inout->features, (inout->num_features + in->num_features) * sizeof(_HWFeature));
+    _SysFeature* flist = realloc(inout->features, (inout->num_features + in->num_features) * sizeof(_SysFeature));
     if (!flist)
     {
         ERROR_PRINT(Cannot allocate space for extended feature list);
@@ -148,8 +149,8 @@ int _merge_feature_lists(_HWFeatureList *inout, _HWFeatureList *in)
 
     for (int i = 0; i < in->num_features; i++)
     {
-        _HWFeature* ifeat = &(in->features[i]);
-        _HWFeature* iof = &(inout->features[inout->num_features + i]);
+        _SysFeature* ifeat = &(in->features[i]);
+        _SysFeature* iof = &(inout->features[inout->num_features + i]);
         
         iof->name = ifeat->name;
         iof->category = ifeat->category;
@@ -164,11 +165,11 @@ int _merge_feature_lists(_HWFeatureList *inout, _HWFeatureList *in)
     return 0;
 }
 
-void _free_feature_list(_HWFeatureList *list)
+void _free_feature_list(_SysFeatureList *list)
 {
     if (list)
     {
-        memset(list->features, 0, list->num_features * sizeof(_HWFeature));
+        memset(list->features, 0, list->num_features * sizeof(_SysFeature));
         free(list->features);
         list->features = NULL;
         list->tester = NULL;
@@ -177,7 +178,7 @@ void _free_feature_list(_HWFeatureList *list)
 }
 
 
-int internal_to_external_feature_list(_HWFeatureList *inlist, HWFeatureList* outlist)
+int internal_to_external_feature_list(_SysFeatureList *inlist, SysFeatureList* outlist)
 {
     if ((!inlist) || (!outlist))
     {
@@ -187,7 +188,7 @@ int internal_to_external_feature_list(_HWFeatureList *inlist, HWFeatureList* out
     outlist->num_features = 0;
     outlist->features = NULL;
 
-    outlist->features = malloc(inlist->num_features * sizeof(HWFeature));
+    outlist->features = malloc(inlist->num_features * sizeof(SysFeature));
     if (!outlist->features)
     {
         return -ENOMEM;
@@ -195,15 +196,15 @@ int internal_to_external_feature_list(_HWFeatureList *inlist, HWFeatureList* out
 
     for (int i = 0; i < inlist->num_features; i++)
     {
-        HWFeature* out = &(outlist->features[i]);
-        _HWFeature* in = &(inlist->features[i]);
+        SysFeature* out = &(outlist->features[i]);
+        _SysFeature* in = &(inlist->features[i]);
 
         out->name = malloc((strlen(in->name)+1) * sizeof(char));
         if (!out->name)
         {
             for (int j = 0; j < i; j++)
             {
-                HWFeature* c = &(outlist->features[j]);
+                SysFeature* c = &(outlist->features[j]);
                 if (c->name) free(c->name);
                 if (c->category) free(c->category);
                 if (c->description) free(c->description);
@@ -218,7 +219,7 @@ int internal_to_external_feature_list(_HWFeatureList *inlist, HWFeatureList* out
             free(out->name);
             for (int j = 0; j < i; j++)
             {
-                HWFeature* c = &(outlist->features[j]);
+                SysFeature* c = &(outlist->features[j]);
                 if (c->name) free(c->name);
                 if (c->category) free(c->category);
                 if (c->description) free(c->description);
@@ -234,7 +235,7 @@ int internal_to_external_feature_list(_HWFeatureList *inlist, HWFeatureList* out
             free(out->category);
             for (int j = 0; j < i; j++)
             {
-                HWFeature* c = &(outlist->features[j]);
+                SysFeature* c = &(outlist->features[j]);
                 if (c->name) free(c->name);
                 if (c->category) free(c->category);
                 if (c->description) free(c->description);
@@ -246,8 +247,8 @@ int internal_to_external_feature_list(_HWFeatureList *inlist, HWFeatureList* out
     }
     for (int i = 0; i < inlist->num_features; i++)
     {
-        HWFeature* out = &(outlist->features[i]);
-        _HWFeature* in = &(inlist->features[i]);
+        SysFeature* out = &(outlist->features[i]);
+        _SysFeature* in = &(inlist->features[i]);
         int slen = HWFEATURES_MIN_STRLEN(strlen(in->name) + 1, HWFEATURES_MAX_STR_LENGTH);
         strncpy(out->name, in->name, slen);
         slen = HWFEATURES_MIN_STRLEN(strlen(in->category) + 1, HWFEATURES_MAX_STR_LENGTH);

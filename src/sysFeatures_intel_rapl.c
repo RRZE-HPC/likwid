@@ -4,7 +4,7 @@
 #include <math.h>
 
 #include <sysFeatures_types.h>
-#include <likwid_device_types.h>
+#include <likwid.h>
 #include <error.h>
 #include <sysFeatures_intel.h>
 #include <sysFeatures_common.h>
@@ -1268,7 +1268,7 @@ int sysFeatures_intel_pp1_policy_setter(LikwidDevice_t device, char* value)
 
 /* Init function */
 
-int sysFeatures_init_intel_rapl(_HWFeatureList* out)
+int sysFeatures_init_intel_rapl(_SysFeatureList* out)
 {
     int err = 0;
     if (intel_rapl_pkg_test())

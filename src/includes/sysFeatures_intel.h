@@ -5,7 +5,7 @@
 #include <cpuid.h>
 #include <topology.h>
 #include <sysFeatures_types.h>
-#include <likwid_device_types.h>
+#include <likwid.h>
 
 
 int intel_cpu_msr_register_getter(LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, char** value);
@@ -18,7 +18,7 @@ int intel_cpu_msr_register_setter(LikwidDevice_t device, uint32_t reg, uint64_t 
 #include <sysFeatures_intel_spec_ctrl.h>
 #include <sysFeatures_intel_rapl.h>
 
-static _HWFeatureList* intel_arch_feature_inputs[] = {
+static _SysFeatureList* intel_arch_feature_inputs[] = {
     &intel_cpu_prefetch_feature_list,
     &intel_cpu_ida_feature_list,
     &intel_cpu_turbo_feature_list,
@@ -27,7 +27,7 @@ static _HWFeatureList* intel_arch_feature_inputs[] = {
     NULL,
 };
 
-static _HWFeatureList* intel_8f_arch_feature_inputs[] = {
+static _SysFeatureList* intel_8f_arch_feature_inputs[] = {
     &intel_cpu_prefetch_feature_list,
     &intel_8f_cpu_feature_list,
     &intel_cpu_ida_feature_list,
@@ -36,7 +36,7 @@ static _HWFeatureList* intel_8f_arch_feature_inputs[] = {
     NULL,
 };
 
-static _HWFeatureList* intel_knl_arch_feature_inputs[] = {
+static _SysFeatureList* intel_knl_arch_feature_inputs[] = {
     &intel_knl_cpu_feature_list,
     &intel_cpu_ida_feature_list,
     &intel_cpu_turbo_feature_list,
@@ -44,7 +44,7 @@ static _HWFeatureList* intel_knl_arch_feature_inputs[] = {
     NULL,
 };
 
-static _HWFeatureList* intel_core2_arch_feature_inputs[] = {
+static _SysFeatureList* intel_core2_arch_feature_inputs[] = {
     &intel_core2_cpu_feature_list,
     &intel_cpu_ida_feature_list,
     &intel_cpu_turbo_feature_list,
@@ -93,6 +93,6 @@ static _HWArchFeatures intel_arch_features[] = {
 
 
 
-int sysFeatures_init_x86_intel(_HWFeatureList* list);
+int sysFeatures_init_x86_intel(_SysFeatureList* list);
 
 #endif

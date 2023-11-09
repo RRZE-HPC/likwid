@@ -41,7 +41,7 @@ int intel_cpu_spec_ddpd_getter(LikwidDevice_t device, char** value);
 int intel_cpu_spec_ctrl();
 
 #define MAX_INTEL_CPU_SPEC_CTRL_FEATURES 7
-static _HWFeature intel_cpu_spec_ctrl_features[] = {
+static _SysFeature intel_cpu_spec_ctrl_features[] = {
     {"ibrs", "spec_ctrl", "Indirect Branch Restricted Speculation", intel_cpu_spec_ibrs_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_ibrs_tester},
     {"stibp", "spec_ctrl", "Single Thread Indirect Branch Predictors", intel_cpu_spec_stibp_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_stibp_tester},
     {"ssbd", "spec_ctrl", "Speculative Store Bypass Disable", intel_cpu_spec_ssbd_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_ssbd_tester},
@@ -50,13 +50,13 @@ static _HWFeature intel_cpu_spec_ctrl_features[] = {
     {"psfd", "spec_ctrl", "Fast Store Forwarding Predictor", intel_cpu_spec_psfd_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_psfd_tester},
     {"ddpd", "spec_ctrl", "Data Dependent Prefetcher", intel_cpu_spec_ddpd_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_ddpd_tester},
 };
-static _HWFeatureList intel_cpu_spec_ctrl_feature_list = {
+static _SysFeatureList intel_cpu_spec_ctrl_feature_list = {
     .num_features = MAX_INTEL_CPU_SPEC_CTRL_FEATURES,
     .tester = intel_cpu_spec_ctrl,
     .features = intel_cpu_spec_ctrl_features,
 };
 
 
-int sysFeatures_init_intel_spec_ctrl(_HWFeatureList* out);
+int sysFeatures_init_intel_spec_ctrl(_SysFeatureList* out);
 
 #endif /* HWFEATURES_X86_INTEL_SPEC_CTRL_H */

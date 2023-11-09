@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include <sysFeatures_types.h>
-#include <likwid_device_types.h>
+#include <likwid.h>
 #include <error.h>
 #include <topology.h>
 
@@ -224,7 +224,7 @@ int cpufreq_intel_pstate_avail_epps_getter(LikwidDevice_t device, char** value)
 
 /* Init function */
 
-int sysFeatures_init_cpufreq(_HWFeatureList* out)
+int sysFeatures_init_cpufreq(_SysFeatureList* out)
 {
     int err = 0;
     if (cpufreq_intel_pstate_test())

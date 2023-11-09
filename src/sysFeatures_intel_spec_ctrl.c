@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include <sysFeatures_types.h>
-#include <likwid_device_types.h>
+#include <likwid.h>
 #include <error.h>
 #include <sysFeatures_intel.h>
 #include <cpuid.h>
@@ -117,7 +117,7 @@ int intel_cpu_spec_ctrl()
 
 /* Init function */
 
-int sysFeatures_init_intel_spec_ctrl(_HWFeatureList* out)
+int sysFeatures_init_intel_spec_ctrl(_SysFeatureList* out)
 {
     return 0;
 }

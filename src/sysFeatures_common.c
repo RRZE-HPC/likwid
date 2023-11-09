@@ -6,11 +6,11 @@
 #include <cpuid.h>
 #include <pci_types.h>
 #include <sysFeatures_types.h>
-#include <likwid_device_types.h>
+#include <likwid.h>
 #include <error.h>
 #include <sysFeatures_common.h>
 
-int register_features(_HWFeatureList *features, _HWFeatureList* in)
+int register_features(_SysFeatureList *features, _SysFeatureList* in)
 {
     int err = 0;
     if (in->tester)
@@ -22,7 +22,7 @@ int register_features(_HWFeatureList *features, _HWFeatureList* in)
     }
     for (int i = 0; i < in->num_features; i++)
     {
-        _HWFeature *f = &in->features[i];
+        _SysFeature *f = &in->features[i];
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering feature %s.%s, f->category, f->name);
         if (f->tester)
         {
@@ -52,15 +52,15 @@ int register_features(_HWFeatureList *features, _HWFeatureList* in)
     return 0;
 }
 
-int sysFeatures_init_generic(_HWArchFeatures* infeatures, _HWFeatureList *list)
+int sysFeatures_init_generic(_HWArchFeatures* infeatures, _SysFeatureList *list)
 {
     int i = 0;
     int j = 0;
     int c = 0;
     int err = 0;
     CpuInfo_t cpuinfo = NULL;
-    _HWFeatureList** feature_list = NULL;
-    _HWFeature* out = NULL;
+    _SysFeatureList** feature_list = NULL;
+    _SysFeature* out = NULL;
     err = topology_init();
     if (err < 0)
     {
@@ -87,7 +87,7 @@ int sysFeatures_init_generic(_HWArchFeatures* infeatures, _HWFeatureList *list)
     }
 
     j = 0;
-    //_HWFeatureList newlist = {0, NULL, NULL};
+    //_SysFeatureList newlist = {0, NULL, NULL};
     while (feature_list[j] != NULL)
     {
         register_features(list, feature_list[j]);

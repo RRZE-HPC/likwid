@@ -6,7 +6,7 @@
 #include <cpuid.h>
 #include <pci_types.h>
 #include <sysFeatures_types.h>
-#include <likwid_device_types.h>
+#include <likwid.h>
 #include <error.h>
 #include <sysFeatures_common.h>
 #include <topology.h>
@@ -16,7 +16,7 @@
 #include <sysFeatures_intel_rapl.h>
 
 
-int sysFeatures_init_x86_intel(_HWFeatureList* out)
+int sysFeatures_init_x86_intel(_SysFeatureList* out)
 {
     int err = 0;
     err = sysFeatures_init_generic(intel_arch_features, out);

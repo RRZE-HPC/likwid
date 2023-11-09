@@ -35,7 +35,7 @@ int sysFeatures_intel_pkg_info_max_time(LikwidDevice_t device, char** value);
 
 
 #define MAX_INTEL_RAPL_PKG_FEATURES 13
-static _HWFeature intel_rapl_pkg_features[] = {
+static _SysFeature intel_rapl_pkg_features[] = {
     {"pkg_energy", "rapl", "Current energy consumtion (PKG domain)", sysFeatures_intel_pkg_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_status_test, "uJ"},
     {"pkg_tdp", "rapl", "Thermal Spec Power", sysFeatures_intel_pkg_info_tdp, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_info_test, "mW"},
     {"pkg_min_limit", "rapl", "Minimum Power", sysFeatures_intel_pkg_info_min_power, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_info_test, "mW"},
@@ -51,7 +51,7 @@ static _HWFeature intel_rapl_pkg_features[] = {
     {"pkg_limit_2_clamp", "rapl", "Clamping status of short-term energy limit (PKG domain)", sysFeatures_intel_pkg_energy_limit_2_clamp_getter, sysFeatures_intel_pkg_energy_limit_2_clamp_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test},
 };
 
-static _HWFeatureList intel_rapl_pkg_feature_list = {
+static _SysFeatureList intel_rapl_pkg_feature_list = {
     .num_features = MAX_INTEL_RAPL_PKG_FEATURES,
     .tester = intel_rapl_pkg_test,
     .features = intel_rapl_pkg_features,
@@ -80,7 +80,7 @@ int sysFeatures_intel_dram_info_max_time(LikwidDevice_t device, char** value);
 
 
 #define MAX_INTEL_RAPL_DRAM_FEATURES 9
-static _HWFeature intel_rapl_dram_features[] = {
+static _SysFeature intel_rapl_dram_features[] = {
     {"dram_energy", "rapl", "Current energy consumtion (DRAM domain)", sysFeatures_intel_dram_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_dram_energy_status_test, "uJ"},
     {"dram_tdp", "rapl", "Thermal Spec Power", sysFeatures_intel_dram_info_tdp, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_dram_info_test, "mW"},
     {"dram_min_limit", "rapl", "Minimum Power", sysFeatures_intel_dram_info_min_power, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_dram_info_test, "mW"},
@@ -92,7 +92,7 @@ static _HWFeature intel_rapl_dram_features[] = {
     {"dram_limit_clamp", "rapl", "Clamping status of long-term energy limit (DRAM domain)", sysFeatures_intel_dram_energy_limit_1_clamp_getter, sysFeatures_intel_dram_energy_limit_1_clamp_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_dram_energy_limit_test},
 };
 
-static _HWFeatureList intel_rapl_dram_feature_list = {
+static _SysFeatureList intel_rapl_dram_feature_list = {
     .num_features = MAX_INTEL_RAPL_DRAM_FEATURES,
     .tester = intel_rapl_dram_test,
     .features = intel_rapl_dram_features,
@@ -120,7 +120,7 @@ int sysFeatures_intel_pp0_policy_setter(LikwidDevice_t device, char* value);
 
 
 #define MAX_INTEL_RAPL_PP0_FEATURES 6
-static _HWFeature intel_rapl_pp0_features[] = {
+static _SysFeature intel_rapl_pp0_features[] = {
     {"pp0_energy", "rapl", "Current energy consumtion (PP0 domain)", sysFeatures_intel_pp0_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pp0_energy_status_test, "uJ"},
     {"pp0_limit", "rapl", "Long-term energy limit (PP0 domain)", sysFeatures_intel_pp0_energy_limit_1_getter, sysFeatures_intel_pp0_energy_limit_1_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pp0_energy_limit_test, "mW"},
     {"pp0_limit_time", "rapl", "Long-term time window (PP0 domain)", sysFeatures_intel_pp0_energy_limit_1_time_getter, sysFeatures_intel_pp0_energy_limit_1_time_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pp0_energy_limit_test, "ms"},
@@ -129,7 +129,7 @@ static _HWFeature intel_rapl_pp0_features[] = {
     {"pp0_policy", "rapl", "Balance Power Policy (PP0 domain)", sysFeatures_intel_pp0_policy_getter, sysFeatures_intel_pp0_policy_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pp0_policy_test},
 };
 
-static _HWFeatureList intel_rapl_pp0_feature_list = {
+static _SysFeatureList intel_rapl_pp0_feature_list = {
     .num_features = MAX_INTEL_RAPL_PP0_FEATURES,
     .tester = intel_rapl_pp0_test,
     .features = intel_rapl_pp0_features,
@@ -158,7 +158,7 @@ int sysFeatures_intel_pp1_policy_setter(LikwidDevice_t device, char* value);
 
 
 #define MAX_INTEL_RAPL_PP1_FEATURES 6
-static _HWFeature intel_rapl_pp1_features[] = {
+static _SysFeature intel_rapl_pp1_features[] = {
     {"pp1_energy", "rapl", "Current energy consumtion (PP1 domain)", sysFeatures_intel_pp1_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pp1_energy_status_test, "uJ"},
     {"pp1_limit", "rapl", "Long-term energy limit (PP1 domain)", sysFeatures_intel_pp1_energy_limit_1_getter, sysFeatures_intel_pp1_energy_limit_1_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pp1_energy_limit_test, "mW"},
     {"pp1_limit_time", "rapl", "Long-term time window (PP1 domain)", sysFeatures_intel_pp1_energy_limit_1_time_getter, sysFeatures_intel_pp1_energy_limit_1_time_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pp1_energy_limit_test, "ms"},
@@ -167,7 +167,7 @@ static _HWFeature intel_rapl_pp1_features[] = {
     {"pp1_policy", "rapl", "Balance Power Policy (PP1 domain)", sysFeatures_intel_pp1_policy_getter, sysFeatures_intel_pp1_policy_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pp1_policy_test},
 };
 
-static _HWFeatureList intel_rapl_pp1_feature_list = {
+static _SysFeatureList intel_rapl_pp1_feature_list = {
     .num_features = MAX_INTEL_RAPL_PP1_FEATURES,
     .tester = intel_rapl_pp1_test,
     .features = intel_rapl_pp1_features,
@@ -201,7 +201,7 @@ int sysFeatures_intel_psys_energy_limit_2_clamp_setter(LikwidDevice_t device, ch
 
 
 #define MAX_INTEL_RAPL_PSYS_FEATURES 9
-static _HWFeature intel_rapl_psys_features[] = {
+static _SysFeature intel_rapl_psys_features[] = {
     {"psys_energy", "rapl", "Current energy consumtion (PSYS domain)", sysFeatures_intel_psys_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_psys_energy_status_test, "uJ"},
     {"psys_limit_1", "rapl", "Long-term energy limit (PSYS domain)", sysFeatures_intel_psys_energy_limit_1_getter, sysFeatures_intel_psys_energy_limit_1_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_psys_energy_limit_test, "mW"},
     {"psys_limit_1_time", "rapl", "Long-term time window (PSYS domain)", sysFeatures_intel_psys_energy_limit_1_time_getter, sysFeatures_intel_psys_energy_limit_1_time_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_psys_energy_limit_test, "ms"},
@@ -214,14 +214,14 @@ static _HWFeature intel_rapl_psys_features[] = {
 };
 
 
-static _HWFeatureList intel_rapl_psys_feature_list = {
+static _SysFeatureList intel_rapl_psys_feature_list = {
     .num_features = MAX_INTEL_RAPL_PSYS_FEATURES,
     .tester = intel_rapl_psys_test,
     .features = intel_rapl_psys_features,
 };
 
 
-int sysFeatures_init_intel_rapl(_HWFeatureList* out);
+int sysFeatures_init_intel_rapl(_SysFeatureList* out);
 
 
 #endif /* HWFEATURES_X86_INTEL_UNCOREFREQ_H */

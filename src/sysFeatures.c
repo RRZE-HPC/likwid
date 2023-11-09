@@ -5,7 +5,7 @@
 #include <topology.h>
 #include <access.h>
 #include <error.h>
-#include <likwid_device.h>
+#include <likwid.h>
 
 #include <sysFeatures.h>
 #include <sysFeatures_types.h>
@@ -16,10 +16,10 @@
 
 //#include <sysFeatures_x86_amd.h>
 
-_HWFeature *local_features = NULL;
+_SysFeature *local_features = NULL;
 int num_local_features = 0;
 
-_HWFeatureList _feature_list = {0, NULL, NULL};
+_SysFeatureList _feature_list = {0, NULL, NULL};
 
 
 static int get_device_access(LikwidDevice_t device)
@@ -95,7 +95,7 @@ int sysFeatures_init()
         err = sysFeatures_init_x86_intel(&_feature_list);
         if (err < 0)
         {
-            ERROR_PRINT(Failed to initialize HWFeatures for Intel architecture);
+            ERROR_PRINT(Failed to initialize SysFeatures for Intel architecture);
             return err;
         }
     }
@@ -104,7 +104,7 @@ int sysFeatures_init()
         //err = sysFeatures_init_x86_amd(&num_features, &features);
         if (err < 0)
         {
-            ERROR_PRINT(Failed to initialize HWFeatures for AMD architecture);
+            ERROR_PRINT(Failed to initialize SysFeatures for AMD architecture);
             return err;
         }
     }
@@ -112,21 +112,21 @@ int sysFeatures_init()
     err = sysFeatures_init_cpufreq(&_feature_list);
     if (err < 0)
     {
-        ERROR_PRINT(Failed to initialize HWFeatures cpufreq module);
+        ERROR_PRINT(Failed to initialize SysFeatures cpufreq module);
         return err;
     }
 
     err = sysFeatures_init_linux_numa_balancing(&_feature_list);
     if (err < 0)
     {
-        ERROR_PRINT(Failed to initialize HWFeatures numa_balancing module);
+        ERROR_PRINT(Failed to initialize SysFeatures numa_balancing module);
         return err;
     }
     
     err = sysFeatures_init_linux_numa_balancing(&_feature_list);
     if (err < 0)
     {
-        ERROR_PRINT(Failed to initialize HWFeatures numa_balancing module);
+        ERROR_PRINT(Failed to initialize SysFeatures numa_balancing module);
         return err;
     }
 
@@ -196,7 +196,7 @@ static int _sysFeatures_get_feature_index(char* name)
             }
         }
     }
-    ERROR_PRINT(HWFeatures modules does not provide a feature called %s, name);
+    ERROR_PRINT(SysFeatures modules does not provide a feature called %s, name);
     return -ENOTSUP;
 }
 
@@ -205,7 +205,7 @@ static int _sysFeatures_get_feature_index(char* name)
 int sysFeatures_getByName(char* name, LikwidDevice_t device, char** value)
 {
     int err = 0;
-    _HWFeature *f = NULL;
+    _SysFeature *f = NULL;
     if ((!name) || (!device) || (!value))
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Invalid inputs to sysFeatures_getByName);
@@ -243,7 +243,7 @@ int sysFeatures_getByName(char* name, LikwidDevice_t device, char** value)
     return err;
 }
 
-int sysFeatures_get(HWFeature* feature, LikwidDevice_t device, char** value)
+int sysFeatures_get(SysFeature* feature, LikwidDevice_t device, char** value)
 {
     int len = strlen(feature->name) + strlen(feature->category) + 2;
     char real[len];
@@ -255,7 +255,7 @@ int sysFeatures_modifyByName(char* name, LikwidDevice_t device, char* value)
 {
     int err = 0;
     int dev_id = -1;
-    _HWFeature *f = NULL;
+    _SysFeature *f = NULL;
     if ((!name) || (!device) || (!value))
     {
         return -EINVAL;
@@ -287,7 +287,7 @@ int sysFeatures_modifyByName(char* name, LikwidDevice_t device, char* value)
     return f->setter(device, value);
 }
 
-int sysFeatures_modify(HWFeature* feature, LikwidDevice_t device, char* value)
+int sysFeatures_modify(SysFeature* feature, LikwidDevice_t device, char* value)
 {
     int len = strlen(feature->name) + strlen(feature->category) + 2;
     char real[len];
@@ -310,7 +310,7 @@ void sysFeatures_finalize()
     
 }
 
-int sysFeatures_list(HWFeatureList* list)
+int sysFeatures_list(SysFeatureList* list)
 {
     if (!list)
     {
@@ -319,7 +319,7 @@ int sysFeatures_list(HWFeatureList* list)
     return internal_to_external_feature_list(&_feature_list, list);
 }
 
-void sysFeatures_list_return(HWFeatureList* list)
+void sysFeatures_list_return(SysFeatureList* list)
 {
     if (!list || !list->features)
     {
@@ -328,7 +328,7 @@ void sysFeatures_list_return(HWFeatureList* list)
     free_feature_list(list);
 /*    for (int i = 0; i < list->num_features; i++)*/
 /*    {*/
-/*        HWFeature* f = &(list->features[i]);*/
+/*        SysFeature* f = &(list->features[i]);*/
 /*        if (f->name) free(f->name);*/
 /*        if (f->category) free(f->category);*/
 /*        if (f->description) free(f->description);*/

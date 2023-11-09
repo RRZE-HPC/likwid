@@ -4,7 +4,7 @@
 #include <math.h>
 
 #include <sysFeatures_types.h>
-#include <likwid_device_types.h>
+#include <likwid.h>
 #include <error.h>
 #include <sysFeatures_amd.h>
 #include <sysFeatures_common.h>
@@ -1027,7 +1027,7 @@ int sysFeatures_amd_l3_energy_status_getter(LikwidDevice_t device, char** value)
 
 /* Init function */
 
-int sysFeatures_init_amd_rapl(_HWFeatureList* out)
+int sysFeatures_init_amd_rapl(_SysFeatureList* out)
 {
     int err = 0;
     if (amd_rapl_pkg_test())

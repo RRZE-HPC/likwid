@@ -156,7 +156,7 @@ if verbose > 0 and verbose <= 3 then
 end
 
 -- initialize the sysfeatures module
-local err = likwid.initHWFeatures()
+local err = likwid.initSysFeatures()
 if err < 0 then
     print_stderr("Cannot initialize HW features module")
     os.exit(1)
@@ -210,11 +210,11 @@ if allFeatures then
         end
     end
     -- add all columns to the table
-    --setmetatable(names, {align = "left"})
+    setmetatable(names, {align = "left"})
     table.insert(all, names)
     table.insert(all, types)
     table.insert(all, access)
-    --setmetatable(descs, {align = "left"})
+    setmetatable(descs, {align = "left"})
     table.insert(all, descs)
 
     -- print the table in selected format
@@ -226,7 +226,7 @@ if allFeatures then
     end
 
     -- finalize sysfeatures module and exit
-    likwid.finalizeHWFeatures()
+    likwid.finalizeSysFeatures()
     os.exit(0)
 end
 
@@ -296,7 +296,7 @@ if listFeatures and #hwtlist > 0 then
     for _,f in pairs(list) do
         table.insert(first, string.format("%s.%s", f.Category, f.Name))
     end
-    --setmetatable(first, {align = "left"})
+    setmetatable(first, {align = "left"})
     table.insert(all, first)
     -- create one column per given hw thread with the current value of the feature
     for i, c in pairs(hwtlist) do
@@ -339,7 +339,7 @@ if listFeatures and #hwtlist > 0 then
         end
     end
     -- finalize sysfeatures module and exit
-    likwid.finalizeHWFeatures()
+    likwid.finalizeSysFeatures()
     os.exit(0)
 end
 
@@ -393,7 +393,7 @@ if #setList > 0 and #hwtlist > 0 then
         end
     end
     -- finalize sysfeatures module and exit
-    likwid.finalizeHWFeatures()
+    likwid.finalizeSysFeatures()
     os.exit(0)
 end
 
@@ -467,5 +467,5 @@ end
         end
     end
 end]]
-likwid.finalizeHWFeatures()
+likwid.finalizeSysFeatures()
 os.exit(0)

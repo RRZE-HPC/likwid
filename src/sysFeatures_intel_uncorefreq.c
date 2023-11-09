@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include <sysFeatures_types.h>
-#include <likwid_device_types.h>
+#include <likwid.h>
 #include <error.h>
 #include <sysFeatures_intel.h>
 #include <sysFeatures_intel_uncorefreq.h>

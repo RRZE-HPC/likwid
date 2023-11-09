@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include <sysFeatures_types.h>
-#include <likwid_device_types.h>
+#include <likwid.h>
 #include <error.h>
 #include <sysFeatures_intel.h>
 
@@ -157,7 +157,7 @@ int intel_core2_ida_setter(LikwidDevice_t device, char* value)
 
 /* Init function */
 
-int sysFeatures_init_intel_prefetchers(_HWFeatureList* out)
+int sysFeatures_init_intel_prefetchers(_SysFeatureList* out)
 {
     return 0;
 }

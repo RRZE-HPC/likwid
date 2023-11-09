@@ -9,13 +9,13 @@ int intel_uncore_max_freq_getter(LikwidDevice_t device, char** value);
 
 
 #define MAX_INTEL_UNCOREFREQ_FEATURES 3
-static _HWFeature intel_uncorefreq_features[] = {
+static _SysFeature intel_uncorefreq_features[] = {
     {"cur_uncore_freq", "uncore_freq", "Current Uncore frequency", intel_uncore_cur_freq_getter, NULL, DEVICE_TYPE_SOCKET},
     {"min_uncore_freq", "uncore_freq", "Minimum Uncore frequency", intel_uncore_min_freq_getter, NULL, DEVICE_TYPE_SOCKET},
     {"max_uncore_freq", "uncore_freq", "Maximal Uncore frequency", intel_uncore_max_freq_getter, NULL, DEVICE_TYPE_SOCKET},
 };
 
-static _HWFeatureList intel_uncorefreq_feature_list = {
+static _SysFeatureList intel_uncorefreq_feature_list = {
     .num_features = MAX_INTEL_UNCOREFREQ_FEATURES,
     .tester = intel_uncorefreq_test,
     .features = intel_uncorefreq_features,

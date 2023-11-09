@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 #include <sysFeatures_types.h>
-#include <likwid_device_types.h>
+#include <likwid.h>
 #include <error.h>
 #include <sysFeatures_common.h>
 #include <sysFeatures_linux_numa_balancing.h>
@@ -67,7 +67,7 @@ int numa_balancing_test()
         }
         else
         {
-            printf("NUMA balancing not available, only a single NUMA domain available\n");
+            DEBUG_PRINT(DEBUGLEV_INFO, NUMA balancing not available. System has only a single NUMA domain);
         }
     }
     return 0;
@@ -95,7 +95,7 @@ int numa_balancing_scan_size_getter(LikwidDevice_t device, char** value)
 }
 
 
-int sysFeatures_init_linux_numa_balancing(_HWFeatureList* out)
+int sysFeatures_init_linux_numa_balancing(_SysFeatureList* out)
 {
     if (numa_balancing_test())
     {

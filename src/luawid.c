@@ -3524,24 +3524,19 @@ lua_likwid_nvFinalize(lua_State *L)
     return 0;
 }
 
+#endif /* LIKWID_WITH_NVMON */
 static int
 lua_likwid_nvSupported(lua_State *L)
 {
-    lua_pushboolean(L, 1);
+    lua_pushboolean(L, likwid_getNvidiaSupport());
     return 1;
 }
-#else
-static int
-lua_likwid_nvSupported(lua_State *L)
-{
-    lua_pushboolean(L, 1);
-    return 0;
-}
-#endif /* LIKWID_WITH_NVMON */
 
+
+#ifdef LIKWID_WITH_SYSFEATURES
 static int hwfeatures_inititalized = 0;
 static int
-lua_likwid_initHWFeatures(lua_State *L)
+lua_likwid_initSysFeatures(lua_State *L)
 {
     int err = 0;
     if (!hwfeatures_inititalized)
@@ -3557,7 +3552,7 @@ lua_likwid_initHWFeatures(lua_State *L)
 }
 
 static int
-lua_likwid_finalizeHWFeatures(lua_State *L)
+lua_likwid_finalizeSysFeatures(lua_State *L)
 {
     if (hwfeatures_inititalized)
     {
@@ -3574,7 +3569,7 @@ lua_likwid_getHwFeatureList(lua_State *L)
         lua_newtable(L);
         return 1;
     }
-    HWFeatureList list = {0, NULL};
+    SysFeatureList list = {0, NULL};
     sysFeatures_list(&list);
     lua_newtable(L);
     for (int i = 0; i < list.num_features; i++)
@@ -3687,10 +3682,10 @@ lua_likwid_createDevice(lua_State *L)
                 case DEVICE_TYPE_AMD_GPU:
 #endif
 #if defined(LIKWID_WITH_NVMON)||defined(LIKWID_WITH_ROCMON)
-                    dev->id.pci.pci_domain = HWFEATURES_ID_TO_PCI_DOMAIN(id);
-                    dev->id.pci.pci_bus = HWFEATURES_ID_TO_PCI_BUS(id);
-                    dev->id.pci.pci_dev = HWFEATURES_ID_TO_PCI_SLOT(id);
-                    dev->id.pci.pci_func = HWFEATURES_ID_TO_PCI_FUNC(id);
+                    dev->id.pci.pci_domain = SYSFEATURES_ID_TO_PCI_DOMAIN(id);
+                    dev->id.pci.pci_bus = SYSFEATURES_ID_TO_PCI_BUS(id);
+                    dev->id.pci.pci_dev = SYSFEATURES_ID_TO_PCI_SLOT(id);
+                    dev->id.pci.pci_func = SYSFEATURES_ID_TO_PCI_FUNC(id);
                     break;
 #endif
                 default:
@@ -3713,6 +3708,14 @@ lua_likwid_destroyDevice(lua_State *L)
         dev->internal_id = -1;
     }
     return 0;
+}
+#endif /* LIKWID_WITH_SYSFEATURES */
+
+static int
+lua_likwid_sysFeaturesSupported(lua_State *L)
+{
+    lua_pushnumber(L, likwid_getSysFeaturesSupport());
+    return 1;
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -3897,13 +3900,17 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_nvGetNameOfMetric",lua_likwid_nvGetNameOfMetric);
     lua_register(L, "likwid_nvGetNameOfGroup",lua_likwid_nvGetNameOfGroup);
 #endif /* LIKWID_WITH_NVMON */
-    lua_register(L, "likwid_initHWFeatures", lua_likwid_initHWFeatures);
-    lua_register(L, "likwid_finalizeHWFeatures", lua_likwid_finalizeHWFeatures);
+    // sysFeatures functions (experimental)
+    lua_register(L, "likwid_sysFeaturesSupported",lua_likwid_sysFeaturesSupported);
+#ifdef LIKWID_WITH_SYSFEATURES
+    lua_register(L, "likwid_initSysFeatures", lua_likwid_initSysFeatures);
+    lua_register(L, "likwid_finalizeSysFeatures", lua_likwid_finalizeSysFeatures);
     lua_register(L, "likwid_sysFeatures_list",lua_likwid_getHwFeatureList);
     lua_register(L, "likwid_sysFeatures_get",lua_likwid_getHwFeature);
     lua_register(L, "likwid_sysFeatures_set",lua_likwid_setHwFeature);
     lua_register(L, "likwid_createDevice",lua_likwid_createDevice);
     lua_register(L, "likwid_destroyDevice",lua_likwid_destroyDevice);
+#endif /* LIKWID_WITH_SYSFEATURES */
 #ifdef __MIC__
     setuid(0);
     seteuid(0);

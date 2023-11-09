@@ -2,13 +2,14 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include <likwid.h>
 #include <topology.h>
 #include <access.h>
 #include <error.h>
-#include <likwid_device.h>
 
 
-int likwid_device_create_simple(LikwidDeviceType type, int id, LikwidDevice_t* device)
+
+static int likwid_device_create_simple(LikwidDeviceType type, int id, LikwidDevice_t* device)
 {
     LikwidDevice_t dev = malloc(sizeof(_LikwidDevice));
     if (!dev)
@@ -89,10 +90,29 @@ int likwid_device_create(LikwidDeviceType type, int id, LikwidDevice_t* device)
             ERROR_PRINT(Not implemented);
             break;
         case DEVICE_TYPE_NUMA:
-            ERROR_PRINT(Not implemented);
+            err = numa_init();
+            if (err == 0)
+            {
+                NumaTopology_t numatopo = get_numaTopology();
+                for (int i = 0; i < numatopo->numberOfNodes; i++)
+                {
+                    NumaNode* node = &numatopo->nodes[i];
+                    if (node->id == id)
+                    {
+                        return likwid_device_create_simple(type, id, device);
+                    }
+                }
+            }
             break;
         case DEVICE_TYPE_DIE:
-            ERROR_PRINT(Not implemented);
+            for (int i = 0; i < topo->numHWThreads; i++)
+            {
+                HWThread* t = & topo->threadPool[i];
+                if (t->dieId == id && t->inCpuSet)
+                {
+                    return likwid_device_create_simple(type, id, device);
+                }
+            }
             break;
         default:
             break;

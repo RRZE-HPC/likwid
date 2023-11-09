@@ -54,7 +54,7 @@
 #include <libgen.h>
 
 #include <lock.h>
-#include <likwid_device_types.h>
+#include <likwid.h>
 #include <access_sysfs_client.h>
 //#include <error.h>
 //#include <sysfs_client.h>
