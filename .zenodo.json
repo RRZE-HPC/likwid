@@ -4,7 +4,8 @@
   "creators": [
     {
       "affiliation": "Reginales Rechenzentrum Erlangen, Friedrich-Alexander-Universität Erlangen-Nürnberg",
-      "name": "Thomas Gruber"
+      "name": "Thomas Gruber",
+      "orcid": "0000-0001-5560-6964"
     },
     {
       "affiliation": "Reginales Rechenzentrum Erlangen, Friedrich-Alexander-Universität Erlangen-Nürnberg",
@@ -17,7 +18,8 @@
     },
     {
       "affiliation": "Reginales Rechenzentrum Erlangen, Friedrich-Alexander-Universität Erlangen-Nürnberg",
-      "name": "Gerhard Wellein"
+      "name": "Gerhard Wellein",
+      "orcid": "0000-0001-7371-3026"
     }
   ],
   "upload_type": "software",
