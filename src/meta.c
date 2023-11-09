@@ -27,6 +27,15 @@ int likwid_getNvidiaSupport(void)
 #endif
 }
 
+int likwid_getRocmSupport(void)
+{
+#ifdef LIKWID_WITH_ROCMON
+    return 1;
+#else
+    return 0;
+#endif
+}
+
 int likwid_getMaxSupportedThreads(void)
 {
     return (int) MAX_NUM_THREADS;

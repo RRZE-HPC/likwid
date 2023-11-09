@@ -83,8 +83,12 @@ extern int likwid_getMinorVersion(void) __attribute__ ((visibility ("default") )
 @return Bugfix version
 */
 extern int likwid_getBugfixVersion(void) __attribute__ ((visibility ("default") ));
+
 /*! \brief Check whether the LIKWID library was built with Nvidia GPU support */
 extern int likwid_getNvidiaSupport(void) __attribute__ ((visibility ("default") ));
+
+/*! \brief Check whether the LIKWID library was built with AMD GPU support */
+extern int likwid_getRocmSupport(void) __attribute__ ((visibility ("default") ));
 
 /*! \brief Get the maximal count of supported HW threads */
 extern int likwid_getMaxSupportedThreads(void) __attribute__ ((visibility ("default") ));
