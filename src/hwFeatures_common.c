@@ -101,12 +101,12 @@ int hwFeatures_init_generic(_HWArchFeatures* infeatures, _HWFeatureList *list)
 
 int _uint64_to_string(uint64_t value, char** str)
 {
-    char* s = malloc(HWFEATURES_MAX_VALUE_LENGTH * sizeof(char));
+    char* s = malloc(HWFEATURES_MAX_STR_LENGTH * sizeof(char));
     if (!s)
     {
         return -ENOMEM;
     }
-    int len = snprintf(s, HWFEATURES_MAX_VALUE_LENGTH-1, "%lld", (uint64_t) value);
+    int len = snprintf(s, HWFEATURES_MAX_STR_LENGTH-1, "%lld", (uint64_t) value);
     if (len >= 0)
     {
         s[len] = '\0';

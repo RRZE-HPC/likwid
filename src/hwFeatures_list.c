@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <hwFeatures_types.h>
+#include <hwFeatures.h>
 #include <likwid.h>
 #include <error.h>
 
@@ -40,9 +40,12 @@ int add_to_feature_list(HWFeatureList *list, HWFeature* feature)
         free(iof->category);
         return -ENOMEM;
     }
-    strncpy(iof->name, feature->name, strlen(feature->name) + 1);
-    strncpy(iof->category, feature->category, strlen(feature->category) + 1);
-    strncpy(iof->description, feature->description, strlen(feature->description) + 1);
+    int slen = HWFEATURES_MIN_STRLEN(strlen(feature->name) + 1, HWFEATURES_MAX_STR_LENGTH);
+    strncpy(iof->name, feature->name, slen);
+    slen = HWFEATURES_MIN_STRLEN(strlen(feature->category) + 1, HWFEATURES_MAX_STR_LENGTH);
+    strncpy(iof->category, feature->category, slen);
+    slen = HWFEATURES_MIN_STRLEN(strlen(feature->description) + 1, HWFEATURES_MAX_STR_LENGTH);
+    strncpy(iof->description, feature->description, slen);
 
     iof->readonly = feature->readonly;
     iof->type = feature->type;
@@ -245,10 +248,12 @@ int internal_to_external_feature_list(_HWFeatureList *inlist, HWFeatureList* out
     {
         HWFeature* out = &(outlist->features[i]);
         _HWFeature* in = &(inlist->features[i]);
-
-        strncpy(out->name, in->name, strlen(in->name) + 1);
-        strncpy(out->category, in->category, strlen(in->category) + 1);
-        strncpy(out->description, in->description, strlen(in->description) + 1);
+        int slen = HWFEATURES_MIN_STRLEN(strlen(in->name) + 1, HWFEATURES_MAX_STR_LENGTH);
+        strncpy(out->name, in->name, slen);
+        slen = HWFEATURES_MIN_STRLEN(strlen(in->category) + 1, HWFEATURES_MAX_STR_LENGTH);
+        strncpy(out->category, in->category, slen);
+        slen = HWFEATURES_MIN_STRLEN(strlen(in->description) + 1, HWFEATURES_MAX_STR_LENGTH);
+        strncpy(out->description, in->description, slen);
         out->type = in->type;
         out->readonly = 0;
         out->writeonly = 0;
