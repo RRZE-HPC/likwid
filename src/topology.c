@@ -1670,6 +1670,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",icelake_str);
     printf("\t%s\n",rocketlake_str);
     printf("\t%s\n",icelakesp_str);
+    printf("\t%s\n",sapphire_rapids_str);
     printf("\n");
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);
@@ -1692,6 +1693,10 @@ print_supportedCPUs (void)
     printf("\t%s\n",cavium_thunderx_str);
     printf("\t%s\n",cavium_thunderx2t99_str);
     printf("\t%s\n",fujitsu_a64fx);
+    printf("\t%s\n",arm_neoverse_n1);
+    printf("\t%s\n",arm_neoverse_v1);
+    printf("\t%s\n",arm_huawei_tsv110);
+    printf("\t%s\n",apple_m1_studio);
     printf("\n");
     printf("Supported ARMv7 processors:\n");
     printf("\t%s\n",armv7l_str);
