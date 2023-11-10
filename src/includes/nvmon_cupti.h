@@ -71,7 +71,9 @@ void (*_dl_non_dynamic_init) (void) __attribute__ ((weak));
         }                                                               \
     } while (0)
 
+#ifndef CUAPIWEAK
 #define CUAPIWEAK __attribute__( ( weak ) )
+#endif
 #define DECLARECUFUNC(funcname, funcsig) CUresult CUAPIWEAK funcname funcsig;  CUresult( *funcname##Ptr ) funcsig;
 DECLARECUFUNC(cuCtxGetCurrent, (CUcontext *));
 DECLARECUFUNC(cuCtxSetCurrent, (CUcontext));
@@ -84,13 +86,17 @@ DECLARECUFUNC(cuCtxPopCurrent, (CUcontext * pctx));
 DECLARECUFUNC(cuCtxPushCurrent, (CUcontext pctx));
 DECLARECUFUNC(cuCtxSynchronize, ());
 
+#ifndef CUDAAPIWEAK
 #define CUDAAPIWEAK __attribute__( ( weak ) )
+#endif
 #define DECLARECUDAFUNC(funcname, funcsig) cudaError_t CUDAAPIWEAK funcname funcsig;  cudaError_t( *funcname##Ptr ) funcsig;
 DECLARECUDAFUNC(cudaGetDevice, (int *));
 DECLARECUDAFUNC(cudaSetDevice, (int));
 DECLARECUDAFUNC(cudaFree, (void *));
 
+#ifndef CUPTIAPIWEAK
 #define CUPTIAPIWEAK __attribute__( ( weak ) )
+#endif
 #define DECLARECUPTIFUNC(funcname, funcsig) CUptiResult CUPTIAPIWEAK funcname funcsig;  CUptiResult( *funcname##Ptr ) funcsig;
 DECLARECUPTIFUNC(cuptiEventGroupGetAttribute, (CUpti_EventGroup eventGroup, CUpti_EventGroupAttribute attrib, size_t * valueSize, void *value));
 DECLARECUPTIFUNC(cuptiDeviceGetEventDomainAttribute, (CUdevice device, CUpti_EventDomainID eventDomain, CUpti_EventDomainAttribute attrib, size_t * valueSize, void *value));

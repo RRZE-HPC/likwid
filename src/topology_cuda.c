@@ -80,8 +80,8 @@ void (*_dl_non_dynamic_init) (void) __attribute__ ((weak));
 
 static void *topo_dl_libcuda = NULL;
 static void *topo_dl_libcudart = NULL;
-static int topology_gpu_initialized = 0;
-GpuTopology gpuTopology = {0, NULL};
+static int topology_cuda_initialized = 0;
+CudaTopology cudaTopology = {0, NULL};
 
 #ifdef LIKWID_WITH_NVMON
 
@@ -99,7 +99,7 @@ DECLARECUDAFUNC(cudaDriverGetVersion, (int*));
 DECLARECUDAFUNC(cudaRuntimeGetVersion, (int*))
 
 static int
-topo_link_libraries(void)
+cuda_topo_link_libraries(void)
 {
 #define DLSYM_AND_CHECK( dllib, name ) dlsym( dllib, name ); if ( dlerror() != NULL ) { return -1; }
 
@@ -140,7 +140,7 @@ topo_link_libraries(void)
 }
 
 static int
-topo_init_cuda(void)
+cuda_topo_init(void)
 {
     CUresult cuErr = (*cuInitTopoPtr)(0);
     if (cuErr != CUDA_SUCCESS)
@@ -152,14 +152,14 @@ topo_init_cuda(void)
 }
 
 static int
-topo_get_numDevices(void)
+cuda_topo_get_numDevices(void)
 {
     CUresult cuErr;
     int count = 0;
     cuErr = (*cuDeviceGetCountTopoPtr)(&count);
     if(cuErr == CUDA_ERROR_NOT_INITIALIZED)
     {
-        int ret = topo_init_cuda();
+        int ret = cuda_topo_init();
         if (ret == 0)
         {
             cuErr = (*cuDeviceGetCountTopoPtr)(&count);
@@ -173,7 +173,7 @@ topo_get_numDevices(void)
 }
 
 static int
-topo_get_numNode(int pci_bus, int pci_dev, int pci_domain)
+cuda_topo_get_numNode(int pci_bus, int pci_dev, int pci_domain)
 {
     char fname[1024];
     char buff[100];
@@ -193,39 +193,39 @@ topo_get_numNode(int pci_bus, int pci_dev, int pci_domain)
     return -1;
 }
 
-static int topology_gpu_cleanup(int idx, int err)
+static int topology_cuda_cleanup(int idx, int err)
 {
     for (int j = idx; j >= 0; j--)
     {
-        if (gpuTopology.devices[j].name)
+        if (cudaTopology.devices[j].name)
         {
-            free(gpuTopology.devices[j].name);
+            free(cudaTopology.devices[j].name);
         }
-        if (gpuTopology.devices[j].short_name)
+        if (cudaTopology.devices[j].short_name)
         {
-            free(gpuTopology.devices[j].short_name);
+            free(cudaTopology.devices[j].short_name);
         }
     }
     return err;
 }
 
 int
-topology_gpu_init()
+topology_cuda_init()
 {
     int i = 0;
     int ret = 0;
     int cuda_version = 0;
     int cudart_version = 0;
-    if (topology_gpu_initialized)
+    if (topology_cuda_initialized)
     {
         return EXIT_SUCCESS;
     }
-    ret = topo_link_libraries();
+    ret = cuda_topo_link_libraries();
     if (ret != 0)
     {
         return EXIT_FAILURE;
     }
-    int num_devs = topo_get_numDevices();
+    int num_devs = cuda_topo_get_numDevices();
     if (num_devs < 0)
     {
         return EXIT_FAILURE;
@@ -234,16 +234,16 @@ topology_gpu_init()
     CUDA_CALL((*cudaRuntimeGetVersionTopoPtr)(&cudart_version), ret = -1; goto topology_gpu_init_error;);
     if (num_devs > 0)
     {
-        gpuTopology.devices = malloc(num_devs * sizeof(GpuDevice));
-        if (!gpuTopology.devices)
+        cudaTopology.devices = malloc(num_devs * sizeof(CudaDevice));
+        if (!cudaTopology.devices)
         {
             return -ENOMEM;
         }
         for (i = 0; i < num_devs; i++)
         {
             CUdevice dev;
-            gpuTopology.devices[i].name = NULL;
-            gpuTopology.devices[i].short_name = NULL;
+            cudaTopology.devices[i].name = NULL;
+            cudaTopology.devices[i].short_name = NULL;
             CU_CALL((*cuDeviceGetTopoPtr)(&dev, i), ret = -ENODEV; goto topology_gpu_init_error;);
             size_t s = 0;
 #if CUDA_VERSION >= 10000
@@ -262,96 +262,96 @@ topology_gpu_init()
 #else
             CU_CALL((*cuDeviceTotalMemTopoPtr)(&s, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
 #endif
-            gpuTopology.devices[i].mem = (unsigned long long)s;
-            gpuTopology.devices[i].name = malloc(1024 * sizeof(char));
-            if (!gpuTopology.devices[i].name)
+            cudaTopology.devices[i].mem = (unsigned long long)s;
+            cudaTopology.devices[i].name = malloc(1024 * sizeof(char));
+            if (!cudaTopology.devices[i].name)
             {
                 ERROR_PRINT(Cannot allocate space for name of GPU %d, i);
                 ret = -ENOMEM;
                 goto topology_gpu_init_error;
             }
-            CU_CALL((*cuDeviceGetNameTopoPtr)(gpuTopology.devices[i].name, 1023, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            gpuTopology.devices[i].name[1024] = '\0';
-            gpuTopology.devices[i].devid = i;
-            gpuTopology.devices[i].short_name = malloc(50 * sizeof(char));
-            if (!gpuTopology.devices[i].short_name)
+            CU_CALL((*cuDeviceGetNameTopoPtr)(cudaTopology.devices[i].name, 1023, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            cudaTopology.devices[i].name[1024] = '\0';
+            cudaTopology.devices[i].devid = i;
+            cudaTopology.devices[i].short_name = malloc(50 * sizeof(char));
+            if (!cudaTopology.devices[i].short_name)
             {
                 ERROR_PRINT(Cannot allocate space for short name of GPU %d, i);
                 ret = -ENOMEM;
                 goto topology_gpu_init_error;
             }
 
-            CU_CALL((*cuDeviceComputeCapabilityTopoPtr)(&gpuTopology.devices[i].ccapMajor, &gpuTopology.devices[i].ccapMinor, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            if (gpuTopology.devices[i].ccapMajor < 7)
+            CU_CALL((*cuDeviceComputeCapabilityTopoPtr)(&cudaTopology.devices[i].ccapMajor, &cudaTopology.devices[i].ccapMinor, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            if (cudaTopology.devices[i].ccapMajor < 7)
             {
-                ret = snprintf(gpuTopology.devices[i].short_name, 49, "nvidia_gpu_cc_lt_7");
+                ret = snprintf(cudaTopology.devices[i].short_name, 49, "nvidia_gpu_cc_lt_7");
             }
-            else if (gpuTopology.devices[i].ccapMajor >= 7)
+            else if (cudaTopology.devices[i].ccapMajor >= 7)
             {
-                ret = snprintf(gpuTopology.devices[i].short_name, 49, "nvidia_gpu_cc_ge_7");
+                ret = snprintf(cudaTopology.devices[i].short_name, 49, "nvidia_gpu_cc_ge_7");
             }
             CUdevprop props;
             CU_CALL((*cuDeviceGetPropertiesTopoPtr)(&props, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            gpuTopology.devices[i].maxThreadsPerBlock = props.maxThreadsPerBlock;
-            gpuTopology.devices[i].maxThreadsDim[0] = props.maxThreadsDim[0];
-            gpuTopology.devices[i].maxThreadsDim[1] = props.maxThreadsDim[1];
-            gpuTopology.devices[i].maxThreadsDim[2] = props.maxThreadsDim[2];
-            gpuTopology.devices[i].maxGridSize[0] = props.maxGridSize[0];
-            gpuTopology.devices[i].maxGridSize[1] = props.maxGridSize[1];
-            gpuTopology.devices[i].maxGridSize[2] = props.maxGridSize[2];
-            gpuTopology.devices[i].sharedMemPerBlock = props.sharedMemPerBlock;
-            gpuTopology.devices[i].totalConstantMemory = props.totalConstantMemory;
-            gpuTopology.devices[i].simdWidth = props.SIMDWidth;
-            gpuTopology.devices[i].memPitch = props.memPitch;
-            gpuTopology.devices[i].clockRatekHz = props.clockRate;
-            gpuTopology.devices[i].textureAlign = props.textureAlign;
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].l2Size, CU_DEVICE_ATTRIBUTE_L2_CACHE_SIZE, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].memClockRatekHz, CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].memClockRatekHz, CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].pciBus, CU_DEVICE_ATTRIBUTE_PCI_BUS_ID, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].pciDev, CU_DEVICE_ATTRIBUTE_PCI_DEVICE_ID, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].pciDom, CU_DEVICE_ATTRIBUTE_PCI_DOMAIN_ID, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].maxBlockRegs, CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].numMultiProcs, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].maxThreadPerMultiProc, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].memBusWidth, CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].unifiedAddrSpace, CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].ecc, CU_DEVICE_ATTRIBUTE_ECC_ENABLED, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].asyncEngines, CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].mapHostMem, CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].integrated, CU_DEVICE_ATTRIBUTE_INTEGRATED, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&gpuTopology.devices[i].surfaceAlign, CU_DEVICE_ATTRIBUTE_SURFACE_ALIGNMENT, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            cudaTopology.devices[i].maxThreadsPerBlock = props.maxThreadsPerBlock;
+            cudaTopology.devices[i].maxThreadsDim[0] = props.maxThreadsDim[0];
+            cudaTopology.devices[i].maxThreadsDim[1] = props.maxThreadsDim[1];
+            cudaTopology.devices[i].maxThreadsDim[2] = props.maxThreadsDim[2];
+            cudaTopology.devices[i].maxGridSize[0] = props.maxGridSize[0];
+            cudaTopology.devices[i].maxGridSize[1] = props.maxGridSize[1];
+            cudaTopology.devices[i].maxGridSize[2] = props.maxGridSize[2];
+            cudaTopology.devices[i].sharedMemPerBlock = props.sharedMemPerBlock;
+            cudaTopology.devices[i].totalConstantMemory = props.totalConstantMemory;
+            cudaTopology.devices[i].simdWidth = props.SIMDWidth;
+            cudaTopology.devices[i].memPitch = props.memPitch;
+            cudaTopology.devices[i].clockRatekHz = props.clockRate;
+            cudaTopology.devices[i].textureAlign = props.textureAlign;
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].l2Size, CU_DEVICE_ATTRIBUTE_L2_CACHE_SIZE, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].memClockRatekHz, CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].memClockRatekHz, CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].pciBus, CU_DEVICE_ATTRIBUTE_PCI_BUS_ID, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].pciDev, CU_DEVICE_ATTRIBUTE_PCI_DEVICE_ID, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].pciDom, CU_DEVICE_ATTRIBUTE_PCI_DOMAIN_ID, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].maxBlockRegs, CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].numMultiProcs, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].maxThreadPerMultiProc, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].memBusWidth, CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].unifiedAddrSpace, CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].ecc, CU_DEVICE_ATTRIBUTE_ECC_ENABLED, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].asyncEngines, CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].mapHostMem, CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].integrated, CU_DEVICE_ATTRIBUTE_INTEGRATED, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].surfaceAlign, CU_DEVICE_ATTRIBUTE_SURFACE_ALIGNMENT, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
 
-            gpuTopology.devices[i].numaNode = topo_get_numNode(gpuTopology.devices[i].pciBus, gpuTopology.devices[i].pciDev, gpuTopology.devices[i].pciDom);
+            cudaTopology.devices[i].numaNode = cuda_topo_get_numNode(cudaTopology.devices[i].pciBus, cudaTopology.devices[i].pciDev, cudaTopology.devices[i].pciDom);
         }
-        gpuTopology.numDevices = num_devs;
+        cudaTopology.numDevices = num_devs;
     }
-    topology_gpu_initialized = 1;
+    topology_cuda_initialized = 1;
     return EXIT_SUCCESS;
 topology_gpu_init_error:
     for (int j = 0; j < i; j++)
     {
-        topology_gpu_cleanup(i-1, 0);
+        topology_cuda_cleanup(i-1, 0);
     }
     return ret;
 }
 
 
 void
-topology_gpu_finalize(void)
+topology_cuda_finalize(void)
 {
-    if (topology_gpu_initialized)
+    if (topology_cuda_initialized)
     {
-        int ret = topology_gpu_cleanup(gpuTopology.numDevices-1, 0);
+        int ret = topology_cuda_cleanup(cudaTopology.numDevices-1, 0);
     }
 }
 
-GpuTopology_t
-get_gpuTopology(void)
+CudaTopology_t
+get_cudaTopology(void)
 {
-    if (topology_gpu_initialized)
+    if (topology_cuda_initialized)
     {
-        return &gpuTopology;
+        return &cudaTopology;
     }
 }
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 set -x
 
-LUA_VERSION=5.4.2
-EXT_FOLDER=/home/hpc/unrz/unrz139/Work/likwid-branches/ext
+LUA_VERSION=5.4.6
+EXT_FOLDER=$HOME/Work/likwid-master/ext2
 
 TEMPDIR=/tmp/$$
 

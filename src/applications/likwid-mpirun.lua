@@ -655,7 +655,7 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
         opts["ntasks-per-node"] = string.format("%d", ppn)
     end
     opts["cpu_bind"] = "none"
-    opts["cpus-per-task"] = string.format("%d", threads)
+    opts["cpus-per-task"] = string.format("%d", tpp)
     supported_types = _srun_get_mpi_types()
     if supported_types["pmi2"] then
         opts["mpi"] = "pmi2"
@@ -2197,7 +2197,20 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         outfile = arg
         print_stderr("WARN: The output file option is currently ignored. Will be available in upcoming releases")
     elseif opt == "s" or opt == "skip" then
-        skipStr = "-s "..arg
+        local skip_mask = nil
+        if arg:match("0x[0-9A-Fa-f]") then
+            skip_mask = arg
+        else
+            if arg:match("[0-9A-Fa-f]") then
+                print_stderr("Given skip mask looks like hex, sanitizing arg to 0x"..arg)
+                skip_mask = "0x"..arg
+            else
+                print_stderr("Skip mask must be given in hex, ignoring setting")
+            end
+        end
+        if skip_mask ~= nil then
+            skipStr = "-s "..skip_mask
+        end
     elseif opt == "mpiopts" then
         mpiopts = tostring(arg)
     elseif opt == "?" then
@@ -2280,6 +2293,19 @@ if (mpiexecutable == nil) then
     mpirun_exit(1)
 end
 
+if mpitype == "slurm" then
+    local scontrol = abspath("scontrol")
+    if scontrol == nil then
+        print_stderr("Cannot find SLURM's scontrol command")
+        mpirun_exit(1)
+    end
+    local srun = abspath("srun")
+    if srun == nil then
+        print_stderr("Cannot find SLURM's srun command")
+        mpirun_exit(1)
+    end
+end
+
 if omptype == nil then
     omptype = getOmpType()
     if debug and omptype ~= nil then
@@ -2310,6 +2336,10 @@ if not hostfile then
     end
 else
     hosts = readHostfile(hostfile)
+end
+if #hosts == 0 then
+    print_stderr("Cannot read list of hosts from environment or hostfile")
+    mpirun_exit(1)
 end
 
 local givenNrNodes = getNumberOfNodes(hosts)

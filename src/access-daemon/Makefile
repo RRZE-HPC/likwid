@@ -32,6 +32,7 @@ include  ../../make/include_$(COMPILER).mk
 DAEMON_TARGET = likwid-accessD
 SETFREQ_TARGET = likwid-setFreq
 APPDAEMON_TARGET = likwid-appDaemon.so
+SYSFSDAEMON_TARGET = ../../likwid-sysD
 GOTCHA_FOLDER = ../../ext/GOTCHA
 Q         ?= @
 
@@ -39,12 +40,18 @@ DEFINES   += -D_GNU_SOURCE -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) -DMAX_NUM_NODES=
 ifeq ($(DEBUG),true)
 DEFINES += -DDEBUG_LIKWID
 endif
+ifeq ($(NVIDIA_INTERFACE), true)
+DEFINES += -DLIKWID_NVMON
+endif
+ifeq ($(ROCM_INTERFACE), true)
+DEFINES += -DLIKWID_ROCMON
+endif
 INCLUDES  = -I../includes
 CFLAGS    += -std=c99 -fPIC -pie -fPIE -fstack-protector
 ifeq ($(COMPILER),GCCX86)
 CFLAGS    +=  -m32
 endif
-CPPFLAGS :=  $(DEFINES) $(INCLUDES)
+CPPFLAGS :=  $(DEFINES) $(INCLUDES) -L$(PREFIX)/lib
 
 ifeq ($(COMPILER),GCCARMv8)
 all:
@@ -52,13 +59,14 @@ else
 all: $(DAEMON_TARGET) $(SETFREQ_TARGET) $(APPDAEMON_TARGET)
 endif
 
-$(DAEMON_TARGET): accessDaemon.c
-	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) accessDaemon.c
+$(DAEMON_TARGET): accessDaemon.c ../intel_perfmon_uncore_discovery.c
+	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) accessDaemon.c ../intel_perfmon_uncore_discovery.c
 
 $(SETFREQ_TARGET): setFreqDaemon.c
 	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(SETFREQ_TARGET) setFreqDaemon.c
 
 $(APPDAEMON_TARGET): $(GOTCHA_TARGET) appDaemon.c
 	$(Q)$(CC) -shared -fPIC $(CPPFLAGS) -Wl,-soname,$(APPDAEMON_TARGET).$(VERSION).$(RELEASE) -fstack-protector -I. -I$(GOTCHA_FOLDER)/include  -L$(GOTCHA_FOLDER) appDaemon.c -o ../../$(APPDAEMON_TARGET)  -llikwid-gotcha
-../../sysfsD: sysfsDaemon.c
+
+$(SYSFSDAEMON_TARGET): sysfsDaemon.c
 	$(Q)$(CC) -g -fsanitize=address -fsanitize=leak -fomit-frame-pointer  $(CFLAGS) $(CPPFLAGS) -o ../../sysfsD sysfsDaemon.c

@@ -67,9 +67,10 @@ power_init(int cpuId)
     {
         return 0;
     }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Init power);
     if (!lock_check())
     {
-        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        ERROR_PRINT(Access to performance monitoring registers locked);
         return -ENOLCK;
     }
     init_configuration();
@@ -86,6 +87,7 @@ power_init(int cpuId)
     power_info.uncoreMinFreq = 0;
     power_info.uncoreMaxFreq = 0;
     power_info.perfBias = 0;
+    power_info.statusRegWidth = 32;
     if (config->daemonMode == ACCESSMODE_PERF)
     {
         ERROR_PRINT(RAPL in access mode 'perf_event' only available with perfmon);
@@ -138,6 +140,7 @@ power_init(int cpuId)
                 case SKYLAKEX:
                 case ICELAKEX1:
                 case ICELAKEX2:
+                case SAPPHIRERAPIDS:
                     core_limits = 1;
                     power_info.hasRAPL = 1;
                     numDomains = NUM_POWER_DOMAINS;
@@ -162,7 +165,11 @@ power_init(int cpuId)
                 cpuid_info.model == ZENPLUS_RYZEN2 ||
                 cpuid_info.model == ZEN2_RYZEN ||
                 cpuid_info.model == ZEN2_RYZEN2 ||
-                cpuid_info.model == ZEN2_RYZEN3)
+                cpuid_info.model == ZEN2_RYZEN3 ||
+                cpuid_info.model == ZEN3_RYZEN ||
+                cpuid_info.model == ZEN3_RYZEN2 ||
+                cpuid_info.model == ZEN3_RYZEN3 ||
+                cpuid_info.model == ZEN3_EPYC_TRENTO)
             {
                 cpuid_info.turbo = 0;
                 power_info.hasRAPL = 1;
@@ -209,6 +216,7 @@ power_init(int cpuId)
                 case ZEN4_EPYC:
                     cpuid_info.turbo = 0;
                     power_info.hasRAPL = 1;
+                    power_info.statusRegWidth = 64;
                     numDomains = 2;
                     unit_reg = MSR_AMD17_RAPL_POWER_UNIT;
                     power_names[0] = "CORE";
@@ -235,7 +243,7 @@ power_init(int cpuId)
         err = HPMaddThread(cpuId);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to RAPL counters)
+            ERROR_PRINT(Cannot get access to RAPL counters)
             return err;
         }
     }
@@ -272,7 +280,7 @@ power_init(int cpuId)
             err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT, &flags);
             if (err)
             {
-                fprintf(stderr,"Cannot gather values from MSR_TURBO_RATIO_LIMIT\n");
+                ERROR_PRINT(Cannot gather values from %s, "MSR_TURBO_RATIO_LIMIT");
             }
             else
             {
@@ -287,6 +295,7 @@ power_init(int cpuId)
                         err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT1, &flag_vals[1]);
                         if (err)
                         {
+                            ERROR_PRINT(Cannot read core limits from %s, "MSR_TURBO_RATIO_LIMIT1");
                             flag_vals[1] = 0;
                         }
                     }
@@ -295,6 +304,7 @@ power_init(int cpuId)
                         err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT2, &flag_vals[2]);
                         if (err)
                         {
+                            ERROR_PRINT(Cannot read core limits from %s, "MSR_TURBO_RATIO_LIMIT2");
                             flag_vals[2] = 0;
                         }
                     }
@@ -303,6 +313,7 @@ power_init(int cpuId)
                         err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT3, &flag_vals[3]);
                         if (err)
                         {
+                            ERROR_PRINT(Cannot read core limits from %s, "MSR_TURBO_RATIO_LIMIT3");
                             flag_vals[3] = 0;
                         }
                     }
@@ -327,7 +338,7 @@ power_init(int cpuId)
                     err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT_CORES, &flags_cores);
                     if (err)
                     {
-                        ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT_CORES);
+                        ERROR_PRINT(Cannot read core limits from %s, "MSR_TURBO_RATIO_LIMIT_CORES");
                         flags_cores = 0;
                     }
                     for (int i = 0; i < 8; i++)
@@ -348,7 +359,7 @@ power_init(int cpuId)
         }
         else
         {
-            fprintf(stderr,"Cannot gather values from MSR_PLATFORM_INFO\n");
+            ERROR_PRINT(Cannot gather values from %s, "MSR_PLATFORM_INFO");
         }
     }
 
@@ -379,7 +390,7 @@ power_init(int cpuId)
                 power_info.domains[i].maxPower = 0.0;
                 power_info.domains[i].maxTimeWindow = 0.0;
             }
-            if ((cpuid_info.model == HASWELL_EP) ||
+            if (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == HASWELL_EP) ||
                 (cpuid_info.model == HASWELL_M1) ||
                 (cpuid_info.model == HASWELL_M2) ||
                 (cpuid_info.model == BROADWELL_D) ||
@@ -387,8 +398,9 @@ power_init(int cpuId)
                 (cpuid_info.model == SKYLAKEX) ||
                 (cpuid_info.model == ICELAKEX1) ||
                 (cpuid_info.model == ICELAKEX2) ||
+                (cpuid_info.model == SAPPHIRERAPIDS) ||
                 (cpuid_info.model == XEON_PHI_KNL) ||
-                (cpuid_info.model == XEON_PHI_KML))
+                (cpuid_info.model == XEON_PHI_KML)))
             {
                 power_info.domains[DRAM].energyUnit = 15.3E-6;
             }
@@ -470,7 +482,7 @@ power_init(int cpuId)
         }
         else
         {
-            fprintf(stderr,"Cannot gather values from unit register 0x%X, deactivating RAPL support\n", unit_reg);
+            DEBUG_PRINT(DEBUGLEV_INFO, Cannot gather values from unit register 0x%X. deactivating RAPL support, unit_reg);
             power_info.hasRAPL =  0;
         }
 
@@ -488,6 +500,17 @@ power_init(int cpuId)
                 power_info.perfBias = flags & 0xF;
             }
         }
+
+        if (cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_EPYC))
+        {
+            err = HPMread(cpuId, MSR_DEV, MSR_AMD19_RAPL_L3_UNIT, &flags);
+            if (err == 0)
+            {
+                DEBUG_PRINT(DEBUGLEV_DETAIL, Reading energy unit for Zen4 L3 RAPL domain);
+                power_info.domains[1].energyUnit = 1.0 / (1 << ((flags >> 8) & 0x1F));
+            }
+        }
+        power_info.numDomains = numDomains;
         power_initialized = 1;
         return power_info.hasRAPL;
     }
@@ -528,8 +551,7 @@ power_limitSet(int cpuId, PowerType domain, double power, double time, int doCla
     {
         return -EINVAL;
     }
-    fprintf(stderr, "Not implemented\n");
-    return 0;
+
 
     uint32_t X = (log(time) - log(power_info.timeUnit))/log(2);
     uint32_t powerField = (uint32_t)(power/(power_info.domains[domain].energyUnit));
@@ -544,7 +566,7 @@ power_limitSet(int cpuId, PowerType domain, double power, double time, int doCla
         err = HPMwrite(cpuId, MSR_DEV, limit_regs[domain], flags);
         if (err)
         {
-            fprintf(stderr, "Failed to set power limit for domain %s on CPU %d\n",power_names[domain], cpuId);
+            ERROR_PRINT(Failed to set power limit for domain %s on CPU %d,power_names[domain], cpuId);
             return -EFAULT;
         }
     }
@@ -568,7 +590,7 @@ power_limitGet(int cpuId, PowerType domain, double* power, double* time)
         err = HPMread(cpuId, MSR_DEV, limit_regs[domain], &flags);
         if (err)
         {
-            fprintf(stderr, "Failed to set power limit for domain %s on CPU %d\n",power_names[domain], cpuId);
+            ERROR_PRINT(Failed to set power limit for domain %s on CPU %d,power_names[domain], cpuId);
             return -EFAULT;
         }
         *power = ((double)extractBitField(flags, 15, 0)) * power_info.domains[domain].energyUnit;

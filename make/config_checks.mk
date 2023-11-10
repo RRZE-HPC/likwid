@@ -63,7 +63,7 @@ FORTRAN_REMOVE_MOVED =
 else
 FORTRAN_IF := $(strip $(FORTRAN_IF_NAME))
 FORTRAN_INSTALL = @echo "===> INSTALL fortran interface to $(PREFIX)/include/"; \
-                  cp -f likwid.mod  $(strip $(PREFIX))/include/$(strip $(FORTRAN_IF_NAME))
+                  cp -f $(BASE_DIR)/likwid.mod  $(strip $(PREFIX))/include/$(strip $(FORTRAN_IF_NAME))
 FORTRAN_REMOVE = @echo "===> REMOVING fortran interface from $(PREFIX)/include/"; \
                  rm -f $(strip $(PREFIX))/include/$(strip $(FORTRAN_IF_NAME))
 FORTRAN_REMOVE_MOVED = @echo "===> REMOVING fortran interface from $(INSTALLED_PREFIX)/include/"; \
@@ -81,4 +81,9 @@ ifeq ($(strip $(NVIDIA_INTERFACE)), true)
 #LIBS+= -lcuda -ldl
 INCLUDES += -I$(CUDAINCLUDE) -I$(CUPTIINCLUDE)
 #CPPFLAGS += -L$(CUDALIBDIR) -L$(CUPTILIBDIR)
+endif
+
+ifeq ($(strip $(ROCM_INTERFACE)), true)
+# HSA includes 'hsa/xxx.h' and rocprofiler 'xxx.h'
+INCLUDES += -I$(HIPINCLUDE) -I$(HSAINCLUDE) -I$(HSAINCLUDE)/hsa -I$(ROCPROFILERINCLUDE) -I$(RSMIINCLUDE)
 endif

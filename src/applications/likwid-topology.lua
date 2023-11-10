@@ -160,7 +160,14 @@ for cntr=0,cputopo["numHWThreads"]-1 do
     else
         table.insert(line, "")
     end
-    table.insert(output_csv, likwid.printTextTable(header, line, cntr == 0))
+    if print_csv then
+        if cntr == 0 then
+            table.insert(output_csv, table.concat(header, ","))
+        end
+        table.insert(output_csv, table.concat(line, ","))
+    else
+        table.insert(output_csv, likwid.printTextTable(header, line, cntr == 0))
+    end
 end
 table.insert(output_csv, likwid.hline)
 
@@ -269,16 +276,16 @@ else
 end
 
 if likwid.nvSupported() then
-    gputopo = likwid.getGpuTopology()
-    if gputopo then
+    local cudatopo = likwid.getCudaTopology()
+    if cudatopo then
         table.insert(output_csv, likwid.sline)
         table.insert(output_csv, "GPU Topology")
         table.insert(output_csv, likwid.sline)
-        table.insert(output_csv, string.format("GPU count:\t\t%d", gputopo["numDevices"]))
+        table.insert(output_csv, string.format("GPU count:\t\t%d", cudatopo["numDevices"]))
         table.insert(output_csv, likwid.hline)
 
-        for i=1, gputopo["numDevices"] do
-            gpu = gputopo["devices"][i]
+        for i=1, cudatopo["numDevices"] do
+            gpu = cudatopo["devices"][i]
             table.insert(output_csv, string.format("STRUCT,GPU Topology %d,9", gpu["id"]))
             table.insert(output_csv, string.format("ID:\t\t\t%d", gpu["id"]))
             table.insert(output_csv, string.format("Name:\t\t\t%s", gpu["name"]))
@@ -326,7 +333,66 @@ if likwid.nvSupported() then
             table.insert(output_csv, likwid.hline)
         end
     end
-    likwid.putGpuTopology()
+    likwid.putCudaTopology()
+end
+
+if likwid.rocmSupported() then
+    local rocmtopo = likwid.getRocmTopology()
+    if rocmtopo then
+        table.insert(output_csv, likwid.sline)
+        table.insert(output_csv, "ROCm GPU Topology")
+        table.insert(output_csv, likwid.sline)
+        table.insert(output_csv, string.format("GPU count:\t\t%d", rocmtopo["numDevices"]))
+        table.insert(output_csv, likwid.hline)
+
+        for i=1, rocmtopo["numDevices"] do
+            gpu = rocmtopo["devices"][i]
+            table.insert(output_csv, string.format("STRUCT,GPU Topology %d,9", gpu["id"]))
+            table.insert(output_csv, string.format("ID:\t\t\t%d", gpu["id"]))
+            table.insert(output_csv, string.format("Name:\t\t\t%s", gpu["name"]))
+            table.insert(output_csv, string.format("Compute capability:\t%d.%d", gpu["ccapMajor"], gpu["ccapMinor"]))
+            table.insert(output_csv, string.format("L2 size:\t\t%.2f MB", gpu["l2Size"]/(1024*1024)))
+            table.insert(output_csv, string.format("Memory:\t\t\t%.2f GB", gpu["memory"]/(1024*1024*1024)))
+            table.insert(output_csv, string.format("Clock rate:\t\t%d kHz", gpu["clockRatekHz"]))
+            table.insert(output_csv, string.format("Memory clock rate:\t%d kHz", gpu["memClockRatekHz"]))
+            table.insert(output_csv, string.format("Attached to NUMA node:\t%d", gpu["numaNode"]))
+            if print_gpus then
+                table.insert(output_csv, string.format("Number of SPs:\t\t%d", gpu["numMultiProcs"]))
+                table.insert(output_csv, string.format("Max. threads per SP:\t%d", gpu["maxThreadPerMultiProc"]))
+                table.insert(output_csv, string.format("Max. threads per block:\t%d", gpu["maxThreadsPerBlock"]))
+                local s = {}
+                for i, data in pairs(gpu["maxThreadsDim"]) do
+                    table.insert(s, string.format("%d", data))
+                end
+                table.insert(output_csv, string.format("Max. thread dimensions:\t%s", table.concat(s, "/")))
+                table.insert(output_csv, string.format("Max. regs per block:\t%d", gpu["regsPerBlock"]))
+                table.insert(output_csv, string.format("Shared mem per block:\t%d", gpu["sharedMemPerBlock"]))
+
+                table.insert(output_csv, string.format("Memory bus width:\t%d", gpu["memBusWidth"]))
+                table.insert(output_csv, string.format("Texture alignment:\t%d", gpu["textureAlign"]))
+                if gpu["ecc"] == 0 then
+                    table.insert(output_csv, "ECC:\t\t\toff")
+                else
+                    table.insert(output_csv, "ECC:\t\t\ton")
+                end
+                if gpu["integrated"] == 0 then
+                    table.insert(output_csv, "GPU integrated:\t\tno")
+                else
+                    table.insert(output_csv, "GPU integrated:\t\tyes")
+                end
+                s = {}
+                for i, data in pairs(gpu["maxGridSize"]) do
+                    table.insert(s, string.format("%d", data))
+                end
+                table.insert(output_csv, string.format("Max. grid sizes:\t%s", table.concat(s, "/")))
+                table.insert(output_csv, string.format("PCI bus:\t\t0x%x", gpu["pciBus"]))
+                table.insert(output_csv, string.format("PCI domain:\t\t0x%x", gpu["pciDom"]))
+                table.insert(output_csv, string.format("PCI device:\t\t0x%x", gpu["pciDev"]))
+            end
+            table.insert(output_csv, likwid.hline)
+        end
+    end
+    likwid.putRocmTopology()
 end
 
 if print_csv then

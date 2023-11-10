@@ -30,6 +30,10 @@ INSTRUMENT_BENCH = true#NO SPACE
 # For configuring include paths, go to CUDA section
 NVIDIA_INTERFACE = false#NO SPACE
 
+# Build LIKWID with AMD GPU interface (ROCm)
+# For configuring include paths, go to ROCm section
+ROCM_INTERFACE = false#NO SPACE
+
 # Build experimental sysfeatures interface and Lua CLI application
 BUILD_SYSFEATURES = false#NO SPACE
 
@@ -111,9 +115,9 @@ DEBUG = false#NO SPACE
 
 # Basic configuration for some internal arrays.
 # Maximal number of hardware threads
-MAX_NUM_THREADS = 300
+MAX_NUM_THREADS = 500
 # Maximal number of sockets
-MAX_NUM_NODES = 64
+MAX_NUM_NODES = 128
 # Maximal number of CLI parameters
 MAX_NUM_CLIARGS = 16384
 
@@ -127,8 +131,8 @@ TOPO_FILE_PATH = /etc/likwid_topo.cfg
 # Versioning Information
 # The libraries are named liblikwid.<VERSION>.<RELEASE>
 VERSION = 5
-RELEASE = 2
-MINOR = 3
+RELEASE = 3
+MINOR = 0
 # Date when the release is published
 DATE    = 12.12.2022
 
@@ -175,3 +179,13 @@ CUPTIINCLUDE = $(CUDA_HOME)/extras/CUPTI/include
 # In order to hook into the CUDA application, the appDaemon is required
 # If you just want the NvMarkerAPI, you can keep it false
 BUILDAPPDAEMON=false
+
+# ROCm build data
+# LIKWID requires ROCm to be present only for compilation with
+# ROCM_INTERFACE=true. At runtime, the ROCm library have
+# to be in the LD_LIBRARY_PATH to dynamically load the libraries.
+# Include directory for ROCm headers
+HSAINCLUDE 			= $(ROCM_HOME)/include
+ROCPROFILERINCLUDE	        = $(ROCM_HOME)/include/rocprofiler
+HIPINCLUDE 			= $(ROCM_HOME)/include
+RSMIINCLUDE			= $(ROCM_HOME)/include

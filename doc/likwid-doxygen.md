@@ -1,7 +1,7 @@
 /*! \mainpage LIKWID - Like I Knew What I Am Doing
 
 \section Introduction
-This is an effort to develop easy to use but yet powerful performance tools for the GNU Linux operating system. While the focus of LIKWID was on x86 processors, it is now ported to ARM and POWER processors. A backend for Nvidia GPUs is part of LIKWID with version 5.0.<BR>
+This is an effort to develop easy to use but yet powerful performance tools for the GNU Linux operating system. While the focus of LIKWID was on x86 processors, it is now ported to ARM and POWER processors. A backend for Nvidia GPUs is part of LIKWID with version 5.0. With the Rocmon backend, AMD GPUs can be monitored.<BR>
 
 LIKWID follows the philosophy:
 - Simple
@@ -16,7 +16,7 @@ LIKWID follows the philosophy:
 \section Tools LIKWID Tools
 - \ref likwid-topology : A tool to display the thread and cache topology on multicore/multisocket computers.
 - \ref likwid-pin : A tool to pin your threaded application without changing your code. Works for pthreads and OpenMP.
-- \ref likwid-perfctr : A tool to measure hardware performance counters on x86, ARM and POWER processors as well as Nvidia GPUs. It can be used as wrapper application without modifying the profiled code or with a marker API to measure only parts of the code.
+- \ref likwid-perfctr : A tool to measure hardware performance counters on x86, ARM and POWER processors as well as Nvidia/AMD GPUs. It can be used as wrapper application without modifying the profiled code or with a marker API to measure only parts of the code.
 - \ref likwid-powermeter : A tool for accessing RAPL counters and query Turbo mode steps on Intel processor. RAPL counters are also available in \ref likwid-perfctr.
 - \ref likwid-setFrequencies : A tool to print and manage the clock frequency of CPU hardware threads and the Uncore (Intel only).
 - \ref likwid-memsweeper : A tool to cleanup ccNUMA domains and LLC caches to get a clean environment for benchmarks.
@@ -73,6 +73,8 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 
 \subsection Fortran90_Interface Fortran90 Interface
 - \ref Fortran_Interface
+- \ref Fortran_RocmGPU_Interface
+- \ref Fortran_NvGPU_Interface
 
 \section Architectures Supported Architectures
 \subsection Architectures_X86 X86 Architectures
@@ -106,6 +108,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage icelake
 - \subpage icelakesp
 - \subpage tigerlake
+- \subpage sapphirerapids
 
 \subsubsection Architectures_AMD AMD&reg;
 - \subpage k8
@@ -131,6 +134,9 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 \subsection Architectures_NVIDIA Nvidia GPU architectures
 - For compute capability < 7.0: support based on CUPTI Events API
 - For compute capability >= 7.0: support based on CUpti Profiling API
+
+\subsection Architectures_AMD AMD GPU architectures
+- ROCm 5.0 and higher capable GPUs
 
 \section Examples Example Codes
 Using the Likwid API:

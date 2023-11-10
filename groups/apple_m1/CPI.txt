@@ -1,0 +1,21 @@
+SHORT  Cycles per instruction
+
+EVENTSET
+PMC0  CPU_CYCLES
+PMC1  INST_RETIRED
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI   PMC0/PMC1
+IPC   PMC1/PMC0
+
+LONG
+Formulas:
+CPI = CPU_CYCLES/INST_RETIRED
+IPC = INST_RETIRED/CPU_CYCLES
+-
+This group measures how efficient the processor works with
+regard to instruction throughput. Also important as the raw
+value of INST_RETIRED as it tells you how many instruction
+you need to execute for a task.
+

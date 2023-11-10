@@ -116,6 +116,50 @@ int perfevent_paranoid_value()
     return paranoid;
 }
 
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+enum apple_m1_pmc_type {
+    M1_UNKNOWN = 0,
+    M1_ICESTORM,
+    M1_FIRESTORM,
+};
+
+int perfevent_apple_m1_pmc_type_select(int cpu_id, enum apple_m1_pmc_type *type)
+{
+    FILE* fd;
+    char buff[100];
+    *type = M1_UNKNOWN;
+    bstring fname = bformat("/sys/devices/system/cpu/cpu%d/of_node/compatible", cpu_id);
+    fd = fopen(bdata(fname), "r");
+    if (fd == NULL)
+    {
+        ERROR_PRINT(Failed to detect PMU type for Apple M1);
+        bdestroy(fname);
+        return errno;
+    }
+    size_t read = fread(buff, sizeof(char), 100, fd);
+    if (read > 0)
+    {
+        if (strncmp("apple,icestorm", buff, 14) == 0)
+        {
+            *type = M1_ICESTORM;
+        }
+        else if (strncmp("apple,firestorm", buff, 15) == 0)
+        {
+            *type = M1_FIRESTORM;
+        }
+        bdestroy(fname);
+        return 0;
+    }
+    else
+    {
+        ERROR_PRINT(Cannot read %s, bdata(fname));
+    }
+    bdestroy(fname);
+    return -1;
+}
+#endif
+
+
 int perfmon_init_perfevent(int cpu_id)
 {
     perf_event_paranoid = perfevent_paranoid_value();
@@ -170,7 +214,6 @@ struct perf_event_config_format {
     int start;
     int end;
 };
-
 
 
 int parse_event_config(char* base, char* option, int* num_formats, struct perf_event_config_format **formats)
@@ -289,6 +332,7 @@ int read_perf_event_type(char* folder)
     return type;
 }
 
+
 int apply_event_config(struct perf_event_attr *attr, uint64_t optval, int num_formats, struct perf_event_config_format *formats)
 {
     if (!attr || num_formats <= 0 || !formats)
@@ -337,6 +381,7 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
     attr->type = PERF_TYPE_HARDWARE;
     attr->disabled = 1;
     attr->inherit = 1;
+    attr->pinned = 1;
     if (translate_types[FIXED] != NULL &&
         strcmp(translate_types[PMC], translate_types[FIXED]) == 0)
     {
@@ -375,6 +420,7 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
                 case TIGERLAKE1:
                 case TIGERLAKE2:
                 case SNOWRIDGEX:
+                case SAPPHIRERAPIDS:
                     if (strncmp(event->name, "TOPDOWN_SLOTS", 13) == 0)
                     {
                         attr->config = 0x0400;
@@ -434,7 +480,19 @@ int perf_perf_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEv
     return 0;
 }
 
-int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
+int perf_metrics_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
+{
+    attr->type = 4;
+    attr->exclude_kernel = 1;
+    attr->exclude_hv = 1;
+    attr->exclude_guest = 1;
+    //attr->disabled = 1;
+    //attr->inherit = 1;
+    attr->config = (event->umask<<8) + event->eventId;
+    return 0;
+}
+
+int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterType type, PerfmonEvent *event)
 {
     int ret = 0;
     uint64_t offcore_flags = 0x0ULL;
@@ -446,6 +504,8 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     attr->exclude_hv = 1;
     attr->disabled = 1;
     attr->inherit = 1;
+    attr->exclude_guest = 1;
+
 
     num_formats = 0;
     formats = NULL;
@@ -463,10 +523,10 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     }
     else
     {
-        ret = parse_event_config(translate_types[PMC], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
+        ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
     }
 #else
-    ret = parse_event_config(translate_types[PMC], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
+    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
 #endif
     if (ret == 0)
     {
@@ -503,7 +563,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
         num_formats = 1;
     }
 #else
-    ret = parse_event_config(translate_types[PMC], perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], &num_formats, &formats);
+    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], &num_formats, &formats);
 #endif
     if (ret == 0)
     {
@@ -546,7 +606,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
                     ret = 0;
                     num_formats = 0;
                     formats = NULL;
-                    ret = parse_event_config(translate_types[PMC], perfEventOptionNames[event->options[j].type], &num_formats, &formats);
+                    ret = parse_event_config(translate_types[type], perfEventOptionNames[event->options[j].type], &num_formats, &formats);
                     if (ret == 0)
                     {
                         uint64_t optval = event->options[j].value;
@@ -595,7 +655,8 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
         ret = 0;
         num_formats = 0;
         formats = NULL;
-        ret = parse_event_config(translate_types[PMC], perfEventOptionNames[EVENT_OPTION_MATCH0], &num_formats, &formats);
+        ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_MATCH0], &num_formats, &formats);
+
         if (ret == 0)
         {
             uint64_t optval = offcore_flags;
@@ -622,7 +683,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     ret = 0;
     num_formats = 0;
     formats = NULL;
-    ret = parse_event_config(translate_types[PMC], perfEventOptionNames[EVENT_OPTION_PMC], &num_formats, &formats);
+    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_PMC], &num_formats, &formats);
     if (ret == 0)
     {
         uint64_t optval = getCounterTypeOffset(index)+1;
@@ -745,11 +806,27 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
         if (ret == 0)
         {
             uint64_t umask = event->umask;
+            if (type >= CBOX0 && type <= CBOX59 && cpuid_info.isIntel && num_formats > 1
+                && (cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 || cpuid_info.model == SAPPHIRERAPIDS))
+            {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Applying special umask handling for CBOXes of Intel ICX and SPR chips);
+                for(int j = 0; j < event->numberOfOptions; j++)
+                {
+                    if (event->options[j].type == EVENT_OPTION_MATCH0)
+                    {
+                        DEBUG_PRINT(DEBUGLEV_DEVELOP, 0x%lX (0x%lX | (0x%lX << (%d - %d))), umask | (event->options[j].value << (formats[0].end - formats[0].start)), umask, event->options[j].value, formats[0].end, formats[0].start);
+                        umask |= (event->options[j].value << (formats[0].end - formats[0].start + 1));
+                        break;
+                    }
+                }
+            }
             for (int i = 0; i < num_formats && umask != 0x0; i++)
             {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Format %s from %d-%d with value 0x%lX, perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], formats[i].start, formats[i].end, umask);
                 switch(formats[i].reg)
                 {
                     case CONFIG:
+                        DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding 0x%lX to 0x%X, create_mask(umask, formats[i].start, formats[i].end), attr->config);
                         attr->config |= create_mask(umask, formats[i].start, formats[i].end);
                         break;
                     case CONFIG1:
@@ -810,6 +887,14 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                         }
                         free(formats);
                     }
+                    /*if (cpuid_info.family == P6_FAMILY && cpuid_info.model == SAPPHIRERAPIDS && event->options[j].type == EVENT_OPTION_MATCH0)
+                    {
+                        attr->config |= (((uint64_t)event->options[j].value) & 0x3ffffff) << 32;
+                    }
+                    if (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2)) && event->options[j].type == EVENT_OPTION_MATCH0)
+                    {
+                        attr->config |= create_mask(event->options[j].value, 32, 57);
+                    }*/
                     break;
                 default:
                     break;
@@ -939,6 +1024,14 @@ int perfmon_setupCountersThread_perfevent(
                 }
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PERF);
                 break;
+            case METRICS:
+                ret = perf_metrics_setup(&attr, index, event);
+                if (ret < 0)
+                {
+                    continue;
+                }
+                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_METRICS);
+                break;
             case PMC:
                 pmc_lock = 1;
 #if defined(__ARM_ARCH_8A)
@@ -956,10 +1049,38 @@ int perfmon_setupCountersThread_perfevent(
                         }
                     }
                 }
+                else if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO)
+                {
+                    enum apple_m1_pmc_type ptype = M1_UNKNOWN;
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Getting real perf_event type for HWThread %d, cpu_id);
+                    ret = perfevent_apple_m1_pmc_type_select(cpu_id, &ptype);
+                    if (ret == 0)
+                    {
+                        switch (ptype)
+                        {
+                            case M1_ICESTORM:
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, HWThread %d is an icestorm core, cpu_id);
+                                type = IPMC;
+                                break;
+                            case M1_FIRESTORM:
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, HWThread %d is an firestorm core, cpu_id);
+                                type = FPMC;
+                                break;
+                            default:
+                                pmc_lock = 0;
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        ERROR_PRINT(Failed getting real perf_event type for HWThread %d, cpu_id);
+                        pmc_lock = 0;
+                    }
+                }
 #endif
                 if (pmc_lock)
                 {
-                    ret = perf_pmc_setup(&attr, index, event);
+                    ret = perf_pmc_setup(&attr, index, type, event);
                     VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
                 }
                 break;
@@ -1030,6 +1151,88 @@ int perfmon_setupCountersThread_perfevent(
             case CBOX25:
             case CBOX26:
             case CBOX27:
+            case CBOX28:
+            case CBOX29:
+            case CBOX30:
+            case CBOX31:
+            case CBOX32:
+            case CBOX33:
+            case CBOX34:
+            case CBOX35:
+            case CBOX36:
+            case CBOX37:
+            case CBOX38:
+            case CBOX39:
+            case CBOX40:
+            case CBOX41:
+            case CBOX42:
+            case CBOX43:
+            case CBOX44:
+            case CBOX45:
+            case CBOX46:
+            case CBOX47:
+            case CBOX48:
+            case CBOX49:
+            case CBOX50:
+            case CBOX51:
+            case CBOX52:
+            case CBOX53:
+            case CBOX54:
+            case CBOX55:
+            case CBOX56:
+            case CBOX57:
+            case CBOX58:
+            case CBOX59:
+            case MDF0:
+            case MDF1:
+            case MDF2:
+            case MDF3:
+            case MDF4:
+            case MDF5:
+            case MDF6:
+            case MDF7:
+            case MDF8:
+            case MDF9:
+            case MDF10:
+            case MDF11:
+            case MDF12:
+            case MDF13:
+            case MDF14:
+            case MDF15:
+            case MDF16:
+            case MDF17:
+            case MDF18:
+            case MDF19:
+            case MDF20:
+            case MDF21:
+            case MDF22:
+            case MDF23:
+            case MDF24:
+            case MDF25:
+            case MDF26:
+            case MDF27:
+            case MDF28:
+            case MDF29:
+            case MDF30:
+            case MDF31:
+            case MDF32:
+            case MDF33:
+            case MDF34:
+            case MDF35:
+            case MDF36:
+            case MDF37:
+            case MDF38:
+            case MDF39:
+            case MDF40:
+            case MDF41:
+            case MDF42:
+            case MDF43:
+            case MDF44:
+            case MDF45:
+            case MDF46:
+            case MDF47:
+            case MDF48:
+            case MDF49:
             case UBOX:
             case UBOXFIX:
             case SBOX0:
@@ -1039,11 +1242,45 @@ int perfmon_setupCountersThread_perfevent(
             case QBOX0:
             case QBOX1:
             case QBOX2:
+            case QBOX3:
             case WBOX:
             case PBOX:
             case RBOX0:
             case RBOX1:
+            case RBOX2:
+            case RBOX3:
             case BBOX0:
+            case BBOX1:
+            case BBOX2:
+            case BBOX3:
+            case BBOX4:
+            case BBOX5:
+            case BBOX6:
+            case BBOX7:
+            case BBOX8:
+            case BBOX9:
+            case BBOX10:
+            case BBOX11:
+            case BBOX12:
+            case BBOX13:
+            case BBOX14:
+            case BBOX15:
+            case BBOX16:
+            case BBOX17:
+            case BBOX18:
+            case BBOX19:
+            case BBOX20:
+            case BBOX21:
+            case BBOX22:
+            case BBOX23:
+            case BBOX24:
+            case BBOX25:
+            case BBOX26:
+            case BBOX27:
+            case BBOX28:
+            case BBOX29:
+            case BBOX30:
+            case BBOX31:
             case EDBOX0:
             case EDBOX1:
             case EDBOX2:
@@ -1060,14 +1297,78 @@ int perfmon_setupCountersThread_perfevent(
             case EUBOX5:
             case EUBOX6:
             case EUBOX7:
+            case IBOX0:
+            case IBOX1:
+            case IBOX2:
+            case IBOX3:
+            case IBOX4:
+            case IBOX5:
+            case IBOX6:
+            case IBOX7:
+            case IBOX8:
+            case IBOX9:
+            case IBOX10:
+            case IBOX11:
+            case IBOX12:
+            case IBOX13:
+            case IBOX14:
+            case IBOX15:
+            case IRP0:
+            case IRP1:
+            case IRP2:
+            case IRP3:
+            case IRP4:
+            case IRP5:
+            case IRP6:
+            case IRP7:
+            case IRP8:
+            case IRP9:
+            case IRP10:
+            case IRP11:
+            case IRP12:
+            case IRP13:
+            case IRP14:
+            case IRP15:
+            case HBM0:
+            case HBM1:
+            case HBM2:
+            case HBM3:
+            case HBM4:
+            case HBM5:
+            case HBM6:
+            case HBM7:
+            case HBM8:
+            case HBM9:
+            case HBM10:
+            case HBM11:
+            case HBM12:
+            case HBM13:
+            case HBM14:
+            case HBM15:
+            case HBM16:
+            case HBM17:
+            case HBM18:
+            case HBM19:
+            case HBM20:
+            case HBM21:
+            case HBM22:
+            case HBM23:
+            case HBM24:
+            case HBM25:
+            case HBM26:
+            case HBM27:
+            case HBM28:
+            case HBM29:
+            case HBM30:
+            case HBM31:
                 if (cpuid_info.family == ZEN_FAMILY && type == MBOX0)
                 {
-                    if (numa_lock[affinity_thread2numa_lookup[cpu_id]] == cpu_id)
+                    if (die_lock[affinity_thread2die_lookup[cpu_id]] == cpu_id)
                     {
                         has_lock = 1;
                     }
                 }
-                else if (cpuid_info.family == ZEN_FAMILY && type == CBOX0)
+                else if ((cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY) && type == CBOX0)
                 {
                     if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id)
                     {
@@ -1122,7 +1423,7 @@ int perfmon_setupCountersThread_perfevent(
                     DEBUG_PRINT(DEBUGLEV_INFO, Cannot measure Uncore with perf_event_paranoid value = %d, perf_event_paranoid);
                     perf_disable_uncore = 1;
                 }
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, perf_event_open: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, perf_event_open: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
                 cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, -1, allflags);
             }
             else
@@ -1132,7 +1433,7 @@ int perfmon_setupCountersThread_perfevent(
             if (cpu_event_fds[cpu_id][index] < 0)
             {
                 ERROR_PRINT(Setup of event %s on CPU %d failed: %s, event->name, cpu_id, strerror(errno));
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, open error: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, open error: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
             }
             if (group_fd < 0)
             {
@@ -1206,7 +1507,7 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                 continue;
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
-            tmp = 0;
+            tmp = 0x0LL;
             ret = read(cpu_event_fds[cpu_id][index], &tmp, sizeof(long long));
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
             if (ret == sizeof(long long))
@@ -1257,7 +1558,7 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                 continue;
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
-            tmp = 0;
+            tmp = 0x0LL;
             ret = read(cpu_event_fds[cpu_id][index], &tmp, sizeof(long long));
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
             if (ret == sizeof(long long))

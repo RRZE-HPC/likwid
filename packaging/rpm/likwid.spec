@@ -129,16 +129,20 @@ It consists of:
 
 
 %build
-%ifarch i386 i486 i586 i686
+%ifarch %{ix86} 
 COMPILER="GCCX86"
 %else
 %ifarch %{arm}
+COMPILER="GCCARMv7"
+%else
+%ifarch %{arm64}
 COMPILER="GCCARMv8"
 %else
 %ifarch %{power64}
 COMPILER="GCCPOWER"
 %else
 COMPILER="GCC"
+%endif
 %endif
 %endif
 %endif
@@ -158,16 +162,20 @@ COMPILER="GCC"
     FORTRAN_INTERFACE="true"
 
 %install
-%ifarch i386 i486 i586 i686
+%ifarch %{ix86} 
 COMPILER="GCCX86"
 %else
 %ifarch %{arm}
+COMPILER="GCCARMv7"
+%else
+%ifarch %{arm64}
 COMPILER="GCCARMv8"
 %else
 %ifarch %{power64}
 COMPILER="GCCPOWER"
 %else
 COMPILER="GCC"
+%endif
 %endif
 %endif
 %endif
@@ -185,16 +193,20 @@ COMPILER="GCC"
     FC="gfortran" \
     FCFLAGS="-J ./  -fsyntax-only" \
     FORTRAN_INTERFACE="true"
-
+    
+%ifarch %{x86_64} %{ix86} 
 chmod 755 $RPM_BUILD_ROOT/%{_prefix}/sbin/likwid-accessD
 chmod 755 $RPM_BUILD_ROOT/%{_prefix}/sbin/likwid-setFreq
+%endif
 
 %post
 /sbin/ldconfig
+%ifarch %{x86_64} %{ix86} 
 chown root:root $RPM_BUILD_ROOT/%{_prefix}/sbin/likwid-accessD
 chmod u+s $RPM_BUILD_ROOT/%{_prefix}/sbin/likwid-accessD
 chown root:root $RPM_BUILD_ROOT/%{_prefix}/sbin/likwid-setFreq
 chmod u+s $RPM_BUILD_ROOT/%{_prefix}/sbin/likwid-setFreq
+%endif
 
 %postun
 /sbin/ldconfig
@@ -216,9 +228,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/likwid-mpirun
 %{_bindir}/feedGnuplot
 %{_bindir}/likwid-perfscope
+%ifarch %{x86_64} %{ix86} 
 %{_bindir}/likwid-setFrequencies
 %{_sbindir}/likwid-setFreq
 %{_sbindir}/likwid-accessD
+%endif
 %{_libdir}/*
 %{_datadir}/likwid/docs
 %{_datadir}/likwid/perfgroups

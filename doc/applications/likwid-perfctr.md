@@ -56,7 +56,11 @@ custom event sets. The \ref Marker_API can measure mulitple named regions and th
 </TR>
 <TR>
   <TD>-W, --gpugroup &lt;arg&gt;</TD>
-  <TD>Specify which event string or performance group should be measured on the GPUs. Only if built with NVIDIA_INTERFACE=true.</TD>
+  <TD>Specify which event string or performance group should be measured on the Nvidia GPUs. Only if built with NVIDIA_INTERFACE=true.</TD>
+</TR>
+<TR>
+  <TD>-R &lt;arg&gt;</TD>
+  <TD>Specify which event string or performance group should be measured on the AMD GPUs. Only if built with ROCM_INTERFACE=true.</TD>
 </TR>
 <TR>
   <TD>-c &lt;arg&gt;</TD>
@@ -68,7 +72,11 @@ custom event sets. The \ref Marker_API can measure mulitple named regions and th
 </TR>
 <TR>
   <TD>-G &lt;arg&gt;</TD>
-  <TD>Defines the GPUs that should be measured<BR>You can use simple lists like 0,1,3 or ranges like 0-2. Only if built with NVIDIA_INTERFACE=true.</TD>
+  <TD>Defines the Nvidia GPUs that should be measured<BR>You can use simple lists like 0,1,3 or ranges like 0-2. Only if built with NVIDIA_INTERFACE=true.</TD>
+</TR>
+<TR>
+  <TD>-I &lt;arg&gt;</TD>
+  <TD>Defines the AMD GPUs that should be measured<BR>You can use simple lists like 0,1,3 or ranges like 0-2. Only if built with ROCM_INTERFACE=true.</TD>
 </TR>
 <TR>
   <TD>-H</TD>
@@ -274,6 +282,8 @@ The LIKWID package contains an example code: see \ref F-markerAPI-code.
 Since the calls to the LIKWID library are executed by your application, the runtime will raise and in specific circumstances, there are some other problems like the time measurement. You can execute <CODE>LIKWID_MARKER_THREADINIT</CODE> and <CODE>LIKWID_MARKER_START</CODE> inside the same parallel region but put a barrier between the calls to ensure that there is no big timing difference between the threads. The common way is to init LIKWID and the participating threads inside of an initialization routine, use only START and STOP in your code and close the Marker API in a finalization routine. Be aware that at the first start of a region, the thread-local hash table gets a new entry to store the measured values. If your code inside the region is short or you are executing the region only once, the overhead of creating the hash table entry can be significant compared to the execution of the region code. The overhead of creating the hash tables can be done in prior by using the <CODE>LIKWID_MARKER_REGISTER</CODE> function. It must be called by each thread and one time for each compute region. It is completely <I>optional</I>, <CODE>LIKWID_MARKER_START</CODE> performs the same operations.
 
 <H2>CUDA code</H2>
-With LIKWID 5.0 CUDA kernels can be measured. There is a special NvMarkerAPI for Nvidia GPUs. The usage is similar to the CPU MarkerAPI, just replace <CODE>LIKWID_MARKER_</CODE> with <CODE>LIKWID_NVMARKER_</CODE>. The two MarkerAPIs can be mixed.
+With LIKWID 5.0 CUDA kernels can be measured. There is a special NvMarkerAPI for Nvidia GPUs. The usage is similar to the CPU MarkerAPI, just replace <CODE>LIKWID_MARKER_</CODE> with <CODE>LIKWID_NVMARKER_</CODE>. All MarkerAPIs can be mixed.
 
+<H2>ROCm code</H2>
+ROCm kernels can be measured. There is a special RocmonMarkerAPI for AMD GPUs. The usage is similar to the CPU or Nvidia MarkerAPI, just replace <CODE>LIKWID_MARKER_</CODE> with <CODE>ROCMON_MARKER_</CODE>. All MarkerAPIs can be mixed.
 */

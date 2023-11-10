@@ -5,6 +5,7 @@
  *
  * Copyright © 2009, 2011, 2012 CNRS, inria., Université Bordeaux  All rights reserved.
  * Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
+ * Copyright © 2022 IBM Corporation.  All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -19,19 +20,15 @@
 #define HWLOC_CONFIGURE_H
 
 
-/* Define to 1 if gcc's __atomic builtins are available */
-/* #undef HAVE_ATOMIC_BUILTINS */
-
 /* Define to 1 if the system has the type `CACHE_DESCRIPTOR'. */
 /* #undef HAVE_CACHE_DESCRIPTOR */
 
 /* Define to 1 if the system has the type `CACHE_RELATIONSHIP'. */
 /* #undef HAVE_CACHE_RELATIONSHIP */
 
-/* Define to 1 if you have the `close' function. */
-#define HAVE_CLOSE 1
 /* Define to 1 if you have the `clock_gettime' function. */
 #define HAVE_CLOCK_GETTIME 1
+
 /* Define to 1 if you have the `clz' function. */
 /* #undef HAVE_CLZ */
 
@@ -59,13 +56,13 @@
 /* Define to 1 if you have the <cuda_runtime_api.h> header file. */
 /* #undef HAVE_CUDA_RUNTIME_API_H */
 
-/* Define to 1 if you have the declaration of `CL_DEVICE_TOPOLOGY_AMD', and to
-   0 if you don't. */
-/* #undef HAVE_DECL_CL_DEVICE_TOPOLOGY_AMD */
+/* Define to 1 if you have the declaration of `bind', and to 0 if you don't.
+   */
+#define HAVE_DECL_BIND 1
 
 /* Define to 1 if you have the declaration of `CTL_HW', and to 0 if you don't.
    */
-#define HAVE_DECL_CTL_HW 0
+/* #undef HAVE_DECL_CTL_HW */
 
 /* Define to 1 if you have the declaration of `fabsf', and to 0 if you don't.
    */
@@ -77,15 +74,47 @@
 
 /* Define to 1 if you have the declaration of `GetModuleFileName', and to 0 if
    you don't. */
-#define HAVE_DECL_GETMODULEFILENAME 0
+/* #undef HAVE_DECL_GETMODULEFILENAME */
 
 /* Define to 1 if you have the declaration of `getprogname', and to 0 if you
    don't. */
 #define HAVE_DECL_GETPROGNAME 0
 
+/* Define to 1 if you have the declaration of `HW_MEMSIZE', and to 0 if you
+   don't. */
+/* #undef HAVE_DECL_HW_MEMSIZE */
+
+/* Define to 1 if you have the declaration of `HW_MEMSIZE64', and to 0 if you
+   don't. */
+/* #undef HAVE_DECL_HW_MEMSIZE64 */
+
 /* Define to 1 if you have the declaration of `HW_NCPU', and to 0 if you
    don't. */
-#define HAVE_DECL_HW_NCPU 0
+/* #undef HAVE_DECL_HW_NCPU */
+
+/* Define to 1 if you have the declaration of `HW_PHYSMEM', and to 0 if you
+   don't. */
+/* #undef HAVE_DECL_HW_PHYSMEM */
+
+/* Define to 1 if you have the declaration of `HW_PHYSMEM64', and to 0 if you
+   don't. */
+/* #undef HAVE_DECL_HW_PHYSMEM64 */
+
+/* Define to 1 if you have the declaration of `HW_REALMEM', and to 0 if you
+   don't. */
+/* #undef HAVE_DECL_HW_REALMEM */
+
+/* Define to 1 if you have the declaration of `HW_REALMEM64', and to 0 if you
+   don't. */
+/* #undef HAVE_DECL_HW_REALMEM64 */
+
+/* Define to 1 if you have the declaration of `HW_USERMEM', and to 0 if you
+   don't. */
+/* #undef HAVE_DECL_HW_USERMEM */
+
+/* Define to 1 if you have the declaration of `HW_USERMEM64', and to 0 if you
+   don't. */
+/* #undef HAVE_DECL_HW_USERMEM64 */
 
 /* Define to 1 if you have the declaration of `lgrp_latency_cookie', and to 0
    if you don't. */
@@ -164,15 +193,8 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
 
-/* Define to 1 if you have the <endian.h> header file. */
-#define HAVE_ENDIAN_H 1
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
-/* Define to 1 if you have the <fcntl.h> header file. */
-#define HAVE_FCNTL_H 1
-
 /* Define to 1 if you have the `ffs' function. */
 #define HAVE_FFS 1
-#endif
 
 /* Define to 1 if you have the `ffsl' function. */
 #define HAVE_FFSL 1
@@ -185,13 +207,6 @@
 
 /* Define to 1 if you have the `getpagesize' function. */
 #define HAVE_GETPAGESIZE 1
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
-/* Define to 1 if you have the `getpid' function. */
-#define HAVE_GETPID 1
-
-/* Define to 1 if you have the `gettimeofday' function. */
-#define HAVE_GETTIMEOFDAY 1
-#endif
 
 /* Define to 1 if the system has the type `GROUP_AFFINITY'. */
 /* #undef HAVE_GROUP_AFFINITY */
@@ -208,6 +223,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
 
+/* Define to 1 if you have the `isatty' function. */
+#define HAVE_ISATTY 1
+
 /* Define to 1 if the system has the type `KAFFINITY'. */
 /* #undef HAVE_KAFFINITY */
 
@@ -216,6 +234,12 @@
 
 /* Define to 1 if you have the <langinfo.h> header file. */
 #define HAVE_LANGINFO_H 1
+
+/* Define to 1 if you have the <level_zero/zes_api.h> header file. */
+/* #undef HAVE_LEVEL_ZERO_ZES_API_H */
+
+/* Define to 1 if you have the <level_zero/ze_api.h> header file. */
+/* #undef HAVE_LEVEL_ZERO_ZE_API_H */
 
 /* Define to 1 if we have -lgdi32 */
 /* #undef HAVE_LIBGDI32 */
@@ -231,20 +255,15 @@
 
 /* Define to 1 if you have the <libudev.h> header file. */
 /* #undef HAVE_LIBUDEV_H */
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
-/* Define to 1 if you have the `localeconv' function. */
-#define HAVE_LOCALECONV 1
-#endif
 
 /* Define to 1 if you have the <locale.h> header file. */
 #define HAVE_LOCALE_H 1
 
 /* Define to 1 if the system has the type `LOGICAL_PROCESSOR_RELATIONSHIP'. */
 /* #undef HAVE_LOGICAL_PROCESSOR_RELATIONSHIP */
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
-/* Define to 1 if the system has the type 'long long int'. */
-#define HAVE_LONG_LONG_INT 1
-#endif
+
+/* Define to 1 if you have the <mach_init.h> header file. */
+/* #undef HAVE_MACH_INIT_H */
 
 /* Define to 1 if you have the <mach/mach_host.h> header file. */
 /* #undef HAVE_MACH_MACH_HOST_H */
@@ -258,24 +277,17 @@
 /* Define to 1 if you have the `memalign' function. */
 #define HAVE_MEMALIGN 1
 
-/* Define to 1 if you have the <memory.h> header file. */
-#define HAVE_MEMORY_H 1
+/* Define to 1 if you have the <minix/config.h> header file. */
+/* #undef HAVE_MINIX_CONFIG_H */
 
-/* Define to 1 if we have -lmyriexpress */
-/* #undef HAVE_MYRIEXPRESS */
-
-/* Define to 1 if you have the <myriexpress.h> header file. */
-/* #undef HAVE_MYRIEXPRESS_H */
 /* Define to 1 if you have the `mkstemp' function. */
 #define HAVE_MKSTEMP 1
 
 /* Define to 1 if you have the <mpi.h> header file. */
 /* #undef HAVE_MPI_H */
+
 /* Define to 1 if you have the `nl_langinfo' function. */
 #define HAVE_NL_LANGINFO 1
-
-/* Define to 1 if you have the <numaif.h> header file. */
-/* #undef HAVE_NUMAIF_H */
 
 /* Define to 1 if the system has the type `NUMA_NODE_RELATIONSHIP'. */
 /* #undef HAVE_NUMA_NODE_RELATIONSHIP */
@@ -285,9 +297,6 @@
 
 /* Define to 1 if you have the <nvml.h> header file. */
 /* #undef HAVE_NVML_H */
-
-/* Define to 1 if you have the `open' function. */
-#define HAVE_OPEN 1
 
 /* Define to 1 if you have the `openat' function. */
 #define HAVE_OPENAT 1
@@ -332,18 +341,11 @@
 /* Define to 1 if you have the `putwc' function. */
 #define HAVE_PUTWC 1
 
-/* Define to 1 if you have the `read' function. */
-#define HAVE_READ 1
-
 /* Define to 1 if the system has the type `RelationProcessorPackage'. */
 /* #undef HAVE_RELATIONPROCESSORPACKAGE */
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
-/* Define to 1 if you have the <sched.h> header file. */
-#define HAVE_SCHED_H 1
 
-/* Define to 1 if you have the `sched_yield' function. */
-#define HAVE_SCHED_YIELD 1
-#endif
+/* Define to 1 if you have the <rocm_smi/rocm_smi.h> header file. */
+/* #undef HAVE_ROCM_SMI_ROCM_SMI_H */
 
 /* Define to 1 if you have the `setlocale' function. */
 #define HAVE_SETLOCALE 1
@@ -353,6 +355,9 @@
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#define HAVE_STDIO_H 1
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
@@ -372,15 +377,9 @@
 /* Define to 1 if you have the `strncasecmp' function. */
 #define HAVE_STRNCASECMP 1
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
-/* Define to 1 if you have the `strtoll' function. */
-#define HAVE_STRTOLL 1
-
-/* Define to 1 if gcc's __sync builtins are available */
-#define HAVE_SYNC_BUILTINS 1
-#endif
-
 /* Define to 1 if you have the `strtoull' function. */
-/* #undef HAVE_STRTOULL */
+#define HAVE_STRTOLL 1
+#endif
 
 /* Define to '1' if sysctl is present and usable */
 /* #undef HAVE_SYSCTL */
@@ -389,15 +388,14 @@
 /* #undef HAVE_SYSCTLBYNAME */
 
 /* Define to 1 if the system has the type
-   `SYSTEM_LOGICAL_PROCESSOR_INFORMATION'. */
-/* #undef HAVE_SYSTEM_LOGICAL_PROCESSOR_INFORMATION */
-
-/* Define to 1 if the system has the type
    `SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX'. */
 /* #undef HAVE_SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX */
 
 /* Define to 1 if you have the <sys/cpuset.h> header file. */
 /* #undef HAVE_SYS_CPUSET_H */
+
+/* Define to 1 if you have the <sys/domainset.h> header file. */
+/* #undef HAVE_SYS_DOMAINSET_H */
 
 /* Define to 1 if you have the <sys/lgrp_user.h> header file. */
 /* #undef HAVE_SYS_LGRP_USER_H */
@@ -406,7 +404,7 @@
 #define HAVE_SYS_MMAN_H 1
 
 /* Define to 1 if you have the <sys/param.h> header file. */
-#define HAVE_SYS_PARAM_H 1
+/* #undef HAVE_SYS_PARAM_H */
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1
@@ -414,16 +412,17 @@
 /* Define to 1 if you have the <sys/sysctl.h> header file. */
 /* #undef HAVE_SYS_SYSCTL_H */
 
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
-/* Define to 1 if you have the <sys/time.h> header file. */
-#define HAVE_SYS_TIME_H 1
-#endif
+/* Define to 1 if you have the <sys/thr.h> header file. */
+/* #undef HAVE_SYS_THR_H */
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
 
 /* Define to 1 if you have the <sys/utsname.h> header file. */
 #define HAVE_SYS_UTSNAME_H 1
+
+/* Define to 1 if you have the `tcgetpgrp' function. */
+#define HAVE_TCGETPGRP 1
 
 /* Define to 1 if you have the <time.h> header file. */
 #define HAVE_TIME_H 1
@@ -433,10 +432,6 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
-/* Define to 1 if the system has the type 'unsigned long long int'. */
-#define HAVE_UNSIGNED_LONG_LONG_INT 1
-#endif
 
 /* Define to 1 if you have the `uselocale' function. */
 #define HAVE_USELOCALE 1
@@ -444,20 +439,23 @@
 /* Define to 1 if you have the <valgrind/valgrind.h> header file. */
 /* #undef HAVE_VALGRIND_VALGRIND_H */
 
+/* Define to 1 if you have the <wchar.h> header file. */
+#define HAVE_WCHAR_H 1
+
 /* Define to 1 if the system has the type `wchar_t'. */
 #define HAVE_WCHAR_T 1
 
 /* Define to 1 if you have the <X11/keysym.h> header file. */
-//#define HAVE_X11_KEYSYM_H 1
+/* #undef HAVE_X11_KEYSYM_H */
 
 /* Define to 1 if you have the <X11/Xlib.h> header file. */
-//#define HAVE_X11_XLIB_H 1
+/* #undef HAVE_X11_XLIB_H */
 
 /* Define to 1 if you have the <X11/Xutil.h> header file. */
-//#define HAVE_X11_XUTIL_H 1
+/* #undef HAVE_X11_XUTIL_H */
 
 /* Define to 1 if you have the <xlocale.h> header file. */
-//#define HAVE_XLOCALE_H 1
+/* #undef HAVE_XLOCALE_H */
 
 /* Define to '1' if __progname is present and usable */
 #define HAVE___PROGNAME 1
@@ -465,8 +463,14 @@
 /* Define to 1 on AIX */
 /* #undef HWLOC_AIX_SYS */
 
+/* Define to the location of the archivemount program */
+/* #undef HWLOC_ARCHIVEMOUNT_PATH */
+
 /* Define to 1 on BlueGene/Q */
 /* #undef HWLOC_BGQ_SYS */
+
+/* Define if the CUDA component is built statically inside libhwloc */
+/* #undef HWLOC_CUDA_COMPONENT_BUILTIN */
 
 /* Whether C compiler supports symbol visibility or not */
 #define HWLOC_C_HAVE_VISIBILITY 1
@@ -480,8 +484,14 @@
 /* Define to 1 on *FREEBSD */
 /* #undef HWLOC_FREEBSD_SYS */
 
+/* Define if the GL component is built statically inside libhwloc */
+/* #undef HWLOC_GL_COMPONENT_BUILTIN */
+
+/* Define to 1 if --enable-32bits-pci-domain is called. */
+/* #undef HWLOC_HAVE_32BITS_PCI_DOMAIN */
+
 /* Whether your compiler has __attribute__ or not */
-#define HWLOC_HAVE_ATTRIBUTE 1
+#define HWLOC_HAVE_ATTRIBUTE  1
 
 /* Whether your compiler has __attribute__ aligned or not */
 #define HWLOC_HAVE_ATTRIBUTE_ALIGNED 1
@@ -494,6 +504,9 @@
 
 /* Whether your compiler has __attribute__ const or not */
 #define HWLOC_HAVE_ATTRIBUTE_CONST 1
+
+/* Whether your compiler has __attribute__ constructor or not */
+#define HWLOC_HAVE_ATTRIBUTE_CONSTRUCTOR 1
 
 /* Whether your compiler has __attribute__ deprecated or not */
 #define HWLOC_HAVE_ATTRIBUTE_DEPRECATED 1
@@ -548,6 +561,7 @@
 
 /* Define to 1 if you have the `clzl' function. */
 /* #undef HWLOC_HAVE_CLZL */
+
 /* Define to 1 if snprintf supports NULL output buffer and returns the correct
    length on truncation */
 #undef HWLOC_HAVE_CORRECT_SNPRINTF
@@ -560,6 +574,12 @@
 
 /* Define to 1 if you have the `cudart' SDK. */
 /* #undef HWLOC_HAVE_CUDART */
+
+/* `Define to 1 if you have the Foundation Darwin framework' */
+/* #undef HWLOC_HAVE_DARWIN_FOUNDATION */
+
+/* `Define to 1 if you have the IOKit Darwin framework' */
+/* #undef HWLOC_HAVE_DARWIN_IOKIT */
 
 /* Define to 1 if function `clz' is declared by system headers */
 /* #undef HWLOC_HAVE_DECL_CLZ */
@@ -597,8 +617,17 @@
 /* Define to 1 if you have the `flsl' function. */
 /* #undef HWLOC_HAVE_FLSL */
 
+/* Define to 1 if gcc -Wcast-function-type is supported and enabled */
+/* #undef HWLOC_HAVE_GCC_W_CAST_FUNCTION_TYPE */
+
+/* Define to 1 if gcc -Wmissing-field-initializers is supported and enabled */
+/* #undef HWLOC_HAVE_GCC_W_MISSING_FIELD_INITIALIZERS */
+
 /* Define to 1 if you have the GL module components. */
 /* #undef HWLOC_HAVE_GL */
+
+/* Define to 1 if you have the `LevelZero' library. */
+/* #undef HWLOC_HAVE_LEVELZERO */
 
 /* Define to 1 if you have a library providing the termcap interface */
 /* #undef HWLOC_HAVE_LIBTERMCAP */
@@ -609,18 +638,15 @@
 /* Define to 1 if you have the `libxml2' library. */
 /* #undef HWLOC_HAVE_LIBXML2 */
 
-/* Define to 1 if building the Linux PCI component */
-#define HWLOC_HAVE_LINUXPCI 1
-
-/* Define to 1 if building the Linux I/O component */
+/* Define to 1 for I/O discovery in the Linux component */
 #define HWLOC_HAVE_LINUXIO 1
 
+/* Define to 1 if enabling Linux-specific PCI discovery in the Linux I/O
+   component */
+#define HWLOC_HAVE_LINUXPCI 1
 
-/* Define to 1 if mbind is available. */
-/* #undef HWLOC_HAVE_MBIND */
-
-/* Define to 1 if migrate_pages is available. */
-/* #undef HWLOC_HAVE_MIGRATE_PAGES */
+/* Define to 1 if the hwloc library should use ltdl for loading plugins */
+/* #undef HWLOC_HAVE_LTDL */
 
 /* Define to 1 if you have the `NVML' library. */
 /* #undef HWLOC_HAVE_NVML */
@@ -642,11 +668,11 @@
 /* Define to 1 if pthread mutexes are available */
 #define HWLOC_HAVE_PTHREAD_MUTEX 1
 
+/* Define to 1 if you have the `RSMI' library. */
+/* #undef HWLOC_HAVE_RSMI */
+
 /* Define to 1 if glibc provides a prototype of sched_setaffinity() */
 #define HWLOC_HAVE_SCHED_SETAFFINITY 1
-
-/* Define to 1 if set_mempolicy is available. */
-/* #undef HWLOC_HAVE_SET_MEMPOLICY */
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HWLOC_HAVE_STDINT_H 1
@@ -658,14 +684,15 @@
 /* #undef HWLOC_HAVE_WINDOWS_H */
 
 /* Define to 1 if X11 headers including Xutil.h and keysym.h are available. */
-#define HWLOC_HAVE_X11_KEYSYM 1
+/* #undef HWLOC_HAVE_X11_KEYSYM */
+
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 /* Define to 1 if you have x86 cpuid */
 #define HWLOC_HAVE_X86_CPUID 1
 #endif
 
-/* Define to 1 if the _syscall3 macro works */
-/* #undef HWLOC_HAVE__SYSCALL3 */
+/* Define to 1 if zeDevicePciGetPropertiesExt is available */
+/* #undef HWLOC_HAVE_ZEDEVICEPCIGETPROPERTIESEXT */
 
 /* Define to 1 on HP-UX */
 /* #undef HWLOC_HPUX_SYS */
@@ -673,24 +700,37 @@
 /* Define to 1 on Irix */
 /* #undef HWLOC_IRIX_SYS */
 
+/* Define if the LevelZero component is built statically inside libhwloc */
+/* #undef HWLOC_LEVELZERO_COMPONENT_BUILTIN */
+
 /* Define to 1 on Linux */
 #define HWLOC_LINUX_SYS 1
 
 /* Define to 1 on *NETBSD */
 /* #undef HWLOC_NETBSD_SYS */
 
-/* Define to 1 on OSF */
-/* #undef HWLOC_OSF_SYS */
+/* Define if the NVML component is built statically inside libhwloc */
+/* #undef HWLOC_NVML_COMPONENT_BUILTIN */
+
+/* Define if the OpenCL component is built statically inside libhwloc */
+/* #undef HWLOC_OPENCL_COMPONENT_BUILTIN */
+
+/* Define if the PCI component is built statically inside libhwloc */
+/* #undef HWLOC_PCI_COMPONENT_BUILTIN */
+
+/* Define if the RSMI component is built statically inside libhwloc */
+/* #undef HWLOC_RSMI_COMPONENT_BUILTIN */
 
 /* The size of `unsigned int', as computed by sizeof */
 #define HWLOC_SIZEOF_UNSIGNED_INT 4
+
 /* The size of `unsigned long', as computed by sizeof */
 #if defined(__x86_64) || defined(_ARCH_PPC)
-#define HWLOC_SIZEOF_UNSIGNED_LONG 8
+    #define HWLOC_SIZEOF_UNSIGNED_LONG 8
 #else
-#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
-#define HWLOC_SIZEOF_UNSIGNED_LONG 4
-#endif
+    #if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+        #define HWLOC_SIZEOF_UNSIGNED_LONG 4
+    #endif
 #endif
 
 /* Define to 1 on Solaris */
@@ -715,7 +755,7 @@
 
 /* The library version, always available, even in embedded mode, contrary to
    VERSION */
-#define HWLOC_VERSION "2.1.0"
+#define HWLOC_VERSION "2.9.3"
 
 /* The library version optional greek suffix string */
 #define HWLOC_VERSION_GREEK ""
@@ -724,25 +764,30 @@
 #define HWLOC_VERSION_MAJOR 2
 
 /* The library version minor number */
-#define HWLOC_VERSION_MINOR 1
+#define HWLOC_VERSION_MINOR 9
 
 /* The library version release number */
-#define HWLOC_VERSION_RELEASE 0
+#define HWLOC_VERSION_RELEASE 3
 
 /* Define to 1 on WINDOWS */
 /* #undef HWLOC_WIN_SYS */
 
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
 /* Define to 1 on x86_64 */
-#ifdef __x86_64
-#define HWLOC_X86_64_ARCH 1
-#else
-#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__)
-/* Define to 1 on x86_32 */
-#define HWLOC_X86_32_ARCH 1
+    #ifdef __x86_64
+        #define HWLOC_X86_64_ARCH 1
+    #else
+        #if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__)
+            /* Define to 1 on x86_32 */
+            #define HWLOC_X86_32_ARCH 1
+        #endif
+    #endif
 #endif
-#endif
-#endif
+/* Define if the libxml XML component is built statically inside libhwloc */
+/* #undef HWLOC_XML_LIBXML_COMPONENT_BUILTIN */
+
+/* Define if lstopo Cairo/X11 interactive graphical output is supported */
+/* #undef LSTOPO_HAVE_X11 */
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #define LT_OBJDIR ".libs/"
@@ -754,13 +799,13 @@
 #define PACKAGE "hwloc"
 
 /* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "http://github.com/open-mpi/hwloc/issues"
+#define PACKAGE_BUGREPORT "https://github.com/open-mpi/hwloc/issues"
 
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "hwloc"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "hwloc 2.1.0"
+#define PACKAGE_STRING "hwloc 2.9.3"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "hwloc"
@@ -769,7 +814,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "2.1.0"
+#define PACKAGE_VERSION "2.9.3"
 
 /* The size of `unsigned int', as computed by sizeof. */
 #define SIZEOF_UNSIGNED_INT 4
@@ -788,7 +833,9 @@
 #define SIZEOF_VOID_P 4
 #endif
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #define STDC_HEADERS 1
 
 /* Enable extensions on HP-UX. */
@@ -801,34 +848,92 @@
 #ifndef _ALL_SOURCE
 # define _ALL_SOURCE 1
 #endif
-/* Enable GNU extensions on systems that have them.  */
-#ifndef _GNU_SOURCE
-# define _GNU_SOURCE 1
-#endif
-/* Enable threading extensions on Solaris.  */
-#ifndef _POSIX_PTHREAD_SEMANTICS
-# define _POSIX_PTHREAD_SEMANTICS 1
-#endif
-/* Enable extensions on HP NonStop.  */
-#ifndef _TANDEM_SOURCE
-# define _TANDEM_SOURCE 1
+/* Enable general extensions on macOS.  */
+#ifndef _DARWIN_C_SOURCE
+# define _DARWIN_C_SOURCE 1
 #endif
 /* Enable general extensions on Solaris.  */
 #ifndef __EXTENSIONS__
 # define __EXTENSIONS__ 1
 #endif
-
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
-/* Define to 1 if /dev/urandom should be used for seeding the hash function */
-#define USE_URANDOM 1
-
-/* Define to 1 if CryptGenRandom should be used for seeding the hash function
-   */
-#define USE_WINDOWS_CRYPTOAPI 1
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE 1
+#endif
+/* Enable X/Open compliant socket functions that do not require linking
+   with -lxnet on HP-UX 11.11.  */
+#ifndef _HPUX_ALT_XOPEN_SOCKET_API
+# define _HPUX_ALT_XOPEN_SOCKET_API 1
+#endif
+/* Identify the host operating system as Minix.
+   This macro does not affect the system headers' behavior.
+   A future release of Autoconf may stop defining this macro.  */
+#ifndef _MINIX
+/* # undef _MINIX */
+#endif
+/* Enable general extensions on NetBSD.
+   Enable NetBSD compatibility extensions on Minix.  */
+#ifndef _NETBSD_SOURCE
+# define _NETBSD_SOURCE 1
+#endif
+/* Enable OpenBSD compatibility extensions on NetBSD.
+   Oddly enough, this does nothing on OpenBSD.  */
+#ifndef _OPENBSD_SOURCE
+# define _OPENBSD_SOURCE 1
+#endif
+/* Define to 1 if needed for POSIX-compatible behavior.  */
+#ifndef _POSIX_SOURCE
+/* # undef _POSIX_SOURCE */
+#endif
+/* Define to 2 if needed for POSIX-compatible behavior.  */
+#ifndef _POSIX_1_SOURCE
+/* # undef _POSIX_1_SOURCE */
+#endif
+/* Enable POSIX-compatible threading on Solaris.  */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+# define _POSIX_PTHREAD_SEMANTICS 1
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-5:2014.  */
+#ifndef __STDC_WANT_IEC_60559_ATTRIBS_EXT__
+# define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-1:2014.  */
+#ifndef __STDC_WANT_IEC_60559_BFP_EXT__
+# define __STDC_WANT_IEC_60559_BFP_EXT__ 1
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-2:2015.  */
+#ifndef __STDC_WANT_IEC_60559_DFP_EXT__
+# define __STDC_WANT_IEC_60559_DFP_EXT__ 1
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-4:2015.  */
+#ifndef __STDC_WANT_IEC_60559_FUNCS_EXT__
+# define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-3:2015.  */
+#ifndef __STDC_WANT_IEC_60559_TYPES_EXT__
+# define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
+#endif
+/* Enable extensions specified by ISO/IEC TR 24731-2:2010.  */
+#ifndef __STDC_WANT_LIB_EXT2__
+# define __STDC_WANT_LIB_EXT2__ 1
+#endif
+/* Enable extensions specified by ISO/IEC 24747:2009.  */
+#ifndef __STDC_WANT_MATH_SPEC_FUNCS__
+# define __STDC_WANT_MATH_SPEC_FUNCS__ 1
+#endif
+/* Enable extensions on HP NonStop.  */
+#ifndef _TANDEM_SOURCE
+# define _TANDEM_SOURCE 1
+#endif
+/* Enable X/Open extensions.  Define to 500 only if necessary
+   to make mbstate_t available.  */
+#ifndef _XOPEN_SOURCE
+/* # undef _XOPEN_SOURCE */
 #endif
 
+
 /* Version number of package */
-#define VERSION "2.1.0"
+#define VERSION "2.9.3"
 
 /* Define to 1 if the X Window System is missing or not being used. */
 #define X_DISPLAY_MISSING 1
@@ -836,40 +941,11 @@
 /* Are we building for HP-UX? */
 #define _HPUX_SOURCE 1
 
-/* Define to 1 if on MINIX. */
-/* #undef _MINIX */
-
-/* Define to 2 if the system does not provide POSIX.1 features except with
-   this defined. */
-/* #undef _POSIX_1_SOURCE */
-
-/* Define to 1 if you need to in order for `stat' and other things to work. */
-/* #undef _POSIX_SOURCE */
-
-/* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
-   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
-   #define below would cause a syntax error. */
-/* #undef _UINT32_T */
-
 /* Define this to the process ID type */
 #define hwloc_pid_t pid_t
 
 /* Define this to the thread ID type */
 #define hwloc_thread_t pthread_t
-
-/* Define to `__inline__' or `__inline' if that's what the C compiler
-   calls it, or to nothing if 'inline' is not supported under any name.  */
-#ifndef __cplusplus
-/* #undef inline */
-#endif
-
-/* Define to the type of a signed integer type of width exactly 32 bits if
-   such a type exists and the standard includes do not define it. */
-/* #undef int32_t */
-
-/* Define to the type of an unsigned integer type of width exactly 32 bits if
-   such a type exists and the standard includes do not define it. */
-/* #undef uint32_t */
 
 
 #endif /* HWLOC_CONFIGURE_H */

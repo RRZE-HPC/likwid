@@ -166,5 +166,72 @@ Shortcut for likwid_gpuMarkerClose() if compiled with -DLIKWID_NVMON. Otherwise 
 #endif /* LIKWID_NVMON */
 
 
+/** \addtogroup RocMarkerAPI RocMarker API module (MarkerAPI for AMD GPUs)
+*  @{
+*/
+/*!
+\def ROCMON_MARKER_INIT
+Shortcut for rocmon_markerInit() if compiled with -DLIKWID_ROCMON. Otherwise no operation is performed
+*/
+/*!
+\def ROCMON_MARKER_THREADINIT
+Shortcut for rocmon_markerThreadInit() if compiled with -DLIKWID_ROCMON. Otherwise no operation is performed
+*/
+/*!
+\def ROCMON_MARKER_REGISTER(regionTag)
+Shortcut for rocmon_markerRegisterRegion() with \a regionTag if compiled with -DLIKWID_ROCMON. Otherwise no operation is performed
+*/
+/*!
+\def ROCMON_MARKER_START(regionTag)
+Shortcut for rocmon_markerStartRegion() with \a regionTag if compiled with -DLIKWID_ROCMON. Otherwise no operation is performed
+*/
+/*!
+\def ROCMON_MARKER_STOP(regionTag)
+Shortcut for rocmon_markerStopRegion() with \a regionTag if compiled with -DLIKWID_ROCMON. Otherwise no operation is performed
+*/
+/*!
+\def ROCMON_MARKER_GET(regionTag, ngpus, nevents, events, time, count)
+Shortcut for rocmon_markerGetRegion() for \a regionTag if compiled with -DLIKWID_ROCMON. Otherwise no operation is performed
+*/
+/*!
+\def ROCMON_MARKER_SWITCH
+Shortcut for rocmon_markerNextGroup() if compiled with -DLIKWID_ROCMON. Otherwise no operation is performed
+*/
+/*!
+\def ROCMON_MARKER_RESET(regionTag)
+Shortcut for rocmon_markerResetRegion() if compiled with -DLIKWID_ROCMON. Otherwise no operation is performed
+*/
+/*!
+\def ROCMON_MARKER_CLOSE
+Shortcut for rocmon_markerClose() if compiled with -DLIKWID_ROCMON. Otherwise no operation is performed
+*/
+/** @}*/
+
+#ifdef LIKWID_ROCMON
+#ifndef LIKWID_WITH_ROCMON
+#define LIKWID_WITH_ROCMON
+#endif
+#include <likwid.h>
+#define ROCMON_MARKER_INIT rocmon_markerInit()
+#define ROCMON_MARKER_THREADINIT rocmon_markerThreadInit()
+#define ROCMON_MARKER_SWITCH rocmon_markerNextGroup()
+#define ROCMON_MARKER_REGISTER(regionTag) rocmon_markerRegisterRegion(regionTag)
+#define ROCMON_MARKER_START(regionTag) rocmon_markerStartRegion(regionTag)
+#define ROCMON_MARKER_STOP(regionTag) rocmon_markerStopRegion(regionTag)
+#define ROCMON_MARKER_CLOSE rocmon_markerClose()
+#define ROCMON_MARKER_RESET(regionTag) rocmon_markerResetRegion(regionTag)
+#define ROCMON_MARKER_GET(regionTag, ngpus, nevents, events, time, count) rocmon_markerGetRegion(regionTag, ngpus, nevents, events, time, count)
+#else /* LIKWID_ROCMON */
+#define ROCMON_MARKER_INIT
+#define ROCMON_MARKER_THREADINIT
+#define ROCMON_MARKER_SWITCH
+#define ROCMON_MARKER_REGISTER(regionTag)
+#define ROCMON_MARKER_START(regionTag)
+#define ROCMON_MARKER_STOP(regionTag)
+#define ROCMON_MARKER_CLOSE
+#define ROCMON_MARKER_GET(regionTag, nevents, events, time, count)
+#define ROCMON_MARKER_RESET(regionTag)
+#endif /* LIKWID_ROCMON */
+
 
 #endif /* LIKWID_MARKER_H */
