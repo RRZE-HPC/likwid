@@ -1593,7 +1593,7 @@ if outfile and not use_timeline then
         suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
     end
     local command = "<INSTALLED_PREFIX>/share/likwid/filter/" .. suffix
-    if suffix:len() > 0 then
+    if suffix:len() > 0 and suffix ~= "csv" and suffix ~= "txt" then
         if likwid.access(command, "x") == 0 then
             local tmpfile = outfile .. ".tmp"
             os.rename(outfile, tmpfile)
