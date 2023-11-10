@@ -55,7 +55,9 @@ jobs:
 
     - name: RPM build LIKWID
       id: rpmbuild
-      run: make RPM
+      run: |
+        git config --add safe.directory $(pwd)
+        make RPM
 
     # AlmaLinux 8.5 is a derivate of RedHat Enterprise Linux 8 (UBI8),
     # so the created RPM both contain the substring 'el8' in the RPM file names
@@ -130,7 +132,9 @@ jobs:
 
     - name: RPM build LIKWID
       id: rpmbuild
-      run: make RPM
+      run: |
+        git config --add safe.directory $(pwd)
+        make RPM
 
     # See: https://github.com/actions/upload-artifact
     - name: Save RPM as artifact
