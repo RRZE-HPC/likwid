@@ -137,9 +137,10 @@ local executeCommand = nil
 local mpiexecutable = nil
 local hostpattern = "([%.%a%d_-]+)"
 local pid = likwid.getpid()
+local pwd = os.getenv("PWD")
 local hostfilename = string.format(".hostfile_%s.txt", pid)
 local scriptfilename = string.format(".likwidscript_%s.txt", pid)
-local outfilename = string.format(os.getenv("PWD").."/.output_%s_%%r_%%h.csv", pid)
+local outfilename = string.format("%s/.output_%s_%%r_%%h.csv", pwd, pid)
 local filelist = {}
 
 local function mpirun_exit(exitcode)
@@ -150,6 +151,7 @@ local function mpirun_exit(exitcode)
             os.remove(file)
         end
     end
+    os.execute(string.format("rm --force %s/.output_%s*", pwd, pid)
     os.exit(exitvalue)
 end
 
@@ -2235,11 +2237,16 @@ if use_marker and #perf == 0 then
     mpirun_exit(1)
 end
 
+local gotCommand = false
 for i = 1, #arg do
     if i > 0 then
         local x = arg[i]
-        local t = abspath(x) or x
-        if string.find(x, " ") then
+        local t = x
+        if not gotCommand then
+            t = abspath(x) or x
+        end
+        if t ~= x then gotCommand = true end
+        if string.find(t, " ") then
             table.insert(execList, "\""..t.."\"")
         else
             table.insert(execList, t)
