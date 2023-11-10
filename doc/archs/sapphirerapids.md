@@ -1,4 +1,4 @@
-/*! \page skylake Intel&reg; SapphireRapids
+/*! \page sapphirerapids Intel&reg; SapphireRapids
 
 <P>This page is valid for SapphireRapids.</P>
 
@@ -21,6 +21,13 @@
 <LI>\ref SPR_PBOX "Mesh2PCIe counters"</LI>
 <LI>\ref SPR_HBM "High bandwidth memory counters"</LI>
 </UL>
+
+<H2>Some units are currently not supported</H2>
+<UL>
+<LI>free-running IIO counters</LI>
+<LI>fixed-purpose counters in \ref SPR_WBOX</LI>
+<LI>free-running memory controller counters</LI>
+<L1>M2HBM unit</LI>
 
 <H1>Counters available for each hardware thread</H1>
 \anchor SPR_FIXED

@@ -125,7 +125,11 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage armA57
 - \subpage armThunderX2
 - \subpage a64fx
-- \subpage neon1
+- \subpage neoverseN1
+- \subpage neoverseV1
+- \subpage applem1
+- \subpage hisilicontsv110
+
 
 \subsection Architectures_POWER POWER architectures
 - \subpage power8
