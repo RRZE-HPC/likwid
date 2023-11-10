@@ -2772,12 +2772,24 @@ RocmTopology_t get_rocmTopology(void)
 ################################################################################
 */
 
+/** \addtogroup ROCM AMD GPU monitoring API module for GPUs
+ *  @{
+ */
+
+/*! \brief Element in the output list from rocmon_getEventsOfGpu
+
+It holds the name, the description and the limitation string for one event.
+*/
 typedef struct {
-  char *name;
-  int instances;
-  char *description;
+  char *name;        /*!< \brief Name of the event */
+  int instances;     /*!< \brief Description of the event */
+  char *description; /*!< \brief Limitation string of the event, commonly 'GPU' */
 } Event_rocm_t;
 
+/*! \brief Output list from rocmon_getEventsOfGpu with all supported events
+
+Output list from rocmon_getEventsOfGpu with all supported events
+*/
 typedef struct {
   Event_rocm_t *events;
   int numEvents;
@@ -2785,94 +2797,376 @@ typedef struct {
 typedef EventList_rocm *EventList_rocm_t;
 
 void rocmon_setVerbosity(int level) __attribute__((visibility("default")));
+/*! \brief Initialize the Nvidia GPU performance monitoring facility (Nvmon)
+
+Initialize the AMD GPU performance monitoring feature by creating basic data
+structures. The ROCM and rocprofiler library paths need to be in LD_LIBRARY_PATH to be
+found by dlopen.
+
+@param [in] numGpus Amount of GPUs
+@param [in] gpuIds List of GPUs
+@return error code (0 on success, -ERRORCODE on failure)
+*/
 int rocmon_init(int numGpus, const int *gpuIds)
     __attribute__((visibility("default")));
+
+/*! \brief Close the AMD GPU perfomance monitoring facility of LIKWID (rocmon)
+
+Deallocates all internal data that is used during rocmon performance monitoring.
+Also the counter values are not accessible anymore after calling this function.
+*/
 void rocmon_finalize(void) __attribute__((visibility("default")));
+/*! \brief Add an event string to LIKWID rocmon
+
+A event string looks like Eventname:Countername,...
+The eventname and countername are checked if they are available.
+
+@param [in] eventString Event string
+@param [in] gid Group ID of the event
+@return Returns the ID of the new eventSet
+*/
 int rocmon_addEventSet(const char *eventString, int *gid)
     __attribute__((visibility("default")));
+/*! \brief Switch the active eventSet to a new one (rocmon)
+
+Stops the currently running counters, switches the eventSet by setting up the
+counters and start the counters.
+@param [in] newgroupId of group that should be switched to.
+@return 0 on success and -(thread_id+1) for error
+*/
 int rocmon_switchActiveGroup(int newGroupId)
     __attribute__((visibility("default")));
+/*! \brief Setup all rocmon performance monitoring counters of an eventSet
+
+@param [in] gid (returned from perfmon_addEventSet()
+@return error code (-ENOENT if groupId is invalid and -1 if the counters of one
+CPU cannot be set up)
+*/
 int rocmon_setupCounters(int gid) __attribute__((visibility("default")));
+/*! \brief Start rocmon performance monitoring counters
+
+Start the counters that have been previously set up by rocmon_setupCounters().
+The counter registered are zeroed before enabling the counters
+@return 0 on success and -(gpuid+1) for error
+*/
 int rocmon_startCounters(void) __attribute__((visibility("default")));
+/*! \brief Stop rocmon performance monitoring counters
+
+Stop the counters that have been previously started by rocmon_startCounters().
+@return 0 on success and -(gpuid+1) for error
+*/
 int rocmon_stopCounters(void) __attribute__((visibility("default")));
+/*! \brief Read the rocmon performance monitoring counters on all GPUs
+
+Read the counters that have been previously started by rocmon_startCounters().
+@return 0 on success and -(gpuid+1) for error
+*/
 int rocmon_readCounters(void) __attribute__((visibility("default")));
 
+/*! \brief Get the results of the specified group, counter and GPU (rocmon)
+
+Get the result of all measurement cycles.
+@param [in] gpuIdx of the group that should be read
+@param [in] eventId ID of the event that should be read
+@param [in] groupId ID of the event group that should be read
+@return The counter result
+*/
 double rocmon_getResult(int gpuIdx, int groupId, int eventId)
     __attribute__((visibility("default")));
+/*! \brief Get the last results of the specified group, counter and GPU (rocmon)
+
+Get the result of the last measurement cycle (between start/stop, start/read,
+read/read or read/top).
+@param [in] gpuIdx of the group that should be read
+@param [in] eventId ID of the event that should be read
+@param [in] groupId ID of the event group that should be read
+@return The counter result
+*/
 double rocmon_getLastResult(int gpuIdx, int groupId, int eventId)
     __attribute__((visibility("default")));
 
+/*! \brief Get the list of supported events of a GPU (rocmon)
+
+@param [in] gpuIdx ID of GPU (from GPU topology)
+@param [out] list List of events
+@return Number of supported events or -errno
+*/
 int rocmon_getEventsOfGpu(int gpuIdx, EventList_rocm_t *list)
     __attribute__((visibility("default")));
+/*! \brief Free the allocated list of events of a GPU (rocmon)
+
+@param [in] list List of events to free
+@return Number of supported events or -errno
+*/
 void rocmon_freeEventsOfGpu(EventList_rocm_t list)
     __attribute__((visibility("default")));
 
+/*! \brief Get the number of configured event groups (rocmon)
+
+@return Number of groups
+*/
 int rocmon_getNumberOfGroups(void) __attribute__((visibility("default")));
+/*! \brief Get the ID of the currently set up event group (rocmon)
+
+@return Number of active group
+*/
 int rocmon_getIdOfActiveGroup(void) __attribute__((visibility("default")));
+/*! \brief Get the number of GPUs specified at nvmon_init() (rocmon)
+
+@return Number of GPUs
+*/
 int rocmon_getNumberOfGPUs(void) __attribute__((visibility("default")));
+/*! \brief Get the number of configured eventSets in group (rocmon)
+
+@param [in] groupId ID of group
+@return Number of eventSets
+*/
 int rocmon_getNumberOfEvents(int groupId)
     __attribute__((visibility("default")));
+/*! \brief Get the number of configured metrics for group (rocmon)
+
+@param [in] groupId ID of group
+@return Number of metrics
+*/
 int rocmon_getNumberOfMetrics(int groupId)
     __attribute__((visibility("default")));
 
+/*! \brief Get the event name of the specified group and event (rocmon)
+
+Get the metric name as defined in the performance group file
+@param [in] groupId ID of the group that should be read
+@param [in] eventId ID of the event that should be returned
+@return The event name or NULL in case of failure
+*/
 char *rocmon_getEventName(int groupId, int eventId)
     __attribute__((visibility("default")));
+/*! \brief Get the counter name of the specified group and event (rocmon)
+
+Get the counter name as defined in the performance group file
+@param [in] groupId ID of the group that should be read
+@param [in] eventId ID of the event of which the counter should be returned
+@return The counter name or NULL in case of failure
+*/
 char *rocmon_getCounterName(int groupId, int eventId)
     __attribute__((visibility("default")));
+/*! \brief Get the metric name of the specified group and metric (rocmon)
+
+Get the metric name as defined in the performance group file
+@param [in] groupId ID of the group that should be read
+@param [in] metricId ID of the metric that should be calculated
+@return The metric name or NULL in case of failure
+*/
 char *rocmon_getMetricName(int groupId, int metricId)
     __attribute__((visibility("default")));
 
+/*! \brief Get the accumulated measurement time a group (rocmon)
+
+@param [in] groupId ID of group
+@return Time in seconds the event group was measured
+*/
 double rocmon_getTimeOfGroup(int groupId)
     __attribute__((visibility("default")));
+/*! \brief Get the last measurement time a group (rocmon)
+
+@param [in] groupId ID of group
+@return Time in seconds the event group was measured the last time
+*/
 double rocmon_getLastTimeOfGroup(int groupId)
     __attribute__((visibility("default")));
+/*! \brief Get the measurement time from start to last read of a group (rocmon)
+
+@param [in] groupId ID of group
+@return Time in seconds the event group was measured the last time
+*/
 double rocmon_getTimeToLastReadOfGroup(int groupId)
     __attribute__((visibility("default")));
 
+/*! \brief Get the name group (rocmon)
+
+Get the name of group. Either it is the name of the performance group or
+"Custom"
+@param [in] groupId ID of the group that should be read
+@return The group name or NULL in case of failure
+*/
 char *rocmon_getGroupName(int groupId) __attribute__((visibility("default")));
+/*! \brief Get the short informational string of the specified group (rocmon)
+
+Returns the short information string as defined by performance groups or
+"Custom" in case of custom event sets
+@param [in] groupId ID of the group that should be read
+@return The short information or NULL in case of failure
+*/
 char *rocmon_getGroupInfoShort(int groupId)
     __attribute__((visibility("default")));
+/*! \brief Get the long descriptive string of the specified group (rocmon)
+
+Returns the long descriptive string as defined by performance groups or NULL
+in case of custom event sets
+@param [in] groupId ID of the group that should be read
+@return The long description or NULL in case of failure
+*/
 char *rocmon_getGroupInfoLong(int groupId)
     __attribute__((visibility("default")));
 
+/*! \brief Get all groups (rocmon)
+
+Checks the configured performance group path for the current GPU and
+returns all found group names
+@param [out] groups List of group names
+@param [out] shortinfos List of short information string about group
+@param [out] longinfos List of long information string about group
+@return Amount of found performance groups
+*/
 int rocmon_getGroups(char ***groups, char ***shortinfos, char ***longinfos)
     __attribute__((visibility("default")));
+/*! \brief Free all group information (rocmon)
+
+@param [in] nrgroups Number of groups
+@param [in] groups List of group names
+@param [in] shortinfos List of short information string about group
+@param [in] longinfos List of long information string about group
+*/
 int rocmon_returnGroups(int nrgroups, char **groups, char **shortinfos,
                         char **longinfos)
     __attribute__((visibility("default")));
 
+/** @}*/
+    
+/** \addtogroup RocmonMarkerAPI Marker API module for GPUs
+ *  @{
+ */
+
 // Marker API
+/*! \brief Initialize RocmonLIKWID's marker API
+
+Must be called in serial region of the application to set up basic data
+structures of LIKWID. Reads environment variables:
+- LIKWID_GEVENTS (GPU event string)
+- LIKWID_GPUS (GPU list separated by ,)
+- LIKWID_GPUFILEPATH (Outputpath for RocmonMarkerAPI file)
+*/
 void rocmon_markerInit(void) __attribute__((visibility("default")));
+/*! \brief Close LIKWID's RocmonMarker API
+
+Must be called in serial region of the application. It gathers all data of
+regions and writes them out to a file (filepath in env variable
+LIKWID_FILEPATH).
+*/
 void rocmon_markerClose(void) __attribute__((visibility("default")));
+/*! \brief Register a measurement region
+
+Initializes the hashTable entry in order to reduce execution time of
+rocmon_markerStartRegion()
+@param regionTag [in] Initialize data using this string
+@return Error code
+*/
 int rocmon_markerRegisterRegion(const char *regionTag)
     __attribute__((visibility("default")));
+/*! \brief Start a measurement region
+
+Reads the values of all configured counters and saves the results under the name
+given in regionTag.
+@param regionTag [in] Store data using this string
+@return Error code of start operation
+*/
 int rocmon_markerStartRegion(const char *regionTag)
     __attribute__((visibility("default")));
+/*! \brief Stop a measurement region
+
+Reads the values of all configured counters and saves the results under the name
+given in regionTag. The measurement data of the stopped region gets summed up in
+global region counters.
+@param regionTag [in] Store data using this string
+@return Error code of stop operation
+*/
 int rocmon_markerStopRegion(const char *regionTag)
     __attribute__((visibility("default")));
+/*! \brief Reset a measurement region
+
+Reset the values of all configured counters and timers.
+@param regionTag [in] Reset data using this string
+@return Error code of reset operation
+*/
 int rocmon_markerResetRegion(const char *regionTag)
     __attribute__((visibility("default")));
 
+/*! \brief Read the output file of the RocmonMarker API
+@param [in] filename Filename with RocmonMarker API results
+@return 0 or negative error number
+*/
 int rocmon_readMarkerFile(const char *filename)
     __attribute__((visibility("default")));
+/*! \brief Free space for read in RocmonMarker API file
+ */
 void rocmon_destroyMarkerResults() __attribute__((visibility("default")));
+/*! \brief Get the call count of a region for a GPU
+@param [in] region ID of region
+@param [in] gpu ID of GPU
+@return Call count of a region for a GPU
+*/
 int rocmon_getCountOfRegion(int region, int gpu)
     __attribute__((visibility("default")));
+/*! \brief Get the accumulated measurement time of a region for a GPU
+@param [in] region ID of region
+@param [in] gpu ID of GPU
+@return Measurement time of a region for a GPU
+*/
 double rocmon_getTimeOfRegion(int region, int gpu)
     __attribute__((visibility("default")));
+/*! \brief Get the GPU list of a region
+@param [in] region ID of region
+@param [in] count Length of gpulist array
+@param [in,out] gpulist gpulist array
+@return Number of GPUs of region or count, whatever is lower
+*/
 int rocmon_getGpulistOfRegion(int region, int count, int *gpulist)
     __attribute__((visibility("default")));
+/*! \brief Get the number of GPUs of a region
+@param [in] region ID of region
+@return Number of GPUs of region
+*/
 int rocmon_getGpusOfRegion(int region) __attribute__((visibility("default")));
+/*! \brief Get the number of metrics of a region
+@param [in] region ID of region
+@return Number of metrics of region
+*/
 int rocmon_getMetricsOfRegion(int region)
     __attribute__((visibility("default")));
+/*! \brief Get the number of regions listed in RocmonMarker API result file
+
+@return Number of regions
+*/
 int rocmon_getNumberOfRegions() __attribute__((visibility("default")));
+/*! \brief Get the groupID of a region
+
+@param [in] region ID of region
+@return Group ID of region
+*/
 int rocmon_getGroupOfRegion(int region) __attribute__((visibility("default")));
 char *rocmon_getTagOfRegion(int region) __attribute__((visibility("default")));
+/*! \brief Get the number of events of a region
+@param [in] region ID of region
+@return Number of events of region
+*/
 int rocmon_getEventsOfRegion(int region) __attribute__((visibility("default")));
+/*! \brief Get the event result of a region for an event and GPU
+@param [in] region ID of region
+@param [in] eventId ID of event
+@param [in] gpuId ID of GPU
+@return Result of a region for an event and GPU
+*/
 double rocmon_getResultOfRegionGpu(int region, int eventId, int gpuId)
     __attribute__((visibility("default")));
+/*! \brief Get the metric result of a region for a metric and GPU
+@param [in] region ID of region
+@param [in] metricId ID of metric
+@param [in] gpuId ID of GPU
+@return Metric result of a region for a GPU
+*/
 double rocmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
     __attribute__((visibility("default")));
+
+/** @}*/
 
 #endif /* LIKWID_WITH_ROCMON */
 
