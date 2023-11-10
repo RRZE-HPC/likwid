@@ -2936,6 +2936,7 @@ static char* LikwidDeviceTypeNames[MAX_DEVICE_TYPE] = {
 #ifdef LIKWID_WITH_ROCMON
     [DEVICE_TYPE_AMD_GPU] = "amd_gpu",
 #endif
+};
 
 int likwid_device_create(LikwidDeviceType type, int id, LikwidDevice_t* device);
 void likwid_device_destroy(LikwidDevice_t device);
