@@ -124,7 +124,7 @@ thread_start(void *arg)
     pthread_barrier_wait(tinfo->barrier);
     printf ("Rank %d Thread %d running on Node %s core %d/%d with pid %d and tid %d\n",tinfo->mpi_id, tinfo->thread_id, host, sched_getcpu(), get_sched(), tinfo->pid ,gettid());
     pthread_barrier_wait(tinfo->barrier);
-    if (tinfo->thread_id == 0)
+    if (tinfo->thread_id == 0 && (!system("command -v pstree > /dev/null 2>&1")))
     {
         sleep(tinfo->mpi_id+1);
         char cmd[1024];
@@ -177,11 +177,14 @@ main(int argc, char **argv)
 #pragma omp barrier
 #pragma omp master
         {
-            sleep(rank+1);
-            pid_t pid = getppid();
-            char cmd[1024];
-            sprintf(cmd, "pstree -p -H %d %d",pid, pid);
-            print_cmd(cmd);
+            if( !system("command -v pstree > /dev/null 2>&1") )
+            {
+                sleep(rank+1);
+                pid_t pid = getppid();
+                char cmd[1024];
+                sprintf(cmd, "pstree -p -H %d %d",pid, pid);
+                print_cmd(cmd);
+            }
         }
     }
 #endif
