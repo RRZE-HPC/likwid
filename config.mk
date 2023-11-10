@@ -34,6 +34,9 @@ NVIDIA_INTERFACE = false#NO SPACE
 # For configuring include paths, go to ROCm section
 ROCM_INTERFACE = false#NO SPACE
 
+# Build experimental sysfeatures interface and Lua CLI application
+BUILD_SYSFEATURES = false#NO SPACE
+
 #################################################################
 #################################################################
 # Advanced configuration options                                #

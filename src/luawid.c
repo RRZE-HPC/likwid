@@ -3019,98 +3019,15 @@ static int lua_likwid_nvFinalize(lua_State *L) {
   return 0;
 }
 
-static int lua_likwid_nvSupported(lua_State *L) {
-  lua_pushboolean(L, 1);
-  return 1;
-}
-#else
-static int lua_likwid_nvSupported(lua_State *L) {
-  lua_pushboolean(L, 0);
-  return 0;
-}
 #endif /* LIKWID_WITH_NVMON */
 
-static int hwfeatures_inititalized = 0;
-static int lua_likwid_initHWFeatures(lua_State *L) {
-  int err = 0;
-  if (!hwfeatures_inititalized) {
-    err = hwFeatures_init();
-    if (err == 0) {
-      hwfeatures_inititalized = 1;
-    }
-  }
-  lua_pushnumber(L, err);
-  return 1;
-}
-
-static int lua_likwid_finalizeHWFeatures(lua_State *L) {
-  if (hwfeatures_inititalized) {
-    hwFeatures_finalize();
-    hwfeatures_inititalized = 0;
-  }
-  return 0;
-}
-static int lua_likwid_getHwFeatureList(lua_State *L) {
-  if (!hwfeatures_inititalized) {
-    lua_newtable(L);
+static int
+lua_likwid_nvSupported(lua_State *L)
+{
+    lua_pushboolean(L, likwid_getNvidiaSupport());
     return 1;
-  }
-  HWFeatureList list = {0, NULL};
-  hwFeatures_list(&list);
-  lua_newtable(L);
-  for (int i = 0; i < list.num_features; i++) {
-    lua_pushinteger(L, (lua_Integer)(i + 1));
-    lua_newtable(L);
-    lua_pushstring(L, "Name");
-    lua_pushstring(L, list.features[i].name);
-    lua_settable(L, -3);
-    lua_pushstring(L, "Description");
-    lua_pushstring(L, list.features[i].description);
-    lua_settable(L, -3);
-    lua_pushstring(L, "ReadOnly");
-    lua_pushboolean(L, list.features[i].readonly);
-    lua_settable(L, -3);
-    lua_pushstring(L, "WriteOnly");
-    lua_pushboolean(L, list.features[i].writeonly);
-    lua_settable(L, -3);
-    lua_pushstring(L, "Scope");
-    lua_pushstring(L, HWFeatureScopeNames[list.features[i].scope]);
-    lua_settable(L, -3);
-    lua_settable(L, -3);
-  }
-  hwFeatures_list_return(&list);
-  return 1;
 }
 
-static int lua_likwid_getHwFeature(lua_State *L) {
-  if (hwfeatures_inititalized) {
-    char *feature = (char *)luaL_checkstring(L, 1);
-    int hwt = luaL_checknumber(L, 2);
-    uint64_t value = 0;
-    int err = hwFeatures_getByName(feature, hwt, &value);
-    if (err == 0) {
-      lua_pushinteger(L, value);
-      return 1;
-    }
-  }
-  lua_pushnil(L);
-  return 1;
-}
-
-static int lua_likwid_setHwFeature(lua_State *L) {
-  if (hwfeatures_inititalized) {
-    char *feature = (char *)luaL_checkstring(L, 1);
-    int hwt = luaL_checknumber(L, 2);
-    int value = luaL_checknumber(L, 3);
-    int err = hwFeatures_modifyByName(feature, hwt, value);
-    if (err == 0) {
-      lua_pushboolean(L, 1);
-      return 1;
-    }
-  }
-  lua_pushboolean(L, 0);
-  return 1;
-}
 
 #ifdef LIKWID_WITH_ROCMON
 
@@ -3778,12 +3695,199 @@ static int lua_likwid_finalize_rocm(lua_State *L) {
 
 #else
 
+
+#endif /* LIKWID_WITH_ROCMON */
+
 static int lua_likwid_rocmSupported(lua_State *L) {
-  lua_pushboolean(L, FALSE);
+  lua_pushboolean(L, likwid_getRocmSupport());
   return 1;
 }
 
-#endif /* LIKWID_WITH_ROCMON */
+
+#ifdef LIKWID_WITH_SYSFEATURES
+static int sysfeatures_inititalized = 0;
+static int
+lua_likwid_initSysFeatures(lua_State *L)
+{
+    int err = 0;
+    if (!sysfeatures_inititalized)
+    {
+        err = sysFeatures_init();
+        if (err == 0)
+        {
+            sysfeatures_inititalized = 1;
+        }
+    }
+    lua_pushnumber(L, err);
+    return 1;
+}
+
+static int
+lua_likwid_finalizeSysFeatures(lua_State *L)
+{
+    if (sysfeatures_inititalized)
+    {
+        sysFeatures_finalize();
+        sysfeatures_inititalized = 0;
+    }
+}
+
+static int
+lua_likwid_getSysFeatureList(lua_State *L)
+{
+    if (!sysfeatures_inititalized)
+    {
+        lua_newtable(L);
+        return 1;
+    }
+    SysFeatureList list = {0, NULL};
+    sysFeatures_list(&list);
+    lua_newtable(L);
+    for (int i = 0; i < list.num_features; i++)
+    {
+        lua_pushinteger(L, (lua_Integer)( i+1));
+        lua_newtable(L);
+        lua_pushstring(L, "Name");
+        lua_pushstring(L, list.features[i].name);
+        lua_settable(L,-3);
+        lua_pushstring(L, "Category");
+        lua_pushstring(L, list.features[i].category);
+        lua_settable(L,-3);
+        lua_pushstring(L, "Description");
+        lua_pushstring(L, list.features[i].description);
+        lua_settable(L,-3);
+        lua_pushstring(L, "ReadOnly");
+        lua_pushboolean(L, list.features[i].readonly);
+        lua_settable(L,-3);
+        lua_pushstring(L, "WriteOnly");
+        lua_pushboolean(L, list.features[i].writeonly);
+        lua_settable(L,-3);
+        lua_pushstring(L, "Type");
+        lua_pushstring(L, LikwidDeviceTypeNames[list.features[i].type]);
+        lua_settable(L,-3);
+        lua_pushstring(L, "TypeID");
+        lua_pushinteger(L, list.features[i].type);
+        lua_settable(L,-3);
+        lua_settable(L,-3);
+    }
+    sysFeatures_list_return(&list);
+    return 1;
+}
+
+static int
+lua_likwid_getSysFeature(lua_State *L)
+{
+    if (sysfeatures_inititalized)
+    {
+        char* feature = (char *)luaL_checkstring(L, 1);
+        LikwidDevice_t dev = lua_touserdata(L, 2);
+        char* value = NULL;
+        int err = sysFeatures_getByName(feature, dev, &value);
+        if (err == 0)
+        {
+            lua_pushstring(L, value);
+            return 1;
+        }
+    }
+    lua_pushnil(L);
+    return 1;
+}
+
+static int
+lua_likwid_setSysFeature(lua_State *L)
+{
+    if (sysfeatures_inititalized)
+    {
+        char* feature = (char *)luaL_checkstring(L, 1);
+        LikwidDevice_t dev = lua_touserdata(L, 2);
+        char* value = (char *)luaL_checkstring(L,3);
+        int err = sysFeatures_modifyByName(feature, dev, value);
+        if (err == 0)
+        {
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+    }
+    lua_pushboolean(L, 0);
+    return 1;
+}
+
+static int
+lua_likwid_createDevice(lua_State *L)
+{
+    LikwidDevice_t dev = NULL;
+    int err = 0;
+    int type = luaL_checknumber(L,1);
+    int id = luaL_checknumber(L,2);
+    LikwidDeviceType _type = DEVICE_TYPE_INVALID;
+    if ((!(((type) >= MIN_DEVICE_TYPE) && ((type) < MAX_DEVICE_TYPE))) || (id < 0))
+    {
+        lua_pushnil(L);
+    }
+    else
+    {
+        err = likwid_device_create(type, id, &dev);
+        if (err < 0)
+        {
+            lua_pushnil(L);
+        }
+        else
+        {
+            dev = lua_newuserdata (L, sizeof(_LikwidDevice));
+            dev->type = type;
+            dev->internal_id = id;
+            switch (dev->type)
+            {
+                case DEVICE_TYPE_HWTHREAD:
+                case DEVICE_TYPE_CORE:
+                case DEVICE_TYPE_DIE:
+                case DEVICE_TYPE_LLC:
+                case DEVICE_TYPE_NUMA:
+                case DEVICE_TYPE_SOCKET:
+                    dev->id.simple.id = id;
+                    break;
+#ifdef LIKWID_WITH_NVMON
+                case DEVICE_TYPE_NVIDIA_GPU:
+#endif
+#ifdef LIKWID_WITH_ROCMON
+                case DEVICE_TYPE_AMD_GPU:
+#endif
+#if defined(LIKWID_WITH_NVMON)||defined(LIKWID_WITH_ROCMON)
+                    dev->id.pci.pci_domain = SYSFEATURES_ID_TO_PCI_DOMAIN(id);
+                    dev->id.pci.pci_bus = SYSFEATURES_ID_TO_PCI_BUS(id);
+                    dev->id.pci.pci_dev = SYSFEATURES_ID_TO_PCI_SLOT(id);
+                    dev->id.pci.pci_func = SYSFEATURES_ID_TO_PCI_FUNC(id);
+                    break;
+#endif
+                default:
+                    lua_pushnil(L);
+                    break;
+            }
+        }
+    }
+    return 1;
+}
+
+static int
+lua_likwid_destroyDevice(lua_State *L)
+{
+    LikwidDevice_t dev = lua_touserdata(L, 1);
+    if (dev)
+    {
+        dev->type = DEVICE_TYPE_INVALID;
+        dev->id.simple.id = -1;
+        dev->internal_id = -1;
+    }
+    return 0;
+}
+#endif /* LIKWID_WITH_SYSFEATURES */
+
+static int
+lua_likwid_sysFeaturesSupported(lua_State *L)
+{
+    lua_pushnumber(L, likwid_getSysFeaturesSupport());
+    return 1;
+}
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -4021,11 +4125,17 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
   lua_register(L, "likwid_markerRegionMetric_rocm",
                lua_likwid_markerRegionMetric_rocm);
 #endif /* LIKWID_WITH_ROCMON */
-  lua_register(L, "likwid_initHWFeatures", lua_likwid_initHWFeatures);
-  lua_register(L, "likwid_finalizeHWFeatures", lua_likwid_finalizeHWFeatures);
-  lua_register(L, "likwid_hwFeatures_list", lua_likwid_getHwFeatureList);
-  lua_register(L, "likwid_hwFeatures_get", lua_likwid_getHwFeature);
-  lua_register(L, "likwid_hwFeatures_set", lua_likwid_setHwFeature);
+    // sysFeatures functions (experimental)
+    lua_register(L, "likwid_sysFeaturesSupported",lua_likwid_sysFeaturesSupported);
+#ifdef LIKWID_WITH_SYSFEATURES
+    lua_register(L, "likwid_initSysFeatures", lua_likwid_initSysFeatures);
+    lua_register(L, "likwid_finalizeSysFeatures", lua_likwid_finalizeSysFeatures);
+    lua_register(L, "likwid_sysFeatures_list",lua_likwid_getSysFeatureList);
+    lua_register(L, "likwid_sysFeatures_get",lua_likwid_getSysFeature);
+    lua_register(L, "likwid_sysFeatures_set",lua_likwid_setSysFeature);
+    lua_register(L, "likwid_createDevice",lua_likwid_createDevice);
+    lua_register(L, "likwid_destroyDevice",lua_likwid_destroyDevice);
+#endif /* LIKWID_WITH_SYSFEATURES */
 #ifdef __MIC__
   setuid(0);
   seteuid(0);

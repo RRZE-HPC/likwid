@@ -179,11 +179,14 @@ likwid.seteuid = likwid_seteuid
 likwid.setresuid = likwid_setresuid
 likwid.setresuser = likwid_setresuser
 
-likwid.initHWFeatures = likwid_initHWFeatures
-likwid.hwFeatures_list = likwid_hwFeatures_list
-likwid.hwFeatures_get = likwid_hwFeatures_get
-likwid.hwFeatures_set = likwid_hwFeatures_set
-likwid.finalizeHWFeatures = likwid_finalizeHWFeatures
+likwid.initSysFeatures = likwid_initSysFeatures
+likwid.sysFeatures_list = likwid_sysFeatures_list
+likwid.sysFeatures_get = likwid_sysFeatures_get
+likwid.sysFeatures_set = likwid_sysFeatures_set
+likwid.finalizeSysFeatures = likwid_finalizeSysFeatures
+
+likwid.createDevice = likwid_createDevice
+likwid.destroyDevice = likwid_destroyDevice
 
 likwid.getCudaTopology = likwid_getCudaTopology
 likwid.putCudaTopology = likwid_putCudaTopology
@@ -256,6 +259,17 @@ likwid.signals = { [1] = "SIGHUP", [2] = "SIGINT", [3] = "SIGQUIT", [4] = "SIGIL
 
 infinity = math.huge
 
+likwid.invalid = 0
+likwid.hwthread = likwid.invalid + 1
+likwid.core = likwid.hwthread + 1
+likwid.llc = likwid.core + 1
+likwid.numa = likwid.llc + 1
+likwid.die = likwid.numa + 1
+likwid.socket = likwid.die + 1
+likwid.node = likwid.socket + 1
+likwid.nvidia_gpu = likwid.node + 1
+likwid.amd_gpu = likwid.nvidia_gpu + 1
+likwid.intel_gpu = likwid.amd_gpu + 1
 
 local function getopt(args, ostrlist)
     local arg, place,placeend = nil, 0, 0;

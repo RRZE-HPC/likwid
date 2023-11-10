@@ -45,3 +45,12 @@ int likwid_getMaxSupportedSockets(void)
 {
     return (int) MAX_NUM_NODES;
 }
+
+int likwid_getSysFeaturesSupport(void)
+{
+#ifdef LIKWID_WITH_SYSFEATURES
+    return 1;
+#else
+    return 0;
+#endif
+}

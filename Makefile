@@ -176,6 +176,14 @@ L_HELPER    =   likwid.lua
 ifeq ($(BUILDFREQ),true)
 	L_APPS += likwid-setFrequencies
 endif
+ifeq ($(BUILD_SYSFEATURES),true)
+	L_APPS += likwid-sysfeatures
+	DEFINES += -DLIKWID_WITH_SYSFEATURES
+else
+SYSFEATURE_OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/sysFeatures*.c))
+OBJ := $(filter-out $(SYSFEATURE_OBJ), $(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/likwid_device.o,$(OBJ))
+endif
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 

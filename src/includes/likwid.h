@@ -95,6 +95,47 @@ extern int likwid_getMaxSupportedThreads(void) __attribute__ ((visibility ("defa
 
 /*! \brief Get the maximal count of supported CPU sockets */
 extern int likwid_getMaxSupportedSockets(void) __attribute__ ((visibility ("default") ));
+
+/*! \brief Check whether the LIKWID library was built with sysFeatures support */
+extern int likwid_getSysFeaturesSupport(void) __attribute__ ((visibility ("default") ));
+/** @}*/
+
+/*
+################################################################################
+# Library information
+################################################################################
+*/
+
+/** \addtogroup LibInfo Information about the library
+*  @{
+*/
+/*! \brief Get the major version of the LIKWID library
+
+@return Major version
+*/
+extern int likwid_getMajorVersion(void) __attribute__ ((visibility ("default") ));
+/*! \brief Get the minor version of the LIKWID library
+
+@return Minor version
+*/
+extern int likwid_getMinorVersion(void) __attribute__ ((visibility ("default") ));
+/*! \brief Get the bugfix version of the LIKWID library
+
+@return Bugfix version
+*/
+extern int likwid_getBugfixVersion(void) __attribute__ ((visibility ("default") ));
+
+/*! \brief Check whether the LIKWID library was built with Nvidia GPU support */
+extern int likwid_getNvidiaSupport(void) __attribute__ ((visibility ("default") ));
+
+/*! \brief Check whether the LIKWID library was built with AMD GPU support */
+extern int likwid_getRocmSupport(void) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the maximal count of supported HW threads */
+extern int likwid_getMaxSupportedThreads(void) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the maximal count of supported CPU sockets */
+extern int likwid_getMaxSupportedSockets(void) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 /*
@@ -2835,46 +2876,108 @@ double rocmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
 
 #endif /* LIKWID_WITH_ROCMON */
 
-typedef enum {
-  HWFEATURE_SCOPE_INVALID = 0,
-  HWFEATURE_SCOPE_HWTHREAD,
-  MAX_HWFEATURE_SCOPE,
-} HWFeatureScope;
+#ifdef LIKWID_WITH_SYSFEATURES
 
-static char *HWFeatureScopeNames[MAX_HWFEATURE_SCOPE] = {
-    [HWFEATURE_SCOPE_INVALID] = "invalid",
-    [HWFEATURE_SCOPE_HWTHREAD] = "hwthread",
+typedef enum {
+    DEVICE_TYPE_INVALID,
+    DEVICE_TYPE_HWTHREAD,
+    DEVICE_TYPE_CORE,
+    DEVICE_TYPE_LLC,
+    DEVICE_TYPE_NUMA,
+    DEVICE_TYPE_DIE,
+    DEVICE_TYPE_SOCKET,
+    DEVICE_TYPE_NODE,
+#ifdef LIKWID_WITH_NVMON
+    DEVICE_TYPE_NVIDIA_GPU,
+#endif
+#ifdef LIKWID_WITH_ROCMON
+    DEVICE_TYPE_AMD_GPU,
+#endif
+    MAX_DEVICE_TYPE,
+} LikwidDeviceType;
+#define MIN_DEVICE_TYPE DEVICE_TYPE_HWTHREAD
+
+
+typedef struct {
+    LikwidDeviceType type;
+    union {
+        struct {
+            int id;
+        } simple;
+        struct {
+            int16_t pci_domain;
+            int8_t pci_bus;
+            int8_t pci_dev;
+            int8_t pci_func;
+        } pci;
+    } id;
+    int internal_id;
+} _LikwidDevice;
+typedef _LikwidDevice* LikwidDevice_t;
+
+typedef struct {
+    int num_devices;
+    LikwidDevice_t devices;
+} _LikwidDeviceList;
+typedef _LikwidDeviceList* LikwidDeviceList_t;
+
+static char* LikwidDeviceTypeNames[MAX_DEVICE_TYPE] = {
+    [DEVICE_TYPE_INVALID] = "invalid",
+    [DEVICE_TYPE_HWTHREAD] = "hwthread",
+    [DEVICE_TYPE_CORE] = "core",
+    [DEVICE_TYPE_LLC] = "LLC",
+    [DEVICE_TYPE_NUMA] = "numa",
+    [DEVICE_TYPE_DIE] = "die",
+    [DEVICE_TYPE_SOCKET] = "socket",
+    [DEVICE_TYPE_NODE] = "node",
+#ifdef LIKWID_WITH_NVMON
+    [DEVICE_TYPE_NVIDIA_GPU] = "nvidia_gpu",
+#endif
+#ifdef LIKWID_WITH_ROCMON
+    [DEVICE_TYPE_AMD_GPU] = "amd_gpu",
+#endif
 };
 
-typedef struct {
-  char *name;
-  char *description;
-  HWFeatureScope scope;
-  unsigned int readonly : 1;
-  unsigned int writeonly : 1;
-} HWFeature;
+int likwid_device_create(LikwidDeviceType type, int id, LikwidDevice_t* device);
+void likwid_device_destroy(LikwidDevice_t device);
+char* device_type_name(LikwidDeviceType type);
 
 typedef struct {
-  int num_features;
-  HWFeature *features;
-} HWFeatureList;
+    char* name;
+    char* category;
+    char* description;
+    LikwidDeviceType type;
+    unsigned int readonly:1;
+    unsigned int writeonly:1;
+} SysFeature;
 
-int hwFeatures_init() __attribute__((visibility("default")));
+typedef struct {
+    int num_features;
+    SysFeature* features;
+} SysFeatureList;
 
-int hwFeatures_list(HWFeatureList *list) __attribute__((visibility("default")));
-void hwFeatures_list_return(HWFeatureList *list)
-    __attribute__((visibility("default")));
 
-int hwFeatures_get(HWFeature *feature, int hwthread, uint64_t *value)
-    __attribute__((visibility("default")));
-int hwFeatures_getByName(char *name, int hwthread, uint64_t *value)
-    __attribute__((visibility("default")));
-int hwFeatures_modify(HWFeature *feature, int hwthread, uint64_t value)
-    __attribute__((visibility("default")));
-int hwFeatures_modifyByName(char *name, int hwthread, uint64_t value)
-    __attribute__((visibility("default")));
+#define SYSFEATURE_PCI_DEVICE_TO_ID(domain, bus, slot, func) \
+    ((((uint16_t)(domain))<<16)|(((uint8_t)(bus))<<8)|(((((uint8_t)(slot)) & 0x1f) << 3) | (((uint8_t)(func)) & 0x07)))
+#define SYSFEATURES_ID_TO_PCI_DOMAIN(id) (((id) >> 16) & 0xFFFF)
+#define SYSFEATURES_ID_TO_PCI_BUS(id) (((id) >> 8) & 0xFF)
+#define SYSFEATURES_ID_TO_PCI_SLOT(id) (((id) >> 3) & 0x1F)
+#define SYSFEATURES_ID_TO_PCI_FUNC(id) ((id) & 0x07)
 
-void hwFeatures_finalize() __attribute__((visibility("default")));
+
+
+int sysFeatures_init() __attribute__ ((visibility ("default") ));
+
+int sysFeatures_list(SysFeatureList* list) __attribute__ ((visibility ("default") ));
+void sysFeatures_list_return(SysFeatureList* list) __attribute__ ((visibility ("default") ));
+
+int sysFeatures_get(SysFeature* feature, LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
+int sysFeatures_getByName(char* name, LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
+int sysFeatures_modify(SysFeature* feature, LikwidDevice_t device, char* value) __attribute__ ((visibility ("default") ));
+int sysFeatures_modifyByName(char* name, LikwidDevice_t device, char* value) __attribute__ ((visibility ("default") ));
+
+void sysFeatures_finalize() __attribute__ ((visibility ("default") ));
+#endif /* LIKWID_WITH_SYSFEATURES */
 
 #ifdef __cplusplus
 }
