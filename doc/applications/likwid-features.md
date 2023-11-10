@@ -39,6 +39,6 @@
 </TR>
 </TABLE>
 
-
+<B><CODE>likwid-features</CODE> will be deprecated in 5.4</B>
 
 */
