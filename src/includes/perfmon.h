@@ -7,14 +7,14 @@
  *                    Configures and reads out performance counters
  *                    on x86 based architectures. Supports multi threading.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.3
+ *      Released:  10.11.2023
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2023 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

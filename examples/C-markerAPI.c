@@ -5,14 +5,14 @@
  *
  *      Description:  Example how to use the C/C++ Marker API
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.3
+ *      Released:  10.11.2023
  *
  *      Authors:  Thomas Gruber (tr), thomas.roehl@googlemail.com
  *                Riley Weber, rileyw13@protonmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2023 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -26,37 +26,6 @@
  *      You should have received a copy of the GNU General Public License along with
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * =======================================================================================
- *
- *      Usage: 
- *      use `make C-markerAPI` to compile and `make C-markerAPI-run` to run. 
- * 
- *      typically, the command to compile is something like this:
- *      gcc -fopenmp -DLIKWID_PERFMON C-markerAPI.c -o C-markerAPI -llikwid
- *
- *      or, if likwid is installed in a non-standard prefix:
- *      gcc -fopenmp -I/<PATH_TO_LIKWID>/include -L/<PATH_TO_LIKWID>/lib -DLIKWID_PERFMON C-markerAPI.c -o C-markerAPI -llikwid
- * 
- *      optionally, you may choose at compile time to not measure the code. Do
- *      this by removing the `-DLIKWID_PERFMON` and -llikwid flags:
- *      gcc -fopenmp C-markerAPI.c -o C-markerAPI
- *
- *      note that in this case, it may still be necessary to direct the
- *      compiler to include likwid.h if likwid is not installed in a standard
- *      prefix: 
- *      gcc -fopenmp -I/<PATH_TO_LIKWID>/include C-markerAPI.c -o C-markerAPI
- *
- *      other examples of how to run with likwid-perfctr tool:
- *      
- *      multiple groups:
- *      likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -g L2 -g FLOPS_SP -m ./C-markerAPI
- *      
- *      multiple threads:
- *      likwid-perfctr -C 0-3 -g INSTR_RETIRED_ANY:FIXC0 -m ./C-markerAPI
- *      
- *      with access daemon:
- *      likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -M 1 -m ./C-markerAPI
- * 
  * =======================================================================================
  */
 

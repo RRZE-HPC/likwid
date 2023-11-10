@@ -6,14 +6,14 @@
  *      Description:  Module implementing an interface for frequency manipulation
  *                    Module for manipuating CPU frequencies
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.3
+ *      Released:  10.11.2023
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *                Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2023 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
