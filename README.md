@@ -5,7 +5,7 @@ Introduction
 Likwid is a simple to install and use toolsuite of command line applications and a library
 for performance oriented programmers. It works for Intel, AMD, ARMv8 and POWER9
 processors on the Linux operating system. There is additional support for Nvidia and AMD GPUs.
-There is support for ARMv7 and POWER8 but there is currently no test machine in
+There is support for ARMv7 and POWER8/9 but there is currently no test machine in
 our hands to test them properly.
 
 [LIKWID Playlist (YouTube)](https://www.youtube.com/playlist?list=PLxVedhmuwLq2CqJpAABDMbZG8Whi7pKsk)
@@ -25,6 +25,7 @@ It consists of:
 - likwid-perfscope: Frontend to the timeline mode of likwid-perfctr, plots live graphs of performance metrics using gnuplot
 - likwid-memsweeper: Sweep memory of NUMA domains and evict cachelines from the last level cache
 - likwid-setFrequencies: Tool to control the CPU and Uncore frequencies (x86 only)
+- likwid-sysFeatures: Tool to system settings like frequencies, powercaps and prefetchers (experimental)
 
 For further information please take a look at the [Wiki](https://github.com/RRZE-HPC/likwid/wiki) or contact us via Matrix chat [LIKWID General](https://matrix.to/#/#likwid:matrix.org?via=matrix.org).
 
@@ -61,6 +62,7 @@ Intel
 - Intel Icelake
 - Intel Icelake SP
 - Intel Tigerlake (experimental)
+- Intel SapphireRapids
 
 AMD
 - AMD K8
@@ -69,20 +71,26 @@ AMD
 - AMD Kabini
 - AMD Zen
 - AMD Zen2
-- AMD Zen3 (limited)
+- AMD Zen3
+- AMD Zen4
 
-ARM (experimental)
+ARM
 - ARMv7
 - ARMv8
 - Special support for Marvell Thunder X2
 - Fujitsu A64FX
 - ARM Neoverse N1 (AWS Graviton 2)
+- ARM Neoverse V1
+- HiSilicon TSV110
+- Apple M1
 
 POWER (experimental)
 - IBM POWER8
 - IBM POWER9
 
-Nvidia GPUs (experimental)
+Nvidia GPUs
+
+AMD GPUs
 
 --------------------------------------------------------------------------------
 Download, Build and Install
@@ -106,6 +114,8 @@ sudo make install # sudo required to install the access daemon with proper permi
 
 For ARM builds, the `COMPILER` flag in `config.mk` needs to changed to `GCCARMv8` or `ARMCLANG` (experimental).
 For POWER builds, the `COMPILER` flag in `config.mk` needs to changed to `GCCPOWER` or `XLC` (experimental).
+For Nvidia GPU support, set `NVIDIA_INTERFACE` in `config.mk` to `true` and adjust build-time variables if needed
+For AMD GPU support, set `ROCM_INTERFACE` in `config.mk` to `true` and adjust build-time variables if needed
 
 --------------------------------------------------------------------------------
 Documentation
