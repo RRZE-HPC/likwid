@@ -1,3 +1,19 @@
+# Changelog 5.3.0
+- Support for Intel SapphireRapids (Core, Uncore, RAPL)
+- Support for AMD Zen4 (Core, Uncore, RAPL)
+- Support for Apple M1
+- Support for AMD GPUs (MarkerAPI, F90 interface)
+- Support for AWS Graviton3 (ARM Neovere V1)
+- Support for HiSilicon TSV110
+- Fix of F90 interface installation
+- Support for extended umasks in ICX and SPR
+- Units for metrics in performance groups
+- Library calls to get meta information (version, supported features, etc.)
+- Some fixes for direct access mode
+- Some fixes for X86 RDPMC detection
+- Update of internal hwloc (2.9.3) and Lua (5.4.6) version
+- New experimental sysfeatures module
+
 # Changelog 5.2.2
 - Add mutex to pinning library
 - Fix pin string parsing in pinning library
