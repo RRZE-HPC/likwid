@@ -794,7 +794,7 @@ The IIO box counters are exposed to the operating system through the MSR interfa
 </TABLE>
 
 
-\anchor SKX_BBOX
+\anchor SPR_BBOX
 <H2>Mesh2Memory counters</H2>
 <P>The Intel&reg; SapphireRapids microarchitecture provides measurements of the mesh (M2M) which connects the cores with the Uncore devices.<br>
 The M2M devices is first introduced in the Intel&reg; Skylake SP microarchitecture. There was no suitable unit name for this, so LIKWID calls them simply M2M.
@@ -911,5 +911,63 @@ The M2M devices is first introduced in the Intel&reg; Skylake SP microarchitectu
 </TR>
 </TABLE>
 -->
+
+\anchor SPR_HBM
+<H2>High-Bandwidth Memory (HBM) counters</H2>
+Some SapphireRapids systems provide on-chip HBM. If it is available, there are also corresponding perfmon units. The available events are almost similar to \ref SPR_MBOX.
+</P>
+
+<H3>Counter and events</H3>
+<TABLE>
+<TR>
+  <TH>Counter name</TH>
+  <TH>Event name</TH>
+</TR>
+<TR>
+  <TD>HBM&lt;0-32&gt;C0</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>HBM&lt;0-32&gt;C1</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>HBM&lt;0-32&gt;C2</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>HBM&lt;0-32&gt;C3</TD>
+  <TD>*</TD>
+</TR>
+</TABLE>
+
+<H3>Available Options</H3>
+<TABLE>
+<TR>
+  <TH>Option</TH>
+  <TH>Argument</TH>
+  <TH>Operation</TH>
+  <TH>Comment</TH>
+</TR>
+<TR>
+  <TD>edgedetect</TD>
+  <TD>N</TD>
+  <TD>Set bit 18 in config register</TD>
+  <TD></TD>
+</TR>
+<TR>
+  <TD>invert</TD>
+  <TD>N</TD>
+  <TD>Set bit 23 in config register</TD>
+  <TD></TD>
+</TR>
+<TR>
+  <TD>threshold</TD>
+  <TD>5 bit hex value</TD>
+  <TD>Set bits 24-28 in config register</TD>
+  <TD></TD>
+</TR>
+</TABLE>
+
 
 */
