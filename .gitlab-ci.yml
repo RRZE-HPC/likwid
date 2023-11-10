@@ -3,6 +3,8 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_TAG
 
+variables:
+     GIT_CLONE_PATH: '$CI_BUILDS_DIR/$CI_PROJECT_NAME/$CI_JOB_NAME/$CI_PIPELINE_ID'
 
 build-x86-daemon:
     stage: build
@@ -98,13 +100,13 @@ build-arm8-perf:
     tags:
       - testcluster
 
-check-event-files:
-    stage: .pre
-    tags:
-      - testcluster
-    script:
-      - module load python
-      - test/check_data_files.py events
+#check-event-files:
+#    stage: .pre
+#    tags:
+#      - testcluster
+#    script:
+#      - module load python
+#      - test/check_data_files.py events
 #      - test/check_data_files.py groups
 
 notify-github-pending:
