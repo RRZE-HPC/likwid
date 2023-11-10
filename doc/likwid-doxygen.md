@@ -165,10 +165,18 @@ Mailinglist: <A HREF="http://groups.google.com/group/likwid-users">http://groups
 Likwid is build using GNU make and Perl. Besides the Linux kernel and the standard C library, all required dependencies are shipped with the archive (<A HREF="http://www.lua.org/">Lua</A>, <A HREF="http://www.open-mpi.org/projects/hwloc/">hwloc</A> and <A HREF="https://github.com/LLNL/GOTCHA">GOTCHA</A>).
 It should build on any Linux distribution with a recent GCC compiler or CLANG compiler and 2.6 or newer kernel without any changes.
 
-There is one generic top level Makefile and one .mk configuration file for each
-compiler (at the moment GCC, CLANG and ICC). Please note that we test LIKWID only with GCC. CLANG and ICC is only tested for basic functionality.
+There is one generic top level <CODE>Makefile</CODE>, the main <CODE>config.mk</CODE> configuration file and <CODE>make/include_<COMPILER>.mk</CODE>for each
+compiler. Please note that for x86 systems we test LIKWID only with GCC. CLANG and ICC is only tested for basic functionality.
 
-There is one exception: If you want to use LIKWID on a Intel Xeon Phi card you have to choose the MIC as compiler in config.mk, which is based on Intel ICC compiler.
+If you want to use LIKWID on a Intel Xeon Phi card you have to choose the MIC as compiler in config.mk, which is based on Intel ICC compiler.
+
+For ARM systems, switch the <CODE>COMPILER</CODE> to <CODE>GCCARMv8</CODE> (gcc) or <CODE>ARMCLANG</CODE>. For ARM7, there is <CODE>GCCARMv7</CODE>. In 5.3, a generic <CODE>GCCARM</CODE> was added for ARM systems with <CODE>--march=native</CODE> but it it generally configured for 64 bit ARM. For Fujitsu compiler, use <CODE>FCC</CODE>.
+
+For POWER8 systems, you can use <CODE>GCCPOWER</CODE> or <CODE>XLC</CODE>.
+
+In order to build with Nvidia GPU support, set <CODE>NVIDIA_INTERFACE=true</CODE>. Further configuration options like include paths, can be found also in the file.
+
+For AMD ROCm GPUs, set <CODE>ROCM_INTERFACE=true</CODE>. Further configuration options like include paths, can be found also in the file.
 
 \subsection directory Directory structure
 All source files are in the src/ directory. All header files are located in
