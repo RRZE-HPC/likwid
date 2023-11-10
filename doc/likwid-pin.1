@@ -53,6 +53,10 @@ can be used to turn on interleave memory placement. This can significantly
 speed up the performance of memory bound multithreaded codes. All NUMA nodes
 the user pinned threads to are used for interleaving.
 
+LIKWID introduces the concept of affinity domains which can be described as all hardware threads sharing a topological
+entity. There are, for example, affinity domains for each CPU socket in the system and each of these affinity domains contains
+the hardware threads that belong to the socket. There is always a virtual affinity domain 'N' for the whole node, thus all hardware threads. Further names are 'Sx' with 'x' as socket offset ('S0', 'S1', 'S2', ...), 'Dy' with 'y' as CPU die offset, 'Mz' with 'z' as NUMA domain offset and 'Cx' with 'x' as last level cache offset. It is the offset of the topological entities, so when there are two sockets with IDs 74 und 10023 (systems like this exist), the socket affinity domains are 'S0' and 'S1'.
+
 .SH OPTIONS
 .TP
 .B \-\^h,\-\-\^help
