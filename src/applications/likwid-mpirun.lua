@@ -151,7 +151,7 @@ local function mpirun_exit(exitcode)
             os.remove(file)
         end
     end
-    os.execute(string.format("rm --force %s/.output_%s*", pwd, pid)
+    os.execute(string.format("rm --force %s/.output_%s*", pwd, pid))
     os.exit(exitvalue)
 end
 
