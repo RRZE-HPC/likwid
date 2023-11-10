@@ -11,184 +11,180 @@ on:
 
 jobs:
 
-  #
-  # Build on AlmaLinux 8.5
-  #
-  AlmaLinux-RPM-build:
-    runs-on: ubuntu-latest
-    # See: https://hub.docker.com/_/almalinux
-    container: almalinux:8.5
-    # The job outputs link to the outputs of the 'rpmrename' step
-    # Only job outputs can be used in child jobs
-    outputs:
-      rpm : ${{steps.rpmrename.outputs.RPM}}
-      srpm : ${{steps.rpmrename.outputs.SRPM}}
-    steps:
+#  #
+#  # Build on AlmaLinux 8.5
+#  #
+#  AlmaLinux-RPM-build:
+#    runs-on: ubuntu-latest
+#    # See: https://hub.docker.com/_/almalinux
+#    container: almalinux:8.5
+#    # The job outputs link to the outputs of the 'rpmrename' step
+#    # Only job outputs can be used in child jobs
+#    outputs:
+#      rpm : ${{steps.rpmrename.outputs.RPM}}
+#      srpm : ${{steps.rpmrename.outputs.SRPM}}
+#    steps:
 
-    # Use dnf to install development packages
-    - name: Install development packages
-      run: |
-          dnf --assumeyes group install "Development Tools" "RPM Development Tools"
-          dnf --assumeyes install wget openssl-devel diffutils delve which perl
-          dnf --assumeyes install 'dnf-command(builddep)'
-    # Enable powertools repository for dnf (required for some dependencies)
-    - name: Enable powertools repository
-      run: |
-        dnf --assumeyes --disableplugin=subscription-manager install dnf-plugins-core
-        dnf --assumeyes --disableplugin=subscription-manager install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-        dnf config-manager --enable epel
-        dnf config-manager --set-enabled powertools
+#    # Use dnf to install development packages
+#    - name: Install development packages
+#      run: |
+#          dnf --assumeyes group install "Development Tools" "RPM Development Tools"
+#          dnf --assumeyes install wget openssl-devel diffutils delve which perl
+#          dnf --assumeyes install 'dnf-command(builddep)'
+#    # Enable powertools repository for dnf (required for some dependencies)
+#    - name: Enable powertools repository
+#      run: |
+#        dnf --assumeyes --disableplugin=subscription-manager install dnf-plugins-core
+#        dnf --assumeyes --disableplugin=subscription-manager install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+#        dnf config-manager --enable epel
+#        dnf config-manager --set-enabled powertools
 
-    # Checkout git repository and submodules
-    # fetch-depth must be 0 to use git describe
-    # See: https://github.com/marketplace/actions/checkout
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        submodules: recursive
-        fetch-depth: 0
+#    # Checkout git repository and submodules
+#    # fetch-depth must be 0 to use git describe
+#    # See: https://github.com/marketplace/actions/checkout
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#      with:
+#        submodules: recursive
+#        fetch-depth: 0
 
-    # Use dnf to install build dependencies
-    - name: Install build dependencies
-      run: |
-        dnf --assumeyes builddep packaging/rpm/likwid.spec
+#    # Use dnf to install build dependencies
+#    - name: Install build dependencies
+#      run: |
+#        dnf --assumeyes builddep packaging/rpm/likwid.spec
 
-    - name: RPM build LIKWID
-      id: rpmbuild
-      run: |
-        git config --add safe.directory $(pwd)
-        make RPM
+#    - name: RPM build LIKWID
+#      id: rpmbuild
+#      run: make RPM
 
-    # AlmaLinux 8.5 is a derivate of RedHat Enterprise Linux 8 (UBI8),
-    # so the created RPM both contain the substring 'el8' in the RPM file names
-    # This step replaces the substring 'el8' to 'alma85'. It uses the move operation
-    # because it is unclear whether the default AlmaLinux 8.5 container contains the 
-    # 'rename' command. This way we also get the new names for output. 
-    - name: Rename RPMs (s/el8/alma85/)
-      id: rpmrename
-      run: |
-        OLD_RPM="${{steps.rpmbuild.outputs.RPM}}"
-        OLD_SRPM="${{steps.rpmbuild.outputs.SRPM}}"
-        NEW_RPM="${OLD_RPM/el8/alma85}"
-        NEW_SRPM=${OLD_SRPM/el8/alma85}
-        mv "${OLD_RPM}" "${NEW_RPM}"
-        mv "${OLD_SRPM}" "${NEW_SRPM}"
-        echo "::set-output name=SRPM::${NEW_SRPM}"
-        echo "::set-output name=RPM::${NEW_RPM}"
+#    # AlmaLinux 8.5 is a derivate of RedHat Enterprise Linux 8 (UBI8),
+#    # so the created RPM both contain the substring 'el8' in the RPM file names
+#    # This step replaces the substring 'el8' to 'alma85'. It uses the move operation
+#    # because it is unclear whether the default AlmaLinux 8.5 container contains the 
+#    # 'rename' command. This way we also get the new names for output. 
+#    - name: Rename RPMs (s/el8/alma85/)
+#      id: rpmrename
+#      run: |
+#        OLD_RPM="${{steps.rpmbuild.outputs.RPM}}"
+#        OLD_SRPM="${{steps.rpmbuild.outputs.SRPM}}"
+#        NEW_RPM="${OLD_RPM/el8/alma85}"
+#        NEW_SRPM=${OLD_SRPM/el8/alma85}
+#        mv "${OLD_RPM}" "${NEW_RPM}"
+#        mv "${OLD_SRPM}" "${NEW_SRPM}"
+#        echo "::set-output name=SRPM::${NEW_SRPM}"
+#        echo "::set-output name=RPM::${NEW_RPM}"
 
-    # See: https://github.com/actions/upload-artifact
-    - name: Save RPM as artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: LIKWID RPM for AlmaLinux 8.5
-        path: ${{ steps.rpmrename.outputs.RPM }}
-    - name: Save SRPM as artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: LIKWID SRPM for AlmaLinux 8.5
-        path: ${{ steps.rpmrename.outputs.SRPM }}
+#    # See: https://github.com/actions/upload-artifact
+#    - name: Save RPM as artifact
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: LIKWID RPM for AlmaLinux 8.5
+#        path: ${{ steps.rpmrename.outputs.RPM }}
+#    - name: Save SRPM as artifact
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: LIKWID SRPM for AlmaLinux 8.5
+#        path: ${{ steps.rpmrename.outputs.SRPM }}
 
-  #
-  # Build on UBI 8 using go-toolset
-  #
-  UBI-8-RPM-build:
-    runs-on: ubuntu-latest
-    # See: https://catalog.redhat.com/software/containers/ubi8/ubi/5c359854d70cc534b3a3784e?container-tabs=gti
-    container: registry.access.redhat.com/ubi8/ubi:8.5-226.1645809065
-    # The job outputs link to the outputs of the 'rpmbuild' step
-    outputs:
-      rpm : ${{steps.rpmbuild.outputs.RPM}}
-      srpm : ${{steps.rpmbuild.outputs.SRPM}}
-    steps:
+#  #
+#  # Build on UBI 8 using go-toolset
+#  #
+#  UBI-8-RPM-build:
+#    runs-on: ubuntu-latest
+#    # See: https://catalog.redhat.com/software/containers/ubi8/ubi/5c359854d70cc534b3a3784e?container-tabs=gti
+#    container: registry.access.redhat.com/ubi8/ubi:8.5-226.1645809065
+#    # The job outputs link to the outputs of the 'rpmbuild' step
+#    outputs:
+#      rpm : ${{steps.rpmbuild.outputs.RPM}}
+#      srpm : ${{steps.rpmbuild.outputs.SRPM}}
+#    steps:
 
-    # Use dnf to install development packages
-    - name: Install development packages
-      run: |
-        dnf --assumeyes --disableplugin=subscription-manager install rpm-build rpm-build-libs rpm-libs gcc make python38 git wget openssl-devel diffutils delve which
-        dnf --assumeyes --disableplugin=subscription-manager install 'dnf-command(builddep)'
+#    # Use dnf to install development packages
+#    - name: Install development packages
+#      run: |
+#        dnf --assumeyes --disableplugin=subscription-manager install rpm-build rpm-build-libs rpm-libs gcc make python38 git wget openssl-devel diffutils delve which
+#        dnf --assumeyes --disableplugin=subscription-manager install 'dnf-command(builddep)'
 
-    # Enable powertools repository for dnf (required for some dependencies)
-    #- name: Enable powertools repository
-    #  run: |
-    #    dnf --assumeyes --disableplugin=subscription-manager install dnf-plugins-core
-    #    dnf --assumeyes --disableplugin=subscription-manager install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-    #    dnf repolist
-    #    subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
-    #    /usr/bin/crb enable
+#    # Enable powertools repository for dnf (required for some dependencies)
+#    #- name: Enable powertools repository
+#    #  run: |
+#    #    dnf --assumeyes --disableplugin=subscription-manager install dnf-plugins-core
+#    #    dnf --assumeyes --disableplugin=subscription-manager install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+#    #    dnf repolist
+#    #    subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
+#    #    /usr/bin/crb enable
 
-    # Checkout git repository and submodules
-    # fetch-depth must be 0 to use git describe
-    # See: https://github.com/marketplace/actions/checkout
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        submodules: recursive
-        fetch-depth: 0
+#    # Checkout git repository and submodules
+#    # fetch-depth must be 0 to use git describe
+#    # See: https://github.com/marketplace/actions/checkout
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#      with:
+#        submodules: recursive
+#        fetch-depth: 0
 
-    # Use dnf to install build dependencies
-    - name: Install build dependencies
-      run: |
-        dnf --assumeyes --disableplugin=subscription-manager builddep packaging/rpm/likwid.spec
+#    # Use dnf to install build dependencies
+#    - name: Install build dependencies
+#      run: |
+#        dnf --assumeyes --disableplugin=subscription-manager builddep packaging/rpm/likwid.spec
 
-    - name: RPM build LIKWID
-      id: rpmbuild
-      run: |
-        git config --add safe.directory $(pwd)
-        make RPM
+#    - name: RPM build LIKWID
+#      id: rpmbuild
+#      run: make RPM
 
-    # See: https://github.com/actions/upload-artifact
-    - name: Save RPM as artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: LIKWID RPM for UBI 8
-        path: ${{ steps.rpmbuild.outputs.RPM }}
-    - name: Save SRPM as artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: LIKWID SRPM for UBI 8
-        path: ${{ steps.rpmbuild.outputs.SRPM }}
+#    # See: https://github.com/actions/upload-artifact
+#    - name: Save RPM as artifact
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: LIKWID RPM for UBI 8
+#        path: ${{ steps.rpmbuild.outputs.RPM }}
+#    - name: Save SRPM as artifact
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: LIKWID SRPM for UBI 8
+#        path: ${{ steps.rpmbuild.outputs.SRPM }}
 
-  #
-  # Build on Ubuntu 20.04
-  #
-  Ubuntu-focal-build:
-    runs-on: ubuntu-latest
-    container: ubuntu:20.04
-    # The job outputs link to the outputs of the 'debrename' step
-    # Only job outputs can be used in child jobs
-    outputs:
-      deb : ${{steps.debrename.outputs.DEB}}
-    steps:
-    # Use apt to install development packages
-    - name: Install development packages
-      run: |
-          apt update && apt --assume-yes upgrade
-          apt --assume-yes install build-essential sed git wget bash sudo
-    # Checkout git repository and submodules
-    # fetch-depth must be 0 to use git describe
-    # See: https://github.com/marketplace/actions/checkout
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        submodules: recursive
-        fetch-depth: 0
-    - name: DEB build LIKWID
-      id: dpkg-build
-      run: |
-          make DEB
-    - name: Rename DEB (add '_ubuntu20.04')
-      id: debrename
-      run: |
-        OLD_DEB_NAME=$(echo "${{steps.dpkg-build.outputs.DEB}}" | rev | cut -d '.' -f 2- | rev)
-        NEW_DEB_FILE="${OLD_DEB_NAME}_ubuntu20.04.deb"
-        mv "${{steps.dpkg-build.outputs.DEB}}" "${NEW_DEB_FILE}"
-        echo "::set-output name=DEB::${NEW_DEB_FILE}"
-    # See: https://github.com/actions/upload-artifact
-    - name: Save DEB as artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: LIKWID DEB for Ubuntu 20.04
-        path: ${{ steps.debrename.outputs.DEB }}
+#  #
+#  # Build on Ubuntu 20.04
+#  #
+#  Ubuntu-focal-build:
+#    runs-on: ubuntu-latest
+#    container: ubuntu:20.04
+#    # The job outputs link to the outputs of the 'debrename' step
+#    # Only job outputs can be used in child jobs
+#    outputs:
+#      deb : ${{steps.debrename.outputs.DEB}}
+#    steps:
+#    # Use apt to install development packages
+#    - name: Install development packages
+#      run: |
+#          apt update && apt --assume-yes upgrade
+#          apt --assume-yes install build-essential sed git wget bash sudo
+#    # Checkout git repository and submodules
+#    # fetch-depth must be 0 to use git describe
+#    # See: https://github.com/marketplace/actions/checkout
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#      with:
+#        submodules: recursive
+#        fetch-depth: 0
+#    - name: DEB build LIKWID
+#      id: dpkg-build
+#      run: |
+#          make DEB
+#    - name: Rename DEB (add '_ubuntu20.04')
+#      id: debrename
+#      run: |
+#        OLD_DEB_NAME=$(echo "${{steps.dpkg-build.outputs.DEB}}" | rev | cut -d '.' -f 2- | rev)
+#        NEW_DEB_FILE="${OLD_DEB_NAME}_ubuntu20.04.deb"
+#        mv "${{steps.dpkg-build.outputs.DEB}}" "${NEW_DEB_FILE}"
+#        echo "::set-output name=DEB::${NEW_DEB_FILE}"
+#    # See: https://github.com/actions/upload-artifact
+#    - name: Save DEB as artifact
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: LIKWID DEB for Ubuntu 20.04
+#        path: ${{ steps.debrename.outputs.DEB }}
 
   #
   # Create release with fresh RPMs
@@ -196,32 +192,32 @@ jobs:
   Release:
     runs-on: ubuntu-latest
     # We need the RPMs, so add dependency
-    needs: [AlmaLinux-RPM-build, UBI-8-RPM-build, Ubuntu-focal-build]
+#    needs: [AlmaLinux-RPM-build, UBI-8-RPM-build, Ubuntu-focal-build]
 
     steps:
     # See: https://github.com/actions/download-artifact
-    - name: Download AlmaLinux 8.5 RPM
-      uses: actions/download-artifact@v2
-      with:
-        name: LIKWID RPM for AlmaLinux 8.5
-    - name: Download AlmaLinux 8.5 SRPM
-      uses: actions/download-artifact@v2
-      with:
-        name: LIKWID SRPM for AlmaLinux 8.5
-    
-    - name: Download UBI 8 RPM
-      uses: actions/download-artifact@v2
-      with:
-        name: LIKWID RPM for UBI 8
-    - name: Download UBI 8 SRPM
-      uses: actions/download-artifact@v2
-      with:
-        name: LIKWID SRPM for UBI 8
+#    - name: Download AlmaLinux 8.5 RPM
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: LIKWID RPM for AlmaLinux 8.5
+#    - name: Download AlmaLinux 8.5 SRPM
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: LIKWID SRPM for AlmaLinux 8.5
+#    
+#    - name: Download UBI 8 RPM
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: LIKWID RPM for UBI 8
+#    - name: Download UBI 8 SRPM
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: LIKWID SRPM for UBI 8
 
-    - name: Download Ubuntu 20.04 DEB
-      uses: actions/download-artifact@v2
-      with:
-        name: LIKWID DEB for Ubuntu 20.04
+#    - name: Download Ubuntu 20.04 DEB
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: LIKWID DEB for Ubuntu 20.04
 
     # The download actions do not publish the name of the downloaded file,
     # so we re-use the job outputs of the parent jobs. The files are all
@@ -229,24 +225,24 @@ jobs:
     # The gh-release action afterwards does not accept file lists but all
     # files have to be listed at 'files'. The step creates one output per
     # RPM package (2 per distro)
-    - name: Set RPM variables
-      id: files
-      run: |
-        ALMA_85_RPM=$(basename "${{ needs.AlmaLinux-RPM-build.outputs.rpm}}")
-        ALMA_85_SRPM=$(basename "${{ needs.AlmaLinux-RPM-build.outputs.srpm}}")
-        UBI_8_RPM=$(basename "${{ needs.UBI-8-RPM-build.outputs.rpm}}")
-        UBI_8_SRPM=$(basename "${{ needs.UBI-8-RPM-build.outputs.srpm}}")
-        U_2004_DEB=$(basename "${{ needs.Ubuntu-focal-build.outputs.deb}}")
-        echo "ALMA_85_RPM::${ALMA_85_RPM}"
-        echo "ALMA_85_SRPM::${ALMA_85_SRPM}"
-        echo "UBI_8_RPM::${UBI_8_RPM}"
-        echo "UBI_8_SRPM::${UBI_8_SRPM}"
-        echo "U_2004_DEB::${U_2004_DEB}"
-        echo "::set-output name=ALMA_85_RPM::${ALMA_85_RPM}"
-        echo "::set-output name=ALMA_85_SRPM::${ALMA_85_SRPM}"
-        echo "::set-output name=UBI_8_RPM::${UBI_8_RPM}"
-        echo "::set-output name=UBI_8_SRPM::${UBI_8_SRPM}"
-        echo "::set-output name=U_2004_DEB::${U_2004_DEB}"
+#    - name: Set RPM variables
+#      id: files
+#      run: |
+#        ALMA_85_RPM=$(basename "${{ needs.AlmaLinux-RPM-build.outputs.rpm}}")
+#        ALMA_85_SRPM=$(basename "${{ needs.AlmaLinux-RPM-build.outputs.srpm}}")
+#        UBI_8_RPM=$(basename "${{ needs.UBI-8-RPM-build.outputs.rpm}}")
+#        UBI_8_SRPM=$(basename "${{ needs.UBI-8-RPM-build.outputs.srpm}}")
+#        U_2004_DEB=$(basename "${{ needs.Ubuntu-focal-build.outputs.deb}}")
+#        echo "ALMA_85_RPM::${ALMA_85_RPM}"
+#        echo "ALMA_85_SRPM::${ALMA_85_SRPM}"
+#        echo "UBI_8_RPM::${UBI_8_RPM}"
+#        echo "UBI_8_SRPM::${UBI_8_SRPM}"
+#        echo "U_2004_DEB::${U_2004_DEB}"
+#        echo "::set-output name=ALMA_85_RPM::${ALMA_85_RPM}"
+#        echo "::set-output name=ALMA_85_SRPM::${ALMA_85_SRPM}"
+#        echo "::set-output name=UBI_8_RPM::${UBI_8_RPM}"
+#        echo "::set-output name=UBI_8_SRPM::${UBI_8_SRPM}"
+#        echo "::set-output name=U_2004_DEB::${U_2004_DEB}"
 
     # Get the tag name but remove beginning 'v'
     - name: Get version
@@ -261,9 +257,9 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         name: likwid-${{steps.get_version.outputs.VERSION}}
-        files: |
-         ${{ steps.files.outputs.ALMA_85_RPM }}
-         ${{ steps.files.outputs.ALMA_85_SRPM }}
-         ${{ steps.files.outputs.UBI_8_RPM }}
-         ${{ steps.files.outputs.UBI_8_SRPM }}
-         ${{ steps.files.outputs.U_2004_DEB }}
+#        files: |
+#         ${{ steps.files.outputs.ALMA_85_RPM }}
+#         ${{ steps.files.outputs.ALMA_85_SRPM }}
+#         ${{ steps.files.outputs.UBI_8_RPM }}
+#         ${{ steps.files.outputs.UBI_8_SRPM }}
+#         ${{ steps.files.outputs.U_2004_DEB }}
