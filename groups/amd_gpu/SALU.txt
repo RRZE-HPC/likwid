@@ -8,6 +8,8 @@ METRICS
 GPU SALU insts per work-item ROCM0/ROCM1
 
 LONG
+Formulas:
+GPU SALU insts per work-item = ROCP_SQ_INSTS_SALU/ROCP_SQ_WAVES
 --
 The average number of scalar ALU instructions executed per work-item 
 (affected by flow control).

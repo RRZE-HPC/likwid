@@ -10,6 +10,8 @@ GPU utilization 100*ROCM1/ROCM0
 
 
 LONG
+Formulas:
+GPU utilization = 100*ROCP_GRBM_GUI_ACTIVE/ROCP_GRBM_COUNT
 --
 This group reassembles the 'GPUBusy' metric provided by RocProfiler.
 We should add, that we can select the GPUBusy metric directly and the

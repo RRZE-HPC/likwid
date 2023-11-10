@@ -9,6 +9,8 @@ METRICS
 GPU memory utilization 100*max(ROCM0,16)/ROCM1/ROCM2
 
 LONG
+Formulas:
+GPU memory utilization = 100*max(ROCP_TA_TA_BUSY,16)/ROCP_GRBM_GUI_ACTIVE/ROCP_SE_NUM
 --
 The percentage of GPUTime the memory unit is active. The result includes 
 the stall time (MemUnitStalled). This is measured with all extra fetches 

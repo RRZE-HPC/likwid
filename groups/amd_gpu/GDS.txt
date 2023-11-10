@@ -8,6 +8,8 @@ METRICS
 GPU GDS rw insts per work-item ROCM0/ROCM1
 
 LONG
+Formulas:
+GPU GDS rw insts per work-item = ROCP_SQ_INSTS_GDS/ROCP_SQ_WAVES
 --
 The average number of GDS read or GDS write instructions executed 
 per work item (affected by flow control).

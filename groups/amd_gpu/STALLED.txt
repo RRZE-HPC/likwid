@@ -9,6 +9,8 @@ METRICS
 GPU ALD stalled 100*ROCM0*4/ROCM1/ROCM2
 
 LONG
+Formulas:
+GPU ALD stalled = 100*ROCP_SQ_WAIT_INST_LDS*4/ROCP_SQ_WAVES/ROCP_GRBM_GUI_ACTIVE
 --
 The percentage of GPUTime ALU units are stalled by the LDS input queue 
 being full or the output queue being not ready. If there are LDS bank 

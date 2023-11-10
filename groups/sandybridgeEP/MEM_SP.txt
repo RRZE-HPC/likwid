@@ -57,7 +57,6 @@ Memory bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC0)+SUM(MBOXxC1))*64.0/time
 Memory data volume [GBytes] = 1.0E-09*(SUM(MBOXxC0)+SUM(MBOXxC1))*64.0
 Operational intensity [FLOP/Byte] = (FP_COMP_OPS_EXE_SSE_FP_PACKED*4+FP_COMP_OPS_EXE_SSE_FP_SCALAR+SIMD_FP_256_PACKED_SINGLE*8)/((SUM(MBOXxC0)+SUM(MBOXxC1))*64.0)
 Vectorization ratio [%] = 100*(FP_COMP_OPS_EXE_SSE_FP_PACKED_SINGLE+SIMD_FP_256_PACKED_SINGLE)/(FP_COMP_OPS_EXE_SSE_FP_SCALAR_SINGLE+FP_COMP_OPS_EXE_SSE_FP_PACKED_SINGLE+SIMD_FP_256_PACKED_SINGLE)
-
 --
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
 Since this group is based on Uncore events it is only possible to measure on

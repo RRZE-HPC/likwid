@@ -13,6 +13,11 @@ PCI send bandwidth 1E-6*ROCM0/time
 PCI recv bandwidth 1E-6*ROCM1/time
 
 LONG
+Formulas:
+PCI sent = RSMI_PCI_THROUGHPUT_SENT
+PCI received = RSMI_PCI_THROUGHPUT_RECEIVED
+PCI send bandwidth = 1E-6*RSMI_PCI_THROUGHPUT_SENT/runtime
+PCI recv bandwidth = 1E-6*RSMI_PCI_THROUGHPUT_RECEIVED/runtime
 --
 Currently not usable since the RSMI_PCI_THROUGHPUT_* events require
 one second per call, so 2 seconds for both of them.
