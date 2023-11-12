@@ -182,6 +182,15 @@ regions and writes them out to a file (filepath in env variable
 LIKWID_FILEPATH).
 */
 extern void likwid_markerClose(void) __attribute__((visibility("default")));
+/*! \brief Write marker API results to a file
+
+Must be called in serial region of the application. It gathers all data of
+regions and writes them out to file.
+@param markerfile [in] The file to write to
+@return Error
+*/
+extern int likwid_saveMarkerFile(const char *markerfile)
+    __attribute__((visibility("default")));
 /*! \brief Register a measurement region
 
 Initializes the hashTable entry in order to reduce execution time of
@@ -3031,7 +3040,7 @@ int rocmon_returnGroups(int nrgroups, char **groups, char **shortinfos,
     __attribute__((visibility("default")));
 
 /** @}*/
-    
+
 /** \addtogroup RocmonMarkerAPI Marker API module for GPUs
  *  @{
  */
