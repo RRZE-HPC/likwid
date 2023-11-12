@@ -3,7 +3,7 @@
 - Support for AMD Zen4 (Core, Uncore, RAPL)
 - Support for Apple M1
 - Support for AMD GPUs (MarkerAPI, F90 interface)
-- Support for AWS Graviton3 (ARM Neovere V1)
+- Support for AWS Graviton3 (ARM Neoverse V1)
 - Support for HiSilicon TSV110
 - Fix of F90 interface installation
 - Support for extended umasks in ICX and SPR
