@@ -391,7 +391,7 @@ int main(int argc, char* argv[])
     /* Saves the current monitoring results to the file specified. We will read
      * this using likwid to view results.
      */
-    likwid_saveMarkerFile(getenv("LIKWID_FILEPATH"));
+    likwid_writeMarkerFile(getenv("LIKWID_FILEPATH"));
 
     const char *region_name, *group_name, *event_name, *metric_name;
     double event_value, metric_value;

@@ -503,7 +503,7 @@ likwid_markerClose(void)
 }
 
 int
-likwid_saveMarkerFile(const char* markerfile)
+likwid_writeMarkerFile(const char* markerfile)
 {
     FILE *file = NULL;
     int* validRegions = NULL;
