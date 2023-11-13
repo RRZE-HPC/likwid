@@ -2085,6 +2085,12 @@ static int lua_likwid_markerClose(lua_State *L) {
   return 0;
 }
 
+static int lua_likwid_writeMarkerFile(lua_State *L) {
+  const char *markerfile = (const char *)luaL_checkstring(L, -1);
+  lua_pushinteger(L, likwid_writeMarkerFile(markerfile));
+  return 1;
+}
+
 static int lua_likwid_markerNext(lua_State *L) {
   likwid_markerNextGroup();
   return 0;

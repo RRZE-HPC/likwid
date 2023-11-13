@@ -131,6 +131,7 @@ likwid.sockstr_to_socklist = likwid_sockstr_to_socklist
 likwid.markerInit = likwid_markerInit
 likwid.markerThreadInit = likwid_markerThreadInit
 likwid.markerClose = likwid_markerClose
+likwid.writeMarkerFile = likwid_writeMarkerFile
 likwid.markerNextGroup = likwid_markerNextGroup
 likwid.registerRegion = likwid_registerRegion
 likwid.startRegion = likwid_startRegion
@@ -505,7 +506,7 @@ local function printtable(tab)
             if mtab and mtab["align"] and mtab["align"] == "left" then
                 str = str .. tostring(tab[i][j]) .. back .. front
             elseif mtab and mtab["align"] and mtab["align"] == "right" then
-                str = str .. front .. back .. tostring(tab[i][j]) 
+                str = str .. front .. back .. tostring(tab[i][j])
             else
                 str = str .. front.. tostring(tab[i][j]) ..back
             end

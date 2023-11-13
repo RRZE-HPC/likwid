@@ -38,7 +38,7 @@ interface
 
 !> \ingroup Fortran_Interface
 !! \brief Initialize the Likwid Marker API
-!! This routine initializes the Marker API for Fortran. It reads some 
+!! This routine initializes the Marker API for Fortran. It reads some
 !! environment commonly set by likwid-perfctr.
 !! \note Must be called once in a serial region.
   subroutine likwid_markerInit()
@@ -70,6 +70,15 @@ interface
 !! Likwid calls should be used
   subroutine likwid_markerClose()
   end subroutine likwid_markerClose
+
+!> \ingroup Fortran_Interface
+!! \brief Write marker API results to a file
+!! Gathers all data of regions and writes them out to file.
+!! \note Must be called in serial region of the application.
+  subroutine likwid_writeMarkerFile( markerfile )
+!> \param markerfile [in] The file to write to
+  character(*) :: markerfile
+  end subroutine likwid_writeMarkerFile
 
 !> \ingroup Fortran_Interface
 !! \brief Register a code region
