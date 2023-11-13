@@ -16,7 +16,7 @@ PREFIX ?= /usr/local#NO SPACE
 # Set the default mode for MSR access.
 # This can usually be overriden on the commandline.
 # Valid values are: direct, accessdaemon and perf_event
-ACCESSMODE = perf_event#NO SPACE
+ACCESSMODE = accessdaemon#NO SPACE
 
 # Build Fortran90 module interface for Marker API. Adopt Fortran compiler
 # in ./make/include_<COMPILER>.mk if necessary. Default: ifort (even for
