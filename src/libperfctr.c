@@ -505,6 +505,12 @@ likwid_markerClose(void)
 int
 likwid_writeMarkerFile(const char* markerfile)
 {
+    if (markerfile == NULL)
+    {
+        fprintf(stderr, "File can not be NULL.\n");
+        return -EFAULT;
+    }
+
     FILE *file = NULL;
     int* validRegions = NULL;
 
@@ -520,26 +526,21 @@ likwid_writeMarkerFile(const char* markerfile)
         fprintf(stderr, "No threads or regions defined in hash table\n");
         return -EFAULT;
     }
-    if (markerfile == NULL)
-    {
-        fprintf(stderr, "File can not be NULL.\n");
-        return -EFAULT;
-    }
-    validRegions = (int*)malloc(numberOfRegions*sizeof(int));
-    if (!validRegions)
-    {
-        return -EFAULT;
-    }
-    for (int i=0; i<numberOfRegions; i++)
-    {
-        validRegions[i] = 0;
-    }
-    file = fopen(markerfile,"w");
 
+    file = fopen(markerfile,"w");
     if (file != NULL)
     {
         int newNumberOfRegions = 0;
         int newRegionID = 0;
+        validRegions = (int*)malloc(numberOfRegions*sizeof(int));
+        if (!validRegions)
+        {
+            return -EFAULT;
+        }
+        for (int i=0; i<numberOfRegions; i++)
+        {
+            validRegions[i] = 0;
+        }
         for (int i=0; i<numberOfRegions; i++)
         {
             for (int j=0; j<numberOfThreads; j++)
@@ -576,14 +577,15 @@ likwid_writeMarkerFile(const char* markerfile)
             bdestroy(tmp);
             newRegionID++;
         }
-        newRegionID = 0;
         int *cpulist = (int*) malloc(numberOfThreads * sizeof(int));
         if (cpulist == NULL)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n",
                         numberOfThreads * sizeof(int));
+            free(validRegions);
             return -EFAULT;
         }
+        newRegionID = 0;
         for (int i=0; i<numberOfRegions; i++)
         {
             if (validRegions[i] == 0)
@@ -615,15 +617,13 @@ likwid_writeMarkerFile(const char* markerfile)
             newRegionID++;
         }
         fclose(file);
+        free(validRegions);
+        free(cpulist);
     }
     else
     {
         fprintf(stderr, "Cannot open file %s\n", markerfile);
         fprintf(stderr, "%s", strerror(errno));
-    }
-    if (validRegions)
-    {
-        free(validRegions);
     }
 }
 
