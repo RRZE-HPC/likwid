@@ -81,7 +81,7 @@ HBM write bandwidth [MBytes/s] = 1.0E-06*(SUM(CAS_COUNT_WR))*64.0/runtime
 HBM write data volume [GBytes] = 1.0E-09*(SUM(CAS_COUNT_WR))*64.0
 HBM bandwidth [MBytes/s] = 1.0E-06*(SUM(CAS_COUNT_RD)+SUM(CAS_COUNT_WR))*64.0/runtime
 HBM data volume [GBytes] = 1.0E-09*(SUM(CAS_COUNT_RD)+SUM(CAS_COUNT_WR))*64.0
-Operational intensity [FLOP/Byte] = (FP_ARITH_INST_RETIRED_128B_PACKED_SINGLE*2+FP_ARITH_INST_RETIRED_SCALAR_SINGLE+FP_ARITH_INST_RETIRED_256B_PACKED_SINGLE*4+FP_ARITH_INST_RETIRED_512B_PACKED_SINGLE*8)/(SUM(CAS_COUNT_RD)+SUM(CAS_COUNT_WR))*64.0)
+Operational intensity [FLOP/Byte] = (FP_ARITH_INST_RETIRED_128B_PACKED_SINGLE*4+FP_ARITH_INST_RETIRED_SCALAR_SINGLE+FP_ARITH_INST_RETIRED_256B_PACKED_SINGLE*8+FP_ARITH_INST_RETIRED_512B_PACKED_SINGLE*16)/(SUM(CAS_COUNT_RD)+SUM(CAS_COUNT_WR))*64.0)
 --
 Profiling group to measure HBM bandwidth drawn by all cores of a socket.
 Since this group is based on Uncore events it is only possible to measure on
