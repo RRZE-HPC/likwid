@@ -57,7 +57,7 @@ likwid_markerclose_(void)
 }
 
 void __attribute__ ((visibility ("default") ))
-likwid_writemarkerfile(const char *markerfile)
+likwid_writemarkerfile_(char* markerfile)
 {
     likwid_writeMarkerFile(markerfile);
 }
