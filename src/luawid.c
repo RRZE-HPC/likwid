@@ -3997,6 +3997,7 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
   lua_register(L, "likwid_markerThreadInit", lua_likwid_markerThreadInit);
   lua_register(L, "likwid_markerNextGroup", lua_likwid_markerNext);
   lua_register(L, "likwid_markerClose", lua_likwid_markerClose);
+  lua_register(L, "likwid_writeMarkerFile", lua_likwid_writeMarkerFile);
   lua_register(L, "likwid_registerRegion", lua_likwid_registerRegion);
   lua_register(L, "likwid_startRegion", lua_likwid_startRegion);
   lua_register(L, "likwid_stopRegion", lua_likwid_stopRegion);
