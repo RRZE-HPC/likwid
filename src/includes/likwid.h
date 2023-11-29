@@ -3232,9 +3232,9 @@ static char* LikwidDeviceTypeNames[MAX_DEVICE_TYPE] = {
 #endif
 };
 
-int likwid_device_create(LikwidDeviceType type, int id, LikwidDevice_t* device);
-void likwid_device_destroy(LikwidDevice_t device);
-char* device_type_name(LikwidDeviceType type);
+int likwid_device_create(LikwidDeviceType type, int id, LikwidDevice_t* device) __attribute__ ((visibility ("default") ));
+void likwid_device_destroy(LikwidDevice_t device) __attribute__ ((visibility ("default") ));
+char* device_type_name(LikwidDeviceType type) __attribute__ ((visibility ("default") ));
 
 typedef struct {
     char* name;
