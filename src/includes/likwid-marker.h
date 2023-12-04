@@ -72,8 +72,8 @@ Shortcut for likwid_markerResetRegion() if compiled with -DLIKWID_PERFMON. Other
 Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
-\def LIKWID_WRITE_MARKER_FILE(markerfile)
-Shortcut for likwid_writeMarkerFile() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
+\def LIKWID_MARKER_WRITE_FILE(markerfile)
+Shortcut for likwid_markerWriteFile() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /** @}*/
 
@@ -86,7 +86,7 @@ Shortcut for likwid_writeMarkerFile() if compiled with -DLIKWID_PERFMON. Otherwi
 #define LIKWID_MARKER_START(regionTag) likwid_markerStartRegion(regionTag)
 #define LIKWID_MARKER_STOP(regionTag) likwid_markerStopRegion(regionTag)
 #define LIKWID_MARKER_CLOSE likwid_markerClose()
-#define LIKWID_WRITE_MARKER_FILE(markerfile) likwid_writeMarkerFile(markerfile)
+#define LIKWID_MARKER_WRITE_FILE(markerfile) likwid_markerWriteFile(markerfile)
 #define LIKWID_MARKER_RESET(regionTag) likwid_markerResetRegion(regionTag)
 #define LIKWID_MARKER_GET(regionTag, nevents, events, time, count) likwid_markerGetRegion(regionTag, nevents, events, time, count)
 #else  /* LIKWID_PERFMON */
@@ -97,7 +97,7 @@ Shortcut for likwid_writeMarkerFile() if compiled with -DLIKWID_PERFMON. Otherwi
 #define LIKWID_MARKER_START(regionTag)
 #define LIKWID_MARKER_STOP(regionTag)
 #define LIKWID_MARKER_CLOSE
-#define LIKWID_WRITE_MARKER_FILE(markerfile)
+#define LIKWID_MARKER_WRITE_FILE(markerfile)
 #define LIKWID_MARKER_GET(regionTag, nevents, events, time, count)
 #define LIKWID_MARKER_RESET(regionTag)
 #endif /* LIKWID_PERFMON */

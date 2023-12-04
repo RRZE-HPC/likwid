@@ -189,7 +189,7 @@ regions and writes them out to file.
 @param markerfile [in] The file to write to
 @return Error
 */
-extern int likwid_writeMarkerFile(const char *markerfile)
+extern int likwid_markerWriteFile(const char *markerfile)
     __attribute__((visibility("default")));
 /*! \brief Register a measurement region
 

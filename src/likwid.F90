@@ -75,10 +75,10 @@ interface
 !! \brief Write marker API results to a file
 !! Gathers all data of regions and writes them out to file.
 !! \note Must be called in serial region of the application.
-  subroutine likwid_writeMarkerFile( markerfile )
+  subroutine likwid_markerWriteFile( markerfile )
 !> \param markerfile [in] The file to write to
   character(*) :: markerfile
-  end subroutine likwid_writeMarkerFile
+  end subroutine likwid_markerWriteFile
 
 !> \ingroup Fortran_Interface
 !! \brief Register a code region

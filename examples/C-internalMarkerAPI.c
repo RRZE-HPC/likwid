@@ -396,14 +396,14 @@ int main(int argc, char *argv[])
         copy_arr[((unsigned)c) % ARRAY_SIZE]);
     printf("\n");
 
-    /* We can use LIKWID_WRITE_MARKER_FILE to write the current monitoring
+    /* We can use LIKWID_MARKER_WRITE_FILE to write the current monitoring
      * results to a file at the specified location. Unlike when reading event
      * counts directly using LIKWID_MARKER_GET, this also provides access to the
      * metrics specified in the used performance groups. In this example, we use
      * the LIKWID_FILEPATH defined above to store our results. We will read the
      * contents of this file using likwid to view results next.
      */
-    LIKWID_WRITE_MARKER_FILE(getenv("LIKWID_FILEPATH"));
+    LIKWID_MARKER_WRITE_FILE(getenv("LIKWID_FILEPATH"));
 
     const char *region_name, *group_name, *event_name, *metric_name;
     double event_value, metric_value;

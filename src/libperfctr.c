@@ -503,7 +503,7 @@ likwid_markerClose(void)
 }
 
 int
-likwid_writeMarkerFile(const char* markerfile)
+likwid_markerWriteFile(const char* markerfile)
 {
     if (markerfile == NULL)
     {

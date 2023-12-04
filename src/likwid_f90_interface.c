@@ -57,7 +57,7 @@ likwid_markerclose_(void)
 }
 
 void __attribute__ ((visibility ("default") ))
-likwid_writemarkerfile_(char* markerfile, int len)
+likwid_markerwritefile_(char* markerfile, int len)
 {
     char* tmp = (char*) malloc((len+1) * sizeof(char));
     strncpy(tmp, markerfile, len * sizeof(char));
@@ -70,7 +70,7 @@ likwid_writemarkerfile_(char* markerfile, int len)
         }
     }
 
-    likwid_writeMarkerFile(tmp);
+    likwid_markerWriteFile(tmp);
     free(tmp);
 }
 
