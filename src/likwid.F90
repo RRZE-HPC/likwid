@@ -286,7 +286,7 @@ interface
   character(*) :: regionTag
   end subroutine likwid_RocmMarkerResetRegion
 
-#endif LIKWID_WITH_ROCMON
+#endif /* LIKWID_WITH_ROCMON */
 
 end interface
 
