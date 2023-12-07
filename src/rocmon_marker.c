@@ -120,7 +120,7 @@ _rocmon_parse_gpustr(char* gpuStr, int* numGpus, int** gpuIds)
 }
 
 static void
-_rocmon_saveToFile(void)
+_rocmon_saveToFile(const char* markerfile)
 {
     /* File format
      * 1 numberOfGPUs numberOfRegions numberOfGpuGroups
@@ -129,14 +129,6 @@ _rocmon_saveToFile(void)
      * 4 regionID groupID gpuID callCount timeActive numEvents countersvalues(space separated)
      * 5 regionID groupID gpuID callCount timeActive numEvents countersvalues(space separated)
      */
-
-    // Get markerfile path from environment
-    char* markerfile = getenv("LIKWID_ROCMON_FILEPATH");
-    if (markerfile == NULL)
-    {
-        fprintf(stderr, "Is the application executed with LIKWID wrapper? No file path for the Rocmon Marker API output defined.\n");
-        return;
-    }
 
     // Verify there is something to output
     int numberOfRegions = get_map_size(gpu_maps[0]);
@@ -379,10 +371,32 @@ rocmon_markerClose(void)
     // Stop counters
     rocmon_stopCounters();
 
-    _rocmon_saveToFile();
+    // Get markerfile path from environment
+    char* markerfile = getenv("LIKWID_ROCMON_FILEPATH");
+    if (markerfile == NULL)
+    {
+        fprintf(stderr, "Is the application executed with LIKWID wrapper? No file path for the Rocmon Marker API output defined.\n");
+        return;
+    }
+    else
+    {
+        _rocmon_saveToFile(markerfile);
+    }
+
     _rocmon_finalize();
 }
 
+
+int
+rocmon_markerWriteFile(const char* markerfile)
+{
+    if (!markerfile)
+    {
+        return -EINVAL;
+    }
+    _rocmon_saveToFile(markerfile);
+    return 0;
+}
 
 int
 rocmon_markerRegisterRegion(const char* regionTag)

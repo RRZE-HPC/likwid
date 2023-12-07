@@ -204,6 +204,12 @@ interface
   character(*) :: regionTag
   end subroutine likwid_NvMarkerResetRegion
 
+!> \ingroup Fortran_NvGPU_Interface
+!! \brief Write the current results to file
+  subroutine likwid_NvMarkerWriteFile( filename )
+!> \param filename Filename to write data
+  character(*) :: filename
+  end subroutine likwid_NvMarkerWriteFile
 #endif /* LIKWID_WITH_NVMON */
 
 #ifdef LIKWID_WITH_ROCMON
@@ -285,6 +291,13 @@ interface
 !> \param regionTag Name for the code region for later identification
   character(*) :: regionTag
   end subroutine likwid_RocmMarkerResetRegion
+
+!> \ingroup Fortran_RocmGPU_Interface
+!! \brief Write the current results to file
+  subroutine likwid_RocmMarkerWriteFile( filename )
+!> \param filename Filename to write data
+  character(*) :: filename
+  end subroutine likwid_RocmMarkerWriteFile
 
 #endif /* LIKWID_WITH_ROCMON */
 

@@ -3034,11 +3034,6 @@ lua_likwid_nvSupported(lua_State *L)
 RocmTopology_t rocmtopo = NULL;
 int rocmtopology_isInitialized = 0;
 
-static int lua_likwid_rocmSupported(lua_State *L) {
-  lua_pushboolean(L, TRUE);
-  return 1;
-}
-
 static int lua_likwid_getRocmTopology(lua_State *L) {
   if (!rocmtopology_isInitialized) {
     if (topology_rocm_init() == EXIT_SUCCESS) {
