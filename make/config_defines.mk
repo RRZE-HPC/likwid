@@ -178,6 +178,34 @@ ifeq ($(strip $(COMPILER)),GCCARMv8)
         BUILDFREQ := false
     endif
 endif
+ifeq ($(strip $(COMPILER)),GCCARM)
+    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+        $(info Info: Compiling for ARM architecture. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+        $(info Info: Compiling for ARM architecture. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),direct)
+        $(info Info: Compiling for ARM architecture. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+endif
 ifeq ($(strip $(COMPILER)),ARMCLANG)
     ifeq ($(strip $(ACCESSMODE)),sysdaemon)
         $(info Info: Compiling for ARMv8 architecture. Changing accessmode to perf_event.)

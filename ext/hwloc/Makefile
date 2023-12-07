@@ -39,6 +39,9 @@ endif
 ifeq ($(strip $(COMPILER)), GCCARMv8)
 OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
 endif
+ifeq ($(strip $(COMPILER)), GCCARM)
+OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
+endif
 ifeq ($(strip $(COMPILER)), ARMCLANG)
 OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
 endif

@@ -127,6 +127,7 @@ static char* arm_cortex_a73 = "ARM Cortex A73";
 static char* arm_neoverse_n1 = "ARM Neoverse N1";
 static char* arm_neoverse_v1 = "ARM Neoverse V1";
 static char* arm_huawei_tsv110 = "Huawei TSV110 (ARMv8)";
+static char* arm_nvidia_grace = "Nvidia Grace";
 static char* fujitsu_a64fx = "Fujitsu A64FX";
 static char* apple_m1_studio = "Apple M1";
 static char* power7_str = "POWER7 architecture";
@@ -187,6 +188,7 @@ static char* short_arm8_neo_n1 = "arm8_n1";
 static char* short_arm8_neo_v1 = "arm8_v1";
 static char* short_a64fx = "arm64fx";
 static char* short_apple_m1 = "apple_m1";
+static char* short_nvidia_grace = "nvidia_grace";
 
 static char* short_power7 = "power7";
 static char* short_power8 = "power8";
@@ -1208,6 +1210,10 @@ topology_setName(void)
                         case AWS_GRAVITON3:
                             cpuid_info.name = arm_neoverse_v1;
                             cpuid_info.short_name = short_arm8_neo_v1;
+                            break;
+                        case NVIDIA_GRACE:
+                            cpuid_info.name = arm_nvidia_grace;
+                            cpuid_info.short_name = short_nvidia_grace;
                             break;
                         default:
                             return EXIT_FAILURE;
