@@ -29,7 +29,7 @@
  */
 
 
-#define NUM_COUNTERS_NVIDIAGRACE 13
+#define NUM_COUNTERS_NVIDIAGRACE 41
 
 static RegisterMap nvidiagrace_counter_map[NUM_COUNTERS_NVIDIAGRACE] = {
     {"PMC0", PMC0, PMC, A57_PERFEVTSEL0, A57_PMC0, 0, 0, EVENT_OPTION_NONE_MASK},
@@ -45,19 +45,51 @@ static RegisterMap nvidiagrace_counter_map[NUM_COUNTERS_NVIDIAGRACE] = {
     {"SCF3", PMC10, QBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
     {"SCF4", PMC11, QBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
     {"SCF5", PMC12, QBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"CNV0", PMC13, SBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"CNV1", PMC14, SBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"CNV2", PMC15, SBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"CNV3", PMC16, SBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"CNV4", PMC17, SBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"CNV5", PMC18, SBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"CNVFIX", PMC19, SBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV0C0", PMC20, SBOX1, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV0C1", PMC21, SBOX1, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV0C2", PMC22, SBOX1, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV0C3", PMC23, SBOX1, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV0C4", PMC24, SBOX1, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV0C5", PMC25, SBOX1, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV0FIX", PMC26, SBOX1, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV1C0", PMC27, SBOX2, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV1C1", PMC28, SBOX2, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV1C2", PMC29, SBOX2, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV1C3", PMC30, SBOX2, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV1C4", PMC31, SBOX2, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV1C5", PMC32, SBOX2, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"NV1FIX", PMC33, SBOX2, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"PCIE0", PMC34, PBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"PCIE1", PMC35, PBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"PCIE2", PMC36, PBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"PCIE3", PMC37, PBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"PCIE4", PMC38, PBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"PCIE5", PMC39, PBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"PCIEFIX", PMC40, PBOX0, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
 };
 
 static BoxMap nvidiagrace_box_map[NUM_UNITS] = {
     [PMC] = {A57_PERF_CONTROL_CTRL, A57_OVERFLOW_STATUS, A57_OVERFLOW_FLAGS, 0, 0, 0, 32},
     [QBOX0] = {0, 0, 0, 0, 0, 0, 32},
+    [SBOX0] = {0, 0, 0, 0, 0, 0, 32},
+    [SBOX1] = {0, 0, 0, 0, 0, 0, 32},
+    [SBOX2] = {0, 0, 0, 0, 0, 0, 32},
+    [PBOX0] = {0, 0, 0, 0, 0, 0, 32},
 };
 
 static char* nvidiagrace_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/armv8_pmuv3_0",
-    [PBOX3] = "/sys/bus/event_source/devices/nvidia_cnvlink_pmu_0",
-    [PBOX0] = "/sys/bus/event_source/devices/nvidia_nvlink_c2c0_pmu_0",
-    [PBOX1] = "/sys/bus/event_source/devices/nvidia_nvlink_c2c1_pmu_0",
-    [PBOX2] = "/sys/bus/event_source/devices/nvidia_pcie_pmu_0",
+    [SBOX0] = "/sys/bus/event_source/devices/nvidia_cnvlink_pmu_0",
+    [SBOX1] = "/sys/bus/event_source/devices/nvidia_nvlink_c2c0_pmu_0",
+    [SBOX2] = "/sys/bus/event_source/devices/nvidia_nvlink_c2c1_pmu_0",
+    [PBOX0] = "/sys/bus/event_source/devices/nvidia_pcie_pmu_0",
     [QBOX0] = "/sys/bus/event_source/devices/nvidia_scf_pmu_0"
 };
 
