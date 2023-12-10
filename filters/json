@@ -171,7 +171,10 @@ if filetype == "perfctr" or filetype == "topology":
                                 values = []
                                 for k in line:
                                     if k != "Counter" and k != "Event":
-                                        values.append(float(line[k]))
+                                        if line[k] != "-":
+                                            values.append(float(line[k]))
+                                        else:
+                                            values.append(float('nan'))
                                 group[g][tabkey][c] = {"Event" : event, "Values" : values}
                                 break
                 elif "Metric" in tabkey and not "STAT" in tabkey:
@@ -182,7 +185,10 @@ if filetype == "perfctr" or filetype == "topology":
                                 values = []
                                 for k in line:
                                     if k != "Metric":
-                                        values.append(float(line[k]))
+                                        if line[k] != "-":
+                                            values.append(float(line[k]))
+                                        else:
+                                            values.append(float('nan'))
                                 group[g][tabkey][m] = {"Values" : values}
                                 break
                 else:
@@ -198,7 +204,10 @@ if filetype == "perfctr" or filetype == "topology":
                             if line[k] != key:
                                 v = line[k]
                                 try:
-                                    v = float(v)
+                                    if v != "-":
+                                        v = float(v)
+                                    else:
+                                        v = float('nan')
                                 except: pass
                                 tmp.update({k: v})
                         new[key] = tmp
