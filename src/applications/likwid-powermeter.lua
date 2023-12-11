@@ -1,4 +1,4 @@
-#!<INSTALLED_BINPREFIX>/likwid-lua
+#!/usr/bin/env <LIKWID_LUA_INTERPRETER>
 --[[
  * =======================================================================================
  *
@@ -29,7 +29,16 @@
  *
  * =======================================================================================
 ]]
-package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
+function requirePath()
+    local binfp = io.popen(string.format('which %s 2>/dev/null', arg[0]))
+    if binfp ~= nil then
+        local binpath = binfp:read("*a")
+        binfp:close()
+        local sharepath = string.format("%s/../share/lua/?.lua;", binpath:match("(.*/)") or ".")
+        return sharepath
+    end
+end
+package.path = requirePath() .. package.path
 
 local likwid = require("likwid")
 
