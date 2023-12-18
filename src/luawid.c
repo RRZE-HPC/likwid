@@ -2085,6 +2085,12 @@ static int lua_likwid_markerClose(lua_State *L) {
   return 0;
 }
 
+static int lua_likwid_markerWriteFile(lua_State *L) {
+  const char *markerfile = (const char *)luaL_checkstring(L, -1);
+  lua_pushinteger(L, likwid_markerWriteFile(markerfile));
+  return 1;
+}
+
 static int lua_likwid_markerNext(lua_State *L) {
   likwid_markerNextGroup();
   return 0;
@@ -3991,6 +3997,7 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
   lua_register(L, "likwid_markerThreadInit", lua_likwid_markerThreadInit);
   lua_register(L, "likwid_markerNextGroup", lua_likwid_markerNext);
   lua_register(L, "likwid_markerClose", lua_likwid_markerClose);
+  lua_register(L, "likwid_markerWriteFile", lua_likwid_markerWriteFile);
   lua_register(L, "likwid_registerRegion", lua_likwid_registerRegion);
   lua_register(L, "likwid_startRegion", lua_likwid_startRegion);
   lua_register(L, "likwid_stopRegion", lua_likwid_stopRegion);

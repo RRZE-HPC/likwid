@@ -503,6 +503,131 @@ likwid_markerClose(void)
 }
 
 int
+likwid_markerWriteFile(const char* markerfile)
+{
+    if (markerfile == NULL)
+    {
+        fprintf(stderr, "File can not be NULL.\n");
+        return -EFAULT;
+    }
+
+    FILE *file = NULL;
+    int* validRegions = NULL;
+
+    int numberOfThreads = perfmon_getNumberOfThreads();
+    int numberOfRegions = perfmon_getNumberOfRegions();
+
+    if ( ! likwid_init )
+    {
+        return -EFAULT;;
+    }
+    if ((numberOfThreads == 0)||(numberOfRegions == 0))
+    {
+        fprintf(stderr, "No threads or regions defined in hash table\n");
+        return -EFAULT;
+    }
+
+    file = fopen(markerfile,"w");
+    if (file != NULL)
+    {
+        int newNumberOfRegions = 0;
+        int newRegionID = 0;
+        validRegions = (int*)malloc(numberOfRegions*sizeof(int));
+        if (!validRegions)
+        {
+            return -EFAULT;
+        }
+        for (int i=0; i<numberOfRegions; i++)
+        {
+            validRegions[i] = 0;
+        }
+        for (int i=0; i<numberOfRegions; i++)
+        {
+            for (int j=0; j<numberOfThreads; j++)
+            {
+                validRegions[i] += perfmon_getCountOfRegion(i, j);
+            }
+            if (validRegions[i] > 0)
+                newNumberOfRegions++;
+            else
+                fprintf(stderr, "WARN: Skipping region %s for evaluation.\n", perfmon_getTagOfRegion(i));
+        }
+        if (newNumberOfRegions < numberOfRegions)
+        {
+            fprintf(stderr, "WARN: Regions are skipped because:\n");
+            fprintf(stderr, "      - The region was only registered\n");
+            fprintf(stderr, "      - The region was started but never stopped\n");
+            fprintf(stderr, "      - The region was never started but stopped\n");
+        }
+        DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                Creating Marker file %s with %d regions %d groups and %d threads,
+                markerfile, newNumberOfRegions, numberOfGroups, numberOfThreads);
+        bstring thread_regs_grps = bformat("%d %d %d", numberOfThreads, newNumberOfRegions, numberOfGroups);
+        fprintf(file,"%s\n", bdata(thread_regs_grps));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, %s, bdata(thread_regs_grps));
+        bdestroy(thread_regs_grps);
+
+        for (int i=0; i<numberOfRegions; i++)
+        {
+            if (validRegions[i] == 0)
+                continue;
+            bstring tmp = bformat("%d:%s", newRegionID, perfmon_getTagOfRegion(i));
+            fprintf(file,"%s\n", bdata(tmp));
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, %s, bdata(tmp));
+            bdestroy(tmp);
+            newRegionID++;
+        }
+        int *cpulist = (int*) malloc(numberOfThreads * sizeof(int));
+        if (cpulist == NULL)
+        {
+            fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n",
+                        numberOfThreads * sizeof(int));
+            free(validRegions);
+            return -EFAULT;
+        }
+        newRegionID = 0;
+        for (int i=0; i<numberOfRegions; i++)
+        {
+            if (validRegions[i] == 0)
+                continue;
+            int groupID = perfmon_getGroupOfRegion(i);
+            int nevents = groupSet->groups[groupID].numberOfEvents;
+            int cpulist_size = perfmon_getCpulistOfRegion(i, numberOfThreads, cpulist);
+            for (int j=0; j<numberOfThreads; j++)
+            {
+                int count = perfmon_getCountOfRegion(i, j);
+                double time = perfmon_getTimeOfRegion(i, j);
+                bstring l = bformat("%d %d %d %u %e %d ", newRegionID,
+                                                          groupID,
+                                                          cpulist[j],
+                                                          count,
+                                                          time,
+                                                          nevents);
+
+                for (int k=0; k < MIN(nevents, NUM_PMC); k++)
+                {
+                    bstring tmp = bformat("%e ", perfmon_getResultOfRegionThread(i, k, j));
+                    bconcat(l, tmp);
+                    bdestroy(tmp);
+                }
+                fprintf(file,"%s\n", bdata(l));
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, %s, bdata(l));
+                bdestroy(l);
+            }
+            newRegionID++;
+        }
+        fclose(file);
+        free(validRegions);
+        free(cpulist);
+    }
+    else
+    {
+        fprintf(stderr, "Cannot open file %s\n", markerfile);
+        fprintf(stderr, "%s", strerror(errno));
+    }
+}
+
+int
 likwid_markerRegisterRegion(const char* regionTag)
 {
     if ( ! likwid_init )
