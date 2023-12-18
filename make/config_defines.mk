@@ -294,10 +294,12 @@ endif
 
 ifeq ($(strip $(NVIDIA_INTERFACE)),true)
 DEFINES += -DLIKWID_WITH_NVMON
+BUILDAPPDAEMON = true
 endif
 
 ifeq ($(strip $(ROCM_INTERFACE)),true)
 DEFINES += -DLIKWID_WITH_ROCMON -D__HIP_PLATFORM_HCC__
+BUILDAPPDAEMON = true
 endif
 
 ifeq ($(strip $(BUILDDAEMON)),true)

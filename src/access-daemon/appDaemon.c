@@ -111,7 +111,7 @@ static int parse_gpustr(char* gpuStr, int* numGpus, int** gpuIds)
 {
     // Create bstring
     bstring bGpuStr = bfromcstr(gpuStr);
-    
+    int (*ownatoi)(const char*) = atoi;
     // Parse list
     struct bstrList* gpuTokens = bsplit(bGpuStr,',');
     int tmpNumGpus = gpuTokens->qty;
@@ -129,7 +129,7 @@ static int parse_gpustr(char* gpuStr, int* numGpus, int** gpuIds)
     // Parse ids to int
     for (int i = 0; i < tmpNumGpus; i++)
     {
-        tmpGpuIds[i] = atoi(bdata(gpuTokens->entry[i]));
+        tmpGpuIds[i] = ownatoi(bdata(gpuTokens->entry[i]));
     }
 
     // Copy data
