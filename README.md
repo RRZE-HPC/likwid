@@ -408,6 +408,6 @@ https://groups.google.com/forum/#!topic/likwid-users/F7TDho3k7ps
 Funding
 --------------------------------------------------------------------------------
 
-LIKWID development was funded by BMBF Germany under the FEPA project, grant 01IH13009. Since 2017 the development is further funded by BMBF Germany under the SeASiTe project, grant 01IH16012A.
+LIKWID development was funded by BMBF Germany under the [FEPA project](https://gauss-allianz.de/en/project/title/FEPA), grant 01IH13009. Since 2017 the development is further funded by BMBF Germany under the [SeASiTe project](https://gauss-allianz.de/en/project/title/SeASiTe), grant 01IH16012A. In 2022, the [EE-HPC project](https://gauss-allianz.de/en/project/title/EE-HPC) is funded by BMBF Germany in the GreenHPC grant.
 
-<div align=center><img src="https://raw.githubusercontent.com/wiki/RRZE-HPC/likwid/images/BMBF.png" alt="BMBF logo"/></div>
+<div align=center><img src="https://raw.githubusercontent.com/wiki/RRZE-HPC/likwid/images/BMBF.png" alt="BMBF logo" width="150"/></div>
