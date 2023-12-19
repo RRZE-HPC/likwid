@@ -82,7 +82,7 @@ ARM
 - ARM Neoverse N1 (AWS Graviton 2)
 - ARM Neoverse V1
 - HiSilicon TSV110
-- Apple M1
+- Apple M1 (only with Linux)
 
 POWER (experimental)
 - IBM POWER8
