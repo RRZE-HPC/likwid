@@ -1145,6 +1145,8 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsTigerlake;
                     perfmon_numCounters = perfmon_numCountersTigerlake;
                     perfmon_numCoreCounters = perfmon_numCoreCountersTigerlake;
+                    translate_types = default_translate_types;
+                    break;
                 case ICELAKE1:
                 case ICELAKE2:
                 case ROCKETLAKE:
