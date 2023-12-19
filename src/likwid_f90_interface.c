@@ -266,6 +266,23 @@ likwid_nvmarkerresetregion_(char* regionTag, int len)
     nvmon_markerResetRegion( tmp);
     free(tmp);
 }
+
+int __attribute__ ((visibility ("default") ))
+likwid_nvmarkerwritefile_(char* filename, int len)
+{
+    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    strncpy(tmp, regionTag, len * sizeof(char) );
+
+    for (int i=(len-1); len > 0; len--)
+    {
+        if (tmp[i] != ' ') {
+            tmp[i+1] = 0;
+            break;
+        }
+    }
+    nvmon_markerWriteFile(tmp);
+    free(tmp);
+}
 #endif
 
 #ifdef LIKWID_WITH_ROCMON
@@ -356,6 +373,23 @@ likwid_rocmmarkerresetregion_(char* regionTag, int len)
         }
     }
     rocmon_markerResetRegion( tmp);
+    free(tmp);
+}
+
+int __attribute__ ((visibility ("default") ))
+likwid_rocmmarkerwritefile_(char* filename, int len)
+{
+    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    strncpy(tmp, filename, len * sizeof(char) );
+
+    for (int i=(len-1); len > 0; len--)
+    {
+        if (tmp[i] != ' ') {
+            tmp[i+1] = 0;
+            break;
+        }
+    }
+    rocmon_markerWriteFile(tmp);
     free(tmp);
 }
 #endif /* LIKWID_WITH_ROCMON */

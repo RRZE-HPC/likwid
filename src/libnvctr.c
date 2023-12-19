@@ -267,6 +267,76 @@ void nvmon_markerClose(void) {
   // nvmon_finalize();
 }
 
+int nvmon_markerWriteFile(const char* markerfile)
+{
+  FILE *file = NULL;
+  int numberOfGPUs = 0;
+  int numberOfRegions = 0;
+  if (markerfile == NULL) {
+    fprintf(stderr, "File can not be NULL.\n");
+    return -EFAULT;
+  }
+  numberOfRegions = get_map_size(cuda_maps[0]);
+  numberOfGPUs = nvmon_getNumberOfGPUs();
+  if ((numberOfGPUs == 0) || (numberOfRegions == 0)) {
+    fprintf(stderr, "No GPUs or regions defined in hash table\n");
+    return -EFAULT;
+  }
+
+  file = fopen(markerfile, "w");
+  if (file != NULL) {
+    DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                Creating GPU Marker file % s with % d regions % d groups and
+                    % d GPUs,
+                markerfile, numberOfRegions, numberOfCudaGroups, numberOfGPUs);
+    bstring thread_regs_grps =
+        bformat("%d %d %d", numberOfGPUs, numberOfRegions, numberOfCudaGroups);
+    fprintf(file, "%s\n", bdata(thread_regs_grps));
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, % s, bdata(thread_regs_grps));
+    bdestroy(thread_regs_grps);
+
+    for (int j = 0; j < numberOfRegions; j++) {
+      LikwidGpuResults *results = NULL;
+      int ret = get_smap_by_idx(cuda_maps[0], j, (void **)&results);
+      if (ret == 0) {
+        bstring tmp = bformat("%d:%s", j, bdata(results->label));
+        fprintf(file, "%s\n", bdata(tmp));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, % s, bdata(tmp));
+        bdestroy(tmp);
+      }
+    }
+
+    for (int j = 0; j < numberOfRegions; j++) {
+
+      for (int i = 0; i < numberOfGPUs; i++) {
+        LikwidGpuResults *results = NULL;
+        int ret = get_smap_by_idx(cuda_maps[i], j, (void **)&results);
+        if (!ret) {
+          bstring l =
+              bformat("%d %d %d %u %e %d ", j, results->groupID,
+                      id2Cuda[results->gpuID], results->count, results->time,
+                      nvmon_getNumberOfEvents(results->groupID));
+          for (int k = 0; k < nvmon_getNumberOfEvents(results->groupID); k++) {
+            bstring tmp = bformat("%e ", results->PMcounters[k]);
+            bconcat(l, tmp);
+            bdestroy(tmp);
+          }
+          fprintf(file, "%s\n", bdata(l));
+          DEBUG_PRINT(DEBUGLEV_DEVELOP, % s, bdata(l));
+          bdestroy(l);
+        }
+        free(results);
+      }
+    }
+  } else {
+    int err = errno;
+    fprintf(stderr, "Cannot open file %s\n", markerfile);
+    fprintf(stderr, "%s", strerror(err));
+    return -err;
+  }
+  return 0;
+}
+
 int nvmon_markerRegisterRegion(const char *regionTag) {
   if (!likwid_cuda_init) {
     return -EFAULT;

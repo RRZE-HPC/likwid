@@ -202,17 +202,17 @@ likwid.nvGetNameOfCounter = likwid_nvGetNameOfCounter
 likwid.nvSupported = likwid_nvSupported
 likwid.readNvMarkerFile = likwid_readNvMarkerFile
 likwid.destroyNvMarkerFile = likwid_destroyNvMarkerFile
-likwid.nvMarkerNumRegions = nvmon_getNumberOfRegions
-likwid.nvMarkerRegionGroup = nvmon_getGroupOfRegion
-likwid.nvMarkerRegionTag = nvmon_getTagOfRegion
-likwid.nvMarkerRegionEvents = likwid_markerRegionEvents
-likwid.nvMarkerRegionMetrics = likwid_markerRegionMetrics
-likwid.nvMarkerRegionGpulist = likwid_markerRegionGpulist
-likwid.nvMarkerRegionGpus = likwid_markerRegionGpus
-likwid.nvMarkerRegionTime = likwid_markerRegionTime
-likwid.nvMarkerRegionCount = likwid_markerRegionCount
-likwid.nvMarkerRegionResult = likwid_markerRegionResult
-likwid.nvMarkerRegionMetric = likwid_markerRegionMetric
+likwid.nvMarkerNumRegions = likwid_nvMarkerNumRegions
+likwid.nvMarkerRegionGroup = likwid_nvMarkerRegionGroup
+likwid.nvMarkerRegionTag = likwid_nvMarkerRegionTag
+likwid.nvMarkerRegionEvents = likwid_nvMarkerRegionEvents
+likwid.nvMarkerRegionMetrics = likwid_nvMarkerRegionMetrics
+likwid.nvMarkerRegionGpulist = likwid_nvMarkerRegionGpulist
+likwid.nvMarkerRegionGpus = likwid_nvMarkerRegionGpus
+likwid.nvMarkerRegionTime = likwid_nvMarkerRegionTime
+likwid.nvMarkerRegionCount = likwid_nvMarkerRegionCount
+likwid.nvMarkerRegionResult = likwid_nvMarkerRegionResult
+likwid.nvMarkerRegionMetric = likwid_nvMarkerRegionMetric
 likwid.nvInit = likwid_nvInit
 likwid.nvAddEventSet = likwid_nvAddEventSet
 likwid.nvFinalize = likwid_nvFinalize
@@ -1367,59 +1367,10 @@ end
 likwid.getArch = llikwid_getArch
 
 
-local function getGpuMarkerResults(filename, gpulist, nan2value)
-    local gputopo = likwid.getGpuTopology()
-    local ret = likwid.readNvMarkerFile(filename)
-    if ret < 0 then
-        return nil, nil
-    elseif ret == 0 then
-        return {}, {}
-    end
-    if not nan2value then
-        nan2value = '-'
-    end
-    results = {}
-    metrics = {}
-    for i=1, likwid.nvMarkerNumRegions() do
-        local regionName = likwid.nvMarkerRegionTag(i)
-        local groupID = likwid.nvMarkerRegionGroup(i)
-        local regionGPUs = likwid.nvMarkerRegionGpus(i)
-        results[i] = {}
-        metrics[i] = {}
-        results[i][groupID] = {}
-        metrics[i][groupID] = {}
-        for k=1, likwid.nvMarkerRegionEvents(i) do
-            local eventName = likwid.nvGetNameOfEvent(groupID, k)
-            local counterName = likwid.nvGetNameOfCounter(groupID, k)
-            results[i][groupID][k] = {}
-            for j=1, regionGPUs do
-                results[i][groupID][k][j] = likwid.nvMarkerRegionResult(i,k,j)
-                if results[i][groupID][k][j] ~= results[i][groupID][k][j] then
-                    results[i][groupID][k][j] = nan2value
-                end
-            end
-        end
-        if likwid.nvMarkerRegionMetrics(groupID) > 0 then
-            for k=1, likwid.nvMarkerRegionMetrics(groupID) do
-                local metricName = likwid.getNameOfMetric(groupID, k)
-                metrics[i][likwid.nvMarkerRegionGroup(i)][k] = {}
-                for j=1, regionGPUs do
-                    metrics[i][groupID][k][j] = likwid.nvMarkerRegionMetric(i,k,j)
-                    if metrics[i][groupID][k][j] ~= metrics[i][groupID][k][j] then
-                        metrics[i][groupID][k][j] = nan2value
-                    end
-                end
-            end
-        end
-    end
-    return results, metrics
-end
 
-likwid.getGpuMarkerResults = getGpuMarkerResults
-
-local function printGpuOutput(results, metrics, gpulist, region, stats)
+local function printOutputCuda(results, metrics, gpulist, region, stats)
     local maxLineFields = 0
-    local gputopo = likwid.getGpuTopology()
+    local gputopo = likwid.getCudaTopology()
     local regionName = likwid.nvMarkerRegionTag(region)
     local regionGPUs = likwid.nvMarkerRegionGpus(region)
     local cur_gpulist = gpulist
@@ -1572,10 +1523,10 @@ local function printGpuOutput(results, metrics, gpulist, region, stats)
     end
 end
 
-likwid.printGpuOutput = printGpuOutput
+likwid.printOutputCuda = printOutputCuda
 
-local function getNvMarkerResults(filename, gpulist, nan2value)
-    local gputopo = likwid.getGpuTopology()
+local function getMarkerResultsCuda(filename, gpulist, nan2value)
+    local gputopo = likwid.getCudaTopology()
     local ret = likwid.readNvMarkerFile(filename)
     if ret < 0 then
         return nil, nil
@@ -1622,7 +1573,7 @@ local function getNvMarkerResults(filename, gpulist, nan2value)
     return results, metrics
 end
 
-likwid.getNvMarkerResults = getNvMarkerResults
+likwid.getMarkerResultsCuda = getMarkerResultsCuda
 
 local function getMarkerResultsRocm(filename, gpulist, nan2value)
     local gputopo = likwid.getGpuTopology_rocm()

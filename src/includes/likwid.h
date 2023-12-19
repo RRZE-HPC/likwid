@@ -2327,6 +2327,13 @@ extern void nvmon_markerGetRegion(const char *regionTag, int *nr_gpus,
                                       int *nr_events, double **events,
                                       double *time, int *count)
     __attribute__((visibility("default")));
+/*! \brief Write the output file of the NvMarker API
+@param [in] markerfile Filename for NvMarker API results
+@return 0 or negative error number
+*/
+extern int nvmon_markerWriteFile(const char* markerfile)
+    __attribute__((visibility("default")));
+
 
 /*! \brief Read the output file of the NvMarker API
 @param [in] filename Filename with NvMarker API results
@@ -3098,6 +3105,24 @@ Reset the values of all configured counters and timers.
 */
 int rocmon_markerResetRegion(const char *regionTag)
     __attribute__((visibility("default")));
+
+/*! \brief Write measurement data to file
+
+Write current values to file
+@param markerfile [in] Filename for writing
+@return Error code of write operation
+*/
+int rocmon_markerWriteFile(const char *markerfile)
+    __attribute__((visibility("default")));
+
+/*! \brief Select next group to measure
+
+Must be called in parallel region of the application to switch group on every
+CPU.
+*/
+extern void rocmon_markerNextGroup(void)
+    __attribute__((visibility("default")));
+
 
 /*! \brief Read the output file of the RocmonMarker API
 @param [in] filename Filename with RocmonMarker API results

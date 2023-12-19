@@ -1541,14 +1541,14 @@ if use_marker == true then
     ---------------------------
     if nvSupported and #cuda_event_string_list > 0 then
         if likwid.access(nvMarkerFile, "e") >= 0 then
-            results, metrics = likwid.getNvMarkerResults(nvMarkerFile, markergpulist, nan2value)
+            results, metrics = likwid.getMarkerResultsCuda(nvMarkerFile, gpulist_cuda, nan2value)
             if not results then
-                print_stderr("Failure reading GPU Marker API result file.")
+                print_stderr("Failure reading Nv Marker API result file.")
             elseif #results == 0 then
-                print_stderr("No regions could be found in GPU Marker API result file.")
+                print_stderr("No regions could be found in Nv Marker API result file.")
             else
                 for r = 1, #results do
-                    likwid.printGpuOutput(results[r], metrics[r], gpulist_cuda, r, print_stats)
+                    likwid.printOutputCuda(results[r], metrics[r], gpulist_cuda, r, print_stats)
                 end
             end
             likwid.destroyNvMarkerFile()
@@ -1561,7 +1561,7 @@ if use_marker == true then
     ---------------------------
     if rocmSupported and #rocm_event_string_list > 0 then
         if likwid.access(rocmMarkerFile, "e") >= 0 then
-            results, metrics = likwid.getMarkerResultsRocm(rocmMarkerFile, markerrocmgpulist, nan2value)
+            results, metrics = likwid.getMarkerResultsRocm(rocmMarkerFile, gpulist_rocm, nan2value)
             if not results then
                 print_stderr("Failure reading ROCM Marker API result file.")
             elseif #results == 0 then
