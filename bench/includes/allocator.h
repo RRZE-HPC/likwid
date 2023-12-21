@@ -31,6 +31,7 @@
 #define ALLOCATOR_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <bstrlib.h>
 #include <test_types.h>
 
@@ -42,10 +43,21 @@ extern size_t allocator_dataTypeLength(DataType type);
 extern void allocator_allocateVector(void** ptr,
                 int alignment,
                 uint64_t size,
-                int offset,
+                off_t offset,
                 DataType type,
                 int stride,
                 bstring domain,
+                InitMethod init_method,
+                uint64_t init_method_arg,
                 int init_per_thread);
+
+extern void allocator_initVector(void** ptr,
+                uint64_t size,
+                off_t offset,
+                DataType type,
+                int stride,
+                InitMethod init_method,
+                uint64_t init_method_arg,
+                bool fill);
 
 #endif /*ALLOCATOR_H*/

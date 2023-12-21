@@ -333,6 +333,19 @@ int main(int argc, char** argv)
                     {
                         ownprintf("Loop micro Ops (\u03BCOPs): %d\n",test->uops);
                     }
+                    ownprintf("Initialization: ");
+                    switch (test->init_method)
+                    {
+                        case CONSTANT_ONE:
+                            ownprintf("constant, all ones\n");
+                            break;
+                        case INDEX_STRIDE:
+                            ownprintf("(index + stride) %% size\n");
+                            break;
+                        case LINKED_LIST:
+                            ownprintf("linked list\n");
+                            break;
+                    }
                 }
                 bdestroy(testcase);
                 if (!builtin)
@@ -524,6 +537,8 @@ int main(int argc, char** argv)
                                                     test->type,
                                                     test->stride,
                                                     currentWorkgroup->streams[i].domain,
+                                                    test->init_method,
+                                                    test->init_arg,
                                                     currentWorkgroup->init_per_thread && nrThreads > 1);
                     }
                     tmp++;
@@ -775,6 +790,14 @@ int main(int argc, char** argv)
     {
         ownprintf("UOPs:\t\t\t%" PRIu64 "\n",
                 LLU_CAST ((double)realSize/test->stride)*test->uops*threads_data[0].data.iter);
+    }
+    if (test->init_method == INDEX_STRIDE)
+    {
+        ownprintf("Initialization stride:\t%" PRIu64 "\n",test->init_arg);
+    }
+    else if (test->init_method == LINKED_LIST)
+    {
+        ownprintf("Linked list elem. size:\t%" PRIu64 "\n",test->init_arg);
     }
 
     ownprintf(bdata(HLINE));

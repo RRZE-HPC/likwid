@@ -40,6 +40,8 @@ my @Testcases;
 my $name;
 my $streams;
 my $type;
+my $init_method;
+my $init_arg;
 my $flops;
 my $bytes;
 my $desc;
@@ -122,6 +124,8 @@ while (defined(my $file = readdir(DIR))) {
         $prolog='';
         $loop='';
         $desc='';
+        $init_method='CONSTANT_ONE';
+        $init_arg='';
         $streams=1;
         my $loads=-1;
         my $stores=-1;
@@ -140,6 +144,13 @@ while (defined(my $file = readdir(DIR))) {
                 }
             } elsif ($line =~ /TYPE[ ]+(SINGLE|DOUBLE|INT)/) {
                 $type = $1;
+            } elsif ($line =~ /INIT[ ]+(CONST|INDEX_STRIDE|LINKED_LIST)?/p) {
+                $init_method = $1;
+		# translate to actual enum items
+		if ($init_method eq "CONST") { $init_method = "CONSTANT_ONE"; }
+		if (${^POSTMATCH} =~ /[ ]+([0-9]+)/) {
+			$init_arg = $1;
+		}
             } elsif ($line =~ /FLOPS[ ]+([0-9]+)/) {
                 $flops = $1;
             } elsif ($line =~ /BYTES[ ]+([0-9]+)/) {
@@ -156,7 +167,7 @@ while (defined(my $file = readdir(DIR))) {
                 $loop_instr = $1;
             } elsif ($line =~ /UOPS[ ]+([0-9]+)/) {
                 $uops = $1;
-            } elsif ($line =~ /DESC[ ]+([a-zA-z ,.\-_\(\)\+\*\/=]+)/) {
+            } elsif ($line =~ /DESC[ ]+(.*)/) {
                 $desc = $1;
             } elsif ($line =~ /INC[ ]+([0-9]+)/) {
                 $increment = $1;
@@ -196,6 +207,8 @@ while (defined(my $file = readdir(DIR))) {
         $Vars->{skip} = $skip;
         $Vars->{multi} = $multi;
         $Vars->{desc} = $desc;
+	$Vars->{init_method} = $init_method;
+	$Vars->{init_arg} = $init_arg;
 
 #print Dumper($Vars);
 
@@ -212,7 +225,9 @@ while (defined(my $file = readdir(DIR))) {
                 branches    => $branches,
                 instr_const    => $instr,
                 instr_loop    => $loop_instr,
-                uops    => $uops});
+                uops    => $uops,
+		init_method => $init_method,
+		init_arg => $init_arg});
     }
 }
 #print Dumper(@Testcases);

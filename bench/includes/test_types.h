@@ -41,6 +41,12 @@ typedef enum {
     INT} DataType;
 
 typedef enum {
+    CONSTANT_ONE = 0, /* fill stream with 1 of the employed data type (default) */
+    INDEX_STRIDE,  /* fill stream with the index + stride inside the stream modulo the stream size using the employed data type */
+    LINKED_LIST /* create linked linked for pointer chasing */
+} InitMethod;
+
+typedef enum {
     STREAM_0 = 0,
     STREAM_1 = 1,
     STREAM_2,
@@ -97,6 +103,8 @@ typedef struct {
     int instr_const;
     int instr_loop;
     int uops;
+    InitMethod init_method;
+    uint64_t init_arg;
     int loadstores;
     void* dlhandle;
 } TestCase;

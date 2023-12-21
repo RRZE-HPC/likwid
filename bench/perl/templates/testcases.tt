@@ -12,7 +12,7 @@ extern void [% test.name %]();
 
 static const TestCase kernels[NUMKERNELS] = {
     [% FOREACH test IN Testcases %]
-    {"[% test.name %]" , [% test.streams %], [% test.type %], [% test.stride %], &[% test.name %], [% test.flops %], [% test.bytes %], "[% test.desc %]", [% test.loads %], [% test.stores %], [% test.branches %], [% test.instr_const %], [% test.instr_loop %], [% test.uops %]},
+    {"[% test.name %]" , [% test.streams %], [% test.type %], [% test.stride %], &[% test.name %], [% test.flops %], [% test.bytes %], "[% test.desc %]", [% test.loads %], [% test.stores %], [% test.branches %], [% test.instr_const %], [% test.instr_loop %], [% test.uops %], [% test.init_method %], [% test.init_arg %] },
     [% END %]
 };
 

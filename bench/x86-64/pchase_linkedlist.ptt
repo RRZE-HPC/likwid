@@ -1,0 +1,15 @@
+STREAMS 1
+TYPE INT
+INIT LINKED_LIST 64
+FLOPS 0
+BYTES 4
+DESC Linked list pointer chase with 64 byte-sized list items
+LOADS 1
+STORES 0
+INSTR_LOOP 1
+XOR  R12,  R12
+LOOP 4
+MOV  R13D, [STR0 + R12]
+MOV  R14D, [STR0 + R13]
+MOV  R15D, [STR0 + R14]
+MOV  R12D, [STR0 + R15]
