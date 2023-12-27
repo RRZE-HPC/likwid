@@ -108,6 +108,7 @@ struct thread_info {
     pid_t pid;
     pid_t ppid;
     pthread_barrier_t *barrier;
+    int print_pstree;
 };
 
 void *
@@ -124,7 +125,7 @@ thread_start(void *arg)
     pthread_barrier_wait(tinfo->barrier);
     printf ("Rank %d Thread %d running on Node %s core %d/%d with pid %d and tid %d\n",tinfo->mpi_id, tinfo->thread_id, host, sched_getcpu(), get_sched(), tinfo->pid ,gettid());
     pthread_barrier_wait(tinfo->barrier);
-    if (tinfo->thread_id == 0 && (!system("command -v pstree > /dev/null 2>&1")))
+    if ((tinfo->print_pstree) && (tinfo->thread_id == 0) && (!system("command -v pstree > /dev/null 2>&1")))
     {
         sleep(tinfo->mpi_id+1);
         char cmd[1024];
@@ -146,6 +147,15 @@ main(int argc, char **argv)
     int rank = 0, size = 1;
     char host[HOST_NAME_MAX];
     pid_t master_pid = getpid();
+    int print_pstree = 0;
+    for (i = 0; i < argc; i++)
+    {
+        if (strncmp(argv[i], "-ps", 3) == 0)
+        {
+            print_pstree = 1;
+            break;
+        }
+    }
 
 
     MPI_Init(&argc,&argv);
@@ -177,7 +187,7 @@ main(int argc, char **argv)
 #pragma omp barrier
 #pragma omp master
         {
-            if( !system("command -v pstree > /dev/null 2>&1") )
+            if ((print_pstree) && (!system("command -v pstree > /dev/null 2>&1")))
             {
                 sleep(rank+1);
                 pid_t pid = getppid();
@@ -226,6 +236,7 @@ main(int argc, char **argv)
         tinfos[i].pid = master_pid;
         tinfos[i].ppid = pid;
         tinfos[i].barrier = &bar;
+        tinfos[i].print_pstree = print_pstree;
     }
     MPI_Barrier(MPI_COMM_WORLD);
     MASTER(Start Pthread threads);
