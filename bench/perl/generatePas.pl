@@ -156,7 +156,7 @@ while (defined(my $file = readdir(DIR))) {
                 $loop_instr = $1;
             } elsif ($line =~ /UOPS[ ]+([0-9]+)/) {
                 $uops = $1;
-            } elsif ($line =~ /DESC[ ]+([a-zA-z ,.\-_\(\)\+\*\/=]+)/) {
+            } elsif ($line =~ /DESC[ ]+([0-9a-zA-z ,.\-_\(\)\+\*\/=]+)/) {
                 $desc = $1;
             } elsif ($line =~ /INC[ ]+([0-9]+)/) {
                 $increment = $1;
