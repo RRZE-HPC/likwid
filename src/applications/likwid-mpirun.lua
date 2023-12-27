@@ -339,8 +339,8 @@ local function writeHostfileIntelMPI(hostlist, filename)
     end
     for i, hostcontent in pairs(hostlist) do
         str = hostcontent["hostname"]
-        if hostcontent["slots"] then
-            str = str .. string.format(":%d", hostcontent["slots"])
+        if hostcontent["ppn"] then
+            str = str .. string.format(":%d", hostcontent["ppn"])
         end
         f:write(str .. "\n")
     end
@@ -962,20 +962,22 @@ local function assignHosts(hosts, np, ppn, tpp)
                 if host["maxslots"] and host["maxslots"] < ppn*tpp then
                     table.insert(newhosts, {hostname=host["hostname"],
                                             slots=host["maxslots"],
+                                            ppn=ppn,
                                             maxslots=host["maxslots"],
                                             interface=host["interface"]})
                     if debug then
-                        print_stdout(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], host["maxslots"]))
+                        print_stdout(string.format("DEBUG: Add Host %s with %d/%d slots to host list", host["hostname"], host["ppn"], host["maxslots"]))
                     end
                     current = host["maxslots"]
                     hosts[i] = nil
                 else
                     table.insert(newhosts, {hostname=host["hostname"],
                                             slots=ppn*tpp,
+                                            ppn=ppn,
                                             maxslots=host["slots"],
                                             interface=host["interface"]})
                     if debug then
-                        print_stdout(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], ppn*tpp))
+                        print_stdout(string.format("DEBUG: Add Host %s with %d/%d slots to host list", host["hostname"], ppn, ppn*tpp))
                     end
                     current = ppn*tpp
                     hosts[i] = nil
@@ -1016,11 +1018,12 @@ local function assignHosts(hosts, np, ppn, tpp)
                 mpirun_exit(1)
             else
                 table.insert(newhosts, {hostname=host["hostname"],
+                                        ppn=ppn,
                                         slots=ppn*tpp,
                                         maxslots=host["slots"],
                                         interface=host["interface"]})
                 if debug then
-                    print_stdout(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], ppn*tpp))
+                    print_stdout(string.format("DEBUG: Add Host %s with %d/%d slots to host list", host["hostname"], ppn, ppn*tpp))
                 end
                 current = ppn*tpp
             end
