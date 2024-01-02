@@ -178,6 +178,7 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
                 newreg = cur->global.global_ctl + cur->global.status_offset + ((reg - FAKE_UNC_GLOBAL_STATUS0));
             }
             uint64_t tmp = 0x0;
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Read Uncore counter 0x%X (%s) on CPU %d (socket %d), newreg, pci_device_names[dev], cpu_id, socket_id);
             err = access_x86_msr_read(cpu_id, newreg, &tmp);
             if (err == 0)
             {
@@ -404,6 +405,7 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
             }
             if (newreg != 0x0)
             {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Write Uncore counter 0x%X (%s) on CPU %d (socket %d): 0x%lX, newreg, pci_device_names[dev], cpu_id, socket_id, data);
                 err = access_x86_msr_write(cpu_id, newreg, data);
             }
         }
@@ -612,6 +614,10 @@ access_x86_translate_check(PciDeviceIndex dev, int cpu_id)
     int socket_id = affinity_thread2socket_lookup[cpu_id];
     PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[socket_id];
     if (cur->units && cur->socket_id == socket_id && cur->units[dev].num_regs > 0)
+    {
+        return 1;
+    }
+    if (dev == MSR_UBOX_DEVICE && cur->units)
     {
         return 1;
     }

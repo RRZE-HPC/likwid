@@ -2171,7 +2171,7 @@ int perfmon_readCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
             }
         }
         VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, UNFREEZE_UNCORE);
-        HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, 0x0ULL);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, 0x0ULL));
     }
     if (MEASURE_CORE(eventSet))
     {
