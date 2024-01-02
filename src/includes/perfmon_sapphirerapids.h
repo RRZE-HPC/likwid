@@ -38,7 +38,7 @@ static int perfmon_numCoreCountersSapphireRapids = NUM_COUNTERS_CORE_SAPPHIRERAP
 static int perfmon_numArchEventsSapphireRapids = NUM_ARCH_EVENTS_SAPPHIRERAPIDS;
 
 #define SPR_CHECK_CORE_OVERFLOW(offset) \
-    if (counter_result < data->counterData) \
+    if (counter_result < data[thread_id].counterData) \
     { \
         uint64_t ovf_values = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values)); \
@@ -1231,7 +1231,7 @@ uint32_t spr_power_stop(int thread_id, RegisterIndex index, PerfmonEvent* event,
         uint64_t counter1 = counter_map[index].counterRegister;
         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_POWER)
-        if (counter_result < data->counterData)
+        if (counter_result < data[thread_id].counterData)
         {
             VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_POWER)
             data[thread_id].overflows++;
@@ -1713,7 +1713,7 @@ uint32_t spr_power_read(int thread_id, RegisterIndex index, PerfmonEvent* event,
         uint64_t counter1 = counter_map[index].counterRegister;
         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_POWER)
-        if (counter_result < data->counterData)
+        if (counter_result < data[thread_id].counterData)
         {
             VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_POWER)
             data[thread_id].overflows++;
