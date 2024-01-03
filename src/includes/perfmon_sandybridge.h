@@ -1952,7 +1952,7 @@ int perfmon_finalizeCountersThread_sandybridge(int thread_id, PerfmonEventSet* e
                 break;
         }
         if ((reg) &&
-            (((type == PMC)||(type == FIXED)) || ((type >= UNCORE) && (haveLock) && (HPMcheck(dev, cpu_id)))))
+            (((type == PMC)||(type == FIXED)) || ((type >= UNCORE && type < NUM_UNITS) && (haveLock) && (HPMcheck(dev, cpu_id)))))
         {
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));

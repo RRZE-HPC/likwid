@@ -1629,7 +1629,7 @@ int perfmon_finalizeCountersThread_ivybridge(int thread_id, PerfmonEventSet* eve
             default:
                 break;
         }
-        if ((reg) && (((type == PMC)||(type == FIXED))||((type >= UNCORE) && (haveLock))))
+        if ((reg) && (((type == PMC)||(type == FIXED))||((type >= UNCORE && type < NUM_UNITS) && (haveLock))))
         {
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
             CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
