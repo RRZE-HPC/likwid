@@ -44,7 +44,7 @@ static int perfmon_numArchEventsSapphireRapids = NUM_ARCH_EVENTS_SAPPHIRERAPIDS;
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values)); \
         if (ovf_values & (1ULL<<(offset))) \
         { \
-            data->overflows++; \
+            data[thread_id].overflows++; \
         } \
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<(offset)))); \
     }
@@ -217,8 +217,8 @@ uint64_t spr_power_start(int thread_id, RegisterIndex index, PerfmonEvent* event
         uint64_t tmp = 0x0ULL;
         RegisterType type = counter_map[index].type;
         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1,(uint32_t*)&tmp));
-        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST tmp, START_POWER)
         data[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST data[thread_id].startData, START_POWER)
     }
     return 0;
 }
@@ -420,7 +420,7 @@ int spr_start_uncore_freerun(int thread_id, RegisterIndex index, PerfmonEvent* e
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
     PciDeviceIndex dev = counter_map[index].device;
-    data->startData = data->counterData = 0x0;
+    data[thread_id].startData = data[thread_id].counterData = 0x0;
     VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST 0x0ULL, START_UNCORE_FREERUN);
     int err = HPMread(cpu_id, dev, counter1, &flags);
     if (err == 0)
@@ -842,8 +842,8 @@ int perfmon_startCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* e
             uint64_t counter1 = counter_map[index].counterRegister;
 
             PciDeviceIndex dev = counter_map[index].device;
-            data->startData = 0;
-            data->counterData = 0;
+            data[thread_id].startData = 0;
+            data[thread_id].counterData = 0;
             switch (type)
             {
                 case FIXED:
@@ -1165,7 +1165,7 @@ int perfmon_startCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* e
                 default:
                     break;
             }
-            data->counterData = data->startData;
+            data[thread_id].counterData = data[thread_id].startData;
         }
     }
 
