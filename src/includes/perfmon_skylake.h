@@ -1833,7 +1833,7 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
             default:
                 break;
         }
-        if ((reg) && (((type == PMC)||(type == FIXED))|| ((type >= UNCORE) && (haveLock))))
+        if ((reg) && (((type == PMC)||(type == FIXED))|| ((type >= UNCORE && type < NUM_UNITS) && (haveLock))))
         {
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, reg, &ovf_values_uncore));
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, ovf_values_uncore, SHOW_CTL);

@@ -1974,7 +1974,7 @@ int perfmon_finalizeCountersThread_haswell(int thread_id, PerfmonEventSet* event
                 }*/
                 break;
         }
-        if ((reg) && (((type == PMC)||(type == FIXED))||((type >= UNCORE) && (haveLock))))
+        if ((reg) && (((type == PMC)||(type == FIXED))||((type >= UNCORE && type < NUM_UNITS) && (haveLock))))
         {
             ovf_values_uncore = 0x0ULL;
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
