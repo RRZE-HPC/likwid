@@ -31,5 +31,6 @@ cache lines from memory. And finally L3 miss ratio tells you how many of your
 memory references required a cache line to be loaded from a higher level.
 While the data cache miss rate might be given by your algorithm you should
 try to get data cache miss ratio as low as possible by increasing your cache reuse.
-
+With Intel SapphireRapids, the retired UOPs cannot be measured anymore.
+Instead, the number of retired instructions are used as a basis for the rates.
 
