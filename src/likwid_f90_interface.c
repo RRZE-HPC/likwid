@@ -271,7 +271,7 @@ int __attribute__ ((visibility ("default") ))
 likwid_nvmarkerwritefile_(char* filename, int len)
 {
     char* tmp = (char*) malloc((len+1) * sizeof(char));
-    strncpy(tmp, regionTag, len * sizeof(char) );
+    strncpy(tmp, filename, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
     {
