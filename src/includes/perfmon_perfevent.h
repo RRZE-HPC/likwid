@@ -1037,11 +1037,12 @@ int perfmon_setupCountersThread_perfevent(
 #if defined(__ARM_ARCH_8A)
                 if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
                 {
-                    if (event->eventId == 0x3E8 ||
-                        event->eventId == 0x3E0 ||
-                        event->eventId == 0x308 ||
-                        event->eventId == 0x309 ||
-                        (event->eventId >= 0x314 &&  event->eventId <= 0x31E))
+                    if (event->eventId == 0x308 || event->eventId == 0x309 ||
+                        (event->eventId >= 0x314 && event->eventId <= 0x316) ||
+                        (event->eventId >= 0x318 && event->eventId <= 0x31E) ||
+                        event->eventId == 0x330 || event->eventId == 0x350 ||
+                        event->eventId == 0x370 || event->eventId == 0x396 ||
+                        event->eventId == 0x3E0 || event->eventId == 0x3E8)
                     {
                         if (numa_lock[affinity_thread2numa_lookup[cpu_id]] != cpu_id)
                         {
@@ -1516,14 +1517,20 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                 if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
                 {
                     switch (eventSet->events[i].event.eventId) {
-                        case 0x3E8:
-                            tmp *= 256;
+                        case 0x1e0:
+                            if (cpuid_topology.numCoresPerSocket == 24)
+                                tmp *= 9;
+                            else
+                                tmp *= 8;
                             break;
                         case 0x3E0:
                             if (cpuid_topology.numCoresPerSocket == 24)
                                 tmp *= 36;
                             else
                                 tmp *= 32;
+                            break;
+                        case 0x3E8:
+                            tmp *= 256;
                             break;
                         default:
                             break;
@@ -1567,14 +1574,20 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                 if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
                 {
                     switch (eventSet->events[i].event.eventId) {
-                        case 0x3E8:
-                            tmp *= 256;
+                        case 0x1e0:
+                            if (cpuid_topology.numCoresPerSocket == 24)
+                                tmp *= 9;
+                            else
+                                tmp *= 8;
                             break;
                         case 0x3E0:
                             if (cpuid_topology.numCoresPerSocket == 24)
                                 tmp *= 36;
                             else
                                 tmp *= 32;
+                            break;
+                        case 0x3E8:
+                            tmp *= 256;
                             break;
                         default:
                             break;

@@ -1,0 +1,29 @@
+SHORT Power and Energy consumption
+
+EVENTSET
+PMC0  EA_CORE
+PMC1  EA_L2
+PMC2  EA_MEMORY
+
+METRICS
+Runtime (RDTSC) [s] time
+Energy Core [J] 1E-09*PMC0
+Power Core [W] 1E-09*PMC0/time
+Energy L2 [J] 1E-09*PMC1
+Power L2 [W] 1E-09*PMC1/time
+Energy HBM [J] 1E-09*PMC2
+Power HBM [W] 1E-09*PMC2/time
+
+LONG
+Formulas:
+Energy Core [J] 1E-09*EA_CORE
+Power Core [W] 1E-09*EA_CORE/time
+Energy L2 [J] 1E-09*EA_L2
+Power L2 [W] 1E-09*EA_L2/time
+Energy HBM [J] 1E-09*EA_MEMORY
+Power HBM [W] 1E-09*EA_MEMORY/time
+-
+Getting Power and Energy from PMC counters (core: per raw count is 8 nJ; L2: per raw count
+is 32 nJ; and HBM: per count is 256 nJ). On 24-core/2.6GHz A64FX the former two values
+change to 9 nJ and 36 nJ, respectively. The Likwid internals will scale counters appropriately
+and the output lists adjusted counters which are shown in nJ.
