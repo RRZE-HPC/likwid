@@ -31,10 +31,6 @@
 #ifndef FREQUENCY_H
 #define FREQUENCY_H
 
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-
-
 extern char* daemon_path;
 
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
