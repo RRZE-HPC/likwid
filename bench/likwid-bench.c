@@ -738,6 +738,11 @@ int main(int argc, char** argv)
             destsize = test->bytes/test->streams;
             perUpFactor = (clsize/sizeof(double));
             break;
+        case HALF:
+            datasize = test->bytes/sizeof(_Float16);
+            destsize = test->bytes/test->streams;
+            perUpFactor = (clsize/sizeof(_Float16));
+            break;
     }
 
     cycPerCL = (double) maxCycles/((double)datavol/(clsize*datasize));

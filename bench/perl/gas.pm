@@ -241,6 +241,8 @@ sub define_data
             print ".double $value, $value, $value, $value, $value, $value, $value, $value\n"
         } elsif ($type eq 'SINGLE') {
             print ".single $value, $value, $value, $value, $value, $value, $value, $value\n"
+        } elsif ($type eq 'HALF') {
+            print "._Float16 $value, $value, $value, $value, $value, $value, $value, $value\n"
         } elsif ($type eq 'INT') {
             print ".int $value, $value\n"
         }

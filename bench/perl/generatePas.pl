@@ -138,7 +138,7 @@ while (defined(my $file = readdir(DIR))) {
                 if ($streams > 10) {
                     $multi = 1;
                 }
-            } elsif ($line =~ /TYPE[ ]+(SINGLE|DOUBLE|INT)/) {
+            } elsif ($line =~ /TYPE[ ]+(SINGLE|DOUBLE|INT|HALF)/) {
                 $type = $1;
             } elsif ($line =~ /FLOPS[ ]+([0-9]+)/) {
                 $flops = $1;

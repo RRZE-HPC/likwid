@@ -82,6 +82,9 @@ allocator_dataTypeLength(DataType type)
         case DOUBLE:
             return sizeof(double);
             break;
+        case HALF:
+            return sizeof(_Float16);
+            break;
         default:
             return 0;
     }

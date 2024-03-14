@@ -163,6 +163,7 @@ static struct bstrList* analyse_ptt(bstring pttfile, TestCase** testcase)
     bstring bTYPE = bformat("TYPE");
     bstring bTYPEDOUBLE = bformat("DOUBLE");
     bstring bTYPESINGLE = bformat("SINGLE");
+    bstring bTYPEHALF = bformat("HALF");
     bstring bTYPEINT = bformat("INT");
     bstring bDESC = bformat("DESC");
     bstring bLOADS = bformat("LOADS");
@@ -265,6 +266,10 @@ static struct bstrList* analyse_ptt(bstring pttfile, TestCase** testcase)
                     {
                         test->type = INT;
                     }
+                    else if (bstrncmp(btype, bTYPEHALF, blength(bTYPEHALF)) == BSTR_OK)
+                    {
+                        test->type = HALF;
+                    }
                     else
                     {
                         fprintf(stderr, "Failed to determine type of benchmark\n");
@@ -336,7 +341,7 @@ static struct bstrList* parse_asm(TestCase* testcase, struct bstrList* input)
         struct bstrList* loop = bstrListCreate();
         int got_loop = 0;
         bstring bloopname = bformat("%s_loop", testcase->name);
-	bstring bLOOP = bfromcstr("LOOP");
+        bstring bLOOP = bfromcstr("LOOP");
         int step = testcase->stride;
 
         for (int i = 0; i < input->qty; i++)

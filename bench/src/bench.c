@@ -166,6 +166,24 @@ runTest(void* arg)
                 }
             }
             break;
+        case HALF:
+            {
+                _Float16* hptr;
+                for (i=0; i <  myData->test->streams; i++)
+                {
+                    hptr = (_Float16*) myData->streams[i];
+                    hptr +=  offset;
+                    if (myData->init_per_thread)
+                    {
+                        for (j = 0; j < vecsize; j++)
+                        {
+                            hptr[j] = 1.0;
+                        }
+                    }
+                    myData->streams[i] = (_Float16*) hptr;
+                }
+            }
+            break;
     }
 
     BARRIER;
@@ -562,6 +580,24 @@ getIterSingle(void* arg)
                         }
                     }
                     myData->streams[i] = (double*) dptr;
+                }
+            }
+            break;
+        case HALF:
+            {
+                _Float16* hptr;
+                for (i=0; i <  myData->test->streams; i++)
+                {
+                    hptr = (_Float16*) myData->streams[i];
+                    hptr +=  offset;
+                    if (myData->init_per_thread)
+                    {
+                        for (j = 0; j < vecsize; j++)
+                        {
+                            hptr[j] = 1.0;
+                        }
+                    }
+                    myData->streams[i] = (_Float16*) hptr;
                 }
             }
             break;
