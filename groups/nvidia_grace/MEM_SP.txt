@@ -1,0 +1,49 @@
+SHORT Main memory bandwidth and FLOPs
+
+EVENTSET
+PMC0  INST_RETIRED
+PMC1  CPU_CYCLES
+PMC2  FP_FIXED_OPS_SPEC
+PMC3  FP_SCALE_OPS_SPEC
+PMC4  FP_SP_SPEC
+PMC5  SVE_INST_SPEC
+SCF0  CMEM_RD_DATA
+SCF1  CMEM_WR_TOTAL_BYTES
+
+METRICS
+Runtime (RDTSC) [s]    time
+Clock [MHz]    1.E-06*PMC1/time
+CPI    PMC1/PMC0
+FP rate [MFLOP/s]    1.0E-06*(PMC2+PMC3)/time
+SVE FP rate [MFLOP/s]    1.0E-06*(PMC3)/time
+Scalar/NEON FP rate [MFLOP/s]    1.0E-06*(PMC2)/time
+SVE ratio    100*(PMC3)/(PMC2+PMC3)
+Flops per SP instr    PMC3/PMC4
+Arithmetic ratio SVE    100*(PMC4)/(PMC5)
+Memory read bandwidth [MBytes/s]    1.0E-06*(SCF0)*32.0/time
+Memory read data volume [GBytes]    1.0E-09*(SCF0)*32.0
+Memory write bandwidth [MBytes/s]    1.0E-06*(SCF1)/time
+Memory write data volume [GBytes]    1.0E-09*SCF1
+Memory bandwidth [MBytes/s]    1.0E-06*((SCF0*32.0)+SCF1)/time
+Memory data volume [GBytes]    1.0E-09*((SCF0*32.0)+SCF1)
+
+
+LONG
+Formulas:
+FP rate [MFLOP/s] = 1E-06*(FP_FIXED_OPS_SPEC+FP_SCALE_OPS_SPEC)/time
+SVE FP rate [MFLOP/s] = 1E-06*FP_SCALE_OPS_SPEC/time
+Scalar/NEON FP rate [MFLOPS/s] = 1E-06*FP_FIXED_OPS_SPEC/time
+SVE ratio = 100*FP_SCALE_OPS_SPEC/(FP_FIXED_OPS_SPEC+FP_SCALE_OPS_SPEC)
+Flops per SP instr = FP_SCALE_OPS_SPEC/FP_SP_SPEC
+Arithmetic ratio SVE = 100*FP_SCALE_OPS_SPEC/SVE_INST_SPEC
+Memory read bandwidth [MBytes/s] = 1.0E-06*CMEM_RD_DATA*32.0/runtime
+Memory read data volume [GBytes] = 1.0E-09*CMEM_RD_DATA*32.0
+Memory write bandwidth [MBytes/s] = 1.0E-06*CMEM_WR_DATA*32.0/runtime
+Memory write data volume [GBytes] = 1.0E-09*CMEM_WR_TOTAL_BYTES
+Memory bandwidth [MBytes/s] = 1.0E-06*((CMEM_RD_DATA*32.0)+CMEM_WR_TOTAL_BYTES)/runtime
+Memory data volume [GBytes] = 1.0E-09*((CMEM_RD_DATA*32.0)+CMEM_WR_TOTAL_BYTES)
+-
+Profiling group to measure memory bandwidth for CPU memory and
+FP rate in any precision for scalar and SVE vector operations with additional
+insight into SP instructions.
+The transfer unit 'beats' is 32 Bytes.
