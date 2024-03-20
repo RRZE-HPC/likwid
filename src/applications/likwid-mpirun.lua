@@ -2545,7 +2545,9 @@ end
 if debug then
     print_stdout("DEBUG: Detected environment")
     print_stdout("DEBUG: MPI " .. mpitype)
-    print_stdout("DEBUG: OpenMP " .. omptype or "None")
+    if omptype then
+        print_stdout("DEBUG: OpenMP " .. omptype)
+    end
 end
 
 if skipStr == "" then
