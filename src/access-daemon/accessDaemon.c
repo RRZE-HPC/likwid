@@ -1264,7 +1264,8 @@ allowed_amd19_zen4(uint32_t reg)
     }
     else if ((reg == 0xC0000108) ||
              (reg == 0x00000048) ||
-	     (reg == 0x0000010B))
+             (reg == 0x0000010B) ||
+             ((reg >= 0xC0010240) && (reg <= 0xC001025F)))
     {
         return 1;
     }
