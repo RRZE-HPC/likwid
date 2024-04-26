@@ -59,7 +59,7 @@ static int cpufreq_sysfs_setter(LikwidDevice_t device, char* value, char* sysfs_
     int vallen = strlen(value);
     bstring filename = bformat("/sys/devices/system/cpu/cpu%d/cpufreq/%s", device->id.simple.id, sysfs_filename);
     errno = 0;
-    if (!access(bdata(filename), R_OK))
+    if (!access(bdata(filename), W_OK))
     {
         FILE* fp = NULL;
         errno = 0;
@@ -161,7 +161,9 @@ int cpufreq_acpi_test()
 
 int cpufreq_intel_pstate_base_cpu_freq_getter(LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "base_frequency");
+    int err = cpufreq_sysfs_getter(device, value, "base_frequency");
+    if (err == 0) return 0;
+    return cpufreq_sysfs_getter(device, value, "bios_limit");
 }
 
 int cpufreq_intel_pstate_cur_cpu_freq_getter(LikwidDevice_t device, char** value)
@@ -174,9 +176,19 @@ int cpufreq_intel_pstate_min_cpu_freq_getter(LikwidDevice_t device, char** value
     return cpufreq_sysfs_getter(device, value, "scaling_min_freq");
 }
 
+int cpufreq_intel_pstate_min_cpu_freq_setter(LikwidDevice_t device, char* value)
+{
+    return cpufreq_sysfs_setter(device, value, "scaling_min_freq");
+}
+
 int cpufreq_intel_pstate_max_cpu_freq_getter(LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_max_freq");
+}
+
+int cpufreq_intel_pstate_max_cpu_freq_setter(LikwidDevice_t device, char* value)
+{
+    return cpufreq_sysfs_setter(device, value, "scaling_max_freq");
 }
 
 int cpufreq_intel_pstate_governor_getter(LikwidDevice_t device, char** value)

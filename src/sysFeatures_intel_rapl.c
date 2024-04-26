@@ -37,6 +37,11 @@ static int intel_rapl_register_test(uint32_t reg)
         return 0;
     }
     topo = get_cpuTopology();
+    err = HPMinit();
+    if (err < 0)
+    {
+	    return 0;
+    }
     for (int i = 0; i < topo->numSockets; i++)
     {
         for (int j = 0; j < topo->numHWThreads; j++)
@@ -45,6 +50,8 @@ static int intel_rapl_register_test(uint32_t reg)
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
+		err = HPMaddThread(t->apicId);
+		if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, reg, &data);
                 if (err == 0) valid++;
                 break;
@@ -74,6 +81,8 @@ static int intel_rapl_register_test_bit(uint32_t reg, int bitoffset)
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
+		err = HPMaddThread(t->apicId);
+		if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, reg, &data);
                 if (err == 0 && (data & (1ULL<<bitoffset))) valid++;
                 break;
@@ -91,7 +100,17 @@ static int sysFeatures_intel_rapl_energy_status_getter(LikwidDevice_t device, ch
     {
         return -EINVAL;
     }
-
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
+    
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err < 0)
     {
@@ -111,6 +130,16 @@ static int sysFeatures_intel_rapl_energy_limit_1_enable_getter(LikwidDevice_t de
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
     {
         return -EINVAL;
+    }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
     }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
@@ -136,6 +165,16 @@ static int sysFeatures_intel_rapl_energy_limit_1_enable_setter(LikwidDevice_t de
     {
         return err;
     }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err < 0)
@@ -154,6 +193,16 @@ static int sysFeatures_intel_rapl_energy_limit_1_clamp_getter(LikwidDevice_t dev
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
     {
         return -EINVAL;
+    }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
     }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
@@ -179,6 +228,16 @@ static int sysFeatures_intel_rapl_energy_limit_1_clamp_setter(LikwidDevice_t dev
     {
         return err;
     }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err < 0)
@@ -198,6 +257,16 @@ static int sysFeatures_intel_rapl_energy_limit_1_getter(LikwidDevice_t device, c
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
     {
         return -EINVAL;
+    }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
     }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
@@ -251,6 +320,16 @@ static int sysFeatures_intel_rapl_energy_limit_1_time_getter(LikwidDevice_t devi
     {
         return -EINVAL;
     }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err < 0)
@@ -278,6 +357,16 @@ static int sysFeatures_intel_rapl_energy_limit_1_time_setter(LikwidDevice_t devi
     }
 
     err = _string_to_uint64(value, &time);
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
     if (err < 0)
     {
         return err;
@@ -336,6 +425,16 @@ static int sysFeatures_intel_rapl_energy_limit_2_setter(LikwidDevice_t device, c
     {
         return err;
     }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err < 0)
@@ -362,6 +461,16 @@ static int sysFeatures_intel_rapl_energy_limit_2_time_getter(LikwidDevice_t devi
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
     {
         return -EINVAL;
+    }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
     }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
@@ -394,6 +503,16 @@ static int sysFeatures_intel_rapl_energy_limit_2_time_setter(LikwidDevice_t devi
     {
         return err;
     }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err < 0)
@@ -422,6 +541,16 @@ static int sysFeatures_intel_rapl_energy_limit_2_enable_getter(LikwidDevice_t de
     {
         return -EINVAL;
     }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err < 0)
@@ -447,6 +576,16 @@ static int sysFeatures_intel_rapl_energy_limit_2_enable_setter(LikwidDevice_t de
     {
         return err;
     }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err < 0)
@@ -466,6 +605,16 @@ static int sysFeatures_intel_rapl_energy_limit_2_clamp_getter(LikwidDevice_t dev
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
     {
         return -EINVAL;
+    }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
     }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
@@ -492,6 +641,16 @@ static int sysFeatures_intel_rapl_energy_limit_2_clamp_setter(LikwidDevice_t dev
     {
         return err;
     }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err < 0)
@@ -512,6 +671,16 @@ static int sysFeatures_intel_rapl_info_tdp(LikwidDevice_t device, char** value, 
     {
         return -EINVAL;
     }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err < 0)
@@ -530,6 +699,16 @@ static int sysFeatures_intel_rapl_info_min_power(LikwidDevice_t device, char** v
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
     {
         return -EINVAL;
+    }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
     }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
@@ -550,6 +729,16 @@ static int sysFeatures_intel_rapl_info_max_power(LikwidDevice_t device, char** v
     {
         return -EINVAL;
     }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err < 0)
@@ -568,6 +757,16 @@ static int sysFeatures_intel_rapl_info_max_time(LikwidDevice_t device, char** va
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
     {
         return -EINVAL;
+    }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
     }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
@@ -588,6 +787,16 @@ static int sysFeatures_intel_rapl_policy_getter(LikwidDevice_t device, char** va
     {
         return -EINVAL;
     }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
 
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err < 0)
@@ -604,6 +813,16 @@ static int sysFeatures_intel_rapl_policy_setter(LikwidDevice_t device, char* val
     uint64_t data = 0x0ULL;
     uint64_t policy = 0x0ULL;
     err = _string_to_uint64(value, &policy);
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
     if (err < 0)
     {
         return err;
@@ -640,6 +859,12 @@ int intel_rapl_pkg_test()
         return 0;
     }
     topo = get_cpuTopology();
+    err = HPMinit();
+    if (err < 0)
+    {
+        return 0;
+    }
+
     for (int i = 0; i < topo->numSockets; i++)
     {
         for (int j = 0; j < topo->numHWThreads; j++)
@@ -648,6 +873,8 @@ int intel_rapl_pkg_test()
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
+		err = HPMaddThread(t->apicId);
+		if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
                 if (err == 0) valid++;
                 if (intel_rapl_pkg_info.powerUnit == 0 && intel_rapl_pkg_info.energyUnit == 0 && intel_rapl_pkg_info.timeUnit == 0)
@@ -797,6 +1024,11 @@ int intel_rapl_dram_test()
     }
     topo = get_cpuTopology();
     info = get_cpuInfo();
+    err = HPMinit();
+    if (err < 0)
+    {
+        return 0;
+    }
     for (int i = 0; i < topo->numSockets; i++)
     {
         for (int j = 0; j < topo->numHWThreads; j++)
@@ -805,6 +1037,8 @@ int intel_rapl_dram_test()
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
+		err = HPMaddThread(t->apicId);
+		if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
                 if (err == 0) valid++;
                 if (intel_rapl_dram_info.powerUnit == 0 && intel_rapl_dram_info.energyUnit == 0 && intel_rapl_dram_info.timeUnit == 0)
@@ -932,6 +1166,11 @@ int intel_rapl_psys_test()
     }
     topo = get_cpuTopology();
     info = get_cpuInfo();
+    err = HPMinit();
+    if (err < 0)
+    {
+        return 0;
+    }
     for (int i = 0; i < topo->numSockets; i++)
     {
         for (int j = 0; j < topo->numHWThreads; j++)
@@ -940,6 +1179,8 @@ int intel_rapl_psys_test()
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
+		err = HPMaddThread(t->apicId);
+		if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
                 if (err == 0) valid++;
                 if (intel_rapl_psys_info.powerUnit == 0 && intel_rapl_psys_info.energyUnit == 0 && intel_rapl_psys_info.timeUnit == 0)
@@ -1065,6 +1306,11 @@ int intel_rapl_pp0_test()
     }
     topo = get_cpuTopology();
     info = get_cpuInfo();
+    err = HPMinit();
+    if (err < 0)
+    {
+        return 0;
+    }
     for (int i = 0; i < topo->numSockets; i++)
     {
         for (int j = 0; j < topo->numHWThreads; j++)
@@ -1073,6 +1319,8 @@ int intel_rapl_pp0_test()
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
+		err = HPMaddThread(t->apicId);
+		if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
                 if (err == 0) valid++;
                 if (intel_rapl_pp0_info.powerUnit == 0 && intel_rapl_pp0_info.energyUnit == 0 && intel_rapl_pp0_info.timeUnit == 0)
@@ -1175,6 +1423,11 @@ int intel_rapl_pp1_test()
     }
     topo = get_cpuTopology();
     info = get_cpuInfo();
+    err = HPMinit();
+    if (err < 0)
+    {
+        return 0;
+    }
     for (int i = 0; i < topo->numSockets; i++)
     {
         for (int j = 0; j < topo->numHWThreads; j++)
@@ -1183,6 +1436,8 @@ int intel_rapl_pp1_test()
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
+		err = HPMaddThread(t->apicId);
+		if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
                 if (err == 0) valid++;
                 if (intel_rapl_pp1_info.powerUnit == 0 && intel_rapl_pp1_info.energyUnit == 0 && intel_rapl_pp1_info.timeUnit == 0)
@@ -1288,6 +1543,10 @@ int sysFeatures_init_intel_rapl(_SysFeatureList* out)
             DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PKG not supported);
         }
     }
+    else
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PKG not supported);
+    }
     if (intel_rapl_dram_test())
     {
         DEBUG_PRINT(DEBUGLEV_INFO, Register Intel RAPL DRAM domain);
@@ -1304,6 +1563,10 @@ int sysFeatures_init_intel_rapl(_SysFeatureList* out)
         {
             DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain DRAM not supported);
         }
+    }
+    else
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain DRAM not supported);
     }
     if (intel_rapl_pp0_test())
     {
@@ -1322,6 +1585,10 @@ int sysFeatures_init_intel_rapl(_SysFeatureList* out)
             DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PP0 not supported);
         }
     }
+    else
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PP0 not supported);
+    }
     if (intel_rapl_pp1_test())
     {
         DEBUG_PRINT(DEBUGLEV_INFO, Register Intel RAPL PP1 domain);
@@ -1339,6 +1606,10 @@ int sysFeatures_init_intel_rapl(_SysFeatureList* out)
             DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PP1 not supported);
         }
     }
+    else
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PP1 not supported);
+    }
     if (intel_rapl_psys_test())
     {
         DEBUG_PRINT(DEBUGLEV_INFO, Register Intel RAPL PSYS domain);
@@ -1355,6 +1626,10 @@ int sysFeatures_init_intel_rapl(_SysFeatureList* out)
         {
             DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PSYS not supported);
         }
+    }
+    else
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PSYS not supported);
     }
     return 0;
 }

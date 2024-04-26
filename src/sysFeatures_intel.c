@@ -42,6 +42,16 @@ int intel_cpu_msr_register_getter(LikwidDevice_t device, uint32_t reg, uint64_t 
     {
         return -ENODEV;
     }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
     uint64_t data = 0x0;
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err == 0)
@@ -74,6 +84,16 @@ int intel_cpu_msr_register_setter(LikwidDevice_t device, uint32_t reg, uint64_t 
     {
         return err;
     }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
     if (err == 0)
     {
@@ -96,6 +116,9 @@ int intel_cpu_msr_register_setter(LikwidDevice_t device, uint32_t reg, uint64_t 
 /* Intel Turbo */
 int intel_cpu_turbo_test()
 {
+    int err = 0;
+    int valid = 0;
+    CpuTopology_t topo = NULL;
     unsigned eax = 0x01, ebx, ecx, edx;
     CPUID(eax, ebx, ecx, edx);
     if (((ecx >> 7) & 0x1) == 0)
@@ -103,7 +126,29 @@ int intel_cpu_turbo_test()
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Intel SpeedStep not supported by architecture);
         return 0;
     }
-    return 1;
+
+    err = topology_init();
+    if (err < 0)
+    {
+        return 0;
+    }
+    topo = get_cpuTopology();
+    err = HPMinit();
+    if (err < 0)
+	{
+		return err;
+	}
+    for (int j = 0; j < topo->numHWThreads; j++)
+    {
+        uint64_t data = 0;
+        HWThread* t = &topo->threadPool[j];
+		err = HPMaddThread(t->apicId);
+		if (err < 0) continue;
+        err = HPMread(t->apicId, MSR_DEV, MSR_IA32_MISC_ENABLE, &data);
+        if (err == 0) valid++;
+        break;
+    }
+    return valid = topo->numHWThreads;
 }
 
 int intel_cpu_turbo_getter(LikwidDevice_t device, char** value)

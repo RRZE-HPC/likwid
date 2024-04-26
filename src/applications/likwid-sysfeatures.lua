@@ -307,13 +307,7 @@ if listFeatures and #hwtlist > 0 then
             if dev then
                 local v = likwid.sysFeatures_get(f.Name, dev)
                 if v == nil then
-                    if f.ReadOnly then
-                        table.insert(tab, "rdonly")
-                    elseif f.WriteOnly then
-                        table.insert(tab, "wronly")
-                    else
-                        table.insert(tab, "fail")
-                    end
+                    table.insert(tab, "fail")
                 else
                     table.insert(tab, v)
                 end
@@ -332,7 +326,6 @@ if listFeatures and #hwtlist > 0 then
         likwid.printtable(all)
     end
     -- cleanup device tree before exiting
-    print_stdout("Cleanup tree")
     for l, ltab in pairs(deviceTree) do
         for _, e in pairs(ltab) do
             likwid.destroyDevice(e.device)

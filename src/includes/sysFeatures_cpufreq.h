@@ -35,7 +35,9 @@ int cpufreq_intel_pstate_test();
 int cpufreq_intel_pstate_base_cpu_freq_getter(LikwidDevice_t device, char** value);
 int cpufreq_intel_pstate_cur_cpu_freq_getter(LikwidDevice_t device, char** value);
 int cpufreq_intel_pstate_min_cpu_freq_getter(LikwidDevice_t device, char** value);
+int cpufreq_intel_pstate_min_cpu_freq_setter(LikwidDevice_t device, char* value);
 int cpufreq_intel_pstate_max_cpu_freq_getter(LikwidDevice_t device, char** value);
+int cpufreq_intel_pstate_max_cpu_freq_setter(LikwidDevice_t device, char* value);
 int cpufreq_intel_pstate_governor_getter(LikwidDevice_t device, char** value);
 int cpufreq_intel_pstate_governor_setter(LikwidDevice_t device, char* value);
 int cpufreq_intel_pstate_avail_governors_getter(LikwidDevice_t device, char** value);
@@ -45,8 +47,8 @@ int cpufreq_intel_pstate_avail_governors_getter(LikwidDevice_t device, char** va
 static _SysFeature cpufreq_pstate_features[] = {
     {"base_freq", "cpu_freq", "Base CPU frequency", cpufreq_intel_pstate_base_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
     {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
-    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
-    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
+    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD},
     {"avail_freqs", "cpu_freq", "Available CPU frequencies", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
 };

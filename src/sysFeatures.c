@@ -123,13 +123,6 @@ int sysFeatures_init()
         return err;
     }
     
-    err = sysFeatures_init_linux_numa_balancing(&_feature_list);
-    if (err < 0)
-    {
-        ERROR_PRINT(Failed to initialize SysFeatures numa_balancing module);
-        return err;
-    }
-
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Initialized %d features, _feature_list.num_features);
     return 0;
 }
