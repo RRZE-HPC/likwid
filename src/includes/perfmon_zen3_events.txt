@@ -533,6 +533,7 @@ UMASK_L2_PF_MISS_IN_L3_MISS_L2            0x1F
 
 EVENT_L3_ACCESS                             0x04 CPMC
 UMASK_L3_ACCESS_ALL_TYPES                   0xFF
+UMASK_L3_ACCESS_HIT                         0xFE
 UMASK_L3_ACCESS_MISS                        0x01
 
 EVENT_L3_MISS_LAT                         0x90 CPMC

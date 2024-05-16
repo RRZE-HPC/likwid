@@ -3,22 +3,21 @@ SHORT L3 cache miss rate/ratio (experimental)
 EVENTSET
 PMC0  RETIRED_INSTRUCTIONS
 PMC1  CPU_CLOCKS_UNHALTED
-CPMC0 L3_CACHE_REQ
-CPMC1 L3_MISS_REQ
-CPMC2 L3_CACHE_REQ_MISS
+CPMC0 L3_ACCESS_ALL_TYPES
+CPMC1 L3_ACCESS_MISS
 
 METRICS
 Runtime (RDTSC) [s] time
 CPI  FIXC1/FIXC0
 L3 request rate CPMC0/PMC0
-L3 miss rate CPMC2/PMC0
-L3 miss ratio CPMC2/CPMC0
+L3 miss rate CPMC1/PMC0
+L3 miss ratio CPMC1/CPMC0
 
 LONG
 Formulas:
 L3 request rate = L3_CACHE_REQ/RETIRED_INSTRUCTIONS
-L3 miss rate = L3_CACHE_REQ_MISS/RETIRED_INSTRUCTIONS
-L3 miss ratio = L3_CACHE_REQ_MISS/L3_CACHE_REQ
+L3 miss rate = L3_ACCESS_MISS/RETIRED_INSTRUCTIONS
+L3 miss ratio = L3_ACCESS_MISS/L3_ACCESS_ALL_TYPES
 -
 This group measures the locality of your data accesses with regard to the
 L3 cache. L3 request rate tells you how data intensive your code is
@@ -28,7 +27,4 @@ cache lines from memory. And finally L3 miss ratio tells you how many of your
 memory references required a cache line to be loaded from a higher level.
 While the data cache miss rate might be given by your algorithm you should
 try to get data cache miss ratio as low as possible by increasing your cache reuse.
-AMD defines two events for L3 cache misses:
-- The performance metrics table uses L3_CACHE_REQ_MISS (0x0300C00000400104)
-- The official event for L3 misses is L3_MISS_REQ (0x0300C00000401F9a)
 
