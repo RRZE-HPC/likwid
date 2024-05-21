@@ -255,7 +255,7 @@ extern void likwid_markerGetRegion(const char *regionTag, int *nr_events,
 Returns the ID of the CPU the current process or thread is running on.
 @return current CPU ID
 */
-extern int likwid_getProcessorId() __attribute__((visibility("default")));
+extern int likwid_getProcessorId(void) __attribute__((visibility("default")));
 /*! \brief Pin the current process to given CPU
 
 Pin the current process to the given CPU ID. The process cannot be scheduled to
@@ -316,7 +316,7 @@ extern void HPMmode(int mode) __attribute__((visibility("default")));
 Initialize the module internals to either the MSR/PCI files or the access daemon
 @return error code (0 for access)
 */
-extern int HPMinit() __attribute__((visibility("default")));
+extern int HPMinit(void) __attribute__((visibility("default")));
 /*! \brief Add CPU to access module
 
 Add the given CPU to the access module. This opens the commnunication to either
@@ -329,7 +329,7 @@ extern int HPMaddThread(int cpu_id) __attribute__((visibility("default")));
 
 Close the connections to the MSR/PCI files or the access daemon
 */
-extern void HPMfinalize() __attribute__((visibility("default")));
+extern void HPMfinalize(void) __attribute__((visibility("default")));
 /** @}*/
 
 /*
@@ -724,7 +724,7 @@ typedef AffinityDomains *AffinityDomains_t;
 Initialize affinity information AffinityDomains_t using the data of the
 structures \a CpuInfo_t, CpuTopology_t and NumaTopology_t \sa AffinityDomains_t
 */
-extern void affinity_init() __attribute__((visibility("default")));
+extern void affinity_init(void) __attribute__((visibility("default")));
 /*! \brief Retrieve affinity structure
 
 Get the previously initialized affinity info structure
@@ -759,13 +759,13 @@ extern void affinity_pinThread(int processorId)
 
 @return CPU ID
 */
-extern int affinity_processGetProcessorId()
+extern int affinity_processGetProcessorId(void)
     __attribute__((visibility("default")));
 /*! \brief Return the CPU ID where the current thread runs.
 
 @return CPU ID
 */
-extern int affinity_threadGetProcessorId()
+extern int affinity_threadGetProcessorId(void)
     __attribute__((visibility("default")));
 /*! \brief Destroy affinity information structure
 
@@ -773,7 +773,7 @@ Destroys the affinity information structure AffinityDomains_t. Retrieved
 pointers to the structures are not valid anymore after this function call \sa
 AffinityDomains_t
 */
-extern void affinity_finalize() __attribute__((visibility("default")));
+extern void affinity_finalize(void) __attribute__((visibility("default")));
 /** @}*/
 
 /*
@@ -1176,13 +1176,13 @@ extern int perfmon_readMarkerFile(const char *filename)
     __attribute__((visibility("default")));
 /*! \brief Free space for read in Marker API file
  */
-extern void perfmon_destroyMarkerResults()
+extern void perfmon_destroyMarkerResults(void)
     __attribute__((visibility("default")));
 /*! \brief Get the number of regions listed in Marker API result file
 
 @return Number of regions
 */
-extern int perfmon_getNumberOfRegions() __attribute__((visibility("default")));
+extern int perfmon_getNumberOfRegions(void) __attribute__((visibility("default")));
 /*! \brief Get the groupID of a region
 
 @param [in] region ID of region
@@ -1900,7 +1900,7 @@ typedef enum {
 
 Initialize the internal feature variables for all CPUs
 */
-extern void cpuFeatures_init() __attribute__((visibility("default")));
+extern void cpuFeatures_init(void) __attribute__((visibility("default")));
 /*! \brief Print state of all CPU features for a given CPU
 
 Print state of all CPU features for a given CPU
@@ -2343,12 +2343,12 @@ int nvmon_readMarkerFile(const char *filename)
     __attribute__((visibility("default")));
 /*! \brief Free space for read in NvMarker API file
  */
-void nvmon_destroyMarkerResults() __attribute__((visibility("default")));
+void nvmon_destroyMarkerResults(void) __attribute__((visibility("default")));
 /*! \brief Get the number of regions listed in NvMarker API result file
 
 @return Number of regions
 */
-int nvmon_getNumberOfRegions() __attribute__((visibility("default")));
+int nvmon_getNumberOfRegions(void) __attribute__((visibility("default")));
 /*! \brief Get the number of metrics of a region
 @param [in] region ID of region
 @return Number of metrics of region
@@ -2777,7 +2777,7 @@ typedef struct {
 /** \brief Pointer for exporting the GpuTopology data structure */
 typedef RocmTopology *RocmTopology_t;
 
-int topology_rocm_init() __attribute__((visibility("default")));
+int topology_rocm_init(void) __attribute__((visibility("default")));
 void topology_rocm_finalize(void) __attribute__((visibility("default")));
 RocmTopology_t get_rocmTopology(void)
     __attribute__((visibility("default")));
@@ -3132,7 +3132,7 @@ int rocmon_readMarkerFile(const char *filename)
     __attribute__((visibility("default")));
 /*! \brief Free space for read in RocmonMarker API file
  */
-void rocmon_destroyMarkerResults() __attribute__((visibility("default")));
+void rocmon_destroyMarkerResults(void) __attribute__((visibility("default")));
 /*! \brief Get the call count of a region for a GPU
 @param [in] region ID of region
 @param [in] gpu ID of GPU
@@ -3170,7 +3170,7 @@ int rocmon_getMetricsOfRegion(int region)
 
 @return Number of regions
 */
-int rocmon_getNumberOfRegions() __attribute__((visibility("default")));
+int rocmon_getNumberOfRegions(void) __attribute__((visibility("default")));
 /*! \brief Get the groupID of a region
 
 @param [in] region ID of region
@@ -3294,7 +3294,7 @@ typedef struct {
 
 
 
-int sysFeatures_init() __attribute__ ((visibility ("default") ));
+int sysFeatures_init(void) __attribute__ ((visibility ("default") ));
 
 int sysFeatures_list(SysFeatureList* list) __attribute__ ((visibility ("default") ));
 void sysFeatures_list_return(SysFeatureList* list) __attribute__ ((visibility ("default") ));
@@ -3304,7 +3304,7 @@ int sysFeatures_getByName(char* name, LikwidDevice_t device, char** value) __att
 int sysFeatures_modify(SysFeature* feature, LikwidDevice_t device, char* value) __attribute__ ((visibility ("default") ));
 int sysFeatures_modifyByName(char* name, LikwidDevice_t device, char* value) __attribute__ ((visibility ("default") ));
 
-void sysFeatures_finalize() __attribute__ ((visibility ("default") ));
+void sysFeatures_finalize(void) __attribute__ ((visibility ("default") ));
 #endif /* LIKWID_WITH_SYSFEATURES */
 
 #ifdef __cplusplus
