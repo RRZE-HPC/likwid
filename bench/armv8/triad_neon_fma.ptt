@@ -11,5 +11,5 @@ lsl GPR7, GPR6, 3
 ldr   q1, [STR1, GPR7]
 ldr   q2, [STR2, GPR7]
 ldr   q3, [STR3, GPR7]
-fmla  v1.2d, v1.2d, v3.2d
+fmla  v1.2d, v2.2d, v3.2d
 str   q1, [STR0, GPR7]
