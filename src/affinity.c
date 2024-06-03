@@ -182,6 +182,8 @@ static int create_lookups()
     int do_cache = 1;
     int cachelimit = 0;
     int cacheIdx = -1;
+    int * tmp = NULL;
+    int num_tmp = 0;
     topology_init();
     numa_init();
     CpuTopology_t cputopo = get_cpuTopology();
@@ -246,7 +248,23 @@ static int create_lookups()
         sharedl3_lock = malloc(cputopo->numHWThreads * sizeof(int));
         memset(sharedl3_lock, LOCK_INIT, cputopo->numHWThreads*sizeof(int));
     }
-
+    tmp = malloc(cputopo->numHWThreads * sizeof(int));
+    if (!tmp)
+    {
+        if (affinity_thread2core_lookup) {free(affinity_thread2core_lookup); affinity_thread2core_lookup = NULL;}
+        if (affinity_thread2socket_lookup) {free(affinity_thread2socket_lookup); affinity_thread2socket_lookup = NULL;}
+        if (affinity_thread2sharedl3_lookup) {free(affinity_thread2sharedl3_lookup); affinity_thread2sharedl3_lookup = NULL;}
+        if (affinity_thread2numa_lookup) {free(affinity_thread2numa_lookup); affinity_thread2numa_lookup = NULL;}
+        if (affinity_thread2die_lookup) {free(affinity_thread2die_lookup); affinity_thread2die_lookup = NULL;}
+        if (socket_lock) {free(socket_lock); socket_lock = NULL;}
+        if (die_lock) {free(die_lock); die_lock = NULL;}
+        if (numa_lock) {free(numa_lock); numa_lock = NULL;}
+        if (core_lock) {free(core_lock); core_lock = NULL;}
+        if (tile_lock) {free(tile_lock); tile_lock = NULL;}
+        if (sharedl2_lock) {free(sharedl2_lock); sharedl2_lock = NULL;}
+        if (sharedl3_lock) {free(sharedl3_lock); sharedl3_lock = NULL;}
+        return -ENOMEM;
+    }
 
     int num_pu = cputopo->numHWThreads;
     if (cputopo->numCacheLevels == 0)
@@ -261,6 +279,23 @@ static int create_lookups()
     for (int pu_idx = 0; pu_idx < num_pu; pu_idx++)
     {
         HWThread* t = &cputopo->threadPool[pu_idx];
+        int found = 0;
+        for (int j = 0; j < num_tmp; j++)
+        {
+            if (tmp[j] == t->packageId)
+            {
+                found = 1;
+                break;
+            }
+        }
+        if (!found)
+        {
+            tmp[num_tmp++] = t->packageId;
+        }
+    }
+    for (int pu_idx = 0; pu_idx < num_pu; pu_idx++)
+    {
+        HWThread* t = &cputopo->threadPool[pu_idx];
         int hwthreadid = t->apicId;
         int coreid = t->coreId;
         int dieid = t->dieId;
@@ -268,6 +303,17 @@ static int create_lookups()
         int dies_per_socket = MAX(cputopo->numDies/cputopo->numSockets, 1);
         affinity_thread2core_lookup[hwthreadid] = coreid;
         affinity_thread2socket_lookup[hwthreadid] = sockid;
+        for (int j = 0; j < num_tmp; j++)
+        {
+            if (affinity_thread2socket_lookup[hwthreadid] == tmp[j])
+            {
+                if (affinity_thread2socket_lookup[hwthreadid] != j)
+                {
+                    affinity_thread2socket_lookup[hwthreadid] = j;
+                    sockid = j;
+                }
+            }
+        }
         affinity_thread2die_lookup[hwthreadid] = (sockid * dies_per_socket) + dieid;
         int memid = 0;
         for (int n = 0; n < ntopo->numberOfNodes; n++)
@@ -294,7 +340,7 @@ static int create_lookups()
                                         affinity_thread2sharedl3_lookup[hwthreadid],
                                         affinity_thread2numa_lookup[hwthreadid]);
     }
-
+    free(tmp);
     return 0;
 }
 

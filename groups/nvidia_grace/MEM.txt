@@ -1,0 +1,30 @@
+SHORT Main memory bandwidth in MBytes/s
+
+EVENTSET
+PMC0  INST_RETIRED
+PMC1  CPU_CYCLES
+SCF0  CMEM_RD_DATA
+SCF1  CMEM_WR_TOTAL_BYTES
+
+METRICS
+Runtime (RDTSC) [s] time
+Clock [MHz] 1.E-06*PMC1/time
+CPI  PMC1/PMC0
+Memory read bandwidth [MBytes/s] 1.0E-06*(SCF0)*32.0/time
+Memory read data volume [GBytes] 1.0E-09*(SCF0)*32.0
+Memory write bandwidth [MBytes/s] 1.0E-06*(SCF1)/time
+Memory write data volume [GBytes] 1.0E-09*(SCF1)
+Memory bandwidth [MBytes/s] 1.0E-06*((SCF0*32.0)+SCF1)/time
+Memory data volume [GBytes] 1.0E-09*((SCF0*32.0)+SCF1)
+
+LONG
+Formulas:
+Memory read bandwidth [MBytes/s] = 1.0E-06*CMEM_RD_DATA*32.0/runtime
+Memory read data volume [GBytes] = 1.0E-09*CMEM_RD_DATA*32.0
+Memory write bandwidth [MBytes/s] = 1.0E-06*CMEM_WR_DATA*32.0/runtime
+Memory write data volume [GBytes] = 1.0E-09*CMEM_WR_TOTAL_BYTES
+Memory bandwidth [MBytes/s] = 1.0E-06*((CMEM_RD_DATA*32.0)+CMEM_WR_TOTAL_BYTES)/runtime
+Memory data volume [GBytes] = 1.0E-09*((CMEM_RD_DATA*32.0)+CMEM_WR_TOTAL_BYTES)
+-
+Profiling group to measure memory bandwidth for CPU memory. The transfer unit
+'beats' is 32 Bytes.

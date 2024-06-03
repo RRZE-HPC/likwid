@@ -63,6 +63,9 @@ endif
 ifeq ($(COMPILER),GCCARMv8)
 BENCH_DIR   = ./armv8
 endif
+ifeq ($(COMPILER),GCCARM)
+BENCH_DIR   = ./armv8
+endif
 ifeq ($(COMPILER),ARMCLANG)
 BENCH_DIR   = ./armv8
 endif
