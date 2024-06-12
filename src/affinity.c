@@ -553,7 +553,7 @@ affinity_init()
         numberOfCoresPerCache = numberOfProcessorsPerCache / cputopo->numThreadsPerCore;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPU cores per LLC %d, numberOfCoresPerCache);
         int numCachesPerSocket = cputopo->numCoresPerSocket / numberOfCoresPerCache;
-        numberOfCacheDomains = cputopo->numSockets * numCachesPerSocket;
+        numberOfCacheDomains = cputopo->numSockets * MAX(numCachesPerSocket, 1);
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Cache domains %d, numberOfCacheDomains);
         numberOfDomains += numberOfCacheDomains;
     }
