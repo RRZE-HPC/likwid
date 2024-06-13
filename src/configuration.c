@@ -133,79 +133,74 @@ use_hardcoded:
 int
 init_configuration(void)
 {
+    if (init_config == 1)
+    {
+        return 0;
+    }
+
     FILE* fp = NULL;
     char line[512];
     char name[128];
     char value[256];
     char filename[1024];
-    filename[0] = '\0';
-    char preconfigured[1024];
-    preconfigured[0] = '\0';
-    if (init_config == 1)
-    {
-        return 0;
-    }
-    sprintf(preconfigured, "%s%s",TOSTRING(INSTALL_PREFIX),TOSTRING(CFGFILE));
 
-    if (access(preconfigured, R_OK) != 0)
+    filename[0] = '\0';
+    char* customtopo = getenv("LIKWID_TOPO_FILE");
+    if (customtopo && !access(customtopo, R_OK))
     {
-        if (access(TOSTRING(CFGFILE), R_OK) != 0)
+        sprintf(filename, "%s", customtopo);
+    }
+    else if (!access(TOSTRING(INSTALL_PREFIX, TOPOFILE), R_OK))
+    {
+        sprintf(filename, "%s", TOSTRING(INSTALL_PREFIX, TOPOFILE));
+    }
+    else if (!access(TOSTRING(TOPOFILE), R_OK))
+    {
+        sprintf(filename, "%s", TOSTRING(TOPOFILE));
+    }
+    if (filename[0] != '\0')
+    {
+        if (1023 == strlen(filename) && access(filename, R_OK))
         {
-            if (!access("/etc/likwid.cfg",R_OK))
-            {
-                sprintf(filename,"%s", "/etc/likwid.cfg");
-            }
+            ERROR_PLAIN_PRINT(Topology file path too long for internal buffer);
+            return -1;
         }
-        else
+        config.topologyCfgFileName = (char*)malloc((strlen(filename)+1) * sizeof(char));
+        stpcpy(config.topologyCfgFileName, filename);
+    }
+
+    filename[0] = '\0';
+    char* customcfg = getenv("LIKWID_CFG_FILE");
+    if (customcfg && !access(customcfg, R_OK))
+    {
+        snprintf(filename, 1024, "%s", customcfg);
+    }
+    else if (!access(TOSTRING(INSTALL_PREFIX, CFGFILE), R_OK))
+    {
+        snprintf(filename, 1024, "%s", TOSTRING(INSTALL_PREFIX, CFGFILE));
+    }
+    else if (!access(TOSTRING(CFGFILE), R_OK))
+    {
+        snprintf(filename, 1024, "%s", TOSTRING(CFGFILE));
+    }
+    if (filename[0] != '\0')
+    {
+        if (1023 == strlen(filename) && access(filename, R_OK))
         {
-            sprintf(filename,"%s",TOSTRING(CFGFILE));
+            ERROR_PLAIN_PRINT(Config file path too long for internal buffer);
+            if (config.topologyCfgFileName) free(config.topologyCfgFileName);
+            return -1;
         }
+        config.configFileName = (char*)malloc((strlen(filename)+1) * sizeof(char));
+        stpcpy(config.configFileName, filename);
     }
     else
     {
-        sprintf(filename, "%s",preconfigured);
-    }
-
-    if ((config.topologyCfgFileName == NULL) && (strlen(filename) == 0))
-    {
-        if (!access(TOSTRING(TOPOFILE), R_OK))
-        {
-            preconfigured[0] = '\0';
-            sprintf(preconfigured,"%s", TOSTRING(TOPOFILE));
-        }
-        else
-        {
-            sprintf(preconfigured, "%s%s",TOSTRING(INSTALL_PREFIX),TOSTRING(TOPOFILE));
-            if (access(preconfigured, R_OK))
-            {
-                preconfigured[0] = '\0';
-            }
-        }
-        if (preconfigured[0] != '\0')
-        {
-            config.topologyCfgFileName = (char*)malloc((strlen(preconfigured)+1) * sizeof(char));
-            strcpy(config.topologyCfgFileName, preconfigured);
-            config.topologyCfgFileName[strlen(preconfigured)] = '\0';
-        }
-    }
-
-    if ((strlen(filename) == 0) || (!access(filename, R_OK)))
-    {
         return default_configuration();
     }
-    DEBUG_PRINT(DEBUGLEV_INFO, Reading configuration from %s, filename);
-    // Copy determined config filename to struct
-    config.configFileName = malloc((strlen(filename)+1)*sizeof(char));
-    strcpy(config.configFileName, filename);
-    config.configFileName[strlen(filename)] = '\0';
 
+    DEBUG_PRINT(DEBUGLEV_INFO, Reading configuration from %s, config.configFileName)
     fp = fopen(config.configFileName, "r");
-    if (fp == NULL)
-    {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_INFO, Using compile-time configuration)
-        return default_configuration();
-    }
-    DEBUG_PRINT(DEBUGLEV_INFO, Reading configuration from %s, filename)
     while (fgets(line, 512, fp) != NULL) {
         if (sscanf(line,"%s = %s", name, value) != 2)
         {
@@ -215,17 +210,15 @@ init_configuration(void)
         {
             continue;
         }
-        if (strcmp(name, "topology_file") == 0)
+        if (strcmp(name, "topology_file") == 0 && /*don't overrule user request*/!(customtopo && !access(customtopo, R_OK)))
         {
             config.topologyCfgFileName = (char*)malloc((strlen(value)+1) * sizeof(char));
-            strcpy(config.topologyCfgFileName, value);
-            config.topologyCfgFileName[strlen(value)] = '\0';
+            stpcpy(config.topologyCfgFileName, value);
         }
         else if (strcmp(name, "daemon_path") == 0)
         {
             config.daemonPath = (char*)malloc((strlen(value)+1) * sizeof(char));
-            strcpy(config.daemonPath, value);
-            config.daemonPath[strlen(value)] = '\0';
+            stpcpy(config.daemonPath, value);
             if (access(config.daemonPath, R_OK))
             {
                 if (default_configuration() < 0)
@@ -246,8 +239,7 @@ init_configuration(void)
             if (S_ISDIR(st.st_mode))
             {
                 config.groupPath = (char*)malloc((strlen(value)+1) * sizeof(char));
-                strcpy(config.groupPath, value);
-                config.groupPath[strlen(value)] = '\0';
+                stpcpy(config.groupPath, value);
             }
             else
             {
@@ -279,10 +271,9 @@ init_configuration(void)
             config.maxNumNodes = atoi(value);
         }
     }
+    fclose(fp);
 
     init_config = 1;
-
-    fclose(fp);
     return 0;
 }
 
