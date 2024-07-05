@@ -185,8 +185,7 @@ access_client_startDaemon_direct(int cpu_id, struct sockaddr_un *address)
 }
 
 static int
-access_client_startDaemon_bridge(int cpu_id, const char *bridge_pid_str, struct sockaddr_un *daemon_address) {
-    int bridge_pid;
+access_client_startDaemon_bridge(int cpu_id, const char *bridge_path, struct sockaddr_un *daemon_address) {
     struct sockaddr_un bridge_address;
     int socket_fd = -1;
     int address_length;
@@ -197,10 +196,8 @@ access_client_startDaemon_bridge(int cpu_id, const char *bridge_pid_str, struct 
     long io_count;
     int daemon_pid;
 
-    bridge_pid = atoi(bridge_pid_str);
-
     bridge_address.sun_family = AF_LOCAL;
-    snprintf(bridge_address.sun_path, sizeof(bridge_address.sun_path), "/tmp/likwid-bridge-%d", bridge_pid);
+    snprintf(bridge_address.sun_path, sizeof(bridge_address.sun_path), "%s", bridge_path);
 
     socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (socket_fd < 0)
@@ -342,17 +339,17 @@ access_client_daemon_connect(int cpu_id, struct sockaddr_un *address) {
 
 static int
 access_client_startDaemon(int cpu_id) {
-    const char *likwid_bridge_pid_val;
+    const char *bridge_path;
     struct sockaddr_un address;
     int daemon_ret_code;
     int socket_fd;
 
-    likwid_bridge_pid_val = getenv("LIKWID_BRIDGE_PID");
+    bridge_path = getenv("LIKWID_BRIDGE_PATH");
 
-    if (!likwid_bridge_pid_val) {
+    if (!bridge_path) {
         daemon_ret_code = access_client_startDaemon_direct(cpu_id, &address);
     } else {
-        daemon_ret_code = access_client_startDaemon_bridge(cpu_id, likwid_bridge_pid_val, &address);
+        daemon_ret_code = access_client_startDaemon_bridge(cpu_id, bridge_path, &address);
     }
 
     if (daemon_ret_code < 0) {
