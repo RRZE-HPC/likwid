@@ -123,22 +123,15 @@ access_client_catch_signal()
 }
 
 static int
-access_client_startDaemon(int cpu_id)
+access_client_startDaemon_direct(int cpu_id, struct sockaddr_un *address)
 {
     /* Check the function of the daemon here */
-    int res = 0;
-    char* filepath;
     char *newargv[] = { NULL };
     char *newenv[] = { NULL };
     char *safeexeprog = TOSTRING(ACCESSDAEMON);
     char exeprog[1024];
-    struct sockaddr_un address;
-    size_t address_length;
     int  ret;
     pid_t pid;
-    int timeout = 1000;
-    int socket_fd = -1;
-    int print_once = 0;
 
     if (config.daemonPath != NULL)
     {
@@ -183,6 +176,32 @@ access_client_startDaemon(int cpu_id)
         return pid;
     }
 
+    address->sun_family = AF_LOCAL;
+    snprintf(address->sun_path, sizeof(address->sun_path), TOSTRING(LIKWIDSOCKETBASE) "-%d", pid);
+
+    daemon_pids[cpu_id] = pid;
+    nr_daemons++;
+    return 0;
+}
+
+static int
+access_client_startDaemon_bridge(int cpu_id, const char *bridge_pid_str, struct sockaddr_un *daemon_address) {
+    int bridge_pid;
+    struct sockaddr_un bridge_address;
+    int socket_fd = -1;
+    int address_length;
+    char *filepath;
+    int timeout = 1000;
+    int res;
+    int io_buf;
+    long io_count;
+    int daemon_pid;
+
+    bridge_pid = atoi(bridge_pid_str);
+
+    bridge_address.sun_family = AF_LOCAL;
+    snprintf(bridge_address.sun_path, sizeof(bridge_address.sun_path), "/tmp/likwid-bridge-%d", bridge_pid);
+
     socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
@@ -190,27 +209,111 @@ access_client_startDaemon(int cpu_id)
         return -1;
     }
 
-    address.sun_family = AF_LOCAL;
-    address_length = sizeof(address);
-    snprintf(address.sun_path, sizeof(address.sun_path), TOSTRING(LIKWIDSOCKETBASE) "-%d", pid);
-    filepath = strdup(address.sun_path);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Waiting for socket file %s, address.sun_path);
-    while (access(address.sun_path, F_OK) && timeout > 0)
+    address_length = sizeof(struct sockaddr_un);
+    filepath = strdup(bridge_address.sun_path);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Waiting for bridge socket file %s, bridge_address.sun_path);
+    while (access(bridge_address.sun_path, F_OK) && timeout > 0)
     {
         usleep(2500);
         timeout--;
     }
-    if (!access(address.sun_path, F_OK))
+    if (!access(bridge_address.sun_path, F_OK))
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Socket file %s exists, address.sun_path);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Bridge socket file %s exists, bridge_address.sun_path);
     }
     timeout = 1000;
 
-    res = connect(socket_fd, (struct sockaddr *) &address, address_length);
+    res = connect(socket_fd, (struct sockaddr *) &bridge_address, address_length);
     while (res && timeout > 0)
     {
         usleep(2500);
-        res = connect(socket_fd, (struct sockaddr *) &address, address_length);
+        res = connect(socket_fd, (struct sockaddr *) &bridge_address, address_length);
+
+        if (res == 0)
+        {
+            break;
+        }
+
+        timeout--;
+        DEBUG_PRINT(DEBUGLEV_INFO, Still waiting for bridge socket %s for CPU %d..., filepath, cpu_id);
+    }
+
+    if (timeout <= 0)
+    {
+        ERRNO_PRINT;  /* should hopefully still work, as we make no syscalls in between. */
+        fprintf(stderr, "Exiting due to timeout: The bridge socket file at '%s' could not be\n", filepath);
+        fprintf(stderr, "opened within 10 seconds. Consult the error message above\n");
+        fprintf(stderr, "this to find out why. If the error is 'no such file or directoy',\n");
+        fprintf(stderr, "it usually means that the bridge socket filesystem isn't shared between\n");
+        fprintf(stderr, "the bridge and the client processes.\n");
+        free(filepath);
+        close(socket_fd);
+        return -1;
+    }
+    DEBUG_PRINT(DEBUGLEV_INFO, Successfully opened bridge socket %s to daemon for CPU %d, filepath, cpu_id);
+    free(filepath);
+
+    // request socket creation via the connected bridge
+    io_buf = 1;
+    io_count = send(socket_fd, (char*) &io_buf, sizeof(io_buf), 0);
+
+    if (io_count != sizeof(io_buf)) {
+        ERROR_PRINT(Failed to send msg to the bridge socket)
+        close(socket_fd);
+        return -1;
+    }
+
+    io_count = recv(socket_fd, (char*) &io_buf, sizeof(io_buf), 0);
+
+    if (io_count != sizeof(io_buf)) {
+        ERROR_PRINT(Failed to recv msg from the bridge socket)
+        close(socket_fd);
+        return -1;
+    }
+
+    daemon_pid = io_buf;
+    daemon_address->sun_family = AF_LOCAL;
+    snprintf(daemon_address->sun_path, sizeof(daemon_address->sun_path), TOSTRING(LIKWIDSOCKETBASE) "-%d", daemon_pid);
+
+    daemon_pids[cpu_id] = daemon_pid;
+    nr_daemons++;
+    return 0;
+}
+
+static int
+access_client_daemon_connect(int cpu_id, struct sockaddr_un *address) {
+    int res = 0;
+    char* filepath;
+    size_t address_length;
+    int timeout = 1000;
+    int socket_fd = -1;
+
+    socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+    if (socket_fd < 0)
+    {
+        ERROR_PRINT(socket() failed);
+        return -1;
+    }
+
+    address_length = sizeof(struct sockaddr_un);
+    filepath = strdup(address->sun_path);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Waiting for socket file %s, address->sun_path);
+    while (access(address->sun_path, F_OK) && timeout > 0)
+    {
+        usleep(2500);
+        timeout--;
+    }
+    if (!access(address->sun_path, F_OK))
+    {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Socket file %s exists, address->sun_path);
+    }
+    timeout = 1000;
+
+    res = connect(socket_fd, (struct sockaddr *) address, address_length);
+    while (res && timeout > 0)
+    {
+        usleep(2500);
+        res = connect(socket_fd, (struct sockaddr *) address, address_length);
 
         if (res == 0)
         {
@@ -234,8 +337,29 @@ access_client_startDaemon(int cpu_id)
     }
     DEBUG_PRINT(DEBUGLEV_INFO, Successfully opened socket %s to daemon for CPU %d, filepath, cpu_id);
     free(filepath);
-    daemon_pids[cpu_id] = pid;
-    nr_daemons++;
+    return socket_fd;
+}
+
+static int
+access_client_startDaemon(int cpu_id) {
+    const char *likwid_bridge_pid_val;
+    struct sockaddr_un address;
+    int daemon_ret_code;
+    int socket_fd;
+
+    likwid_bridge_pid_val = getenv("LIKWID_BRIDGE_PID");
+
+    if (!likwid_bridge_pid_val) {
+        daemon_ret_code = access_client_startDaemon_direct(cpu_id, &address);
+    } else {
+        daemon_ret_code = access_client_startDaemon_bridge(cpu_id, likwid_bridge_pid_val, &address);
+    }
+
+    if (daemon_ret_code < 0) {
+        return daemon_ret_code;
+    }
+
+    socket_fd = access_client_daemon_connect(cpu_id, &address);
     return socket_fd;
 }
 
