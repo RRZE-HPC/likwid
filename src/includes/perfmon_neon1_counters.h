@@ -48,3 +48,7 @@ static char* neon1_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/armv8_pmuv3_0",
 };
 
+static char* a76_translate_types[NUM_UNITS] = {
+    [PMC] = "/sys/bus/event_source/devices/armv8_cortex_a76",
+};
+

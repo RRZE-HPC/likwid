@@ -164,6 +164,7 @@ struct topology_functions {
 #define  ARM_CORTEX_A57     0xD07U
 #define  ARM_CORTEX_A72     0xD08U
 #define  ARM_CORTEX_A73     0xD09U
+#define  ARM_CORTEX_A76     0xD0BU
 #define  CAV_THUNDERX	0x0A0U
 #define  CAV_THUNDERX88	0x0A1U
 #define  CAV_THUNDERX81	0x0A2U
