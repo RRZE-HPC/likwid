@@ -910,7 +910,7 @@ int amd_rapl_l3_test()
     }
     topo = get_cpuTopology();
     info = get_cpuInfo();
-    if (info->family == ZEN3_FAMILY && (info->model == ZEN4_RYZEN || info->model == ZEN4_EPYC))
+    if (info->family == ZEN3_FAMILY && (info->model == ZEN4_RYZEN || info->model == ZEN4_RYZEN_PRO || info->model == ZEN4_EPYC))
     {
         for (int i = 0; i < topo->numSockets; i++)
         {
