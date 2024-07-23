@@ -3645,7 +3645,11 @@ int main(void)
                     allowed = allowed_sandybridge;
                     isClientMem = 1;
                 }
-                else if (model == ICELAKE1 || model == ICELAKE2 || model == ROCKETLAKE)
+                else if ((model == ICELAKE1) ||
+			 (model == ICELAKE2) ||
+			 (model == ROCKETLAKE) ||
+			 (model == TIGERLAKE1) ||
+			 (model == TIGERLAKE2) )
                 {
                     allowed = allowed_icl;
                     isClientMem = 1;
