@@ -1199,7 +1199,11 @@ local function splitUncoreEvents(groupdata)
                     elseif e["Counter"]:match("^UPMC%d") then
                         table.insert(socket, event)
                     elseif e["Counter"]:match("^DFC%d") then
-                        table.insert(numa, event)
+                        if cpuinfo["family"] == 0x17 then
+                            table.insert(numa, event)
+                        else
+                            table.insert(socket, event)
+                        end
                     end
                 end
             elseif cpuinfo["architecture"] == "armv8" then
