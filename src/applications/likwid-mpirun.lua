@@ -127,7 +127,7 @@ if os.getenv("LIKWID_FORCE") ~= nil then
     force = true
 end
 
-local LIKWID_PIN="<INSTALLED_PREFIX>/bin/likwid-pin"
+local LIKWID_PIN="likwid-pin"
 local LIKWID_PERFCTR="<INSTALLED_PREFIX>/bin/likwid-perfctr"
 
 local readHostfile = nil
@@ -682,7 +682,7 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
         end
         s = ""
         for _, cm in pairs(cmask) do
-            s = string.format("%.08x", cm) .. s
+            s = string.format("%0.16x", cm) .. s
         end
         local idx = -1
         for i=1, #s do
@@ -1456,22 +1456,21 @@ local function setPerfStrings(perflist, cpuexprs)
 end
 
 local function checkLikwid()
-    local f = io.popen("which likwid-pin 2>/dev/null", "r")
-    if f ~= nil then
-        local s = f:read("*line")
-        if s ~= nil and s ~= LIKWID_PIN then
-            LIKWID_PIN = s
+    if string.sub(LIKWID_PIN, 1,1) ~= "/" then
+        local before = LIKWID_PIN
+        LIKWID_PIN = abspath(LIKWID_PIN)
+        if debug then
+            print_stdout(string.format("DEBUG: Resolved %s to %s", before, LIKWID_PIN))
         end
-        f:close()
     end
-    f = io.popen("which likwid-perfctr 2>/dev/null", "r")
-    if f ~= nil then
-        local s = f:read("*line")
-        if s ~= nil and s ~= LIKWID_PERFCTR then
-            LIKWID_PERFCTR = s
+    if string.sub(LIKWID_PERFCTR, 1,1) ~= "/" then
+        local before = LIKWID_PERFCTR
+        LIKWID_PERFCTR = abspath(LIKWID_PERFCTR)
+        if debug then
+            print_stdout(string.format("DEBUG: Resolved %s to %s", before, LIKWID_PERFCTR))
         end
-        f:close()
     end
+
 end
 
 local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outputname)
