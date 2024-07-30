@@ -1402,12 +1402,17 @@ perfmon_init_maps(void)
                             translate_types = a53_translate_types;
                             break;
                         case ARM_NEOVERSE_N1:
+                        case ARM_CORTEX_A76:
                             eventHash = neon1_arch_events;
                             perfmon_numArchEvents = perfmon_numArchEventsNeoN1;
                             counter_map = neon1_counter_map;
                             box_map = neon1_box_map;
                             perfmon_numCounters = perfmon_numCountersNeoN1;
                             translate_types = neon1_translate_types;
+                            if (access(translate_types[PMC], F_OK) != 0)
+                            {
+                                translate_types = a76_translate_types;
+                            }
                             break;
                         case AWS_GRAVITON3:
                             eventHash = graviton3_arch_events;
