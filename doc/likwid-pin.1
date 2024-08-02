@@ -109,13 +109,7 @@ The physical numbering also allows the usage of ranges like
 which results in the list
 .B 0,1,2.
 .IP 2. 4
-The CPUs can be selected by their indices inside of an affinity domain. The affinity domain is optional and if not given, Likwid assumes the domain
-.B 'N'
-for the whole node. The format is
-.B L:<indexlist>
-for selecting the CPUs inside of domain
-.B 'N'
-or
+The CPUs can be selected by their indices inside of an affinity domain. The format is
 .B L:<domain>:<indexlist>
 for selecting the CPUs inside the given domain. Assuming an virtual affinity domain
 .B 'P'
@@ -171,7 +165,7 @@ are created than specified in the processor list, these threads are pinned to pr
 For selection of CPUs inside of a CPUset only the logical numbering is allowed. Assuming CPUset
 .B 0,4,1,5:
 .TP
-.B likwid-pin -c L:1,3 ./myApp
+.B likwid-pin -c L:N:1,3 ./myApp
 .PP
 This command pins
 .B ./myApp
