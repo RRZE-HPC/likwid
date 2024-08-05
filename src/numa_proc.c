@@ -378,11 +378,13 @@ int proc_numa_init(void)
             int id = numa_info.nodes[i].processors[j];
             if (cpuid_topology.threadPool[id].inCpuSet == 1)
             {
-                check++;
+                numa_info.nodes[i].processors[check++] = id;
             }
         }
         if (check < numa_info.nodes[i].numberOfProcessors)
+        {
             numa_info.nodes[i].numberOfProcessors = check;
+        }
         numa_info.nodes[i].numberOfDistances = nodeDistanceList(id, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
         if (numa_info.nodes[i].numberOfDistances == 0)
         {
