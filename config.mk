@@ -10,7 +10,7 @@
 # GCCARMv8, GCCARMv7 and GCCPOWER
 COMPILER = GCC#NO SPACE
 
-# Path were to install likwid
+# Absolute path were to install likwid
 PREFIX ?= /usr/local#NO SPACE
 
 # Set the default mode for MSR access.
