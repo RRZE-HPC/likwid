@@ -149,7 +149,7 @@ int perfmon_init_perfevent(int cpu_id)
         active_cpus += 1;
     }
     perf_event_num_cpus = cpuid_topology.numHWThreads;
-    if (cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_EPYC))
+    if (cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_EPYC))
     {
         perfEventOptionNames[EVENT_OPTION_TID] = "threadmask";
         perfEventOptionNames[EVENT_OPTION_CID] = "coreid";
@@ -838,7 +838,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
             }
         }
     }
-    if (type != POWER && cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_EPYC))
+    if (type != POWER && cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_EPYC))
     {
         int got_cid = 0;
         int got_slices = 0;
