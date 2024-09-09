@@ -193,7 +193,11 @@ else
 ifeq ($(BUILDFREQ),false)
 all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET)
 else
+ifeq ($(CONTAINER_HELPER),false)
 all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(FREQ_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET)
+else
+all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(FREQ_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET) $(CONTAINER_HELPER_TARGET)
+endif
 endif
 endif
 
@@ -274,6 +278,10 @@ $(FREQ_TARGET): $(SRC_DIR)/access-daemon/setFreqDaemon.c
 $(APPDAEMON_TARGET): $(SRC_DIR)/access-daemon/appDaemon.c $(TARGET_GOTCHA_LIB)
 	@echo "===>  BUILD application interface likwid-appDaemon.so"
 	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-appDaemon.so
+
+$(CONTAINER_HELPER_TARGET): $(SRC_DIR)/bridge/bridge.c
+	@echo "===>  BUILD container helper likwid-bridge"
+	$(Q)$(CC) $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(SRC_DIR)/bridge/bridge.c -o $@
 
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
@@ -365,7 +373,7 @@ clean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TARGET
 	@rm -f $(DYNAMIC_TARGET_LIB)*
 	@rm -f $(PINLIB)*
 	@rm -f $(FORTRAN_IF_NAME)
-	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET) $(APPDAEMON_TARGET)
+	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET) $(APPDAEMON_TARGET) $(CONTAINER_HELPER_TARGET)
 	@rm -f likwid-config.cmake
 
 distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TARGET)
@@ -378,7 +386,7 @@ distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TA
 	@rm -f $(DYNAMIC_TARGET_LIB)*
 	@rm -f $(PINLIB)*
 	@rm -f $(FORTRAN_IF_NAME)
-	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET) $(APPDAEMON_TARGET)
+	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET) $(APPDAEMON_TARGET) $(CONTAINER_HELPER_TARGET)
 	@rm -rf $(BUILD_DIR)
 	@if [ "$(LUA_INTERNAL)" = "true" ]; then rm -f $(TARGET_LUA_LIB).* $(shell basename $(TARGET_LUA_LIB)).*; fi
 	@if [ "$(USE_INTERNAL_HWLOC)" = "true" ]; then rm -f $(TARGET_HWLOC_LIB).* $(shell basename $(TARGET_HWLOC_LIB)).*; fi
@@ -488,7 +496,33 @@ uninstall_appdaemon_moved:
 	@echo "===> No UNINSTALL of the application interface appDaemon"
 endif
 
-install: install_daemon install_freq install_appdaemon
+ifeq ($(CONTAINER_HELPER),true)
+install_container_helper: $(CONTAINER_HELPER_TARGET)
+	@echo "===> INSTALL container helper likwid-bridge to $(SBINPREFIX)/likwid-bridge"
+	@mkdir -p $(SBINPREFIX)
+	@install -m 755 $(CONTAINER_HELPER_TARGET) $(SBINPREFIX)/likwid-bridge
+move_container_helper:
+	@echo "===> MOVE container helper likwid-bridge from $(SBINPREFIX)/likwid-bridge to $(INSTALLED_SBINPREFIX)/likwid-bridge"
+	@mkdir -p $(INSTALLED_SBINPREFIX)
+	@install -m 755 $(SBINPREFIX)/$(CONTAINER_HELPER_TARGET) $(INSTALLED_SBINPREFIX)/$(CONTAINER_HELPER_TARGET)
+uninstall_container_helper:
+	@echo "===> REMOVING container helper likwid-bridge from $(SBINPREFIX)/$(CONTAINER_HELPER_TARGET)"
+	@rm -f $(SBINPREFIX)/$(CONTAINER_HELPER_TARGET)
+uninstall_container_helper_moved:
+	@echo "===> REMOVING container helper likwid-bridge from $(INSTALLED_SBINPREFIX)/$(CONTAINER_HELPER_TARGET)"
+	@rm -f $(INSTALLED_SBINPREFIX)/$(CONTAINER_HELPER_TARGET)
+else
+install_container_helper:
+	@echo "===> No INSTALL of the container helper likwid-bridge"
+move_appdaemon:
+	@echo "===> No MOVE of the container helper likwid-bridge"
+uninstall_appdaemon:
+	@echo "===> No UNINSTALL of the container helper likwid-bridge"
+uninstall_appdaemon_moved:
+	@echo "===> No UNINSTALL of the container helper likwid-bridge"
+endif
+
+install: install_daemon install_freq install_appdaemon install_container_helper
 	@echo "===> INSTALL applications to $(BINPREFIX)"
 	@mkdir -p $(BINPREFIX)
 	@chmod 755 $(BINPREFIX)
@@ -585,7 +619,7 @@ install: install_daemon install_freq install_appdaemon
 	@echo "===> INSTALL cmake to $(abspath $(PREFIX)/share/likwid)"
 	@install -m 644 $(PWD)/likwid-config.cmake $(PREFIX)/share/likwid
 
-move: move_daemon move_freq move_appdaemon
+move: move_daemon move_freq move_appdaemon move_container_helper
 	@echo "===> MOVE applications from $(BINPREFIX) to $(INSTALLED_BINPREFIX)"
 	@mkdir -p $(INSTALLED_BINPREFIX)
 	@chmod 755 $(INSTALLED_BINPREFIX)
@@ -656,7 +690,7 @@ move: move_daemon move_freq move_appdaemon
 		$(PREFIX)/share/likwid/likwid-config.cmake > $(INSTALLED_PREFIX)/share/likwid/likwid-config.cmake
 	@chmod 644 $(INSTALLED_PREFIX)/share/likwid/likwid-config.cmake
 
-uninstall: uninstall_daemon uninstall_freq uninstall_appdaemon
+uninstall: uninstall_daemon uninstall_freq uninstall_appdaemon uninstall_container_helper
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
 	@rm -f $(addprefix $(BINPREFIX)/,$(addsuffix  .lua,$(L_APPS)))
 	@for APP in $(L_APPS); do \
@@ -693,7 +727,7 @@ uninstall: uninstall_daemon uninstall_freq uninstall_appdaemon
 	@rm -rf $(PREFIX)/share/likwid/likwid-config.cmake
 	@rm -rf $(PREFIX)/share/likwid
 
-uninstall_moved: uninstall_daemon_moved uninstall_freq_moved uninstall_appdaemon_moved
+uninstall_moved: uninstall_daemon_moved uninstall_freq_moved uninstall_appdaemon_moved uninstall_container_helper_moved
 	@echo "===> REMOVING applications from $(INSTALLED_PREFIX)/bin"
 	@rm -f $(addprefix $(INSTALLED_BINPREFIX)/,$(addsuffix  .lua,$(L_APPS)))
 	@for APP in $(L_APPS); do \
