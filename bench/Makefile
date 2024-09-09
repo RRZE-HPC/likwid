@@ -75,7 +75,7 @@ endif
 
 
 
-SHARED_TARGET_LIB := -L.. -L$(HWLOC_LIB_DIR) -L$(LUA_LIB_DIR) -llikwid -l$(HWLOC_LIB_NAME) -l$(LUA_LIB_NAME)
+SHARED_TARGET_LIB := -L.. -L$(subst bench/ext,ext,$(HWLOC_LIB_DIR)) -L$(subst bench/ext,ext,$(LUA_LIB_DIR)) -llikwid -l$(HWLOC_LIB_NAME) -l$(LUA_LIB_NAME)
 STATIC_TARGET_LIB := ../liblikwid.a $(HWLOC_LIB_DIR)/lib$(HWLOC_LIB_NAME).a $(LUA_LIB_DIR)/lib$(LUA_LIB_NAME).a
 TARGET_LIB = $(SHARED_TARGET_LIB)
 
