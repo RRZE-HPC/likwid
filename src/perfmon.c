@@ -1288,6 +1288,7 @@ perfmon_init_maps(void)
                     translate_types = zen3_translate_types;
                     break;
                 case ZEN4_RYZEN:
+                case ZEN4_RYZEN2:
                 case ZEN4_EPYC:
                     eventHash = zen4_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen4;
@@ -1950,6 +1951,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen3;
                     break;
                 case ZEN4_RYZEN:
+                case ZEN4_RYZEN2:
                 case ZEN4_EPYC:
                     initThreadArch = perfmon_init_zen4;
                     initialize_power = TRUE;
