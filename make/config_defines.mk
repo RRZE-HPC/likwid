@@ -302,6 +302,10 @@ DEFINES += -DLIKWID_WITH_ROCMON -D__HIP_PLATFORM_HCC__
 BUILDAPPDAEMON = true
 endif
 
+ifeq ($(CONTAINER_HELPER),true)
+	C_APPS += likwid-bridge
+	CONTAINER_HELPER_TARGET = likwid-bridge
+endif
 ifeq ($(strip $(BUILDDAEMON)),true)
 ifneq ($(strip $(COMPILER)),MIC)
     DAEMON_TARGET = likwid-accessD

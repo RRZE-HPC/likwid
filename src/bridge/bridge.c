@@ -1,4 +1,6 @@
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +9,14 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-[[noreturn]] void access_daemon_main() {
+#ifdef __GNUC__
+#define NORETURN_ATTR  __attribute__((noreturn))
+#endif
+#ifdef __GNUG__
+#define NORETURN_ATTR  [[noreturn]]
+#endif
+
+NORETURN_ATTR void access_daemon_main() {
     char *argv[1] = {NULL};
     int ret = execvp("likwid-accessD", argv);
     if (ret < 0) {
@@ -49,7 +58,7 @@ int create_bridge_socket(int id) {
     return socket_fd;
 }
 
-[[noreturn]] void bridge_daemon_main(int socket_fd) {
+NORETURN_ATTR void bridge_daemon_main(int socket_fd) {
     int io_buf;
     while (1) {
         int conn_fd = accept(socket_fd, NULL, NULL);

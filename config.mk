@@ -37,6 +37,9 @@ ROCM_INTERFACE = false#NO SPACE
 # Build experimental sysfeatures interface and Lua CLI application
 BUILD_SYSFEATURES = false#NO SPACE
 
+# Build container helper
+CONTAINER_HELPER = true#NO SPACE
+
 #################################################################
 #################################################################
 # Advanced configuration options                                #
@@ -86,6 +89,10 @@ INSTALLED_FREQDAEMON = $(INSTALLED_SBINPREFIX)/likwid-setFreq#NO SPACE
 BUILDAPPDAEMON=true
 APPDAEMON = $(PREFIX)/lib/likwid-appDaemon.so#NO SPACE
 INSTALLED_APPDAEMON = $(INSTALLED_PREFIX)/lib/likwid-appDaemon.so#NO SPACE
+
+# Build the container helper.
+TMP_CONTAINER_HELPER = $(PREFIX)/sbin/likwid-bridge
+INSTALLED_CONTAINER_HELPER = $(INSTALLED_PREFIX)/sbin/likwid-bridge
 
 # chown installed tools to this user/group
 # if you change anything here, make sure that the user/group can access
