@@ -127,7 +127,7 @@ if os.getenv("LIKWID_FORCE") ~= nil then
     force = true
 end
 
-local LIKWID_PIN="<INSTALLED_PREFIX>/bin/likwid-pin"
+local LIKWID_PIN="likwid-pin"
 local LIKWID_PERFCTR="<INSTALLED_PREFIX>/bin/likwid-perfctr"
 
 local readHostfile = nil
@@ -242,6 +242,10 @@ local function writeHostfileOpenMPI(hostlist, filename)
         print_stderr("ERROR: Cannot open hostfile "..filename)
         mpirun_exit(1)
     end
+    if debug then
+        print_stdout("DEBUG: New Hostfile for OpenMPI:")
+        print_stdout("DEBUG: " .. string.rep("-", 30))
+    end
     for i, hostcontent in pairs(hostlist) do
         str = hostcontent["hostname"]
         if hostcontent["slots"] then
@@ -250,7 +254,13 @@ local function writeHostfileOpenMPI(hostlist, filename)
         if hostcontent["maxslots"] then
             str = str .. string.format(" max-slots=%d", hostcontent["maxslots"])
         end
+        if debug then
+            print_stdout("DEBUG: " .. str)
+        end
         f:write(str .. "\n")
+    end
+    if debug then
+        print_stdout("DEBUG: " .. string.rep("-", 30))
     end
     f:close()
 end
@@ -341,6 +351,8 @@ local function writeHostfileIntelMPI(hostlist, filename)
         str = hostcontent["hostname"]
         if hostcontent["ppn"] then
             str = str .. string.format(":%d", hostcontent["ppn"])
+        elseif hostcontent["slots"] then
+            str = str .. string.format(":%d", hostcontent["slots"])
         end
         f:write(str .. "\n")
     end
@@ -638,6 +650,9 @@ local function _srun_get_mpi_types()
             if line:match("srun: ([^%s]+)") then
                 local mpitype = line:match("srun: ([^%s]+)")
                 t[mpitype] = true
+            elseif line:match("%s+([^%s]+)") then
+                local mpitype = line:match("%s+([^%s]+)")
+                t[mpitype] = true
             end
         end
     end
@@ -656,8 +671,33 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
     if not slurm_no_tasks_per_node then
         opts["ntasks-per-node"] = string.format("%d", ppn)
     end
-    opts["cpu_bind"] = "none"
-    opts["cpus-per-task"] = string.format("%d", tpp)
+    local cpumasks = {}
+    for _, c in pairs(cpuexprs) do
+        local cmask = {0, 0, 0, 0, 0, 0, 0, 0}
+        for _, cpu in pairs(c) do
+            local icpu = tonumber(cpu)
+            local offset = icpu % 64
+            local cmask_idx = math.tointeger(icpu // 64)
+            cmask[cmask_idx+1] = cmask[cmask_idx+1] | (1<<offset)
+        end
+        s = ""
+        for _, cm in pairs(cmask) do
+            s = string.format("%0.16x", cm) .. s
+        end
+        local idx = -1
+        for i=1, #s do
+            if string.sub(s, i, i) ~= "0" then
+                idx = i
+                break
+            end
+        end
+        if idx > 0 then
+            s = string.sub(s, idx)
+        end
+        table.insert(cpumasks, string.format("0x%s", s))
+    end
+    opts["cpu-bind"] = "mask_cpu:"..table.concat(cpumasks, ",")
+    --opts["cpus-per-task"] = string.format("%d", tpp)
     supported_types = _srun_get_mpi_types()
     if supported_types["pmi2"] then
         opts["mpi"] = "pmi2"
@@ -907,6 +947,12 @@ local function getOmpType()
             elseif line:match("libiomp%d*.so") then
                 omptype = "intel"
                 break
+            elseif line:match("libnvomp.so") then
+                omptype = "nvidia"
+                break
+            elseif line:match("libomp.so") then
+                omptype = "llvm"
+                break
             elseif line:match("not a dynamic executable") then
                 omptype = "none"
                 dyn_linked = false
@@ -962,7 +1008,6 @@ local function assignHosts(hosts, np, ppn, tpp)
                 if host["maxslots"] and host["maxslots"] < ppn*tpp then
                     table.insert(newhosts, {hostname=host["hostname"],
                                             slots=host["maxslots"],
-                                            ppn=ppn,
                                             maxslots=host["maxslots"],
                                             interface=host["interface"]})
                     if debug then
@@ -973,7 +1018,6 @@ local function assignHosts(hosts, np, ppn, tpp)
                 else
                     table.insert(newhosts, {hostname=host["hostname"],
                                             slots=ppn*tpp,
-                                            ppn=ppn,
                                             maxslots=host["slots"],
                                             interface=host["interface"]})
                     if debug then
@@ -1018,7 +1062,6 @@ local function assignHosts(hosts, np, ppn, tpp)
                 mpirun_exit(1)
             else
                 table.insert(newhosts, {hostname=host["hostname"],
-                                        ppn=ppn,
                                         slots=ppn*tpp,
                                         maxslots=host["slots"],
                                         interface=host["interface"]})
@@ -1417,22 +1460,21 @@ local function setPerfStrings(perflist, cpuexprs)
 end
 
 local function checkLikwid()
-    local f = io.popen("which likwid-pin 2>/dev/null", "r")
-    if f ~= nil then
-        local s = f:read("*line")
-        if s ~= nil and s ~= LIKWID_PIN then
-            LIKWID_PIN = s
+    if string.sub(LIKWID_PIN, 1,1) ~= "/" then
+        local before = LIKWID_PIN
+        LIKWID_PIN = abspath(LIKWID_PIN)
+        if debug then
+            print_stdout(string.format("DEBUG: Resolved %s to %s", before, LIKWID_PIN))
         end
-        f:close()
     end
-    f = io.popen("which likwid-perfctr 2>/dev/null", "r")
-    if f ~= nil then
-        local s = f:read("*line")
-        if s ~= nil and s ~= LIKWID_PERFCTR then
-            LIKWID_PERFCTR = s
+    if string.sub(LIKWID_PERFCTR, 1,1) ~= "/" then
+        local before = LIKWID_PERFCTR
+        LIKWID_PERFCTR = abspath(LIKWID_PERFCTR)
+        if debug then
+            print_stdout(string.format("DEBUG: Resolved %s to %s", before, LIKWID_PERFCTR))
         end
-        f:close()
     end
+
 end
 
 local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outputname)
@@ -1517,7 +1559,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
             cpuexpr_opt = "-C"
         else
             table.insert(cmd, LIKWID_PIN)
-            table.insert(cmd,"-q")
+            --table.insert(cmd,"-q")
             if #perf > 0 then
                 table.insert(only_pinned_processes, i)
             end
@@ -1530,7 +1572,11 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
         end
         table.insert(cmd, skipStr)
         table.insert(cmd, cpuexpr_opt)
-        table.insert(cmd, table.concat(cpuexprs[i], ","))
+        if mpitype == "slurm" then
+            table.insert(cmd, string.format("L:N:0-%d", #cpuexprs[i] - 1))
+        else
+            table.insert(cmd, table.concat(cpuexprs[i], ","))
+        end
         if use_perfctr then
             for j, expr in pairs(perfexprs) do
                 table.insert(cmd, "-g")
@@ -2499,6 +2545,14 @@ elseif np < #cpuexprs then
     ppn = #cpuexprs
 end
 
+if debug then
+    print_stdout("DEBUG: Detected environment")
+    print_stdout("DEBUG: MPI " .. mpitype)
+    if omptype then
+        print_stdout("DEBUG: OpenMP " .. omptype)
+    end
+end
+
 if skipStr == "" then
     if mpitype == "intelmpi" then
         maj, min = getMpiVersion()
@@ -2549,6 +2603,13 @@ if skipStr == "" then
             else
                 skipStr = '-s 0x3'
             end
+        elseif omptype == "nvidia" then
+            if nrNodes == 1 and tpp == 2 then
+                skipStr = '-s 0x1'
+            --else
+                --skipStr = '-s 0x3'
+            end
+        
         end
     end
 end
