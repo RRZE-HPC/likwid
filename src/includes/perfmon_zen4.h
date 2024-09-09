@@ -174,11 +174,15 @@ int zen4_datafabric_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
         return 0;
     }
 
-    flags |= ((event->eventId & AMD_K17_DF_EVSEL_MASK) << AMD_K17_DF_EVSEL_SHIFT);
-    flags |= (((event->eventId >> 8) & AMD_K17_DF_EVSEL_MASK1) << AMD_K17_DF_EVSEL_SHIFT1);
-    flags |= (((event->eventId >> 12) & AMD_K17_DF_EVSEL_MASK2) << AMD_K17_DF_EVSEL_SHIFT2);
+    flags |= ((event->eventId & AMD_K19_DF_EVSEL_MASK) << AMD_K19_DF_EVSEL_SHIFT);
 
-    flags |= ((event->umask & AMD_K17_DF_UNIT_MASK) << AMD_K17_DF_UNIT_SHIFT);
+    flags |= ((event->umask & AMD_K19_DF_UNIT_MASK) << AMD_K19_DF_UNIT_SHIFT);
+
+    flags |= (((event->umask >> 8) & AMD_K19_DF_UNIT_MASK1) << AMD_K19_DF_UNIT_SHIFT1);
+
+    flags |= (((event->eventId >> 8) & AMD_K19_DF_EVSEL_MASK1) << AMD_K19_DF_EVSEL_SHIFT1);
+
+    flags |= (1ULL << AMD_K19_DF_ENABLE_OFFSET);
 
 
     if (flags != currentConfig[cpu_id][index])
@@ -300,8 +304,8 @@ int perfmon_startCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
                 if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock))
                     continue;
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &flags));
-                eventSet->events[i].threadCounter[thread_id].startData = field64(flags, 0, box_map[type].regWidth);
-                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST field64(flags, 0, box_map[type].regWidth), START_POWER);
+                eventSet->events[i].threadCounter[thread_id].startData = flags;
+                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST flags, START_POWER);
             }
             else if (type == FIXED)
             {
@@ -377,8 +381,9 @@ int perfmon_stopCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
                     continue;
                 if (counter == MSR_AMD17_RAPL_CORE_STATUS && (!haveCLock))
                     continue;
+                if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock))
+                    continue;
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
-                counter_result = field64(counter_result, 0, box_map[type].regWidth);
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
@@ -461,6 +466,8 @@ int perfmon_readCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
                 if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock))
                     continue;
                 if (counter == MSR_AMD17_RAPL_CORE_STATUS && (!haveCLock))
+                    continue;
+                if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock))
                     continue;
                 CHECK_POWER_READ_ERROR(power_read(cpu_id, counter, (uint32_t*)&counter_result));
                 VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, READ_POWER)
