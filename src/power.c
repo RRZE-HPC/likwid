@@ -215,6 +215,7 @@ power_init(int cpuId)
                 case ZEN4_RYZEN:
                 case ZEN4_RYZEN2:
                 case ZEN4_EPYC:
+                case ZEN4_RYZEN_PRO:
                     cpuid_info.turbo = 0;
                     power_info.hasRAPL = 1;
                     power_info.statusRegWidth = 64;

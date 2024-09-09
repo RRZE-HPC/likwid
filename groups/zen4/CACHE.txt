@@ -6,7 +6,7 @@ FIXC2 MAX_CPU_CLOCK
 PMC0  RETIRED_INSTRUCTIONS
 PMC1  CPU_CLOCKS_UNHALTED
 PMC2  DATA_CACHE_ACCESSES
-PMC3  DATA_CACHE_REFILLS_ALL
+PMC3  ANY_DATA_CACHE_FILLS_ALL
 
 METRICS
 Runtime (RDTSC) [s] time
@@ -23,9 +23,9 @@ LONG
 Formulas:
 data cache requests = DATA_CACHE_ACCESSES
 data cache request rate = DATA_CACHE_ACCESSES / RETIRED_INSTRUCTIONS
-data cache misses = DATA_CACHE_REFILLS_ALL
-data cache miss rate = DATA_CACHE_REFILLS_ALL / RETIRED_INSTRUCTIONS
-data cache miss ratio = DATA_CACHE_REFILLS_ALL / DATA_CACHE_ACCESSES
+data cache misses = ANY_DATA_CACHE_FILLS_ALL
+data cache miss rate = ANY_DATA_CACHE_FILLS_ALL / RETIRED_INSTRUCTIONS
+data cache miss ratio = ANY_DATA_CACHE_FILLS_ALL / DATA_CACHE_ACCESSES
 -
 This group measures the locality of your data accesses with regard to the
 L1 cache. Data cache request rate tells you how data intensive your code is
