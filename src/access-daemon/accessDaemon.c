@@ -3645,7 +3645,11 @@ int main(void)
                     allowed = allowed_sandybridge;
                     isClientMem = 1;
                 }
-                else if (model == ICELAKE1 || model == ICELAKE2 || model == ROCKETLAKE)
+                else if ((model == ICELAKE1) ||
+			 (model == ICELAKE2) ||
+			 (model == ROCKETLAKE) ||
+			 (model == TIGERLAKE1) ||
+			 (model == TIGERLAKE2) )
                 {
                     allowed = allowed_icl;
                     isClientMem = 1;
@@ -3746,6 +3750,7 @@ int main(void)
                         allowed = allowed_amd17_zen2;
                         break;
                     case ZEN4_RYZEN:
+                    case ZEN4_RYZEN2:
                     case ZEN4_EPYC:
                     case ZEN4_RYZEN_PRO:
                         allowed = allowed_amd19_zen4;

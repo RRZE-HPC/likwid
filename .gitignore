@@ -26,6 +26,7 @@ likwid-pin
 likwid-powermeter
 likwid-setFrequencies
 likwid-topology
+likwid-bridge
 likwid.lua
 
 # generated doc files
