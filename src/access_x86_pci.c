@@ -61,9 +61,6 @@
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-
 #define PCI_ROOT_PATH  "/proc/bus/pci/"
 #define PCM_PCI_CLASS  0x1101
 
