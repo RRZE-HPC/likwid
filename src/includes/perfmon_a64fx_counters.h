@@ -28,7 +28,7 @@
  * =======================================================================================
  */
 
-#define NUM_COUNTERS_A64FX 6
+#define NUM_COUNTERS_A64FX 8
 
 static RegisterMap a64fx_counter_map[NUM_COUNTERS_A64FX] = {
     {"PMC0", PMC0, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
@@ -37,6 +37,8 @@ static RegisterMap a64fx_counter_map[NUM_COUNTERS_A64FX] = {
     {"PMC3", PMC3, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
     {"PMC4", PMC4, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
     {"PMC5", PMC5, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"PMC6", PMC6, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"PMC7", PMC7, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
 };
 
 static BoxMap a64fx_box_map[NUM_UNITS] = {
