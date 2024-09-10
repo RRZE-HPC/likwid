@@ -48,10 +48,10 @@
 #define MAX_MODEL_STRING_LENGTH 512
 
 struct topology_functions {
-    void (*init_cpuInfo) (cpu_set_t cpuSet);
-    void (*init_cpuFeatures) (void);
-    void (*init_nodeTopology) (cpu_set_t cpuSet);
-    void (*init_cacheTopology) (void);
+    int (*init_cpuInfo) (cpu_set_t cpuSet);
+    int (*init_cpuFeatures) (void);
+    int (*init_nodeTopology) (cpu_set_t cpuSet);
+    int (*init_cacheTopology) (void);
     void (*init_fileTopology) (FILE*);
     void (*close_topology) (void);
 };
@@ -99,7 +99,7 @@ struct topology_functions {
 #define BROADWELL_E3         0x47U
 #define SKYLAKE1             0x4EU
 #define SKYLAKE2             0x5EU
-#define SKYLAKEX             0x55U
+#define SKYLAKEX             0x551U
 #define KABYLAKE1            0x8EU
 #define KABYLAKE2            0x9EU
 #define CANNONLAKE           0x66U

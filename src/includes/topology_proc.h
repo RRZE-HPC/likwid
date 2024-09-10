@@ -41,9 +41,9 @@
 #include <bitUtil.h>
 #include <topology.h>
 
-void proc_init_cpuInfo(cpu_set_t cpuSet);
-void proc_init_cpuFeatures(void);
-void proc_init_nodeTopology(cpu_set_t cpuSet);
-void proc_init_cacheTopology(void);
+int proc_init_cpuInfo(cpu_set_t cpuSet);
+int proc_init_cpuFeatures(void);
+int proc_init_nodeTopology(cpu_set_t cpuSet);
+int proc_init_cacheTopology(void);
 
 #endif /* TOPOLOGY_PROC_H */

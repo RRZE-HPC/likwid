@@ -724,6 +724,7 @@ int likwid_sysfs_list_len(char* sysfsfile)
 int
 topology_setName(void)
 {
+    int err = 0;
     switch ( cpuid_info.family )
     {
         case P6_FAMILY:
@@ -984,8 +985,7 @@ topology_setName(void)
                     break;
 
                 default:
-                    cpuid_info.name = unknown_intel_str;
-                    cpuid_info.short_name = short_unknown;
+                    err = -EFAULT;
                     break;
             }
             break;
@@ -997,7 +997,9 @@ topology_setName(void)
                     cpuid_info.name = xeon_phi_string;
                     cpuid_info.short_name = short_phi;
                     break;
-
+                default:
+                    err = -EFAULT;
+                    break;
             }
             break;
 
@@ -1006,6 +1008,8 @@ topology_setName(void)
             if (cpuid_info.isIntel)
             {
                 ERROR_PLAIN_PRINT(Netburst architecture is not supported);
+                err = -EFAULT;
+                break;
             }
 
             switch ( cpuid_info.model )
@@ -1109,6 +1113,7 @@ topology_setName(void)
                 default:
                     cpuid_info.name = unknown_power_str;
                     cpuid_info.short_name = short_unknown;
+                    err = -EFAULT;
                     break;
            }
            break;
@@ -1132,6 +1137,9 @@ topology_setName(void)
                     cpuid_info.name = amd_zen2_str;
                     cpuid_info.short_name = short_zen2;
                     break;
+                default:
+                    err = -EFAULT;
+                    break;
             }
             break;
         case ZEN3_FAMILY:
@@ -1151,7 +1159,9 @@ topology_setName(void)
                     cpuid_info.name = amd_zen4_str;
                     cpuid_info.short_name = short_zen4;
                     break;
-
+                default:
+                    err = -EFAULT;
+                    break;
             }
             break;
 
@@ -1180,7 +1190,7 @@ topology_setName(void)
                     cpuid_info.short_name = short_arm7;
                     break;
                 default:
-                    return EXIT_FAILURE;
+                    err = -EFAULT;
                     break;
             }
             break;
@@ -1223,7 +1233,7 @@ topology_setName(void)
                             cpuid_info.short_name = short_nvidia_grace;
                             break;
                         default:
-                            return EXIT_FAILURE;
+                            err = -EFAULT;
                             break;
                     }
                     break;
@@ -1244,7 +1254,7 @@ topology_setName(void)
                             cpuid_info.short_name = short_arm8_cav_tx;
                             break;
                         default:
-                            return EXIT_FAILURE;
+                            err = -EFAULT;
                             break;
                     }
                     break;
@@ -1256,7 +1266,7 @@ topology_setName(void)
                             cpuid_info.short_name = short_a64fx;
                             break;
                         default:
-                            return EXIT_FAILURE;
+                            err = -EFAULT;
                             break;
                     }
                     break;
@@ -1269,7 +1279,7 @@ topology_setName(void)
                             cpuid_info.short_name = short_apple_m1;
                             break;
                         default:
-                            return EXIT_FAILURE;
+                            err = -EFAULT;
                             break;
                     }
                     break;
@@ -1281,19 +1291,20 @@ topology_setName(void)
                             cpuid_info.short_name = short_arm8;
                             break;
                         default:
-                            return EXIT_FAILURE;
+                            err = -EFAULT;
                             break;
 
                     }
                     break;
                 default:
-                    return EXIT_FAILURE;
+                    err = -EFAULT;
                     break;
             }
         default:
+            err = -EFAULT;
             break;
     }
-    return EXIT_SUCCESS;
+    return err;
 }
 
 const struct
@@ -1416,10 +1427,7 @@ standard_init:
         if (cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF))
         {
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
-            cpuid_topology.activeHWThreads =
-                ((cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF)) ?
-                cpu_count(&cpuSet) :
-                sysconf(_SC_NPROCESSORS_CONF));
+            cpuid_topology.activeHWThreads = cpu_count(&cpuSet);
 #else
             cpuid_topology.activeHWThreads = sysconf(_SC_NPROCESSORS_ONLN);
 #endif
@@ -1428,10 +1436,39 @@ standard_init:
         {
             cpuid_topology.activeHWThreads = sysconf(_SC_NPROCESSORS_CONF);
         }
-        funcs.init_cpuInfo(cpuSet);
-        topology_setName();
+        cpuid_topology.activeHWThreads = activeHWThreads;
+        ret = funcs.init_cpuInfo(cpuSet);
+        if (ret < 0)
+        {
+            cpuid_topology.activeHWThreads = 0;
+            return ret;
+        }
+        ret = topology_setName();
+        if (ret < 0)
+        {
+            free(cpuid_info.osname);
+            memset(&cpuid_info, 0, sizeof(CpuInfo));
+            memset(&cpuid_topology, 0, sizeof(CpuTopology));
+            return ret;
+        }
         funcs.init_cpuFeatures();
-        funcs.init_nodeTopology(cpuSet);
+        if (ret < 0)
+        {
+            free(cpuid_info.osname);
+            memset(&cpuid_info, 0, sizeof(CpuInfo));
+            memset(&cpuid_topology, 0, sizeof(CpuTopology));
+            return ret;
+        }
+        ret = funcs.init_nodeTopology(cpuSet);
+        if (ret < 0)
+        {
+            free(cpuid_info.osname);
+            free(cpuid_info.features);
+            free(cpuid_topology.threadPool);
+            memset(&cpuid_info, 0, sizeof(CpuInfo));
+            memset(&cpuid_topology, 0, sizeof(CpuTopology));
+            return ret;
+        }
         int activeCount = 0;
         for (int i = 0; i < cpuid_topology.numHWThreads; i++)
         {
@@ -1440,7 +1477,15 @@ standard_init:
         }
         if (activeCount > cpuid_topology.activeHWThreads)
             cpuid_topology.activeHWThreads = activeCount;
-        funcs.init_cacheTopology();
+        ret = funcs.init_cacheTopology();
+        if (ret < 0)
+        {
+            free(cpuid_info.osname);
+            free(cpuid_topology.threadPool);
+            memset(&cpuid_info, 0, sizeof(CpuInfo));
+            memset(&cpuid_topology, 0, sizeof(CpuTopology));
+            return ret;
+        }
         if (cpuid_topology.numCacheLevels == 0)
         {
             CacheLevel* cachePool = NULL;

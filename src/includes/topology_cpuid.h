@@ -33,9 +33,9 @@
 
 #include <sched.h>
 
-void cpuid_init_cpuInfo(cpu_set_t cpuSet);
-void cpuid_init_cpuFeatures(void);
-void cpuid_init_nodeTopology(cpu_set_t cpuSet);
-void cpuid_init_cacheTopology(void);
+int cpuid_init_cpuInfo(cpu_set_t cpuSet);
+int cpuid_init_cpuFeatures(void);
+int cpuid_init_nodeTopology(cpu_set_t cpuSet);
+int cpuid_init_cacheTopology(void);
 
 #endif /* TOPOLOGY_CPUID_H */

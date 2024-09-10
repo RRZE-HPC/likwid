@@ -239,7 +239,7 @@ likwid_hwloc_record_objs_of_type_below_obj(
 
 
 
-void
+int
 hwloc_init_cpuInfo(cpu_set_t cpuSet)
 {
     int i;
@@ -273,7 +273,9 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     cpuid_info.osname[0] = '\0';
     if (!obj)
     {
-        return;
+        free(cpuid_info.osname);
+        cpuid_info.osname = NULL;
+        return -EFAULT;
     }
 
     const char * info;
@@ -365,10 +367,10 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
                             cpuid_info.isIntel,
                             cpuid_topology.numHWThreads,
                             cpuid_topology.activeHWThreads)
-    return;
+    return 0;
 }
 
-void
+int
 hwloc_init_nodeTopology(cpu_set_t cpuSet)
 {
     HWThread* hwThreadPool = NULL;
@@ -617,7 +619,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     cpuid_topology.numCoresPerSocket = maxNumCoresPerSocket;
     cpuid_topology.numSockets = maxNumSockets;
     cpuid_topology.numDies = maxNumDies;
-    return;
+    return 0;
 }
 
 void hwloc_split_llc_check(CacheLevel* llc_cache)
@@ -660,7 +662,7 @@ void hwloc_split_llc_check(CacheLevel* llc_cache)
     return;
 }
 
-void
+int
 hwloc_init_cacheTopology(void)
 {
     int maxNumLevels=0;
@@ -693,7 +695,7 @@ hwloc_init_cacheTopology(void)
     {
         cpuid_topology.numCacheLevels = 0;
         cpuid_topology.cacheLevels = NULL;
-        return;
+        return -ENOMEM;
     }
     /* Start at the bottom of the tree to get all cache levels in order */
     depth = LIKWID_HWLOC_NAME(topology_get_depth)(hwloc_topology);
@@ -819,7 +821,7 @@ hwloc_init_cacheTopology(void)
 
     cpuid_topology.numCacheLevels = maxNumLevels;
     cpuid_topology.cacheLevels = cachePool;
-    return;
+    return 0;
 }
 
 void
@@ -832,23 +834,23 @@ hwloc_close(void)
     }
 }
 #else
-void
+int
 hwloc_init_cpuInfo(void)
 {
     return;
 }
 
-void hwloc_init_cpuFeatures(void)
+int hwloc_init_cpuFeatures(void)
 {
     return;
 }
 
-void hwloc_init_nodeTopology(void)
+int hwloc_init_nodeTopology(void)
 {
     return;
 }
 
-void hwloc_init_cacheTopology(void)
+int hwloc_init_cacheTopology(void)
 {
     return;
 }

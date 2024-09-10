@@ -326,7 +326,7 @@ cpuid_set_osname(void)
     fclose(fp);
 }
 
-void
+int
 cpuid_init_cpuInfo(cpu_set_t cpuSet)
 {
     int cpus_in_set = 0;
@@ -360,10 +360,10 @@ cpuid_init_cpuInfo(cpu_set_t cpuSet)
                             cpuid_info.isIntel,
                             cpuid_topology.numHWThreads,
                             cpuid_topology.activeHWThreads)
-    return;
+    return 0;
 }
 
-void
+int
 cpuid_init_cpuFeatures(void)
 {
     eax = 0x01;
@@ -371,6 +371,10 @@ cpuid_init_cpuFeatures(void)
 
     cpuid_info.featureFlags = 0;
     cpuid_info.features = (char*) malloc(MAX_FEATURE_STRING_LENGTH*sizeof(char));
+    if (!cpuid_info.features)
+    {
+        return -ENOMEM;
+    }
     cpuid_info.features[0] = '\0';
     if (ecx & (1<<0))
     {
@@ -518,10 +522,10 @@ cpuid_init_cpuFeatures(void)
         }
     }
 
-    return;
+    return 0;
 }
 
-void
+int
 cpuid_init_nodeTopology(cpu_set_t cpuSet)
 {
     uint32_t apicId;
@@ -537,6 +541,10 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
     int maxNumCores;
     int width;
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
+    if (!hwThreadPool)
+    {
+        return -ENOMEM;
+    }
     /* check if 0x0B cpuid leaf is supported */
     if (largest_function >= 0x0B)
     {
@@ -768,16 +776,17 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
         }
     }
     cpuid_topology.threadPool = hwThreadPool;
-    return;
+    return 0;
 }
 
-void
+int
 cpuid_init_cacheTopology(void)
 {
     int maxNumLevels=0;
     int id=0;
     CacheLevel* cachePool = NULL;
     CacheType type = DATACACHE;
+
 
     switch ( cpuid_info.family )
     {
@@ -798,7 +807,10 @@ cpuid_init_cacheTopology(void)
         case K8_FAMILY:
             maxNumLevels = 2;
             cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
-
+            if (!cachePool)
+            {
+                return -ENOMEM;
+            }
             eax = 0x80000005;
             CPUID(eax, ebx, ecx, edx);
             cachePool[0].level = 1;
@@ -837,7 +849,10 @@ cpuid_init_cacheTopology(void)
              */
             maxNumLevels = 3;
             cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
-
+            if (!cachePool)
+            {
+                return -ENOMEM;
+            }
             eax = 0x80000005;
             CPUID(eax, ebx, ecx, edx);
             cachePool[0].level = 1;
@@ -900,7 +915,10 @@ cpuid_init_cacheTopology(void)
 
             maxNumLevels = 0;
             cachePool = (CacheLevel*) malloc(3 * sizeof(CacheLevel));
-
+            if (!cachePool)
+            {
+                return -ENOMEM;
+            }
             while (type)
             {
                 ecx = id;
@@ -931,6 +949,6 @@ cpuid_init_cacheTopology(void)
 
     cpuid_topology.numCacheLevels = maxNumLevels;
     cpuid_topology.cacheLevels = cachePool;
-    return;
+    return 0;
 }
 
