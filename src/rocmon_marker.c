@@ -237,6 +237,7 @@ rocmon_markerInit(void)
     char* gpuStr = getenv("LIKWID_ROCMON_GPUS");
     char* gpuFileStr = getenv("LIKWID_ROCMON_FILEPATH");
     char* verbosityStr = getenv("LIKWID_ROCMON_VERBOSITY");
+    char* debugStr = getenv("LIKWID_DEBUG");
 
     // Validate environment variables are set
     if ((eventStr == NULL) || (gpuStr == NULL) || (gpuFileStr == NULL))
@@ -247,6 +248,11 @@ rocmon_markerInit(void)
     if (verbosityStr != NULL) {
         int v = atoi(verbosityStr);
         rocmon_setVerbosity(v);
+    }
+    if (debugStr != NULL)
+    {
+        int v = atoi(debugStr);
+        perfmon_setVerbosity(v);
     }
 
     // Init timer module

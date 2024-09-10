@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
     LIKWID_GPUMARKER_INIT;
 
     LIKWID_GPUMARKER_START("matmul");
-    // You can read the environment variable LIKWID_GPUS to determine list of GPUs
+    // You can read the environment variable LIKWID_NVMON_GPUS to determine list of GPUs
     for (i = 0; i < numDevices; i++)
         int err = cuda_function(0, 3200);
 

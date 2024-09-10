@@ -2254,9 +2254,11 @@ extern CudaTopology_t get_cudaTopology(void)
 
 Must be called in serial region of the application to set up basic data
 structures of LIKWID. Reads environment variables:
-- LIKWID_GEVENTS (GPU event string)
-- LIKWID_GPUS (GPU list separated by ,)
-- LIKWID_GPUFILEPATH (Outputpath for NvMarkerAPI file)
+- LIKWID_NVMON_EVENTS (GPU event string)
+- LIKWID_NVMON_GPUS (GPU list separated by ,)
+- LIKWID_NVMON_FILEPATH (Outputpath for NvMarkerAPI file)
+- LIKWID_NVMON_VERBOSITY (Verbosity level for NVMON interface)
+- LIKWID_DEBUG (Verbosity level for whole library)
 */
 extern void nvmon_markerInit(void) __attribute__((visibility("default")));
 /*! \brief Select next group to measure
@@ -2270,7 +2272,7 @@ extern void nvmon_markerNextGroup(void)
 
 Must be called in serial region of the application. It gathers all data of
 regions and writes them out to a file (filepath in env variable
-LIKWID_FILEPATH).
+LIKWID_NVMON_FILEPATH).
 */
 extern void nvmon_markerClose(void) __attribute__((visibility("default")));
 /*! \brief Register a measurement region
@@ -3057,16 +3059,18 @@ int rocmon_returnGroups(int nrgroups, char **groups, char **shortinfos,
 
 Must be called in serial region of the application to set up basic data
 structures of LIKWID. Reads environment variables:
-- LIKWID_GEVENTS (GPU event string)
-- LIKWID_GPUS (GPU list separated by ,)
-- LIKWID_GPUFILEPATH (Outputpath for RocmonMarkerAPI file)
+- LIKWID_ROCMON_EVENTS (GPU event string)
+- LIKWID_ROCMON_GPUS (GPU list separated by ,)
+- LIKWID_ROCMON_FILEPATH (Outputpath for RocmonMarkerAPI file)
+- LIKWID_ROCMON_VERBOSITY (Verbosity level for ROCMON interface)
+- LIKWID_DEBUG (Verbosity level for whole library)
 */
 void rocmon_markerInit(void) __attribute__((visibility("default")));
 /*! \brief Close LIKWID's RocmonMarker API
 
 Must be called in serial region of the application. It gathers all data of
 regions and writes them out to a file (filepath in env variable
-LIKWID_FILEPATH).
+LIKWID_ROCMON_FILEPATH).
 */
 void rocmon_markerClose(void) __attribute__((visibility("default")));
 /*! \brief Register a measurement region

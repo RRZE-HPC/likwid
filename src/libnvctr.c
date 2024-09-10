@@ -58,17 +58,18 @@ void nvmon_markerInit(void) {
   int i = 0;
   int setgpuinit = 0;
   int gpuverbosity = 0;
-  char *eventStr = getenv("LIKWID_GEVENTS");
-  char *gpuStr = getenv("LIKWID_GPUS");
-  char *gpuFileStr = getenv("LIKWID_GPUFILEPATH");
+  char *eventStr = getenv("LIKWID_NVMON_EVENTS");
+  char *gpuStr = getenv("LIKWID_NVMON_GPUS");
+  char *gpuFileStr = getenv("LIKWID_NVMON_FILEPATH");
+  char *verbosityStr = getenv("LIKWID_NVMON_VERBOSITY");
+  char *debugStr = getenv("LIKWID_DEBUG");
   /*    char* cpu4gpuStr = getenv("LIKWID_CPU4GPUS");*/
   bstring bGpuStr;
   bstring bGeventStr;
   int (*ownatoi)(const char *);
   ownatoi = &atoi;
 
-  if ((eventStr != NULL) && (gpuStr != NULL) && (gpuFileStr != NULL) &&
-      likwid_cuda_init == 0) {
+  if ((eventStr != NULL) && (gpuStr != NULL) && (gpuFileStr != NULL) && likwid_cuda_init == 0) {
     setgpuinit = 1;
   } else if (likwid_cuda_init == 0) {
     fprintf(stderr, "Running without GPU Marker API. Activate GPU Marker API "
@@ -84,12 +85,18 @@ void nvmon_markerInit(void) {
   //     exit(EXIT_FAILURE);
   // }
 
-  timer_init();
-  topology_cuda_init();
-  if (getenv("LIKWID_DEBUG") != NULL) {
-    nvmon_setVerbosity(ownatoi(getenv("LIKWID_DEBUG")));
+  if (debugStr != NULL) {
+    nvmon_setVerbosity(ownatoi(debugStr));
     gpuverbosity = perfmon_verbosity;
   }
+  if (debugStr != NULL)
+  {
+    int v = atoi(debugStr);
+    perfmon_setVerbosity(v);
+  }
+
+  timer_init();
+  topology_cuda_init();
   /*    if (cpu4gpuStr != NULL)*/
   /*    {*/
   /*        use_cpu = ownatoi(getenv("LIKWID_CPU4GPUS"))*/

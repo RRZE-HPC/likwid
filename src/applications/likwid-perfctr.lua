@@ -1088,10 +1088,13 @@ if use_marker == true then
     likwid.setenv("LIKWID_FORCE", "-1")
     likwid.setenv("KMP_INIT_AT_FORK", "FALSE")
     if nvSupported and #gpulist_cuda > 0 and #cuda_event_string_list > 0 then
-        likwid.setenv("LIKWID_GPUS", table.concat(gpulist_cuda, ","))
+        likwid.setenv("LIKWID_NVMON_GPUS", table.concat(gpulist_cuda, ","))
         str = table.concat(cuda_event_string_list, "|")
-        likwid.setenv("LIKWID_GEVENTS", str)
-        likwid.setenv("LIKWID_GPUFILEPATH", nvMarkerFile)
+        likwid.setenv("LIKWID_NVMON_EVENTS", str)
+        likwid.setenv("LIKWID_NVMON_FILEPATH", nvMarkerFile)
+        if verbose > 0 then
+            likwid.setenv("LIKWID_NVMON_VERBOSITY", tostring(verbose))
+        end
     end
     if rocmSupported and #gpulist_rocm > 0 and #rocm_event_string_list > 0 then
         likwid.setenv("LIKWID_ROCMON_GPUS", table.concat(gpulist_rocm, ","))
