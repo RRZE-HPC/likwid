@@ -158,7 +158,7 @@ install:
 	cp -f likwid-bench $(BINPREFIX)
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
-	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-bench.1 > $(MANPREFIX)/man1/likwid-bench.1
+	@sed -e "s#<VERSION>#$(VERSION)#g" -e "s#<DATE>#$(DATE)#g" < $(DOC_DIR)/likwid-bench.1 > $(MANPREFIX)/man1/likwid-bench.1
 
 
 uninstall:
