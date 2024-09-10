@@ -1436,7 +1436,6 @@ standard_init:
         {
             cpuid_topology.activeHWThreads = sysconf(_SC_NPROCESSORS_CONF);
         }
-        cpuid_topology.activeHWThreads = activeHWThreads;
         ret = funcs.init_cpuInfo(cpuSet);
         if (ret < 0)
         {

@@ -599,7 +599,7 @@ proc_init_cpuFeatures(void)
     bstrListDestroy(flaglist);
 
     get_cpu_perf_data();
-    return;
+    return 0;
 }
 
 int
