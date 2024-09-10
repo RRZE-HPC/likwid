@@ -181,6 +181,7 @@ struct topology_functions {
 #define  APPLE_M1_STUDIO 0x02U
 #define  HUAWEI_TSV110 0xD01U
 #define  AWS_GRAVITON3 0xD40U
+#define  NVIDIA_GRACE 0xD4FU
 
 /* ARM vendors */
 #define DEFAULT_ARM	0x41U

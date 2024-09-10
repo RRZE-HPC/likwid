@@ -88,6 +88,7 @@
 #include <perfmon_applem1.h>
 #include <perfmon_hisilicon.h>
 #include <perfmon_graviton3.h>
+#include <perfmon_nvidiagrace.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -1423,6 +1424,14 @@ perfmon_init_maps(void)
                             box_map = graviton3_box_map;
                             perfmon_numCounters = perfmon_numCountersGraviton3;
                             translate_types = graviton3_translate_types;
+                            break;
+                        case NVIDIA_GRACE:
+                            eventHash = nvidiagrace_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsNvidiaGrace;
+                            counter_map = nvidiagrace_counter_map;
+                            box_map = nvidiagrace_box_map;
+                            perfmon_numCounters = perfmon_numCountersNvidiaGrace;
+                            translate_types = nvidiagrace_translate_types;
                             break;
                         default:
                             ERROR_PLAIN_PRINT(Unsupported ARMv8 Processor);

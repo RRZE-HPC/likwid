@@ -1,0 +1,19 @@
+SHORT MFLOP/s
+
+EVENTSET
+PMC0  INST_RETIRED
+PMC1  CPU_CYCLES
+PMC3  FP_FIXED_OPS_SPEC
+PMC4  FP_SCALE_OPS_SPEC
+
+METRICS
+Runtime (RDTSC) [s] time
+Clock [MHz] 1.E-06*PMC1/time
+CPI  PMC1/PMC0
+FP rate [MFLOP/s] 1E-06*(PMC3+PMC4)/time
+
+LONG
+Formulas:
+FP rate [MFLOP/s] = 1E-06*(FP_FIXED_OPS_SPEC+FP_SCALE_OPS_SPEC)/time
+-
+Double-precision FP rate for scalar and SVE vector operations.

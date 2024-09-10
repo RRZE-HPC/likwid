@@ -1125,6 +1125,14 @@ int perfmon_setupCountersThread_perfevent(
             case MBOX5:
             case MBOX6:
             case MBOX7:
+            case MBOX8:
+            case MBOX9:
+            case MBOX10:
+            case MBOX11:
+            case MBOX12:
+            case MBOX13:
+            case MBOX14:
+            case MBOX15:
             case CBOX0:
             case CBOX1:
             case CBOX2:
@@ -1393,6 +1401,11 @@ int perfmon_setupCountersThread_perfevent(
                     {
                         has_lock = 1;
                     }
+                }
+                if ((cpuid_info.family == ARMV8_FAMILY) && (cpuid_info.part == NVIDIA_GRACE) && cpuid_topology.numSockets > 1)
+                {
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Updating uncore type for socket %d on Nvidia Grace, affinity_thread2socket_lookup[cpu_id]);
+                    type += affinity_thread2socket_lookup[cpu_id];
                 }
                 if (has_lock)
                 {

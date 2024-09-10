@@ -8,6 +8,7 @@
 # configuration options setup steps.
 # Supported: GCC, CLANG, ICC, MIC (ICC), GCCX86 (for 32bit systems)
 # GCCARMv8, GCCARMv7 and GCCPOWER
+# Since 5.3, there is a generic GCCARM target
 COMPILER = GCC#NO SPACE
 
 # Absolute path were to install likwid
