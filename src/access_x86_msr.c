@@ -61,8 +61,6 @@
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define MAX_LENGTH_MSR_DEV_NAME  24
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 

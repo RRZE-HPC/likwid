@@ -37,10 +37,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <types.h>
 
 #define LOCK_INIT -1
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
 
 static inline int
 lock_acquire(int* var, int newval)
