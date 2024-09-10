@@ -191,6 +191,12 @@ likwid_markerInit(void)
         return;
     }
 
+    if (debugStr != NULL)
+    {
+        perfmon_verbosity = atoi(debugStr);
+        verbosity = perfmon_verbosity;
+    }
+
     topology_init();
     numa_init();
     affinity_init();
@@ -199,11 +205,6 @@ likwid_markerInit(void)
 #ifndef LIKWID_USE_PERFEVENT
     HPMmode(atoi(modeStr));
 #endif
-    if (debugStr != NULL)
-    {
-        perfmon_verbosity = atoi(debugStr);
-        verbosity = perfmon_verbosity;
-    }
 
     bThreadStr = bfromcstr(cThreadStr);
     threadTokens = bsplit(bThreadStr,',');
