@@ -602,6 +602,7 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     int (*ownatoi)(const char*);
     ownatoi = &atoi;
     int last_socket = -1;
+    int last_coreid = -1;
     int num_sockets = 0;
     int num_cores_per_socket = 0;
     int num_threads_per_core = 0;
@@ -631,6 +632,7 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
             {
                 num_sockets++;
                 last_socket = packageId;
+                last_coreid = -1;
             }
             fclose(fp);
         }
@@ -639,7 +641,7 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         if (NULL != (fp = fopen (bdata(file), "r")))
         {
             bstring src = bread ((bNread) fread, fp);
-            hwThreadPool[i].coreId = ownatoi(bdata(src));
+            hwThreadPool[i].coreId = (++last_coreid);
             if (hwThreadPool[i].packageId == 0)
             {
                 num_cores_per_socket++;
