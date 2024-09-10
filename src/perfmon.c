@@ -1586,6 +1586,7 @@ perfmon_init_maps(void)
                 eventHash[perfmon_numArchEvents].limit[ret] = '\0';
             }
             bdestroy(blim);
+            bstrListDestroy(outlist);
             eventHash[perfmon_numArchEvents].optionMask = EVENT_OPTION_GENERIC_CONFIG_MASK|EVENT_OPTION_GENERIC_UMASK_MASK;
             eventHash[perfmon_numArchEvents].numberOfOptions = 2;
             eventHash[perfmon_numArchEvents].options[0].type = EVENT_OPTION_GENERIC_CONFIG;
