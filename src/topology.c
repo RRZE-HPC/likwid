@@ -124,6 +124,7 @@ static char* arm_cortex_a57 = "ARM Cortex A57";
 static char* arm_cortex_a53 = "ARM Cortex A53";
 static char* arm_cortex_a72 = "ARM Cortex A72";
 static char* arm_cortex_a73 = "ARM Cortex A73";
+static char* arm_cortex_a76 = "ARM Cortex A76";
 static char* arm_neoverse_n1 = "ARM Neoverse N1";
 static char* arm_neoverse_v1 = "ARM Neoverse V1";
 static char* arm_huawei_tsv110 = "Huawei TSV110 (ARMv8)";
@@ -1203,6 +1204,10 @@ topology_setName(void)
                             cpuid_info.name = arm_cortex_a73;
                             cpuid_info.short_name = short_arm8;
                             break;
+                        case ARM_CORTEX_A76:
+                            cpuid_info.name = arm_cortex_a76;
+                            cpuid_info.short_name = short_arm8;
+                            break;
                         case ARM_NEOVERSE_N1:
                             cpuid_info.name = arm_neoverse_n1;
                             cpuid_info.short_name = short_arm8_neo_n1;
@@ -1692,6 +1697,7 @@ print_supportedCPUs (void)
     printf("Supported ARMv8 processors:\n");
     printf("\t%s\n",arm_cortex_a53);
     printf("\t%s\n",arm_cortex_a57);
+    printf("\t%s\n",arm_cortex_a76);
     printf("\t%s\n",cavium_thunderx_str);
     printf("\t%s\n",cavium_thunderx2t99_str);
     printf("\t%s\n",fujitsu_a64fx);
