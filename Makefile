@@ -532,11 +532,11 @@ uninstall_container_helper_moved:
 else
 install_container_helper:
 	@echo "===> No INSTALL of the container helper likwid-bridge"
-move_appdaemon:
+move_container_helper:
 	@echo "===> No MOVE of the container helper likwid-bridge"
-uninstall_appdaemon:
+uninstall_container_helper:
 	@echo "===> No UNINSTALL of the container helper likwid-bridge"
-uninstall_appdaemon_moved:
+uninstall_container_helper_moved:
 	@echo "===> No UNINSTALL of the container helper likwid-bridge"
 endif
 
