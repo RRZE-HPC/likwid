@@ -86,6 +86,8 @@ if file == nil then
 end
 
 
+likwid.setenv("LIKWID_NO_ACCESS", "1")
+local config = likwid.getConfiguration()
 local cpuinfo = likwid.getCpuInfo()
 local cputopo = likwid.getCpuTopology()
 local numainfo = likwid.getNumaInfo()

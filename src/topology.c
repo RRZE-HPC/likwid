@@ -252,7 +252,7 @@ initTopologyFile(FILE* file)
 static int
 readTopologyFile(const char* filename, cpu_set_t cpuSet)
 {
-    FILE* fp;
+    FILE* fp = NULL;
     char structure[256];
     char field[256];
     char value[256];
@@ -260,12 +260,18 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
     int numHWThreads = -1;
     int numCacheLevels = -1;
     int numberOfNodes = -1;
-    int* tmpNumberOfProcessors;
-    int counter;
-    int i;
-    uint32_t tmp, tmp1;
+    int* tmpNumberOfProcessors = NULL;
+    int counter = 0;
+    int i = 0;
+    uint32_t tmp = 0, tmp1 = 0;
+    uint64_t tmp64 = 0;
 
     fp = fopen(filename, "r");
+    if (!fp)
+    {
+        ERROR_PRINT(Failed to open topology file %s, filename);
+        return -errno;
+    }
 
     while (fgets(line, 512, fp) != NULL) {
         sscanf(line,"%s %s", structure, field);
@@ -290,10 +296,16 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
     {
         ERROR_PRINT(Cannot read topology information from file %s, filename);
         fclose(fp);
-        return -1;
+        return -EINVAL;
     }
 
     tmpNumberOfProcessors = (int*) malloc(numberOfNodes *sizeof(int));
+    if (!tmpNumberOfProcessors)
+    {
+        fclose(fp);
+        return -ENOMEM;
+    }
+
     fseek(fp, 0, SEEK_SET);
     counter = 0;
     while (fgets(line, 512, fp) != NULL) {
@@ -310,17 +322,80 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
     }
 
     cpuid_topology.threadPool = (HWThread*)malloc(numHWThreads * sizeof(HWThread));
+    if (!cpuid_topology.threadPool)
+    {
+        free(tmpNumberOfProcessors);
+        fclose(fp);
+        memset(&cpuid_topology, 0, sizeof(CpuTopology));
+        memset(&cpuid_info, 0, sizeof(CpuInfo));
+        return -ENOMEM;
+    }
     cpuid_topology.cacheLevels = (CacheLevel*)malloc(numCacheLevels * sizeof(CacheLevel));
+    if (!cpuid_topology.cacheLevels)
+    {
+        free(tmpNumberOfProcessors);
+        free(cpuid_topology.threadPool);
+        cpuid_topology.threadPool = NULL;
+        fclose(fp);
+        memset(&cpuid_topology, 0, sizeof(CpuTopology));
+        memset(&cpuid_info, 0, sizeof(CpuInfo));
+        return -ENOMEM;
+    }
     cpuid_topology.numHWThreads = numHWThreads;
     cpuid_topology.numCacheLevels = numCacheLevels;
 
     numa_info.nodes = (NumaNode*) malloc(numberOfNodes * sizeof(NumaNode));
+    if (!numa_info.nodes)
+    {
+        free(tmpNumberOfProcessors);
+        free(cpuid_topology.cacheLevels);
+        free(cpuid_topology.threadPool);
+        fclose(fp);
+        memset(&cpuid_topology, 0, sizeof(CpuTopology));
+        //memset(&cpuid_info, 0, sizeof(CpuInfo));
+        return -ENOMEM;
+    }
     numa_info.numberOfNodes = numberOfNodes;
 
     for(i=0;i<numberOfNodes;i++)
     {
         numa_info.nodes[i].processors = (uint32_t*) malloc (tmpNumberOfProcessors[i] * sizeof(int));
+        if (!numa_info.nodes[i].processors)
+        {
+            for (int j = 0; j < i; j++)
+            {
+                if (numa_info.nodes[j].processors) free(numa_info.nodes[j].processors);
+                if (numa_info.nodes[j].distances) free(numa_info.nodes[j].distances);
+            }
+            free(tmpNumberOfProcessors);
+            free(cpuid_topology.cacheLevels);
+            free(cpuid_topology.threadPool);
+            free(numa_info.nodes);
+            fclose(fp);
+            memset(&cpuid_topology, 0, sizeof(CpuTopology));
+            memset(&numa_info, 0, sizeof(NumaTopology));
+            //memset(&cpuid_info, 0, sizeof(CpuInfo));
+            return -ENOMEM;
+        }
         numa_info.nodes[i].distances = (uint32_t*) malloc (numberOfNodes * sizeof(int));
+        if (!numa_info.nodes[i].distances)
+        {
+            free(numa_info.nodes[i].processors);
+            for (int j = 0; j < i; j++)
+            {
+                if (numa_info.nodes[j].processors) free(numa_info.nodes[j].processors);
+                if (numa_info.nodes[j].distances) free(numa_info.nodes[j].distances);
+            }
+            free(tmpNumberOfProcessors);
+            free(cpuid_topology.cacheLevels);
+            free(cpuid_topology.threadPool);
+            free(numa_info.nodes);
+            fclose(fp);
+            memset(&cpuid_topology, 0, sizeof(CpuTopology));
+            memset(&numa_info, 0, sizeof(NumaTopology));
+            //memset(&cpuid_info, 0, sizeof(CpuInfo));
+            return -ENOMEM;
+        }
     }
     free(tmpNumberOfProcessors);
 
@@ -352,7 +427,7 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
             }
             else if (strncmp(field, "threadPool", 11) == 0)
             {
-                int thread;
+                int thread = 0;
 
                 sscanf(line, "%s %s %d %s = %d", structure, field, &thread, value, &tmp);
 
@@ -388,7 +463,7 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
             }
             else if (strncmp(field, "cacheLevels", 12) == 0)
             {
-                int level;
+                int level = 0;
                 char type[128];
                 sscanf(line, "%s %s %d %s", structure, field, &level, value);
 
@@ -470,6 +545,22 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
                 strncpy(value,&(line[strlen(structure)+strlen(field)+4]), 256);
                 int len = 257;
                 cpuid_info.osname = (char*) malloc(len * sizeof(char));
+                if (!cpuid_info.osname)
+                {
+                    for (int i = 0; i < numberOfNodes; i++)
+                    {
+                        NumaNode* n = &numa_info.nodes[i];
+                        if (n->distances) free(n->distances);
+                        if (n->processors) free(n->processors);
+                    }
+                    free(cpuid_topology.cacheLevels);
+                    free(cpuid_topology.threadPool);
+                    free(numa_info.nodes);
+                    fclose(fp);
+                    memset(&cpuid_info, 0, sizeof(CpuInfo));
+                    memset(&cpuid_topology, 0, sizeof(CpuTopology));
+                    memset(&numa_info, 0, sizeof(NumaTopology));
+                }
                 strncpy(cpuid_info.osname, value, len);
                 cpuid_info.osname[strlen(value)-1] = '\0';
             }
@@ -505,9 +596,8 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
             }
             else if (strncmp(field, "featureFlags", 13) == 0)
             {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
-                cpuid_info.featureFlags = tmp;
-
+                sscanf(line, "%s %s = %ld", structure, field, &tmp64);
+                cpuid_info.featureFlags = tmp64;
             }
             else if (strncmp(field, "perf_version", 13) == 0)
             {
@@ -548,12 +638,16 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
                 strncpy(cpuid_info.features, value, len);
                 cpuid_info.features[strlen(value)-1] = '\0';
             }
+            else if (strncmp(field, "architecture", 12) == 0)
+            {
+                strcpy(cpuid_info.architecture,&(line[strlen(structure)+strlen(field)+4]));
+            }
         }
         else if (strncmp(structure, "numa_info", 9) == 0)
         {
             if (strncmp(field, "nodes", 5) == 0)
             {
-                int id;
+                int id = 0;
                 sscanf(line, "%s %s %d %s", structure, field, &id, value);
 
                 if (strncmp(value,"numberOfProcessors", 19) == 0)
@@ -1347,7 +1441,7 @@ void topology_setupTree(void)
         if (!tree_nodeExists(cpuid_topology.topologyTree,
                     hwThreadPool[i].packageId))
         {
-            //printf("Insert Socket %d\n", hwThreadPool[i].packageId);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding socket %d, hwThreadPool[i].packageId);
             tree_insertNode(cpuid_topology.topologyTree,
                     hwThreadPool[i].packageId);
         }
@@ -1361,7 +1455,7 @@ void topology_setupTree(void)
         currentNode = tree_getNode(currentNode, hwThreadPool[i].dieId);*/
         if (!tree_nodeExists(currentNode, hwThreadPool[i].coreId))
         {
-            //printf("Insert Core %d at Socket %d\n", hwThreadPool[i].coreId, hwThreadPool[i].packageId);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding core %d to socket %d, hwThreadPool[i].coreId, hwThreadPool[i].packageId);
             tree_insertNode(currentNode, hwThreadPool[i].coreId);
         }
         currentNode = tree_getNode(currentNode, hwThreadPool[i].coreId);
@@ -1370,20 +1464,23 @@ void topology_setupTree(void)
             /*
                printf("WARNING: Thread already exists!\n");
                */
-            //printf("Insert HWThread %d at Core %d Socket %d\n", hwThreadPool[i].apicId, hwThreadPool[i].coreId, hwThreadPool[i].packageId);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding hwthread %d at core %d on socket %d, hwThreadPool[i].apicId, hwThreadPool[i].coreId, hwThreadPool[i].packageId);
             tree_insertNode(currentNode, hwThreadPool[i].apicId);
         }
 
     }
     i = tree_countChildren(cpuid_topology.topologyTree);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Determine number of sockets. tree tells %d, i);
     if (cpuid_topology.numSockets == 0)
         cpuid_topology.numSockets = i;
     currentNode = tree_getChildNode(cpuid_topology.topologyTree);
     i = tree_countChildren(currentNode);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Determine number of cores per socket. tree tells %d, i);
     if (cpuid_topology.numCoresPerSocket == 0)
         cpuid_topology.numCoresPerSocket = i;
     currentNode = tree_getChildNode(currentNode);
     i = tree_countChildren(currentNode);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Determine number of hwthreads per cores. tree tells %d, i);
     if (cpuid_topology.numThreadsPerCore == 0)
         cpuid_topology.numThreadsPerCore = i;
     return;
@@ -1439,12 +1536,16 @@ standard_init:
         ret = funcs.init_cpuInfo(cpuSet);
         if (ret < 0)
         {
+            errno = ret;
+            ERROR_PRINT(Failed to read cpuinfo);
             cpuid_topology.activeHWThreads = 0;
             return ret;
         }
         ret = topology_setName();
         if (ret < 0)
         {
+            errno = ret;
+            ERROR_PRINT(Failed to set CPU name);
             free(cpuid_info.osname);
             memset(&cpuid_info, 0, sizeof(CpuInfo));
             memset(&cpuid_topology, 0, sizeof(CpuTopology));
@@ -1453,6 +1554,8 @@ standard_init:
         funcs.init_cpuFeatures();
         if (ret < 0)
         {
+            errno = ret;
+            ERROR_PRINT(Failed to detect CPU features);
             free(cpuid_info.osname);
             memset(&cpuid_info, 0, sizeof(CpuInfo));
             memset(&cpuid_topology, 0, sizeof(CpuTopology));
@@ -1461,6 +1564,8 @@ standard_init:
         ret = funcs.init_nodeTopology(cpuSet);
         if (ret < 0)
         {
+            errno = ret;
+            ERROR_PRINT(Failed to setup system topology);
             free(cpuid_info.osname);
             free(cpuid_info.features);
             free(cpuid_topology.threadPool);
@@ -1479,6 +1584,8 @@ standard_init:
         ret = funcs.init_cacheTopology();
         if (ret < 0)
         {
+            errno = ret;
+            ERROR_PRINT(Failed to setup cache topology);
             free(cpuid_info.osname);
             free(cpuid_topology.threadPool);
             memset(&cpuid_info, 0, sizeof(CpuInfo));
@@ -1583,6 +1690,7 @@ standard_init:
                     break;
             }
         }
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Setting up tree);
         topology_setupTree();
         sched_setaffinity(0, sizeof(cpu_set_t), &cpuSet);
     }
