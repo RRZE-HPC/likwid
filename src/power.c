@@ -238,7 +238,11 @@ power_init(int cpuId)
             break;
     }
 
-    perfmon_init_maps();
+    err = perfmon_init_maps();
+    if (err != 0)
+    {
+        return err;
+    }
     if (!HPMinitialized())
     {
         HPMinit();

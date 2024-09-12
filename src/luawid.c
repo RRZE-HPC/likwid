@@ -882,7 +882,11 @@ lua_likwid_getEventsAndCounters(lua_State* L)
         affinity_init();
         affinity_isInitialized = 1;
     }
-    perfmon_init_maps();
+    int err = perfmon_init_maps();
+    if (err != 0)
+    {
+        return 0;
+    }
     perfmon_check_counter_map(0);
     char** archTypeNames = getArchRegisterTypeNames();
     lua_newtable(L);

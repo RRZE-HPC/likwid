@@ -876,7 +876,10 @@ perfmon_init_maps(void)
 {
     int err = 0;
     if (eventHash != NULL && counter_map != NULL && box_map != NULL && perfmon_numCounters > 0 && perfmon_numArchEvents > 0)
-        return -EINVAL;
+    {
+        // Already initialized
+        return 0;
+    }
     switch ( cpuid_info.family )
     {
         case P6_FAMILY:
