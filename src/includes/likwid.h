@@ -710,6 +710,10 @@ typedef struct {
                                      in the system */
   uint32_t numberOfProcessorsPerCache; /*!< \brief Number of hardware threads
                                           per LLC cache in the system */
+  uint32_t numberOfCudaDomains;       /*!< \brief Number of hardware threads
+                                          close to a Nvidia GPU in the system */
+  uint32_t numberOfRocmDomains;       /*!< \brief Number of hardware threads
+                                          close to a AMD GPU in the system */
   uint32_t numberOfAffinityDomains;    /*!< \brief Number of affinity domains in
                                           the current system  and length of \a
                                           domains array */
@@ -724,7 +728,7 @@ typedef AffinityDomains *AffinityDomains_t;
 Initialize affinity information AffinityDomains_t using the data of the
 structures \a CpuInfo_t, CpuTopology_t and NumaTopology_t \sa AffinityDomains_t
 */
-extern void affinity_init(void) __attribute__((visibility("default")));
+extern int affinity_init(void) __attribute__((visibility("default")));
 /*! \brief Retrieve affinity structure
 
 Get the previously initialized affinity info structure

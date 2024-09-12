@@ -177,92 +177,217 @@ static int get_id_of_type(hwloc_obj_t base, hwloc_obj_type_t type)
     return -1;
 }
 
+#define AFF_FREE_AND_RESET(ptr) if (ptr != NULL) { free(ptr); ptr = NULL; }
+
 static int create_lookups()
 {
+    int err = 0;
     int do_cache = 1;
     int cachelimit = 0;
     int cacheIdx = -1;
     int * tmp = NULL;
     int num_tmp = 0;
-    topology_init();
-    numa_init();
+    err = topology_init();
+    if (err != 0)
+    {
+        return err;
+    }
+    err = numa_init();
+    if (err != 0)
+    {
+        return err;
+    }
     CpuTopology_t cputopo = get_cpuTopology();
     NumaTopology_t ntopo = get_numaTopology();
     if (!affinity_thread2core_lookup)
     {
         affinity_thread2core_lookup = malloc(cputopo->numHWThreads * sizeof(int));
+        if (!affinity_thread2core_lookup)
+        {
+            return -ENOMEM;
+        }
         memset(affinity_thread2core_lookup, -1, cputopo->numHWThreads*sizeof(int));
     }
     if (!affinity_thread2socket_lookup)
     {
         affinity_thread2socket_lookup = malloc(cputopo->numHWThreads * sizeof(int));
+        if (!affinity_thread2socket_lookup)
+        {
+            AFF_FREE_AND_RESET(affinity_thread2core_lookup);
+            return -ENOMEM;
+        }
         memset(affinity_thread2socket_lookup, -1, cputopo->numHWThreads*sizeof(int));
     }
     if (!affinity_thread2sharedl3_lookup)
     {
         affinity_thread2sharedl3_lookup = malloc(cputopo->numHWThreads * sizeof(int));
+        if (!affinity_thread2sharedl3_lookup)
+        {
+            AFF_FREE_AND_RESET(affinity_thread2socket_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2core_lookup);
+            return -ENOMEM;
+        }
         memset(affinity_thread2sharedl3_lookup, -1, cputopo->numHWThreads*sizeof(int));
     }
     if (!affinity_thread2numa_lookup)
     {
         affinity_thread2numa_lookup = malloc(cputopo->numHWThreads * sizeof(int));
+        if (!affinity_thread2numa_lookup)
+        {
+            AFF_FREE_AND_RESET(affinity_thread2sharedl3_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2socket_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2core_lookup);
+            return -ENOMEM;
+        }
         memset(affinity_thread2numa_lookup, -1, cputopo->numHWThreads*sizeof(int));
     }
     if (!affinity_thread2die_lookup)
     {
         affinity_thread2die_lookup = malloc(cputopo->numHWThreads * sizeof(int));
+        if (!affinity_thread2die_lookup)
+        {
+            AFF_FREE_AND_RESET(affinity_thread2numa_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2sharedl3_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2socket_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2core_lookup);
+            return -ENOMEM;
+        }
         memset(affinity_thread2die_lookup, -1, cputopo->numHWThreads*sizeof(int));
     }
     if (!socket_lock)
     {
         socket_lock = malloc(cputopo->numHWThreads * sizeof(int));
+        if (!socket_lock)
+        {
+            AFF_FREE_AND_RESET(affinity_thread2die_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2numa_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2sharedl3_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2socket_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2core_lookup);
+            return -ENOMEM;
+        }
         memset(socket_lock, LOCK_INIT, cputopo->numHWThreads*sizeof(int));
     }
     if (!die_lock)
     {
         die_lock = malloc(cputopo->numHWThreads * sizeof(int));
+        if (!die_lock)
+        {
+            AFF_FREE_AND_RESET(socket_lock);
+            AFF_FREE_AND_RESET(affinity_thread2die_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2numa_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2sharedl3_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2socket_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2core_lookup);
+            return -ENOMEM;
+        }
         memset(die_lock, LOCK_INIT, cputopo->numHWThreads*sizeof(int));
     }
     if (!numa_lock)
     {
         numa_lock = malloc(cputopo->numHWThreads * sizeof(int));
+        if (!numa_lock)
+        {
+            AFF_FREE_AND_RESET(die_lock);
+            AFF_FREE_AND_RESET(socket_lock);
+            AFF_FREE_AND_RESET(affinity_thread2die_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2numa_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2sharedl3_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2socket_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2core_lookup);
+            return -ENOMEM;
+        }
         memset(numa_lock, LOCK_INIT, cputopo->numHWThreads*sizeof(int));
     }
     if (!core_lock)
     {
         core_lock = malloc(cputopo->numHWThreads * sizeof(int));
+        if (!core_lock)
+        {
+            AFF_FREE_AND_RESET(numa_lock);
+            AFF_FREE_AND_RESET(die_lock);
+            AFF_FREE_AND_RESET(socket_lock);
+            AFF_FREE_AND_RESET(affinity_thread2die_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2numa_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2sharedl3_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2socket_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2core_lookup);
+            return -ENOMEM;
+        }
         memset(core_lock, LOCK_INIT, cputopo->numHWThreads*sizeof(int));
     }
     if (!tile_lock)
     {
         tile_lock = malloc(cputopo->numHWThreads * sizeof(int));
+        if (!tile_lock)
+        {
+            AFF_FREE_AND_RESET(core_lock);
+            AFF_FREE_AND_RESET(numa_lock);
+            AFF_FREE_AND_RESET(die_lock);
+            AFF_FREE_AND_RESET(socket_lock);
+            AFF_FREE_AND_RESET(affinity_thread2die_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2numa_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2sharedl3_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2socket_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2core_lookup);
+            return -ENOMEM;
+        }
         memset(tile_lock, LOCK_INIT, cputopo->numHWThreads*sizeof(int));
     }
     if (!sharedl2_lock)
     {
         sharedl2_lock = malloc(cputopo->numHWThreads * sizeof(int));
+        if (!sharedl2_lock)
+        {
+            AFF_FREE_AND_RESET(tile_lock);
+            AFF_FREE_AND_RESET(core_lock);
+            AFF_FREE_AND_RESET(numa_lock);
+            AFF_FREE_AND_RESET(die_lock);
+            AFF_FREE_AND_RESET(socket_lock);
+            AFF_FREE_AND_RESET(affinity_thread2die_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2numa_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2sharedl3_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2socket_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2core_lookup);
+            return -ENOMEM;
+        }
         memset(sharedl2_lock, LOCK_INIT, cputopo->numHWThreads*sizeof(int));
     }
     if (!sharedl3_lock)
     {
         sharedl3_lock = malloc(cputopo->numHWThreads * sizeof(int));
+        if (!sharedl3_lock)
+        {
+            AFF_FREE_AND_RESET(sharedl2_lock);
+            AFF_FREE_AND_RESET(tile_lock);
+            AFF_FREE_AND_RESET(core_lock);
+            AFF_FREE_AND_RESET(numa_lock);
+            AFF_FREE_AND_RESET(die_lock);
+            AFF_FREE_AND_RESET(socket_lock);
+            AFF_FREE_AND_RESET(affinity_thread2die_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2numa_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2sharedl3_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2socket_lookup);
+            AFF_FREE_AND_RESET(affinity_thread2core_lookup);
+            return -ENOMEM;
+        }
         memset(sharedl3_lock, LOCK_INIT, cputopo->numHWThreads*sizeof(int));
     }
     tmp = malloc(cputopo->numHWThreads * sizeof(int));
     if (!tmp)
     {
-        if (affinity_thread2core_lookup) {free(affinity_thread2core_lookup); affinity_thread2core_lookup = NULL;}
-        if (affinity_thread2socket_lookup) {free(affinity_thread2socket_lookup); affinity_thread2socket_lookup = NULL;}
-        if (affinity_thread2sharedl3_lookup) {free(affinity_thread2sharedl3_lookup); affinity_thread2sharedl3_lookup = NULL;}
-        if (affinity_thread2numa_lookup) {free(affinity_thread2numa_lookup); affinity_thread2numa_lookup = NULL;}
-        if (affinity_thread2die_lookup) {free(affinity_thread2die_lookup); affinity_thread2die_lookup = NULL;}
-        if (socket_lock) {free(socket_lock); socket_lock = NULL;}
-        if (die_lock) {free(die_lock); die_lock = NULL;}
-        if (numa_lock) {free(numa_lock); numa_lock = NULL;}
-        if (core_lock) {free(core_lock); core_lock = NULL;}
-        if (tile_lock) {free(tile_lock); tile_lock = NULL;}
-        if (sharedl2_lock) {free(sharedl2_lock); sharedl2_lock = NULL;}
-        if (sharedl3_lock) {free(sharedl3_lock); sharedl3_lock = NULL;}
+        AFF_FREE_AND_RESET(sharedl3_lock);
+        AFF_FREE_AND_RESET(sharedl2_lock);
+        AFF_FREE_AND_RESET(tile_lock);
+        AFF_FREE_AND_RESET(core_lock);
+        AFF_FREE_AND_RESET(numa_lock);
+        AFF_FREE_AND_RESET(die_lock);
+        AFF_FREE_AND_RESET(socket_lock);
+        AFF_FREE_AND_RESET(affinity_thread2die_lookup);
+        AFF_FREE_AND_RESET(affinity_thread2numa_lookup);
+        AFF_FREE_AND_RESET(affinity_thread2sharedl3_lookup);
+        AFF_FREE_AND_RESET(affinity_thread2socket_lookup);
+        AFF_FREE_AND_RESET(affinity_thread2core_lookup);
         return -ENOMEM;
     }
 
@@ -523,7 +648,7 @@ static int affinity_addCacheDomain(int socket, int cacheId, AffinityDomain* doma
     return -EINVAL;
 }
 
-static int affinity_addMemoryDomain(int nodeId, AffinityDomain* domain, int* help)
+static int _affinity_addMemoryDomain(int nodeId, AffinityDomain* domain, int* help)
 {
     CpuTopology_t cputopo = get_cpuTopology();
     NumaTopology_t numatopo = get_numaTopology();
@@ -554,34 +679,144 @@ static int affinity_addMemoryDomain(int nodeId, AffinityDomain* domain, int* hel
             domain->numberOfProcessors = num_hwthreads;
             domain->numberOfCores = affinity_countSocketCores(domain->numberOfProcessors, domain->processorList, help);
             domain->tag = bformat("M%d", nodeId);
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain M%d: %d HW threads on %d cores, nodeId, domain->numberOfProcessors, domain->numberOfCores);
+            
             return 0;
         }
     }
     return -EINVAL;
 }
 
+static int affinity_addMemoryDomain(int nodeId, AffinityDomain* domain, int* help)
+{
+    int err = _affinity_addMemoryDomain(nodeId, domain, help);
+    if (err == 0)
+    {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain M%d: %d HW threads on %d cores, nodeId, domain->numberOfProcessors, domain->numberOfCores);
+    }
+    return err;
+}
+
+#ifdef LIKWID_WITH_NVMON
+static int affinity_addCudaDomain(int nodeId, AffinityDomain* domain, int offset, int* help)
+{
+    int err = 0;
+    CpuTopology_t cputopo = get_cpuTopology();
+    NumaTopology_t numatopo = get_numaTopology();
+    CudaTopology_t cudatopo = get_cudaTopology();
+
+    if ((nodeId < 0) || (!domain))
+    {
+        return -EINVAL;
+    }
+    if (cputopo && numatopo && cudatopo)
+    {
+        if (nodeId >= 0 && nodeId < cudatopo->numDevices)
+        {
+            CudaDevice* cudadev = &cudatopo->devices[nodeId];
+            if (cudadev->numaNode >= 0)
+            {
+                err = _affinity_addMemoryDomain(cudadev->numaNode, domain, help);
+                if (err == 0)
+                {
+                    bdestroy(domain->tag);
+                    domain->tag = bformat("G%d", nodeId+offset);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain %s: %d HW threads on %d cores, bdata(domain->tag), domain->numberOfProcessors, domain->numberOfCores);
+                    return 0;
+                }
+            }
+        }
+    }
+    return -EINVAL;
+}
+#endif
+
+#ifdef LIKWID_WITH_ROCMON
+static int affinity_addRocmDomain(int nodeId, AffinityDomain* domain, int offset, int* help)
+{
+    int err = 0;
+    CpuTopology_t cputopo = get_cpuTopology();
+    NumaTopology_t numatopo = get_numaTopology();
+    RocmTopology_t rocmtopo = get_rocmTopology();
+
+    if ((nodeId < 0) || (!domain))
+    {
+        return -EINVAL;
+    }
+    if (cputopo && numatopo && rocmtopo)
+    {
+        if (nodeId >= 0 && nodeId < rocmtopo->numDevices)
+        {
+            RocmDevice* rocmdev = &rocmtopo->devices[nodeId];
+            if (rocmdev->numaNode >= 0)
+            {
+                err = _affinity_addMemoryDomain(rocmdev->numaNode, domain, help);
+                if (err == 0)
+                {
+                    bdestroy(domain->tag);
+                    domain->tag = bformat("G%d", nodeId+offset);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain %s: %d HW threads on %d cores, bdata(domain->tag), domain->numberOfProcessors, domain->numberOfCores);
+                    return 0;
+                }
+            }
+            else
+            {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Skipping affinity domain G%d because NUMA node unknown, nodeId);
+            }
+        }
+    }
+    return -EINVAL;
+}
+#endif
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void
+int
 affinity_init()
 {
+    int err = 0;
     int numberOfDomains = 1; /* all systems have the node domain */
     int finalNumberOfDomains = 0;
     int currentDomain;
     int subCounter = 0;
     int offset = 0;
     int domid = 0;
-    int tmp;
+    int tmp = 0;
     if (affinity_initialized == 1)
     {
-        return;
+        return 0;
     }
-    topology_init();
+    err = topology_init();
+    if (err != 0)
+    {
+        return err;
+    }
     CpuTopology_t cputopo = get_cpuTopology();
     CpuInfo_t cpuinfo = get_cpuInfo();
-    numa_init();
+    err = numa_init();
+    if (err != 0)
+    {
+        return err;
+    }
     NumaTopology_t numatopo = get_numaTopology();
+
+#ifdef LIKWID_WITH_NVMON
+    int numCudaDomains = 0;
+    CudaTopology_t cudatopo = NULL;
+    err = topology_cuda_init();
+    if (err != 0)
+    {
+        return err;
+    }
+#endif
+#ifdef LIKWID_WITH_ROCMON
+    int numRocmDomains = 0;
+    RocmTopology_t rocmtopo = NULL;
+    err = topology_rocm_init();
+    if (err != 0)
+    {
+        return err;
+    }
+#endif
 
     int doCacheDomains = 1;
     int numberOfCacheDomains = 0;
@@ -612,23 +847,54 @@ affinity_init()
     }
     numberOfDomains += numatopo->numberOfNodes;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: NUMA domains %d, numatopo->numberOfNodes);
+#if defined(LIKWID_WITH_NVMON) || defined(LIKWID_WITH_ROCMON)
+    int gpuDomains = 0;
+#ifdef LIKWID_WITH_NVMON
+    cudatopo = get_cudaTopology();
+    for (int i = 0; i < cudatopo->numDevices; i++)
+    {
+        CudaDevice* dev = &cudatopo->devices[i];
+        if (dev->numaNode >= 0)
+        {
+            numCudaDomains++;
+        }
+    }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CUDA domains %d (%d device(s)), numCudaDomains, cudatopo->numDevices);
+    gpuDomains += numCudaDomains;
+#endif
+#ifdef LIKWID_WITH_ROCMON
+    rocmtopo = get_rocmTopology();
+    for (int i = 0; i < rocmtopo->numDevices; i++)
+    {
+        RocmDevice* dev = &rocmtopo->devices[i];
+        if (dev->numaNode >= 0)
+        {
+            numRocmDomains++;
+        }
+    }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: ROCm domains %d (%d device(s)), numRocmDomains, rocmtopo->numDevices);
+    gpuDomains += numRocmDomains;
+#endif
+    numberOfDomains += gpuDomains;
+#endif
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: All domains %d, numberOfDomains);
 
     domains = (AffinityDomain*) malloc(numberOfDomains * sizeof(AffinityDomain));
     if (!domains)
     {
         fprintf(stderr,"No more memory for %ld bytes for array of affinity domains\n",numberOfDomains * sizeof(AffinityDomain));
-        return;
+        return -ENOMEM;
     }
     memset(domains, 0, numberOfDomains * sizeof(AffinityDomain));
     int* helper = malloc(cputopo->numHWThreads * sizeof(int));
     if (!helper)
     {
-        return;
+        free(domains);
+        return -ENOMEM;
     }
 
     /* Node domain */
-    int err = affinity_addNodeDomain(&domains[domid], helper);
+    err = affinity_addNodeDomain(&domains[domid], helper);
     if (!err)
     {
         domid++;
@@ -691,6 +957,32 @@ affinity_init()
             finalNumberOfDomains++;
         }
     }
+#ifdef LIKWID_WITH_NVMON
+    for (int i = 0; i < cudatopo->numDevices; i++)
+    {
+        err = affinity_addCudaDomain(i, &domains[domid], 0, helper);
+        if (!err)
+        {
+            domid++;
+            finalNumberOfDomains++;
+        }
+    }
+#endif
+#ifdef LIKWID_WITH_ROCMON
+    int gpuOffset = 0;
+#ifdef LIKWID_WITH_NVMON
+    gpuOffset = numCudaDomains;
+#endif
+    for (int i = 0; i < rocmtopo->numDevices; i++)
+    {
+        err = affinity_addRocmDomain(i, &domains[domid], gpuOffset, helper);
+        if (!err)
+        {
+            domid++;
+            finalNumberOfDomains++;
+        }
+    }
+#endif
     free(helper);
 
     affinity_numberOfDomains = numberOfDomains;
@@ -701,11 +993,20 @@ affinity_init()
     affinityDomains.numberOfCacheDomains = numberOfCacheDomains;
     affinityDomains.numberOfCoresPerCache = numberOfCoresPerCache;
     affinityDomains.numberOfProcessorsPerCache = numberOfProcessorsPerCache;
+    affinityDomains.numberOfCudaDomains = 0;
+#ifdef LIKWID_WITH_NVMON
+    affinityDomains.numberOfCudaDomains = numCudaDomains;
+#endif
+    affinityDomains.numberOfRocmDomains = 0;
+#ifdef LIKWID_WITH_ROCMON
+    affinityDomains.numberOfRocmDomains = numRocmDomains;
+#endif
     affinityDomains.domains = domains;
 
     create_lookups();
 
     affinity_initialized = 1;
+    return 0;
 }
 
 void

@@ -96,19 +96,21 @@ topo_get_numDevices(void)
 }
 
 static int
-topo_get_numNode(int pci_bus, int pci_dev, int pci_domain)
+topo_get_numNode(int pci_domain, int pci_bus, int pci_dev)
 {
     char fname[1024];
     char buff[100];
-    int ret = snprintf(fname, 1023, "/sys/bus/pci/devices/0000:%02x:%02x.%1x/numa_node", pci_bus, pci_dev, pci_domain);
+    int ret = snprintf(fname, 1023, "/sys/bus/pci/devices/%04x:%02x:%02x.%1x/numa_node", pci_domain, pci_bus, pci_dev, 0);
     if (ret > 0)
     {
         fname[ret] = '\0';
+        printf("Reading %s for NUMA node\n", fname);
         FILE* fp = fopen(fname, "r");
         if (fp)
         {
             ret = fread(buff, sizeof(char), 99, fp);
             int numa_node = atoi(buff);
+            printf("Got node %d\n", numa_node);
             fclose(fp);
             return numa_node;
         }
@@ -183,7 +185,11 @@ topo_gpu_init(RocmDevice *device, int deviceId)
     device->ecc = props.ECCEnabled;
     device->mapHostMem = props.canMapHostMemory;
     device->integrated = props.integrated;
-    device->numaNode = topo_get_numNode(device->pciBus, device->pciDev, device->pciDom);
+    device->numaNode = -1;
+    if ((device->pciDom != 0) && (device->pciBus != 0) && (device->pciDev != 0))
+    {
+        device->numaNode = topo_get_numNode(device->pciDom, device->pciBus, device->pciDev);
+    }
 
     // Copy Name
     device->name = malloc(256 * sizeof(char));

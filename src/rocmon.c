@@ -46,6 +46,10 @@
 
 #include <likwid.h>
 #include <rocmon_types.h>
+#include <amd_smi/amdsmi.h>
+#if AMDSMI_LIB_VERSION_YEAR == 23 && AMDSMI_LIB_VERSION_MAJOR == 4 && AMDSMI_LIB_VERSION_MINOR == 0 && AMDSMI_LIB_VERSION_RELEASE == 0
+typedef struct metrics_table_header_t metrics_table_header_t;
+#endif
 #include <rocm_smi/rocm_smi.h>
 
 // #include <hsa.h>

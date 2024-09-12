@@ -3694,14 +3694,12 @@ static int lua_likwid_finalize_rocm(lua_State *L) {
   return 0;
 }
 
-#else
+#endif /* LIKWID_WITH_ROCMON */
 
 static int lua_likwid_rocmSupported(lua_State *L) {
   lua_pushboolean(L, likwid_getRocmSupport());
   return 1;
 }
-
-#endif /* LIKWID_WITH_ROCMON */
 
 
 #ifdef LIKWID_WITH_SYSFEATURES
