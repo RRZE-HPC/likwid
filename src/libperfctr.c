@@ -159,6 +159,7 @@ likwid_markerInit(void)
     bstring bEventStr;
     struct bstrList* threadTokens;
     struct bstrList* eventStrings;
+    cpu_set_t cpuset;
     char* modeStr = getenv("LIKWID_MODE");
     char* eventStr = getenv("LIKWID_EVENTS");
     char* cThreadStr = getenv("LIKWID_THREADS");
@@ -193,8 +194,49 @@ likwid_markerInit(void)
 
     if (debugStr != NULL)
     {
-        perfmon_verbosity = atoi(debugStr);
-        verbosity = perfmon_verbosity;
+        verbosity = atoi(debugStr);
+        perfmon_setVerbosity(verbosity);
+    }
+
+    bThreadStr = bfromcstr(cThreadStr);
+    threadTokens = bsplit(bThreadStr,',');
+    num_cpus = threadTokens->qty;
+    for (i = 0; i < num_cpus; i++)
+    {
+        threads2Cpu[i] = ownatoi(bdata(threadTokens->entry[i]));
+    }
+    bdestroy(bThreadStr);
+    bstrListDestroy(threadTokens);
+
+    CPU_ZERO(&cpuset);
+    if (pinStr != NULL)
+    {
+        // If LIKWID should pin the threads, we check whether we are already
+        // in a restricted cpuset with a single hwthread. This happens
+        // when an OpenMP region is executed before LIKWID_MARKER_INIT.
+        // When the first thread starts up, LIKWID pins the master process
+        // and the thread. But we want to get the topology without the restriction
+        // here. We don't need to set it back because the first operation
+        // after getting the topology is the pinning of the master process.
+        int err = sched_getaffinity(0, sizeof(cpu_set_t), &cpuset);
+        if (err == 0)
+        {
+            int count = CPU_COUNT(&cpuset);
+            if (count == 1 && count != num_cpus)
+            {
+                cpu_set_t newcpuset;
+                CPU_ZERO(&newcpuset);
+                for (i = 0; i < num_cpus; i++)
+                {
+                    CPU_SET(threads2Cpu[i], &newcpuset);
+                }
+                err = sched_setaffinity(0, sizeof(cpu_set_t), &newcpuset);
+            }
+        }
+        else
+        {
+            fprintf(stderr,"Failed to get cpuset for master thread.\n");
+        }
     }
 
     topology_init();
@@ -205,16 +247,6 @@ likwid_markerInit(void)
 #ifndef LIKWID_USE_PERFEVENT
     HPMmode(atoi(modeStr));
 #endif
-
-    bThreadStr = bfromcstr(cThreadStr);
-    threadTokens = bsplit(bThreadStr,',');
-    num_cpus = threadTokens->qty;
-    for (i=0; i<num_cpus; i++)
-    {
-        threads2Cpu[i] = ownatoi(bdata(threadTokens->entry[i]));
-    }
-    bdestroy(bThreadStr);
-    bstrListDestroy(threadTokens);
 
     if (pinStr != NULL)
     {
