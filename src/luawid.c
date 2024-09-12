@@ -1733,14 +1733,14 @@ static int lua_likwid_readTemp(lua_State *L) {
 static volatile int recv_sigint = 0;
 
 static void signal_catcher(int signo) {
-  if (signo == SIGINT) {
-    recv_sigint++;
-  }
+  recv_sigint++;
   return;
 }
 
 static int lua_likwid_catch_signal(lua_State *L) {
   signal(SIGINT, signal_catcher);
+  signal(SIGTERM, signal_catcher);
+  signal(SIGABRT, signal_catcher);
   return 0;
 }
 
