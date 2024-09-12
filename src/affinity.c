@@ -527,7 +527,8 @@ static int affinity_addMemoryDomain(int nodeId, AffinityDomain* domain, int* hel
 {
     CpuTopology_t cputopo = get_cpuTopology();
     NumaTopology_t numatopo = get_numaTopology();
-    if (!domain)
+    int num_hwthreads = 0;
+    if ((nodeId < 0) || (!domain))
     {
         return -EINVAL;
     }
@@ -542,9 +543,15 @@ static int affinity_addMemoryDomain(int nodeId, AffinityDomain* domain, int* hel
             }
             for (int i = 0; i < numatopo->nodes[nodeId].numberOfProcessors; i++)
             {
-                domain->processorList[i] = (int)numatopo->nodes[nodeId].processors[i];
+                for (int j = 0; j < cputopo->numHWThreads; j++)
+                {
+                    if (cputopo->threadPool[j].apicId == numatopo->nodes[nodeId].processors[i] && cputopo->threadPool[j].inCpuSet == 1)
+                    {
+                        domain->processorList[num_hwthreads++] = (int)numatopo->nodes[nodeId].processors[i];
+                    }
+                }
             }
-            domain->numberOfProcessors = numatopo->nodes[nodeId].numberOfProcessors;
+            domain->numberOfProcessors = num_hwthreads;
             domain->numberOfCores = affinity_countSocketCores(domain->numberOfProcessors, domain->processorList, help);
             domain->tag = bformat("M%d", nodeId);
             DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain M%d: %d HW threads on %d cores, nodeId, domain->numberOfProcessors, domain->numberOfCores);

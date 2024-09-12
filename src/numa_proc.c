@@ -372,17 +372,17 @@ int proc_numa_init(void)
         numa_info.nodes[i].id = id;
         nodeMeminfo(id, &numa_info.nodes[i].totalMemory, &numa_info.nodes[i].freeMemory);
         numa_info.nodes[i].numberOfProcessors = nodeProcessorList(id, &numa_info.nodes[i].processors);
-        int check = 0;
-        for (int j = 0; j < numa_info.nodes[i].numberOfProcessors; j++)
-        {
-            int id = numa_info.nodes[i].processors[j];
-            if (cpuid_topology.threadPool[id].inCpuSet == 1)
-            {
-                check++;
-            }
-        }
-        if (check < numa_info.nodes[i].numberOfProcessors)
-            numa_info.nodes[i].numberOfProcessors = check;
+/*        int check = 0;*/
+/*        for (int j = 0; j < numa_info.nodes[i].numberOfProcessors; j++)*/
+/*        {*/
+/*            int id = numa_info.nodes[i].processors[j];*/
+/*            if (cpuid_topology.threadPool[id].inCpuSet == 1)*/
+/*            {*/
+/*                numa_info.nodes[i].processors[check++] = numa_info.nodes[i].processors[j];*/
+/*            }*/
+/*        }*/
+/*        if (check < numa_info.nodes[i].numberOfProcessors)*/
+/*            numa_info.nodes[i].numberOfProcessors = check;*/
         numa_info.nodes[i].numberOfDistances = nodeDistanceList(id, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
         if (numa_info.nodes[i].numberOfDistances == 0)
         {
