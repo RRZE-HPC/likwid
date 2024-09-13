@@ -67,6 +67,7 @@
 #include <string.h>
 #include <math.h> // Temporary
 #include <getopt.h>
+#include <error.h>
 #include <calculator_stack.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
@@ -119,6 +120,7 @@ struct Preferences
     {
         bool tokens;
         bool postfix;
+        bool errors;
     } display;
     struct Mode
     {
@@ -134,6 +136,7 @@ typedef enum
     overflow,
     parenMismatch,
     inputMissing,
+    faultyExpression,
 } Error;
 
 typedef char* token;
@@ -158,6 +161,9 @@ void raise(Error err)
             break;
         case inputMissing:
             msg = "Function input missing";
+            break;
+        case faultyExpression:
+            msg = "Expression invalid";
             break;
     }
     //printf("\tError: %s\n", msg);
@@ -217,14 +223,30 @@ int doFunc(Stack *s, token function)
     {
         raise(inputMissing);
         stackPush(s, num2Str(NAN));
-        return -1;
+        return -EFAULT;
     }
     else if (stackSize(s) == 1 && strcmp(stackTop(s), FUNCTIONSEPARATOR) == 0)
     {
         stackPop(s);
         raise(inputMissing);
         stackPush(s, num2Str(NAN));
-        return -1;
+        return -EFAULT;
+    }
+    else if (stackSize(s) > 2)
+    {
+        if  (!(  (strncmp(function, "min", 3) == 0)
+              || (strncmp(function, "max", 3) == 0)
+              || (strncmp(function, "sum", 3) == 0)
+              || (strncmp(function, "avg", 3) == 0)
+              || (strncmp(function, "mean", 4) == 0)
+              || (strncmp(function, "median", 6) == 0)
+              || (strncmp(function, "var", 3) == 0)))
+        {
+            while (stackSize(s) > 0) stackPop(s);
+            raise(inputMissing);
+            stackPush(s, num2Str(NAN));
+            return -EFAULT;
+        }
     }
     token input = (token)stackPop(s);
     number num = buildNumber(input);
@@ -306,7 +328,7 @@ int doFunc(Stack *s, token function)
     else if(strncmp(function, "median", 6) == 0)
     {
         // needed for sorting
-        Stack tmp, safe;
+        Stack tmp = FRESH_STACK, safe = FRESH_STACK;
         // Result already initialized with first number
         counter = 1;
         stackInit(&tmp, (stackSize(s) > 0 ? stackSize(s) : 1));
@@ -350,7 +372,7 @@ int doFunc(Stack *s, token function)
     }
     else if(strncmp(function, "var", 3) == 0)
     {
-        Stack tmp;
+        Stack tmp = FRESH_STACK;
         counter = 1;
         // second stack to store values during calculation of mean
         stackInit(&tmp, (stackSize(s) > 0 ? stackSize(s) : 1));
@@ -415,7 +437,7 @@ int doOp(Stack *s, token op)
                         ret = NAN;
                     else
                         ret = INFINITY;
-                    err = -1;
+                    err = -EFAULT;
                 }
                 else
                     ret = lside / rside;
@@ -430,7 +452,7 @@ int doOp(Stack *s, token op)
                         ret = NAN;
                     else
                         ret = INFINITY;
-                    err = -1;
+                    err = -EFAULT;
                 }
                 else
                 {
@@ -561,34 +583,34 @@ Symbol type(char ch)
 
 bool isFunction(token tk)
 {
-    return (strncmp(tk, "abs", 3) == 0
-        || strncmp(tk, "floor", 5) == 0
-        || strncmp(tk, "ceil", 4) == 0
-        || strncmp(tk, "sin", 3) == 0
-        || strncmp(tk, "cos", 3) == 0
-        || strncmp(tk, "tan", 3) == 0
-        || strncmp(tk, "arcsin", 6) == 0
-        || strncmp(tk, "arccos", 6) == 0
-        || strncmp(tk, "arctan", 6) == 0
-        || strncmp(tk, "asin", 4) == 0
-        || strncmp(tk, "acos", 4) == 0
-        || strncmp(tk, "atan", 4) == 0
-        || strncmp(tk, "sqrt", 4) == 0
-        || strncmp(tk, "cbrt", 4) == 0
-        || strncmp(tk, "log", 3) == 0
-        || strncmp(tk, "min", 3) == 0
-        || strncmp(tk, "max", 3) == 0
-        || strncmp(tk, "sum", 3) == 0
-        || strncmp(tk, "avg", 3) == 0
-        || strncmp(tk, "mean", 4) == 0
-        || strncmp(tk, "median", 6) == 0
-        || strncmp(tk, "var", 3) == 0
-        || strncmp(tk, "exp", 3) == 0);
+    return ((strncmp(tk, "abs", 3) == 0 && strlen(tk) == 3)
+        || (strncmp(tk, "floor", 5) == 0 && strlen(tk) == 5)
+        || (strncmp(tk, "ceil", 4) == 0 && strlen(tk) == 4)
+        || (strncmp(tk, "sin", 3) == 0 && strlen(tk) == 3)
+        || (strncmp(tk, "cos", 3) == 0 && strlen(tk) == 3)
+        || (strncmp(tk, "tan", 3) == 0 && strlen(tk) == 3)
+        || (strncmp(tk, "arcsin", 6) == 0 && strlen(tk) == 6)
+        || (strncmp(tk, "arccos", 6) == 0 && strlen(tk) == 6)
+        || (strncmp(tk, "arctan", 6) == 0 && strlen(tk) == 6)
+        || (strncmp(tk, "asin", 4) == 0 && strlen(tk) == 4)
+        || (strncmp(tk, "acos", 4) == 0 && strlen(tk) == 4)
+        || (strncmp(tk, "atan", 4) == 0 && strlen(tk) == 4)
+        || (strncmp(tk, "sqrt", 4) == 0 && strlen(tk) == 4)
+        || (strncmp(tk, "cbrt", 4) == 0 && strlen(tk) == 4)
+        || (strncmp(tk, "log", 3) == 0 && strlen(tk) == 3)
+        || (strncmp(tk, "min", 3) == 0 && strlen(tk) == 3)
+        || (strncmp(tk, "max", 3) == 0 && strlen(tk) == 3)
+        || (strncmp(tk, "sum", 3) == 0 && strlen(tk) == 3)
+        || (strncmp(tk, "avg", 3) == 0 && strlen(tk) == 3)
+        || (strncmp(tk, "mean", 4) == 0 && strlen(tk) == 4)
+        || (strncmp(tk, "median", 6) == 0 && strlen(tk) == 6)
+        || (strncmp(tk, "var", 3) == 0 && strlen(tk) == 3)
+        || (strncmp(tk, "exp", 3) == 0 && strlen(tk) == 3));
 }
 
 bool isSpecialValue(token tk)
 {
-    return (strncmp(tk, "nan", 3) == 0 || strncmp(tk, "inf", 3) == 0);
+    return ((strlen(tk) == 3) && ((strncmp(tk, "nan", 3) == 0) || (strncmp(tk, "inf", 3))));
 }
 
 Symbol tokenType(token tk)
@@ -628,11 +650,23 @@ int tokenize(char *str, char *(**tokensRef))
     char* ptr = str;
     char ch = '\0';
     int numTokens = 0;
+    int lparen_count = 0;
+    int rparen_count = 0;
+    int ops_count = 0;
+    if ((!str) || (!tokensRef))
+    {
+        return -EINVAL;
+    }
+    if (strlen(str) == 0)
+    {
+        raise(faultyExpression);
+        return -EFAULT;
+    }
     char* tmpToken = malloc((prefs.maxtokenlength+1) * sizeof(char));
     if (!tmpToken)
     {
         fprintf(stderr, "Malloc of temporary buffer failed\n");
-        return 0;
+        return -ENOMEM;
     }
     while((ch = *ptr++))
     {
@@ -641,7 +675,8 @@ int tokenize(char *str, char *(**tokensRef))
 
         token newToken = NULL;
         tmpToken[0] = '\0';
-        switch(type(ch))
+        Symbol sym = type(ch);
+        switch(sym)
         {
             case addop:
                 {
@@ -694,8 +729,11 @@ int tokenize(char *str, char *(**tokensRef))
 
                             // Append null-terminator
                             tmpToken[len] = '\0';
+                            if (len > 1)
+                            {
+                                break;
+                            }
                         }
-                        break;
                     }
                     // If it's not part of a number, it's an op - fall through
                 }
@@ -708,6 +746,9 @@ int tokenize(char *str, char *(**tokensRef))
                 {
                     tmpToken[0] = ch;
                     tmpToken[1] = '\0';
+                    if (sym == lparen) lparen_count++;
+                    else if (sym == rparen) rparen_count++;
+                    else if (sym == multop || sym == expop || sym == addop) ops_count++;
                 }
                 break;
             case digit:
@@ -804,16 +845,30 @@ int tokenize(char *str, char *(**tokensRef))
                 *tokensRef = NULL;
                 free(newToken);
                 free(tmpToken);
-                return 0;
+                return -ENOMEM;
             }
             tokens = tmp;
             tmp = NULL;
             tokens[numTokens - 1] = newToken;
         }
     }
-    *tokensRef = tokens; // Send back out
     free(tmpToken);
     tmpToken = NULL;
+    if (lparen_count != rparen_count)
+    {
+        for (int i = 0; i < numTokens; i++) free(tokens[i]);
+        free(tokens);
+        raise(parenMismatch);
+        return -EFAULT;
+    }
+    if (numTokens == lparen_count + rparen_count + ops_count)
+    {
+        for (int i = 0; i < numTokens; i++) free(tokens[i]);
+        free(tokens);
+        raise(faultyExpression);
+        return -EFAULT;
+    }
+    *tokensRef = tokens; // Send back out
     return numTokens;
 }
 
@@ -866,8 +921,9 @@ int precedence(token op1, token op2)
     return ret;
 }
 
-void evalStackPush(Stack *s, token val)
+int evalStackPush(Stack *s, token val)
 {
+    int err = 0;
     if(prefs.display.postfix)
         printf("\t%s\n", val);
 
@@ -875,8 +931,16 @@ void evalStackPush(Stack *s, token val)
     {
         case function:
             {
-                if (doFunc(s, val) < 0)
-                    return;
+                err = doFunc(s, val);
+                if (err < 0)
+                {
+                    while (stackSize(s) > 0)
+                    {
+                        char* t = stackPop(s);
+                        free(t);
+                    }
+                    return err;
+                }
             }
             break;
         case expop:
@@ -885,9 +949,11 @@ void evalStackPush(Stack *s, token val)
             {
                 if(stackSize(s) >= 2)
                 {
-                    // Evaluate
-                    if (doOp(s, val) < 0)
-                        return;
+                    err = doOp(s, val);
+                    if (err < 0)
+                    {
+                        return err;
+                    }
                 }
                 else
                 {
@@ -903,13 +969,14 @@ void evalStackPush(Stack *s, token val)
         default:
             break;
     }
+    return 0;
 }
 
-bool postfix(token *tokens, int numTokens, Stack *output)
+int postfix(token *tokens, int numTokens, Stack *output)
 {
-    Stack operators, intermediate;
+    Stack operators = FRESH_STACK, intermediate = FRESH_STACK;
     int i;
-    bool err = false;
+    int err = 0;
     stackInit(&operators, numTokens);
     stackInit(&intermediate, numTokens);
     for(i = 0; i < numTokens; i++)
@@ -921,7 +988,13 @@ bool postfix(token *tokens, int numTokens, Stack *output)
                 {
                     // If the token is a number, then add it to the output queue.
                     //printf("Adding number %s to output stack\n", tokens[i]);
-                    evalStackPush(output, tokens[i]);
+                    err = evalStackPush(output, tokens[i]);
+                    if (err < 0)
+                    {
+                        stackFree(&operators);
+                        stackFree(&intermediate);
+                        return err;
+                    }
                 }
                 break;
             case function:
@@ -931,7 +1004,13 @@ bool postfix(token *tokens, int numTokens, Stack *output)
                         && ((precedence(tokens[i], (char*)stackTop(&operators)) <= 0)))
                     {
                         //printf("Moving operator %s from operator stack to output stack\n", (char*)stackTop(&operators));
-                        evalStackPush(output, stackPop(&operators));
+                        err = evalStackPush(output, stackPop(&operators));
+                        if (err < 0)
+                        {
+                            stackFree(&operators);
+                            stackFree(&intermediate);
+                            return err;
+                        }
                         stackPush(&intermediate, stackTop(output));
                     }
 
@@ -954,7 +1033,13 @@ bool postfix(token *tokens, int numTokens, Stack *output)
                         && stackSize(&operators) > 1)
                     {
                         //printf("Moving operator from operator stack to output stack\n");
-                        evalStackPush(output, stackPop(&operators));
+                        err = evalStackPush(output, stackPop(&operators));
+                        if (err < 0)
+                        {
+                            stackFree(&operators);
+                            stackFree(&intermediate);
+                            return err;
+                        }
                         stackPush(&intermediate, stackTop(output));
                     }
                 }
@@ -977,7 +1062,13 @@ bool postfix(token *tokens, int numTokens, Stack *output)
                             || (!leftAssoc(tokens[i]) && precedence(tokens[i], (char*)stackTop(&operators)) < 0)))
                     {
                         //printf("Moving operator %s from operator stack to output stack\n", (char*)stackTop(&operators));
-                        evalStackPush(output, stackPop(&operators));
+                        err = evalStackPush(output, stackPop(&operators));
+                        if (err < 0)
+                        {
+                            stackFree(&operators);
+                            stackFree(&intermediate);
+                            return err;
+                        }
                         stackPush(&intermediate, stackTop(output));
                     }
                     //printf("Adding operator %s to operator stack\n", tokens[i]);
@@ -1006,13 +1097,19 @@ bool postfix(token *tokens, int numTokens, Stack *output)
                         && stackSize(&operators) > 1)
                     {
                         //printf("Moving operator %s from operator stack to output stack\n", (char*)stackTop(&operators));
-                        evalStackPush(output, stackPop(&operators));
+                        err = evalStackPush(output, stackPop(&operators));
+                        if (err < 0)
+                        {
+                            stackFree(&operators);
+                            stackFree(&intermediate);
+                            return err;
+                        }
                         stackPush(&intermediate, stackTop(output));
                     }
                     if(stackSize(&operators) > 0
                         && tokenType((token)stackTop(&operators)) != lparen)
                     {
-                        err = true;
+                        err = -EFAULT;
                         raise(parenMismatch);
                     }
                     //printf("Removing left paren from operator stack\n");
@@ -1020,7 +1117,13 @@ bool postfix(token *tokens, int numTokens, Stack *output)
                     while (stackSize(&operators) > 0 && tokenType((token)stackTop(&operators)) == function)
                     {
                         //printf("Removing function from operator stack to output stack\n");
-                        evalStackPush(output, stackPop(&operators));
+                        err = evalStackPush(output, stackPop(&operators));
+                        if (err < 0)
+                        {
+                            stackFree(&operators);
+                            stackFree(&intermediate);
+                            return err;
+                        }
                         stackPush(&intermediate, stackTop(output));
                     }
                 }
@@ -1043,18 +1146,24 @@ bool postfix(token *tokens, int numTokens, Stack *output)
             err = true;
         }
         //printf("Moving operator from operator stack to output stack\n");
-        evalStackPush(output, stackPop(&operators));
+        err = evalStackPush(output, stackPop(&operators));
+        if (err < 0)
+        {
+            stackFree(&operators);
+            stackFree(&intermediate);
+            return err;
+        }
         stackPush(&intermediate, stackTop(output));
     }
     // pop result from intermediate stack
-    token r = stackPop(&intermediate);
+    stackPop(&intermediate);
     // free remaining intermediate results
     while (stackSize(&intermediate) > 0)
     {
         token s = stackPop(&intermediate);
         free(s);
     }
-    if (err == true)
+    if (err != 0)
     {
         while (stackSize(&operators) > 0)
         {
@@ -1074,11 +1183,16 @@ calculate_infix(char* finfix, double *result)
     int i;
     int ret = 0;
     *result = 0;
+    double res = 0;
     token* tokens = NULL;
     Stack expr;
     prefs.maxtokenlength = MAXTOKENLENGTH;
     prefs.precision = MAXPRECISION;
     int numTokens = tokenize(finfix, &tokens);
+    if (numTokens < 0)
+    {
+        return numTokens;
+    }
     if (numTokens == 1)
     {
         if (tokenType(tokens[0]) == value)
@@ -1093,23 +1207,35 @@ calculate_infix(char* finfix, double *result)
     }
     stackInit(&expr, numTokens);
     ret = postfix(tokens, numTokens, &expr);
-    if ((stackSize(&expr) != 1) || (ret == true))
+    if (ret != 0)
     {
-        *result = NAN;
-        ret = -1;
+        if (stackSize(&expr) > 0)
+        {
+            char* t = stackTop(&expr);
+            res = atof(t);
+            free(t);
+        }
+        if (prefs.display.errors) printf("\tError evaluating expression\n");;
+        goto calcerror;
+    }
+    else if (stackSize(&expr) != 1)
+    {
+        raise(faultyExpression);
+        if (prefs.display.errors) printf("\tError evaluating expression\n");
+        ret = -EFAULT;
         goto calcerror;
     }
     else
     {
+        res = atof((char*)stackTop(&expr));
         for (i=0; i< numTokens; i++)
         {
             if (tokens[i] == stackTop(&expr))
                 tokens[i] = NULL;
         }
-        token r = stackPop(&expr);
-        *result = strtod((char*)r, NULL);
-        free(r);
+        free(stackPop(&expr));
     }
+    *result = res;
     ret = 0;
 calcerror:
     stackFree(&expr);
