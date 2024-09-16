@@ -1433,7 +1433,18 @@ if use_wrapper or use_timeline then
             end
             break
         end
-        local remain = likwid.sleep(math.floor(duration - (twork * 1E6)))
+	exitvalue, exited = likwid.checkProgram(pid)
+        if exited then
+            io.stdout:flush()
+            if #execList > 0 then
+                break
+            end
+        end
+        local sleeptime = duration - (twork * 1E6)
+	local remain = 0
+        if sleeptime > 0 then
+           remain = likwid.sleep(math.floor(duration - (twork * 1E6)))
+        end
 
         exitvalue, exited = likwid.checkProgram(pid)
         if exited then

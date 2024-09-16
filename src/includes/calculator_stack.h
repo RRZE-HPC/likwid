@@ -42,6 +42,8 @@ typedef struct
     int top;
 } Stack;
 
+#define FRESH_STACK {NULL, 0, -1}
+
 void stackInit(Stack *s, int size);
 void stackPush(Stack *s, void* val);
 void* stackTop(Stack *s);

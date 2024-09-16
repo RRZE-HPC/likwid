@@ -952,3 +952,11 @@ cpuid_init_cacheTopology(void)
     return 0;
 }
 
+
+int cpuid_get_hwthread_data(int cpu_id, HWThread* hwt)
+{
+    eax = 0x01;
+    CPUID(eax, ebx, ecx, edx);
+    hwt->apicId = extractBitField(ebx,8,24);
+    return 0;
+}
