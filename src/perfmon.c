@@ -880,6 +880,12 @@ perfmon_init_maps(void)
         // Already initialized
         return 0;
     }
+#if defined(__x86_64__) || defined(__i386__) || defined(_ARCH_PPC)
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Initialize maps for family 0x%X model 0x%X stepping 0x%X, cpuid_info.family, cpuid_info.model, cpuid_info.stepping);
+#endif
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Initialize maps for family 0x%X vendor 0x%X part 0x%X, cpuid_info.family, cpuid_info.family, cpuid_info.model);
+#endif
     switch ( cpuid_info.family )
     {
         case P6_FAMILY:
@@ -1510,8 +1516,8 @@ perfmon_init_maps(void)
                             break;
                     }
                     break;
-		            case APPLE_M1:
-		            case APPLE:
+                case APPLE_M1:
+                case APPLE:
                     switch (cpuid_info.model)
                     {
                          case APPLE_M1_STUDIO:
@@ -2131,7 +2137,16 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     if (ret < 0)
     {
         ERROR_PRINT(Failed to initialize event and counter lists for %s, cpuid_info.name);
+        free(groupSet->threads);
+        free(groupSet);
+        groupSet = NULL;
+        for(i=0; i<cpuid_topology.numHWThreads; i++)
+            free(currentConfig[i]);
+        free(currentConfig);
+        currentConfig = NULL;
+#ifndef LIKWID_USE_PERFEVENT
         HPMfinalize();
+#endif
         return ret;
     }
 
@@ -2140,7 +2155,16 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     if (ret < 0)
     {
         ERROR_PRINT(Failed to initialize event and counter lists for %s, cpuid_info.name);
+        free(groupSet->threads);
+        free(groupSet);
+        groupSet = NULL;
+        for(i=0; i<cpuid_topology.numHWThreads; i++)
+            free(currentConfig[i]);
+        free(currentConfig);
+        currentConfig = NULL;
+#ifndef LIKWID_USE_PERFEVENT
         HPMfinalize();
+#endif
         return ret;
     }
 
