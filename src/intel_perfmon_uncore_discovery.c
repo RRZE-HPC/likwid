@@ -25,8 +25,8 @@ struct pci_dev {
 
 static void mymemcpy(void* dest, void* src, int size)
 {
-    uint8_t* udest = (uint8_t*)dest;
-    uint8_t* usrc = (uint8_t*)src;
+    uint8_t volatile* udest = (uint8_t*)dest;
+    uint8_t volatile* usrc = (uint8_t*)src;
     for (int i = 0; i < size/sizeof(uint8_t); i++)
     {
         *(udest + i) = *(usrc + i);
