@@ -10,7 +10,7 @@ without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS FOR A PARTICULAR
 PURPOSE. See the terms and conditions of the GNU Lesser General Public License
 for more details.  You should have received a copy of the GNU Lesser General
 Public License along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include <assert.h>
@@ -23,8 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "sampleLib.h"
 
 void dbg() {}
-int main()
-{
+int main() {
   sample_init();
   int check_val = retX(9);
   assert(check_val == 10);

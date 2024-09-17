@@ -3,14 +3,14 @@ This file is part of GOTCHA.  For copyright information see the COPYRIGHT
 file in the top level directory, or at
 https://github.com/LLNL/gotcha/blob/master/COPYRIGHT
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License (as published by the Free Software
-Foundation) version 2.1 dated February 1999.  This program is distributed in the
-hope that it will be useful, but WITHOUT ANY WARRANTY; without even the IMPLIED
-WARRANTY OF MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms
-and conditions of the GNU Lesser General Public License for more details.  You should
-have received a copy of the GNU Lesser General Public License along with this
-program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307 USA
+the terms of the GNU Lesser General Public License (as published by the Free
+Software Foundation) version 2.1 dated February 1999.  This program is
+distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE. See the terms and conditions of the GNU Lesser General Public License
+for more details.  You should have received a copy of the GNU Lesser General
+Public License along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 /*!
@@ -26,12 +26,13 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #ifndef GOTCHA_UTILS_H
 #define GOTCHA_UTILS_H
 #include <sys/mman.h>
+
 #include "gotcha/gotcha_types.h"
 #include "hash.h"
 // TODO: remove these includes
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 // END TODO
 #include <elf.h>
 #include <link.h>
@@ -44,36 +45,35 @@ extern int debug_level;
 void gotcha_init();
 extern hash_table_t function_hash_table;
 extern hash_table_t notfound_binding_table;
-#define debug_bare_printf(lvl, format, ...)       \
-   do {                                           \
-     if (debug_level >= lvl) {                    \
-        gotcha_dbg_printf(format, ## __VA_ARGS__); \
-     }                                            \
-   } while (0);
+#define debug_bare_printf(lvl, format, ...)     \
+  do {                                          \
+    if (debug_level >= lvl) {                   \
+      gotcha_dbg_printf(format, ##__VA_ARGS__); \
+    }                                           \
+  } while (0);
 
-#define SHORT_FILE__ ((strrchr(__FILE__, '/') ? : __FILE__ - 1) + 1)
+#define SHORT_FILE__ ((strrchr(__FILE__, '/') ?: __FILE__ - 1) + 1)
 
-#define debug_printf(lvl, format, ...)               \
-   do {                                              \
-     if (debug_level >= lvl) {                       \
-        gotcha_dbg_printf("[%d/%d][%s:%u] - " format, \
-               gotcha_gettid(), gotcha_getpid(),     \
-               SHORT_FILE__, __LINE__,               \
-               ## __VA_ARGS__);                      \
-     }                                               \
-   } while (0);
+#define debug_printf(lvl, format, ...)                               \
+  do {                                                               \
+    if (debug_level >= lvl) {                                        \
+      gotcha_dbg_printf("[%d/%d][%s:%u] - " format, gotcha_gettid(), \
+                        gotcha_getpid(), SHORT_FILE__, __LINE__,     \
+                        ##__VA_ARGS__);                              \
+    }                                                                \
+  } while (0);
 
-#define error_printf(format, ...)                          \
-do {                                                       \
-     if (debug_level) {                                    \
-        gotcha_dbg_printf("ERROR [%d/%d][%s:%u] - " format, \
-               gotcha_gettid(), gotcha_getpid(),           \
-               SHORT_FILE__, __LINE__,                     \
-               ## __VA_ARGS__);                            \
-     }                                                     \
-   } while (0);
+#define error_printf(format, ...)                                          \
+  do {                                                                     \
+    if (debug_level) {                                                     \
+      gotcha_dbg_printf("ERROR [%d/%d][%s:%u] - " format, gotcha_gettid(), \
+                        gotcha_getpid(), SHORT_FILE__, __LINE__,           \
+                        ##__VA_ARGS__);                                    \
+    }                                                                      \
+  } while (0);
 
-#define LIB_NAME(X) (!X->l_name ? "[NULL]" : (!*X->l_name ? "[EMPTY]" : X->l_name))
+#define LIB_NAME(X) \
+  (!X->l_name ? "[NULL]" : (!*X->l_name ? "[EMPTY]" : X->l_name))
 
 /*!
  ******************************************************************************
@@ -97,7 +97,6 @@ do {                                                       \
  ******************************************************************************
  */
 #define BOUNDARY_BEFORE(ptr, pagesize) \
-  (ElfW(Addr))(((ElfW(Addr))ptr) &(-pagesize))
-
+  (ElfW(Addr))(((ElfW(Addr))ptr) & (-pagesize))
 
 #endif
