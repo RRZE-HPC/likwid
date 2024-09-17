@@ -1219,17 +1219,20 @@ topology_setName(void)
                 case ZEN_RYZEN:
                     cpuid_info.name = amd_zen_str;
                     cpuid_info.short_name = short_zen;
+                    cpuid_info.supportUncore = 1;
                     break;
                 case ZENPLUS_RYZEN:
                 case ZENPLUS_RYZEN2:
                     cpuid_info.name = amd_zenplus_str;
                     cpuid_info.short_name = short_zen;
+                    cpuid_info.supportUncore = 1;
                     break;
                 case ZEN2_RYZEN:
                 case ZEN2_RYZEN2:
                 case ZEN2_RYZEN3:
                     cpuid_info.name = amd_zen2_str;
                     cpuid_info.short_name = short_zen2;
+                    cpuid_info.supportUncore = 1;
                     break;
                 default:
                     err = -EFAULT;
@@ -1245,6 +1248,7 @@ topology_setName(void)
                 case ZEN3_EPYC_TRENTO:
                     cpuid_info.name = amd_zen3_str;
                     cpuid_info.short_name = short_zen3;
+                    cpuid_info.supportUncore = 1;
                     break;
                 case ZEN4_RYZEN:
                 case ZEN4_RYZEN2:
@@ -1252,6 +1256,7 @@ topology_setName(void)
                 case ZEN4_RYZEN_PRO:
                     cpuid_info.name = amd_zen4_str;
                     cpuid_info.short_name = short_zen4;
+                    cpuid_info.supportUncore = 1;
                     break;
                 default:
                     err = -EFAULT;
@@ -1325,6 +1330,7 @@ topology_setName(void)
                         case NVIDIA_GRACE:
                             cpuid_info.name = arm_nvidia_grace;
                             cpuid_info.short_name = short_nvidia_grace;
+                            cpuid_info.supportUncore = 1;
                             break;
                         default:
                             err = -EFAULT;
@@ -1544,14 +1550,9 @@ standard_init:
         ret = topology_setName();
         if (ret < 0)
         {
-            errno = ret;
-            ERROR_PRINT(Failed to set CPU name);
-            free(cpuid_info.osname);
-            memset(&cpuid_info, 0, sizeof(CpuInfo));
-            memset(&cpuid_topology, 0, sizeof(CpuTopology));
-            return ret;
+            DEBUG_PRINT(DEBUGLEV_INFO, Cannot use machine-given CPU name);
         }
-        funcs.init_cpuFeatures();
+        ret = funcs.init_cpuFeatures();
         if (ret < 0)
         {
             errno = ret;
@@ -1863,6 +1864,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",arm_neoverse_v1);
     printf("\t%s\n",arm_huawei_tsv110);
     printf("\t%s\n",apple_m1_studio);
+    printf("\t%s\n",arm_nvidia_grace);
     printf("\n");
     printf("Supported ARMv7 processors:\n");
     printf("\t%s\n",armv7l_str);

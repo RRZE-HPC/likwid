@@ -925,6 +925,8 @@ end
 if print_info or verbose > 0 then
     print_stdout(string.format("CPU family:\t%u", cpuinfo["family"]))
     print_stdout(string.format("CPU model:\t%u", cpuinfo["model"]))
+    print_stdout(string.format("CPU vendor:\t%u", cpuinfo["vendor"]))
+    print_stdout(string.format("CPU part:\t%u", cpuinfo["part"]))
     print_stdout(string.format("CPU short:\t%s", cpuinfo["short_name"]))
     print_stdout(string.format("CPU stepping:\t%u", cpuinfo["stepping"]))
     print_stdout(string.format("CPU features:\t%s", cpuinfo["features"]))
@@ -936,7 +938,9 @@ if print_info or verbose > 0 then
         print_stdout(string.format("PERFMON number of counters:\t\t%u", cpuinfo["perf_num_ctr"]))
         print_stdout(string.format("PERFMON width of counters:\t\t%u", cpuinfo["perf_width_ctr"]))
         print_stdout(string.format("PERFMON number of fixed counters:\t%u", cpuinfo["perf_num_fixed_ctr"]))
+        print_stdout(string.format("PERFMON supports desktop memory controllers:\t%u", cpuinfo["supportClientmem"]))
     end
+    print_stdout(string.format("PERFMON supports Uncore:\t%u", cpuinfo["supportUncore"]))
     ---------------------------
     if nvSupported and cudatopo then
         print_stdout(likwid.hline)
