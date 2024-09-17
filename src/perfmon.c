@@ -984,7 +984,7 @@ perfmon_init_maps(void)
                     counter_map = nehalem_counter_map;
                     perfmon_numCounters = perfmon_numCountersNehalem;
                     box_map = nehalem_box_map;
-                    translate_types = default_translate_types;
+                    translate_types = nehalem_translate_types;
                     break;
 
                 case NEHALEM_WESTMERE_M:
@@ -994,7 +994,7 @@ perfmon_init_maps(void)
                     counter_map = nehalem_counter_map;
                     perfmon_numCounters = perfmon_numCountersNehalem;
                     box_map = nehalem_box_map;
-                    translate_types = default_translate_types;
+                    translate_types = nehalem_translate_types;
                     break;
 
                 case IVYBRIDGE_EP:

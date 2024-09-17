@@ -65,3 +65,9 @@ static BoxMap nehalem_box_map[NUM_UNITS] = {
     [UNCORE] = {MSR_UNCORE_PERF_GLOBAL_CTRL, MSR_UNCORE_PERF_GLOBAL_STATUS, MSR_UNCORE_PERF_GLOBAL_OVF_CTRL, -1, 0, 0, 48}
 };
 
+static char* nehalem_translate_types[NUM_UNITS] = {
+    [FIXED] = "/sys/bus/event_source/devices/cpu",
+    [PMC] = "/sys/bus/event_source/devices/cpu",
+    [UNCORE] = "/sys/bus/event_source/devices/uncore",
+};
+

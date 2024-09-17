@@ -1117,6 +1117,7 @@ int perfmon_setupCountersThread_perfevent(
                 is_uncore = 1;
                 break;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0)
+            case UNCORE:
             case MBOX0:
             case MBOX1:
             case MBOX2:
