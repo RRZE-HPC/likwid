@@ -51,7 +51,7 @@ CFLAGS    += -std=c99 -fPIC -pie -fPIE -fstack-protector
 ifeq ($(COMPILER),GCCX86)
 CFLAGS    +=  -m32
 endif
-CPPFLAGS :=  $(DEFINES) $(INCLUDES) -L../../lib
+CPPFLAGS :=  $(DEFINES) $(INCLUDES) -L../..
 
 ifeq ($(COMPILER),GCCARMv8)
 all:
@@ -66,7 +66,7 @@ $(SETFREQ_TARGET): setFreqDaemon.c
 	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(SETFREQ_TARGET) setFreqDaemon.c
 
 $(APPDAEMON_TARGET): $(GOTCHA_TARGET) appDaemon.c
-	$(Q)$(CC) -shared -fPIC $(CPPFLAGS) -Wl,-soname,$(APPDAEMON_TARGET).$(VERSION).$(RELEASE) -fstack-protector -I. -I$(GOTCHA_FOLDER)/include  -L$(GOTCHA_FOLDER) appDaemon.c -o ../../$(APPDAEMON_TARGET)  -llikwid-gotcha
+	$(Q)$(CC) -shared -fPIC $(CPPFLAGS) -Wl,-soname,$(APPDAEMON_TARGET).$(VERSION).$(RELEASE) -fstack-protector -I. -I$(GOTCHA_FOLDER)/include  -L$(GOTCHA_FOLDER) appDaemon.c -o ../../$(APPDAEMON_TARGET)  -llikwid -llikwid-gotcha
 
 $(SYSFSDAEMON_TARGET): sysfsDaemon.c
 	$(Q)$(CC) -g -fsanitize=address -fsanitize=leak -fomit-frame-pointer  $(CFLAGS) $(CPPFLAGS) -o ../../sysfsD sysfsDaemon.c
