@@ -11,7 +11,10 @@
 # Since 5.3, there is a generic GCCARM target
 COMPILER = GCC#NO SPACE
 
-# Absolute path were to install likwid
+# Absolute path where to install likwid. If you need just an intermediate
+# install location, e.g. for packaging, use PREFIX for the intermediate
+# location and INSTALLED_PREFIX for the final location. You can use
+# 'make move' to copy it from PREFIX to INSTALLED_PREFIX.
 PREFIX ?= /usr/local#NO SPACE
 
 # Set the default mode for MSR access.
