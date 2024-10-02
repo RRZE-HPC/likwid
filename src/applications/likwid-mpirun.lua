@@ -1792,8 +1792,8 @@ local function parseMarkerOutputFile(filename)
             elseif line:match("^CPU clock:,") then
                 clock = line:match("^CPU clock:,([%d.]+)")
                 clock = tonumber(clock)*1.E09
-            elseif parse_reg_info and line:match("TABLE,Region ([^%s]+),Group (%d+) Raw,([^%s]+),") then
-                current_region, gidx, gname  = line:match("TABLE,Region ([^%s]+),Group (%d+) Raw,([^%s]+),")
+            elseif parse_reg_info and line:match("TABLE,Region (%s*[^%s]+),Group (%d+) Raw,([^%s]+),") then
+                current_region, gidx, gname  = line:match("TABLE,Region (%s*[^%s]+),Group (%d+) Raw,([^%s]+),")
                 gidx = tonumber(gidx)
                 if results[current_region] == nil then
                     results[current_region] = {}
