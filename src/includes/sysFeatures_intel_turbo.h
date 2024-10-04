@@ -3,8 +3,8 @@
 
 
 int intel_cpu_turbo_test();
-int intel_cpu_turbo_getter(LikwidDevice_t device, char** value);
-int intel_cpu_turbo_setter(LikwidDevice_t device, char* value);
+int intel_cpu_turbo_getter(const LikwidDevice_t device, char** value);
+int intel_cpu_turbo_setter(const LikwidDevice_t device, const char* value);
 
 #define MAX_INTEL_TURBO_CPU_FEATURES 1
 static _SysFeature intel_cpu_turbo_features[] = {

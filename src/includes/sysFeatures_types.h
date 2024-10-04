@@ -12,8 +12,8 @@ typedef enum {
 } HWFEATURES_VALUE_TYPES;
 
 
-typedef int (*hwfeature_getter_function)(LikwidDevice_t device, char** value);
-typedef int (*hwfeature_setter_function)(LikwidDevice_t device, char* value);
+typedef int (*hwfeature_getter_function)(const LikwidDevice_t device, char** value);
+typedef int (*hwfeature_setter_function)(const LikwidDevice_t device, const char* value);
 typedef int (*hwfeature_test_function)();
 
 typedef struct {

@@ -10,7 +10,7 @@
 #include <error.h>
 #include <sysFeatures_common.h>
 
-int register_features(_SysFeatureList *features, _SysFeatureList* in)
+int register_features(_SysFeatureList *features, const _SysFeatureList* in)
 {
     int err = 0;
     if (in->tester)
@@ -52,7 +52,7 @@ int register_features(_SysFeatureList *features, _SysFeatureList* in)
     return 0;
 }
 
-int sysFeatures_init_generic(_HWArchFeatures* infeatures, _SysFeatureList *list)
+int sysFeatures_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList *list)
 {
     int i = 0;
     int j = 0;
@@ -117,7 +117,7 @@ int _uint64_to_string(uint64_t value, char** str)
     return len;
 }
 
-int _string_to_uint64(char* str, uint64_t* value)
+int _string_to_uint64(const char* str, uint64_t* value)
 {
     char* ptr = NULL;
     if ((strncmp(str, "true", 4) == 0) || (strncmp(str, "TRUE", 4) == 0))

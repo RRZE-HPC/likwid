@@ -35,7 +35,7 @@ int sysFeatures_init_x86_intel(_SysFeatureList* out)
     return 0;
 }
 
-int intel_cpu_msr_register_getter(LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, char** value)
+int intel_cpu_msr_register_getter(const LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, char** value)
 {
     int err = 0;
     if (device->type != DEVICE_TYPE_HWTHREAD)
@@ -70,7 +70,7 @@ int intel_cpu_msr_register_getter(LikwidDevice_t device, uint32_t reg, uint64_t 
     return err;
 }
 
-int intel_cpu_msr_register_setter(LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, char* value)
+int intel_cpu_msr_register_setter(const LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, const char* value)
 {
     int err = 0;
     if (device->type != DEVICE_TYPE_HWTHREAD)
@@ -151,7 +151,7 @@ int intel_cpu_turbo_test()
     return valid = topo->numHWThreads;
 }
 
-int intel_cpu_turbo_getter(LikwidDevice_t device, char** value)
+int intel_cpu_turbo_getter(const LikwidDevice_t device, char** value)
 {
     if (intel_cpu_turbo_test())
     {
@@ -160,7 +160,7 @@ int intel_cpu_turbo_getter(LikwidDevice_t device, char** value)
     return -ENOTSUP;
 }
 
-int intel_cpu_turbo_setter(LikwidDevice_t device, char* value)
+int intel_cpu_turbo_setter(const LikwidDevice_t device, const char* value)
 {
     if (intel_cpu_turbo_test())
     {

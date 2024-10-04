@@ -18,7 +18,7 @@ int intel_cpu_spec_ibrs_tester()
     return testBit(edx, 26);
 }
 
-int intel_cpu_spec_ibrs_getter(LikwidDevice_t device, char** value)
+int intel_cpu_spec_ibrs_getter(const LikwidDevice_t device, char** value)
 {
     return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x1, 0, 0, value);
 }
@@ -31,7 +31,7 @@ int intel_cpu_spec_stibp_tester()
     return testBit(edx, 27);
 }
 
-int intel_cpu_spec_stibp_getter(LikwidDevice_t device, char** value)
+int intel_cpu_spec_stibp_getter(const LikwidDevice_t device, char** value)
 {
     return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x2, 1, 0, value);
 }
@@ -43,7 +43,7 @@ int intel_cpu_spec_ssbd_tester()
     return testBit(edx, 31);
 }
 
-int intel_cpu_spec_ssbd_getter(LikwidDevice_t device, char** value)
+int intel_cpu_spec_ssbd_getter(const LikwidDevice_t device, char** value)
 {
     return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x4, 2, 1, value);
 }
@@ -56,7 +56,7 @@ int intel_cpu_spec_ipred_dis_tester()
     return testBit(edx, 1);
 }
 
-int intel_cpu_spec_ipred_dis_getter(LikwidDevice_t device, char** value)
+int intel_cpu_spec_ipred_dis_getter(const LikwidDevice_t device, char** value)
 {
     return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x8, 3, 0, value);
 }
@@ -68,7 +68,7 @@ int intel_cpu_spec_rrsba_dis_tester()
     return testBit(edx, 2);
 }
 
-int intel_cpu_spec_rrsba_dis_getter(LikwidDevice_t device, char** value)
+int intel_cpu_spec_rrsba_dis_getter(const LikwidDevice_t device, char** value)
 {
     return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x20, 5, 1, value);
 }
@@ -80,7 +80,7 @@ int intel_cpu_spec_psfd_tester()
     return testBit(edx, 0);
 }
 
-int intel_cpu_spec_psfd_getter(LikwidDevice_t device, char** value)
+int intel_cpu_spec_psfd_getter(const LikwidDevice_t device, char** value)
 {
     return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x80, 7, 1, value);
 }
@@ -93,7 +93,7 @@ int intel_cpu_spec_ddpd_tester()
     return 0;//testBit(edx, 0);
 }
 
-int intel_cpu_spec_ddpd_getter(LikwidDevice_t device, char** value)
+int intel_cpu_spec_ddpd_getter(const LikwidDevice_t device, char** value)
 {
     return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x100, 8, 1, value);
 }
