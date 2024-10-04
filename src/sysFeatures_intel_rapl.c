@@ -19,11 +19,11 @@ typedef struct {
     double timeUnit;
 } IntelRaplDomainInfo;
 
-IntelRaplDomainInfo intel_rapl_pkg_info = {0, 0, 0};
-IntelRaplDomainInfo intel_rapl_dram_info = {0, 0, 0};
-IntelRaplDomainInfo intel_rapl_psys_info = {0, 0, 0};
-IntelRaplDomainInfo intel_rapl_pp0_info = {0, 0, 0};
-IntelRaplDomainInfo intel_rapl_pp1_info = {0, 0, 0};
+static IntelRaplDomainInfo intel_rapl_pkg_info = {0, 0, 0};
+static IntelRaplDomainInfo intel_rapl_dram_info = {0, 0, 0};
+static IntelRaplDomainInfo intel_rapl_psys_info = {0, 0, 0};
+static IntelRaplDomainInfo intel_rapl_pp0_info = {0, 0, 0};
+static IntelRaplDomainInfo intel_rapl_pp1_info = {0, 0, 0};
 
 static int intel_rapl_register_test(uint32_t reg)
 {
