@@ -16,10 +16,10 @@
 
 //#include <sysFeatures_x86_amd.h>
 
-_SysFeature *local_features = NULL;
-int num_local_features = 0;
+static _SysFeature *local_features = NULL;
+static int num_local_features = 0;
 
-_SysFeatureList _feature_list = {0, NULL, NULL};
+static _SysFeatureList _feature_list = {0, NULL, NULL};
 
 
 static int get_device_access(LikwidDevice_t device)

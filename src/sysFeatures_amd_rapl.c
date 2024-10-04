@@ -19,9 +19,9 @@ typedef struct {
     double timeUnit;
 } AmdRaplDomainInfo;
 
-AmdRaplDomainInfo amd_rapl_pkg_info = {0, 0, 0};
-AmdRaplDomainInfo amd_rapl_core_info = {0, 0, 0};
-AmdRaplDomainInfo amd_rapl_l3_info = {0, 0, 0};
+static AmdRaplDomainInfo amd_rapl_pkg_info = {0, 0, 0};
+static AmdRaplDomainInfo amd_rapl_core_info = {0, 0, 0};
+static AmdRaplDomainInfo amd_rapl_l3_info = {0, 0, 0};
 
 static int amd_rapl_register_test(uint32_t reg)
 {
