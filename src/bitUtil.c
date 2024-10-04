@@ -30,6 +30,7 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include <types.h>
@@ -37,15 +38,33 @@
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 uint64_t
-field64(uint64_t value, int start, int length)
+field64(uint64_t bitfield, int start, int length)
 {
-    return (value >> start) & (~0ULL >> (64 - length));
+    return (bitfield >> start) & (~0ULL >> (64 - length));
 }
 
 uint32_t
-field32(uint32_t value, int start, int length)
+field32(uint32_t bitfield, int start, int length)
 {
-    return (value >> start) & (~0U >> (32 - length));
+    return (bitfield >> start) & (~0U >> (32 - length));
+}
+
+void
+field64set(uint64_t* bitfield, int start, int length, uint64_t value)
+{
+    assert(start >= 0 && start < 64);
+    assert(length >= 0 && length <= 64);
+    const uint64_t mask = (~0ULL >> (64 - length)) << start;
+    *bitfield = (*bitfield & ~mask) | ((value << start) & mask);
+}
+
+void
+field32set(uint32_t* bitfield, int start, int length, uint32_t value)
+{
+    assert(start >= 0 && start < 32);
+    assert(length >= 0 && length <= 32);
+    const uint32_t mask = (~0ULL >> (32 - length)) << start;
+    *bitfield = (*bitfield & ~mask) | ((value << start) & mask);
 }
 
 uint32_t

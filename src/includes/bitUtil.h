@@ -33,10 +33,12 @@
 
 #include <types.h>
 
-extern uint64_t field64(uint64_t value, int start, int length);
-extern uint32_t field32(uint32_t value, int start, int length);
-extern uint32_t extractBitField(uint32_t inField, uint32_t width, uint32_t offset);
-extern uint32_t getBitFieldWidth(uint32_t number);
+uint64_t field64(uint64_t bitfield, int start, int length);
+uint32_t field32(uint32_t bitfield, int start, int length);
+void field64set(uint64_t* bitfield, int start, int length, uint64_t value);
+void field32set(uint32_t* bitfield, int start, int length, uint32_t value);
+uint32_t extractBitField(uint32_t inField, uint32_t width, uint32_t offset) __attribute__((deprecated)); // please use field32 field64 instead
+uint32_t getBitFieldWidth(uint32_t number);
 
 #define setBit(reg,bit)  (reg) |= (1ULL<<(bit))
 #define clearBit(reg,bit) (reg) &= ~(1ULL<<(bit))
