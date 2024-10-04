@@ -8,5 +8,7 @@ int sysFeatures_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList 
 
 int _uint64_to_string(uint64_t value, char** str);
 int _string_to_uint64(const char* str, uint64_t* value);
+int sysFeatures_double_to_string(double value, char **str);
+int sysFeatures_string_to_double(const char* str, double *value);
 
 #endif

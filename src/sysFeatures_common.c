@@ -101,20 +101,21 @@ int sysFeatures_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList 
 
 int _uint64_to_string(uint64_t value, char** str)
 {
-    char* s = malloc(HWFEATURES_MAX_STR_LENGTH * sizeof(char));
-    if (!s)
+    char s[HWFEATURES_MAX_STR_LENGTH];
+    const int len = snprintf(s, sizeof(s), "%llu", value);
+    if (len < 0)
+    {
+        ERROR_PRINT(Conversion of uint64_t %lld failed: %s, value, strerror(errno));
+        return -errno;
+    }
+    char *newstr = realloc(*str, len+1);
+    if (!newstr)
     {
         return -ENOMEM;
     }
-    int len = snprintf(s, HWFEATURES_MAX_STR_LENGTH-1, "%lld", (uint64_t) value);
-    if (len >= 0)
-    {
-        s[len] = '\0';
-        *str = s;
-        return 0;
-    }
-    ERROR_PRINT(Conversion of uint64_t %lld failed: %s, value, strerror(errno));
-    return len;
+    *str = newstr;
+    strcpy(*str, s);
+    return 0;
 }
 
 int _string_to_uint64(const char* str, uint64_t* value)
@@ -138,5 +139,43 @@ int _string_to_uint64(const char* str, uint64_t* value)
         return -errno;
     }
     *value = v;
+    return 0;
+}
+
+int sysFeatures_double_to_string(double value, char **str)
+{
+    char s[HWFEATURES_MAX_STR_LENGTH];
+    const int len = snprintf(s, sizeof(s), "%f", value);
+    if (len < 0)
+    {
+        ERROR_PRINT(Conversion of double %f failed: %s, value, strerror(errno));
+        return -errno;
+    }
+    char* newstr = realloc(*str, len+1);
+    if (!newstr)
+    {
+        return -ENOMEM;
+    }
+    *str = newstr;
+    strcpy(*str, s);
+    return 0;
+}
+
+int sysFeatures_string_to_double(const char* str, double *value)
+{
+    errno = 0;
+    char* endptr = NULL;
+    const double result = strtod(str, &endptr);
+    if (!endptr)
+    {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Conversion of string '%s' to double failed: %s, str, strerror(errno));
+        return -errno;
+    }
+    if (errno != 0)
+    {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Conversion of string '%s' to double failed: %s, str, result, strerror(errno));
+        return -errno;
+    }
+    *value = result;
     return 0;
 }
