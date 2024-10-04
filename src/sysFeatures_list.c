@@ -6,7 +6,7 @@
 #include <likwid.h>
 #include <error.h>
 
-int add_to_feature_list(SysFeatureList *list, SysFeature* feature)
+int add_to_feature_list(SysFeatureList *list, const SysFeature* feature)
 {
     if ((!list) || (!feature))
     {
@@ -58,7 +58,7 @@ int add_to_feature_list(SysFeatureList *list, SysFeature* feature)
 }
 
 
-int merge_feature_lists(SysFeatureList *inout, SysFeatureList *in)
+int merge_feature_lists(SysFeatureList *inout, const SysFeatureList *in)
 {
     if ((!inout) || (!in))
     {
@@ -102,7 +102,7 @@ void free_feature_list(SysFeatureList *list)
     }
 }
 
-int _add_to_feature_list(_SysFeatureList *list, _SysFeature* feature)
+int _add_to_feature_list(_SysFeatureList *list, const _SysFeature* feature)
 {
     if ((!list) || (!feature))
     {
@@ -131,7 +131,7 @@ int _add_to_feature_list(_SysFeatureList *list, _SysFeature* feature)
     return 0;
 }
 
-int _merge_feature_lists(_SysFeatureList *inout, _SysFeatureList *in)
+int _merge_feature_lists(_SysFeatureList *inout, const _SysFeatureList *in)
 {
     if ((!inout) || (!in))
     {
@@ -178,7 +178,7 @@ void _free_feature_list(_SysFeatureList *list)
 }
 
 
-int internal_to_external_feature_list(_SysFeatureList *inlist, SysFeatureList* outlist)
+int internal_to_external_feature_list(const _SysFeatureList *inlist, SysFeatureList* outlist)
 {
     if ((!inlist) || (!outlist))
     {

@@ -13,7 +13,7 @@
 
 
 
-int numa_balancing_procfs_getter(LikwidDevice_t device, char** value, char* sysfsfile)
+int numa_balancing_procfs_getter(const LikwidDevice_t device, char** value, const char* sysfsfile)
 {
     int err = 0;
     if ((!device) || (!value) || (!sysfsfile) || (device->type != DEVICE_TYPE_NODE))
@@ -73,23 +73,23 @@ int numa_balancing_test()
     return 0;
 }
 
-int numa_balancing_state_getter(LikwidDevice_t device, char** value)
+int numa_balancing_state_getter(const LikwidDevice_t device, char** value)
 {
     return numa_balancing_procfs_getter(device, value, "numa_balancing");
 }
-int numa_balancing_scan_delay_getter(LikwidDevice_t device, char** value)
+int numa_balancing_scan_delay_getter(const LikwidDevice_t device, char** value)
 {
     return numa_balancing_procfs_getter(device, value, "numa_balancing_scan_delay_ms");
 }
-int numa_balancing_scan_period_min_getter(LikwidDevice_t device, char** value)
+int numa_balancing_scan_period_min_getter(const LikwidDevice_t device, char** value)
 {
     return numa_balancing_procfs_getter(device, value, "numa_balancing_scan_period_min_ms");
 }
-int numa_balancing_scan_period_max_getter(LikwidDevice_t device, char** value)
+int numa_balancing_scan_period_max_getter(const LikwidDevice_t device, char** value)
 {
     return numa_balancing_procfs_getter(device, value, "numa_balancing_scan_period_max_ms");
 }
-int numa_balancing_scan_size_getter(LikwidDevice_t device, char** value)
+int numa_balancing_scan_size_getter(const LikwidDevice_t device, char** value)
 {
     return numa_balancing_procfs_getter(device, value, "numa_balancing_scan_size_mb");
 }

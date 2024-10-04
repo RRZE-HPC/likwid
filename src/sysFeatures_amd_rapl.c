@@ -81,7 +81,7 @@ static int amd_rapl_register_test_bit(uint32_t reg, int bitoffset)
     return valid == topo->numSockets;
 }
 
-static int sysFeatures_amd_rapl_energy_status_getter(LikwidDevice_t device, char** value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -101,7 +101,7 @@ static int sysFeatures_amd_rapl_energy_status_getter(LikwidDevice_t device, char
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_enable_getter(LikwidDevice_t device, char** value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -120,7 +120,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_enable_getter(LikwidDevice_t devi
     return _uint64_to_string(newdata, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_enable_setter(LikwidDevice_t device, char* value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_enable_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -145,7 +145,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_enable_setter(LikwidDevice_t devi
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -163,7 +163,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_clamp_getter(LikwidDevice_t devic
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_clamp_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -189,7 +189,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_clamp_setter(LikwidDevice_t devic
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_getter(LikwidDevice_t device, char** value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -209,7 +209,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_getter(LikwidDevice_t device, cha
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_setter(LikwidDevice_t device, char* value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -241,7 +241,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_setter(LikwidDevice_t device, cha
     return 0;
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_time_getter(LikwidDevice_t device, char** value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -265,7 +265,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_time_getter(LikwidDevice_t device
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_time_setter(LikwidDevice_t device, char* value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_time_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -300,7 +300,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_time_setter(LikwidDevice_t device
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_getter(LikwidDevice_t device, char** value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -320,7 +320,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_getter(LikwidDevice_t device, cha
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_setter(LikwidDevice_t device, char* value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -353,7 +353,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_setter(LikwidDevice_t device, cha
     return 0;
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_time_getter(LikwidDevice_t device, char** value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -377,7 +377,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_time_getter(LikwidDevice_t device
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_time_setter(LikwidDevice_t device, char* value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_time_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -412,7 +412,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_time_setter(LikwidDevice_t device
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_enable_getter(LikwidDevice_t device, char** value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -431,7 +431,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_enable_getter(LikwidDevice_t devi
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_enable_setter(LikwidDevice_t device, char* value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_enable_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -457,7 +457,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_enable_setter(LikwidDevice_t devi
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_clamp_getter(LikwidDevice_t device, char** value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -476,7 +476,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_clamp_getter(LikwidDevice_t devic
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_clamp_setter(LikwidDevice_t device, char* value, uint32_t reg, AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_clamp_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -502,7 +502,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_clamp_setter(LikwidDevice_t devic
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int sysFeatures_amd_rapl_info_tdp(LikwidDevice_t device, char** value, uint32_t reg)
+static int sysFeatures_amd_rapl_info_tdp(const LikwidDevice_t device, char** value, uint32_t reg)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -521,7 +521,7 @@ static int sysFeatures_amd_rapl_info_tdp(LikwidDevice_t device, char** value, ui
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_info_min_power(LikwidDevice_t device, char** value, uint32_t reg)
+static int sysFeatures_amd_rapl_info_min_power(const LikwidDevice_t device, char** value, uint32_t reg)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -540,7 +540,7 @@ static int sysFeatures_amd_rapl_info_min_power(LikwidDevice_t device, char** val
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_info_max_power(LikwidDevice_t device, char** value, uint32_t reg)
+static int sysFeatures_amd_rapl_info_max_power(const LikwidDevice_t device, char** value, uint32_t reg)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -559,7 +559,7 @@ static int sysFeatures_amd_rapl_info_max_power(LikwidDevice_t device, char** val
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_info_max_time(LikwidDevice_t device, char** value, uint32_t reg)
+static int sysFeatures_amd_rapl_info_max_time(const LikwidDevice_t device, char** value, uint32_t reg)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -578,7 +578,7 @@ static int sysFeatures_amd_rapl_info_max_time(LikwidDevice_t device, char** valu
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_policy_getter(LikwidDevice_t device, char** value, uint32_t reg)
+static int sysFeatures_amd_rapl_policy_getter(const LikwidDevice_t device, char** value, uint32_t reg)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -596,7 +596,7 @@ static int sysFeatures_amd_rapl_policy_getter(LikwidDevice_t device, char** valu
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_policy_setter(LikwidDevice_t device, char* value, uint32_t reg)
+static int sysFeatures_amd_rapl_policy_setter(const LikwidDevice_t device, char* value, uint32_t reg)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -673,7 +673,7 @@ int sysFeatures_amd_pkg_energy_status_test()
 }
 
 
-int sysFeatures_amd_pkg_energy_status_getter(LikwidDevice_t device, char** value)
+int sysFeatures_amd_pkg_energy_status_getter(const LikwidDevice_t device, char** value)
 {
     return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_PKG_STATUS, &amd_rapl_pkg_info);
 }
@@ -683,70 +683,70 @@ int sysFeatures_amd_pkg_energy_status_getter(LikwidDevice_t device, char** value
 /*    return amd_rapl_register_test(MSR_PKG_RAPL_POWER_LIMIT);*/
 /*}*/
 
-/*int sysFeatures_amd_pkg_energy_limit_1_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_pkg_energy_limit_1_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_1_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_pkg_energy_limit_1_setter(const LikwidDevice_t device, char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_1_time_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_pkg_energy_limit_1_time_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_time_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_1_time_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_pkg_energy_limit_1_time_setter(const LikwidDevice_t device, char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_time_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_1_enable_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_pkg_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_enable_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_1_enable_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_pkg_energy_limit_1_enable_setter(const LikwidDevice_t device, char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_enable_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_pkg_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_clamp_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_pkg_energy_limit_1_clamp_setter(const LikwidDevice_t device, char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_clamp_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
 
 
 
-/*int sysFeatures_amd_pkg_energy_limit_2_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_pkg_energy_limit_2_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_2_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_pkg_energy_limit_2_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_2_time_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_pkg_energy_limit_2_time_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_time_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_2_time_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_pkg_energy_limit_2_time_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_time_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_2_enable_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_pkg_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_enable_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_2_enable_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_pkg_energy_limit_2_enable_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_enable_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_2_clamp_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_pkg_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_clamp_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
-/*int sysFeatures_amd_pkg_energy_limit_2_clamp_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_pkg_energy_limit_2_clamp_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_clamp_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &amd_rapl_pkg_info);*/
 /*}*/
@@ -756,22 +756,22 @@ int sysFeatures_amd_pkg_energy_status_getter(LikwidDevice_t device, char** value
 /*    return amd_rapl_register_test(MSR_PKG_POWER_INFO);*/
 /*}*/
 
-/*int sysFeatures_amd_pkg_info_tdp(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_pkg_info_tdp(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_info_tdp(device, value, MSR_PKG_POWER_INFO);*/
 /*}*/
 
-/*int sysFeatures_amd_pkg_info_min_power(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_pkg_info_min_power(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_info_min_power(device, value, MSR_PKG_POWER_INFO);*/
 /*}*/
 
-/*int sysFeatures_amd_pkg_info_max_power(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_pkg_info_max_power(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_info_max_power(device, value, MSR_PKG_POWER_INFO);*/
 /*}*/
 
-/*int sysFeatures_amd_pkg_info_max_time(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_pkg_info_max_time(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_info_max_time(device, value, MSR_PKG_POWER_INFO);*/
 /*}*/
@@ -818,7 +818,7 @@ int sysFeatures_amd_core_energy_status_test()
     return amd_rapl_register_test(MSR_AMD17_RAPL_CORE_STATUS);
 }
 
-int sysFeatures_amd_core_energy_status_getter(LikwidDevice_t device, char** value)
+int sysFeatures_amd_core_energy_status_getter(const LikwidDevice_t device, char** value)
 {
     return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_CORE_STATUS, &amd_rapl_core_info);
 }
@@ -833,35 +833,35 @@ int sysFeatures_amd_core_energy_status_getter(LikwidDevice_t device, char** valu
 /*}*/
 
 
-/*int sysFeatures_amd_core_energy_limit_1_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_core_energy_limit_1_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &amd_rapl_core_info);*/
 /*}*/
-/*int sysFeatures_amd_core_energy_limit_1_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_core_energy_limit_1_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &amd_rapl_core_info);*/
 /*}*/
-/*int sysFeatures_amd_core_energy_limit_1_time_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_core_energy_limit_1_time_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_time_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &amd_rapl_core_info);*/
 /*}*/
-/*int sysFeatures_amd_core_energy_limit_1_time_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_core_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_time_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &amd_rapl_core_info);*/
 /*}*/
-/*int sysFeatures_amd_core_energy_limit_1_enable_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_core_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_enable_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &amd_rapl_core_info);*/
 /*}*/
-/*int sysFeatures_amd_core_energy_limit_1_enable_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_core_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_enable_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &amd_rapl_core_info);*/
 /*}*/
-/*int sysFeatures_amd_core_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_core_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_clamp_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &amd_rapl_core_info);*/
 /*}*/
-/*int sysFeatures_amd_core_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_core_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_clamp_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &amd_rapl_core_info);*/
 /*}*/
@@ -871,22 +871,22 @@ int sysFeatures_amd_core_energy_status_getter(LikwidDevice_t device, char** valu
 /*    return amd_rapl_register_test(MSR_DRAM_POWER_INFO);*/
 /*}*/
 
-/*int sysFeatures_amd_core_info_tdp(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_core_info_tdp(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_info_tdp(device, value, MSR_DRAM_POWER_INFO);*/
 /*}*/
 
-/*int sysFeatures_amd_core_info_min_power(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_core_info_min_power(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_info_min_power(device, value, MSR_DRAM_POWER_INFO);*/
 /*}*/
 
-/*int sysFeatures_amd_core_info_max_power(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_core_info_max_power(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_info_max_power(device, value, MSR_DRAM_POWER_INFO);*/
 /*}*/
 
-/*int sysFeatures_amd_core_info_max_time(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_core_info_max_time(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_info_max_time(device, value, MSR_DRAM_POWER_INFO);*/
 /*}*/
@@ -943,7 +943,7 @@ int sysFeatures_amd_l3_energy_status_test()
 }
 
 
-int sysFeatures_amd_l3_energy_status_getter(LikwidDevice_t device, char** value)
+int sysFeatures_amd_l3_energy_status_getter(const LikwidDevice_t device, char** value)
 {
     return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD19_RAPL_L3_STATUS, &amd_rapl_l3_info);
 }
@@ -957,69 +957,69 @@ int sysFeatures_amd_l3_energy_status_getter(LikwidDevice_t device, char** value)
 /*    return amd_rapl_register_test_bit(MSR_PLATFORM_POWER_LIMIT, 63);*/
 /*}*/
 
-/*int sysFeatures_amd_l3_energy_limit_1_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_l3_energy_limit_1_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_1_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_l3_energy_limit_1_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_1_time_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_l3_energy_limit_1_time_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_time_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_1_time_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_l3_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_time_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_1_enable_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_l3_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_enable_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_1_enable_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_l3_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_enable_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_1_clamp_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_l3_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_clamp_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_1_clamp_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_l3_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_1_clamp_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
 
 
-/*int sysFeatures_amd_l3_energy_limit_2_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_l3_energy_limit_2_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_2_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_l3_energy_limit_2_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_2_time_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_l3_energy_limit_2_time_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_time_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_2_time_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_l3_energy_limit_2_time_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_time_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_2_enable_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_l3_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_enable_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_2_enable_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_l3_energy_limit_2_enable_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_enable_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_2_clamp_getter(LikwidDevice_t device, char** value)*/
+/*int sysFeatures_amd_l3_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_clamp_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/
-/*int sysFeatures_amd_l3_energy_limit_2_clamp_setter(LikwidDevice_t device, char* value)*/
+/*int sysFeatures_amd_l3_energy_limit_2_clamp_setter(const LikwidDevice_t device, const char* value)*/
 /*{*/
 /*    return sysFeatures_amd_rapl_energy_limit_2_clamp_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &amd_rapl_l3_info);*/
 /*}*/

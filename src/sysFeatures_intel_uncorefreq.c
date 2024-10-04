@@ -55,7 +55,7 @@ int intel_uncorefreq_test()
     return valid == topo->numSockets;
 }
 
-int intel_uncore_cur_freq_getter(LikwidDevice_t device, char** value)
+int intel_uncore_cur_freq_getter(const LikwidDevice_t device, char** value)
 {
     int err = 0;
     CpuTopology_t topo = NULL;
@@ -93,7 +93,7 @@ int intel_uncore_cur_freq_getter(LikwidDevice_t device, char** value)
     return -ENODEV;
 }
 
-int intel_uncore_min_freq_getter(LikwidDevice_t device, char** value)
+int intel_uncore_min_freq_getter(const LikwidDevice_t device, char** value)
 {
     int err = 0;
     CpuTopology_t topo = NULL;
@@ -131,7 +131,7 @@ int intel_uncore_min_freq_getter(LikwidDevice_t device, char** value)
     return -ENODEV;
 }
 
-int intel_uncore_max_freq_getter(LikwidDevice_t device, char** value)
+int intel_uncore_max_freq_getter(const LikwidDevice_t device, char** value)
 {
     int err = 0;
     CpuTopology_t topo = NULL;

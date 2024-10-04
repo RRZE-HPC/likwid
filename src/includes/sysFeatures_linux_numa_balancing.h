@@ -3,14 +3,14 @@
 
 
 
-int numa_balancing_procfs_getter(LikwidDevice_t device, char** value, char* sysfsfile);
+int numa_balancing_procfs_getter(const LikwidDevice_t device, char** value, const char* sysfsfile);
 
 int numa_balancing_test();
-int numa_balancing_state_getter(LikwidDevice_t device, char** value);
-int numa_balancing_scan_delay_getter(LikwidDevice_t device, char** value);
-int numa_balancing_scan_period_min_getter(LikwidDevice_t device, char** value);
-int numa_balancing_scan_period_max_getter(LikwidDevice_t device, char** value);
-int numa_balancing_scan_size_getter(LikwidDevice_t device, char** value);
+int numa_balancing_state_getter(const LikwidDevice_t device, char** value);
+int numa_balancing_scan_delay_getter(const LikwidDevice_t device, char** value);
+int numa_balancing_scan_period_min_getter(const LikwidDevice_t device, char** value);
+int numa_balancing_scan_period_max_getter(const LikwidDevice_t device, char** value);
+int numa_balancing_scan_size_getter(const LikwidDevice_t device, char** value);
 
 #define MAX_NUMA_BALANCING_FEATURES 5
 static _SysFeature numa_balancing_features[] = {

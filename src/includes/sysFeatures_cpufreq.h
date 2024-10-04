@@ -5,13 +5,13 @@ int sysFeatures_init_cpufreq(_SysFeatureList* out);
 
 
 int cpufreq_acpi_test();
-int cpufreq_acpi_cur_cpu_freq_getter(LikwidDevice_t device, char** value);
-int cpufreq_acpi_min_cpu_freq_getter(LikwidDevice_t device, char** value);
-int cpufreq_acpi_max_cpu_freq_getter(LikwidDevice_t device, char** value);
-int cpufreq_acpi_avail_cpu_freqs_getter(LikwidDevice_t device, char** value);
-int cpufreq_acpi_governor_getter(LikwidDevice_t device, char** value);
-int cpufreq_acpi_governor_setter(LikwidDevice_t device, char* value);
-int cpufreq_acpi_avail_governors_getter(LikwidDevice_t device, char** value);
+int cpufreq_acpi_cur_cpu_freq_getter(const LikwidDevice_t device, char** value);
+int cpufreq_acpi_min_cpu_freq_getter(const LikwidDevice_t device, char** value);
+int cpufreq_acpi_max_cpu_freq_getter(const LikwidDevice_t device, char** value);
+int cpufreq_acpi_avail_cpu_freqs_getter(const LikwidDevice_t device, char** value);
+int cpufreq_acpi_governor_getter(const LikwidDevice_t device, char** value);
+int cpufreq_acpi_governor_setter(const LikwidDevice_t device, const char* value);
+int cpufreq_acpi_avail_governors_getter(const LikwidDevice_t device, char** value);
 
 
 
@@ -32,15 +32,15 @@ static _SysFeatureList cpufreq_acpi_feature_list = {
 };
 
 int cpufreq_intel_pstate_test();
-int cpufreq_intel_pstate_base_cpu_freq_getter(LikwidDevice_t device, char** value);
-int cpufreq_intel_pstate_cur_cpu_freq_getter(LikwidDevice_t device, char** value);
-int cpufreq_intel_pstate_min_cpu_freq_getter(LikwidDevice_t device, char** value);
-int cpufreq_intel_pstate_min_cpu_freq_setter(LikwidDevice_t device, char* value);
-int cpufreq_intel_pstate_max_cpu_freq_getter(LikwidDevice_t device, char** value);
-int cpufreq_intel_pstate_max_cpu_freq_setter(LikwidDevice_t device, char* value);
-int cpufreq_intel_pstate_governor_getter(LikwidDevice_t device, char** value);
-int cpufreq_intel_pstate_governor_setter(LikwidDevice_t device, char* value);
-int cpufreq_intel_pstate_avail_governors_getter(LikwidDevice_t device, char** value);
+int cpufreq_intel_pstate_base_cpu_freq_getter(const LikwidDevice_t device, char** value);
+int cpufreq_intel_pstate_cur_cpu_freq_getter(const LikwidDevice_t device, char** value);
+int cpufreq_intel_pstate_min_cpu_freq_getter(const LikwidDevice_t device, char** value);
+int cpufreq_intel_pstate_min_cpu_freq_setter(const LikwidDevice_t device, const char* value);
+int cpufreq_intel_pstate_max_cpu_freq_getter(const LikwidDevice_t device, char** value);
+int cpufreq_intel_pstate_max_cpu_freq_setter(const LikwidDevice_t device, const char* value);
+int cpufreq_intel_pstate_governor_getter(const LikwidDevice_t device, char** value);
+int cpufreq_intel_pstate_governor_setter(const LikwidDevice_t device, const char* value);
+int cpufreq_intel_pstate_avail_governors_getter(const LikwidDevice_t device, char** value);
 
 
 #define MAX_CPUFREQ_PSTATE_CPU_FEATURES 6
@@ -60,8 +60,8 @@ static _SysFeatureList cpufreq_pstate_feature_list = {
 };
 
 int cpufreq_epp_test();
-int cpufreq_intel_pstate_epp_getter(LikwidDevice_t device, char** value);
-int cpufreq_intel_pstate_avail_epps_getter(LikwidDevice_t device, char** value);
+int cpufreq_intel_pstate_epp_getter(const LikwidDevice_t device, char** value);
+int cpufreq_intel_pstate_avail_epps_getter(const LikwidDevice_t device, char** value);
 
 
 #define MAX_CPUFREQ_EPP_FEATURES 2

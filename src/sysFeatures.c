@@ -127,7 +127,7 @@ int sysFeatures_init()
     return 0;
 }
 
-static int _sysFeatures_get_feature_index(char* name)
+static int _sysFeatures_get_feature_index(const char* name)
 {
     int dot = -1;
     if (!name)
@@ -195,7 +195,7 @@ static int _sysFeatures_get_feature_index(char* name)
 
 
 
-int sysFeatures_getByName(char* name, LikwidDevice_t device, char** value)
+int sysFeatures_getByName(const char* name, const LikwidDevice_t device, char** value)
 {
     int err = 0;
     _SysFeature *f = NULL;
@@ -236,7 +236,7 @@ int sysFeatures_getByName(char* name, LikwidDevice_t device, char** value)
     return err;
 }
 
-int sysFeatures_get(SysFeature* feature, LikwidDevice_t device, char** value)
+int sysFeatures_get(const SysFeature* feature, const LikwidDevice_t device, char** value)
 {
     int len = strlen(feature->name) + strlen(feature->category) + 2;
     char real[len];
@@ -244,7 +244,7 @@ int sysFeatures_get(SysFeature* feature, LikwidDevice_t device, char** value)
     return sysFeatures_getByName(real, device, value);
 }
 
-int sysFeatures_modifyByName(char* name, LikwidDevice_t device, char* value)
+int sysFeatures_modifyByName(const char* name, const LikwidDevice_t device, const char* value)
 {
     int err = 0;
     int dev_id = -1;
@@ -280,7 +280,7 @@ int sysFeatures_modifyByName(char* name, LikwidDevice_t device, char* value)
     return f->setter(device, value);
 }
 
-int sysFeatures_modify(SysFeature* feature, LikwidDevice_t device, char* value)
+int sysFeatures_modify(const SysFeature* feature, const LikwidDevice_t device, const char* value)
 {
     int len = strlen(feature->name) + strlen(feature->category) + 2;
     char real[len];

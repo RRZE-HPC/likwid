@@ -8,9 +8,9 @@
 #include <likwid.h>
 
 
-int intel_cpu_msr_register_getter(LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, char** value);
+int intel_cpu_msr_register_getter(const LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, char** value);
 
-int intel_cpu_msr_register_setter(LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, char* value);
+int intel_cpu_msr_register_setter(const LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, const char* value);
 
 #include <sysFeatures_intel_prefetcher.h>
 #include <sysFeatures_intel_turbo.h>

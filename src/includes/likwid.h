@@ -3307,10 +3307,10 @@ int sysFeatures_init(void) __attribute__ ((visibility ("default") ));
 int sysFeatures_list(SysFeatureList* list) __attribute__ ((visibility ("default") ));
 void sysFeatures_list_return(SysFeatureList* list) __attribute__ ((visibility ("default") ));
 
-int sysFeatures_get(SysFeature* feature, LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
-int sysFeatures_getByName(char* name, LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
-int sysFeatures_modify(SysFeature* feature, LikwidDevice_t device, char* value) __attribute__ ((visibility ("default") ));
-int sysFeatures_modifyByName(char* name, LikwidDevice_t device, char* value) __attribute__ ((visibility ("default") ));
+int sysFeatures_get(const SysFeature* feature, const LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
+int sysFeatures_getByName(const char* name, const LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
+int sysFeatures_modify(const SysFeature* feature, const LikwidDevice_t device, const char* value) __attribute__ ((visibility ("default") ));
+int sysFeatures_modifyByName(const char* name, const LikwidDevice_t device, const char* value) __attribute__ ((visibility ("default") ));
 
 void sysFeatures_finalize(void) __attribute__ ((visibility ("default") ));
 #endif /* LIKWID_WITH_SYSFEATURES */
