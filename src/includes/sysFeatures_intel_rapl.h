@@ -36,19 +36,19 @@ int sysFeatures_intel_pkg_info_max_time(const LikwidDevice_t device, char** valu
 
 #define MAX_INTEL_RAPL_PKG_FEATURES 13
 static _SysFeature intel_rapl_pkg_features[] = {
-    {"pkg_energy", "rapl", "Current energy consumtion (PKG domain)", sysFeatures_intel_pkg_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_status_test, "uJ"},
-    {"pkg_tdp", "rapl", "Thermal Spec Power", sysFeatures_intel_pkg_info_tdp, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_info_test, "mW"},
-    {"pkg_min_limit", "rapl", "Minimum Power", sysFeatures_intel_pkg_info_min_power, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_info_test, "mW"},
-    {"pkg_max_limit", "rapl", "Maximum Power", sysFeatures_intel_pkg_info_max_power, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_info_test, "mW"},
-    {"pkg_max_time", "rapl", "Maximum Time", sysFeatures_intel_pkg_info_max_time, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_info_test, "ms"},
-    {"pkg_limit_1", "rapl", "Long-term energy limit (PKG domain)", sysFeatures_intel_pkg_energy_limit_1_getter, sysFeatures_intel_pkg_energy_limit_1_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test, "mW"},
-    {"pkg_limit_1_time", "rapl", "Long-term time window (PKG domain)", sysFeatures_intel_pkg_energy_limit_1_time_getter, sysFeatures_intel_pkg_energy_limit_1_time_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test, "ms"},
-    {"pkg_limit_1_enable", "rapl", "Status of long-term energy limit (PKG domain)", sysFeatures_intel_pkg_energy_limit_1_enable_getter, sysFeatures_intel_pkg_energy_limit_1_enable_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test},
-    {"pkg_limit_1_clamp", "rapl", "Clamping status of long-term energy limit (PKG domain)", sysFeatures_intel_pkg_energy_limit_1_clamp_getter, sysFeatures_intel_pkg_energy_limit_1_clamp_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test},
-    {"pkg_limit_2", "rapl", "Short-term energy limit (PKG domain)", sysFeatures_intel_pkg_energy_limit_2_getter, sysFeatures_intel_pkg_energy_limit_2_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test, "mW"},
-    {"pkg_limit_2_time", "rapl", "Short-term time window (PKG domain)", sysFeatures_intel_pkg_energy_limit_2_time_getter, sysFeatures_intel_pkg_energy_limit_2_time_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test, "ms"},
-    {"pkg_limit_2_enable", "rapl", "Status of short-term energy limit (PKG domain)", sysFeatures_intel_pkg_energy_limit_2_enable_getter, sysFeatures_intel_pkg_energy_limit_2_enable_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test},
-    {"pkg_limit_2_clamp", "rapl", "Clamping status of short-term energy limit (PKG domain)", sysFeatures_intel_pkg_energy_limit_2_clamp_getter, sysFeatures_intel_pkg_energy_limit_2_clamp_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test},
+    {"pkg_energy", "rapl", "Current energy consumtion (PKG domain)", sysFeatures_intel_pkg_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_status_test, "J"},
+    {"pkg_tdp", "rapl", "Thermal Spec Power", sysFeatures_intel_pkg_info_tdp, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_info_test, "W"},
+    {"pkg_min_limit", "rapl", "Minimum Power", sysFeatures_intel_pkg_info_min_power, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_info_test, "W"},
+    {"pkg_max_limit", "rapl", "Maximum Power", sysFeatures_intel_pkg_info_max_power, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_info_test, "W"},
+    {"pkg_max_time", "rapl", "Maximum Time", sysFeatures_intel_pkg_info_max_time, NULL, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_info_test, "s"},
+    {"pkg_limit_1", "rapl", "Long-term energy limit (PKG domain)", sysFeatures_intel_pkg_energy_limit_1_getter, sysFeatures_intel_pkg_energy_limit_1_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test, "W"},
+    {"pkg_limit_1_time", "rapl", "Long-term time window (PKG domain)", sysFeatures_intel_pkg_energy_limit_1_time_getter, sysFeatures_intel_pkg_energy_limit_1_time_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test, "s"},
+    {"pkg_limit_1_enable", "rapl", "Status of long-term energy limit (PKG domain)", sysFeatures_intel_pkg_energy_limit_1_enable_getter, sysFeatures_intel_pkg_energy_limit_1_enable_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test, "bool"},
+    {"pkg_limit_1_clamp", "rapl", "Clamping status of long-term energy limit (PKG domain)", sysFeatures_intel_pkg_energy_limit_1_clamp_getter, sysFeatures_intel_pkg_energy_limit_1_clamp_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test, "bool"},
+    {"pkg_limit_2", "rapl", "Short-term energy limit (PKG domain)", sysFeatures_intel_pkg_energy_limit_2_getter, sysFeatures_intel_pkg_energy_limit_2_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test, "W"},
+    {"pkg_limit_2_time", "rapl", "Short-term time window (PKG domain)", sysFeatures_intel_pkg_energy_limit_2_time_getter, sysFeatures_intel_pkg_energy_limit_2_time_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test, "s"},
+    {"pkg_limit_2_enable", "rapl", "Status of short-term energy limit (PKG domain)", sysFeatures_intel_pkg_energy_limit_2_enable_getter, sysFeatures_intel_pkg_energy_limit_2_enable_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test, "bool"},
+    {"pkg_limit_2_clamp", "rapl", "Clamping status of short-term energy limit (PKG domain)", sysFeatures_intel_pkg_energy_limit_2_clamp_getter, sysFeatures_intel_pkg_energy_limit_2_clamp_setter, DEVICE_TYPE_SOCKET, sysFeatures_intel_pkg_energy_limit_test, "bool"},
 };
 
 static _SysFeatureList intel_rapl_pkg_feature_list = {
