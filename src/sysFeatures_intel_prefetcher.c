@@ -28,7 +28,7 @@ static int _intel_cpu_hwpf_register_test(uint64_t reg)
     {
         uint64_t data = 0;
         HWThread* t = &topo->threadPool[j];
-        err = HPMread(t->apicId, MSR_DEV, MSR_PREFETCH_ENABLE, &data);
+        err = HPMread(t->apicId, MSR_DEV, reg, &data);
         if (err == 0) valid = 1;
         break;
     }
