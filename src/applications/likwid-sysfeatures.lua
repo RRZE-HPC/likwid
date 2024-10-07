@@ -336,6 +336,53 @@ if listFeatures and #hwtlist > 0 then
     os.exit(0)
 end
 
+if #getList > 0 and #hwtlist > 0 then
+    -- filter the full feature list to have only the selected ones
+    -- the new list entry contains all entries of the original feature entry plus
+    -- the user-given value
+    local featList = {}
+    for _, f in pairs(getList) do
+        for _, l in pairs(list) do
+            if f == l.Name or f == string.format("%s.%s", l.Category, l.Name) then
+                table.insert(featList, {
+                    TypeID = l.TypeID,
+                    Type = l.Type,
+                    Name = l.Name,
+                    Category = l.Category,
+                    ReadOnly = l.ReadOnly,
+                    WriteOnly = l.WriteOnly,
+                })
+            end
+        end
+    end
+
+    -- get all features in the new list
+    for i, c in pairs(hwtlist) do
+        local tab = {}
+        for _,f in pairs(featList) do
+            -- get device from the device tree
+            local dev = getDevice(f.TypeID, c)
+            if dev then
+                local v = likwid.sysFeatures_get(f.Name, dev)
+                if not v then
+                    print_stderr(string.format("Failed to get feature '%s.%s' (Type %s, Resp %d)", f.Category, f.Name, f.Type, c))
+                else
+                    print_stdout(v)
+                end
+            end
+        end
+    end
+    -- cleanup device tree before exiting
+    for l, ltab in pairs(deviceTree) do
+        for _, e in pairs(ltab) do
+            likwid.destroyDevice(e.device)
+        end
+    end
+    -- finalize sysfeatures module and exit
+    likwid.finalizeSysFeatures()
+    os.exit(0)
+end
+
 if #setList > 0 and #hwtlist > 0 then
     -- filter the full feature list to have only the selected ones
     -- the new list entry contains all entries of the original feature entry plus
