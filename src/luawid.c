@@ -3781,15 +3781,17 @@ lua_likwid_getSysFeature(lua_State *L)
 {
     if (sysfeatures_inititalized)
     {
-        char* feature = (char *)luaL_checkstring(L, 1);
-        LikwidDevice_t dev = lua_touserdata(L, 2);
+        const char* feature = luaL_checkstring(L, 1);
+        const LikwidDevice_t dev = lua_touserdata(L, 2);
         char* value = NULL;
         int err = sysFeatures_getByName(feature, dev, &value);
         if (err == 0)
         {
             lua_pushstring(L, value);
+            free(value);
             return 1;
         }
+        free(value);
     }
     lua_pushnil(L);
     return 1;
@@ -3800,9 +3802,9 @@ lua_likwid_setSysFeature(lua_State *L)
 {
     if (sysfeatures_inititalized)
     {
-        char* feature = (char *)luaL_checkstring(L, 1);
-        LikwidDevice_t dev = lua_touserdata(L, 2);
-        char* value = (char *)luaL_checkstring(L,3);
+        const char* feature = luaL_checkstring(L, 1);
+        const LikwidDevice_t dev = lua_touserdata(L, 2);
+        const char* value = luaL_checkstring(L,3);
         int err = sysFeatures_modifyByName(feature, dev, value);
         if (err == 0)
         {
