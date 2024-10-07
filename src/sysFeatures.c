@@ -10,11 +10,10 @@
 #include <sysFeatures.h>
 #include <sysFeatures_types.h>
 #include <sysFeatures_common.h>
+#include <sysFeatures_amd.h>
 #include <sysFeatures_intel.h>
 #include <sysFeatures_cpufreq.h>
 #include <sysFeatures_linux_numa_balancing.h>
-
-//#include <sysFeatures_x86_amd.h>
 
 static _SysFeature *local_features = NULL;
 static int num_local_features = 0;
@@ -101,7 +100,7 @@ int sysFeatures_init()
     }
     else
     {
-        //err = sysFeatures_init_x86_amd(&num_features, &features);
+        err = sysFeatures_init_x86_amd(&_feature_list);
         if (err < 0)
         {
             ERROR_PRINT(Failed to initialize SysFeatures for AMD architecture);
