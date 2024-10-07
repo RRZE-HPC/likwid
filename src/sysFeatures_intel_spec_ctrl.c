@@ -89,8 +89,7 @@ int intel_cpu_spec_ddpd_tester()
 {
     unsigned eax = 0x07, ebx = 0, ecx = 0x02, edx = 0;
     CPUID(eax, ebx, ecx, edx);
-    // TODO Fix
-    return 0;//testBit(edx, 0);
+    return testBit(edx, 3);
 }
 
 int intel_cpu_spec_ddpd_getter(const LikwidDevice_t device, char** value)
