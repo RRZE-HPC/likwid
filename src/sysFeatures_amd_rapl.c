@@ -12,16 +12,11 @@
 #include <access.h>
 #include <registers.h>
 
+#include <sysFeatures_common_rapl.h>
 
-typedef struct {
-    double powerUnit;
-    double energyUnit;
-    double timeUnit;
-} AmdRaplDomainInfo;
-
-static AmdRaplDomainInfo amd_rapl_pkg_info = {0, 0, 0};
-static AmdRaplDomainInfo amd_rapl_core_info = {0, 0, 0};
-static AmdRaplDomainInfo amd_rapl_l3_info = {0, 0, 0};
+static RaplDomainInfo amd_rapl_pkg_info = {0, 0, 0};
+static RaplDomainInfo amd_rapl_core_info = {0, 0, 0};
+static RaplDomainInfo amd_rapl_l3_info = {0, 0, 0};
 
 static int amd_rapl_register_test(uint32_t reg)
 {
@@ -86,7 +81,7 @@ static int amd_rapl_register_test_bit(uint32_t reg, int bitoffset)
     return valid == topo->numSockets;
 }
 
-static int sysFeatures_amd_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -106,7 +101,7 @@ static int sysFeatures_amd_rapl_energy_status_getter(const LikwidDevice_t device
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -125,7 +120,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_enable_getter(const LikwidDevice_
     return _uint64_to_string(newdata, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_enable_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_enable_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -150,7 +145,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_enable_setter(const LikwidDevice_
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -168,7 +163,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_clamp_getter(const LikwidDevice_t
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_clamp_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_clamp_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -194,7 +189,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_clamp_setter(const LikwidDevice_t
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -214,7 +209,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_getter(const LikwidDevice_t devic
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -246,7 +241,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_setter(const LikwidDevice_t devic
     return 0;
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -270,7 +265,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_time_getter(const LikwidDevice_t 
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_1_time_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_1_time_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -305,7 +300,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_time_setter(const LikwidDevice_t 
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -325,7 +320,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_getter(const LikwidDevice_t devic
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -358,7 +353,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_setter(const LikwidDevice_t devic
     return 0;
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -382,7 +377,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_time_getter(const LikwidDevice_t 
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_time_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_time_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -417,7 +412,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_time_setter(const LikwidDevice_t 
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -436,7 +431,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_enable_getter(const LikwidDevice_
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_enable_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_enable_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -462,7 +457,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_enable_setter(const LikwidDevice_
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;
@@ -481,7 +476,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_clamp_getter(const LikwidDevice_t
     return _uint64_to_string(data, value);
 }
 
-static int sysFeatures_amd_rapl_energy_limit_2_clamp_setter(const LikwidDevice_t device, char* value, uint32_t reg, const AmdRaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_limit_2_clamp_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     uint64_t data = 0x0ULL;

@@ -13,37 +13,13 @@
 #include <access.h>
 #include <registers.h>
 
-typedef struct {
-    double powerUnit;   // unit W
-    double energyUnit;  // unit J
-    double timeUnit;    // unit s
-} IntelRaplDomainInfo;
+#include <sysFeatures_common_rapl.h>
 
-static IntelRaplDomainInfo intel_rapl_pkg_info = {0, 0, 0};
-static IntelRaplDomainInfo intel_rapl_dram_info = {0, 0, 0};
-static IntelRaplDomainInfo intel_rapl_psys_info = {0, 0, 0};
-static IntelRaplDomainInfo intel_rapl_pp0_info = {0, 0, 0};
-static IntelRaplDomainInfo intel_rapl_pp1_info = {0, 0, 0};
-
-static double timeWindow_to_seconds(const IntelRaplDomainInfo *info, uint64_t timeWindow)
-{
-    /* see Intel SDM: Package RAPL Domain: MSR_PKG_POWER_LIMIT */
-    const uint64_t y = field64(timeWindow, 0, 5);
-    const uint64_t z = field64(timeWindow, 5, 2);
-    return (1 << y) * (1.0 + z / 4.0) * info->timeUnit;
-}
-
-static uint64_t seconds_to_timeWindow(const IntelRaplDomainInfo *info, double seconds)
-{
-    /* see Intel SDM: Package RAPL Domain: MSR_PKG_POWER_LIMIT */
-    const uint64_t timeInHwTime = (uint64_t)(seconds / info->timeUnit);
-    uint64_t y = (uint64_t)(log2(timeInHwTime));
-    if (y > 0x1F)
-        y = 0x7F;
-    const uint64_t o = (1 << y);
-    const uint64_t z = (4 * (timeInHwTime - o)) / o;
-    return (y & 0x1F) | ((z & 0x3) << 5);
-}
+static RaplDomainInfo intel_rapl_pkg_info = {0, 0, 0};
+static RaplDomainInfo intel_rapl_dram_info = {0, 0, 0};
+static RaplDomainInfo intel_rapl_psys_info = {0, 0, 0};
+static RaplDomainInfo intel_rapl_pp0_info = {0, 0, 0};
+static RaplDomainInfo intel_rapl_pp1_info = {0, 0, 0};
 
 static int intel_rapl_register_test(uint32_t reg)
 {
@@ -112,7 +88,7 @@ static int intel_rapl_register_test_bit(uint32_t reg, int bitoffset)
     return valid == topo->numSockets;
 }
 
-static int sysFeatures_intel_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -140,7 +116,7 @@ static int sysFeatures_intel_rapl_energy_status_getter(const LikwidDevice_t devi
     return sysFeatures_double_to_string((double)energy * info->energyUnit, value);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -168,7 +144,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_enable_getter(const LikwidDevic
     return _uint64_to_string(enable, value);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -202,7 +178,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_enable_setter(const LikwidDevic
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -230,7 +206,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_clamp_getter(const LikwidDevice
     return _uint64_to_string(clamp, value);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -264,7 +240,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_clamp_setter(const LikwidDevice
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_1_getter(const LikwidDevice_t device, char** value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -293,7 +269,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_getter(const LikwidDevice_t dev
     return sysFeatures_double_to_string(watts, value);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_1_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (reg == 0x0) || (!info) || (device->type != DEVICE_TYPE_SOCKET))
@@ -320,7 +296,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_setter(const LikwidDevice_t dev
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_1_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -349,7 +325,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_time_getter(const LikwidDevice_
     return sysFeatures_double_to_string(seconds, value);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -386,7 +362,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_time_setter(const LikwidDevice_
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_2_getter(const LikwidDevice_t device, char** value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -415,7 +391,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_getter(const LikwidDevice_t dev
     return sysFeatures_double_to_string(watts, value);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_2_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (reg == 0x0) || (!info) || (device->type != DEVICE_TYPE_SOCKET))
@@ -451,7 +427,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_setter(const LikwidDevice_t dev
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_2_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -480,7 +456,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_time_getter(const LikwidDevice_
     return sysFeatures_double_to_string(seconds, value);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_2_time_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_time_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -517,7 +493,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_time_setter(const LikwidDevice_
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -545,7 +521,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_enable_getter(const LikwidDevic
     return _uint64_to_string(enable, value);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_2_enable_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_enable_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -579,7 +555,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_enable_setter(const LikwidDevic
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -607,7 +583,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_clamp_getter(const LikwidDevice
     return _uint64_to_string(clamp, value);
 }
 
-static int sysFeatures_intel_rapl_energy_limit_2_clamp_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const IntelRaplDomainInfo* info)
+static int sysFeatures_intel_rapl_energy_limit_2_clamp_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = 0;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
