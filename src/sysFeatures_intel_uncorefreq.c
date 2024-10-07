@@ -27,9 +27,9 @@ int intel_uncorefreq_test()
     {
         return err;
     }
-    for (int i = 0; i < topo->numHWThreads; i++)
+    for (int j = 0; j < topo->numSockets; j++)
     {
-        for (int j = 0; j < topo->numSockets; j++)
+        for (int i = 0; i < topo->numHWThreads; i++)
         {
             HWThread* t = &topo->threadPool[i];
             if (t->inCpuSet)
@@ -51,8 +51,12 @@ int intel_uncorefreq_test()
             }
         }
     }
-    DEBUG_PRINT(DEBUGLEV_INFO, Failed to access Uncore frequency registers);
-    return valid == topo->numSockets;
+    if (valid != topo->numSockets)
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, Failed to access Uncore frequency registers);
+        return 0;
+    }
+    return 1;
 }
 
 int intel_uncore_cur_freq_getter(const LikwidDevice_t device, char** value)
