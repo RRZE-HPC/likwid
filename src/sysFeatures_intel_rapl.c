@@ -316,7 +316,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_setter(const LikwidDevice_t dev
     }
 
     const uint64_t powerUnits = (uint64_t)round(watts / info->powerUnit);
-    field64set(&msrData, 0, 15, powerUnits);
+    field64set(&msrData, 0, 15, MIN(powerUnits, 0x7FFF));
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }
 
@@ -447,7 +447,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_setter(const LikwidDevice_t dev
     }
 
     const uint64_t powerUnits = (uint64_t)round(watts / info->powerUnit);
-    field64set(&msrData, 15, 15, powerUnits);
+    field64set(&msrData, 15, 15, MIN(powerUnits, 0x7FFF));
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }
 
