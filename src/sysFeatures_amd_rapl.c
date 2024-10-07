@@ -32,9 +32,14 @@ static int amd_rapl_register_test(uint32_t reg)
     err = topology_init();
     if (err < 0)
     {
-        return 0;
+        return err;
     }
     topo = get_cpuTopology();
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
     for (int i = 0; i < topo->numSockets; i++)
     {
         for (int j = 0; j < topo->numHWThreads; j++)
