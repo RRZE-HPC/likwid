@@ -27,7 +27,7 @@ static int cpufreq_sysfs_getter(const LikwidDevice_t device, char** value, const
         if (blength(content) > 0)
         {
             btrimws(content);
-            char* v = malloc((blength(content)+1) * sizeof(char));
+            char* v = realloc(*value, (blength(content)+1) * sizeof(char));
             if (v)
             {
                 strncpy(v, bdata(content), blength(content));
