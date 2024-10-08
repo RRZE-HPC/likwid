@@ -261,3 +261,34 @@ int internal_to_external_feature_list(const _SysFeatureList *inlist, SysFeatureL
     }
     return 0;
 }
+
+void sysFeatures_printlistint(const _SysFeatureList *list)
+{
+    if (list->num_features == 0)
+    {
+        printf("<blank feature list>\n");
+    }
+    for (int i = 0; i < list->num_features; i++)
+    {
+        const _SysFeature *f = &list->features[i];
+        const char *cat = f->category ? f->category : "(null)";
+        const char *desc = f->description ? f->description : "(null)";
+        const char *unit = f->unit ? f->unit : "(null)";
+        printf("[%03d] name=%s category=%s description=%s getter=%p setter=%p type=%d tester=%p unit=%s\n", i, f->name, cat, desc, f->getter, f->setter, f->type, f->tester, unit);
+    }
+}
+
+void sysFeatures_printlistext(const SysFeatureList *list)
+{
+    if (list->num_features == 0)
+    {
+        printf("<blank feature list>\n");
+    }
+    for (int i = 0; i < list->num_features; i++)
+    {
+        const SysFeature *f = &list->features[i];
+        const char *cat = f->category ? f->category : "(null)";
+        const char *desc = f->description ? f->description : "(null)";
+        printf("[%03d] name=%s category=%s description=%s type=%d readonly=%d writeonly=%d\n", i, f->name, cat, desc, f->type, f->readonly, f->writeonly);
+    }
+}
