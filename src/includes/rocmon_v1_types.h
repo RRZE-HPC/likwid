@@ -35,8 +35,16 @@
 #include <likwid.h>
 // #include <hsa.h>
 #ifndef ROCPROFILER_VERSION_MAJOR
-#include <rocprofiler.h>
+#ifdef HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE
+#undef HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE
 #endif
+#include <rocprofiler/rocprofiler.h>
+#endif
+#include <amd_smi/amdsmi.h>
+#if AMDSMI_LIB_VERSION_YEAR == 23 && AMDSMI_LIB_VERSION_MAJOR == 4 && AMDSMI_LIB_VERSION_MINOR == 0 && AMDSMI_LIB_VERSION_RELEASE == 0
+typedef struct metrics_table_header_t metrics_table_header_t;
+#endif
+#include <rocm_smi/rocm_smi.h>
 #include <map.h>
 
 typedef struct {
