@@ -83,10 +83,10 @@ static int amd_rapl_register_test_bit(uint32_t reg, int bitoffset)
 
 static int sysFeatures_amd_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
+    int err = getset_info_check(device, value, info, DEVICE_TYPE_SOCKET);
+    if (err < 0)
     {
-        return -EINVAL;
+        return err;
     }
     uint64_t msrData = 0;
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &msrData);
@@ -100,10 +100,10 @@ static int sysFeatures_amd_rapl_energy_status_getter(const LikwidDevice_t device
 
 static int sysFeatures_amd_rapl_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
+    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
+    if (err < 0)
     {
-        return -EINVAL;
+        return err;
     }
     uint64_t msrData = 0;
     err = HPMread(device->id.simple.id, MSR_DEV, reg, &msrData);
@@ -117,23 +117,13 @@ static int sysFeatures_amd_rapl_energy_limit_1_enable_getter(const LikwidDevice_
 
 static int sysFeatures_amd_rapl_energy_limit_1_enable_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
+    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
+    if (err < 0)
     {
-        return -EINVAL;
+        return err;
     }
     uint64_t enable;
     err = sysFeatures_string_to_uint64(value, &enable);
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
     if (err < 0)
     {
         return err;
@@ -150,17 +140,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_enable_setter(const LikwidDevice_
 
 static int sysFeatures_amd_rapl_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
+    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
     if (err < 0)
     {
         return err;
@@ -177,23 +157,13 @@ static int sysFeatures_amd_rapl_energy_limit_1_clamp_getter(const LikwidDevice_t
 
 static int sysFeatures_amd_rapl_energy_limit_1_clamp_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
+    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
+    if (err < 0)
     {
-        return -EINVAL;
+        return err;
     }
     uint64_t clamp;
     err = sysFeatures_string_to_uint64(value, &clamp);
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
     if (err < 0)
     {
         return err;
@@ -210,17 +180,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_clamp_setter(const LikwidDevice_t
 
 static int sysFeatures_amd_rapl_energy_limit_1_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
+    int err = getset_info_check(device, value, info, DEVICE_TYPE_SOCKET);
     if (err < 0)
     {
         return err;
@@ -238,10 +198,10 @@ static int sysFeatures_amd_rapl_energy_limit_1_getter(const LikwidDevice_t devic
 
 static int sysFeatures_amd_rapl_energy_limit_1_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (reg == 0x0) || (!info) || (device->type != DEVICE_TYPE_SOCKET))
+    int err = getset_info_check(device, value, info, DEVICE_TYPE_SOCKET);
+    if (err < 0)
     {
-        return -EINVAL;
+        return err;
     }
     double watts = 0.0;
     err = sysFeatures_string_to_double(value, &watts);
@@ -262,17 +222,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_setter(const LikwidDevice_t devic
 
 static int sysFeatures_amd_rapl_energy_limit_1_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
+    int err = getset_info_check(device, value, info, DEVICE_TYPE_SOCKET);
     if (err < 0)
     {
         return err;
@@ -290,23 +240,13 @@ static int sysFeatures_amd_rapl_energy_limit_1_time_getter(const LikwidDevice_t 
 
 static int sysFeatures_amd_rapl_energy_limit_1_time_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
+    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
+    if (err < 0)
     {
-        return -EINVAL;
+        return err;
     }
     double seconds = 0.0;
     err = sysFeatures_string_to_double(value, &seconds);
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
     if (err < 0)
     {
         return err;
@@ -324,17 +264,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_time_setter(const LikwidDevice_t 
 
 static int sysFeatures_amd_rapl_energy_limit_2_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
+    int err = getset_info_check(device, value, info, DEVICE_TYPE_SOCKET);
     if (err < 0)
     {
         return err;
@@ -352,23 +282,13 @@ static int sysFeatures_amd_rapl_energy_limit_2_getter(const LikwidDevice_t devic
 
 static int sysFeatures_amd_rapl_energy_limit_2_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (reg == 0x0) || (!info) || (device->type != DEVICE_TYPE_SOCKET))
+    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
+    if (err < 0)
     {
-        return -EINVAL;
+        return err;
     }
     double watts = 0.0;
     err = sysFeatures_string_to_double(value, &watts);
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
     if (err < 0)
     {
         return err;
@@ -386,17 +306,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_setter(const LikwidDevice_t devic
 
 static int sysFeatures_amd_rapl_energy_limit_2_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
+    int err = getset_info_check(device, value, info, DEVICE_TYPE_SOCKET);
     if (err < 0)
     {
         return err;
@@ -414,23 +324,13 @@ static int sysFeatures_amd_rapl_energy_limit_2_time_getter(const LikwidDevice_t 
 
 static int sysFeatures_amd_rapl_energy_limit_2_time_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
+    int err = getset_info_check(device, value, info, DEVICE_TYPE_SOCKET);
+    if (err < 0)
     {
-        return -EINVAL;
+        return err;
     }
     double seconds = 0.0;
     err = sysFeatures_string_to_double(value, &seconds);
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
     if (err < 0)
     {
         return err;
@@ -448,17 +348,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_time_setter(const LikwidDevice_t 
 
 static int sysFeatures_amd_rapl_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
+    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
     if (err < 0)
     {
         return err;
@@ -475,23 +365,13 @@ static int sysFeatures_amd_rapl_energy_limit_2_enable_getter(const LikwidDevice_
 
 static int sysFeatures_amd_rapl_energy_limit_2_enable_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
+    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
+    if (err < 0)
     {
-        return -EINVAL;
+        return err;
     }
     uint64_t enable;
     err = sysFeatures_string_to_uint64(value, &enable);
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
     if (err < 0)
     {
         return err;
@@ -508,17 +388,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_enable_setter(const LikwidDevice_
 
 static int sysFeatures_amd_rapl_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
+    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
     if (err < 0)
     {
         return err;
@@ -535,23 +405,13 @@ static int sysFeatures_amd_rapl_energy_limit_2_clamp_getter(const LikwidDevice_t
 
 static int sysFeatures_amd_rapl_energy_limit_2_clamp_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
+    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
+    if (err < 0)
     {
-        return -EINVAL;
+        return err;
     }
     uint64_t clamp;
     err = sysFeatures_string_to_uint64(value, &clamp);
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
     if (err < 0)
     {
         return err;
@@ -568,17 +428,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_clamp_setter(const LikwidDevice_t
 
 static int sysFeatures_amd_rapl_info_tdp(const LikwidDevice_t device, char** value, uint32_t reg)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
+    int err = getset_check(device, value, DEVICE_TYPE_SOCKET);
     if (err < 0)
     {
         return err;
@@ -595,17 +445,7 @@ static int sysFeatures_amd_rapl_info_tdp(const LikwidDevice_t device, char** val
 
 static int sysFeatures_amd_rapl_info_min_power(const LikwidDevice_t device, char** value, uint32_t reg)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
+    int err = getset_check(device, value, DEVICE_TYPE_SOCKET);
     if (err < 0)
     {
         return err;
@@ -622,17 +462,7 @@ static int sysFeatures_amd_rapl_info_min_power(const LikwidDevice_t device, char
 
 static int sysFeatures_amd_rapl_info_max_power(const LikwidDevice_t device, char** value, uint32_t reg)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
+    int err = getset_check(device, value, DEVICE_TYPE_SOCKET);
     if (err < 0)
     {
         return err;
@@ -649,17 +479,7 @@ static int sysFeatures_amd_rapl_info_max_power(const LikwidDevice_t device, char
 
 static int sysFeatures_amd_rapl_info_max_time(const LikwidDevice_t device, char** value, uint32_t reg)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
+    int err = getset_check(device, value, DEVICE_TYPE_SOCKET);
     if (err < 0)
     {
         return err;
@@ -676,17 +496,7 @@ static int sysFeatures_amd_rapl_info_max_time(const LikwidDevice_t device, char*
 
 static int sysFeatures_amd_rapl_policy_getter(const LikwidDevice_t device, char** value, uint32_t reg)
 {
-    int err = 0;
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
+    int err = getset_check(device, value, DEVICE_TYPE_SOCKET);
     if (err < 0)
     {
         return err;
@@ -703,19 +513,13 @@ static int sysFeatures_amd_rapl_policy_getter(const LikwidDevice_t device, char*
 
 static int sysFeatures_amd_rapl_policy_setter(const LikwidDevice_t device, char* value, uint32_t reg)
 {
-    int err = 0;
+    int err = getset_check(device, value, DEVICE_TYPE_SOCKET);
+    if (err < 0)
+    {
+        return err;
+    }
     uint64_t policy;
     err = sysFeatures_string_to_uint64(value, &policy);
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
     if (err < 0)
     {
         return err;
@@ -726,8 +530,7 @@ static int sysFeatures_amd_rapl_policy_setter(const LikwidDevice_t device, char*
     {
         return err;
     }
-    msrData &= ~(0x1F);
-    msrData |= (policy & 0x1F);
+    field64set(&msrData, 0, 5, policy);
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }
 

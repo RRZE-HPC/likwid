@@ -28,7 +28,7 @@ int sysFeatures_amd_core_energy_status_getter(LikwidDevice_t device, char** valu
 
 #define MAX_AMD_RAPL_CORE_FEATURES 1
 static _SysFeature amd_rapl_core_features[] = {
-    {"core_energy", "rapl", "Current energy consumtion (DRAM domain)", sysFeatures_amd_core_energy_status_getter, NULL, DEVICE_TYPE_CORE, sysFeatures_amd_core_energy_status_test, "J"},
+    {"core_energy", "rapl", "Current energy consumtion (Core domain)", sysFeatures_amd_core_energy_status_getter, NULL, DEVICE_TYPE_CORE, sysFeatures_amd_core_energy_status_test, "J"},
 };
 
 static _SysFeatureList amd_rapl_core_feature_list = {
