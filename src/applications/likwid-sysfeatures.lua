@@ -264,6 +264,18 @@ for sid=0, cputopo.numSockets do
     end
 end
 
+-- I don't know what I'm doing but I'm trying to populate the device tree according to cores
+deviceTree[likwid.core] = {}
+coresAdded = {}
+for _, c in pairs(hwtlist) do
+    for _, t in pairs(cputopo.threadPool) do
+        if t.apicId == c and not (coresAdded[t.coreId] ~= Nil) then
+            table.insert(deviceTree[likwid.core], {device = likwid.createDevice(likwid.core, t.coreId), id = c})
+            coresAdded[t.coreId] = true
+        end
+    end
+end
+
 local function getDevice(level, id)
     if deviceTree[level] then
         for _, entry in pairs(deviceTree[level]) do
