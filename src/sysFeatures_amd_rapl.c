@@ -81,9 +81,9 @@ static int amd_rapl_register_test_bit(uint32_t reg, int bitoffset)
     return valid == topo->numSockets;
 }
 
-static int sysFeatures_amd_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
+static int sysFeatures_amd_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info, LikwidDeviceType type)
 {
-    int err = getset_info_check(device, value, info, DEVICE_TYPE_SOCKET);
+    int err = getset_info_check(device, value, info, type);
     if (err < 0)
     {
         return err;
@@ -589,7 +589,7 @@ int sysFeatures_amd_pkg_energy_status_test()
 
 int sysFeatures_amd_pkg_energy_status_getter(const LikwidDevice_t device, char** value)
 {
-    return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_PKG_STATUS, &amd_rapl_pkg_info);
+    return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_PKG_STATUS, &amd_rapl_pkg_info, DEVICE_TYPE_SOCKET);
 }
 
 /*int sysFeatures_amd_pkg_energy_limit_test()*/
@@ -735,7 +735,7 @@ int sysFeatures_amd_core_energy_status_test()
 
 int sysFeatures_amd_core_energy_status_getter(const LikwidDevice_t device, char** value)
 {
-    return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_CORE_STATUS, &amd_rapl_core_info);
+    return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_CORE_STATUS, &amd_rapl_core_info, DEVICE_TYPE_CORE);
 }
 
 /*int sysFeatures_amd_core_energy_limit_test()*/
@@ -860,7 +860,7 @@ int sysFeatures_amd_l3_energy_status_test()
 
 int sysFeatures_amd_l3_energy_status_getter(const LikwidDevice_t device, char** value)
 {
-    return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD19_RAPL_L3_STATUS, &amd_rapl_l3_info);
+    return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD19_RAPL_L3_STATUS, &amd_rapl_l3_info, DEVICE_TYPE_SOCKET);
 }
 
 /*int sysFeatures_amd_l3_energy_limit_test()*/
