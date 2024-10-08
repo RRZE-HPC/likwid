@@ -88,9 +88,6 @@ static _SysFeatureList* amd_k19_cpu_feature_inputs[] = {
     &amd_k19_cpu_speculation_feature_list,
     &amd_k19_cpu_l1dflush_feature_list,
     &amd_k19_cpu_hwconfig_feature_list,
-    &amd_rapl_core_feature_list,
-    &amd_rapl_pkg_feature_list,
-    &amd_rapl_l3_feature_list,
     NULL,
 };
 

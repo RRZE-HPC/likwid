@@ -756,6 +756,8 @@ int amd_rapl_pkg_test()
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
+                err = HPMaddThread(t->apicId);
+                if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, MSR_AMD17_RAPL_POWER_UNIT, &data);
                 if (err == 0) valid++;
                 if (amd_rapl_pkg_info.powerUnit == 0 && amd_rapl_pkg_info.energyUnit == 0 && amd_rapl_pkg_info.timeUnit == 0)
@@ -908,6 +910,8 @@ int amd_rapl_core_test()
     {
         uint64_t data = 0x0;
         HWThread* t = &topo->threadPool[j];
+        err = HPMaddThread(t->apicId);
+        if (err < 0) continue;
         err = HPMread(t->apicId, MSR_DEV, MSR_AMD17_RAPL_POWER_UNIT, &data);
         if (err == 0) valid++;
         if (amd_rapl_core_info.powerUnit == 0 && amd_rapl_core_info.energyUnit == 0 && amd_rapl_core_info.timeUnit == 0)
@@ -916,7 +920,6 @@ int amd_rapl_core_test()
             amd_rapl_core_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
             amd_rapl_core_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
         }
-        break;
     }
     return valid == topo->numHWThreads;
 }
@@ -1029,6 +1032,8 @@ int amd_rapl_l3_test()
                 HWThread* t = &topo->threadPool[j];
                 if (t->packageId == i)
                 {
+                    err = HPMaddThread(t->apicId);
+                    if (err < 0) continue;
                     err = HPMread(t->apicId, MSR_DEV, MSR_AMD19_RAPL_L3_UNIT, &data);
                     if (err == 0) valid++;
                     if (amd_rapl_l3_info.powerUnit == 0 && amd_rapl_l3_info.energyUnit == 0 && amd_rapl_l3_info.timeUnit == 0)
