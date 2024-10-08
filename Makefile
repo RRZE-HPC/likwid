@@ -151,6 +151,12 @@ ifneq ($(ROCM_INTERFACE), true)
 OBJ := $(filter-out $(BUILD_DIR)/rocmon.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/rocmon_marker.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/topology_rocm.o,$(OBJ))
+else
+ifeq ($(strip $(ROCM_SDK_CHECK)),0)
+OBJ := $(filter-out $(BUILD_DIR)/rocmon_sdk.o,$(OBJ))
+else
+OBJ := $(filter-out $(BUILD_DIR)/rocmon_v1.o,$(OBJ))
+endif
 endif
 ifeq ($(COMPILER),GCCPOWER)
 OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
@@ -353,10 +359,16 @@ $(BUILD_DIR)/%.o:  %.c
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
-$(BUILD_DIR)/rocmon_marker.o:  rocmon_marker.c
-	@echo "===>  COMPILE  $@"
+$(BUILD_DIR)/rocmon_%.o:  rocmon_%.c
+	@echo "===>  COMPILE  $@ with redefined symbol HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE"
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
-	$(Q)objcopy --redefine-sym HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE=HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE2 $@
+	$(Q)objcopy --redefine-sym HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE=HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE_$@ $@
+
+$(BUILD_DIR)/rocmon.o:  rocmon.c
+	@echo "===>  COMPILE  $@ with redefined symbol HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE"
+	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
+	$(Q)objcopy --redefine-sym HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE=HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE_$@ $@
+
 
 $(BUILD_DIR)/%.o:  %.cc
 	@echo "===>  COMPILE  $@"
