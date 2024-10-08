@@ -43,6 +43,17 @@ static int get_device_access(LikwidDevice_t device)
                 hwt = device->id.simple.id;
             }
             break;
+        case DEVICE_TYPE_CORE:
+            for (int i = 0; i < topo->numHWThreads; i++)
+            {
+                HWThread* t = &topo->threadPool[i];
+                if (t->inCpuSet == 1 && device->id.simple.id == t->coreId)
+                {
+                    hwt = t->apicId;
+                    break;
+                }
+            }
+            break;
         case DEVICE_TYPE_NODE:
             for (int i = 0; i < topo->numHWThreads; i++)
             {
@@ -270,7 +281,6 @@ int sysFeatures_modifyByName(const char* name, const LikwidDevice_t device, cons
     {
         return -ENODEV;
     }
-    
     err = get_device_access(device);
     if (err < 0)
     {
