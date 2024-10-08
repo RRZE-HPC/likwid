@@ -17,4 +17,8 @@ void _free_feature_list(_SysFeatureList *list);
 /* Get an external list from an internal one */
 int internal_to_external_feature_list(const _SysFeatureList *inlist, SysFeatureList* outlist);
 
+/* Print a list for debugging purposes */
+void sysFeatures_printlistint(const _SysFeatureList *list);
+void sysFeatures_printlistext(const SysFeatureList *list);
+
 #endif /* HWFEATURES_LIST_H */
