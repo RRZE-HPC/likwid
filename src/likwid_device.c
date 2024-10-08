@@ -64,7 +64,7 @@ int likwid_device_create(LikwidDeviceType type, int id, LikwidDevice_t* device)
             return likwid_device_create_simple(type, 0, device);
             break;
         case DEVICE_TYPE_CORE:
-            if (id > 0 && id < maxHWThreadNum)
+            if (id >= 0 && (unsigned)id < topo->numSockets * topo->numCoresPerSocket)
             {
                 for (int i = 0; i < topo->numHWThreads; i++)
                 {
