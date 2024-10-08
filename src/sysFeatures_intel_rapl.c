@@ -21,40 +21,6 @@ static RaplDomainInfo intel_rapl_psys_info = {0, 0, 0};
 static RaplDomainInfo intel_rapl_pp0_info = {0, 0, 0};
 static RaplDomainInfo intel_rapl_pp1_info = {0, 0, 0};
 
-static int getset_check(const LikwidDevice_t device, const void *value, LikwidDeviceType type)
-{
-    if (!device || !value || (device->type != type))
-    {
-        return -EINVAL;
-    }
-    int err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
-    if (err < 0)
-    {
-        return err;
-    }
-    return 0;
-}
-
-static int getset_unusedinfo_check(const LikwidDevice_t device, const void *value, const RaplDomainInfo *info, LikwidDeviceType type)
-{
-    (void)info;
-    return getset_check(device, value, type);
-}
-
-static int getset_info_check(const LikwidDevice_t device, const void *value, const RaplDomainInfo *info, LikwidDeviceType type)
-{
-    if (!info)
-    {
-        return -EINVAL;
-    }
-    return getset_unusedinfo_check(device, value, info, type);
-}
-
 static int intel_rapl_register_test(uint32_t reg)
 {
     int err = 0;

@@ -1,6 +1,9 @@
 #ifndef HWFEATURES_COMMON_RAPL_H
 #define HWFEATURES_COMMON_RAPL_H
 
+#include <likwid.h>
+#include <access.h>
+
 typedef struct {
     double powerUnit;   // unit W
     double energyUnit;  // unit J
@@ -25,6 +28,40 @@ static inline uint64_t seconds_to_timeWindow(const RaplDomainInfo *info, double 
     const uint64_t o = (1 << y);
     const uint64_t z = (4 * (timeInHwTime - o)) / o;
     return (y & 0x1F) | ((z & 0x3) << 5);
+}
+
+static inline int getset_check(const LikwidDevice_t device, const void *value, LikwidDeviceType type)
+{
+    if (!device || !value || (device->type != type))
+    {
+        return -EINVAL;
+    }
+    int err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
+    return 0;
+}
+
+static inline int getset_unusedinfo_check(const LikwidDevice_t device, const void *value, const RaplDomainInfo *info, LikwidDeviceType type)
+{
+    (void)info;
+    return getset_check(device, value, type);
+}
+
+static inline int getset_info_check(const LikwidDevice_t device, const void *value, const RaplDomainInfo *info, LikwidDeviceType type)
+{
+    if (!info)
+    {
+        return -EINVAL;
+    }
+    return getset_unusedinfo_check(device, value, info, type);
 }
 
 #endif /* HWFEATURES_COMMON_RAPL_H */
