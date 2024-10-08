@@ -125,6 +125,8 @@ int _add_to_feature_list(_SysFeatureList *list, const _SysFeature* feature)
     iof->type = feature->type;
     iof->getter = feature->getter;
     iof->setter = feature->setter;
+    iof->tester = feature->tester;
+    iof->unit = feature->unit;
 
     list->num_features++;
 
@@ -199,36 +201,36 @@ int internal_to_external_feature_list(const _SysFeatureList *inlist, SysFeatureL
         SysFeature* out = &(outlist->features[i]);
         _SysFeature* in = &(inlist->features[i]);
 
-        out->name = malloc((strlen(in->name)+1) * sizeof(char));
+        out->name = strndup(in->name, HWFEATURES_MAX_STR_LENGTH - 1);
         if (!out->name)
         {
             for (int j = 0; j < i; j++)
             {
                 SysFeature* c = &(outlist->features[j]);
-                if (c->name) free(c->name);
-                if (c->category) free(c->category);
-                if (c->description) free(c->description);
+                free(c->name);
+                free(c->category);
+                free(c->description);
             }
             free(outlist->features);
             outlist->features = NULL;
             return -ENOMEM;
         }
-        out->category = malloc((strlen(in->category)+1) * sizeof(char));
+        out->category = strndup(in->category, HWFEATURES_MAX_STR_LENGTH - 1);
         if (!out->category)
         {
             free(out->name);
             for (int j = 0; j < i; j++)
             {
                 SysFeature* c = &(outlist->features[j]);
-                if (c->name) free(c->name);
-                if (c->category) free(c->category);
-                if (c->description) free(c->description);
+                free(c->name);
+                free(c->category);
+                free(c->description);
             }
             free(outlist->features);
             outlist->features = NULL;
             return -ENOMEM;
         }
-        out->description = malloc((strlen(in->description)+1) * sizeof(char));
+        out->description = strndup(in->description, HWFEATURES_MAX_STR_LENGTH - 1);
         if (!out->description)
         {
             free(out->name);
@@ -236,25 +238,14 @@ int internal_to_external_feature_list(const _SysFeatureList *inlist, SysFeatureL
             for (int j = 0; j < i; j++)
             {
                 SysFeature* c = &(outlist->features[j]);
-                if (c->name) free(c->name);
-                if (c->category) free(c->category);
-                if (c->description) free(c->description);
+                free(c->name);
+                free(c->category);
+                free(c->description);
             }
             free(outlist->features);
             outlist->features = NULL;
             return -ENOMEM;
         }
-    }
-    for (int i = 0; i < inlist->num_features; i++)
-    {
-        SysFeature* out = &(outlist->features[i]);
-        _SysFeature* in = &(inlist->features[i]);
-        int slen = HWFEATURES_MIN_STRLEN(strlen(in->name) + 1, HWFEATURES_MAX_STR_LENGTH);
-        strncpy(out->name, in->name, slen);
-        slen = HWFEATURES_MIN_STRLEN(strlen(in->category) + 1, HWFEATURES_MAX_STR_LENGTH);
-        strncpy(out->category, in->category, slen);
-        slen = HWFEATURES_MIN_STRLEN(strlen(in->description) + 1, HWFEATURES_MAX_STR_LENGTH);
-        strncpy(out->description, in->description, slen);
         out->type = in->type;
         out->readonly = 0;
         out->writeonly = 0;
