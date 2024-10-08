@@ -46,8 +46,8 @@ static int intel_rapl_register_test(uint32_t reg)
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
-		err = HPMaddThread(t->apicId);
-		if (err < 0) continue;
+                err = HPMaddThread(t->apicId);
+                if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, reg, &data);
                 if (err == 0) valid++;
                 break;
@@ -77,10 +77,10 @@ static int intel_rapl_register_test_bit(uint32_t reg, int bitoffset)
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
-		err = HPMaddThread(t->apicId);
-		if (err < 0) continue;
+                err = HPMaddThread(t->apicId);
+                if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, reg, &data);
-                if (err == 0 && (data & (1ULL<<bitoffset))) valid++;
+                if (err == 0 && field64(data, bitoffset, 1)) valid++;
                 break;
             }
         }
@@ -818,15 +818,15 @@ int intel_rapl_pkg_test()
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
-		err = HPMaddThread(t->apicId);
-		if (err < 0) continue;
+                err = HPMaddThread(t->apicId);
+                if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
                 if (err == 0) valid++;
                 if (intel_rapl_pkg_info.powerUnit == 0 && intel_rapl_pkg_info.energyUnit == 0 && intel_rapl_pkg_info.timeUnit == 0)
                 {
-                    intel_rapl_pkg_info.powerUnit = 1.0 / (1 << (data & 0xF));
-                    intel_rapl_pkg_info.energyUnit = 1.0 / (1 << ((data >> 8) & 0x1F));
-                    intel_rapl_pkg_info.timeUnit = 1.0 / (1 << ((data >> 16) & 0xF));
+                    intel_rapl_pkg_info.powerUnit = 1.0 / (1 << field64(data, 0, 4));
+                    intel_rapl_pkg_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
+                    intel_rapl_pkg_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
                 }
                 break;
             }
@@ -982,15 +982,15 @@ int intel_rapl_dram_test()
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
-		err = HPMaddThread(t->apicId);
-		if (err < 0) continue;
+                err = HPMaddThread(t->apicId);
+                if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
                 if (err == 0) valid++;
                 if (intel_rapl_dram_info.powerUnit == 0 && intel_rapl_dram_info.energyUnit == 0 && intel_rapl_dram_info.timeUnit == 0)
                 {
-                    intel_rapl_dram_info.powerUnit = 1.0 / (1 << (data & 0xF));
-                    intel_rapl_dram_info.energyUnit = 1.0 / (1 << ((data >> 8) & 0x1F));
-                    intel_rapl_dram_info.timeUnit = 1.0 / (1 << ((data >> 16) & 0xF));
+                    intel_rapl_dram_info.powerUnit = 1.0 / (1 << field64(data, 0, 4));
+                    intel_rapl_dram_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
+                    intel_rapl_dram_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
                     if ((info->model == HASWELL_EP) ||
                         (info->model == HASWELL_M1) ||
                         (info->model == HASWELL_M2) ||
@@ -1124,19 +1124,19 @@ int intel_rapl_psys_test()
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
-		err = HPMaddThread(t->apicId);
-		if (err < 0) continue;
+                err = HPMaddThread(t->apicId);
+                if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
                 if (err == 0) valid++;
                 if (intel_rapl_psys_info.powerUnit == 0 && intel_rapl_psys_info.energyUnit == 0 && intel_rapl_psys_info.timeUnit == 0)
                 {
-                    intel_rapl_psys_info.powerUnit = 1.0 / (1 << (data & 0xF));
-                    intel_rapl_psys_info.energyUnit = 1.0 / (1 << ((data >> 8) & 0x1F));
+                    intel_rapl_psys_info.powerUnit = 1.0 / (1 << field64(data, 0, 4));
+                    intel_rapl_psys_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
                     if (info->model == SAPPHIRERAPIDS)
                     {
                         intel_rapl_psys_info.energyUnit = 1.0;
                     }
-                    intel_rapl_psys_info.timeUnit = 1.0 / (1 << ((data >> 16) & 0xF));
+                    intel_rapl_psys_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
                 }
                 break;
             }
@@ -1264,15 +1264,15 @@ int intel_rapl_pp0_test()
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
-		err = HPMaddThread(t->apicId);
-		if (err < 0) continue;
+                err = HPMaddThread(t->apicId);
+                if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
                 if (err == 0) valid++;
                 if (intel_rapl_pp0_info.powerUnit == 0 && intel_rapl_pp0_info.energyUnit == 0 && intel_rapl_pp0_info.timeUnit == 0)
                 {
-                    intel_rapl_pp0_info.powerUnit = 1.0 / (1 << (data & 0xF));
-                    intel_rapl_pp0_info.energyUnit = 1.0 / (1 << ((data >> 8) & 0x1F));
-                    intel_rapl_pp0_info.timeUnit = 1.0 / (1 << ((data >> 16) & 0xF));
+                    intel_rapl_pp0_info.powerUnit = 1.0 / (1 << field64(data, 0, 4));
+                    intel_rapl_pp0_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
+                    intel_rapl_pp0_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
                 }
                 break;
             }
@@ -1381,15 +1381,15 @@ int intel_rapl_pp1_test()
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
-		err = HPMaddThread(t->apicId);
-		if (err < 0) continue;
+                err = HPMaddThread(t->apicId);
+                if (err < 0) continue;
                 err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
                 if (err == 0) valid++;
                 if (intel_rapl_pp1_info.powerUnit == 0 && intel_rapl_pp1_info.energyUnit == 0 && intel_rapl_pp1_info.timeUnit == 0)
                 {
-                    intel_rapl_pp1_info.powerUnit = 1.0 / (1 << (data & 0xF));
-                    intel_rapl_pp1_info.energyUnit = 1.0 / (1 << ((data >> 8) & 0x1F));
-                    intel_rapl_pp1_info.timeUnit = 1.0 / (1 << ((data >> 16) & 0xF));
+                    intel_rapl_pp1_info.powerUnit = 1.0 / (1 << field64(data, 0, 4));
+                    intel_rapl_pp1_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
+                    intel_rapl_pp1_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
                 }
                 break;
             }
