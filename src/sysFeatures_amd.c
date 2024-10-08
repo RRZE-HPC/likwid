@@ -18,7 +18,6 @@ int sysFeatures_init_x86_amd(_SysFeatureList* out)
         ERROR_PRINT(Failed to init AMD RAPL HWFetures);
         return err;
     }
-
     return 0;
 }
 
