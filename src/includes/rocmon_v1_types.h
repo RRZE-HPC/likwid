@@ -1,11 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  nvmon_types.h
+ *      Filename:  rocmon_v1_types.h
  *
- *      Description:  Header File of nvmon module.
- *                    Configures and reads out performance counters
- *                    on NVIDIA GPUs. Supports multi GPUs.
+ *      Description:  Header File of rocmon v1 module.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -29,8 +27,8 @@
  *
  * =======================================================================================
  */
-#ifndef LIKWID_ROCMON_TYPES_H
-#define LIKWID_ROCMON_TYPES_H
+#ifndef LIKWID_ROCMON_V1_TYPES_H
+#define LIKWID_ROCMON_V1_TYPES_H
 
 #include <likwid.h>
 // #include <hsa.h>
@@ -148,4 +146,4 @@ typedef struct {
     int* gpulist;
     double** counters;
 } LikwidRocmResults;
-#endif /* LIKWID_ROCMON_TYPES_H */
+#endif /* LIKWID_ROCMON_V1_TYPES_H */
