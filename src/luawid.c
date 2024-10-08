@@ -3837,6 +3837,7 @@ lua_likwid_createDevice(lua_State *L)
         }
         else
         {
+            likwid_device_destroy(dev);
             dev = lua_newuserdata (L, sizeof(_LikwidDevice));
             dev->type = type;
             dev->internal_id = id;
