@@ -39,7 +39,9 @@
 #include <types.h>
 
 #include <likwid.h>
-#include <rocmon_types.h>
+#ifndef LIKWID_ROCPROF_SDK
+#include <rocmon_v1_types.h>
+#endif
 
 #define gettid() syscall(SYS_gettid)
 
