@@ -1,0 +1,21 @@
+SHORT Power, temperature and voltage
+
+EVENTSET
+ROCM0 RSMI_POWER_AVE[0]
+ROCM1 RSMI_TEMP_EDGE
+ROCM2 RSMI_VOLT_VDDGFX
+
+
+METRICS
+Power average 1E-6*ROCM0
+Edge temperature 1E-3*ROCM1
+Voltage 1E-3*ROCM2
+
+LONG
+Formulas:
+Power average = RSMI_POWER_AVE[0]
+Edge temperature = 1E-3*RSMI_TEMP_EDGE
+Voltage = 1E-3*RSMI_VOLT_VDDGFX
+--
+Gets the current average power consumption in watts, the
+temperature in celsius and the voltage in volts.
