@@ -96,10 +96,7 @@ int sysFeatures_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList 
     return 0;
 }
 
-
-
-
-int _uint64_to_string(uint64_t value, char** str)
+int sysFeatures_uint64_to_string(uint64_t value, char** str)
 {
     char s[HWFEATURES_MAX_STR_LENGTH];
     const int len = snprintf(s, sizeof(s), "%llu", value);
@@ -118,7 +115,7 @@ int _uint64_to_string(uint64_t value, char** str)
     return 0;
 }
 
-int _string_to_uint64(const char* str, uint64_t* value)
+int sysFeatures_string_to_uint64(const char* str, uint64_t* value)
 {
     char* ptr = NULL;
     if ((strncmp(str, "true", 4) == 0) || (strncmp(str, "TRUE", 4) == 0))

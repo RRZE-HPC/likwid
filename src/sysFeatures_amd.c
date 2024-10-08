@@ -48,7 +48,7 @@ int amd_cpu_prefetch_control_getter(const LikwidDevice_t device, uint64_t mask, 
                 //*value = !((data >> shift) & mask);
             _val = !((data & mask) >> shift);
         }
-        return _uint64_to_string(_val, value);
+        return sysFeatures_uint64_to_string(_val, value);
     }
     return err;
 }
@@ -66,7 +66,7 @@ int amd_cpu_prefetch_control_setter(const LikwidDevice_t device, uint64_t mask, 
     }*/
     uint64_t data = 0x0;
     uint64_t _val = 0x0ULL;
-    err = _string_to_uint64(value, &_val);
+    err = sysFeatures_string_to_uint64(value, &_val);
     if (err < 0)
     {
         return err;
@@ -151,7 +151,7 @@ int amd_cpu_spec_control_getter(const LikwidDevice_t device, uint64_t mask, uint
             _val = !((data & mask) >> shift);
         }
     }
-    return _uint64_to_string(_val, value);
+    return sysFeatures_uint64_to_string(_val, value);
 }
 
 int amd_cpu_spec_control_setter(const LikwidDevice_t device, uint64_t mask, uint64_t shift, int invert, const char* value)
@@ -167,7 +167,7 @@ int amd_cpu_spec_control_setter(const LikwidDevice_t device, uint64_t mask, uint
     }*/
     uint64_t data = 0x0;
     uint64_t _val = 0x0;
-    err = _string_to_uint64(value, &_val);
+    err = sysFeatures_string_to_uint64(value, &_val);
     if (err < 0)
     {
         return err;
@@ -256,7 +256,7 @@ int amd_cpu_hwconfig_getter(const LikwidDevice_t device, uint64_t mask, uint64_t
             _val = !((data & mask) >> shift);
         }
     }
-    return _uint64_to_string(_val, value);
+    return sysFeatures_uint64_to_string(_val, value);
 }
 
 int amd_cpu_hwconfig_setter(const LikwidDevice_t device, uint64_t mask, uint64_t shift, int invert, const char* value)
@@ -272,7 +272,7 @@ int amd_cpu_hwconfig_setter(const LikwidDevice_t device, uint64_t mask, uint64_t
     }*/
     uint64_t data = 0x0;
     uint64_t _val = 0x0;
-    err = _string_to_uint64(value, &_val);
+    err = sysFeatures_string_to_uint64(value, &_val);
     if (err < 0)
     {
         return err;

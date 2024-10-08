@@ -112,7 +112,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_enable_getter(const LikwidDevice_
         return err;
     }
     const uint64_t enable = field64(msrData, 15, 1);
-    return _uint64_to_string(enable, value);
+    return sysFeatures_uint64_to_string(enable, value);
 }
 
 static int sysFeatures_amd_rapl_energy_limit_1_enable_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
@@ -123,7 +123,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_enable_setter(const LikwidDevice_
         return -EINVAL;
     }
     uint64_t enable;
-    err = _string_to_uint64(value, &enable);
+    err = sysFeatures_string_to_uint64(value, &enable);
     if (err < 0)
     {
         return err;
@@ -172,7 +172,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_clamp_getter(const LikwidDevice_t
         return err;
     }
     const uint64_t clamp = field64(msrData, 16, 1);
-    return _uint64_to_string(clamp, value);
+    return sysFeatures_uint64_to_string(clamp, value);
 }
 
 static int sysFeatures_amd_rapl_energy_limit_1_clamp_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
@@ -183,7 +183,7 @@ static int sysFeatures_amd_rapl_energy_limit_1_clamp_setter(const LikwidDevice_t
         return -EINVAL;
     }
     uint64_t clamp;
-    err = _string_to_uint64(value, &clamp);
+    err = sysFeatures_string_to_uint64(value, &clamp);
     if (err < 0)
     {
         return err;
@@ -470,7 +470,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_enable_getter(const LikwidDevice_
         return err;
     }
     const uint64_t enable = field64(msrData, 47, 1);
-    return _uint64_to_string(enable, value);
+    return sysFeatures_uint64_to_string(enable, value);
 }
 
 static int sysFeatures_amd_rapl_energy_limit_2_enable_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
@@ -481,7 +481,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_enable_setter(const LikwidDevice_
         return -EINVAL;
     }
     uint64_t enable;
-    err = _string_to_uint64(value, &enable);
+    err = sysFeatures_string_to_uint64(value, &enable);
     if (err < 0)
     {
         return err;
@@ -530,7 +530,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_clamp_getter(const LikwidDevice_t
         return err;
     }
     const uint64_t clamp = field64(msrData, 48, 1);
-    return _uint64_to_string(clamp, value);
+    return sysFeatures_uint64_to_string(clamp, value);
 }
 
 static int sysFeatures_amd_rapl_energy_limit_2_clamp_setter(const LikwidDevice_t device, char* value, uint32_t reg, const RaplDomainInfo* info)
@@ -541,7 +541,7 @@ static int sysFeatures_amd_rapl_energy_limit_2_clamp_setter(const LikwidDevice_t
         return -EINVAL;
     }
     uint64_t clamp;
-    err = _string_to_uint64(value, &clamp);
+    err = sysFeatures_string_to_uint64(value, &clamp);
     if (err < 0)
     {
         return err;
@@ -698,14 +698,14 @@ static int sysFeatures_amd_rapl_policy_getter(const LikwidDevice_t device, char*
         return err;
     }
     const uint64_t policy = field64(msrData, 0, 5);
-    return _uint64_to_string(policy, value);
+    return sysFeatures_uint64_to_string(policy, value);
 }
 
 static int sysFeatures_amd_rapl_policy_setter(const LikwidDevice_t device, char* value, uint32_t reg)
 {
     int err = 0;
     uint64_t policy;
-    err = _string_to_uint64(value, &policy);
+    err = sysFeatures_string_to_uint64(value, &policy);
     if (err < 0)
     {
         return err;

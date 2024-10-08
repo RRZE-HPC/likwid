@@ -90,7 +90,7 @@ int intel_uncore_cur_freq_getter(const LikwidDevice_t device, char** value)
             if (err == 0)
             {
                 tmp = (tmp & 0xFFULL) * 100;
-                return _uint64_to_string(tmp, value);
+                return sysFeatures_uint64_to_string(tmp, value);
             }
         }
     }
@@ -128,7 +128,7 @@ int intel_uncore_min_freq_getter(const LikwidDevice_t device, char** value)
             if (err == 0)
             {
                 tmp = ((tmp>>8) & 0xFFULL) * 100;
-                return _uint64_to_string(tmp, value);
+                return sysFeatures_uint64_to_string(tmp, value);
             }
         }
     }
@@ -166,7 +166,7 @@ int intel_uncore_max_freq_getter(const LikwidDevice_t device, char** value)
             if (err == 0)
             {
                 tmp = (tmp & 0xFFULL) * 100;;
-                return _uint64_to_string(tmp, value);
+                return sysFeatures_uint64_to_string(tmp, value);
             }
         }
     }

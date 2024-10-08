@@ -65,7 +65,7 @@ int intel_cpu_msr_register_getter(const LikwidDevice_t device, uint32_t reg, uin
         {
             _val = !((data & mask) >> shift);
         }
-        return _uint64_to_string(_val, value);
+        return sysFeatures_uint64_to_string(_val, value);
     }
     return err;
 }
@@ -79,7 +79,7 @@ int intel_cpu_msr_register_setter(const LikwidDevice_t device, uint32_t reg, uin
     }
     uint64_t data = 0x0ULL;
     uint64_t _val = 0x0ULL;
-    err = _string_to_uint64(value, &_val);
+    err = sysFeatures_string_to_uint64(value, &_val);
     if (err < 0)
     {
         return err;
