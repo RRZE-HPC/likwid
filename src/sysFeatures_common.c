@@ -12,7 +12,6 @@
 
 int register_features(_SysFeatureList *features, const _SysFeatureList* in)
 {
-    int err = 0;
     if (in->tester)
     {
         if (!in->tester())
@@ -29,7 +28,7 @@ int register_features(_SysFeatureList *features, const _SysFeatureList* in)
             if (f->tester())
             {
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, Running test for feature %s.%s, f->category, f->name);
-                err = _add_to_feature_list(features, f);
+                int err = _add_to_feature_list(features, f);
                 if (err < 0)
                 {
                     ERROR_PRINT(Failed to add HW feature %s.%s to feature list, f->category, f->name);
@@ -42,7 +41,7 @@ int register_features(_SysFeatureList *features, const _SysFeatureList* in)
         }
         else
         {
-            err = _add_to_feature_list(features, f);
+            int err = _add_to_feature_list(features, f);
             if (err < 0)
             {
                 ERROR_PRINT(Failed to add HW feature %s.%s to feature list, f->category, f->name);
@@ -54,31 +53,23 @@ int register_features(_SysFeatureList *features, const _SysFeatureList* in)
 
 int sysFeatures_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList *list)
 {
-    int i = 0;
-    int j = 0;
-    int c = 0;
-    int err = 0;
-    CpuInfo_t cpuinfo = NULL;
-    _SysFeatureList** feature_list = NULL;
-    _SysFeature* out = NULL;
-    err = topology_init();
+    int err = topology_init();
     if (err < 0)
     {
         ERROR_PRINT(Failed to initialize topology module);
         return err;
     }
-    cpuinfo = get_cpuInfo();
+    CpuInfo_t cpuinfo = get_cpuInfo();
 
-    c = 0;
-    while (infeatures[c].family >= 0 && infeatures[c].model >= 0)
+    _SysFeatureList** feature_list = NULL;
+    for (unsigned c = 0; infeatures[c].family >= 0 && infeatures[c].model >= 0; c++)
     {
-        if (infeatures[c].family == cpuinfo->family && infeatures[c].model == cpuinfo->model)
+        if ((unsigned)infeatures[c].family == cpuinfo->family && (unsigned)infeatures[c].model == cpuinfo->model)
         {
             DEBUG_PRINT(DEBUGLEV_DEVELOP, Using feature list for CPU family 0x%X and model 0x%X, cpuinfo->family, cpuinfo->model);
             feature_list = infeatures[c].features;
             break;
         }
-        c++;
     }
     if (!feature_list)
     {
@@ -86,12 +77,9 @@ int sysFeatures_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList 
         return -ENOTSUP;
     }
 
-    j = 0;
-    //_SysFeatureList newlist = {0, NULL, NULL};
-    while (feature_list[j] != NULL)
+    for (unsigned j = 0; feature_list[j] != NULL; j++)
     {
         register_features(list, feature_list[j]);
-        j++;
     }
     return 0;
 }
