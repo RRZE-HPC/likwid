@@ -21,7 +21,7 @@ static RaplDomainInfo amd_rapl_l3_info = {0, 0, 0};
 static int amd_rapl_register_test(uint32_t reg)
 {
     int err = 0;
-    int valid = 0;
+    unsigned valid = 0;
     CpuTopology_t topo = NULL;
 
     err = topology_init();
@@ -35,9 +35,9 @@ static int amd_rapl_register_test(uint32_t reg)
     {
         return err;
     }
-    for (int i = 0; i < topo->numSockets; i++)
+    for (unsigned i = 0; i < topo->numSockets; i++)
     {
-        for (int j = 0; j < topo->numHWThreads; j++)
+        for (unsigned j = 0; j < topo->numHWThreads; j++)
         {
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
@@ -76,7 +76,7 @@ static int sysFeatures_amd_rapl_energy_status_getter(const LikwidDevice_t device
 int amd_rapl_pkg_test(void)
 {
     int err = 0;
-    int valid = 0;
+    unsigned valid = 0;
     CpuTopology_t topo = NULL;
 
     err = topology_init();
@@ -85,9 +85,9 @@ int amd_rapl_pkg_test(void)
         return 0;
     }
     topo = get_cpuTopology();
-    for (int i = 0; i < topo->numSockets; i++)
+    for (unsigned i = 0; i < topo->numSockets; i++)
     {
-        for (int j = 0; j < topo->numHWThreads; j++)
+        for (unsigned j = 0; j < topo->numHWThreads; j++)
         {
             uint64_t data = 0;
             HWThread* t = &topo->threadPool[j];
@@ -127,9 +127,8 @@ int sysFeatures_amd_pkg_energy_status_getter(const LikwidDevice_t device, char**
 int amd_rapl_core_test(void)
 {
     int err = 0;
-    int valid = 0;
+    unsigned valid = 0;
     CpuTopology_t topo = NULL;
-    CpuInfo_t info = NULL;
 
     err = topology_init();
     if (err < 0)
@@ -137,8 +136,7 @@ int amd_rapl_core_test(void)
         return 0;
     }
     topo = get_cpuTopology();
-    info = get_cpuInfo();
-    for (int j = 0; j < topo->numHWThreads; j++)
+    for (unsigned j = 0; j < topo->numHWThreads; j++)
     {
         uint64_t data = 0x0;
         HWThread* t = &topo->threadPool[j];
@@ -173,7 +171,7 @@ int sysFeatures_amd_core_energy_status_getter(const LikwidDevice_t device, char*
 int amd_rapl_l3_test(void)
 {
     int err = 0;
-    int valid = 0;
+    unsigned valid = 0;
     CpuTopology_t topo = NULL;
     CpuInfo_t info = NULL;
 
@@ -186,9 +184,9 @@ int amd_rapl_l3_test(void)
     info = get_cpuInfo();
     if (info->family == ZEN3_FAMILY && (info->model == ZEN4_RYZEN || info->model == ZEN4_RYZEN_PRO || info->model == ZEN4_EPYC))
     {
-        for (int i = 0; i < topo->numSockets; i++)
+        for (unsigned i = 0; i < topo->numSockets; i++)
         {
-            for (int j = 0; j < topo->numHWThreads; j++)
+            for (unsigned j = 0; j < topo->numHWThreads; j++)
             {
                 uint64_t data = 0;
                 HWThread* t = &topo->threadPool[j];
