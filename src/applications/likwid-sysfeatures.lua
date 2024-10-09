@@ -317,11 +317,15 @@ if listFeatures and #hwtlist > 0 then
         for _,f in pairs(list) do
             local dev = getDevice(f.TypeID, c)
             if dev then
-                local v = likwid.sysFeatures_get(f.Name, dev)
-                if v == nil then
-                    table.insert(tab, "fail")
+                if f.WriteOnly then
+                    table.insert(tab, "(wronly)")
                 else
-                    table.insert(tab, v)
+                    local v = likwid.sysFeatures_get(f.Name, dev)
+                    if v == nil then
+                        table.insert(tab, "fail")
+                    else
+                        table.insert(tab, v)
+                    end
                 end
             else
                 table.insert(tab, "-")
