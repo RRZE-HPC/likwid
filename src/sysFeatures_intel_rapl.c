@@ -537,7 +537,7 @@ static int sysFeatures_intel_rapl_policy_setter(const LikwidDevice_t device, con
     {
         return err;
     }
-    field64set(msrData, 0, 5, policy);
+    field64set(&msrData, 0, 5, policy);
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }
 
