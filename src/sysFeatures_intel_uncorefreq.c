@@ -10,42 +10,37 @@
 #include <access.h>
 #include <sysFeatures_common.h>
 
-int intel_uncorefreq_test()
+int intel_uncorefreq_test(void)
 {
-    int err = 0;
-    int valid = 0;
-    CpuTopology_t topo = NULL;
-
-    err = topology_init();
+    int err = topology_init();
     if (err < 0)
     {
         return err;
     }
-    topo = get_cpuTopology();
+    CpuTopology_t topo = get_cpuTopology();
     err = HPMinit();
     if (err < 0)
     {
         return err;
     }
-    for (int j = 0; j < topo->numSockets; j++)
+    unsigned valid = 0;
+    for (unsigned j = 0; j < topo->numSockets; j++)
     {
-        for (int i = 0; i < topo->numHWThreads; i++)
+        for (unsigned i = 0; i < topo->numHWThreads; i++)
         {
             HWThread* t = &topo->threadPool[i];
             if (t->inCpuSet)
             {
-                uint64_t tmp = 0;
                 if (t->packageId != j) continue;
                 err = HPMaddThread(t->apicId);
                 if (err < 0) continue;
-                err = HPMread(t->apicId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
+                uint64_t msrData = 0;
+                err = HPMread(t->apicId, MSR_DEV, MSR_UNCORE_FREQ, &msrData);
+                if (err < 0) break;
+                err = HPMread(t->apicId, MSR_DEV, MSR_UNCORE_FREQ_READ, &msrData);
                 if (err == 0)
                 {
-                    err = HPMread(t->apicId, MSR_DEV, MSR_UNCORE_FREQ_READ, &tmp);
-                    if (err == 0)
-                    {
-                        valid++;
-                    }
+                    valid++;
                 }
                 break;
             }
@@ -61,37 +56,33 @@ int intel_uncorefreq_test()
 
 int intel_uncore_cur_freq_getter(const LikwidDevice_t device, char** value)
 {
-    int err = 0;
-    CpuTopology_t topo = NULL;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
     {
         return -EINVAL;
     }
-    err = topology_init();
+    int err = topology_init();
     if (err < 0)
     {
         return err;
     }
-    topo = get_cpuTopology();
+    CpuTopology_t topo = get_cpuTopology();
     err = HPMinit();
     if (err < 0)
     {
         return err;
     }
-    for (int i = 0; i < topo->numHWThreads; i++)
+    for (unsigned i = 0; i < topo->numHWThreads; i++)
     {
         HWThread* t = &topo->threadPool[i];
-        if (t->packageId == device->id.simple.id && t->inCpuSet)
+        if ((int)t->packageId == device->id.simple.id && t->inCpuSet)
         {
-            uint64_t tmp = 0;
             err = HPMaddThread(t->apicId);
             if (err < 0) continue;
-            err = HPMread(t->apicId, MSR_DEV, MSR_UNCORE_FREQ_READ, &tmp);
-            if (err == 0)
-            {
-                tmp = (tmp & 0xFFULL) * 100;
-                return sysFeatures_uint64_to_string(tmp, value);
-            }
+            uint64_t msrData = 0;
+            err = HPMread(t->apicId, MSR_DEV, MSR_UNCORE_FREQ_READ, &msrData);
+            if (err < 0) continue;
+            // FIXME we stricly do not know the base frequency, but it is typically 100 Mhz
+            return sysFeatures_uint64_to_string(field64(msrData, 0, 8) * 100, value);
         }
     }
     return -ENODEV;
@@ -99,37 +90,33 @@ int intel_uncore_cur_freq_getter(const LikwidDevice_t device, char** value)
 
 int intel_uncore_min_freq_getter(const LikwidDevice_t device, char** value)
 {
-    int err = 0;
-    CpuTopology_t topo = NULL;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
     {
         return -EINVAL;
     }
-    err = topology_init();
+    int err = topology_init();
     if (err < 0)
     {
         return err;
     }
-    topo = get_cpuTopology();
+    CpuTopology_t topo = get_cpuTopology();
     err = HPMinit();
     if (err < 0)
     {
         return err;
     }
-    for (int i = 0; i < topo->numHWThreads; i++)
+    for (unsigned i = 0; i < topo->numHWThreads; i++)
     {
         HWThread* t = &topo->threadPool[i];
-        if (t->packageId == device->id.simple.id && t->inCpuSet)
+        if ((int)t->packageId == device->id.simple.id && t->inCpuSet)
         {
-            uint64_t tmp = 0;
             err = HPMaddThread(t->apicId);
             if (err < 0) continue;
-            err = HPMread(t->apicId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
-            if (err == 0)
-            {
-                tmp = ((tmp>>8) & 0xFFULL) * 100;
-                return sysFeatures_uint64_to_string(tmp, value);
-            }
+            uint64_t msrData = 0;
+            err = HPMread(t->apicId, MSR_DEV, MSR_UNCORE_FREQ, &msrData);
+            if (err < 0) continue;
+            // FIXME we stricly do not know the base frequency, but it is typically 100 Mhz
+            return sysFeatures_uint64_to_string(field64(msrData, 8, 8) * 100, value);
         }
     }
     return -ENODEV;
@@ -137,37 +124,33 @@ int intel_uncore_min_freq_getter(const LikwidDevice_t device, char** value)
 
 int intel_uncore_max_freq_getter(const LikwidDevice_t device, char** value)
 {
-    int err = 0;
-    CpuTopology_t topo = NULL;
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
     {
         return -EINVAL;
     }
-    err = topology_init();
+    int err = topology_init();
     if (err < 0)
     {
         return err;
     }
-    topo = get_cpuTopology();
+    CpuTopology_t topo = get_cpuTopology();
     err = HPMinit();
     if (err < 0)
     {
         return err;
     }
-    for (int i = 0; i < topo->numHWThreads; i++)
+    for (unsigned  i = 0; i < topo->numHWThreads; i++)
     {
         HWThread* t = &topo->threadPool[i];
-        if (t->packageId == device->id.simple.id && t->inCpuSet)
+        if ((int)t->packageId == device->id.simple.id && t->inCpuSet)
         {
-            uint64_t tmp = 0;
             err = HPMaddThread(t->apicId);
             if (err < 0) continue;
-            err = HPMread(t->apicId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
-            if (err == 0)
-            {
-                tmp = (tmp & 0xFFULL) * 100;;
-                return sysFeatures_uint64_to_string(tmp, value);
-            }
+            uint64_t msrData = 0;
+            err = HPMread(t->apicId, MSR_DEV, MSR_UNCORE_FREQ, &msrData);
+            if (err < 0) continue;
+            // FIXME we stricly do not know the base frequency, but it is typically 100 Mhz
+            return sysFeatures_uint64_to_string(field64(msrData, 0, 8) * 100, value);
         }
     }
     return -ENODEV;
