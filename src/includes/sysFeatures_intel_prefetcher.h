@@ -4,7 +4,7 @@
 /*********************************************************************************************************************/
 /*                          Intel prefetchers                                                                        */
 /*********************************************************************************************************************/
-int intel_cpu_l2_hwpf_register_test();
+int intel_cpu_l2_hwpf_register_test(void);
 int intel_cpu_l2_hwpf_getter(const LikwidDevice_t device, char** value);
 int intel_cpu_l2_hwpf_setter(const LikwidDevice_t device, const char* value);
 int intel_cpu_l2_adj_pf_getter(const LikwidDevice_t device, char** value);
@@ -69,7 +69,7 @@ static _SysFeatureList intel_knl_cpu_feature_list = {
 /*********************************************************************************************************************/
 /*                          Intel Core2 prefetchers                                                                  */
 /*********************************************************************************************************************/
-int intel_core2_l2_hwpf_register_test();
+int intel_core2_l2_hwpf_register_test(void);
 int intel_core2_l2_hwpf_getter(const LikwidDevice_t device, char** value);
 int intel_core2_l2_hwpf_setter(const LikwidDevice_t device, const char* value);
 int intel_core2_l2_adjpf_getter(const LikwidDevice_t device, char** value);
@@ -97,7 +97,7 @@ static _SysFeatureList intel_core2_cpu_feature_list = {
 /*                          Intel Dynamic Acceleration                                                               */
 /*********************************************************************************************************************/
 
-int intel_core2_ida_tester();
+int intel_core2_ida_tester(void);
 int intel_core2_ida_getter(const LikwidDevice_t device, char** value);
 int intel_core2_ida_setter(const LikwidDevice_t device, const char* value);
 
