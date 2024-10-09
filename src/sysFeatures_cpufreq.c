@@ -111,6 +111,7 @@ static int cpufreq_driver_test(const char* testgovernor)
             break;
         }
     }
+    bdestroy(btest);
     return err;
 }
 
