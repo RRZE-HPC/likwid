@@ -6,11 +6,11 @@
 #include <topology.h>
 #include <sysFeatures_types.h>
 #include <likwid.h>
+#include <stdbool.h>
 
 
-int intel_cpu_msr_register_getter(const LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, char** value);
-
-int intel_cpu_msr_register_setter(const LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, const char* value);
+int intel_cpu_msr_register_getter(const LikwidDevice_t device, uint32_t reg, int bitoffset, int width, bool invert, char** value);
+int intel_cpu_msr_register_setter(const LikwidDevice_t device, uint32_t reg, int bitoffset, int width, bool invert, const char* value);
 
 #include <sysFeatures_intel_prefetcher.h>
 #include <sysFeatures_intel_turbo.h>

@@ -18,8 +18,7 @@
 
 int sysFeatures_init_x86_intel(_SysFeatureList* out)
 {
-    int err = 0;
-    err = sysFeatures_init_generic(intel_arch_features, out);
+    int err = sysFeatures_init_generic(intel_arch_features, out);
     if (err < 0)
     {
         ERROR_PRINT(Failed to init general Intel HWFetures);
@@ -35,14 +34,13 @@ int sysFeatures_init_x86_intel(_SysFeatureList* out)
     return 0;
 }
 
-int intel_cpu_msr_register_getter(const LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, char** value)
+int intel_cpu_msr_register_getter(const LikwidDevice_t device, uint32_t reg, int bitoffset, int width, bool invert, char** value)
 {
-    int err = 0;
     if (device->type != DEVICE_TYPE_HWTHREAD)
     {
         return -ENODEV;
     }
-    err = HPMinit();
+    int err = HPMinit();
     if (err < 0)
     {
         return err;
@@ -52,34 +50,28 @@ int intel_cpu_msr_register_getter(const LikwidDevice_t device, uint32_t reg, uin
     {
         return err;
     }
-    uint64_t data = 0x0;
-    err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
-    if (err == 0)
+    uint64_t msrData = 0x0;
+    err = HPMread(device->id.simple.id, MSR_DEV, reg, &msrData);
+    if (err < 0)
     {
-        uint64_t _val = 0x0;
-        if (!invert)
-        {
-            _val = (data & mask) >> shift;
-        }
-        else
-        {
-            _val = !((data & mask) >> shift);
-        }
-        return sysFeatures_uint64_to_string(_val, value);
+        return err;
     }
-    return err;
+    uint64_t result = field64(msrData, bitoffset, width);
+    if (invert)
+    {
+        result = !result;
+    }
+    return sysFeatures_uint64_to_string(result, value);
 }
 
-int intel_cpu_msr_register_setter(const LikwidDevice_t device, uint32_t reg, uint64_t mask, uint64_t shift, int invert, const char* value)
+int intel_cpu_msr_register_setter(const LikwidDevice_t device, uint32_t reg, int bitoffset, int width, bool invert, const char* value)
 {
-    int err = 0;
     if (device->type != DEVICE_TYPE_HWTHREAD)
     {
         return -ENODEV;
     }
-    uint64_t data = 0x0ULL;
-    uint64_t _val = 0x0ULL;
-    err = sysFeatures_string_to_uint64(value, &_val);
+    uint64_t intval;
+    int err = sysFeatures_string_to_uint64(value, &intval);
     if (err < 0)
     {
         return err;
@@ -94,57 +86,52 @@ int intel_cpu_msr_register_setter(const LikwidDevice_t device, uint32_t reg, uin
     {
         return err;
     }
-    err = HPMread(device->id.simple.id, MSR_DEV, reg, &data);
-    if (err == 0)
+    uint64_t msrData = 0;
+    err = HPMread(device->id.simple.id, MSR_DEV, reg, &msrData);
+    if (err < 0)
     {
-        data &= ~(mask);
-        if (invert)
-        {
-            data |= (((!_val) << shift) & mask);
-        }
-        else
-        {
-            data |= ((_val << shift) & mask);
-        }
-        err = HPMwrite(device->id.simple.id, MSR_DEV, reg, data);
+        return err;
     }
-    return err;
+    if (invert)
+    {
+        intval = !intval;
+    }
+    field64set(&msrData, bitoffset, width, intval);
+    return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }
 
 
 
 /* Intel Turbo */
-int intel_cpu_turbo_test()
+int intel_cpu_turbo_test(void)
 {
-    int err = 0;
-    int valid = 0;
-    CpuTopology_t topo = NULL;
-    unsigned eax = 0x01, ebx, ecx, edx;
+    uint32_t eax = 0x01, ebx, ecx = 0x0, edx;
     CPUID(eax, ebx, ecx, edx);
-    if (((ecx >> 7) & 0x1) == 0)
+    if (field32(ecx, 7, 1) == 0)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Intel SpeedStep not supported by architecture);
         return 0;
     }
 
-    err = topology_init();
+    int err = topology_init();
     if (err < 0)
     {
         return 0;
     }
-    topo = get_cpuTopology();
+    CpuTopology_t topo = get_cpuTopology();
     err = HPMinit();
     if (err < 0)
 	{
 		return err;
 	}
-    for (int j = 0; j < topo->numHWThreads; j++)
+    unsigned valid = 0;
+    for (unsigned j = 0; j < topo->numHWThreads; j++)
     {
-        uint64_t data = 0;
         HWThread* t = &topo->threadPool[j];
 		err = HPMaddThread(t->apicId);
 		if (err < 0) continue;
-        err = HPMread(t->apicId, MSR_DEV, MSR_IA32_MISC_ENABLE, &data);
+        uint64_t msrData = 0;
+        err = HPMread(t->apicId, MSR_DEV, MSR_IA32_MISC_ENABLE, &msrData);
         if (err == 0) valid++;
         break;
     }
@@ -155,7 +142,7 @@ int intel_cpu_turbo_getter(const LikwidDevice_t device, char** value)
 {
     if (intel_cpu_turbo_test())
     {
-        return intel_cpu_msr_register_getter(device, MSR_IA32_MISC_ENABLE, (1ULL<<36), 36, 1, value);
+        return intel_cpu_msr_register_getter(device, MSR_IA32_MISC_ENABLE, 36, 1, true, value);
     }
     return -ENOTSUP;
 }
@@ -164,7 +151,7 @@ int intel_cpu_turbo_setter(const LikwidDevice_t device, const char* value)
 {
     if (intel_cpu_turbo_test())
     {
-        return intel_cpu_msr_register_setter(device, MSR_IA32_MISC_ENABLE, (1ULL<<36), 36, 1, value);
+        return intel_cpu_msr_register_setter(device, MSR_IA32_MISC_ENABLE, 36, 1, true, value);
     }
     return -ENOTSUP;
 }
