@@ -22,36 +22,29 @@ int add_to_feature_list(SysFeatureList *list, const SysFeature* feature)
     }
     list->features = flist;
 
-    SysFeature* iof = &(list->features[list->num_features]);
-    iof->name = malloc((strlen(feature->name) + 1) * sizeof(char));
+    SysFeature* iof = &list->features[list->num_features];
+    iof->name = strndup(feature->name, HWFEATURES_MAX_STR_LENGTH - 1);
     if (!iof->name)
     {
         return -ENOMEM;
     }
-    iof->category = malloc((strlen(feature->category) + 1) * sizeof(char));
+    iof->category = strndup(feature->category, HWFEATURES_MAX_STR_LENGTH - 1);
     if (!iof->category)
     {
         free(iof->name);
         return -ENOMEM;
     }
-    iof->description = malloc((strlen(feature->description) + 1) * sizeof(char));
+    iof->description = strndup(feature->category, HWFEATURES_MAX_STR_LENGTH - 1);
     if (!iof->description)
     {
         free(iof->name);
         free(iof->category);
         return -ENOMEM;
     }
-    int slen = HWFEATURES_MIN_STRLEN(strlen(feature->name) + 1, HWFEATURES_MAX_STR_LENGTH);
-    strncpy(iof->name, feature->name, slen);
-    slen = HWFEATURES_MIN_STRLEN(strlen(feature->category) + 1, HWFEATURES_MAX_STR_LENGTH);
-    strncpy(iof->category, feature->category, slen);
-    slen = HWFEATURES_MIN_STRLEN(strlen(feature->description) + 1, HWFEATURES_MAX_STR_LENGTH);
-    strncpy(iof->description, feature->description, slen);
 
     iof->readonly = feature->readonly;
     iof->type = feature->type;
     iof->writeonly = feature->writeonly;
-
     list->num_features++;
 
     return 0;
@@ -76,7 +69,7 @@ int merge_feature_lists(SysFeatureList *inout, const SysFeatureList *in)
 
     for (int i = 0; i < in->num_features; i++)
     {
-        SysFeature* ifeat = &(in->features[i]);
+        SysFeature* ifeat = &in->features[i];
         add_to_feature_list(inout, ifeat);
     }
 
@@ -90,12 +83,11 @@ void free_feature_list(SysFeatureList *list)
     {
         for (int i = 0; i < list->num_features; i++)
         {
-            SysFeature* f = &(list->features[i]);
+            SysFeature* f = &list->features[i];
             if (f->name) free(f->name);
             if (f->category) free(f->category);
             if (f->description) free(f->description);
         }
-        memset(list->features, 0, list->num_features * sizeof(SysFeature));
         free(list->features);
         list->features = NULL;
         list->num_features = 0;
@@ -118,7 +110,7 @@ int _add_to_feature_list(_SysFeatureList *list, const _SysFeature* feature)
     }
     list->features = flist;
 
-    _SysFeature* iof = &(list->features[list->num_features]);
+    _SysFeature* iof = &list->features[list->num_features];
     iof->name = feature->name;
     iof->category = feature->category;
     iof->description = feature->description;
@@ -151,8 +143,8 @@ int _merge_feature_lists(_SysFeatureList *inout, const _SysFeatureList *in)
 
     for (int i = 0; i < in->num_features; i++)
     {
-        _SysFeature* ifeat = &(in->features[i]);
-        _SysFeature* iof = &(inout->features[inout->num_features + i]);
+        _SysFeature* ifeat = &in->features[i];
+        _SysFeature* iof = &inout->features[inout->num_features + i];
         
         iof->name = ifeat->name;
         iof->category = ifeat->category;
@@ -171,7 +163,6 @@ void _free_feature_list(_SysFeatureList *list)
 {
     if (list)
     {
-        memset(list->features, 0, list->num_features * sizeof(_SysFeature));
         free(list->features);
         list->features = NULL;
         list->tester = NULL;
@@ -206,7 +197,7 @@ int internal_to_external_feature_list(const _SysFeatureList *inlist, SysFeatureL
         {
             for (int j = 0; j < i; j++)
             {
-                SysFeature* c = &(outlist->features[j]);
+                SysFeature* c = &outlist->features[j];
                 free(c->name);
                 free(c->category);
                 free(c->description);
@@ -221,7 +212,7 @@ int internal_to_external_feature_list(const _SysFeatureList *inlist, SysFeatureL
             free(out->name);
             for (int j = 0; j < i; j++)
             {
-                SysFeature* c = &(outlist->features[j]);
+                SysFeature* c = &outlist->features[j];
                 free(c->name);
                 free(c->category);
                 free(c->description);
@@ -237,7 +228,7 @@ int internal_to_external_feature_list(const _SysFeatureList *inlist, SysFeatureL
             free(out->category);
             for (int j = 0; j < i; j++)
             {
-                SysFeature* c = &(outlist->features[j]);
+                SysFeature* c = &outlist->features[j];
                 free(c->name);
                 free(c->category);
                 free(c->description);
