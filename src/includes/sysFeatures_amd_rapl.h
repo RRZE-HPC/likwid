@@ -2,12 +2,10 @@
 #define HWFEATURES_X86_AMD_RAPL_H
 
 
-int amd_rapl_pkg_test();
+int amd_rapl_pkg_test(void);
 
-int sysFeatures_amd_pkg_energy_status_test();
+int sysFeatures_amd_pkg_energy_status_test(void);
 int sysFeatures_amd_pkg_energy_status_getter(LikwidDevice_t device, char** value);
-
-
 
 #define MAX_AMD_RAPL_PKG_FEATURES 1
 static _SysFeature amd_rapl_pkg_features[] = {
@@ -20,9 +18,9 @@ static _SysFeatureList amd_rapl_pkg_feature_list = {
     .features = amd_rapl_pkg_features,
 };
 
-int amd_rapl_core_test();
+int amd_rapl_core_test(void);
 
-int sysFeatures_amd_core_energy_status_test();
+int sysFeatures_amd_core_energy_status_test(void);
 int sysFeatures_amd_core_energy_status_getter(LikwidDevice_t device, char** value);
 
 
@@ -37,9 +35,9 @@ static _SysFeatureList amd_rapl_core_feature_list = {
     .features = amd_rapl_core_features,
 };
 
-int amd_rapl_l3_test();
+int amd_rapl_l3_test(void);
 
-int sysFeatures_amd_l3_energy_status_test();
+int sysFeatures_amd_l3_energy_status_test(void);
 int sysFeatures_amd_l3_energy_status_getter(LikwidDevice_t device, char** value);
 
 
