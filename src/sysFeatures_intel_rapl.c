@@ -23,32 +23,29 @@ static RaplDomainInfo intel_rapl_pp1_info = {0, 0, 0};
 
 static int intel_rapl_register_test(uint32_t reg)
 {
-    int err = 0;
-    int valid = 0;
-    CpuTopology_t topo = NULL;
-
-    err = topology_init();
+    int err = topology_init();
     if (err < 0)
     {
         return 0;
     }
-    topo = get_cpuTopology();
+    CpuTopology_t topo = get_cpuTopology();
     err = HPMinit();
     if (err < 0)
     {
 	    return 0;
     }
-    for (int i = 0; i < topo->numSockets; i++)
+    unsigned valid = 0;
+    for (unsigned i = 0; i < topo->numSockets; i++)
     {
-        for (int j = 0; j < topo->numHWThreads; j++)
+        for (unsigned j = 0; j < topo->numHWThreads; j++)
         {
-            uint64_t data = 0;
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
                 err = HPMaddThread(t->apicId);
                 if (err < 0) continue;
-                err = HPMread(t->apicId, MSR_DEV, reg, &data);
+                uint64_t msrData = 0;
+                err = HPMread(t->apicId, MSR_DEV, reg, &msrData);
                 if (err == 0) valid++;
                 break;
             }
@@ -59,28 +56,30 @@ static int intel_rapl_register_test(uint32_t reg)
 
 static int intel_rapl_register_test_bit(uint32_t reg, int bitoffset)
 {
-    int err = 0;
-    int valid = 0;
-    CpuTopology_t topo = NULL;
-
-    err = topology_init();
+    int err = topology_init();
     if (err < 0)
     {
         return 0;
     }
-    topo = get_cpuTopology();
-    for (int i = 0; i < topo->numSockets; i++)
+    CpuTopology_t topo = get_cpuTopology();
+    err = HPMinit();
+    if (err < 0)
     {
-        for (int j = 0; j < topo->numHWThreads; j++)
+	    return 0;
+    }
+    unsigned valid = 0;
+    for (unsigned i = 0; i < topo->numSockets; i++)
+    {
+        for (unsigned j = 0; j < topo->numHWThreads; j++)
         {
-            uint64_t data = 0;
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
                 err = HPMaddThread(t->apicId);
                 if (err < 0) continue;
-                err = HPMread(t->apicId, MSR_DEV, reg, &data);
-                if (err == 0 && field64(data, bitoffset, 1)) valid++;
+                uint64_t msrData = 0;
+                err = HPMread(t->apicId, MSR_DEV, reg, &msrData);
+                if (err == 0 && field64(msrData, bitoffset, 1)) valid++;
                 break;
             }
         }
@@ -548,39 +547,36 @@ static int sysFeatures_intel_rapl_policy_setter(const LikwidDevice_t device, con
 
 int intel_rapl_pkg_test()
 {
-    int err = 0;
-    int valid = 0;
-    CpuTopology_t topo = NULL;
-
-    err = topology_init();
+    int err = topology_init();
     if (err < 0)
     {
         return 0;
     }
-    topo = get_cpuTopology();
+    CpuTopology_t topo = get_cpuTopology();
     err = HPMinit();
     if (err < 0)
     {
         return 0;
     }
 
-    for (int i = 0; i < topo->numSockets; i++)
+    unsigned valid = 0;
+    for (unsigned i = 0; i < topo->numSockets; i++)
     {
-        for (int j = 0; j < topo->numHWThreads; j++)
+        for (unsigned j = 0; j < topo->numHWThreads; j++)
         {
-            uint64_t data = 0;
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
                 err = HPMaddThread(t->apicId);
                 if (err < 0) continue;
-                err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
+                uint64_t msrData = 0;
+                err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &msrData);
                 if (err == 0) valid++;
                 if (intel_rapl_pkg_info.powerUnit == 0 && intel_rapl_pkg_info.energyUnit == 0 && intel_rapl_pkg_info.timeUnit == 0)
                 {
-                    intel_rapl_pkg_info.powerUnit = 1.0 / (1 << field64(data, 0, 4));
-                    intel_rapl_pkg_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
-                    intel_rapl_pkg_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
+                    intel_rapl_pkg_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
+                    intel_rapl_pkg_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
+                    intel_rapl_pkg_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
                 }
                 break;
             }
@@ -709,40 +705,36 @@ int sysFeatures_intel_pkg_info_max_time(const LikwidDevice_t device, char** valu
 
 int intel_rapl_dram_test()
 {
-    int err = 0;
-    int valid = 0;
-    CpuTopology_t topo = NULL;
-    CpuInfo_t info = NULL;
-
-    err = topology_init();
+    int err = topology_init();
     if (err < 0)
     {
         return 0;
     }
-    topo = get_cpuTopology();
-    info = get_cpuInfo();
+    CpuTopology_t topo = get_cpuTopology();
+    CpuInfo_t info = get_cpuInfo();
     err = HPMinit();
     if (err < 0)
     {
         return 0;
     }
-    for (int i = 0; i < topo->numSockets; i++)
+    unsigned valid = 0;
+    for (unsigned i = 0; i < topo->numSockets; i++)
     {
-        for (int j = 0; j < topo->numHWThreads; j++)
+        for (unsigned j = 0; j < topo->numHWThreads; j++)
         {
-            uint64_t data = 0;
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
                 err = HPMaddThread(t->apicId);
                 if (err < 0) continue;
-                err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
+                uint64_t msrData = 0;
+                err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &msrData);
                 if (err == 0) valid++;
                 if (intel_rapl_dram_info.powerUnit == 0 && intel_rapl_dram_info.energyUnit == 0 && intel_rapl_dram_info.timeUnit == 0)
                 {
-                    intel_rapl_dram_info.powerUnit = 1.0 / (1 << field64(data, 0, 4));
-                    intel_rapl_dram_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
-                    intel_rapl_dram_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
+                    intel_rapl_dram_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
+                    intel_rapl_dram_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
+                    intel_rapl_dram_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
                     if ((info->model == HASWELL_EP) ||
                         (info->model == HASWELL_M1) ||
                         (info->model == HASWELL_M2) ||
@@ -850,44 +842,40 @@ int sysFeatures_intel_dram_info_max_time(const LikwidDevice_t device, char** val
 
 int intel_rapl_psys_test()
 {
-    int err = 0;
-    int valid = 0;
-    CpuTopology_t topo = NULL;
-    CpuInfo_t info = NULL;
-
-    err = topology_init();
+    int err = topology_init();
     if (err < 0)
     {
         return 0;
     }
-    topo = get_cpuTopology();
-    info = get_cpuInfo();
+    CpuTopology_t topo = get_cpuTopology();
+    CpuInfo_t info = get_cpuInfo();
     err = HPMinit();
     if (err < 0)
     {
         return 0;
     }
-    for (int i = 0; i < topo->numSockets; i++)
+    unsigned valid = 0;
+    for (unsigned i = 0; i < topo->numSockets; i++)
     {
-        for (int j = 0; j < topo->numHWThreads; j++)
+        for (unsigned j = 0; j < topo->numHWThreads; j++)
         {
-            uint64_t data = 0;
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
                 err = HPMaddThread(t->apicId);
                 if (err < 0) continue;
-                err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
+                uint64_t msrData = 0;
+                err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &msrData);
                 if (err == 0) valid++;
                 if (intel_rapl_psys_info.powerUnit == 0 && intel_rapl_psys_info.energyUnit == 0 && intel_rapl_psys_info.timeUnit == 0)
                 {
-                    intel_rapl_psys_info.powerUnit = 1.0 / (1 << field64(data, 0, 4));
-                    intel_rapl_psys_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
+                    intel_rapl_psys_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
+                    intel_rapl_psys_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
                     if (info->model == SAPPHIRERAPIDS)
                     {
                         intel_rapl_psys_info.energyUnit = 1.0;
                     }
-                    intel_rapl_psys_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
+                    intel_rapl_psys_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
                 }
                 break;
             }
@@ -990,40 +978,35 @@ int sysFeatures_intel_psys_energy_limit_2_clamp_setter(const LikwidDevice_t devi
 
 int intel_rapl_pp0_test()
 {
-    int err = 0;
-    int valid = 0;
-    CpuTopology_t topo = NULL;
-    CpuInfo_t info = NULL;
-
-    err = topology_init();
+    int err = topology_init();
     if (err < 0)
     {
         return 0;
     }
-    topo = get_cpuTopology();
-    info = get_cpuInfo();
+    CpuTopology_t topo = get_cpuTopology();
     err = HPMinit();
     if (err < 0)
     {
         return 0;
     }
-    for (int i = 0; i < topo->numSockets; i++)
+    unsigned valid = 0;
+    for (unsigned i = 0; i < topo->numSockets; i++)
     {
-        for (int j = 0; j < topo->numHWThreads; j++)
+        for (unsigned j = 0; j < topo->numHWThreads; j++)
         {
-            uint64_t data = 0;
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
                 err = HPMaddThread(t->apicId);
                 if (err < 0) continue;
-                err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
+                uint64_t msrData = 0;
+                err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &msrData);
                 if (err == 0) valid++;
                 if (intel_rapl_pp0_info.powerUnit == 0 && intel_rapl_pp0_info.energyUnit == 0 && intel_rapl_pp0_info.timeUnit == 0)
                 {
-                    intel_rapl_pp0_info.powerUnit = 1.0 / (1 << field64(data, 0, 4));
-                    intel_rapl_pp0_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
-                    intel_rapl_pp0_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
+                    intel_rapl_pp0_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
+                    intel_rapl_pp0_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
+                    intel_rapl_pp0_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
                 }
                 break;
             }
@@ -1107,40 +1090,36 @@ int sysFeatures_intel_pp0_policy_setter(const LikwidDevice_t device, const char*
 
 int intel_rapl_pp1_test()
 {
-    int err = 0;
-    int valid = 0;
-    CpuTopology_t topo = NULL;
-    CpuInfo_t info = NULL;
-
-    err = topology_init();
+    int err = topology_init();
     if (err < 0)
     {
         return 0;
     }
-    topo = get_cpuTopology();
-    info = get_cpuInfo();
+    CpuTopology_t topo = get_cpuTopology();
+    CpuInfo_t info = get_cpuInfo();
     err = HPMinit();
     if (err < 0)
     {
         return 0;
     }
-    for (int i = 0; i < topo->numSockets; i++)
+    unsigned valid = 0;
+    for (unsigned i = 0; i < topo->numSockets; i++)
     {
-        for (int j = 0; j < topo->numHWThreads; j++)
+        for (unsigned j = 0; j < topo->numHWThreads; j++)
         {
-            uint64_t data = 0;
             HWThread* t = &topo->threadPool[j];
             if (t->packageId == i)
             {
                 err = HPMaddThread(t->apicId);
                 if (err < 0) continue;
-                err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &data);
+                uint64_t msrData = 0;
+                err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &msrData);
                 if (err == 0) valid++;
                 if (intel_rapl_pp1_info.powerUnit == 0 && intel_rapl_pp1_info.energyUnit == 0 && intel_rapl_pp1_info.timeUnit == 0)
                 {
-                    intel_rapl_pp1_info.powerUnit = 1.0 / (1 << field64(data, 0, 4));
-                    intel_rapl_pp1_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
-                    intel_rapl_pp1_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
+                    intel_rapl_pp1_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
+                    intel_rapl_pp1_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
+                    intel_rapl_pp1_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
                 }
                 break;
             }
