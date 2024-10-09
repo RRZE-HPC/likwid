@@ -21,6 +21,8 @@ static int cpufreq_sysfs_getter(const LikwidDevice_t device, char** value, const
         return -EINVAL;
     }
     bstring filename = bformat("/sys/devices/system/cpu/cpu%d/cpufreq/%s", device->id.simple.id, sysfs_filename);
+    // bdata() conditionally returns NULL and gcc access doesn't like that with access()
+#pragma GCC diagnostic ignored "-Wnonnull"
     if (!access(bdata(filename), R_OK))
     {
         bstring content = read_file(bdata(filename));
@@ -56,7 +58,6 @@ static int cpufreq_sysfs_setter(const LikwidDevice_t device, const char* value, 
     {
         return -EINVAL;
     }
-    int vallen = strlen(value);
     bstring filename = bformat("/sys/devices/system/cpu/cpu%d/cpufreq/%s", device->id.simple.id, sysfs_filename);
     errno = 0;
     if (!access(bdata(filename), W_OK))
@@ -70,7 +71,8 @@ static int cpufreq_sysfs_setter(const LikwidDevice_t device, const char* value, 
         }
         else
         {
-            int ret = fwrite(value, sizeof(char), vallen, fp);
+            const size_t vallen = strlen(value);
+            const size_t ret = fwrite(value, sizeof(char), vallen, fp);
             if (ret != (sizeof(char) * vallen))
             {
                 ERROR_PRINT("Failed to open file '%s' for writing: %s", bdata(filename), strerror(errno))
@@ -94,7 +96,7 @@ static int cpufreq_driver_test(const char* testgovernor)
     topology_init();
     CpuTopology_t topo = get_cpuTopology();
 
-    for (int i = 0; i < topo->numHWThreads; i++)
+    for (unsigned i = 0; i < topo->numHWThreads; i++)
     {
         HWThread* t = &topo->threadPool[i];
         if (t->inCpuSet)
