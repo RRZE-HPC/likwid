@@ -2,12 +2,12 @@
 #define HWFEATURES_X86_INTEL_RAPL_H
 
 
-int intel_rapl_pkg_test();
+int intel_rapl_pkg_test(void);
 
-int sysFeatures_intel_pkg_energy_status_test();
+int sysFeatures_intel_pkg_energy_status_test(void);
 int sysFeatures_intel_pkg_energy_status_getter(const LikwidDevice_t device, char** value);
 
-int sysFeatures_intel_pkg_energy_limit_test();
+int sysFeatures_intel_pkg_energy_limit_test(void);
 
 int sysFeatures_intel_pkg_energy_limit_1_getter(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_pkg_energy_limit_1_setter(const LikwidDevice_t device, const char* value);
@@ -27,7 +27,7 @@ int sysFeatures_intel_pkg_energy_limit_2_enable_setter(const LikwidDevice_t devi
 int sysFeatures_intel_pkg_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_pkg_energy_limit_2_clamp_setter(const LikwidDevice_t device, const char* value);
 
-int sysFeatures_intel_pkg_info_test();
+int sysFeatures_intel_pkg_info_test(void);
 int sysFeatures_intel_pkg_info_tdp(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_pkg_info_min_power(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_pkg_info_max_power(const LikwidDevice_t device, char** value);
@@ -57,12 +57,12 @@ static _SysFeatureList intel_rapl_pkg_feature_list = {
     .features = intel_rapl_pkg_features,
 };
 
-int intel_rapl_dram_test();
+int intel_rapl_dram_test(void);
 
-int sysFeatures_intel_dram_energy_status_test();
+int sysFeatures_intel_dram_energy_status_test(void);
 int sysFeatures_intel_dram_energy_status_getter(const LikwidDevice_t device, char** value);
 
-int sysFeatures_intel_dram_energy_limit_test();
+int sysFeatures_intel_dram_energy_limit_test(void);
 int sysFeatures_intel_dram_energy_limit_1_getter(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_dram_energy_limit_1_setter(const LikwidDevice_t device, const char* value);
 int sysFeatures_intel_dram_energy_limit_1_time_getter(const LikwidDevice_t device, char** value);
@@ -72,7 +72,7 @@ int sysFeatures_intel_dram_energy_limit_1_enable_setter(const LikwidDevice_t dev
 int sysFeatures_intel_dram_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_dram_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value);
 
-int sysFeatures_intel_dram_info_test();
+int sysFeatures_intel_dram_info_test(void);
 int sysFeatures_intel_dram_info_tdp(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_dram_info_min_power(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_dram_info_max_power(const LikwidDevice_t device, char** value);
@@ -99,12 +99,12 @@ static _SysFeatureList intel_rapl_dram_feature_list = {
 };
 
 
-int intel_rapl_pp0_test();
+int intel_rapl_pp0_test(void);
 
-int sysFeatures_intel_pp0_energy_status_test();
+int sysFeatures_intel_pp0_energy_status_test(void);
 int sysFeatures_intel_pp0_energy_status_getter(const LikwidDevice_t device, char** value);
 
-int sysFeatures_intel_pp0_energy_limit_test();
+int sysFeatures_intel_pp0_energy_limit_test(void);
 int sysFeatures_intel_pp0_energy_limit_1_getter(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_pp0_energy_limit_1_setter(const LikwidDevice_t device, const char* value);
 int sysFeatures_intel_pp0_energy_limit_1_time_getter(const LikwidDevice_t device, char** value);
@@ -114,7 +114,7 @@ int sysFeatures_intel_pp0_energy_limit_1_enable_setter(const LikwidDevice_t devi
 int sysFeatures_intel_pp0_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_pp0_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value);
 
-int sysFeatures_intel_pp0_policy_test();
+int sysFeatures_intel_pp0_policy_test(void);
 int sysFeatures_intel_pp0_policy_getter(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_pp0_policy_setter(const LikwidDevice_t device, const char* value);
 
@@ -136,12 +136,12 @@ static _SysFeatureList intel_rapl_pp0_feature_list = {
 };
 
 
-int intel_rapl_pp1_test();
+int intel_rapl_pp1_test(void);
 
-int sysFeatures_intel_pp1_energy_status_test();
+int sysFeatures_intel_pp1_energy_status_test(void);
 int sysFeatures_intel_pp1_energy_status_getter(const LikwidDevice_t device, char** value);
 
-int sysFeatures_intel_pp1_energy_limit_test();
+int sysFeatures_intel_pp1_energy_limit_test(void);
 int sysFeatures_intel_pp1_energy_limit_1_getter(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_pp1_energy_limit_1_setter(const LikwidDevice_t device, const char* value);
 int sysFeatures_intel_pp1_energy_limit_1_time_getter(const LikwidDevice_t device, char** value);
@@ -151,7 +151,7 @@ int sysFeatures_intel_pp1_energy_limit_1_enable_setter(const LikwidDevice_t devi
 int sysFeatures_intel_pp1_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_pp1_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value);
 
-int sysFeatures_intel_pp1_policy_test();
+int sysFeatures_intel_pp1_policy_test(void);
 int sysFeatures_intel_pp1_policy_getter(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_pp1_policy_setter(const LikwidDevice_t device, const char* value);
 
@@ -174,12 +174,12 @@ static _SysFeatureList intel_rapl_pp1_feature_list = {
 };
 
 
-int intel_rapl_psys_test();
+int intel_rapl_psys_test(void);
 
-int sysFeatures_intel_psys_energy_status_test();
+int sysFeatures_intel_psys_energy_status_test(void);
 int sysFeatures_intel_psys_energy_status_getter(const LikwidDevice_t device, char** value);
 
-int sysFeatures_intel_psys_energy_limit_test();
+int sysFeatures_intel_psys_energy_limit_test(void);
 int sysFeatures_intel_psys_energy_limit_1_getter(const LikwidDevice_t device, char** value);
 int sysFeatures_intel_psys_energy_limit_1_setter(const LikwidDevice_t device, const char* value);
 int sysFeatures_intel_psys_energy_limit_1_time_getter(const LikwidDevice_t device, char** value);
