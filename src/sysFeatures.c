@@ -24,13 +24,12 @@ static _SysFeatureList _feature_list = {0, NULL, NULL};
 static int get_device_access(LikwidDevice_t device)
 {
     int hwt = -1;
-    CpuTopology_t topo = NULL;
     int err = topology_init();
     if (err < 0)
     {
         return err;
     }
-    topo = get_cpuTopology();
+    CpuTopology_t topo = get_cpuTopology();
 
     if (device->type == DEVICE_TYPE_INVALID)
     {
@@ -38,16 +37,16 @@ static int get_device_access(LikwidDevice_t device)
     }
     switch (device->type) {
         case DEVICE_TYPE_HWTHREAD:
-            if (device->id.simple.id >= 0 && device->id.simple.id < topo->numHWThreads)
+            if (device->id.simple.id >= 0 && device->id.simple.id < (int)topo->numHWThreads)
             {
                 hwt = device->id.simple.id;
             }
             break;
         case DEVICE_TYPE_CORE:
-            for (int i = 0; i < topo->numHWThreads; i++)
+            for (unsigned i = 0; i < topo->numHWThreads; i++)
             {
                 HWThread* t = &topo->threadPool[i];
-                if (t->inCpuSet == 1 && device->id.simple.id == t->coreId)
+                if (t->inCpuSet == 1 && device->id.simple.id == (int)t->coreId)
                 {
                     hwt = t->apicId;
                     break;
@@ -55,7 +54,7 @@ static int get_device_access(LikwidDevice_t device)
             }
             break;
         case DEVICE_TYPE_NODE:
-            for (int i = 0; i < topo->numHWThreads; i++)
+            for (unsigned i = 0; i < topo->numHWThreads; i++)
             {
                 HWThread* t = &topo->threadPool[i];
                 if (t->inCpuSet == 1)
@@ -66,16 +65,19 @@ static int get_device_access(LikwidDevice_t device)
             }
             break;
         case DEVICE_TYPE_SOCKET:
-            for (int i = 0; i < topo->numHWThreads; i++)
+            for (unsigned i = 0; i < topo->numHWThreads; i++)
             {
                 HWThread* t = &topo->threadPool[i];
-                if (t->inCpuSet == 1 && device->id.simple.id == t->packageId)
+                if (t->inCpuSet == 1 && device->id.simple.id == (int)t->packageId)
                 {
                     hwt = t->apicId;
                     break;
                 }
             }
             break;
+        default:
+            fprintf(stderr, "get_device_access: Unimplemented device type: %d\n", device->type);
+            abort();
     }
     if (hwt >= 0)
     {
