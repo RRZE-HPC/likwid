@@ -21,25 +21,22 @@ int numa_balancing_procfs_getter(const LikwidDevice_t device, char** value, cons
         return -EINVAL;
     }
     bstring filename = bformat("/proc/sys/kernel/%s", sysfsfile);
+#pragma GCC diagnostic ignored "-Wnonnull"
     if (!access(bdata(filename), R_OK))
     {
         bstring content = read_file(bdata(filename));
-        if (blength(content) > 0)
+        btrimws(content);
+        char *v = strdup(bdata(content));
+        if (v)
         {
-            btrimws(content);
-            char* v = malloc((blength(content)+1) * sizeof(char));
-            if (v)
-            {
-                strncpy(v, bdata(content), blength(content));
-                v[blength(content)] = '\0';
-                *value = v;
-            }
-            else
-            {
-                err = -ENOMEM;
-            }
-            bdestroy(content);
+            free(*value);
+            *value = v;
         }
+        else
+        {
+            err = -ENOMEM;
+        }
+        bdestroy(content);
     }
     else
     {
@@ -49,28 +46,29 @@ int numa_balancing_procfs_getter(const LikwidDevice_t device, char** value, cons
     return err;
 }
 
-int numa_balancing_test()
+int numa_balancing_test(void)
 {
     int err = access("/proc/sys/kernel/numa_balancing", F_OK);
     if (err < 0)
     {
         return -errno;
     }
-    if (err == 0)
+    err = topology_init();
+    if (err < 0)
     {
-        topology_init();
-        numa_init();
-        NumaTopology_t topo = get_numaTopology();
-        if (topo->numberOfNodes > 1)
-        {
-            return 1;
-        }
-        else
-        {
-            DEBUG_PRINT(DEBUGLEV_INFO, NUMA balancing not available. System has only a single NUMA domain);
-        }
+        return err;
     }
-    return 0;
+    err = numa_init();
+    if (err < 0)
+    {
+        return err;
+    }
+    NumaTopology_t topo = get_numaTopology();
+    if (topo->numberOfNodes > 1)
+    {
+        return 1;
+    }
+    DEBUG_PRINT(DEBUGLEV_INFO, NUMA balancing not available. System has only a single NUMA domain); return 0;
 }
 
 int numa_balancing_state_getter(const LikwidDevice_t device, char** value)

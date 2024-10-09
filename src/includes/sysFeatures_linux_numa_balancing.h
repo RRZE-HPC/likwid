@@ -5,7 +5,7 @@
 
 int numa_balancing_procfs_getter(const LikwidDevice_t device, char** value, const char* sysfsfile);
 
-int numa_balancing_test();
+int numa_balancing_test(void);
 int numa_balancing_state_getter(const LikwidDevice_t device, char** value);
 int numa_balancing_scan_delay_getter(const LikwidDevice_t device, char** value);
 int numa_balancing_scan_period_min_getter(const LikwidDevice_t device, char** value);
