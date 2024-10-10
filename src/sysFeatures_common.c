@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <assert.h>
 
+#include <access.h>
 #include <registers.h>
 #include <cpuid.h>
 #include <pci_types.h>
@@ -163,4 +165,113 @@ int sysFeatures_string_to_double(const char* str, double *value)
     }
     *value = result;
     return 0;
+}
+
+int likwid_sysft_foreach_hwt_testmsr(uint64_t reg)
+{
+    int err = topology_init();
+    if (err < 0)
+    {
+        return 0;
+    }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    CpuTopology_t topo = get_cpuTopology();
+    unsigned valid = 0;
+    for (unsigned j = 0; j < topo->numHWThreads; j++)
+    {
+        HWThread* t = &topo->threadPool[j];
+        err = HPMaddThread(t->apicId);
+        if (err < 0) continue;
+        uint64_t msrData = 0;
+        err = HPMread(t->apicId, MSR_DEV, reg, &msrData);
+        if (err == 0)
+        {
+            valid += 1;
+        }
+    }
+    return valid == topo->numHWThreads;
+}
+
+int likwid_sysft_foreach_socket_testmsr(uint64_t reg)
+{
+    int err = topology_init();
+    if (err < 0)
+    {
+        return 0;
+    }
+    err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    CpuTopology_t topo = get_cpuTopology();
+    unsigned valid = 0;
+    for (unsigned i = 0; i < topo->numSockets; i++)
+    {
+        for (unsigned j = 0; j < topo->numHWThreads; j++)
+        {
+            HWThread* t = &topo->threadPool[j];
+            if (t->packageId == i)
+            {
+                err = HPMaddThread(t->apicId);
+                if (err < 0) continue;
+                uint64_t msrData = 0;
+                err = HPMread(t->apicId, MSR_DEV, reg, &msrData);
+                if (err == 0) valid++;
+                break;
+            }
+        }
+    }
+    return valid == topo->numSockets;
+}
+
+static int readmsr_socket(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
+{
+    assert(device->type == DEVICE_TYPE_SOCKET);
+    int err = topology_init();
+    if (err < 0)
+    {
+        return err;
+    }
+    CpuTopology_t topo = get_cpuTopology();
+    for (unsigned i = 0; i < topo->numHWThreads; i++)
+    {
+        HWThread* t = &topo->threadPool[i];
+        if ((int)t->packageId == device->id.simple.id && t->inCpuSet)
+        {
+            err = HPMaddThread(t->apicId);
+            if (err < 0) continue;
+            err = HPMread(t->apicId, MSR_DEV, reg, msrData);
+            if (err < 0) continue;
+            return 0;
+        }
+    }
+    if (err < 0)
+    {
+        return err;
+    }
+    return -ENODEV;
+}
+
+int likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
+{
+    int err = HPMinit();
+    if (err < 0)
+    {
+        return err;
+    }
+    switch (device->type)
+    {
+    case DEVICE_TYPE_SOCKET:
+        err = readmsr_socket(device, reg, msrData);
+        break;
+    default:
+        fprintf(stderr, "likwid_sysft_readmsr: Unimplemented device type: %d\n", device->type);
+        abort();
+    }
+    return err;
 }

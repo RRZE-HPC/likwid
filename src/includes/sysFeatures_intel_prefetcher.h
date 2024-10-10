@@ -103,6 +103,7 @@ int intel_core2_ida_setter(const LikwidDevice_t device, const char* value);
 
 #define MAX_INTEL_CPU_IDA_FEATURES 1
 static _SysFeature intel_cpu_ida_features[] = {
+    // TODO does this really belong into the "prefetcher" category?
     {"ida", "prefetch", "Intel Dynamic Acceleration", intel_core2_ida_getter, intel_core2_ida_setter, DEVICE_TYPE_HWTHREAD, intel_core2_ida_tester},
 };
 

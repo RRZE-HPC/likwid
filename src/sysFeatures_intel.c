@@ -113,29 +113,7 @@ int intel_cpu_turbo_test(void)
         return 0;
     }
 
-    int err = topology_init();
-    if (err < 0)
-    {
-        return 0;
-    }
-    CpuTopology_t topo = get_cpuTopology();
-    err = HPMinit();
-    if (err < 0)
-	{
-		return err;
-	}
-    unsigned valid = 0;
-    for (unsigned j = 0; j < topo->numHWThreads; j++)
-    {
-        HWThread* t = &topo->threadPool[j];
-		err = HPMaddThread(t->apicId);
-		if (err < 0) continue;
-        uint64_t msrData = 0;
-        err = HPMread(t->apicId, MSR_DEV, MSR_IA32_MISC_ENABLE, &msrData);
-        if (err == 0) valid++;
-        break;
-    }
-    return valid = topo->numHWThreads;
+    return likwid_sysft_foreach_hwt_testmsr(MSR_IA32_MISC_ENABLE);
 }
 
 int intel_cpu_turbo_getter(const LikwidDevice_t device, char** value)
