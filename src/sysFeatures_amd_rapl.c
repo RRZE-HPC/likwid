@@ -18,40 +18,6 @@ static RaplDomainInfo amd_rapl_pkg_info = {0, 0, 0};
 static RaplDomainInfo amd_rapl_core_info = {0, 0, 0};
 static RaplDomainInfo amd_rapl_l3_info = {0, 0, 0};
 
-static int amd_rapl_register_test(uint32_t reg)
-{
-    int err = 0;
-    unsigned valid = 0;
-    CpuTopology_t topo = NULL;
-
-    err = topology_init();
-    if (err < 0)
-    {
-        return err;
-    }
-    topo = get_cpuTopology();
-    err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    for (unsigned i = 0; i < topo->numSockets; i++)
-    {
-        for (unsigned j = 0; j < topo->numHWThreads; j++)
-        {
-            HWThread* t = &topo->threadPool[j];
-            if (t->packageId == i)
-            {
-                uint64_t msrData = 0;
-                err = HPMread(t->apicId, MSR_DEV, reg, &msrData);
-                if (err == 0) valid++;
-                break;
-            }
-        }
-    }
-    return valid == topo->numSockets;
-}
-
 static int sysFeatures_amd_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info, LikwidDeviceType type)
 {
     int err = getset_info_check(device, value, info, type);
@@ -73,46 +39,25 @@ static int sysFeatures_amd_rapl_energy_status_getter(const LikwidDevice_t device
 /*                          Amd RAPL (PKG domain)                                                                  */
 /*********************************************************************************************************************/
 
+static int pkg_test_testFunc(uint64_t msrData, void *)
+{
+    if (amd_rapl_pkg_info.powerUnit == 0 && amd_rapl_pkg_info.energyUnit == 0 && amd_rapl_pkg_info.timeUnit == 0)
+    {
+        amd_rapl_pkg_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
+        amd_rapl_pkg_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
+        amd_rapl_pkg_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
+    }
+    return 1;
+}
+
 int amd_rapl_pkg_test(void)
 {
-    int err = 0;
-    unsigned valid = 0;
-    CpuTopology_t topo = NULL;
-
-    err = topology_init();
-    if (err < 0)
-    {
-        return 0;
-    }
-    topo = get_cpuTopology();
-    for (unsigned i = 0; i < topo->numSockets; i++)
-    {
-        for (unsigned j = 0; j < topo->numHWThreads; j++)
-        {
-            uint64_t data = 0;
-            HWThread* t = &topo->threadPool[j];
-            if (t->packageId == i)
-            {
-                err = HPMaddThread(t->apicId);
-                if (err < 0) continue;
-                err = HPMread(t->apicId, MSR_DEV, MSR_AMD17_RAPL_POWER_UNIT, &data);
-                if (err == 0) valid++;
-                if (amd_rapl_pkg_info.powerUnit == 0 && amd_rapl_pkg_info.energyUnit == 0 && amd_rapl_pkg_info.timeUnit == 0)
-                {
-                    amd_rapl_pkg_info.powerUnit = 1.0 / (1 << field64(data, 0, 4));
-                    amd_rapl_pkg_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
-                    amd_rapl_pkg_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
-                }
-                break;
-            }
-        }
-    }
-    return valid == topo->numSockets;
+    return likwid_sysft_foreach_socket_testmsr_cb(MSR_AMD17_RAPL_POWER_UNIT, pkg_test_testFunc, NULL);
 }
 
 int sysFeatures_amd_pkg_energy_status_test(void)
 {
-    return amd_rapl_register_test(MSR_AMD17_RAPL_PKG_STATUS);
+    return likwid_sysft_foreach_socket_testmsr(MSR_AMD17_RAPL_PKG_STATUS);
 }
 
 int sysFeatures_amd_pkg_energy_status_getter(const LikwidDevice_t device, char** value)
@@ -124,39 +69,25 @@ int sysFeatures_amd_pkg_energy_status_getter(const LikwidDevice_t device, char**
 /*                          AMD RAPL (CORE domain)                                                                 */
 /*********************************************************************************************************************/
 
+static int core_test_testFunc(uint64_t msrData, void *)
+{
+    if (amd_rapl_core_info.powerUnit == 0 && amd_rapl_core_info.energyUnit == 0 && amd_rapl_core_info.timeUnit == 0)
+    {
+        amd_rapl_core_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
+        amd_rapl_core_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
+        amd_rapl_core_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
+    }
+    return 1;
+}
+
 int amd_rapl_core_test(void)
 {
-    int err = 0;
-    unsigned valid = 0;
-    CpuTopology_t topo = NULL;
-
-    err = topology_init();
-    if (err < 0)
-    {
-        return 0;
-    }
-    topo = get_cpuTopology();
-    for (unsigned j = 0; j < topo->numHWThreads; j++)
-    {
-        uint64_t data = 0x0;
-        HWThread* t = &topo->threadPool[j];
-        err = HPMaddThread(t->apicId);
-        if (err < 0) continue;
-        err = HPMread(t->apicId, MSR_DEV, MSR_AMD17_RAPL_POWER_UNIT, &data);
-        if (err == 0) valid++;
-        if (amd_rapl_core_info.powerUnit == 0 && amd_rapl_core_info.energyUnit == 0 && amd_rapl_core_info.timeUnit == 0)
-        {
-            amd_rapl_core_info.powerUnit = 1.0 / (1 << field64(data, 0, 4));
-            amd_rapl_core_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
-            amd_rapl_core_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
-        }
-    }
-    return valid == topo->numHWThreads;
+    return likwid_sysft_foreach_core_testmsr_cb(MSR_AMD17_RAPL_POWER_UNIT, core_test_testFunc, NULL);
 }
 
 int sysFeatures_amd_core_energy_status_test(void)
 {
-    return amd_rapl_register_test(MSR_AMD17_RAPL_CORE_STATUS);
+    return likwid_sysft_foreach_core_testmsr(MSR_AMD17_RAPL_CORE_STATUS);
 }
 
 int sysFeatures_amd_core_energy_status_getter(const LikwidDevice_t device, char** value)
@@ -168,51 +99,31 @@ int sysFeatures_amd_core_energy_status_getter(const LikwidDevice_t device, char*
 /*                          AMD RAPL (L3 domain)                                                                     */
 /*********************************************************************************************************************/
 
+static int l3_test_testFunc(uint64_t msrData, void *)
+{
+    if (amd_rapl_l3_info.powerUnit == 0 && amd_rapl_l3_info.energyUnit == 0 && amd_rapl_l3_info.timeUnit == 0)
+    {
+        amd_rapl_l3_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
+        amd_rapl_l3_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
+        amd_rapl_l3_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
+    }
+    return 1;
+}
+
 int amd_rapl_l3_test(void)
 {
-    int err = 0;
-    unsigned valid = 0;
-    CpuTopology_t topo = NULL;
-    CpuInfo_t info = NULL;
-
-    err = topology_init();
-    if (err < 0)
-    {
+    int err = topology_init();
+    CpuInfo_t info = get_cpuInfo();
+    if (info->family != ZEN3_FAMILY)
         return 0;
-    }
-    topo = get_cpuTopology();
-    info = get_cpuInfo();
-    if (info->family == ZEN3_FAMILY && (info->model == ZEN4_RYZEN || info->model == ZEN4_RYZEN_PRO || info->model == ZEN4_EPYC))
-    {
-        for (unsigned i = 0; i < topo->numSockets; i++)
-        {
-            for (unsigned j = 0; j < topo->numHWThreads; j++)
-            {
-                uint64_t data = 0;
-                HWThread* t = &topo->threadPool[j];
-                if (t->packageId == i)
-                {
-                    err = HPMaddThread(t->apicId);
-                    if (err < 0) continue;
-                    err = HPMread(t->apicId, MSR_DEV, MSR_AMD19_RAPL_L3_UNIT, &data);
-                    if (err == 0) valid++;
-                    if (amd_rapl_l3_info.powerUnit == 0 && amd_rapl_l3_info.energyUnit == 0 && amd_rapl_l3_info.timeUnit == 0)
-                    {
-                        amd_rapl_l3_info.powerUnit = 1.0 / (1 << field64(data, 0, 4));
-                        amd_rapl_l3_info.energyUnit = 1.0 / (1 << field64(data, 8, 5));
-                        amd_rapl_l3_info.timeUnit = 1.0 / (1 << field64(data, 16, 4));
-                    }
-                    break;
-                }
-            }
-        }
-    }
-    return valid == topo->numSockets;
+    if (info->model != ZEN4_RYZEN && info->model != ZEN4_RYZEN_PRO && info->model != ZEN4_EPYC)
+        return 0;
+    return likwid_sysft_foreach_socket_testmsr_cb(MSR_AMD19_RAPL_L3_UNIT, l3_test_testFunc, NULL);
 }
 
 int sysFeatures_amd_l3_energy_status_test(void)
 {
-    return amd_rapl_register_test(MSR_AMD19_RAPL_L3_STATUS);
+    return likwid_sysft_foreach_core_testmsr(MSR_AMD19_RAPL_L3_STATUS);
 }
 
 int sysFeatures_amd_l3_energy_status_getter(const LikwidDevice_t device, char** value)

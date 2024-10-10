@@ -12,7 +12,11 @@ int sysFeatures_double_to_string(double value, char **str);
 int sysFeatures_string_to_double(const char* str, double *value);
 
 int likwid_sysft_foreach_hwt_testmsr(uint64_t reg);
+int likwid_sysft_foreach_hwt_testmsr_cb(uint64_t reg, int (*testFunc)(uint64_t msrData, void *cbData), void *cbData);
+int likwid_sysft_foreach_core_testmsr(uint64_t reg);
+int likwid_sysft_foreach_core_testmsr_cb(uint64_t reg, int (*testFunc)(uint64_t msrData, void *cbData), void *cbData);
 int likwid_sysft_foreach_socket_testmsr(uint64_t reg);
+int likwid_sysft_foreach_socket_testmsr_cb(uint64_t reg, int (*testFunc)(uint64_t msrData, void *cbData), void *cbData);
 int likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData);
 
 #endif

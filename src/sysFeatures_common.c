@@ -167,28 +167,88 @@ int sysFeatures_string_to_double(const char* str, double *value)
     return 0;
 }
 
-int likwid_sysft_foreach_hwt_testmsr(uint64_t reg)
+int likwid_sysft_foreach_core_testmsr(uint64_t reg)
+{
+    return likwid_sysft_foreach_core_testmsr_cb(reg, NULL, NULL);
+}
+
+int likwid_sysft_foreach_core_testmsr_cb(uint64_t reg, int (*testFunc)(uint64_t msrData, void *cbData), void *cbData)
 {
     int err = topology_init();
     if (err < 0)
-    {
-        return 0;
-    }
+        return err;
     err = HPMinit();
     if (err < 0)
-    {
         return err;
+    CpuTopology_t topo = get_cpuTopology();
+    const unsigned numCores = topo->numSockets * topo->numCoresPerSocket;
+    unsigned valid = 0;
+    for (unsigned i = 0; i < numCores; i++)
+    {
+        for (unsigned j = 0; j < topo->numHWThreads; j++)
+        {
+            HWThread* t = &topo->threadPool[j];
+            if (t->coreId != i)
+                continue;
+            err = HPMaddThread(t->apicId);
+            if (err < 0)
+                continue;
+            uint64_t msrData = 0;
+            err = HPMread(t->apicId, MSR_DEV, reg, &msrData);
+            if (err < 0)
+                continue;
+            if (testFunc)
+            {
+                err = testFunc(msrData, cbData);
+                if (err < 0)
+                    return err;
+                if (err > 0)
+                    valid += 1;
+            }
+            else
+            {
+                valid += 1;
+            }
+            break;
+        }
     }
+    return valid == numCores;
+}
+
+int likwid_sysft_foreach_hwt_testmsr(uint64_t reg)
+{
+    return likwid_sysft_foreach_hwt_testmsr_cb(reg, NULL, NULL);
+}
+
+int likwid_sysft_foreach_hwt_testmsr_cb(uint64_t reg, int (*testFunc)(uint64_t msrData, void *cbData), void *cbData)
+{
+    int err = topology_init();
+    if (err < 0)
+        return err;
+    err = HPMinit();
+    if (err < 0)
+        return err;
     CpuTopology_t topo = get_cpuTopology();
     unsigned valid = 0;
     for (unsigned j = 0; j < topo->numHWThreads; j++)
     {
         HWThread* t = &topo->threadPool[j];
         err = HPMaddThread(t->apicId);
-        if (err < 0) continue;
+        if (err < 0)
+            continue;
         uint64_t msrData = 0;
         err = HPMread(t->apicId, MSR_DEV, reg, &msrData);
-        if (err == 0)
+        if (err < 0)
+            continue;
+        if (testFunc)
+        {
+            err = testFunc(msrData, cbData);
+            if (err < 0)
+                return err;
+            if (err > 0)
+                valid += 1;
+        }
+        else
         {
             valid += 1;
         }
@@ -198,16 +258,17 @@ int likwid_sysft_foreach_hwt_testmsr(uint64_t reg)
 
 int likwid_sysft_foreach_socket_testmsr(uint64_t reg)
 {
+    return likwid_sysft_foreach_socket_testmsr_cb(reg, NULL, NULL);
+}
+
+int likwid_sysft_foreach_socket_testmsr_cb(uint64_t reg, int (*testFunc)(uint64_t msrData, void *cbData), void *cbData)
+{
     int err = topology_init();
     if (err < 0)
-    {
-        return 0;
-    }
+        return err;
     err = HPMinit();
     if (err < 0)
-    {
         return err;
-    }
     CpuTopology_t topo = get_cpuTopology();
     unsigned valid = 0;
     for (unsigned i = 0; i < topo->numSockets; i++)
@@ -215,15 +276,28 @@ int likwid_sysft_foreach_socket_testmsr(uint64_t reg)
         for (unsigned j = 0; j < topo->numHWThreads; j++)
         {
             HWThread* t = &topo->threadPool[j];
-            if (t->packageId == i)
+            if (t->packageId != i)
+                continue;
+            err = HPMaddThread(t->apicId);
+            if (err < 0)
+                continue;
+            uint64_t msrData = 0;
+            err = HPMread(t->apicId, MSR_DEV, reg, &msrData);
+            if (err < 0)
+                continue;
+            if (testFunc)
             {
-                err = HPMaddThread(t->apicId);
-                if (err < 0) continue;
-                uint64_t msrData = 0;
-                err = HPMread(t->apicId, MSR_DEV, reg, &msrData);
-                if (err == 0) valid++;
-                break;
+                err = testFunc(msrData, cbData);
+                if (err < 0)
+                    return err;
+                if (err > 0)
+                    valid += 1;
             }
+            else
+            {
+                valid += 1;
+            }
+            break;
         }
     }
     return valid == topo->numSockets;
@@ -257,6 +331,17 @@ static int readmsr_socket(const LikwidDevice_t device, uint64_t reg, uint64_t *m
     return -ENODEV;
 }
 
+static int readmsr_hwthread(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
+{
+    assert(device->type == DEVICE_TYPE_HWTHREAD);
+    int err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+    {
+        return err;
+    }
+    return HPMread(device->id.simple.id, MSR_DEV, reg, msrData);
+}
+
 int likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
 {
     int err = HPMinit();
@@ -268,6 +353,9 @@ int likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *ms
     {
     case DEVICE_TYPE_SOCKET:
         err = readmsr_socket(device, reg, msrData);
+        break;
+    case DEVICE_TYPE_HWTHREAD:
+        err = readmsr_hwthread(device, reg, msrData);
         break;
     default:
         fprintf(stderr, "likwid_sysft_readmsr: Unimplemented device type: %d\n", device->type);
