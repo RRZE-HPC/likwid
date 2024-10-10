@@ -13,7 +13,7 @@
 #include <error.h>
 #include <sysFeatures_common.h>
 
-int register_features(_SysFeatureList *features, const _SysFeatureList* in)
+int likwid_sysft_register_features(_SysFeatureList *features, const _SysFeatureList* in)
 {
     if (in->tester)
     {
@@ -54,7 +54,7 @@ int register_features(_SysFeatureList *features, const _SysFeatureList* in)
     return 0;
 }
 
-int sysFeatures_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList *list)
+int likwid_sysft_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList *list)
 {
     int err = topology_init();
     if (err < 0)
@@ -82,12 +82,12 @@ int sysFeatures_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList 
 
     for (unsigned j = 0; feature_list[j] != NULL; j++)
     {
-        register_features(list, feature_list[j]);
+        likwid_sysft_register_features(list, feature_list[j]);
     }
     return 0;
 }
 
-int sysFeatures_uint64_to_string(uint64_t value, char** str)
+int likwid_sysft_uint64_to_string(uint64_t value, char** str)
 {
     char s[HWFEATURES_MAX_STR_LENGTH];
     const int len = snprintf(s, sizeof(s), "%llu", value);
@@ -106,7 +106,7 @@ int sysFeatures_uint64_to_string(uint64_t value, char** str)
     return 0;
 }
 
-int sysFeatures_string_to_uint64(const char* str, uint64_t* value)
+int likwid_sysft_string_to_uint64(const char* str, uint64_t* value)
 {
     char* ptr = NULL;
     if ((strncmp(str, "true", 4) == 0) || (strncmp(str, "TRUE", 4) == 0))
@@ -130,7 +130,7 @@ int sysFeatures_string_to_uint64(const char* str, uint64_t* value)
     return 0;
 }
 
-int sysFeatures_double_to_string(double value, char **str)
+int likwid_sysft_double_to_string(double value, char **str)
 {
     char s[HWFEATURES_MAX_STR_LENGTH];
     const int len = snprintf(s, sizeof(s), "%f", value);
@@ -149,7 +149,7 @@ int sysFeatures_double_to_string(double value, char **str)
     return 0;
 }
 
-int sysFeatures_string_to_double(const char* str, double *value)
+int likwid_sysft_string_to_double(const char* str, double *value)
 {
     errno = 0;
     char* endptr = NULL;

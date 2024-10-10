@@ -18,7 +18,7 @@
 
 int sysFeatures_init_x86_intel(_SysFeatureList* out)
 {
-    int err = sysFeatures_init_generic(intel_arch_features, out);
+    int err = likwid_sysft_init_generic(intel_arch_features, out);
     if (err < 0)
     {
         ERROR_PRINT(Failed to init general Intel HWFetures);
@@ -61,7 +61,7 @@ int intel_cpu_msr_register_getter(const LikwidDevice_t device, uint32_t reg, int
     {
         result = !result;
     }
-    return sysFeatures_uint64_to_string(result, value);
+    return likwid_sysft_uint64_to_string(result, value);
 }
 
 int intel_cpu_msr_register_setter(const LikwidDevice_t device, uint32_t reg, int bitoffset, int width, bool invert, const char* value)
@@ -71,7 +71,7 @@ int intel_cpu_msr_register_setter(const LikwidDevice_t device, uint32_t reg, int
         return -ENODEV;
     }
     uint64_t intval;
-    int err = sysFeatures_string_to_uint64(value, &intval);
+    int err = likwid_sysft_string_to_uint64(value, &intval);
     if (err < 0)
     {
         return err;

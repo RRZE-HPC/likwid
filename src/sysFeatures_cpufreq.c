@@ -245,7 +245,7 @@ int sysFeatures_init_cpufreq(_SysFeatureList* out)
     if (cpufreq_intel_pstate_test())
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering Intel Pstate knobs for cpufreq)
-        err = register_features(out, &cpufreq_pstate_feature_list);
+        err = likwid_sysft_register_features(out, &cpufreq_pstate_feature_list);
         if (err < 0)
         {
             return err;
@@ -254,7 +254,7 @@ int sysFeatures_init_cpufreq(_SysFeatureList* out)
     else if (cpufreq_acpi_test())
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering ACPI cpufreq knobs for cpufreq)
-        register_features(out, &cpufreq_acpi_feature_list);
+        likwid_sysft_register_features(out, &cpufreq_acpi_feature_list);
         if (err < 0)
         {
             return err;
@@ -264,7 +264,7 @@ int sysFeatures_init_cpufreq(_SysFeatureList* out)
     if (cpufreq_epp_test())
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering Energy Performance Preference knobs for cpufreq)
-        err = register_features(out, &cpufreq_epp_feature_list);
+        err = likwid_sysft_register_features(out, &cpufreq_epp_feature_list);
         if (err < 0)
         {
             return err;
