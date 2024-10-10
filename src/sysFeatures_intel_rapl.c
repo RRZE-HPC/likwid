@@ -21,39 +21,6 @@ static RaplDomainInfo intel_rapl_psys_info = {0, 0, 0};
 static RaplDomainInfo intel_rapl_pp0_info = {0, 0, 0};
 static RaplDomainInfo intel_rapl_pp1_info = {0, 0, 0};
 
-static int intel_rapl_register_test(uint32_t reg)
-{
-    int err = topology_init();
-    if (err < 0)
-    {
-        return 0;
-    }
-    CpuTopology_t topo = get_cpuTopology();
-    err = HPMinit();
-    if (err < 0)
-    {
-	    return 0;
-    }
-    unsigned valid = 0;
-    for (unsigned i = 0; i < topo->numSockets; i++)
-    {
-        for (unsigned j = 0; j < topo->numHWThreads; j++)
-        {
-            HWThread* t = &topo->threadPool[j];
-            if (t->packageId == i)
-            {
-                err = HPMaddThread(t->apicId);
-                if (err < 0) continue;
-                uint64_t msrData = 0;
-                err = HPMread(t->apicId, MSR_DEV, reg, &msrData);
-                if (err == 0) valid++;
-                break;
-            }
-        }
-    }
-    return valid == topo->numSockets;
-}
-
 static int intel_rapl_register_test_bit(uint32_t reg, int bitoffset)
 {
     int err = topology_init();
@@ -592,7 +559,7 @@ int intel_rapl_pkg_limit_test_lock(void)
 
 int sysFeatures_intel_pkg_energy_status_test(void)
 {
-    return intel_rapl_register_test(MSR_PKG_ENERGY_STATUS);
+    return likwid_sysft_foreach_socket_testmsr(MSR_PKG_ENERGY_STATUS);
 }
 
 int sysFeatures_intel_pkg_energy_status_getter(const LikwidDevice_t device, char** value)
@@ -602,7 +569,7 @@ int sysFeatures_intel_pkg_energy_status_getter(const LikwidDevice_t device, char
 
 int sysFeatures_intel_pkg_energy_limit_test(void)
 {
-    return intel_rapl_register_test(MSR_PKG_RAPL_POWER_LIMIT);
+    return likwid_sysft_foreach_socket_testmsr(MSR_PKG_RAPL_POWER_LIMIT);
 }
 
 int sysFeatures_intel_pkg_energy_limit_1_getter(const LikwidDevice_t device, char** value)
@@ -675,7 +642,7 @@ int sysFeatures_intel_pkg_energy_limit_2_clamp_setter(const LikwidDevice_t devic
 
 int sysFeatures_intel_pkg_info_test(void)
 {
-    return intel_rapl_register_test(MSR_PKG_POWER_INFO);
+    return likwid_sysft_foreach_socket_testmsr(MSR_PKG_POWER_INFO);
 }
 
 int sysFeatures_intel_pkg_info_tdp(const LikwidDevice_t device, char** value)
@@ -760,7 +727,7 @@ int intel_rapl_dram_test(void)
 
 int sysFeatures_intel_dram_energy_status_test(void)
 {
-    return intel_rapl_register_test(MSR_DRAM_ENERGY_STATUS);
+    return likwid_sysft_foreach_socket_testmsr(MSR_DRAM_ENERGY_STATUS);
 }
 
 int sysFeatures_intel_dram_energy_status_getter(const LikwidDevice_t device, char** value)
@@ -770,7 +737,7 @@ int sysFeatures_intel_dram_energy_status_getter(const LikwidDevice_t device, cha
 
 int sysFeatures_intel_dram_energy_limit_test(void)
 {
-    return intel_rapl_register_test(MSR_DRAM_RAPL_POWER_LIMIT);
+    return likwid_sysft_foreach_socket_testmsr(MSR_DRAM_RAPL_POWER_LIMIT);
 }
 int intel_rapl_dram_limit_test_lock(void)
 {
@@ -812,7 +779,7 @@ int sysFeatures_intel_dram_energy_limit_1_clamp_setter(const LikwidDevice_t devi
 
 int sysFeatures_intel_dram_info_test(void)
 {
-    return intel_rapl_register_test(MSR_DRAM_POWER_INFO);
+    return likwid_sysft_foreach_socket_testmsr(MSR_DRAM_POWER_INFO);
 }
 
 int sysFeatures_intel_dram_info_tdp(const LikwidDevice_t device, char** value)
@@ -887,9 +854,8 @@ int intel_rapl_psys_test(void)
 
 int sysFeatures_intel_psys_energy_status_test(void)
 {
-    return intel_rapl_register_test(MSR_PLATFORM_ENERGY_STATUS);
+    return likwid_sysft_foreach_socket_testmsr(MSR_PLATFORM_ENERGY_STATUS);
 }
-
 
 int sysFeatures_intel_psys_energy_status_getter(const LikwidDevice_t device, char** value)
 {
@@ -898,7 +864,7 @@ int sysFeatures_intel_psys_energy_status_getter(const LikwidDevice_t device, cha
 
 int sysFeatures_intel_psys_energy_limit_test(void)
 {
-    return intel_rapl_register_test(MSR_PLATFORM_POWER_LIMIT);
+    return likwid_sysft_foreach_socket_testmsr(MSR_PLATFORM_POWER_LIMIT);
 }
 int intel_rapl_psys_limit_test_lock(void)
 {
@@ -1018,9 +984,8 @@ int intel_rapl_pp0_test(void)
 
 int sysFeatures_intel_pp0_energy_status_test(void)
 {
-    return intel_rapl_register_test(MSR_PP0_ENERGY_STATUS);
+    return likwid_sysft_foreach_socket_testmsr(MSR_PP0_ENERGY_STATUS);
 }
-
 
 int sysFeatures_intel_pp0_energy_status_getter(const LikwidDevice_t device, char** value)
 {
@@ -1029,8 +994,9 @@ int sysFeatures_intel_pp0_energy_status_getter(const LikwidDevice_t device, char
 
 int sysFeatures_intel_pp0_energy_limit_test(void)
 {
-    return intel_rapl_register_test(MSR_PP0_RAPL_POWER_LIMIT);
+    return likwid_sysft_foreach_socket_testmsr(MSR_PP0_RAPL_POWER_LIMIT);
 }
+
 int intel_rapl_pp0_limit_test_lock(void)
 {
     return intel_rapl_register_test_bit(MSR_PP0_RAPL_POWER_LIMIT, 31);
@@ -1072,7 +1038,7 @@ int sysFeatures_intel_pp0_energy_limit_1_clamp_setter(const LikwidDevice_t devic
 
 int sysFeatures_intel_pp0_policy_test(void)
 {
-    return intel_rapl_register_test(MSR_PP0_ENERGY_POLICY);
+    return likwid_sysft_foreach_socket_testmsr(MSR_PP0_ENERGY_POLICY);
 }
 int sysFeatures_intel_pp0_policy_getter(const LikwidDevice_t device, char** value)
 {
@@ -1131,7 +1097,7 @@ int intel_rapl_pp1_test(void)
 
 int sysFeatures_intel_pp1_energy_status_test(void)
 {
-    return intel_rapl_register_test(MSR_PP1_ENERGY_STATUS);
+    return likwid_sysft_foreach_socket_testmsr(MSR_PP1_ENERGY_STATUS);
 }
 
 int sysFeatures_intel_pp1_energy_status_getter(const LikwidDevice_t device, char** value)
@@ -1141,8 +1107,9 @@ int sysFeatures_intel_pp1_energy_status_getter(const LikwidDevice_t device, char
 
 int sysFeatures_intel_pp1_energy_limit_test(void)
 {
-    return intel_rapl_register_test(MSR_PP1_RAPL_POWER_LIMIT);
+    return likwid_sysft_foreach_socket_testmsr(MSR_PP1_RAPL_POWER_LIMIT);
 }
+
 int intel_rapl_pp1_limit_test_lock(void)
 {
     return intel_rapl_register_test_bit(MSR_PP1_RAPL_POWER_LIMIT, 31);
@@ -1184,7 +1151,7 @@ int sysFeatures_intel_pp1_energy_limit_1_clamp_setter(const LikwidDevice_t devic
 
 int sysFeatures_intel_pp1_policy_test(void)
 {
-    return intel_rapl_register_test(MSR_PP1_ENERGY_POLICY);
+    return likwid_sysft_foreach_socket_testmsr(MSR_PP1_ENERGY_POLICY);
 }
 int sysFeatures_intel_pp1_policy_getter(const LikwidDevice_t device, char** value)
 {
