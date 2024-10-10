@@ -37,7 +37,7 @@ int intel_uncore_cur_freq_getter(const LikwidDevice_t device, char** value)
     {
         return err;
     }
-    return sysFeatures_uint64_to_string(field64(msrData, 0, 8) * 100, value);
+    return likwid_sysft_uint64_to_string(field64(msrData, 0, 8) * 100, value);
 }
 
 int intel_uncore_min_freq_getter(const LikwidDevice_t device, char** value)
@@ -52,7 +52,7 @@ int intel_uncore_min_freq_getter(const LikwidDevice_t device, char** value)
     {
         return err;
     }
-    return sysFeatures_uint64_to_string(field64(msrData, 8, 8) * 100, value);
+    return likwid_sysft_uint64_to_string(field64(msrData, 8, 8) * 100, value);
 }
 
 int intel_uncore_max_freq_getter(const LikwidDevice_t device, char** value)
@@ -67,6 +67,6 @@ int intel_uncore_max_freq_getter(const LikwidDevice_t device, char** value)
     {
         return err;
     }
-    return sysFeatures_uint64_to_string(field64(msrData, 0, 8) * 100, value);
+    return likwid_sysft_uint64_to_string(field64(msrData, 0, 8) * 100, value);
 }
 

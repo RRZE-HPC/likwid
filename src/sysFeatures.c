@@ -87,7 +87,7 @@ static int get_device_access(LikwidDevice_t device)
 }
 
 
-int sysFeatures_init()
+int sysFeatures_init(void)
 {
     int err = 0;
 
@@ -299,7 +299,7 @@ int sysFeatures_modify(const SysFeature* feature, const LikwidDevice_t device, c
     return sysFeatures_modifyByName(feature->name, device, value);
 }
 
-void sysFeatures_finalize()
+void sysFeatures_finalize(void)
 {
     if (local_features != NULL)
     {

@@ -30,7 +30,7 @@ static int sysFeatures_intel_rapl_energy_status_getter(const LikwidDevice_t devi
     err = likwid_sysft_readmsr_field(device, reg, 0, 32, &energy);
     if (err)
         return err;
-    return sysFeatures_double_to_string((double)energy * info->energyUnit, value);
+    return likwid_sysft_double_to_string((double)energy * info->energyUnit, value);
 }
 
 static int sysFeatures_intel_rapl_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
@@ -42,7 +42,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_enable_getter(const LikwidDevic
     err = likwid_sysft_readmsr_field(device, reg, 15, 1, &enable);
     if (err < 0)
         return err;
-    return sysFeatures_uint64_to_string(enable, value);
+    return likwid_sysft_uint64_to_string(enable, value);
 }
 
 static int sysFeatures_intel_rapl_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
@@ -51,7 +51,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_enable_setter(const LikwidDevic
     if (err < 0)
         return err;
     uint64_t enable;
-    err = sysFeatures_string_to_uint64(value, &enable);
+    err = likwid_sysft_string_to_uint64(value, &enable);
     if (err < 0)
         return err;
     return likwid_sysft_writemsr_field(device, reg, 15, 1, enable);
@@ -66,7 +66,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_clamp_getter(const LikwidDevice
     err = likwid_sysft_readmsr_field(device, reg, 16, 1, &clamp);
     if (err < 0)
         return err;
-    return sysFeatures_uint64_to_string(clamp, value);
+    return likwid_sysft_uint64_to_string(clamp, value);
 }
 
 static int sysFeatures_intel_rapl_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
@@ -75,7 +75,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_clamp_setter(const LikwidDevice
     if (err < 0)
         return err;
     uint64_t clamp;
-    err = sysFeatures_string_to_uint64(value, &clamp);
+    err = likwid_sysft_string_to_uint64(value, &clamp);
     if (err < 0)
         return err;
     return likwid_sysft_writemsr_field(device, reg, 16, 1, clamp);
@@ -91,7 +91,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_getter(const LikwidDevice_t dev
     if (err < 0)
         return err;
     const double watts = (double)powerUnits * info->powerUnit;
-    return sysFeatures_double_to_string(watts, value);
+    return likwid_sysft_double_to_string(watts, value);
 }
 
 static int sysFeatures_intel_rapl_energy_limit_1_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
@@ -100,7 +100,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_setter(const LikwidDevice_t dev
     if (err < 0)
         return err;
     double watts;
-    err = sysFeatures_string_to_double(value, &watts);
+    err = likwid_sysft_string_to_double(value, &watts);
     if (err < 0)
         return err;
     const uint64_t powerUnits = MIN((uint64_t)round(watts / info->powerUnit), 0x7FFF);
@@ -117,7 +117,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_time_getter(const LikwidDevice_
     if (err < 0)
         return err;
     const double seconds = timeWindow_to_seconds(info, timeWindow);
-    return sysFeatures_double_to_string(seconds, value);
+    return likwid_sysft_double_to_string(seconds, value);
 }
 
 static int sysFeatures_intel_rapl_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
@@ -126,7 +126,7 @@ static int sysFeatures_intel_rapl_energy_limit_1_time_setter(const LikwidDevice_
     if (err < 0)
         return err;
     double seconds;
-    err = sysFeatures_string_to_double(value, &seconds);
+    err = likwid_sysft_string_to_double(value, &seconds);
     if (err < 0)
         return err;
     const uint64_t timeWindow = seconds_to_timeWindow(info, seconds);
@@ -143,7 +143,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_getter(const LikwidDevice_t dev
     if (err < 0)
         return err;
     const double watts = (double)powerUnits * info->powerUnit;
-    return sysFeatures_double_to_string(watts, value);
+    return likwid_sysft_double_to_string(watts, value);
 }
 
 static int sysFeatures_intel_rapl_energy_limit_2_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
@@ -152,7 +152,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_setter(const LikwidDevice_t dev
     if (err < 0)
         return err;
     double watts;
-    err = sysFeatures_string_to_double(value, &watts);
+    err = likwid_sysft_string_to_double(value, &watts);
     if (err < 0)
         return err;
     const uint64_t powerUnits = MIN((uint64_t)round(watts / info->powerUnit), 0x7FFF);
@@ -169,7 +169,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_time_getter(const LikwidDevice_
     if (err < 0)
         return err;
     const double seconds = timeWindow_to_seconds(info, timeWindow);
-    return sysFeatures_double_to_string(seconds, value);
+    return likwid_sysft_double_to_string(seconds, value);
 }
 
 static int sysFeatures_intel_rapl_energy_limit_2_time_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
@@ -178,7 +178,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_time_setter(const LikwidDevice_
     if (err < 0)
         return err;
     double seconds;
-    err = sysFeatures_string_to_double(value, &seconds);
+    err = likwid_sysft_string_to_double(value, &seconds);
     if (err < 0)
         return err;
     const uint64_t timeWindow = seconds_to_timeWindow(info, seconds);
@@ -194,7 +194,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_enable_getter(const LikwidDevic
     err = likwid_sysft_readmsr_field(device, reg, 47, 1, &enable);
     if (err < 0)
         return err;
-    return sysFeatures_uint64_to_string(enable, value);
+    return likwid_sysft_uint64_to_string(enable, value);
 }
 
 static int sysFeatures_intel_rapl_energy_limit_2_enable_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
@@ -203,7 +203,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_enable_setter(const LikwidDevic
     if (err < 0)
         return err;
     uint64_t enable;
-    err = sysFeatures_string_to_uint64(value, &enable);
+    err = likwid_sysft_string_to_uint64(value, &enable);
     if (err < 0)
         return err;
     return likwid_sysft_writemsr_field(device, reg, 47, 1, enable);
@@ -218,7 +218,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_clamp_getter(const LikwidDevice
     err = likwid_sysft_readmsr_field(device, reg, 48, 1, &clamp);
     if (err < 0)
         return err;
-    return sysFeatures_uint64_to_string(clamp, value);
+    return likwid_sysft_uint64_to_string(clamp, value);
 }
 
 static int sysFeatures_intel_rapl_energy_limit_2_clamp_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
@@ -227,7 +227,7 @@ static int sysFeatures_intel_rapl_energy_limit_2_clamp_setter(const LikwidDevice
     if (err < 0)
         return err;
     uint64_t clamp;
-    err = sysFeatures_string_to_uint64(value, &clamp);
+    err = likwid_sysft_string_to_uint64(value, &clamp);
     if (err < 0)
         return err;
     return likwid_sysft_writemsr_field(device, reg, 48, 1, clamp);
@@ -242,7 +242,7 @@ static int sysFeatures_intel_rapl_info_tdp(const LikwidDevice_t device, char** v
     err = likwid_sysft_readmsr_field(device, reg, 0, 15, &powerUnits);
     if (err < 0)
         return err;
-    return sysFeatures_double_to_string((double)powerUnits * intel_rapl_pkg_info.powerUnit, value);
+    return likwid_sysft_double_to_string((double)powerUnits * intel_rapl_pkg_info.powerUnit, value);
 }
 
 static int sysFeatures_intel_rapl_info_min_power(const LikwidDevice_t device, char** value, uint32_t reg)
@@ -255,7 +255,7 @@ static int sysFeatures_intel_rapl_info_min_power(const LikwidDevice_t device, ch
     if (err < 0)
         return err;
     const double watts = (double)powerUnits * intel_rapl_pkg_info.powerUnit;
-    return sysFeatures_double_to_string(watts, value);
+    return likwid_sysft_double_to_string(watts, value);
 }
 
 static int sysFeatures_intel_rapl_info_max_power(const LikwidDevice_t device, char** value, uint32_t reg)
@@ -268,7 +268,7 @@ static int sysFeatures_intel_rapl_info_max_power(const LikwidDevice_t device, ch
     if (err < 0)
         return err;
     const double watts = (double)powerUnits * intel_rapl_pkg_info.powerUnit;
-    return sysFeatures_double_to_string(watts, value);
+    return likwid_sysft_double_to_string(watts, value);
 }
 
 static int sysFeatures_intel_rapl_info_max_time(const LikwidDevice_t device, char** value, uint32_t reg)
@@ -281,7 +281,7 @@ static int sysFeatures_intel_rapl_info_max_time(const LikwidDevice_t device, cha
     if (err < 0)
         return err;
     const double seconds = (double)timeUnits * intel_rapl_pkg_info.timeUnit;
-    return sysFeatures_double_to_string(seconds, value);
+    return likwid_sysft_double_to_string(seconds, value);
 }
 
 static int sysFeatures_intel_rapl_policy_getter(const LikwidDevice_t device, char** value, uint32_t reg)
@@ -293,7 +293,7 @@ static int sysFeatures_intel_rapl_policy_getter(const LikwidDevice_t device, cha
     err = likwid_sysft_readmsr_field(device, reg, 0, 5, &policy);
     if (err < 0)
         return err;
-    return sysFeatures_uint64_to_string(policy, value);
+    return likwid_sysft_uint64_to_string(policy, value);
 }
 
 static int sysFeatures_intel_rapl_policy_setter(const LikwidDevice_t device, const char* value, uint32_t reg)
@@ -302,7 +302,7 @@ static int sysFeatures_intel_rapl_policy_setter(const LikwidDevice_t device, con
     if (err < 0)
         return err;
     uint64_t policy;
-    err = sysFeatures_string_to_uint64(value, &policy);
+    err = likwid_sysft_string_to_uint64(value, &policy);
     if (err < 0)
         return err;
     return likwid_sysft_writemsr_field(device, reg, 0, 5, policy);
@@ -883,7 +883,7 @@ int sysFeatures_init_intel_rapl(_SysFeatureList* out)
                 intel_rapl_pkg_feature_list.features[i].setter = NULL;
             }
         }
-        err = register_features(out, &intel_rapl_pkg_feature_list);
+        err = likwid_sysft_register_features(out, &intel_rapl_pkg_feature_list);
         if (err < 0)
         {
             DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PKG not supported);
@@ -904,7 +904,7 @@ int sysFeatures_init_intel_rapl(_SysFeatureList* out)
                 intel_rapl_dram_feature_list.features[i].setter = NULL;
             }
         }
-        err = register_features(out, &intel_rapl_dram_feature_list);
+        err = likwid_sysft_register_features(out, &intel_rapl_dram_feature_list);
         if (err < 0)
         {
             DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain DRAM not supported);
@@ -925,7 +925,7 @@ int sysFeatures_init_intel_rapl(_SysFeatureList* out)
                 intel_rapl_pp0_feature_list.features[i].setter = NULL;
             }
         }
-        err = register_features(out, &intel_rapl_pp0_feature_list);
+        err = likwid_sysft_register_features(out, &intel_rapl_pp0_feature_list);
         if (err < 0)
         {
             DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PP0 not supported);
@@ -946,7 +946,7 @@ int sysFeatures_init_intel_rapl(_SysFeatureList* out)
                 intel_rapl_pp1_feature_list.features[i].setter = NULL;
             }
         }
-        err = register_features(out, &intel_rapl_pp1_feature_list);
+        err = likwid_sysft_register_features(out, &intel_rapl_pp1_feature_list);
         if (err < 0)
         {
             DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PP1 not supported);
@@ -967,7 +967,7 @@ int sysFeatures_init_intel_rapl(_SysFeatureList* out)
                 intel_rapl_psys_feature_list.features[i].setter = NULL;
             }
         }
-        err = register_features(out, &intel_rapl_psys_feature_list);
+        err = likwid_sysft_register_features(out, &intel_rapl_psys_feature_list);
         if (err < 0)
         {
             DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PSYS not supported);

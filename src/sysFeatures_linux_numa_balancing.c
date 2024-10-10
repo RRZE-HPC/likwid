@@ -97,7 +97,7 @@ int sysFeatures_init_linux_numa_balancing(_SysFeatureList* out)
 {
     if (numa_balancing_test())
     {
-        return register_features(out, &numa_balancing_feature_list);
+        return likwid_sysft_register_features(out, &numa_balancing_feature_list);
     }
     return 0;
 }

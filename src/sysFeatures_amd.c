@@ -7,7 +7,7 @@
 
 int sysFeatures_init_x86_amd(_SysFeatureList* out)
 {
-    int err = sysFeatures_init_generic(amd_arch_features, out);
+    int err = likwid_sysft_init_generic(amd_arch_features, out);
     if (err < 0)
     {
         ERROR_PRINT(Failed to init general x86 HWFetures);
@@ -36,13 +36,13 @@ static int amd_cpu_prefetch_control_getter(const LikwidDevice_t device, int bito
     {
         val = !val;
     }
-    return sysFeatures_uint64_to_string(val, value);
+    return likwid_sysft_uint64_to_string(val, value);
 }
 
 int amd_cpu_prefetch_control_setter(const LikwidDevice_t device, int bitoffset, int width, bool invert, const char* value)
 {
     uint64_t control;
-    int err = sysFeatures_string_to_uint64(value, &control);
+    int err = likwid_sysft_string_to_uint64(value, &control);
     if (err < 0)
     {
         return err;
@@ -125,13 +125,13 @@ int amd_cpu_spec_control_getter(const LikwidDevice_t device, int bitoffset, int 
     {
         control = !control;
     }
-    return sysFeatures_uint64_to_string(control, value);
+    return likwid_sysft_uint64_to_string(control, value);
 }
 
 int amd_cpu_spec_control_setter(const LikwidDevice_t device, int bitoffset, int width, bool invert, const char* value)
 {
     uint64_t control = 0x0;
-    int err = sysFeatures_string_to_uint64(value, &control);
+    int err = likwid_sysft_string_to_uint64(value, &control);
     if (err < 0)
     {
         return err;
@@ -194,7 +194,7 @@ int amd_cpu_spec_pfsd_setter(const LikwidDevice_t device, const char* value)
 int amd_cpu_flush_l1(const LikwidDevice_t device, const char* value)
 {
     uint64_t flush;
-    int err = sysFeatures_string_to_uint64(value, &flush);
+    int err = likwid_sysft_string_to_uint64(value, &flush);
     if (err < 0)
     {
         return err;
@@ -216,13 +216,13 @@ int amd_cpu_hwconfig_getter(const LikwidDevice_t device, int bitoffset, int widt
     {
         hwconfig = !hwconfig;
     }
-    return sysFeatures_uint64_to_string(hwconfig, value);
+    return likwid_sysft_uint64_to_string(hwconfig, value);
 }
 
 int amd_cpu_hwconfig_setter(const LikwidDevice_t device, int bitoffset, int width, bool invert, const char* value)
 {
     uint64_t hwconfig;
-    int err = sysFeatures_string_to_uint64(value, &hwconfig);
+    int err = likwid_sysft_string_to_uint64(value, &hwconfig);
     if (err < 0)
     {
         return err;
