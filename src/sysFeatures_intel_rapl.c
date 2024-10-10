@@ -21,39 +21,6 @@ static RaplDomainInfo intel_rapl_psys_info = {0, 0, 0};
 static RaplDomainInfo intel_rapl_pp0_info = {0, 0, 0};
 static RaplDomainInfo intel_rapl_pp1_info = {0, 0, 0};
 
-static int intel_rapl_register_test_bit(uint32_t reg, int bitoffset)
-{
-    int err = topology_init();
-    if (err < 0)
-    {
-        return 0;
-    }
-    CpuTopology_t topo = get_cpuTopology();
-    err = HPMinit();
-    if (err < 0)
-    {
-	    return 0;
-    }
-    unsigned valid = 0;
-    for (unsigned i = 0; i < topo->numSockets; i++)
-    {
-        for (unsigned j = 0; j < topo->numHWThreads; j++)
-        {
-            HWThread* t = &topo->threadPool[j];
-            if (t->packageId == i)
-            {
-                err = HPMaddThread(t->apicId);
-                if (err < 0) continue;
-                uint64_t msrData = 0;
-                err = HPMread(t->apicId, MSR_DEV, reg, &msrData);
-                if (err == 0 && field64(msrData, bitoffset, 1)) valid++;
-                break;
-            }
-        }
-    }
-    return valid == topo->numSockets;
-}
-
 static int sysFeatures_intel_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
     int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
@@ -552,9 +519,14 @@ int intel_rapl_pkg_test(void)
     return valid == topo->numSockets;
 }
 
+static int pkg_limit_test_lock_testFunc(uint64_t msrData, void *)
+{
+    return field64(msrData, 63, 1);
+}
+
 int intel_rapl_pkg_limit_test_lock(void)
 {
-    return intel_rapl_register_test_bit(MSR_PKG_RAPL_POWER_LIMIT, 63);
+    return likwid_sysft_foreach_socket_testmsr_cb(MSR_PKG_RAPL_POWER_LIMIT, pkg_limit_test_lock_testFunc, NULL);
 }
 
 int sysFeatures_intel_pkg_energy_status_test(void)
@@ -739,9 +711,14 @@ int sysFeatures_intel_dram_energy_limit_test(void)
 {
     return likwid_sysft_foreach_socket_testmsr(MSR_DRAM_RAPL_POWER_LIMIT);
 }
+
+static int dram_limit_test_lock_testFunc(uint64_t msrData, void *)
+{
+    return field64(msrData, 31, 1);
+}
 int intel_rapl_dram_limit_test_lock(void)
 {
-    return intel_rapl_register_test_bit(MSR_DRAM_RAPL_POWER_LIMIT, 31);
+    return likwid_sysft_foreach_socket_testmsr_cb(MSR_DRAM_RAPL_POWER_LIMIT, dram_limit_test_lock_testFunc, NULL);
 }
 
 int sysFeatures_intel_dram_energy_limit_1_getter(const LikwidDevice_t device, char** value)
@@ -866,9 +843,15 @@ int sysFeatures_intel_psys_energy_limit_test(void)
 {
     return likwid_sysft_foreach_socket_testmsr(MSR_PLATFORM_POWER_LIMIT);
 }
+
+static int psys_limit_test_lock_testFunc(uint64_t msrData, void *)
+{
+    return field64(msrData, 63, 1);
+}
+
 int intel_rapl_psys_limit_test_lock(void)
 {
-    return intel_rapl_register_test_bit(MSR_PLATFORM_POWER_LIMIT, 63);
+    return likwid_sysft_foreach_socket_testmsr_cb(MSR_PLATFORM_POWER_LIMIT, psys_limit_test_lock_testFunc, NULL);
 }
 
 int sysFeatures_intel_psys_energy_limit_1_getter(const LikwidDevice_t device, char** value)
@@ -942,45 +925,22 @@ int sysFeatures_intel_psys_energy_limit_2_clamp_setter(const LikwidDevice_t devi
 /*                          Intel RAPL (PP0 domain)                                                                  */
 /*********************************************************************************************************************/
 
-int intel_rapl_pp0_test(void)
+static int pp0_test_testFunc(uint64_t msrData, void *cbData)
 {
-    int err = topology_init();
-    if (err < 0)
+    (void)cbData;
+    if (intel_rapl_pp0_info.powerUnit == 0 && intel_rapl_pp0_info.energyUnit == 0 && intel_rapl_pp0_info.timeUnit == 0)
     {
-        return 0;
+        intel_rapl_pp0_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
+        intel_rapl_pp0_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
+        intel_rapl_pp0_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
     }
-    CpuTopology_t topo = get_cpuTopology();
-    err = HPMinit();
-    if (err < 0)
-    {
-        return 0;
-    }
-    unsigned valid = 0;
-    for (unsigned i = 0; i < topo->numSockets; i++)
-    {
-        for (unsigned j = 0; j < topo->numHWThreads; j++)
-        {
-            HWThread* t = &topo->threadPool[j];
-            if (t->packageId == i)
-            {
-                err = HPMaddThread(t->apicId);
-                if (err < 0) continue;
-                uint64_t msrData = 0;
-                err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &msrData);
-                if (err == 0) valid++;
-                if (intel_rapl_pp0_info.powerUnit == 0 && intel_rapl_pp0_info.energyUnit == 0 && intel_rapl_pp0_info.timeUnit == 0)
-                {
-                    intel_rapl_pp0_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
-                    intel_rapl_pp0_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
-                    intel_rapl_pp0_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
-                }
-                break;
-            }
-        }
-    }
-    return valid == topo->numSockets;
+    return 1;
 }
 
+int intel_rapl_pp0_test(void)
+{
+    return likwid_sysft_foreach_socket_testmsr_cb(MSR_RAPL_POWER_UNIT, pp0_test_testFunc, NULL);
+}
 
 int sysFeatures_intel_pp0_energy_status_test(void)
 {
@@ -997,9 +957,14 @@ int sysFeatures_intel_pp0_energy_limit_test(void)
     return likwid_sysft_foreach_socket_testmsr(MSR_PP0_RAPL_POWER_LIMIT);
 }
 
+static int pp0_limit_test_lock_testFunc(uint64_t msrData, void *)
+{
+    return field64(msrData, 31, 1);
+}
+
 int intel_rapl_pp0_limit_test_lock(void)
 {
-    return intel_rapl_register_test_bit(MSR_PP0_RAPL_POWER_LIMIT, 31);
+    return likwid_sysft_foreach_socket_testmsr_cb(MSR_PP0_RAPL_POWER_LIMIT, pp0_limit_test_lock_testFunc, NULL);
 }
 
 int sysFeatures_intel_pp0_energy_limit_1_getter(const LikwidDevice_t device, char** value)
@@ -1034,8 +999,6 @@ int sysFeatures_intel_pp0_energy_limit_1_clamp_setter(const LikwidDevice_t devic
 {
     return sysFeatures_intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
-
-
 int sysFeatures_intel_pp0_policy_test(void)
 {
     return likwid_sysft_foreach_socket_testmsr(MSR_PP0_ENERGY_POLICY);
@@ -1054,46 +1017,22 @@ int sysFeatures_intel_pp0_policy_setter(const LikwidDevice_t device, const char*
 /*                          Intel RAPL (PP1 domain)                                                                  */
 /*********************************************************************************************************************/
 
-int intel_rapl_pp1_test(void)
+static int pp1_test_testFunc(uint64_t msrData, void *cbData)
 {
-    int err = topology_init();
-    if (err < 0)
+    (void)cbData;
+    if (intel_rapl_pp1_info.powerUnit == 0 && intel_rapl_pp1_info.energyUnit == 0 && intel_rapl_pp1_info.timeUnit == 0)
     {
-        return 0;
+        intel_rapl_pp1_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
+        intel_rapl_pp1_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
+        intel_rapl_pp1_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
     }
-    CpuTopology_t topo = get_cpuTopology();
-    CpuInfo_t info = get_cpuInfo();
-    err = HPMinit();
-    if (err < 0)
-    {
-        return 0;
-    }
-    unsigned valid = 0;
-    for (unsigned i = 0; i < topo->numSockets; i++)
-    {
-        for (unsigned j = 0; j < topo->numHWThreads; j++)
-        {
-            HWThread* t = &topo->threadPool[j];
-            if (t->packageId == i)
-            {
-                err = HPMaddThread(t->apicId);
-                if (err < 0) continue;
-                uint64_t msrData = 0;
-                err = HPMread(t->apicId, MSR_DEV, MSR_RAPL_POWER_UNIT, &msrData);
-                if (err == 0) valid++;
-                if (intel_rapl_pp1_info.powerUnit == 0 && intel_rapl_pp1_info.energyUnit == 0 && intel_rapl_pp1_info.timeUnit == 0)
-                {
-                    intel_rapl_pp1_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
-                    intel_rapl_pp1_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
-                    intel_rapl_pp1_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
-                }
-                break;
-            }
-        }
-    }
-    return valid == topo->numSockets;
+    return 1;
 }
 
+int intel_rapl_pp1_test(void)
+{
+    return likwid_sysft_foreach_socket_testmsr_cb(MSR_RAPL_POWER_UNIT, pp1_test_testFunc, NULL);
+}
 
 int sysFeatures_intel_pp1_energy_status_test(void)
 {
@@ -1110,9 +1049,14 @@ int sysFeatures_intel_pp1_energy_limit_test(void)
     return likwid_sysft_foreach_socket_testmsr(MSR_PP1_RAPL_POWER_LIMIT);
 }
 
+static int pp1_limit_test_lock(uint64_t msrData, void *)
+{
+    return field64(msrData, 31, 1);
+}
+
 int intel_rapl_pp1_limit_test_lock(void)
 {
-    return intel_rapl_register_test_bit(MSR_PP1_RAPL_POWER_LIMIT, 31);
+    return likwid_sysft_foreach_socket_testmsr_cb(MSR_PP1_RAPL_POWER_LIMIT, pp1_limit_test_lock, NULL);
 }
 
 int sysFeatures_intel_pp1_energy_limit_1_getter(const LikwidDevice_t device, char** value)
