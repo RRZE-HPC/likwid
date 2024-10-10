@@ -2,7 +2,6 @@
 #define HWFEATURES_COMMON_RAPL_H
 
 #include <likwid.h>
-#include <access.h>
 
 typedef struct {
     double powerUnit;   // unit W
@@ -35,16 +34,6 @@ static inline int getset_check(const LikwidDevice_t device, const void *value, L
     if (!device || !value || (device->type != type))
     {
         return -EINVAL;
-    }
-    int err = HPMinit();
-    if (err < 0)
-    {
-        return err;
-    }
-    err = HPMaddThread(device->id.simple.id);
-    if (err < 0)
-    {
-        return err;
     }
     return 0;
 }

@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <assert.h>
 
+#include <bitUtil.h>
 #include <access.h>
 #include <registers.h>
 #include <cpuid.h>
@@ -362,4 +363,36 @@ int likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *ms
         abort();
     }
     return err;
+}
+
+int likwid_sysft_readmsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t *value)
+{
+    int err = HPMinit();
+    if (err < 0)
+        return err;
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+        return err;
+    uint64_t msrData = 0x0;
+    err = HPMread(device->id.simple.id, MSR_DEV, reg, &msrData);
+    if (err < 0)
+        return err;
+    *value = field64(msrData, bitoffset, width);
+    return 0;
+}
+
+int likwid_sysft_writemsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t value)
+{
+    int err = HPMinit();
+    if (err < 0)
+        return err;
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+        return err;
+    uint64_t msrData = 0x0;
+    err = HPMread(device->id.simple.id, MSR_DEV, reg, &msrData);
+    if (err < 0)
+        return err;
+    field64set(&msrData, bitoffset, width, value);
+    return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }

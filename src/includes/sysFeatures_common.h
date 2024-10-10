@@ -18,5 +18,7 @@ int likwid_sysft_foreach_core_testmsr_cb(uint64_t reg, int (*testFunc)(uint64_t 
 int likwid_sysft_foreach_socket_testmsr(uint64_t reg);
 int likwid_sysft_foreach_socket_testmsr_cb(uint64_t reg, int (*testFunc)(uint64_t msrData, void *cbData), void *cbData);
 int likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData);
+int likwid_sysft_readmsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t *value);
+int likwid_sysft_writemsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t value);
 
 #endif
