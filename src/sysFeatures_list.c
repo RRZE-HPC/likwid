@@ -170,7 +170,6 @@ void _free_feature_list(_SysFeatureList *list)
     }
 }
 
-
 int likwid_sysft_internal_to_external_feature_list(const _SysFeatureList *inlist, LikwidSysFeatureList* outlist)
 {
     if ((!inlist) || (!outlist))
@@ -189,8 +188,8 @@ int likwid_sysft_internal_to_external_feature_list(const _SysFeatureList *inlist
 
     for (int i = 0; i < inlist->num_features; i++)
     {
-        LikwidSysFeature* out = &(outlist->features[i]);
-        _SysFeature* in = &(inlist->features[i]);
+        LikwidSysFeature* out = &outlist->features[i];
+        const _SysFeature* in = &inlist->features[i];
 
         out->name = strndup(in->name, HWFEATURES_MAX_STR_LENGTH - 1);
         if (!out->name)

@@ -9,6 +9,8 @@
 #include <sysFeatures_intel_uncorefreq.h>
 #include <access.h>
 #include <sysFeatures_common.h>
+#include <registers.h>
+#include <bitUtil.h>
 
 int intel_uncorefreq_test(void)
 {

@@ -8,6 +8,9 @@
 #include <sysFeatures_intel.h>
 #include <access.h>
 #include <sysFeatures_common.h>
+#include <bitUtil.h>
+#include <cpuid.h>
+#include <registers.h>
 
 /*********************************************************************************************************************/
 /*                          Intel prefetchers                                                                        */

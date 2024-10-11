@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <math.h>
 
+#include <bitUtil.h>
 #include <sysFeatures_types.h>
 #include <likwid.h>
 #include <error.h>
@@ -11,7 +12,7 @@
 #include <sysFeatures_amd_rapl.h>
 #include <access.h>
 #include <registers.h>
-
+#include <topology.h>
 #include <sysFeatures_common_rapl.h>
 
 static RaplDomainInfo amd_rapl_pkg_info = {0, 0, 0};
@@ -65,6 +66,16 @@ int sysFeatures_amd_pkg_energy_status_getter(const LikwidDevice_t device, char**
     return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_PKG_STATUS, &amd_rapl_pkg_info, DEVICE_TYPE_SOCKET);
 }
 
+static _SysFeature amd_rapl_pkg_features[] = {
+    {"pkg_energy", "rapl", "Current energy consumtion (PKG domain)", sysFeatures_amd_pkg_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, sysFeatures_amd_pkg_energy_status_test, "J"},
+};
+
+static const _SysFeatureList amd_rapl_pkg_feature_list = {
+    .num_features = ARRAY_COUNT(amd_rapl_pkg_features),
+    .tester = amd_rapl_pkg_test,
+    .features = amd_rapl_pkg_features,
+};
+
 /*********************************************************************************************************************/
 /*                          AMD RAPL (CORE domain)                                                                 */
 /*********************************************************************************************************************/
@@ -94,6 +105,16 @@ int sysFeatures_amd_core_energy_status_getter(const LikwidDevice_t device, char*
 {
     return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_CORE_STATUS, &amd_rapl_core_info, DEVICE_TYPE_CORE);
 }
+
+static _SysFeature amd_rapl_core_features[] = {
+    {"core_energy", "rapl", "Current energy consumtion (Core domain)", sysFeatures_amd_core_energy_status_getter, NULL, DEVICE_TYPE_CORE, sysFeatures_amd_core_energy_status_test, "J"},
+};
+
+static const _SysFeatureList amd_rapl_core_feature_list = {
+    .num_features = ARRAY_COUNT(amd_rapl_core_features),
+    .tester = amd_rapl_core_test,
+    .features = amd_rapl_core_features,
+};
 
 /*********************************************************************************************************************/
 /*                          AMD RAPL (L3 domain)                                                                     */
@@ -130,6 +151,16 @@ int sysFeatures_amd_l3_energy_status_getter(const LikwidDevice_t device, char** 
 {
     return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD19_RAPL_L3_STATUS, &amd_rapl_l3_info, DEVICE_TYPE_SOCKET);
 }
+
+static _SysFeature amd_rapl_l3_features[] = {
+    {"l3_energy", "rapl", "Current energy consumtion (L3 domain)", sysFeatures_amd_l3_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, sysFeatures_amd_l3_energy_status_test, "J"},
+};
+
+static const _SysFeatureList amd_rapl_l3_feature_list = {
+    .num_features = ARRAY_COUNT(amd_rapl_l3_features),
+    .tester = amd_rapl_l3_test,
+    .features = amd_rapl_l3_features,
+};
 
 /* Init function */
 

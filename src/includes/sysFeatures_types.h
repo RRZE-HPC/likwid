@@ -17,14 +17,14 @@ typedef int (*hwfeature_setter_function)(const LikwidDevice_t device, const char
 typedef int (*hwfeature_test_function)();
 
 typedef struct {
-    char* name;
-    char* category;
-    char* description;
+    const char* name;
+    const char* category;
+    const char* description;
     hwfeature_getter_function getter;
     hwfeature_setter_function setter;
     LikwidDeviceType type;
     hwfeature_test_function tester;
-    char* unit;
+    const char* unit;
 } _SysFeature;
 
 typedef struct {
@@ -36,7 +36,7 @@ typedef struct {
 typedef struct {
     int family;
     int model;
-    _SysFeatureList** features;
+    const _SysFeatureList** features;
     int max_stepping;
 } _HWArchFeatures;
 
