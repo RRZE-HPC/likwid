@@ -381,6 +381,17 @@ int likwid_sysft_readmsr_field(const LikwidDevice_t device, uint64_t reg, int bi
     return 0;
 }
 
+int likwid_sysft_readmsr_bit_to_string(const LikwidDevice_t device, uint64_t reg, int bitoffset, bool invert, char **value)
+{
+    uint64_t field;
+    int err = likwid_sysft_readmsr_field(device, reg, bitoffset, 1, &field);
+    if (err < 0)
+        return err;
+    if (invert)
+        field = !field;
+    return likwid_sysft_uint64_to_string(field, value);
+}
+
 int likwid_sysft_writemsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t value)
 {
     int err = HPMinit();
@@ -395,4 +406,15 @@ int likwid_sysft_writemsr_field(const LikwidDevice_t device, uint64_t reg, int b
         return err;
     field64set(&msrData, bitoffset, width, value);
     return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
+}
+
+int likwid_sysft_writemsr_bit_from_string(const LikwidDevice_t device, uint64_t reg, int bitoffset, bool invert, const char *value)
+{
+    uint64_t field;
+    int err = likwid_sysft_string_to_uint64(value, field);
+    if (err < 0)
+        return err;
+    if (invert)
+        field = !field;
+    return likwid_sysft_writemsr_field(device, reg, bitoffset, 1, field);
 }
