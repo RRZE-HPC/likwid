@@ -72,3 +72,14 @@ int intel_uncore_max_freq_getter(const LikwidDevice_t device, char** value)
     return likwid_sysft_uint64_to_string(field64(msrData, 0, 8) * 100, value);
 }
 
+static _SysFeature intel_uncorefreq_features[] = {
+    {"cur_uncore_freq", "uncore_freq", "Current Uncore frequency", intel_uncore_cur_freq_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "MHz"},
+    {"min_uncore_freq", "uncore_freq", "Minimum Uncore frequency", intel_uncore_min_freq_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "MHz"},
+    {"max_uncore_freq", "uncore_freq", "Maximal Uncore frequency", intel_uncore_max_freq_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "MHz"},
+};
+
+const _SysFeatureList likwid_sysft_intel_uncorefreq_feature_list = {
+    .num_features = ARRAY_COUNT(intel_uncorefreq_features),
+    .tester = intel_uncorefreq_test,
+    .features = intel_uncorefreq_features,
+};
