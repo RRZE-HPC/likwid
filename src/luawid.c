@@ -3714,7 +3714,7 @@ lua_likwid_initSysFeatures(lua_State *L)
     int err = 0;
     if (!sysfeatures_inititalized)
     {
-        err = sysFeatures_init();
+        err = likwid_sysft_init();
         if (err == 0)
         {
             sysfeatures_inititalized = 1;
@@ -3729,7 +3729,7 @@ lua_likwid_finalizeSysFeatures(lua_State *L)
 {
     if (sysfeatures_inititalized)
     {
-        sysFeatures_finalize();
+        likwid_sysft_finalize();
         sysfeatures_inititalized = 0;
     }
 }
@@ -3742,8 +3742,8 @@ lua_likwid_getSysFeatureList(lua_State *L)
         lua_newtable(L);
         return 1;
     }
-    SysFeatureList list = {0, NULL};
-    sysFeatures_list(&list);
+    LikwidSysFeatureList list = {0, NULL};
+    likwid_sysft_list(&list);
     lua_newtable(L);
     for (int i = 0; i < list.num_features; i++)
     {
@@ -3772,7 +3772,7 @@ lua_likwid_getSysFeatureList(lua_State *L)
         lua_settable(L,-3);
         lua_settable(L,-3);
     }
-    sysFeatures_list_return(&list);
+    likwid_sysft_list_return(&list);
     return 1;
 }
 
@@ -3784,7 +3784,7 @@ lua_likwid_getSysFeature(lua_State *L)
         const char* feature = luaL_checkstring(L, 1);
         const LikwidDevice_t dev = lua_touserdata(L, 2);
         char* value = NULL;
-        int err = sysFeatures_getByName(feature, dev, &value);
+        int err = likwid_sysft_getByName(feature, dev, &value);
         if (err == 0)
         {
             lua_pushstring(L, value);
@@ -3805,7 +3805,7 @@ lua_likwid_setSysFeature(lua_State *L)
         const char* feature = luaL_checkstring(L, 1);
         const LikwidDevice_t dev = lua_touserdata(L, 2);
         const char* value = luaL_checkstring(L,3);
-        int err = sysFeatures_modifyByName(feature, dev, value);
+        int err = likwid_sysft_modifyByName(feature, dev, value);
         if (err == 0)
         {
             lua_pushboolean(L, 1);

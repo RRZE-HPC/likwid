@@ -16,7 +16,7 @@
 #include <sysFeatures_intel_rapl.h>
 
 
-int sysFeatures_init_x86_intel(_SysFeatureList* out)
+int likwid_sysft_init_x86_intel(_SysFeatureList* out)
 {
     int err = likwid_sysft_init_generic(intel_arch_features, out);
     if (err < 0)

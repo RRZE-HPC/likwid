@@ -239,7 +239,7 @@ int cpufreq_intel_pstate_avail_epps_getter(const LikwidDevice_t device, char** v
 
 /* Init function */
 
-int sysFeatures_init_cpufreq(_SysFeatureList* out)
+int likwid_sysft_init_cpufreq(_SysFeatureList* out)
 {
     int err = 0;
     if (cpufreq_intel_pstate_test())

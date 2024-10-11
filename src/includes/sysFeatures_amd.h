@@ -9,7 +9,7 @@
 #include <sysFeatures_common.h>
 #include <sysFeatures_amd_rapl.h>
 
-int sysFeatures_init_x86_amd(_SysFeatureList* out);
+int likwid_sysft_init_x86_amd(_SysFeatureList* out);
 
 int amd_cpu_l1_stream_getter(const LikwidDevice_t device, char** value);
 int amd_cpu_l1_stream_setter(const LikwidDevice_t device, const char* value);
