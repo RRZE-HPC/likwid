@@ -93,6 +93,6 @@ static _HWArchFeatures intel_arch_features[] = {
 
 
 
-int sysFeatures_init_x86_intel(_SysFeatureList* list);
+int likwid_sysft_init_x86_intel(_SysFeatureList* list);
 
 #endif

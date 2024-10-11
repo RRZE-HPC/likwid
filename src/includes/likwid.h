@@ -3285,12 +3285,12 @@ typedef struct {
     LikwidDeviceType type;
     unsigned int readonly:1;
     unsigned int writeonly:1;
-} SysFeature;
+} LikwidSysFeature;
 
 typedef struct {
     int num_features;
-    SysFeature* features;
-} SysFeatureList;
+    LikwidSysFeature* features;
+} LikwidSysFeatureList;
 
 
 #define SYSFEATURE_PCI_DEVICE_TO_ID(domain, bus, slot, func) \
@@ -3302,17 +3302,17 @@ typedef struct {
 
 
 
-int sysFeatures_init(void) __attribute__ ((visibility ("default") ));
+int likwid_sysft_init(void) __attribute__ ((visibility ("default") ));
 
-int sysFeatures_list(SysFeatureList* list) __attribute__ ((visibility ("default") ));
-void sysFeatures_list_return(SysFeatureList* list) __attribute__ ((visibility ("default") ));
+int likwid_sysft_list(LikwidSysFeatureList *list) __attribute__ ((visibility ("default") ));
+void likwid_sysft_list_return(LikwidSysFeatureList *list) __attribute__ ((visibility ("default") ));
 
-int sysFeatures_get(const SysFeature* feature, const LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
-int sysFeatures_getByName(const char* name, const LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
-int sysFeatures_modify(const SysFeature* feature, const LikwidDevice_t device, const char* value) __attribute__ ((visibility ("default") ));
-int sysFeatures_modifyByName(const char* name, const LikwidDevice_t device, const char* value) __attribute__ ((visibility ("default") ));
+int likwid_sysft_get(const LikwidSysFeature *feature, const LikwidDevice_t device, char **value) __attribute__ ((visibility ("default") ));
+int likwid_sysft_getByName(const char *name, const LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
+int likwid_sysft_modify(const LikwidSysFeature* feature, const LikwidDevice_t device, const char* value) __attribute__ ((visibility ("default") ));
+int likwid_sysft_modifyByName(const char* name, const LikwidDevice_t device, const char* value) __attribute__ ((visibility ("default") ));
 
-void sysFeatures_finalize(void) __attribute__ ((visibility ("default") ));
+void likwid_sysft_finalize(void) __attribute__ ((visibility ("default") ));
 #endif /* LIKWID_WITH_SYSFEATURES */
 
 #ifdef __cplusplus

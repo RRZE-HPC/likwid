@@ -87,7 +87,7 @@ static int get_device_access(LikwidDevice_t device)
 }
 
 
-int sysFeatures_init(void)
+int likwid_sysft_init(void)
 {
     int err = 0;
 
@@ -104,7 +104,7 @@ int sysFeatures_init(void)
     }
     if (cpuinfo->isIntel)
     {
-        err = sysFeatures_init_x86_intel(&_feature_list);
+        err = likwid_sysft_init_x86_intel(&_feature_list);
         if (err < 0)
         {
             ERROR_PRINT(Failed to initialize SysFeatures for Intel architecture);
@@ -113,7 +113,7 @@ int sysFeatures_init(void)
     }
     else
     {
-        err = sysFeatures_init_x86_amd(&_feature_list);
+        err = likwid_sysft_init_x86_amd(&_feature_list);
         if (err < 0)
         {
             ERROR_PRINT(Failed to initialize SysFeatures for AMD architecture);
@@ -121,14 +121,14 @@ int sysFeatures_init(void)
         }
     }
     
-    err = sysFeatures_init_cpufreq(&_feature_list);
+    err = likwid_sysft_init_cpufreq(&_feature_list);
     if (err < 0)
     {
         ERROR_PRINT(Failed to initialize SysFeatures cpufreq module);
         return err;
     }
 
-    err = sysFeatures_init_linux_numa_balancing(&_feature_list);
+    err = likwid_sysft_init_linux_numa_balancing(&_feature_list);
     if (err < 0)
     {
         ERROR_PRINT(Failed to initialize SysFeatures numa_balancing module);
@@ -139,7 +139,7 @@ int sysFeatures_init(void)
     return 0;
 }
 
-static int _sysFeatures_get_feature_index(const char* name)
+static int get_feature_index(const char* name)
 {
     int dot = -1;
     if (!name)
@@ -207,7 +207,7 @@ static int _sysFeatures_get_feature_index(const char* name)
 
 
 
-int sysFeatures_getByName(const char* name, const LikwidDevice_t device, char** value)
+int likwid_sysft_getByName(const char* name, const LikwidDevice_t device, char** value)
 {
     int err = 0;
     _SysFeature *f = NULL;
@@ -221,7 +221,7 @@ int sysFeatures_getByName(const char* name, const LikwidDevice_t device, char** 
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Invalid device type);
         return -EINVAL;
     }
-    int idx = _sysFeatures_get_feature_index(name);
+    int idx = get_feature_index(name);
     if (idx < 0)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Failed to get index for %s, name);
@@ -248,15 +248,15 @@ int sysFeatures_getByName(const char* name, const LikwidDevice_t device, char** 
     return err;
 }
 
-int sysFeatures_get(const SysFeature* feature, const LikwidDevice_t device, char** value)
+int likwid_sysft_get(const LikwidSysFeature* feature, const LikwidDevice_t device, char** value)
 {
     int len = strlen(feature->name) + strlen(feature->category) + 2;
     char real[len];
-    int ret = snprintf(real, len, "%s.%s", feature->category, feature->name);
-    return sysFeatures_getByName(real, device, value);
+    snprintf(real, len, "%s.%s", feature->category, feature->name);
+    return likwid_sysft_getByName(real, device, value);
 }
 
-int sysFeatures_modifyByName(const char* name, const LikwidDevice_t device, const char* value)
+int likwid_sysft_modifyByName(const char* name, const LikwidDevice_t device, const char* value)
 {
     int err = 0;
     int dev_id = -1;
@@ -269,7 +269,7 @@ int sysFeatures_modifyByName(const char* name, const LikwidDevice_t device, cons
     {
         return -EINVAL;
     }
-    int idx = _sysFeatures_get_feature_index(name);
+    int idx = get_feature_index(name);
     if (idx < 0)
     {
         return -EINVAL;
@@ -291,15 +291,15 @@ int sysFeatures_modifyByName(const char* name, const LikwidDevice_t device, cons
     return f->setter(device, value);
 }
 
-int sysFeatures_modify(const SysFeature* feature, const LikwidDevice_t device, const char* value)
+int likwid_sysft_modify(const LikwidSysFeature* feature, const LikwidDevice_t device, const char* value)
 {
     int len = strlen(feature->name) + strlen(feature->category) + 2;
     char real[len];
-    int ret = snprintf(real, len, "%s.%s", feature->category, feature->name);
-    return sysFeatures_modifyByName(feature->name, device, value);
+    snprintf(real, len, "%s.%s", feature->category, feature->name);
+    return likwid_sysft_modifyByName(feature->name, device, value);
 }
 
-void sysFeatures_finalize(void)
+void likwid_sysft_finalize(void)
 {
     if (local_features != NULL)
     {
@@ -314,22 +314,22 @@ void sysFeatures_finalize(void)
     
 }
 
-int sysFeatures_list(SysFeatureList* list)
+int likwid_sysft_list(LikwidSysFeatureList* list)
 {
     if (!list)
     {
         return -EINVAL;
     }
-    return internal_to_external_feature_list(&_feature_list, list);
+    return likwid_sysft_internal_to_external_feature_list(&_feature_list, list);
 }
 
-void sysFeatures_list_return(SysFeatureList* list)
+void likwid_sysft_list_return(LikwidSysFeatureList* list)
 {
     if (!list || !list->features)
     {
         return;
     }
-    free_feature_list(list);
+    likwid_sysft_free_feature_list(list);
 /*    for (int i = 0; i < list->num_features; i++)*/
 /*    {*/
 /*        SysFeature* f = &(list->features[i]);*/

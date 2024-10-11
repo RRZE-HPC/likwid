@@ -93,7 +93,7 @@ int numa_balancing_scan_size_getter(const LikwidDevice_t device, char** value)
 }
 
 
-int sysFeatures_init_linux_numa_balancing(_SysFeatureList* out)
+int likwid_sysft_init_linux_numa_balancing(_SysFeatureList* out)
 {
     if (numa_balancing_test())
     {

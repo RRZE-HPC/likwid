@@ -5,7 +5,7 @@
 #include <access.h>
 #include <sysFeatures_amd_rapl.h>
 
-int sysFeatures_init_x86_amd(_SysFeatureList* out)
+int likwid_sysft_init_x86_amd(_SysFeatureList* out)
 {
     int err = likwid_sysft_init_generic(amd_arch_features, out);
     if (err < 0)
@@ -39,7 +39,7 @@ static int amd_cpu_prefetch_control_getter(const LikwidDevice_t device, int bito
     return likwid_sysft_uint64_to_string(val, value);
 }
 
-int amd_cpu_prefetch_control_setter(const LikwidDevice_t device, int bitoffset, int width, bool invert, const char* value)
+static int amd_cpu_prefetch_control_setter(const LikwidDevice_t device, int bitoffset, int width, bool invert, const char* value)
 {
     uint64_t control;
     int err = likwid_sysft_string_to_uint64(value, &control);
