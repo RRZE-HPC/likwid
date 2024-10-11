@@ -143,7 +143,7 @@ static const _SysFeatureList* intel_arch_feature_inputs[] = {
     &intel_cpu_ida_feature_list,
     &intel_cpu_turbo_feature_list,
     &intel_uncorefreq_feature_list,
-    &intel_cpu_spec_ctrl_feature_list,
+    &likwid_sysft_intel_cpu_spec_ctrl_feature_list,
     NULL,
 };
 
@@ -152,7 +152,7 @@ static const _SysFeatureList* intel_8f_arch_feature_inputs[] = {
     &intel_8f_cpu_feature_list,
     &intel_cpu_ida_feature_list,
     &intel_cpu_turbo_feature_list,
-    &intel_cpu_spec_ctrl_feature_list,
+    &likwid_sysft_intel_cpu_spec_ctrl_feature_list,
     NULL,
 };
 
@@ -160,7 +160,7 @@ static const _SysFeatureList* intel_knl_arch_feature_inputs[] = {
     &intel_knl_cpu_feature_list,
     &intel_cpu_ida_feature_list,
     &intel_cpu_turbo_feature_list,
-    &intel_cpu_spec_ctrl_feature_list,
+    &likwid_sysft_intel_cpu_spec_ctrl_feature_list,
     NULL,
 };
 
@@ -168,7 +168,7 @@ static const _SysFeatureList* intel_core2_arch_feature_inputs[] = {
     &intel_core2_cpu_feature_list,
     &intel_cpu_ida_feature_list,
     &intel_cpu_turbo_feature_list,
-    &intel_cpu_spec_ctrl_feature_list,
+    &likwid_sysft_intel_cpu_spec_ctrl_feature_list,
     NULL,
 };
 
