@@ -8,7 +8,7 @@
 #include <sysFeatures_intel.h>
 #include <cpuid.h>
 #include <bitUtil.h>
-
+#include <registers.h>
 
 
 int intel_cpu_spec_ibrs_tester(void)

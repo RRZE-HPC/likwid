@@ -85,4 +85,6 @@ typedef struct {
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
 
+#define ARRAY_COUNT(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 #endif /*TYPES_H*/
