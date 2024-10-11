@@ -141,29 +141,17 @@ int likwid_sysft_init(void)
 
 static int get_feature_index(const char* name)
 {
-    int dot = -1;
     if (!name)
     {
         return -EINVAL;
     }
-    int namelen = strlen(name);
-    for (int i = 0; i < namelen; i++)
-    {
-        if (name[i] == '.')
-        {
-            dot = i;
-            break;
-        }
-    }
-    if (dot < 0)
+    if (!strchr(name, '.'))
     {
         int out = -1;
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Features name has no dot -> compare with name, dot);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Features name has no dot -> compare with name);
         for (int i = 0; i < _feature_list.num_features; i++)
         {
-            int featlen = strlen(_feature_list.features[i].name);
-            int checklen = (namelen < featlen ? featlen : namelen);
-            if (strncmp(name, _feature_list.features[i].name, checklen) == 0)
+            if (strcmp(name, _feature_list.features[i].name) == 0)
             {
                 if (out < 0)
                 {
@@ -183,21 +171,16 @@ static int get_feature_index(const char* name)
     }
     else
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Features name contains dot at offset %d -> compare with category.name, dot);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Features name contains dot -> compare with category.name);
         for (int i = 0; i < _feature_list.num_features; i++)
         {
             int featlen = strlen(_feature_list.features[i].name) + strlen(_feature_list.features[i].category) + 2;
-            char real[featlen];
-            int ret = snprintf(real, featlen, "%s.%s", _feature_list.features[i].category, _feature_list.features[i].name);
-            if (ret > 0)
+            char combined_name[featlen];
+            snprintf(combined_name, featlen, "%s.%s", _feature_list.features[i].category, _feature_list.features[i].name);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Comparing '%s' to '%s': %d, name, combined_name, strcmp(name, combined_name));
+            if (strcmp(name, combined_name) == 0)
             {
-                real[ret] = '\0';
-                int checklen = (namelen < featlen ? featlen : namelen);
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Comparing '%s' to '%s': %d, name, real, strncmp(name, real, checklen));
-                if (strncmp(name, real, checklen) == 0)
-                {
-                    return i;
-                }
+                return i;
             }
         }
     }
@@ -330,14 +313,6 @@ void likwid_sysft_list_return(LikwidSysFeatureList* list)
         return;
     }
     likwid_sysft_free_feature_list(list);
-/*    for (int i = 0; i < list->num_features; i++)*/
-/*    {*/
-/*        SysFeature* f = &(list->features[i]);*/
-/*        if (f->name) free(f->name);*/
-/*        if (f->category) free(f->category);*/
-/*        if (f->description) free(f->description);*/
-/*    }*/
-/*    free(list->features);*/
     list->features = NULL;
     list->num_features = 0;
 }
