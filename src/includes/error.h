@@ -32,6 +32,7 @@
 #define ERROR_H
 
 #include <likwid.h>
+#include <stdio.h>
 
 #define str(x) #x
 
