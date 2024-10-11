@@ -3,9 +3,9 @@
 #include <stdint.h>
 
 #include <sysFeatures_types.h>
+#include <sysFeatures_common.h>
 #include <likwid.h>
 #include <error.h>
-#include <sysFeatures_intel.h>
 #include <cpuid.h>
 #include <bitUtil.h>
 #include <registers.h>
@@ -19,7 +19,7 @@ int intel_cpu_spec_ibrs_tester(void)
 
 int intel_cpu_spec_ibrs_getter(const LikwidDevice_t device, char** value)
 {
-    return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x1, 0, 0, value);
+    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 0, false, value);
 }
 
 int intel_cpu_spec_stibp_tester(void)
@@ -31,7 +31,7 @@ int intel_cpu_spec_stibp_tester(void)
 
 int intel_cpu_spec_stibp_getter(const LikwidDevice_t device, char** value)
 {
-    return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x2, 1, 0, value);
+    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 1, false, value);
 }
 
 int intel_cpu_spec_ssbd_tester(void)
@@ -43,7 +43,7 @@ int intel_cpu_spec_ssbd_tester(void)
 
 int intel_cpu_spec_ssbd_getter(const LikwidDevice_t device, char** value)
 {
-    return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x4, 2, 1, value);
+    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 2, true, value);
 }
 
 int intel_cpu_spec_ipred_dis_tester(void)
@@ -55,7 +55,7 @@ int intel_cpu_spec_ipred_dis_tester(void)
 
 int intel_cpu_spec_ipred_dis_getter(const LikwidDevice_t device, char** value)
 {
-    return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x8, 3, 0, value);
+    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 3, false, value);
 }
 
 int intel_cpu_spec_rrsba_dis_tester(void)
@@ -67,7 +67,7 @@ int intel_cpu_spec_rrsba_dis_tester(void)
 
 int intel_cpu_spec_rrsba_dis_getter(const LikwidDevice_t device, char** value)
 {
-    return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x20, 5, 1, value);
+    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 5, true, value);
 }
 
 int intel_cpu_spec_psfd_tester(void)
@@ -79,7 +79,7 @@ int intel_cpu_spec_psfd_tester(void)
 
 int intel_cpu_spec_psfd_getter(const LikwidDevice_t device, char** value)
 {
-    return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x80, 7, 1, value);
+    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 7, true, value);
 }
 
 int intel_cpu_spec_ddpd_tester(void)
@@ -91,7 +91,7 @@ int intel_cpu_spec_ddpd_tester(void)
 
 int intel_cpu_spec_ddpd_getter(const LikwidDevice_t device, char** value)
 {
-    return intel_cpu_msr_register_getter(device, MSR_IA32_SPEC_CTRL, 0x100, 8, 1, value);
+    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 8, true, value);
 }
 
 static int intel_cpu_spec_ctrl(void)
