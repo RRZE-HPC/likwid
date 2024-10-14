@@ -19,7 +19,7 @@ static RaplDomainInfo amd_rapl_pkg_info = {0, 0, 0};
 static RaplDomainInfo amd_rapl_core_info = {0, 0, 0};
 static RaplDomainInfo amd_rapl_l3_info = {0, 0, 0};
 
-static int sysFeatures_amd_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info, LikwidDeviceType type)
+static int amd_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info, LikwidDeviceType type)
 {
     int err = getset_info_check(device, value, info, type);
     if (err < 0)
@@ -51,23 +51,23 @@ static int pkg_test_testFunc(uint64_t msrData, void *)
     return 1;
 }
 
-int amd_rapl_pkg_test(void)
+static int amd_rapl_pkg_test(void)
 {
     return likwid_sysft_foreach_socket_testmsr_cb(MSR_AMD17_RAPL_POWER_UNIT, pkg_test_testFunc, NULL);
 }
 
-int sysFeatures_amd_pkg_energy_status_test(void)
+static int amd_pkg_energy_status_test(void)
 {
     return likwid_sysft_foreach_socket_testmsr(MSR_AMD17_RAPL_PKG_STATUS);
 }
 
-int sysFeatures_amd_pkg_energy_status_getter(const LikwidDevice_t device, char** value)
+static int amd_pkg_energy_status_getter(const LikwidDevice_t device, char** value)
 {
-    return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_PKG_STATUS, &amd_rapl_pkg_info, DEVICE_TYPE_SOCKET);
+    return amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_PKG_STATUS, &amd_rapl_pkg_info, DEVICE_TYPE_SOCKET);
 }
 
 static _SysFeature amd_rapl_pkg_features[] = {
-    {"pkg_energy", "rapl", "Current energy consumtion (PKG domain)", sysFeatures_amd_pkg_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, sysFeatures_amd_pkg_energy_status_test, "J"},
+    {"pkg_energy", "rapl", "Current energy consumtion (PKG domain)", amd_pkg_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, amd_pkg_energy_status_test, "J"},
 };
 
 static const _SysFeatureList amd_rapl_pkg_feature_list = {
@@ -91,23 +91,23 @@ static int core_test_testFunc(uint64_t msrData, void *)
     return 1;
 }
 
-int amd_rapl_core_test(void)
+static int amd_rapl_core_test(void)
 {
     return likwid_sysft_foreach_core_testmsr_cb(MSR_AMD17_RAPL_POWER_UNIT, core_test_testFunc, NULL);
 }
 
-int sysFeatures_amd_core_energy_status_test(void)
+static int amd_core_energy_status_test(void)
 {
     return likwid_sysft_foreach_core_testmsr(MSR_AMD17_RAPL_CORE_STATUS);
 }
 
-int sysFeatures_amd_core_energy_status_getter(const LikwidDevice_t device, char** value)
+static int amd_core_energy_status_getter(const LikwidDevice_t device, char** value)
 {
-    return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_CORE_STATUS, &amd_rapl_core_info, DEVICE_TYPE_CORE);
+    return amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_CORE_STATUS, &amd_rapl_core_info, DEVICE_TYPE_CORE);
 }
 
 static _SysFeature amd_rapl_core_features[] = {
-    {"core_energy", "rapl", "Current energy consumtion (Core domain)", sysFeatures_amd_core_energy_status_getter, NULL, DEVICE_TYPE_CORE, sysFeatures_amd_core_energy_status_test, "J"},
+    {"core_energy", "rapl", "Current energy consumtion (Core domain)", amd_core_energy_status_getter, NULL, DEVICE_TYPE_CORE, amd_core_energy_status_test, "J"},
 };
 
 static const _SysFeatureList amd_rapl_core_feature_list = {
@@ -131,7 +131,7 @@ static int l3_test_testFunc(uint64_t msrData, void *)
     return 1;
 }
 
-int amd_rapl_l3_test(void)
+static int amd_rapl_l3_test(void)
 {
     int err = topology_init();
     CpuInfo_t info = get_cpuInfo();
@@ -142,18 +142,18 @@ int amd_rapl_l3_test(void)
     return likwid_sysft_foreach_socket_testmsr_cb(MSR_AMD19_RAPL_L3_UNIT, l3_test_testFunc, NULL);
 }
 
-int sysFeatures_amd_l3_energy_status_test(void)
+static int amd_l3_energy_status_test(void)
 {
     return likwid_sysft_foreach_core_testmsr(MSR_AMD19_RAPL_L3_STATUS);
 }
 
-int sysFeatures_amd_l3_energy_status_getter(const LikwidDevice_t device, char** value)
+static int amd_l3_energy_status_getter(const LikwidDevice_t device, char** value)
 {
-    return sysFeatures_amd_rapl_energy_status_getter(device, value, MSR_AMD19_RAPL_L3_STATUS, &amd_rapl_l3_info, DEVICE_TYPE_SOCKET);
+    return amd_rapl_energy_status_getter(device, value, MSR_AMD19_RAPL_L3_STATUS, &amd_rapl_l3_info, DEVICE_TYPE_SOCKET);
 }
 
 static _SysFeature amd_rapl_l3_features[] = {
-    {"l3_energy", "rapl", "Current energy consumtion (L3 domain)", sysFeatures_amd_l3_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, sysFeatures_amd_l3_energy_status_test, "J"},
+    {"l3_energy", "rapl", "Current energy consumtion (L3 domain)", amd_l3_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, amd_l3_energy_status_test, "J"},
 };
 
 static const _SysFeatureList amd_rapl_l3_feature_list = {
@@ -164,7 +164,7 @@ static const _SysFeatureList amd_rapl_l3_feature_list = {
 
 /* Init function */
 
-int sysFeatures_init_amd_rapl(_SysFeatureList* out)
+int likwid_sysft_init_amd_rapl(_SysFeatureList* out)
 {
     int err = 0;
     if (amd_rapl_pkg_test())
