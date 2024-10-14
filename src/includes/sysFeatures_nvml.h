@@ -1,0 +1,4 @@
+#ifndef SYSFEATURES_NVML_H
+#define SYSFEATURES_NVML_H
+
+#endif // SYSFEATURES_NVML_H
