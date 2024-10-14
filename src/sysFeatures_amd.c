@@ -28,52 +28,52 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     return 0;
 }
 
-int amd_cpu_l1_stream_getter(const LikwidDevice_t device, char** value)
+static int amd_cpu_l1_stream_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_PREFETCH_CONTROL, 0, true, value);
 }
 
-int amd_cpu_l1_stream_setter(const LikwidDevice_t device, const char* value)
+static int amd_cpu_l1_stream_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_PREFETCH_CONTROL, 0, true, value);
 }
 
-int amd_cpu_l1_stride_getter(const LikwidDevice_t device, char** value)
+static int amd_cpu_l1_stride_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_PREFETCH_CONTROL, 1, true, value);
 }
 
-int amd_cpu_l1_stride_setter(const LikwidDevice_t device, const char* value)
+static int amd_cpu_l1_stride_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_PREFETCH_CONTROL, 1, true, value);
 }
 
-int amd_cpu_l1_region_getter(const LikwidDevice_t device, char** value)
+static int amd_cpu_l1_region_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_PREFETCH_CONTROL, 2, true, value);
 }
 
-int amd_cpu_l1_region_setter(const LikwidDevice_t device, const char* value)
+static int amd_cpu_l1_region_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_PREFETCH_CONTROL, 2, true, value);
 }
 
-int amd_cpu_l2_stream_getter(const LikwidDevice_t device, char** value)
+static int amd_cpu_l2_stream_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_PREFETCH_CONTROL, 3, true, value);
 }
 
-int amd_cpu_l2_stream_setter(const LikwidDevice_t device, const char* value)
+static int amd_cpu_l2_stream_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_PREFETCH_CONTROL, 3, true, value);
 }
 
-int amd_cpu_up_down_getter(const LikwidDevice_t device, char** value)
+static int amd_cpu_up_down_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_PREFETCH_CONTROL, 5, true, value);
 }
 
-int amd_cpu_up_down_setter(const LikwidDevice_t device, const char* value)
+static int amd_cpu_up_down_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_PREFETCH_CONTROL, 5, true, value);
 }
@@ -91,42 +91,42 @@ static const _SysFeatureList amd_k19_cpu_prefetch_feature_list = {
     .features = amd_k19_cpu_prefetch_features,
 };
 
-int amd_cpu_spec_ibrs_getter(const LikwidDevice_t device, char** value)
+static int amd_cpu_spec_ibrs_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_SPEC_CTRL, 0, false, value);
 }
 
-int amd_cpu_spec_ibrs_setter(const LikwidDevice_t device, const char* value)
+static int amd_cpu_spec_ibrs_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_SPEC_CTRL, 0, false, value);
 }
 
-int amd_cpu_spec_stibp_getter(const LikwidDevice_t device, char** value)
+static int amd_cpu_spec_stibp_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_SPEC_CTRL, 1, false, value);
 }
 
-int amd_cpu_spec_stibp_setter(const LikwidDevice_t device, const char* value)
+static int amd_cpu_spec_stibp_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_SPEC_CTRL, 1, false, value);
 }
 
-int amd_cpu_spec_ssbd_getter(const LikwidDevice_t device, char** value)
+static int amd_cpu_spec_ssbd_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_SPEC_CTRL, 2, true, value);
 }
 
-int amd_cpu_spec_ssbd_setter(const LikwidDevice_t device, const char* value)
+static int amd_cpu_spec_ssbd_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_SPEC_CTRL, 2, true, value);
 }
 
-int amd_cpu_spec_pfsd_getter(const LikwidDevice_t device, char** value)
+static int amd_cpu_spec_pfsd_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_SPEC_CTRL, 7, true, value);
 }
 
-int amd_cpu_spec_pfsd_setter(const LikwidDevice_t device, const char* value)
+static int amd_cpu_spec_pfsd_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_SPEC_CTRL, 7, true, value);
 }
@@ -143,14 +143,18 @@ static const _SysFeatureList amd_k19_cpu_speculation_feature_list = {
     .features = amd_k19_cpu_speculation_features,
 };
 
-int amd_cpu_flush_l1(const LikwidDevice_t device, const char* value)
+static int amd_cpu_flush_l1(const LikwidDevice_t device, const char* value)
 {
     uint64_t flush;
     int err = likwid_sysft_string_to_uint64(value, &flush);
     if (err < 0)
-    {
         return err;
-    }
+    err = HPMinit();
+    if (err < 0)
+        return err;
+    err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+        return err;
     return HPMwrite(device->id.simple.id, MSR_DEV, MSR_AMD19_L1D_FLUSH_REGISTER, flush & 0x1);
 }
 
@@ -163,12 +167,12 @@ static const _SysFeatureList amd_k19_cpu_l1dflush_feature_list = {
     .features = amd_k19_cpu_l1dflush_features,
 };
 
-int amd_cpu_hwconfig_cpddis_getter(const LikwidDevice_t device, char** value)
+static int amd_cpu_hwconfig_cpddis_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD17_HW_CONFIG, 25, true, value);
 }
 
-int amd_cpu_hwconfig_cpddis_setter(const LikwidDevice_t device, const char* value)
+static int amd_cpu_hwconfig_cpddis_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD17_HW_CONFIG, 25, true, value);
 }
