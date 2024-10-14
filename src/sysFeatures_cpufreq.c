@@ -119,105 +119,134 @@ static int cpufreq_driver_test(const char* testgovernor)
 
 /* ACPI CPUfreq driver */
 
-int cpufreq_acpi_cur_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_acpi_cur_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_cur_freq");
 }
 
-int cpufreq_acpi_min_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_acpi_min_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_min_freq");
 }
 
-int cpufreq_acpi_max_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_acpi_max_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_max_freq");
 }
 
-int cpufreq_acpi_avail_cpu_freqs_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_acpi_avail_cpu_freqs_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_available_frequencies");
 }
 
-int cpufreq_acpi_governor_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_acpi_governor_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_governor");
 }
 
-int cpufreq_acpi_governor_setter(const LikwidDevice_t device, const char* value)
+static int cpufreq_acpi_governor_setter(const LikwidDevice_t device, const char* value)
 {
     return cpufreq_sysfs_setter(device, value, "scaling_governor");
 }
 
-int cpufreq_acpi_avail_governors_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_acpi_avail_governors_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_available_governors");
 }
 
-int cpufreq_acpi_test()
+static int cpufreq_acpi_test(void)
 {
     return cpufreq_driver_test("acpi_cpufreq");
 }
 
+static _SysFeature cpufreq_acpi_features[] = {
+    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_acpi_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_acpi_min_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_acpi_max_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"avail_freqs", "cpu_freq", "Available CPU frequencies", cpufreq_acpi_avail_cpu_freqs_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"governor", "cpu_freq", "CPU frequency governor", cpufreq_acpi_governor_getter, cpufreq_acpi_governor_setter, DEVICE_TYPE_HWTHREAD},
+    {"avail_governors", "cpu_freq", "Available CPU frequency governor", cpufreq_acpi_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
+};
+
+static const _SysFeatureList cpufreq_acpi_feature_list = {
+    .num_features = ARRAY_COUNT(cpufreq_acpi_features),
+    .tester = cpufreq_acpi_test,
+    .features = cpufreq_acpi_features,
+};
 
 /* Intel Pstate driver */
 
-int cpufreq_intel_pstate_base_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_intel_pstate_base_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
     int err = cpufreq_sysfs_getter(device, value, "base_frequency");
     if (err == 0) return 0;
     return cpufreq_sysfs_getter(device, value, "bios_limit");
 }
 
-int cpufreq_intel_pstate_cur_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_intel_pstate_cur_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_cur_freq");
 }
 
-int cpufreq_intel_pstate_min_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_intel_pstate_min_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_min_freq");
 }
 
-int cpufreq_intel_pstate_min_cpu_freq_setter(const LikwidDevice_t device, const char* value)
+static int cpufreq_intel_pstate_min_cpu_freq_setter(const LikwidDevice_t device, const char* value)
 {
     return cpufreq_sysfs_setter(device, value, "scaling_min_freq");
 }
 
-int cpufreq_intel_pstate_max_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_intel_pstate_max_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_max_freq");
 }
 
-int cpufreq_intel_pstate_max_cpu_freq_setter(const LikwidDevice_t device, const char* value)
+static int cpufreq_intel_pstate_max_cpu_freq_setter(const LikwidDevice_t device, const char* value)
 {
     return cpufreq_sysfs_setter(device, value, "scaling_max_freq");
 }
 
-int cpufreq_intel_pstate_governor_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_intel_pstate_governor_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_governor");
 }
 
-int cpufreq_intel_pstate_governor_setter(const LikwidDevice_t device, const char* value)
+static int cpufreq_intel_pstate_governor_setter(const LikwidDevice_t device, const char* value)
 {
     return cpufreq_sysfs_setter(device, value, "scaling_governor");
 }
 
-int cpufreq_intel_pstate_avail_governors_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_intel_pstate_avail_governors_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_available_governors");
 }
 
-int cpufreq_intel_pstate_test()
+static int cpufreq_intel_pstate_test(void)
 {
     return cpufreq_driver_test("intel_pstate");
 }
 
+static _SysFeature cpufreq_pstate_features[] = {
+    {"base_freq", "cpu_freq", "Base CPU frequency", cpufreq_intel_pstate_base_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
+    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
+    {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD},
+    {"avail_governors", "cpu_freq", "Available CPU frequencies", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
+};
+
+static const _SysFeatureList cpufreq_pstate_feature_list = {
+    .num_features = ARRAY_COUNT(cpufreq_pstate_features), 
+    .tester = cpufreq_intel_pstate_test,
+    .features = cpufreq_pstate_features,
+};
+
 
 /* Energy Performance Preference */
 
-int cpufreq_epp_test()
+static int cpufreq_epp_test(void)
 {
     if ((!access("/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference", R_OK)) &&
         (!access("/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_available_preferences", R_OK)))
@@ -227,15 +256,26 @@ int cpufreq_epp_test()
     return 0;
 }
 
-int cpufreq_intel_pstate_epp_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_intel_pstate_epp_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "energy_performance_preference");
 }
 
-int cpufreq_intel_pstate_avail_epps_getter(const LikwidDevice_t device, char** value)
+static int cpufreq_intel_pstate_avail_epps_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "energy_performance_available_preferences");
 }
+
+static _SysFeature cpufreq_epp_features[] = {
+    {"epp", "cpu_freq", "Current energy performance preference", cpufreq_intel_pstate_epp_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"avail_epps", "cpu_freq", "Available energy performance preferences", cpufreq_intel_pstate_epp_getter, NULL, DEVICE_TYPE_HWTHREAD},
+};
+
+static const _SysFeatureList cpufreq_epp_feature_list = {
+    .num_features = ARRAY_COUNT(cpufreq_epp_features),
+    .tester = cpufreq_epp_test,
+    .features = cpufreq_epp_features,
+};
 
 /* Init function */
 
