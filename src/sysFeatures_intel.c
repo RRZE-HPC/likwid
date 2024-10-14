@@ -28,7 +28,7 @@ int likwid_sysft_init_x86_intel(_SysFeatureList* out)
         ERROR_PRINT(Failed to init general Intel HWFetures);
         return err;
     }
-    err = sysFeatures_init_intel_rapl(out);
+    err = likwid_sysft_init_intel_rapl(out);
     if (err < 0)
     {
         ERROR_PRINT(Failed to init Intel RAPL HWFetures);
