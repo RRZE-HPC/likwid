@@ -16,47 +16,47 @@
 /*                          Intel prefetchers                                                                        */
 /*********************************************************************************************************************/
 
-int intel_cpu_l2_hwpf_register_test(void)
+static int intel_cpu_l2_hwpf_register_test(void)
 {
     return likwid_sysft_foreach_hwt_testmsr(MSR_PREFETCH_ENABLE);
 }
 
-int intel_cpu_l2_hwpf_getter(const LikwidDevice_t device, char** value)
+static int intel_cpu_l2_hwpf_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_PREFETCH_ENABLE, 0, true, value);
 }
 
-int intel_cpu_l2_hwpf_setter(const LikwidDevice_t device, const char* value)
+static int intel_cpu_l2_hwpf_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_PREFETCH_ENABLE, 0, true, value);
 }
 
-int intel_cpu_l2_adj_pf_getter(const LikwidDevice_t device, char** value)
+static int intel_cpu_l2_adj_pf_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_PREFETCH_ENABLE, 1, true, value);
 }
 
-int intel_cpu_l2_adj_pf_setter(const LikwidDevice_t device, const char* value)
+static int intel_cpu_l2_adj_pf_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_PREFETCH_ENABLE, 1, true, value);
 }
 
-int intel_cpu_l1_dcu_getter(const LikwidDevice_t device, char** value)
+static int intel_cpu_l1_dcu_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_PREFETCH_ENABLE, 2, true, value);
 }
 
-int intel_cpu_l1_dcu_setter(const LikwidDevice_t device, const char* value)
+static int intel_cpu_l1_dcu_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_PREFETCH_ENABLE, 2, true, value);
 }
 
-int intel_cpu_l1_dcu_ip_getter(const LikwidDevice_t device, char** value)
+static int intel_cpu_l1_dcu_ip_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_PREFETCH_ENABLE, 3, true, value);
 }
 
-int intel_cpu_l1_dcu_ip_setter(const LikwidDevice_t device, const char* value)
+static int intel_cpu_l1_dcu_ip_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_PREFETCH_ENABLE, 3, true, value);
 }
@@ -78,12 +78,12 @@ const _SysFeatureList likwid_sysft_intel_cpu_prefetch_feature_list = {
 /*                          Intel 0x8F prefetchers                                                                   */
 /*********************************************************************************************************************/
 
-int intel_cpu_l2_multipath_pf_getter(const LikwidDevice_t device, char** value)
+static int intel_cpu_l2_multipath_pf_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_PREFETCH_ENABLE, 6, true, value);
 }
 
-int intel_cpu_l2_multipath_pf_setter(const LikwidDevice_t device, const char* value)
+static int intel_cpu_l2_multipath_pf_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_PREFETCH_ENABLE, 6, true, value);
 }
@@ -100,22 +100,22 @@ const _SysFeatureList likwid_sysft_intel_8f_cpu_feature_list = {
 /*********************************************************************************************************************/
 /*                          Intel Knights Landing prefetchers                                                        */
 /*********************************************************************************************************************/
-int intel_knl_l1_dcu_getter(const LikwidDevice_t device, char** value)
+static int intel_knl_l1_dcu_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_PREFETCH_ENABLE, 0, true, value);
 }
 
-int intel_knl_l1_dcu_setter(const LikwidDevice_t device, const char* value)
+static int intel_knl_l1_dcu_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_PREFETCH_ENABLE, 0, true, value);
 }
 
-int intel_knl_l2_hwpf_getter(const LikwidDevice_t device, char** value)
+static int intel_knl_l2_hwpf_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_PREFETCH_ENABLE, 1, true, value);
 }
 
-int intel_knl_l2_hwpf_setter(const LikwidDevice_t device, const char* value)
+static int intel_knl_l2_hwpf_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_PREFETCH_ENABLE, 1, true, value);
 }
@@ -134,47 +134,47 @@ const _SysFeatureList likwid_sysft_intel_knl_cpu_feature_list = {
 /*                          Intel Core2 prefetchers                                                                  */
 /*********************************************************************************************************************/
 
-int intel_core2_l2_hwpf_register_test(void)
+static int intel_core2_l2_hwpf_register_test(void)
 {
     return likwid_sysft_foreach_hwt_testmsr(MSR_IA32_MISC_ENABLE);
 }
 
-int intel_core2_l2_hwpf_getter(const LikwidDevice_t device, char** value)
+static int intel_core2_l2_hwpf_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_MISC_ENABLE, 9, true, value);
 }
 
-int intel_core2_l2_hwpf_setter(const LikwidDevice_t device, const char* value)
+static int intel_core2_l2_hwpf_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_IA32_MISC_ENABLE, 9, true, value);
 }
 
-int intel_core2_l2_adjpf_getter(const LikwidDevice_t device, char** value)
+static int intel_core2_l2_adjpf_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_MISC_ENABLE, 19, true, value);
 }
 
-int intel_core2_l2_adjpf_setter(const LikwidDevice_t device, const char* value)
+static int intel_core2_l2_adjpf_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_IA32_MISC_ENABLE, 19, true, value);
 }
 
-int intel_core2_l1_dcu_getter(const LikwidDevice_t device, char** value)
+static int intel_core2_l1_dcu_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_MISC_ENABLE, 37, true, value);
 }
 
-int intel_core2_l1_dcu_setter(const LikwidDevice_t device, const char* value)
+static int intel_core2_l1_dcu_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_IA32_MISC_ENABLE, 37, true, value);
 }
 
-int intel_core2_l1_dcu_ip_getter(const LikwidDevice_t device, char** value)
+static int intel_core2_l1_dcu_ip_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_MISC_ENABLE, 39, true, value);
 }
 
-int intel_core2_l1_dcu_ip_setter(const LikwidDevice_t device, const char* value)
+static int intel_core2_l1_dcu_ip_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_IA32_MISC_ENABLE, 39, true, value);
 }
@@ -195,7 +195,7 @@ const _SysFeatureList likwid_sysft_intel_core2_cpu_feature_list = {
 /*                          Intel Dynamic Acceleration                                                               */
 /*********************************************************************************************************************/
 
-int intel_core2_ida_tester(void)
+static int intel_core2_ida_tester(void)
 {
     // TODO Not sure if Dynamic Acceleration was defacto replaced with Turbo Boost?
     // Should we advertise this capability on newer processors?
@@ -213,12 +213,12 @@ int intel_core2_ida_tester(void)
     return 0;
 }
 
-int intel_core2_ida_getter(const LikwidDevice_t device, char** value)
+static int intel_core2_ida_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_MISC_ENABLE, 38, true, value);
 }
 
-int intel_core2_ida_setter(const LikwidDevice_t device, const char* value) {
+static int intel_core2_ida_setter(const LikwidDevice_t device, const char* value) {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_IA32_MISC_ENABLE, 38, true, value);
 }
 
