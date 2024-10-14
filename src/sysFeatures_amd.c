@@ -19,7 +19,7 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
         ERROR_PRINT(Failed to init general x86 HWFetures);
         return err;
     }
-    err = sysFeatures_init_amd_rapl(out);
+    err = likwid_sysft_init_amd_rapl(out);
     if (err < 0)
     {
         ERROR_PRINT(Failed to init AMD RAPL HWFetures);
