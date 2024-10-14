@@ -21,7 +21,7 @@ static int intel_cpu_turbo_test(void)
     return likwid_sysft_foreach_hwt_testmsr(MSR_IA32_MISC_ENABLE);
 }
 
-int intel_cpu_turbo_getter(const LikwidDevice_t device, char** value)
+static int intel_cpu_turbo_getter(const LikwidDevice_t device, char** value)
 {
     if (intel_cpu_turbo_test())
     {
@@ -30,7 +30,7 @@ int intel_cpu_turbo_getter(const LikwidDevice_t device, char** value)
     return -ENOTSUP;
 }
 
-int intel_cpu_turbo_setter(const LikwidDevice_t device, const char* value)
+static int intel_cpu_turbo_setter(const LikwidDevice_t device, const char* value)
 {
     if (intel_cpu_turbo_test())
     {
