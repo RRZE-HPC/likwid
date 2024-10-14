@@ -1,35 +1,8 @@
 #ifndef HWFEATURES_NUMABALANCING_H
 #define HWFEATURES_NUMABALANCING_H
 
-
-
-int numa_balancing_procfs_getter(const LikwidDevice_t device, char** value, const char* sysfsfile);
-
-int numa_balancing_test(void);
-int numa_balancing_state_getter(const LikwidDevice_t device, char** value);
-int numa_balancing_scan_delay_getter(const LikwidDevice_t device, char** value);
-int numa_balancing_scan_period_min_getter(const LikwidDevice_t device, char** value);
-int numa_balancing_scan_period_max_getter(const LikwidDevice_t device, char** value);
-int numa_balancing_scan_size_getter(const LikwidDevice_t device, char** value);
-
-#define MAX_NUMA_BALANCING_FEATURES 5
-static _SysFeature numa_balancing_features[] = {
-    {"numa_balancing", "os", "Current state of NUMA balancing", numa_balancing_state_getter, NULL, DEVICE_TYPE_NODE},
-    {"numa_balancing_scan_delay_ms", "os", "Time between page scans", numa_balancing_scan_delay_getter, NULL, DEVICE_TYPE_NODE},
-    {"numa_balancing_scan_period_min_ms", "os", "Minimal time for scan period", numa_balancing_scan_period_min_getter, NULL, DEVICE_TYPE_NODE},
-    {"numa_balancing_scan_period_max_ms", "os", "Maximal time for scan period", numa_balancing_scan_period_max_getter, NULL, DEVICE_TYPE_NODE},
-    {"numa_balancing_scan_size_mb", "os", "Scan size for NUMA balancing", numa_balancing_scan_size_getter, NULL, DEVICE_TYPE_NODE},
-};
-
-static _SysFeatureList numa_balancing_feature_list = {
-    .num_features = MAX_NUMA_BALANCING_FEATURES,
-    .tester = numa_balancing_test,
-    .features = numa_balancing_features,
-};
-
+#include <sysFeatures_types.h>
 
 int likwid_sysft_init_linux_numa_balancing(_SysFeatureList* out);
 
-
 #endif /* HWFEATURES_NUMABALANCING_H */
-
