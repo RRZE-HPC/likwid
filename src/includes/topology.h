@@ -157,6 +157,7 @@ struct topology_functions {
 #define ZEN4_RYZEN_PRO  0x08
 #define ZEN4_RYZEN2     0x74
 #define ZEN4_EPYC       0x11
+#define ZEN4_EPYC_BERGAMO 0xA0
 
 /* ARM */
 #define  ARM7L          0x3U
