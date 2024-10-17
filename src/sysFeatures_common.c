@@ -64,7 +64,7 @@ int likwid_sysft_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList
     }
     CpuInfo_t cpuinfo = get_cpuInfo();
 
-    _SysFeatureList** feature_list = NULL;
+    const _SysFeatureList** feature_list = NULL;
     for (unsigned c = 0; infeatures[c].family >= 0 && infeatures[c].model >= 0; c++)
     {
         if ((unsigned)infeatures[c].family == cpuinfo->family && (unsigned)infeatures[c].model == cpuinfo->model)
@@ -173,7 +173,7 @@ int likwid_sysft_foreach_core_testmsr(uint64_t reg)
     return likwid_sysft_foreach_core_testmsr_cb(reg, NULL, NULL);
 }
 
-int likwid_sysft_foreach_core_testmsr_cb(uint64_t reg, int (*testFunc)(uint64_t msrData, void *cbData), void *cbData)
+int likwid_sysft_foreach_core_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData)
 {
     int err = topology_init();
     if (err < 0)
@@ -221,7 +221,7 @@ int likwid_sysft_foreach_hwt_testmsr(uint64_t reg)
     return likwid_sysft_foreach_hwt_testmsr_cb(reg, NULL, NULL);
 }
 
-int likwid_sysft_foreach_hwt_testmsr_cb(uint64_t reg, int (*testFunc)(uint64_t msrData, void *cbData), void *cbData)
+int likwid_sysft_foreach_hwt_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData)
 {
     int err = topology_init();
     if (err < 0)
@@ -262,7 +262,7 @@ int likwid_sysft_foreach_socket_testmsr(uint64_t reg)
     return likwid_sysft_foreach_socket_testmsr_cb(reg, NULL, NULL);
 }
 
-int likwid_sysft_foreach_socket_testmsr_cb(uint64_t reg, int (*testFunc)(uint64_t msrData, void *cbData), void *cbData)
+int likwid_sysft_foreach_socket_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData)
 {
     int err = topology_init();
     if (err < 0)
@@ -411,7 +411,7 @@ int likwid_sysft_writemsr_field(const LikwidDevice_t device, uint64_t reg, int b
 int likwid_sysft_writemsr_bit_from_string(const LikwidDevice_t device, uint64_t reg, int bitoffset, bool invert, const char *value)
 {
     uint64_t field;
-    int err = likwid_sysft_string_to_uint64(value, field);
+    int err = likwid_sysft_string_to_uint64(value, &field);
     if (err < 0)
         return err;
     if (invert)
