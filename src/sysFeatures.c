@@ -14,6 +14,7 @@
 #include <sysFeatures_intel.h>
 #include <sysFeatures_cpufreq.h>
 #include <sysFeatures_linux_numa_balancing.h>
+#include <sysFeatures_nvml.h>
 
 static _SysFeature *local_features = NULL;
 static int num_local_features = 0;
@@ -23,6 +24,8 @@ static _SysFeatureList _feature_list = {0, NULL, NULL};
 
 static int get_device_access(LikwidDevice_t device)
 {
+    /* This function is somewhat redundant to the initialization,
+     * which is implicitly called in every getter/settter. */
     int hwt = -1;
     int err = topology_init();
     if (err < 0)
@@ -75,9 +78,17 @@ static int get_device_access(LikwidDevice_t device)
                 }
             }
             break;
+#ifdef LIKWID_WITH_NVMON
+        case DEVICE_TYPE_NVIDIA_GPU:
+            return 0;
+#endif
+#ifdef LIKWID_WITH_ROCMON
+        case DEVICE_TYPE_AMD_GPU:
+            return 0;
+#endif
         default:
-            fprintf(stderr, "get_device_access: Unimplemented device type: %d\n", device->type);
-            abort();
+            ERROR_PRINT(get_device_access: Unimplemented device type: %d\n, device->type);
+            return -EPERM;
     }
     if (hwt >= 0)
     {
@@ -134,6 +145,14 @@ int likwid_sysft_init(void)
         ERROR_PRINT(Failed to initialize SysFeatures numa_balancing module);
         return err;
     }
+#ifdef LIKWID_WITH_NVMON
+    err = likwid_sysft_init_nvml(&_feature_list);
+    if (err < 0)
+    {
+        ERROR_PRINT(Failed to initialize SysFeatures nvml module);
+        return err;
+    }
+#endif
     
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Initialized %d features, _feature_list.num_features);
     return 0;
