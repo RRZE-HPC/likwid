@@ -3275,6 +3275,7 @@ static char* LikwidDeviceTypeNames[MAX_DEVICE_TYPE] = {
 };
 
 int likwid_device_create(LikwidDeviceType type, int id, LikwidDevice_t* device) __attribute__ ((visibility ("default") ));
+int likwid_device_create_from_string(LikwidDeviceType type, const char *id, LikwidDevice_t* device) __attribute__ ((visibility ("default") ));
 void likwid_device_destroy(LikwidDevice_t device) __attribute__ ((visibility ("default") ));
 char* device_type_name(LikwidDeviceType type) __attribute__ ((visibility ("default") ));
 
