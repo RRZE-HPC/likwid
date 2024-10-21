@@ -3241,10 +3241,10 @@ typedef struct {
             int id;
         } simple;
         struct {
-            int16_t pci_domain;
-            int8_t pci_bus;
-            int8_t pci_dev;
-            int8_t pci_func;
+            uint16_t pci_domain;
+            uint8_t pci_bus;
+            uint8_t pci_dev;
+            uint8_t pci_func;
         } pci;
     } id;
     int internal_id;

@@ -10,7 +10,7 @@
 #include <access.h>
 #include <error.h>
 
-static int parse_pci_addr(const char *id, int16_t *domain, int8_t *bus, int8_t *dev, int8_t *func)
+static int parse_pci_addr(const char *id, uint16_t *domain, uint8_t *bus, uint8_t *dev, uint8_t *func)
 {
     /* Try to parse PCI address string of type: 00000000:00:00.0
      * Leading zeroes may be omitted in input string. */
@@ -59,10 +59,10 @@ static int parse_pci_addr(const char *id, int16_t *domain, int8_t *bus, int8_t *
         goto cleanup;
     }
 
-    *domain = (int16_t)domain_ul;
-    *bus = (int8_t)bus_ul;
-    *dev = (int8_t)dev_ul;
-    *func = (int8_t)func_ul;
+    *domain = (uint16_t)domain_ul;
+    *bus = (uint8_t)bus_ul;
+    *dev = (uint8_t)dev_ul;
+    *func = (uint8_t)func_ul;
 
 cleanup:
     free(id_tokenized);
@@ -82,7 +82,7 @@ static int device_create_simple(LikwidDeviceType type, int id, LikwidDevice_t* d
     return 0;
 }
 
-static int device_create_pci(LikwidDeviceType type, int id, int16_t domain, int8_t bus, int8_t dev, int8_t func, LikwidDevice_t *device)
+static int device_create_pci(LikwidDeviceType type, int id, uint16_t domain, uint8_t bus, uint8_t dev, uint8_t func, LikwidDevice_t *device)
 {
     int err = 0;
     LikwidDevice_t lw_dev = malloc(sizeof(_LikwidDevice));
@@ -202,15 +202,15 @@ static int device_create_nvgpu_by_index(int id, LikwidDevice_t *device)
     return -ENODEV;
 }
 
-static int device_create_nvgpu_by_pciaddr(int16_t dom, int8_t bus, int8_t dev, int8_t func, LikwidDevice_t *device)
+static int device_create_nvgpu_by_pciaddr(uint16_t dom, uint8_t bus, uint8_t dev, uint8_t func, LikwidDevice_t *device)
 {
     CudaTopology_t topo = get_cudaTopology();
 
     for (int i = 0; i < topo->numDevices; i++)
     {
-        if (topo->devices[i].pciDom != (uint16_t)dom)
+        if (topo->devices[i].pciDom != dom)
             continue;
-        if (topo->devices[i].pciBus != (uint8_t)bus)
+        if (topo->devices[i].pciBus != bus)
             continue;
         if (topo->devices[i].pciDev != dev)
             continue;
@@ -239,15 +239,15 @@ static int device_create_amdgpu_by_index(int id, LikwidDevice_t *device)
     return -ENODEV;
 }
 
-static int device_create_amdgpu_by_pciaddr(int16_t dom, int8_t bus, int8_t dev, int8_t func, LikwidDevice_t *device)
+static int device_create_amdgpu_by_pciaddr(uint16_t dom, uint8_t bus, uint8_t dev, uint8_t func, LikwidDevice_t *device)
 {
     RocmTopology_t topo = get_rocmTopology();
 
     for (int i = 0; i < topo->numDevices; i++)
     {
-        if (topo->devices[i].pciDom != (uint16_t)domain)
+        if (topo->devices[i].pciDom != domain)
             continue;
-        if (topo->devices[i].pciBus != (uint8_t)bus)
+        if (topo->devices[i].pciBus != bus)
             continue;
         if (topo->devices[i].pciDev != dev)
             continue;
@@ -356,8 +356,8 @@ int likwid_device_create_from_string(LikwidDeviceType type, const char *id, Likw
 
     /* Parsing the PCI address is stricly only necessary for GPUs, but we only
      * do it once here for simplicity. */
-    int16_t dom;
-    int8_t bus, dev, func;
+    uint16_t dom;
+    uint8_t bus, dev, func;
 
     char *endptr;
     long long_id;
