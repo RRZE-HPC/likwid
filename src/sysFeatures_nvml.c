@@ -198,25 +198,100 @@ static int nvidia_gpu_gfx_clock_cur_getter(const LikwidDevice_t device, char **v
     return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_CURRENT, value);
 }
 
+static int nvidia_gpu_gfx_clock_app_target_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_APP_CLOCK_TARGET, value);
+}
+
+static int nvidia_gpu_gfx_clock_app_default_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value);
+}
+
+static int nvidia_gpu_gfx_clock_boost_max_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, value);
+}
+
+static int nvidia_gpu_sm_clock_cur_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, value);
+}
+
+static int nvidia_gpu_sm_clock_app_target_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_TARGET, value);
+}
+
+static int nvidia_gpu_sm_clock_app_default_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value);
+}
+
+static int nvidia_gpu_sm_clock_boost_max_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, value);
+}
+
+static int nvidia_gpu_dram_clock_cur_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_CURRENT, value);
+}
+
+static int nvidia_gpu_dram_clock_app_target_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_TARGET, value);
+}
+
+static int nvidia_gpu_dram_clock_app_default_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value);
+}
+
+static int nvidia_gpu_dram_clock_boost_max_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, value);
+}
+
+static int nvidia_gpu_video_clock_cur_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_VIDEO, NVML_CLOCK_ID_CURRENT, value);
+}
+
+static int nvidia_gpu_video_clock_app_target_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_VIDEO, NVML_CLOCK_ID_APP_CLOCK_TARGET, value);
+}
+
+static int nvidia_gpu_video_clock_app_default_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_VIDEO, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value);
+}
+
+static int nvidia_gpu_video_clock_boost_max_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_VIDEO, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, value);
+}
+
 static _SysFeature nvidia_gpu_features[] = {
     {"device_count", "nvml", "Number of GPUs on node. Not all GPUs may be accessible.", nvidia_gpu_device_count_getter, NULL, DEVICE_TYPE_NODE},
     {"devices_available", "nvml", "Available GPUs (PCI addresses)", nvidia_gpu_devices_available_getter, NULL, DEVICE_TYPE_NODE},
     {"gfx_clock_cur", "nvml", "Current clock speed (graphics domain)", nvidia_gpu_gfx_clock_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
-    {"gfx_clock_app_target", "nvml", "Application target clock speed (graphics domain)"},
-    {"gfx_clock_app_default", "nvml", "Application default clock speed (graphics domain)"},
-    {"gfx_clock_boost_max", "nvml", "Application default clock speed (graphics domain)"},
-    {"sm_clock_cur", "nvml", "Current clock speed (SM domain)"},
-    {"sm_clock_app_target", "nvml", "Application target clock speed (SM domain)"},
-    {"sm_clock_app_default", "nvml", "Application default clock speed (SM domain)"},
-    {"sm_clock_boost_max", "nvml", "Application default clock speed (SM domain)"},
-    {"dram_clock_cur", "nvml", "Current clock speed (memory domain)"},
-    {"dram_clock_app_target", "nvml", "Application target clock speed (memory domain)"},
-    {"dram_clock_app_default", "nvml", "Application default clock speed (memory domain)"},
-    {"dram_clock_boost_max", "nvml", "Application default clock speed (memory domain)"},
-    {"video_clock_cur", "nvml", "Current clock speed (video encoder/decoder domain)"},
-    {"video_clock_app_target", "nvml", "Application target clock speed (video encoder/decoder domain)"},
-    {"video_clock_app_default", "nvml", "Application default clock speed (video encoder/decoder domain)"},
-    {"video_clock_boost_max", "nvml", "Application default clock speed (video encoder/decoder domain)"},
+    {"gfx_clock_app_target", "nvml", "Application target clock speed (graphics domain)", nvidia_gpu_gfx_clock_app_target_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"gfx_clock_app_default", "nvml", "Application default clock speed (graphics domain)", nvidia_gpu_gfx_clock_app_default_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"gfx_clock_boost_max", "nvml", "Application default clock speed (graphics domain)", nvidia_gpu_gfx_clock_boost_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"sm_clock_cur", "nvml", "Current clock speed (SM domain)", nvidia_gpu_sm_clock_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"sm_clock_app_target", "nvml", "Application target clock speed (SM domain)", nvidia_gpu_sm_clock_app_target_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"sm_clock_app_default", "nvml", "Application default clock speed (SM domain)", nvidia_gpu_sm_clock_app_default_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"sm_clock_boost_max", "nvml", "Application default clock speed (SM domain)", nvidia_gpu_sm_clock_boost_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"dram_clock_cur", "nvml", "Current clock speed (memory domain)", nvidia_gpu_dram_clock_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"dram_clock_app_target", "nvml", "Application target clock speed (memory domain)", nvidia_gpu_dram_clock_app_target_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"dram_clock_app_default", "nvml", "Application default clock speed (memory domain)", nvidia_gpu_dram_clock_app_default_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"dram_clock_boost_max", "nvml", "Application default clock speed (memory domain)", nvidia_gpu_dram_clock_boost_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"video_clock_cur", "nvml", "Current clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"video_clock_app_target", "nvml", "Application target clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_app_target_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"video_clock_app_default", "nvml", "Application default clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_app_default_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"video_clock_boost_max", "nvml", "Application default clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_boost_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
 };
 
 static const _SysFeatureList nvidia_gpu_feature_list = {
