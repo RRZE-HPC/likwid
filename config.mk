@@ -126,7 +126,7 @@ DEBUG = false#NO SPACE
 
 # Basic configuration for some internal arrays.
 # Maximal number of hardware threads
-MAX_NUM_THREADS = 500
+MAX_NUM_THREADS = 512
 # Maximal number of sockets
 MAX_NUM_NODES = 128
 # Maximal number of CLI parameters
