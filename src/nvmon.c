@@ -72,7 +72,7 @@ int likwid_nvmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
 #include <nvmon_cupti.h>
 #include <nvmon_nvml.h>
-#include <nvmon_perfworks.h>
+//#include <nvmon_perfworks.h>
 
 
 LikwidNvResults* gMarkerResults = NULL;
@@ -337,10 +337,12 @@ nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
     }
     else
     {
+#ifdef LIKWID_NVMON_PERFWORKS_H
         if (nvmon_perfworks_functions.getEventList)
         {
             err = nvmon_perfworks_functions.getEventList(available, list);
         }
+#endif
     }
 
     // Get nvml events and merge lists
