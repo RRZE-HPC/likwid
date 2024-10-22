@@ -25,16 +25,7 @@ static int numa_balancing_procfs_getter(const LikwidDevice_t device, char** valu
     {
         bstring content = read_file(bdata(filename));
         btrimws(content);
-        char *v = strdup(bdata(content));
-        if (v)
-        {
-            free(*value);
-            *value = v;
-        }
-        else
-        {
-            err = -ENOMEM;
-        }
+        err = likwid_sysft_copystr(bdata(content), value);
         bdestroy(content);
     }
     else

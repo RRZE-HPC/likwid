@@ -205,14 +205,7 @@ static int nvidia_gpu_devices_available_getter(const LikwidDevice_t device, char
     NVML_CALL(nvmlDeviceGetCount_v2, &deviceCount);
 
     if (deviceCount == 0)
-    {
-        char *nonestr = strdup("");
-        if (!nonestr)
-            return -ENOMEM;
-        free(*value);
-        *value = nonestr;
-        return 0;
-    }
+        return likwid_sysft_copystr("", value);
 
     const size_t requiredBytes = NVML_DEVICE_PCI_BUS_ID_BUFFER_SIZE * deviceCount;
     char *newval = realloc(*value, requiredBytes);
