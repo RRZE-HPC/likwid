@@ -168,6 +168,16 @@ int likwid_sysft_string_to_double(const char* str, double *value)
     return 0;
 }
 
+int likwid_sysft_copystr(const char *str, char **value)
+{
+    char *newstr = strdup(str);
+    if (!newstr)
+        return -ENOMEM;
+    free(*value);
+    *value = newstr;
+    return 0;
+}
+
 int likwid_sysft_foreach_core_testmsr(uint64_t reg)
 {
     return likwid_sysft_foreach_core_testmsr_cb(reg, NULL, NULL);

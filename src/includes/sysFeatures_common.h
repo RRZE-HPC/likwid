@@ -11,6 +11,7 @@ int likwid_sysft_uint64_to_string(uint64_t value, char** str);
 int likwid_sysft_string_to_uint64(const char* str, uint64_t* value);
 int likwid_sysft_double_to_string(double value, char **str);
 int likwid_sysft_string_to_double(const char* str, double *value);
+int likwid_sysft_copystr(const char *str, char **value);
 
 typedef int (*likwid_sysft_msr_test_func)(uint64_t msrData, void *cbData);
 
