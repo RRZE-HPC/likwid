@@ -24,6 +24,13 @@
 
 #define DECLAREFUNC_NVML(funcname, funcsig) nvmlReturn_t __attribute__((weak)) funcname funcsig;  static nvmlReturn_t ( *funcname##_ptr ) funcsig;
 
+#define LWD_TO_NVMLD(lwd, nvmlDevice) nvmlDevice_t nvmlDevice;  \
+    do {                                                        \
+        int err = lw_device_to_nvml_device(lwd, &nvmlDevice);   \
+        if (err < 0)                                            \
+            return err;                                         \
+    } while (0)
+
 DECLAREFUNC_NVML(nvmlDeviceGetBAR1MemoryInfo, (nvmlDevice_t device, nvmlBAR1Memory_t* bar1Memory));
 DECLAREFUNC_NVML(nvmlDeviceGetBusType, (nvmlDevice_t device, nvmlBusType_t *type));
 DECLAREFUNC_NVML(nvmlDeviceGetClock, (nvmlDevice_t device, nvmlClockType_t clockType, nvmlClockId_t clockId, unsigned int* clockMHz));
@@ -325,10 +332,7 @@ static int nvidia_gpu_video_clock_boost_max_getter(const LikwidDevice_t device, 
 
 static int nvidia_gpu_bar1_getter(const LikwidDevice_t device, int entry, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     nvmlBAR1Memory_t bar1Memory;
     NVML_CALL(nvmlDeviceGetBAR1MemoryInfo, (nvmlDevice, &bar1Memory), return -EPERM);
     if (entry == 0)
@@ -355,10 +359,7 @@ static int nvidia_gpu_bar1_total_getter(const LikwidDevice_t device, char **valu
 
 static int nvidia_gpu_bus_type_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     nvmlBusType_t type;
     NVML_CALL(nvmlDeviceGetBusType, (nvmlDevice, &type), return -EPERM);
     static const char *types[] = {
@@ -371,10 +372,7 @@ static int nvidia_gpu_bus_type_getter(const LikwidDevice_t device, char **value)
 
 static int nvidia_gpu_pcie_gen_cur_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int gen;
     NVML_CALL(nvmlDeviceGetCurrPcieLinkGeneration, (nvmlDevice, &gen), return -EPERM);
     return likwid_sysft_uint64_to_string(gen, value);
@@ -382,10 +380,7 @@ static int nvidia_gpu_pcie_gen_cur_getter(const LikwidDevice_t device, char **va
 
 static int nvidia_gpu_pcie_gen_gpu_max_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int gen;
     NVML_CALL(nvmlDeviceGetGpuMaxPcieLinkGeneration, (nvmlDevice, &gen), return -EPERM);
     return likwid_sysft_uint64_to_string(gen, value);
@@ -393,10 +388,7 @@ static int nvidia_gpu_pcie_gen_gpu_max_getter(const LikwidDevice_t device, char 
 
 static int nvidia_gpu_pcie_gen_sys_max_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int gen;
     NVML_CALL(nvmlDeviceGetMaxPcieLinkGeneration, (nvmlDevice, &gen), return -EPERM);
     return likwid_sysft_uint64_to_string(gen, value);
@@ -404,10 +396,7 @@ static int nvidia_gpu_pcie_gen_sys_max_getter(const LikwidDevice_t device, char 
 
 static int nvidia_gpu_pcie_width_cur_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int width;
     NVML_CALL(nvmlDeviceGetCurrPcieLinkWidth, (nvmlDevice, &width), return -EPERM);
     return likwid_sysft_uint64_to_string(width, value);
@@ -415,10 +404,7 @@ static int nvidia_gpu_pcie_width_cur_getter(const LikwidDevice_t device, char **
 
 static int nvidia_gpu_pcie_width_sys_max_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int width;
     NVML_CALL(nvmlDeviceGetMaxPcieLinkWidth, (nvmlDevice, &width), return -EPERM);
     return likwid_sysft_uint64_to_string(width, value);
@@ -436,10 +422,7 @@ static int nvidia_gpu_pcie_speed_value(unsigned int pcieSpeed, char **value)
 
 static int nvidia_gpu_pcie_speed_max_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int maxSpeed;
     NVML_CALL(nvmlDeviceGetPcieLinkMaxSpeed, (nvmlDevice, &maxSpeed), return -EPERM);
     return nvidia_gpu_pcie_speed_value(maxSpeed, value);
@@ -447,10 +430,7 @@ static int nvidia_gpu_pcie_speed_max_getter(const LikwidDevice_t device, char **
 
 static int nvidia_gpu_pcie_speed_cur_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int speed;
     NVML_CALL(nvmlDeviceGetPcieSpeed, (nvmlDevice, &speed), return -EPERM);
     return nvidia_gpu_pcie_speed_value(speed, value);
@@ -458,10 +438,7 @@ static int nvidia_gpu_pcie_speed_cur_getter(const LikwidDevice_t device, char **
 
 static int nvidia_gpu_pcie_replay_counter_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int replayCounter;
     NVML_CALL(nvmlDeviceGetPcieReplayCounter, (nvmlDevice, &replayCounter), return -EPERM);
     return likwid_sysft_uint64_to_string(replayCounter, value);
@@ -470,10 +447,7 @@ static int nvidia_gpu_pcie_replay_counter_getter(const LikwidDevice_t device, ch
 static int nvidia_gpu_pcie_throughput_getter(const LikwidDevice_t device, nvmlPcieUtilCounter_t counter, char **value)
 {
     // TODO does this work right? appears to always return 0?
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int throughput;
     NVML_CALL(nvmlDeviceGetPcieThroughput, (nvmlDevice, counter, &throughput), return -EPERM);
     return likwid_sysft_uint64_to_string(throughput, value);
@@ -491,10 +465,7 @@ static int nvidia_gpu_pcie_throughput_rx_getter(const LikwidDevice_t device, cha
 
 static int nvidia_gpu_decoder_util_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int utilization, dummy;
     NVML_CALL(nvmlDeviceGetDecoderUtilization, (nvmlDevice, &utilization, &dummy), return -EPERM);
     return likwid_sysft_uint64_to_string(utilization, value);
@@ -502,10 +473,7 @@ static int nvidia_gpu_decoder_util_getter(const LikwidDevice_t device, char **va
 
 static int nvidia_gpu_ecc_default_enabled_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     nvmlEnableState_t enabled;
     NVML_CALL(nvmlDeviceGetDefaultEccMode, (nvmlDevice, &enabled), return -EPERM);
     return likwid_sysft_uint64_to_string(enabled == NVML_FEATURE_ENABLED, value);
@@ -513,10 +481,7 @@ static int nvidia_gpu_ecc_default_enabled_getter(const LikwidDevice_t device, ch
 
 static int nvidia_gpu_ecc_enabled_getter(const LikwidDevice_t device, bool getPending, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     nvmlEnableState_t current, pending;
     NVML_CALL(nvmlDeviceGetEccMode, (nvmlDevice, &current, &pending), return -EPERM);
     if (getPending)
@@ -552,10 +517,7 @@ typedef enum
 
 static int nvidia_gpu_ecc_error_getter(const LikwidDevice_t device, EccErrType type, EccErrMem mem, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     nvmlEccErrorCounts_t ecc;
     if (type == ECC_CORR_VOL)
         NVML_CALL(nvmlDeviceGetDetailedEccErrors, (nvmlDevice, NVML_MEMORY_ERROR_TYPE_CORRECTED, NVML_VOLATILE_ECC, &ecc), return -EPERM);
@@ -656,10 +618,7 @@ static int nvidia_gpu_ecc_error_reg_agg_uncorr_getter(const LikwidDevice_t devic
 
 static int nvidia_gpu_fan_speed_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int fanSpeed;
     NVML_CALL(nvmlDeviceGetFanSpeed, (nvmlDevice, &fanSpeed), return -EPERM);
     return likwid_sysft_uint64_to_string(fanSpeed, value);
@@ -667,10 +626,7 @@ static int nvidia_gpu_fan_speed_getter(const LikwidDevice_t device, char **value
 
 static int nvidia_gpu_pstate_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     nvmlPstates_t pstate;
     NVML_CALL(nvmlDeviceGetPerformanceState, (nvmlDevice, &pstate), return -EPERM);
     return likwid_sysft_uint64_to_string(pstate, value);
@@ -678,10 +634,7 @@ static int nvidia_gpu_pstate_getter(const LikwidDevice_t device, char **value)
 
 static int nvidia_gpu_power_limit_default_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int milliwatts;
     NVML_CALL(nvmlDeviceGetPowerManagementDefaultLimit, (nvmlDevice, &milliwatts), return -EPERM);
     return likwid_sysft_double_to_string(milliwatts / 1000.0, value);
@@ -689,10 +642,7 @@ static int nvidia_gpu_power_limit_default_getter(const LikwidDevice_t device, ch
 
 static int nvidia_gpu_power_limit_cur_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int milliwatts;
     NVML_CALL(nvmlDeviceGetPowerManagementLimit, (nvmlDevice, &milliwatts), return -EPERM);
     return likwid_sysft_double_to_string(milliwatts / 1000.0, value);
@@ -700,10 +650,7 @@ static int nvidia_gpu_power_limit_cur_getter(const LikwidDevice_t device, char *
 
 static int nvidia_gpu_power_limit_minmax_getter(const LikwidDevice_t device, bool max, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int milliwattsMin, milliwattsMax;
     NVML_CALL(nvmlDeviceGetPowerManagementLimitConstraints, (nvmlDevice, &milliwattsMin, &milliwattsMax), return -EPERM);
     return likwid_sysft_double_to_string((max ? milliwattsMax : milliwattsMin) / 1000.0, value);
@@ -721,10 +668,7 @@ static int nvidia_gpu_power_limit_max_getter(const LikwidDevice_t device, char *
 
 static int nvidia_gpu_power_limit_enf_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int milliwatts;
     NVML_CALL(nvmlDeviceGetEnforcedPowerLimit, (nvmlDevice, &milliwatts), return -EPERM);
     return likwid_sysft_double_to_string(milliwatts / 1000.0, value);
@@ -732,10 +676,7 @@ static int nvidia_gpu_power_limit_enf_getter(const LikwidDevice_t device, char *
 
 static int nvidia_gpu_power_cur_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int milliwatts;
     NVML_CALL(nvmlDeviceGetPowerUsage, (nvmlDevice, &milliwatts), return -EPERM);
     return likwid_sysft_double_to_string(milliwatts / 1000.0, value);
@@ -743,10 +684,7 @@ static int nvidia_gpu_power_cur_getter(const LikwidDevice_t device, char **value
 
 static int nvidia_gpu_encoder_capacity_getter(const LikwidDevice_t device, nvmlEncoderType_t type, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int capacity;
     NVML_CALL(nvmlDeviceGetEncoderCapacity, (nvmlDevice, type, &capacity), return -EPERM);
     return likwid_sysft_uint64_to_string(capacity, value);
@@ -769,10 +707,7 @@ static int nvidia_gpu_encoder_capacity_av1_getter(const LikwidDevice_t device, c
 
 static int nvidia_gpu_encoder_usage_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int utilization, periodUs;
     NVML_CALL(nvmlDeviceGetEncoderUtilization, (nvmlDevice, &utilization, &periodUs), return -EPERM);
     return likwid_sysft_uint64_to_string(utilization, value);
@@ -807,10 +742,7 @@ static int nvidia_gpu_gom_pend_getter(const LikwidDevice_t device, char **value)
 
 static int nvidia_gpu_jpg_usage_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int utilization, periodUs;
     NVML_CALL(nvmlDeviceGetJpgUtilization, (nvmlDevice, &utilization, &periodUs), return -EPERM);
     return likwid_sysft_uint64_to_string(utilization, value);
@@ -818,10 +750,7 @@ static int nvidia_gpu_jpg_usage_getter(const LikwidDevice_t device, char **value
 
 static int nvidia_gpu_dram_bus_width_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int busWidth;
     NVML_CALL(nvmlDeviceGetMemoryBusWidth, (nvmlDevice, &busWidth), return -EPERM);
     return likwid_sysft_uint64_to_string(busWidth, value);
@@ -829,10 +758,7 @@ static int nvidia_gpu_dram_bus_width_getter(const LikwidDevice_t device, char **
 
 static int nvidia_gpu_multi_gpu_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int multiGpuBool;
     NVML_CALL(nvmlDeviceGetMultiGpuBoard, (nvmlDevice, &multiGpuBool), return -EPERM);
     return likwid_sysft_uint64_to_string(multiGpuBool, value);
@@ -840,10 +766,7 @@ static int nvidia_gpu_multi_gpu_getter(const LikwidDevice_t device, char **value
 
 static int nvidia_gpu_temp_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int temp;
     NVML_CALL(nvmlDeviceGetTemperature, (nvmlDevice, NVML_TEMPERATURE_GPU, &temp), return -EPERM);
     return likwid_sysft_uint64_to_string(temp, value);
@@ -851,10 +774,7 @@ static int nvidia_gpu_temp_getter(const LikwidDevice_t device, char **value)
 
 static int nvidia_gpu_temp_thresh_getter(const LikwidDevice_t device, nvmlTemperatureThresholds_t t, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int temp;
     NVML_CALL(nvmlDeviceGetTemperatureThreshold, (nvmlDevice, t, &temp), return -EPERM);
     return likwid_sysft_uint64_to_string(temp, value);
@@ -902,10 +822,7 @@ static int nvidia_gpu_temp_thresh_gps_cur_getter(const LikwidDevice_t device, ch
 
 static int nvidia_gpu_ofa_usage_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int usage, samplingPeriodUs;
     NVML_CALL(nvmlDeviceGetOfaUtilization, (nvmlDevice, &usage, &samplingPeriodUs), return -EPERM);
     return likwid_sysft_uint64_to_string(usage, value);
@@ -913,10 +830,7 @@ static int nvidia_gpu_ofa_usage_getter(const LikwidDevice_t device, char **value
 
 static int nvidia_gpu_energy_getter(const LikwidDevice_t device, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned long long energy;
     NVML_CALL(nvmlDeviceGetTotalEnergyConsumption, (nvmlDevice, &energy), return -EPERM);
     return likwid_sysft_double_to_string((double)energy / 1000.0, value);
@@ -924,10 +838,7 @@ static int nvidia_gpu_energy_getter(const LikwidDevice_t device, char **value)
 
 static int nvidia_gpu_gpumem_usage_getter(const LikwidDevice_t device, bool gpu, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     nvmlUtilization_t util;
     NVML_CALL(nvmlDeviceGetUtilizationRates, (nvmlDevice, &util), return -EPERM);
     return likwid_sysft_uint64_to_string(gpu ? util.gpu : util.memory, value);
@@ -945,10 +856,7 @@ static int nvidia_gpu_dram_usage_getter(const LikwidDevice_t device, char **valu
 
 static int nvidia_gpu_policy_time_getter(const LikwidDevice_t device, nvmlPerfPolicyType_t type, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     nvmlViolationTime_t vt;
     NVML_CALL(nvmlDeviceGetViolationStatus, (nvmlDevice, type, &vt), return -EPERM);
     char timeBuf[64];
