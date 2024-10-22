@@ -30,6 +30,41 @@
 #ifndef LIKWID_ROCMON_SDK_TYPES_H
 #define LIKWID_ROCMON_SDK_TYPES_H
 
+#include <likwid.h>
+/*#ifdef ROCPROFILER_EXPORT*/
+/*#undef ROCPROFILER_EXPORT*/
+/*#endif*/
+/*#ifdef ROCPROFILER_IMPORT*/
+/*#undef ROCPROFILER_IMPORT*/
+/*#endif*/
+/*#ifdef ROCPROFILER_VERSION_MAJOR*/
+/*#undef ROCPROFILER_VERSION_MAJOR*/
+/*#endif*/
+/*#ifdef ROCPROFILER_VERSION_MINOR*/
+/*#undef ROCPROFILER_VERSION_MINOR*/
+/*#endif*/
+/*#ifdef ROCPROFILER_API*/
+/*#undef ROCPROFILER_API*/
+/*#endif*/
+#include <rocprofiler-sdk/rocprofiler.h>
+/*#ifdef ROCPROFILER_API*/
+/*#undef ROCPROFILER_API*/
+/*#endif*/
+#include <rocprofiler-sdk/registration.h>
+
+
+typedef struct {
+    rocprofiler_agent_t* agent;
+    rocprofiler_buffer_id_t buffer;
+    rocprofiler_context_id_t context;
+    RocmonEventResultList *result;
+} RocprofilerSdkAgentData;
+
+typedef struct {
+    int num_agents;
+    RocprofilerSdkAgentData* agents;
+} RocprofilerSdkData;
+
 
 
 #endif /* LIKWID_ROCMON_SDK_TYPES_H */

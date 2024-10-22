@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  rocmon_v1_types.h
+ *      Filename:  rocmon_smi_types.h
  *
- *      Description:  Header File of rocmon v1 module.
+ *      Description:  Header File of rocmon for smi backend.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -27,14 +27,14 @@
  *
  * =======================================================================================
  */
-#ifndef LIKWID_ROCMON_V1_TYPES_H
-#define LIKWID_ROCMON_V1_TYPES_H
+#ifndef LIKWID_ROCMON_SMI_TYPES_H
+#define LIKWID_ROCMON_SMI_TYPES_H
 
-#include <likwid.h>
-// #include <hsa.h>
-#ifdef HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE
-#undef HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE
+#include <amd_smi/amdsmi.h>
+#if AMDSMI_LIB_VERSION_YEAR == 23 && AMDSMI_LIB_VERSION_MAJOR == 4 && AMDSMI_LIB_VERSION_MINOR == 0 && AMDSMI_LIB_VERSION_RELEASE == 0
+typedef struct metrics_table_header_t metrics_table_header_t;
 #endif
+#include <rocm_smi/rocm_smi.h>
 #ifdef ROCPROFILER_EXPORT
 #undef ROCPROFILER_EXPORT
 #endif
@@ -50,10 +50,32 @@
 #ifdef ROCPROFILER_API
 #undef ROCPROFILER_API
 #endif
-#include <rocprofiler/rocprofiler.h>
-
-
 #include <rocmon_common_types.h>
 
+struct RocmonSmiEvent_struct;
+typedef int (*RocmonSmiMeasureFunc)(int deviceId, struct RocmonSmiEvent_struct* event, RocmonEventResult* result);
 
-#endif /* LIKWID_ROCMON_V1_TYPES_H */
+typedef enum {
+    ROCMON_SMI_EVENT_TYPE_NORMAL = 0,
+    ROCMON_SMI_EVENT_TYPE_VARIANT,
+    ROCMON_SMI_EVENT_TYPE_SUBVARIANT,
+    ROCMON_SMI_EVENT_TYPE_INSTANCES
+} RocmonSmiEventType;
+
+#define MAX_ROCMON_SMI_EVENT_NAME 40
+typedef struct RocmonSmiEvent_struct {
+    char name[MAX_ROCMON_SMI_EVENT_NAME];
+    uint64_t variant;
+    uint64_t subvariant;
+    uint64_t extra;
+    int instances;
+    RocmonSmiEventType type;
+    RocmonSmiMeasureFunc measureFunc;
+} RocmonSmiEvent;
+
+typedef struct {
+    RocmonSmiEvent* entries;
+    int numEntries;
+} RocmonSmiEventList;
+
+#endif /* LIKWID_ROCMON_SMI_TYPES_H */

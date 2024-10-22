@@ -39,11 +39,21 @@
 #include <types.h>
 
 #include <likwid.h>
-#ifndef LIKWID_ROCPROF_SDK
+#include <rocmon.h>
+#include <rocmon_common_types.h>
 #include <rocmon_v1_types.h>
+#ifdef LIKWID_ROCPROF_SDK
+#include <rocmon_sdk_types.h>
+#endif
+#include <rocmon_smi_types.h>
+
+#ifndef FREE_IF_NOT_NULL
+#define FREE_IF_NOT_NULL(x) if (x != NULL) { free(x); x = NULL; }
 #endif
 
+#ifndef gettid
 #define gettid() syscall(SYS_gettid)
+#endif
 
 #ifndef NAN
 #define NAN (0.0/0.0)
@@ -202,8 +212,6 @@ _rocmon_saveToFile(const char* markerfile)
 static void
 _rocmon_finalize(void)
 {
-#define FREE_IF_NOT_NULL(x) if (x != NULL) { free(x); x = NULL; }
-
     // Ensure markers were initialized
     if (!rocmon_marker_initialized)
     {
@@ -316,7 +324,7 @@ rocmon_markerInit(void)
         ret = rocmon_addEventSet(bdata(gEventStrings->entry[i]), &gpu_groups[i]);
         if (ret < 0)
         {
-            fprintf(stderr,"Error setting up Rocmon Marker API.\n");
+            fprintf(stderr,"Error setting up Rocmon Marker API: %d\n", ret);
             free(gpu_ids);
             free(gpu_maps);
             free(gpu_groups);
@@ -337,7 +345,7 @@ rocmon_markerInit(void)
     ret = rocmon_setupCounters(gpu_groups[active_group]);
     if (ret)
     {
-        fprintf(stderr,"Error setting up Rocmon Marker API.\n");
+        fprintf(stderr,"Error setting up Rocmon Marker API: %d\n", ret);
         free(gpu_ids);
         free(gpu_maps);
         free(gpu_groups);
@@ -349,7 +357,7 @@ rocmon_markerInit(void)
     ret = rocmon_startCounters();
     if (ret)
     {
-        fprintf(stderr,"Error starting up Rocmon Marker API.\n");
+        fprintf(stderr,"Error starting up Rocmon Marker API: %d\n", ret);
         free(gpu_ids);
         free(gpu_maps);
         free(gpu_groups);
@@ -1066,8 +1074,8 @@ rocmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
     {
         return NAN;
     }
-    GroupInfo* ginfo = &rocmon_context->groups[rocmMarkerResults[region].groupID];
-    if (metricId < 0 || metricId >= ginfo->nmetrics)
+    GroupInfo* ginfo = rocmon_get_group(rocmMarkerResults[region].groupID);
+    if ((!ginfo) || (metricId < 0) || (metricId >= ginfo->nmetrics))
     {
         return NAN;
     }
