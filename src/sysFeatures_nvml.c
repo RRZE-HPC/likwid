@@ -1,7 +1,9 @@
 #include <sysFeatures_nvml.h>
 
+#include <math.h>
 #include <dlfcn.h>
 #include <nvml.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -82,6 +84,10 @@ DECLAREFUNC_NVML(nvmlDeviceGetTotalEccErrors, nvmlDevice_t device, nvmlMemoryErr
 DECLAREFUNC_NVML(nvmlDeviceGetTotalEnergyConsumption, nvmlDevice_t device, unsigned long long *energy);
 DECLAREFUNC_NVML(nvmlDeviceGetUtilizationRates, nvmlDevice_t device, nvmlUtilization_t* utilization);
 DECLAREFUNC_NVML(nvmlDeviceGetViolationStatus, nvmlDevice_t device, nvmlPerfPolicyType_t perfPolicyType, nvmlViolationTime_t* violTime);
+DECLAREFUNC_NVML(nvmlDeviceSetEccMode, nvmlDevice_t device, nvmlEnableState_t ecc);
+DECLAREFUNC_NVML(nvmlDeviceSetGpuOperationMode, nvmlDevice_t device, nvmlGpuOperationMode_t mode);
+DECLAREFUNC_NVML(nvmlDeviceSetPowerManagementLimit, nvmlDevice_t device, unsigned int limit);
+DECLAREFUNC_NVML(nvmlDeviceSetTemperatureThreshold, nvmlDevice_t device, nvmlTemperatureThresholds_t thresholdType, int *temp);
 __attribute__((weak)) const char *nvmlErrorString(nvmlReturn_t result);
 static const char *(*nvmlErrorString_ptr)(nvmlReturn_t result);
 DECLAREFUNC_NVML(nvmlInit_v2, void);
@@ -155,6 +161,10 @@ int likwid_sysft_init_nvml(_SysFeatureList *list)
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetTemperatureThreshold);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetUtilizationRates);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetViolationStatus);
+    DLSYM_AND_CHECK(dl_nvml, nvmlDeviceSetEccMode);
+    DLSYM_AND_CHECK(dl_nvml, nvmlDeviceSetGpuOperationMode);
+    DLSYM_AND_CHECK(dl_nvml, nvmlDeviceSetPowerManagementLimit);
+    DLSYM_AND_CHECK(dl_nvml, nvmlDeviceSetTemperatureThreshold);
     DLSYM_AND_CHECK(dl_nvml, nvmlErrorString);
     DLSYM_AND_CHECK(dl_nvml, nvmlInit_v2);
     DLSYM_AND_CHECK(dl_nvml, nvmlShutdown);
@@ -242,10 +252,7 @@ static int nvidia_gpu_devices_available_getter(const LikwidDevice_t device, char
 
 static int nvidia_gpu_clock_info_getter(const LikwidDevice_t device, nvmlClockType_t clockType, nvmlClockId_t clockId, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     unsigned clockMHz;
     NVML_CALL(nvmlDeviceGetClock, nvmlDevice, clockType, clockId, &clockMHz);
     return likwid_sysft_uint64_to_string(clockMHz, value);
@@ -490,6 +497,17 @@ static int nvidia_gpu_ecc_enabled_getter(const LikwidDevice_t device, bool getPe
     return likwid_sysft_uint64_to_string(current == NVML_FEATURE_ENABLED, value);
 }
 
+static int nvidia_gpu_ecc_enabled_setter(const LikwidDevice_t device, const char *value)
+{
+    uint64_t enabled;
+    int err = likwid_sysft_string_to_uint64(value, &enabled);
+    if (err < 0)
+        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
+    NVML_CALL(nvmlDeviceSetEccMode, nvmlDevice, (enabled == 0) ? NVML_FEATURE_DISABLED : NVML_FEATURE_ENABLED);
+    return 0;
+}
+
 static int nvidia_gpu_ecc_enabled_cur_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_ecc_enabled_getter(device, false, value);
@@ -649,6 +667,18 @@ static int nvidia_gpu_power_limit_cur_getter(const LikwidDevice_t device, char *
     return likwid_sysft_double_to_string(milliwatts / 1000.0, value);
 }
 
+static int nvidia_gpu_power_limit_cur_setter(const LikwidDevice_t device, const char *value)
+{
+    uint64_t watts;
+    int err = likwid_sysft_string_to_uint64(value, &watts);
+    if (err < 0)
+        return err;
+    const unsigned int pw = (unsigned int)round(watts * 1000.0);
+    LWD_TO_NVMLD(device, nvmlDevice);
+    NVML_CALL(nvmlDeviceSetPowerManagementLimit, nvmlDevice, pw);
+    return 0;
+}
+
 static int nvidia_gpu_power_limit_minmax_getter(const LikwidDevice_t device, bool max, char **value)
 {
     LWD_TO_NVMLD(device, nvmlDevice);
@@ -714,21 +744,33 @@ static int nvidia_gpu_encoder_usage_getter(const LikwidDevice_t device, char **v
     return likwid_sysft_uint64_to_string(utilization, value);
 }
 
+static const char *goms[] = {
+    "all_on", "compute_only", "graphics_only",
+};
+
 static int nvidia_gpu_gom_getter(const LikwidDevice_t device, bool usePending, char **value)
 {
-    nvmlDevice_t nvmlDevice;
-    int err = lw_device_to_nvml_device(device, &nvmlDevice);
-    if (err < 0)
-        return err;
+    LWD_TO_NVMLD(device, nvmlDevice);
     nvmlGpuOperationMode_t current, pending;
     NVML_CALL(nvmlDeviceGetGpuOperationMode, nvmlDevice, &current, &pending);
-    static const char *goms[] = {
-        "all_on", "compute_only", "graphics_only",
-    };
     nvmlGpuOperationMode_t gom = usePending ? pending : current;
     if (gom >= ARRAY_COUNT(goms))
         gom = 0;
     return likwid_sysft_copystr(goms[gom], value);
+}
+
+static int nvidia_gpu_gom_setter(const LikwidDevice_t device, const char *value)
+{
+    LWD_TO_NVMLD(device, nvmlDevice);
+    for (size_t i = 0; i < ARRAY_COUNT(goms); i++)
+    {
+        if (strcmp(value, goms[i]) == 0)
+        {
+            NVML_CALL(nvmlDeviceSetGpuOperationMode, nvmlDevice, (int)i);
+            return 0;
+        }
+    }
+    return -EINVAL;
 }
 
 static int nvidia_gpu_gom_cur_getter(const LikwidDevice_t device, char **value)
@@ -819,6 +861,60 @@ static int nvidia_gpu_temp_thresh_acou_max_getter(const LikwidDevice_t device, c
 static int nvidia_gpu_temp_thresh_gps_cur_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_GPS_CURR, value);
+}
+
+static int nvidia_gpu_temp_thresh_setter(const LikwidDevice_t device, nvmlTemperatureThresholds_t t, const char *value)
+{
+    uint64_t temp;
+    int err = likwid_sysft_string_to_uint64(value, &temp);
+    if (err < 0)
+        return err;
+    if (temp > INT_MAX)
+        temp = INT_MAX;
+    int arg = (int)temp;
+    LWD_TO_NVMLD(device, nvmlDevice);
+    NVML_CALL(nvmlDeviceSetTemperatureThreshold, nvmlDevice, t, &arg);
+    return 0;
+}
+
+static int nvidia_gpu_temp_thresh_shut_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_SHUTDOWN, value);
+}
+
+static int nvidia_gpu_temp_thresh_slow_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_SLOWDOWN, value);
+}
+
+static int nvidia_gpu_temp_thresh_mem_max_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_MEM_MAX, value);
+}
+
+static int nvidia_gpu_temp_thresh_gpu_max_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_GPU_MAX, value);
+}
+
+static int nvidia_gpu_temp_thresh_acou_min_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MIN, value);
+}
+
+static int nvidia_gpu_temp_thresh_acou_cur_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_CURR, value);
+}
+
+static int nvidia_gpu_temp_thresh_acou_max_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MAX, value);
+}
+
+static int nvidia_gpu_temp_thresh_gps_cur_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_GPS_CURR, value);
 }
 
 static int nvidia_gpu_ofa_usage_getter(const LikwidDevice_t device, char **value)
@@ -940,8 +1036,8 @@ static _SysFeature nvidia_gpu_features[] = {
     {"pcie_throughput_rx", "nvml", "Current PCIe throughput (RX)", nvidia_gpu_pcie_throughput_rx_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "KB/s"},
     {"decoder_usage", "nvml", "Current decoder usage", nvidia_gpu_decoder_util_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL},
     {"ecc_enabled_default", "nvml", "DRAM ECC enable default", nvidia_gpu_ecc_default_enabled_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL},
-    {"ecc_enabled_cur", "nvml", "DRAM ECC currently enabled", nvidia_gpu_ecc_enabled_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL},
-    {"ecc_enabled_pend", "nvml", "DRAM ECC enable pending (after reboot)", nvidia_gpu_ecc_enabled_pend_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL},
+    {"ecc_enabled_cur", "nvml", "DRAM ECC currently enabled", nvidia_gpu_ecc_enabled_cur_getter, nvidia_gpu_ecc_enabled_setter, DEVICE_TYPE_NVIDIA_GPU, NULL},
+    {"ecc_enabled_pend", "nvml", "DRAM ECC enable pending (after reboot)", nvidia_gpu_ecc_enabled_pend_getter, nvidia_gpu_ecc_enabled_setter, DEVICE_TYPE_NVIDIA_GPU, NULL},
     {"ecc_dram_volatile_corr_err_count", "nvml", "DRAM ECC corrected errors (GPU lifetime aggregate)", nvidia_gpu_ecc_error_dram_vol_corr_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL},
     {"ecc_dram_volatile_uncorr_err_count", "nvml", "DRAM ECC corrected errors (since reboot)", nvidia_gpu_ecc_error_dram_vol_uncorr_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL},
     {"ecc_dram_aggregate_corr_err_count", "nvml", "DRAM ECC corrected errors (GPU lifetime aggregate)", nvidia_gpu_ecc_error_dram_agg_corr_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL},
@@ -961,7 +1057,7 @@ static _SysFeature nvidia_gpu_features[] = {
     {"fan_speed", "nvml", "Fan speed", nvidia_gpu_fan_speed_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
     {"pstate_cur", "nvml", "Current performance state", nvidia_gpu_pstate_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL},
     {"power_limit_default", "nvml", "Default power limit", nvidia_gpu_power_limit_default_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "W"},
-    {"power_limit_cur", "nvml", "Current power limit", nvidia_gpu_power_limit_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "W"},
+    {"power_limit_cur", "nvml", "Current power limit", nvidia_gpu_power_limit_cur_getter, nvidia_gpu_power_limit_cur_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "W"},
     {"power_limit_min", "nvml", "Minimum power limit", nvidia_gpu_power_limit_min_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "W"},
     {"power_limit_max", "nvml", "Maximum power limit", nvidia_gpu_power_limit_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "W"},
     {"power_limit_enf", "nvml", "Enforced (resulting) power limit", nvidia_gpu_power_limit_enf_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "W"},
@@ -970,20 +1066,20 @@ static _SysFeature nvidia_gpu_features[] = {
     {"encoder_cap_hevc", "nvml", "Video encoder HEVC capacity", nvidia_gpu_encoder_capacity_hevc_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
     {"encoder_cap_av1", "nvml", "Video encoder AV1 capacity", nvidia_gpu_encoder_capacity_av1_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
     {"encoder_usage", "nvml", "Video encoder usage", nvidia_gpu_encoder_usage_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
-    {"gom_cur", "nvml", "Current GPU operation mode (all_on, compute_only, graphics_only)", nvidia_gpu_gom_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL},
-    {"gom_pend", "nvml", "Pending (after reboot) GPU operation mode (all_on, compute_only, graphics_only)", nvidia_gpu_gom_pend_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL},
+    {"gom_cur", "nvml", "Current GPU operation mode (all_on, compute_only, graphics_only)", nvidia_gpu_gom_cur_getter, nvidia_gpu_gom_setter, DEVICE_TYPE_NVIDIA_GPU, NULL},
+    {"gom_pend", "nvml", "Pending (after reboot) GPU operation mode (all_on, compute_only, graphics_only)", nvidia_gpu_gom_pend_getter, nvidia_gpu_gom_setter, DEVICE_TYPE_NVIDIA_GPU, NULL},
     {"jpg_usage", "nvml", "JPG usage", nvidia_gpu_jpg_usage_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
     {"dram_bus_width", "nvml", "DRAM bus width", nvidia_gpu_dram_bus_width_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "Bit"},
     {"multi_gpu", "nvml", "Multi GPU board", nvidia_gpu_multi_gpu_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "bool"},
     {"temp_gpu_cur", "nvml", "Current GPU temperature", nvidia_gpu_temp_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
-    {"temp_thresh_shut", "nvml", "Shutdown temperature threshold", nvidia_gpu_temp_thresh_shut_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
-    {"temp_thresh_slow", "nvml", "Slowdown Temperature threshold", nvidia_gpu_temp_thresh_slow_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
-    {"temp_thresh_mem_max", "nvml", "Maximum memory temperature threshold", nvidia_gpu_temp_thresh_mem_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
-    {"temp_thresh_gpu_max", "nvml", "Maximum GPU temperature threshold", nvidia_gpu_temp_thresh_gpu_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
-    {"temp_thresh_acou_min", "nvml", "Minimum acoustic temperature threshold", nvidia_gpu_temp_thresh_acou_min_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
-    {"temp_thresh_acou_cur", "nvml", "Current acoustic temperature threshold", nvidia_gpu_temp_thresh_acou_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
-    {"temp_thresh_acou_max", "nvml", "Maximum acoustic temperature threshold", nvidia_gpu_temp_thresh_acou_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
-    {"temp_thresh_gps_cur", "nvml", "Current GPS temperature threshold", nvidia_gpu_temp_thresh_gps_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
+    {"temp_thresh_shut", "nvml", "Shutdown temperature threshold", nvidia_gpu_temp_thresh_shut_getter, nvidia_gpu_temp_thresh_shut_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
+    {"temp_thresh_slow", "nvml", "Slowdown Temperature threshold", nvidia_gpu_temp_thresh_slow_getter, nvidia_gpu_temp_thresh_slow_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
+    {"temp_thresh_mem_max", "nvml", "Maximum memory temperature threshold", nvidia_gpu_temp_thresh_mem_max_getter, nvidia_gpu_temp_thresh_mem_max_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
+    {"temp_thresh_gpu_max", "nvml", "Maximum GPU temperature threshold", nvidia_gpu_temp_thresh_gpu_max_getter, nvidia_gpu_temp_thresh_gpu_max_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
+    {"temp_thresh_acou_min", "nvml", "Minimum acoustic temperature threshold", nvidia_gpu_temp_thresh_acou_min_getter, nvidia_gpu_temp_thresh_acou_min_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
+    {"temp_thresh_acou_cur", "nvml", "Current acoustic temperature threshold", nvidia_gpu_temp_thresh_acou_cur_getter, nvidia_gpu_temp_thresh_acou_cur_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
+    {"temp_thresh_acou_max", "nvml", "Maximum acoustic temperature threshold", nvidia_gpu_temp_thresh_acou_max_getter, nvidia_gpu_temp_thresh_acou_max_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
+    {"temp_thresh_gps_cur", "nvml", "Current GPS temperature threshold", nvidia_gpu_temp_thresh_gps_cur_getter, nvidia_gpu_temp_thresh_gps_cur_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
     {"ofa_usage", "nvml", "Optical Flow Accelerator usage", nvidia_gpu_ofa_usage_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
     {"energy", "nvml", "Energy consumed since driver reload", nvidia_gpu_energy_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "J"},
     {"gpu_usage", "nvml", "GPU usage", nvidia_gpu_gpu_usage_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
