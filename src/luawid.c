@@ -3817,73 +3817,55 @@ lua_likwid_setSysFeature(lua_State *L)
 }
 
 static int
-lua_likwid_createDevice(lua_State *L)
+lua_likwid_destroyDevice(lua_State *L)
 {
-    LikwidDevice_t dev = NULL;
-    int err = 0;
-    int type = luaL_checknumber(L,1);
-    int id = luaL_checknumber(L,2);
-    LikwidDeviceType _type = DEVICE_TYPE_INVALID;
-    if ((!(((type) >= MIN_DEVICE_TYPE) && ((type) < MAX_DEVICE_TYPE))) || (id < 0))
-    {
-        lua_pushnil(L);
-    }
-    else
-    {
-        err = likwid_device_create(type, id, &dev);
-        if (err < 0)
-        {
-            lua_pushnil(L);
-        }
-        else
-        {
-            likwid_device_destroy(dev);
-            dev = lua_newuserdata (L, sizeof(_LikwidDevice));
-            dev->type = type;
-            dev->internal_id = id;
-            switch (dev->type)
-            {
-                case DEVICE_TYPE_HWTHREAD:
-                case DEVICE_TYPE_CORE:
-                case DEVICE_TYPE_DIE:
-                case DEVICE_TYPE_LLC:
-                case DEVICE_TYPE_NUMA:
-                case DEVICE_TYPE_SOCKET:
-                    dev->id.simple.id = id;
-                    break;
-#ifdef LIKWID_WITH_NVMON
-                case DEVICE_TYPE_NVIDIA_GPU:
-#endif
-#ifdef LIKWID_WITH_ROCMON
-                case DEVICE_TYPE_AMD_GPU:
-#endif
-#if defined(LIKWID_WITH_NVMON)||defined(LIKWID_WITH_ROCMON)
-                    dev->id.pci.pci_domain = SYSFEATURES_ID_TO_PCI_DOMAIN(id);
-                    dev->id.pci.pci_bus = SYSFEATURES_ID_TO_PCI_BUS(id);
-                    dev->id.pci.pci_dev = SYSFEATURES_ID_TO_PCI_SLOT(id);
-                    dev->id.pci.pci_func = SYSFEATURES_ID_TO_PCI_FUNC(id);
-                    break;
-#endif
-                default:
-                    lua_pushnil(L);
-                    break;
-            }
-        }
-    }
-    return 1;
+    LikwidDevice_t *dev = lua_touserdata(L, 1);
+    if (dev)
+        likwid_device_destroy(*dev);
+    return 0;
 }
 
 static int
-lua_likwid_destroyDevice(lua_State *L)
+lua_likwid_createDevice(lua_State *L)
 {
-    LikwidDevice_t dev = lua_touserdata(L, 1);
-    if (dev)
+    LikwidDevice_t dev;
+    int type = luaL_checknumber(L,1);
+    if (lua_isinteger(L,2))
     {
-        dev->type = DEVICE_TYPE_INVALID;
-        dev->id.simple.id = -1;
-        dev->internal_id = -1;
+        int id_int = luaL_checknumber(L,2);
+        int err = likwid_device_create(type, id_int, &dev);
+        if (err < 0)
+            return luaL_error(L, "likwid_device_create() failed: %s", strerror(-err));
+        if (err > 0)
+            return luaL_error(L, "likwid_device_create() unknown error");
     }
-    return 0;
+    else if (lua_isstring(L,2))
+    {
+        const char *id_str = luaL_checkstring(L,2);
+        int err = likwid_device_create_from_string(type, id_str, &dev);
+        if (err < 0)
+            return luaL_error(L, "likwid_device_create_from_string() failed: %s", strerror(-err));
+        if (err > 0)
+            return luaL_error(L, "likwid_device_create_from_string() unknown error");
+    }
+    else
+    {
+        return luaL_error(L, "ID must be int or string, found: %s", lua_typename(L, lua_type(L, 2)));
+    }
+
+    /* what happens with 'dev' if any Lua functions fail? We probably leak memory,
+     * but I don't know how to avoid that... */
+    LikwidDevice_t *luadev = lua_newuserdata(L, sizeof(dev));
+    *luadev = dev;
+
+    luaL_newmetatable(L, "LikwidDevice_Finalizer");
+    {
+        lua_pushcfunction(L, lua_likwid_destroyDevice);
+        lua_setfield(L, -2, "__gc");
+    }
+
+    lua_setmetatable(L, -2);
+    return 1;
 }
 #endif /* LIKWID_WITH_SYSFEATURES */
 
@@ -4140,7 +4122,6 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
     lua_register(L, "likwid_sysFeatures_get",lua_likwid_getSysFeature);
     lua_register(L, "likwid_sysFeatures_set",lua_likwid_setSysFeature);
     lua_register(L, "likwid_createDevice",lua_likwid_createDevice);
-    lua_register(L, "likwid_destroyDevice",lua_likwid_destroyDevice);
 #endif /* LIKWID_WITH_SYSFEATURES */
 #ifdef __MIC__
   setuid(0);

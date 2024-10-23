@@ -341,12 +341,6 @@ if listFeatures and #hwtlist > 0 then
     else
         likwid.printtable(all)
     end
-    -- cleanup device tree before exiting
-    for l, ltab in pairs(deviceTree) do
-        for _, e in pairs(ltab) do
-            likwid.destroyDevice(e.device)
-        end
-    end
     -- finalize sysfeatures module and exit
     likwid.finalizeSysFeatures()
     os.exit(0)
@@ -386,12 +380,6 @@ if #getList > 0 and #hwtlist > 0 then
                     print_stdout(v)
                 end
             end
-        end
-    end
-    -- cleanup device tree before exiting
-    for l, ltab in pairs(deviceTree) do
-        for _, e in pairs(ltab) do
-            likwid.destroyDevice(e.device)
         end
     end
     -- finalize sysfeatures module and exit
@@ -440,12 +428,6 @@ if #setList > 0 and #hwtlist > 0 then
                     print_stderr(string.format("Failed to set feature '%s.%s' to '%s' (Type %s, Resp %d)", f.Category, f.Name, f.Value, f.Type, c))
                 end
             end
-        end
-    end
-    -- cleanup device tree before exiting
-    for l, ltab in pairs(deviceTree) do
-        for _, e in pairs(ltab) do
-            likwid.destroyDevice(e.device)
         end
     end
     -- finalize sysfeatures module and exit
@@ -504,7 +486,6 @@ end
                     print_stdout(string.format("Failed %s for HWThread %d", f, c))
                 end
             end
-            likwid.destroyDevice(dev)
         end
     end
     -- Next disable all features for all selected hardware threads
@@ -519,7 +500,6 @@ end
                     print_stdout(string.format("Failed %s for HWThread %d", f, c))
                 end
             end
-            likwid.destroyDevice(dev)
         end
     end
 end]]

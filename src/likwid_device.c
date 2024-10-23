@@ -306,14 +306,16 @@ int likwid_device_create_from_string(LikwidDeviceType type, const char *id, Likw
         return err;
 
 #ifdef LIKWID_WITH_NVMON
+    /* The topology init functions currently return both positive and negative
+     * error numbers :-/, so use this workaround for now. */
     err = topology_cuda_init();
     if (err != 0)
-        return err;
+        return -EPERM;
 #endif
 #ifdef LIKWID_WITH_ROCMON
     err = topology_rocm_init();
     if (err != 0)
-        return err;
+        return -EPERM;
 #endif
 
     char *tokenized_string = strdup(id);
