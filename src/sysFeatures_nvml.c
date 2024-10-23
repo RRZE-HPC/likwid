@@ -217,14 +217,9 @@ static int nvidia_gpu_devices_available_getter(const LikwidDevice_t device, char
     if (deviceCount == 0)
         return likwid_sysft_copystr("", value);
 
-    const size_t requiredBytes = NVML_DEVICE_PCI_BUS_ID_BUFFER_SIZE * deviceCount;
-    char *newval = realloc(*value, requiredBytes);
-    if (!newval)
-        return -ENOMEM;
-
+    bstring resultstr = bfromcstr("");
     for (unsigned i = 0; i < deviceCount; i++)
     {
-        nvmlReturn_t err;
         nvmlDevice_t nvmlDevice;
         nvmlPciInfo_t pciInfo;
         if (nvmlDeviceGetHandleByIndex_v2_ptr(i, &nvmlDevice) != NVML_SUCCESS ||
@@ -233,21 +228,19 @@ static int nvidia_gpu_devices_available_getter(const LikwidDevice_t device, char
             snprintf(pciInfo.busId, sizeof(pciInfo.busId), "ERR");
         }
 
-        /* Since the strings to copy are limited by NVML_DEVICE_PCI_BUS_ID_BUFFER_SIZE,
-         * the buffer size should always be sufficient. */
         if (i == 0)
-        {
-            strcpy(newval, pciInfo.busId);
-        }
-        else
-        {
-            strcat(newval, " ");
-            strcat(newval, pciInfo.busId);
-        }
+            bcatcstr(resultstr, " ");
+        bcatcstr(resultstr, pciInfo.busId);
     }
 
-    *value = newval;
-    return 0;
+    int err = 0;
+    const char *s = bdata(resultstr);
+    if (s)
+        err = likwid_sysft_copystr(s, value);
+    else
+        err = -ENOMEM;
+    bdestroy(resultstr);
+    return err;
 }
 
 static int nvidia_gpu_clock_info_getter(const LikwidDevice_t device, nvmlClockType_t clockType, nvmlClockId_t clockId, char **value)
