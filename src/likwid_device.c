@@ -259,12 +259,33 @@ static int device_create_amdgpu_by_pciaddr(uint16_t dom, uint8_t bus, uint8_t de
 }
 #endif
 
+static int topo_init(void)
+{
+    int err = topology_init();
+    if (err < 0)
+        return err;
+
+#ifdef LIKWID_WITH_NVMON
+    /* The topology init functions currently return both positive and negative
+     * error numbers :-/, so use this workaround for now. */
+    err = topology_cuda_init();
+    if (err != 0)
+        return -EPERM;
+#endif
+#ifdef LIKWID_WITH_ROCMON
+    err = topology_rocm_init();
+    if (err != 0)
+        return -EPERM;
+#endif
+    return 0;
+}
+
 int likwid_device_create(LikwidDeviceType type, int id, LikwidDevice_t* device)
 {
     if ((type <= DEVICE_TYPE_INVALID) || (type >= MAX_DEVICE_TYPE) || (id < 0) || (!device))
         return -EINVAL;
 
-    int err = topology_init();
+    int err = topo_init();
     if (err < 0)
         return err;
 
@@ -301,22 +322,9 @@ int likwid_device_create_from_string(LikwidDeviceType type, const char *id, Likw
     if ((type < DEVICE_TYPE_INVALID) || (type >= MAX_DEVICE_TYPE) || (!id) || (!device))
         return -EINVAL;
 
-    int err = topology_init();
+    int err = topo_init();
     if (err < 0)
         return err;
-
-#ifdef LIKWID_WITH_NVMON
-    /* The topology init functions currently return both positive and negative
-     * error numbers :-/, so use this workaround for now. */
-    err = topology_cuda_init();
-    if (err != 0)
-        return -EPERM;
-#endif
-#ifdef LIKWID_WITH_ROCMON
-    err = topology_rocm_init();
-    if (err != 0)
-        return -EPERM;
-#endif
 
     char *tokenized_string = strdup(id);
     if (!tokenized_string)
