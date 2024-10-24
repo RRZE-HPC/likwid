@@ -651,7 +651,7 @@ UMASK_L3_XI_SAMPLED_LATENCY_REQUESTS_EXT_FAR                     0x20
 
 # Energy Events
 
-EVENT_RAPL_CORE_ENERGY                    0x01 PWR0
+EVENT_RAPL_CORE_ENERGY                    0x01 PWR1
 UMASK_RAPL_CORE_ENERGY                    0x00
 
 EVENT_RAPL_L3_ENERGY                     0x03 PWR2
