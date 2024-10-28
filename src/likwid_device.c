@@ -456,11 +456,18 @@ void likwid_device_destroy(LikwidDevice_t device)
     }
 }
 
-char* device_type_name(LikwidDeviceType type)
+const char *likwid_device_type_name(LikwidDeviceType type)
 {
-    if ((type < DEVICE_TYPE_INVALID) || (type >= MAX_DEVICE_TYPE))
-    {
+    if (type < DEVICE_TYPE_INVALID || type >= MAX_DEVICE_TYPE)
         return "unsupported";
-    }
     return LikwidDeviceTypeNames[type];
+}
+
+void likwid_device_fmt_pci(char *buf, size_t size, LikwidDevice_t device)
+{
+    const uint16_t dom = device->id.pci.pci_domain;
+    const uint8_t bus = device->id.pci.pci_bus;
+    const uint8_t dev = device->id.pci.pci_dev;
+    const uint8_t func = device->id.pci.pci_func;
+    snprintf(buf, size, "%08x:%02x:%02x.%01x", dom, bus, dev, func);
 }

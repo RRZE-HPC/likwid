@@ -52,8 +52,8 @@ function usage()
     print_stdout("-h, --help\t\t Help message")
     print_stdout("-v, --version\t\t Version information")
     print_stdout("-a, --all\t\t List all available features")
-    print_stdout("-l, --list\t\t List features and state for given hardware threads")
-    print_stdout("-c, --cpus <list>\t Perform operations on given hardware threads")
+    print_stdout("-l, --list\t\t List features and state for given devices")
+    print_stdout("-d, --devices <list>\t Perform operations on given devices")
     print_stdout("-g, --get <feature(s)>\t Get the value of the given feature(s)")
     print_stdout("                      \t feature format: <category>.<name> or just <name> if unique")
     print_stdout("                      \t can be a list of features")
@@ -72,8 +72,7 @@ end
 -- main variables with defaults
 local listFeatures = false
 local allFeatures = false
-local num_hwts = 0
-local hwtlist = {}
+local devList = {}
 local getList = {}
 local setList = {}
 local cpuinfo = likwid.getCpuInfo()
@@ -83,7 +82,7 @@ local verbose = 0
 local output_csv = false
 
 -- parse the command line
-for opt,arg in likwid.getopt(arg, {"h","v","l","c:","g:","s:","a", "O","help","version","list", "set:", "get:","all", "cpus:", "V:", "verbose:"}) do
+for opt,arg in likwid.getopt(arg, {"h","v","l","d:","g:","s:","a", "O","help","version","list", "set:", "get:","all", "cpus:", "V:", "verbose:"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -98,8 +97,8 @@ for opt,arg in likwid.getopt(arg, {"h","v","l","c:","g:","s:","a", "O","help","v
     elseif opt == "v" or opt == "version" then
         version()
         os.exit(0)
-    elseif opt == "c" or opt == "cpus"then
-        num_hwts, hwtlist = likwid.cpustr_to_cpulist(arg)
+    elseif opt == "d" or opt == "devices"then
+        devList = likwid.createDevicesFromString(arg)
     elseif opt == "l" or opt == "list" then
         listFeatures = true
     elseif opt == "O" then
@@ -131,15 +130,15 @@ if (listFeatures or allFeatures) and (#getList > 0 or #setList > 0) then
     print_stderr("Cannot list features and get/set at the same time")
     os.exit(1)
 end
-if #hwtlist == 0 then
+if #devList == 0 then
     if listFeatures then
-        print_stderr("HWThread selection (-c) required for listing the state of all features")
+        print_stderr("Device selection (-d) required for listing the state of all features")
         os.exit(1)
     elseif #getList > 0 then
-        print_stderr("HWThread selection (-c) required for getting the state of given features")
+        print_stderr("Device selection (-d) required for getting the state of given features")
         os.exit(1)
     elseif #setList > 0 then
-        print_stderr("HWThread selection (-c) required for setting the state of given features")
+        print_stderr("Device selection (-d) required for setting the state of given features")
         os.exit(1)
     end
 end
@@ -163,7 +162,7 @@ if err < 0 then
 end
 
 -- get a list of all features for the system
-local list = likwid.sysFeatures_list()
+local ft_list = likwid.sysFeatures_list()
 
 -- print the list
 if allFeatures then
@@ -174,7 +173,7 @@ if allFeatures then
     local descs = {}
     local cats = {}
     -- create a table of categories for sorting
-    for _,f in pairs(list) do
+    for _,f in pairs(ft_list) do
         found = false
         for _, c in pairs(cats) do
             if c == f.Category then
@@ -194,7 +193,7 @@ if allFeatures then
     table.insert(access, "Access")
     table.insert(descs, "Description")
     for _,c in pairs(cats) do
-        for _,f in pairs(list) do
+        for _,f in pairs(ft_list) do
             if f.Category == c then
                 table.insert(names, string.format("%s.%s", f.Category, f.Name))
                 table.insert(types, f.Type)
@@ -230,93 +229,23 @@ if allFeatures then
     os.exit(0)
 end
 
-
--- sysfeatures requires exact specification of devices
--- some exist per hw thread others only for the whole node
--- or the socket
--- this creates all devices based on the given hw threads
-local deviceTree = {}
-
--- there is only a single entry for the whole node
--- the first entry in the list of hw threads is responsible
-deviceTree[likwid.node] = {}
-table.insert(deviceTree[likwid.node], {device = likwid.createDevice(likwid.node, hwtlist[1]), id = hwtlist[1]})
--- create the devices for all hw threads in the list
-deviceTree[likwid.hwthread] = {}
-for i, c in pairs(hwtlist) do
-    table.insert(deviceTree[likwid.hwthread], {device = likwid.createDevice(likwid.hwthread, c), id = c})
-end
--- create the devices for all sockets which are covered by the list of given hw threads
-deviceTree[likwid.socket] = {}
-for sid=0, cputopo.numSockets do
-    local sdone = false
-    for _, c in pairs(hwtlist) do
-        for _, t in pairs(cputopo.threadPool) do
-            if t.apicId == c and t.packageId == sid then
-                table.insert(deviceTree[likwid.socket], {device = likwid.createDevice(likwid.socket, sid), id = c})
-                sdone = true
-                break
-            end
-        end
-        if sdone then
-            break
-        end
-    end
-end
-
--- I don't know what I'm doing but I'm trying to populate the device tree according to cores
-deviceTree[likwid.core] = {}
-coresAdded = {}
-for _, c in pairs(hwtlist) do
-    for _, t in pairs(cputopo.threadPool) do
-        if t.apicId == c and not (coresAdded[t.coreId] ~= Nil) then
-            table.insert(deviceTree[likwid.core], {device = likwid.createDevice(likwid.core, t.coreId), id = c})
-            coresAdded[t.coreId] = true
-        end
-    end
-end
-
-local function getDevice(level, id)
-    if deviceTree[level] then
-        for _, entry in pairs(deviceTree[level]) do
-            if entry.id == id then
-                return entry.device
-            end
-        end
-    end
-    return nil
-end
-
---[[deviceTree[likwid.core] = {}
-for cid=0, tonumber(cputopo.numCores) do
-    for _, c in pairs(hwtlist) do
-        for _, t in pairs(cputopo.threadPool) do
-            if t.apicId == c and t.coreId == cid then
-                table.insert(deviceTree[likwid.core], {device = likwid.createDevice(likwid.core, cid), id = c})
-            end
-        end
-    end
-end]]
-
-
-if listFeatures and #hwtlist > 0 then
+if listFeatures and #devList > 0 then
     -- prepare output table
     local all = {}
     -- first column contains the feature category and name
     local first = {}
-    table.insert(first, "Feature/HWT")
-    for _,f in pairs(list) do
+    table.insert(first, "Feature/Dev")
+    for _,f in pairs(ft_list) do
         table.insert(first, string.format("%s.%s", f.Category, f.Name))
     end
     setmetatable(first, {align = "left"})
     table.insert(all, first)
-    -- create one column per given hw thread with the current value of the feature
-    for i, c in pairs(hwtlist) do
+    -- create one column per given device with the current value of the feature
+    for i, dev in pairs(devList) do
         local tab = {}
-        table.insert(tab, string.format("HWThread %d", c))
-        for _,f in pairs(list) do
-            local dev = getDevice(f.TypeID, c)
-            if dev then
+        table.insert(tab, string.format("%s %s", dev:typeName(), dev:id()))
+        for _,f in pairs(ft_list) do
+            if dev:typeId() == f.TypeID then
                 if f.WriteOnly then
                     table.insert(tab, "(wronly)")
                 else
@@ -346,13 +275,13 @@ if listFeatures and #hwtlist > 0 then
     os.exit(0)
 end
 
-if #getList > 0 and #hwtlist > 0 then
+if #getList > 0 and #devList > 0 then
     -- filter the full feature list to have only the selected ones
     -- the new list entry contains all entries of the original feature entry plus
     -- the user-given value
     local featList = {}
     for _, f in pairs(getList) do
-        for _, l in pairs(list) do
+        for _, l in pairs(ft_list) do
             if f == l.Name or f == string.format("%s.%s", l.Category, l.Name) then
                 table.insert(featList, {
                     TypeID = l.TypeID,
@@ -367,7 +296,7 @@ if #getList > 0 and #hwtlist > 0 then
     end
 
     -- get all features in the new list
-    for i, c in pairs(hwtlist) do
+    for i, c in pairs(devList) do
         local tab = {}
         for _,f in pairs(featList) do
             -- get device from the device tree
@@ -387,7 +316,7 @@ if #getList > 0 and #hwtlist > 0 then
     os.exit(0)
 end
 
-if #setList > 0 and #hwtlist > 0 then
+if #setList > 0 and #devList > 0 then
     -- filter the full feature list to have only the selected ones
     -- the new list entry contains all entries of the original feature entry plus
     -- the user-given value
@@ -395,7 +324,7 @@ if #setList > 0 and #hwtlist > 0 then
     for _, f in pairs(setList) do
         local t = likwid.stringsplit(f, "=")
         if #t == 2 then
-            for _, l in pairs(list) do
+            for _, l in pairs(ft_list) do
                 if t[1] == l.Name or t[1] == string.format("%s.%s", l.Category, l.Name) then
                     table.insert(featList, {
                         TypeID = l.TypeID,
@@ -414,7 +343,7 @@ if #setList > 0 and #hwtlist > 0 then
     end
 
     -- set all features in the new list
-    for i, c in pairs(hwtlist) do
+    for i, c in pairs(devList) do
         local tab = {}
         for _,f in pairs(featList) do
             -- get device from the device tree
@@ -435,73 +364,5 @@ if #setList > 0 and #hwtlist > 0 then
     os.exit(0)
 end
 
-
---[[if (not (listFeatures or allFeatures)) or #enableList > 0 or #disableList > 0 then
-    -- Check whether there are similar entries in enable and distable list and remove them (first add to skip list, then remove from tables)
-    if #enableList > 0 and #disableList > 0 then
-        local skipList = {}
-        for i,e in pairs(enableList) do
-            for j, d in pairs(disableList) do
-                if (e == d) then
-                    print_stderr(string.format("Feature %s is in enable and disable list, doing nothing for feature", e))
-                    table.insert(skipList, e)
-                end
-            end
-        end
-        for i, s in pairs(skipList) do
-            for j, e in pairs(enableList) do
-                if (s == e) then table.remove(enableList, j) end
-            end
-            for j, e in pairs(disableList) do
-                if (s == e) then table.remove(disableList, j) end
-            end
-        end
-    end
-
-    -- Filter enable and disable lists to contain only valid and writable features
-    local realEnableList = {}
-    local realDisableList = {}
-    for _, f in pairs(list) do
-        for _, e in pairs(enableList) do
-            if f.Name == e and not f.ReadOnly then
-                table.insert(realEnableList, f.Name)
-            end
-        end
-        for _, e in pairs(disableList) do
-            if f.Name == e and not f.ReadOnly then
-                table.insert(realDisableList, f.Name)
-            end
-        end
-    end
-
-    -- First enable all features for all selected hardware threads
-    if #realEnableList > 0 then
-        for i, c in pairs(hwtlist) do
-            local dev = likwid.createDevice(likwid.hwthread, c)
-            for j, f in pairs(realEnableList) do
-                local ret = likwid.sysFeatures_set(f, dev, 1)
-                if ret == true then
-                    print_stdout(string.format("Enabled %s for HWThread %d", f, c))
-                else
-                    print_stdout(string.format("Failed %s for HWThread %d", f, c))
-                end
-            end
-        end
-    end
-    -- Next disable all features for all selected hardware threads
-    if #realDisableList > 0 then
-        for i, c in pairs(hwtlist) do
-            local dev = likwid.createDevice(likwid.hwthread, c)
-            for j, f in pairs(realDisableList) do
-                local ret = likwid.sysFeatures_set(f, dev, 0)
-                if ret == true then
-                    print_stdout(string.format("Disabled %s for HWThread %d", f, c))
-                else
-                    print_stdout(string.format("Failed %s for HWThread %d", f, c))
-                end
-            end
-        end
-    end
-end]]
 likwid.finalizeSysFeatures()
 os.exit(0)

@@ -187,6 +187,7 @@ likwid.sysFeatures_set = likwid_sysFeatures_set
 likwid.finalizeSysFeatures = likwid_finalizeSysFeatures
 
 likwid.createDevice = likwid_createDevice
+likwid.createDevicesFromString = likwid_createDevicesFromString
 
 likwid.getCudaTopology = likwid_getCudaTopology
 likwid.putCudaTopology = likwid_putCudaTopology

@@ -1247,33 +1247,29 @@ static int lua_likwid_getAffinityInfo(lua_State *L) {
 static int
 lua_likwid_cpustr_to_cpulist(lua_State* L)
 {
-    int ret = 0;
-    char* cpustr = (char *)luaL_checkstring(L, 1);
+    const char *cpustr = luaL_checkstring(L, 1);
     if (!cputopo)
     {
         topology_init();
         cputopo = get_cpuTopology();
         topology_isInitialized = 1;
     }
-    int* cpulist = (int*) malloc(cputopo->numHWThreads * sizeof(int));
+    int *cpulist = malloc(cputopo->numHWThreads * sizeof(int));
     if (cpulist == NULL)
-    {
-        lua_pushnumber(L, 0);
-        return 1;
-    }
-    ret = cpustr_to_cpulist(cpustr, cpulist, cputopo->numHWThreads);
-    if (ret <= 0)
+        return luaL_error(L, "Cannot allocate memory");
+
+    int listlen = cpustr_to_cpulist(cpustr, cpulist, cputopo->numHWThreads);
+    if (listlen < 0)
     {
         free(cpulist);
-        lua_pushnumber(L, 0);
-        return 1;
+        return luaL_error(L, "cpustr_to_cpulist() failed (%d): %s", listlen, strerror(listlen));
     }
-    lua_pushnumber(L, ret);
+    lua_pushnumber(L, listlen);
     lua_newtable(L);
-    for (int i=0;i<ret;i++)
+    for (int i = 0; i < listlen; i++)
     {
-        lua_pushinteger(L, (lua_Integer)( i+1));
-        lua_pushinteger(L, (lua_Integer)( cpulist[i]));
+        lua_pushinteger(L, (lua_Integer)(i+1));
+        lua_pushinteger(L, (lua_Integer)(cpulist[i]));
         lua_settable(L,-3);
     }
     free(cpulist);
@@ -3727,11 +3723,13 @@ lua_likwid_initSysFeatures(lua_State *L)
 static int
 lua_likwid_finalizeSysFeatures(lua_State *L)
 {
+    (void)L;
     if (sysfeatures_inititalized)
     {
         likwid_sysft_finalize();
         sysfeatures_inititalized = 0;
     }
+    return 0;
 }
 
 static int
@@ -3782,7 +3780,7 @@ lua_likwid_getSysFeature(lua_State *L)
     if (sysfeatures_inititalized)
     {
         const char* feature = luaL_checkstring(L, 1);
-        const LikwidDevice_t dev = lua_touserdata(L, 2);
+        const LikwidDevice_t dev = *(LikwidDevice_t *)luaL_checkudata(L, 2, "LikwidDevice_t");
         char* value = NULL;
         int err = likwid_sysft_getByName(feature, dev, &value);
         if (err == 0)
@@ -3802,9 +3800,9 @@ lua_likwid_setSysFeature(lua_State *L)
 {
     if (sysfeatures_inititalized)
     {
-        const char* feature = luaL_checkstring(L, 1);
-        const LikwidDevice_t dev = lua_touserdata(L, 2);
-        const char* value = luaL_checkstring(L,3);
+        const char *feature = luaL_checkstring(L, 1);
+        const LikwidDevice_t dev = *(LikwidDevice_t *)luaL_checkudata(L, 2, "LikwidDevice_t");
+        const char *value = luaL_checkstring(L,3);
         int err = likwid_sysft_modifyByName(feature, dev, value);
         if (err == 0)
         {
@@ -3816,13 +3814,120 @@ lua_likwid_setSysFeature(lua_State *L)
     return 1;
 }
 
-static int
-lua_likwid_destroyDevice(lua_State *L)
+static int lua_likwid_destroyDevice(lua_State *L)
 {
-    LikwidDevice_t *dev = lua_touserdata(L, 1);
-    if (dev)
-        likwid_device_destroy(*dev);
+    LikwidDevice_t *dev = luaL_checkudata(L, 1, "LikwidDevice_t");
+    likwid_device_destroy(*dev);
     return 0;
+}
+
+static int lua_likwiddevice_get_typeId(lua_State *L)
+{
+    const LikwidDevice_t dev = *(LikwidDevice_t *)luaL_checkudata(L, 1, "LikwidDevice_t");
+    lua_pushinteger(L, dev->type);
+    return 1;
+}
+
+static int lua_likwiddevice_get_typeName(lua_State *L)
+{
+    const LikwidDevice_t dev = *(LikwidDevice_t *)luaL_checkudata(L, 1, "LikwidDevice_t");
+    lua_pushstring(L, likwid_device_type_name(dev->type));
+    return 1;
+}
+
+static int lua_likwiddevice_get_id(lua_State *L)
+{
+    const LikwidDevice_t dev = *(LikwidDevice_t *)luaL_checkudata(L, 1, "LikwidDevice_t");
+
+    char buf[128];
+#ifdef LIKWID_WITH_NVMON
+    if (dev->type == DEVICE_TYPE_NVIDIA_GPU)
+    {
+        likwid_device_fmt_pci(buf, sizeof(buf), dev);
+        lua_pushstring(L, buf);
+        return 1;
+    }
+#endif
+#ifdef LIKWID_WITH_ROCMON
+    if (dev->type == DEVICE_TYPE_AMD_GPU)
+    {
+        likwid_device_fmt_pci(buf, sizeof(buf), dev);
+        lua_pushstring(L, buf);
+        return 1;
+    }
+#endif
+    snprintf(buf, sizeof(buf), "%d", dev->id);
+    lua_pushstring(L, buf);
+    return 1;
+}
+
+static int lua_likwiddevice_get_internalId(lua_State *L)
+{
+    const LikwidDevice_t dev = *(LikwidDevice_t *)luaL_checkudata(L, 1, "LikwidDevice_t");
+    lua_pushinteger(L, dev->internal_id);
+    return 1;
+}
+
+static void push_likwiddevice(lua_State *L, LikwidDevice_t dev)
+{
+    LikwidDevice_t *luadev = lua_newuserdata(L, sizeof(luadev));
+    *luadev = dev;
+
+    luaL_newmetatable(L, "LikwidDevice_t");
+
+    /* Create deleter */
+    lua_pushcfunction(L, lua_likwid_destroyDevice);
+    lua_setfield(L, -2, "__gc");
+
+    /* Create index for members */
+    lua_newtable(L);
+
+    lua_pushstring(L, "typeId");
+    lua_pushcfunction(L, lua_likwiddevice_get_typeId);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "typeName");
+    lua_pushcfunction(L, lua_likwiddevice_get_typeName);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "id");
+    lua_pushcfunction(L, lua_likwiddevice_get_id);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "internalId");
+    lua_pushcfunction(L, lua_likwiddevice_get_internalId);
+    lua_settable(L, -3);
+
+    /* Set the created table as index for members. */
+    lua_setfield(L, -2, "__index"); 
+
+    /* Last, assign the metatable to the likwid device. */
+    lua_setmetatable(L, -2);
+}
+
+static int
+lua_likwid_createDevicesFromString(lua_State *L)
+{
+    const char *devstr = luaL_checkstring(L, 1);
+
+    LikwidDeviceList_t dev_list;
+    int err = likwid_devstr_to_devlist(devstr, &dev_list);
+    if (err < 0)
+        luaL_error(L, "Cannot create device list: %s", strerror(-err));
+
+    lua_newtable(L);
+    for (int i = 0; i < dev_list->num_devices; i++)
+    {
+        lua_pushinteger(L, i + 1);
+        push_likwiddevice(L, dev_list->devices[i]);
+        lua_settable(L, -3);
+    }
+
+    /* Do not delete the devices themselves (only the pointer array + list object),
+     * since the devices themselves are returned in the lua list. */
+    free(dev_list->devices);
+    free(dev_list);
+    return 1;
 }
 
 static int
@@ -3855,16 +3960,7 @@ lua_likwid_createDevice(lua_State *L)
 
     /* what happens with 'dev' if any Lua functions fail? We probably leak memory,
      * but I don't know how to avoid that... */
-    LikwidDevice_t *luadev = lua_newuserdata(L, sizeof(dev));
-    *luadev = dev;
-
-    luaL_newmetatable(L, "LikwidDevice_Finalizer");
-    {
-        lua_pushcfunction(L, lua_likwid_destroyDevice);
-        lua_setfield(L, -2, "__gc");
-    }
-
-    lua_setmetatable(L, -2);
+    push_likwiddevice(L, dev);
     return 1;
 }
 #endif /* LIKWID_WITH_SYSFEATURES */
@@ -4121,6 +4217,7 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
     lua_register(L, "likwid_sysFeatures_list",lua_likwid_getSysFeatureList);
     lua_register(L, "likwid_sysFeatures_get",lua_likwid_getSysFeature);
     lua_register(L, "likwid_sysFeatures_set",lua_likwid_setSysFeature);
+    lua_register(L, "likwid_createDevicesFromString",lua_likwid_createDevicesFromString);
     lua_register(L, "likwid_createDevice",lua_likwid_createDevice);
 #endif /* LIKWID_WITH_SYSFEATURES */
 #ifdef __MIC__

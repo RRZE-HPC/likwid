@@ -3253,7 +3253,7 @@ typedef _LikwidDevice* LikwidDevice_t;
 
 typedef struct {
     int num_devices;
-    LikwidDevice_t devices;
+    LikwidDevice_t *devices;
 } _LikwidDeviceList;
 typedef _LikwidDeviceList* LikwidDeviceList_t;
 
@@ -3274,10 +3274,26 @@ static char* LikwidDeviceTypeNames[MAX_DEVICE_TYPE] = {
 #endif
 };
 
+/* \brief Read LikwidDevice selection string and create specified devices.
+
+Read the LikwidDevice selection string and creates list with created devices.
+The format is 'type:id_list'. 'type' is N (node), S (socket), C (chip),
+M (NUMA node), D (die), GN (Nvidia GPU), GA (AMD GPU). N does not have id_list,
+since there is always one node only. 'id_list' is a comma separated list of
+integers or integer ranges specified as '2-15' (inclusive bounds).
+GPUs may also use PCI adresses (e.g. 00000000:20:1f:0) instead of integer numbers.
+@param [in] str LikwidDevice selection string
+@param [out] dev_list Created device list (in case of success).
+@return error code (<0 on failure)
+*/
+int likwid_devstr_to_devlist(const char *str, LikwidDeviceList_t *dev_list)
+    __attribute__((visibility("default")));
+
 int likwid_device_create(LikwidDeviceType type, int id, LikwidDevice_t* device) __attribute__ ((visibility ("default") ));
 int likwid_device_create_from_string(LikwidDeviceType type, const char *id, LikwidDevice_t* device) __attribute__ ((visibility ("default") ));
 void likwid_device_destroy(LikwidDevice_t device) __attribute__ ((visibility ("default") ));
-char* device_type_name(LikwidDeviceType type) __attribute__ ((visibility ("default") ));
+const char *likwid_device_type_name(LikwidDeviceType type) __attribute__ ((visibility ("default") ));
+void likwid_device_fmt_pci(char *buf, size_t size, LikwidDevice_t device) __attribute__ ((visibility ("default") ));
 
 typedef struct {
     char* name;
