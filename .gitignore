@@ -33,3 +33,5 @@ likwid.lua
 # generated doc files
 doc/html
 
+# core dumps
+/core
