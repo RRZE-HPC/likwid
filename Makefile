@@ -145,6 +145,7 @@ OBJ := $(filter-out $(BUILD_DIR)/nvmon.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/nvmon_nvml.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/topology_cuda.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/libnvctr.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/sysFeatures_nvml.o,$(OBJ))
 endif
 ifneq ($(ROCM_INTERFACE), true)
 OBJ := $(filter-out $(BUILD_DIR)/rocmon.o,$(OBJ))
