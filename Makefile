@@ -201,6 +201,7 @@ else
 SYSFEATURE_OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/sysFeatures*.c))
 OBJ := $(filter-out $(SYSFEATURE_OBJ), $(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/likwid_device.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/devstring.o,$(OBJ))
 endif
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
