@@ -296,18 +296,14 @@ if #getList > 0 and #devList > 0 then
     end
 
     -- get all features in the new list
-    for i, c in pairs(devList) do
+    for i, dev in pairs(devList) do
         local tab = {}
         for _,f in pairs(featList) do
-            -- get device from the device tree
-            local dev = getDevice(f.TypeID, c)
-            if dev then
-                local v = likwid.sysFeatures_get(f.Name, dev)
-                if not v then
-                    print_stderr(string.format("Failed to get feature '%s.%s' (Type %s, Resp %d)", f.Category, f.Name, f.Type, c))
-                else
-                    print_stdout(v)
-                end
+            local v = likwid.sysFeatures_get(f.Name, dev)
+            if not v then
+                print_stderr(string.format("Failed to get feature '%s.%s' (Type %s, Resp %d)", f.Category, f.Name, f.Type, v))
+            else
+                print_stdout(v)
             end
         end
     end
@@ -343,19 +339,15 @@ if #setList > 0 and #devList > 0 then
     end
 
     -- set all features in the new list
-    for i, c in pairs(devList) do
+    for i, dev in pairs(devList) do
         local tab = {}
         for _,f in pairs(featList) do
-            -- get device from the device tree
-            local dev = getDevice(f.TypeID, c)
-            if dev then
-                if verbose > 0 then
-                    print_stdout(string.format("Setting '%s.%s' to '%s' (Type %s, Resp %d)", f.Category, f.Name, f.Value, f.Type, c))
-                end
-                local v = likwid.sysFeatures_set(f.Name, dev, f.Value)
-                if not v then
-                    print_stderr(string.format("Failed to set feature '%s.%s' to '%s' (Type %s, Resp %d)", f.Category, f.Name, f.Value, f.Type, c))
-                end
+            if verbose > 0 then
+                print_stdout(string.format("Setting '%s.%s' to '%s' (Type %s, Resp %d)", f.Category, f.Name, f.Value, f.Type, c))
+            end
+            local v = likwid.sysFeatures_set(f.Name, dev, f.Value)
+            if not v then
+                print_stderr(string.format("Failed to set feature '%s.%s' to '%s' (Type %s, Resp %d)", f.Category, f.Name, f.Value, f.Type, c))
             end
         end
     end
