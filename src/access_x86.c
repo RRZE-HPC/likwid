@@ -50,6 +50,8 @@
 #include <access_x86_translate.h>
 #include <affinity.h>
 
+#define ARCH_SPR_GNR_SRF ((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS || cpuid_info.model == GRANITERAPIDS || cpuid_info.model == SIERRAFORREST))
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int
@@ -60,7 +62,7 @@ access_x86_init(int cpu_id)
     {
         if (cpuid_info.supportUncore)
         {
-            if (!((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS)))
+            if (!(ARCH_SPR_GNR_SRF))
             {
                 ret = access_x86_pci_init(affinity_thread2socket_lookup[cpu_id]);
             }
@@ -72,7 +74,7 @@ access_x86_init(int cpu_id)
                     ERROR_PRINT(Initialization of MMIO access failed);
                 }
             }
-            else if ((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS))
+            else if (ARCH_SPR_GNR_SRF)
             {
                 ret = access_x86_translate_init(cpu_id);
             }
@@ -109,7 +111,7 @@ access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *da
                     *data = tmp;
                 }
             }
-            else if ((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS))
+            else if (ARCH_SPR_GNR_SRF)
             {
                 if (access_x86_translate_check(dev, cpu_id))
                 {
@@ -158,7 +160,7 @@ access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t da
                     err = access_x86_mmio_write(dev, affinity_thread2socket_lookup[cpu_id], reg, data);
                 }
             }
-            else if ((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS))
+            else if (ARCH_SPR_GNR_SRF)
             {
                 if (access_x86_translate_check(dev, cpu_id))
                 {
@@ -198,7 +200,7 @@ access_x86_finalize(int cpu_id)
             DEBUG_PRINT(DEBUGLEV_DEVELOP, Finalize of MMIO access);
             access_x86_mmio_finalize(affinity_thread2socket_lookup[cpu_id]);
         }
-        else if ((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS))
+        else if (ARCH_SPR_GNR_SRF)
         {
             DEBUG_PRINT(DEBUGLEV_DEVELOP, Finalize of Fake access);
             access_x86_translate_finalize(cpu_id);
@@ -227,7 +229,7 @@ access_x86_check(PciDeviceIndex dev, int cpu_id)
             {
                 return access_x86_mmio_check(dev, affinity_thread2socket_lookup[cpu_id]);
             }
-            else if ((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS))
+            else if (ARCH_SPR_GNR_SRF)
             {
                 return access_x86_translate_check(dev, cpu_id);
             }

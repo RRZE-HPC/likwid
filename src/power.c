@@ -141,6 +141,8 @@ power_init(int cpuId)
                 case ICELAKEX1:
                 case ICELAKEX2:
                 case SAPPHIRERAPIDS:
+                case GRANITERAPIDS:
+                case SIERRAFORREST:
                     core_limits = 1;
                     power_info.hasRAPL = 1;
                     numDomains = NUM_POWER_DOMAINS;
@@ -405,7 +407,8 @@ power_init(int cpuId)
                 (cpuid_info.model == ICELAKEX1) ||
                 (cpuid_info.model == ICELAKEX2) ||
                 (cpuid_info.model == XEON_PHI_KNL) ||
-                (cpuid_info.model == XEON_PHI_KML)))
+                (cpuid_info.model == XEON_PHI_KML) ||
+                (cpuid_info.model == GRANITERAPIDS)))
             {
                 power_info.domains[DRAM].energyUnit = 15.3E-6;
             }

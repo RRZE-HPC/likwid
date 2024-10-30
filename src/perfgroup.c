@@ -775,7 +775,7 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
             i++;
         }
         if ((!has_fix3) && cpuid_info.perf_num_fixed_ctr > 3 && 
-            (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 || cpuid_info.model == ROCKETLAKE || cpuid_info.model == SAPPHIRERAPIDS || cpuid_info.model == TIGERLAKE1 || cpuid_info.model == TIGERLAKE2))
+            (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 || cpuid_info.model == ROCKETLAKE || cpuid_info.model == SAPPHIRERAPIDS || cpuid_info.model == TIGERLAKE1 || cpuid_info.model == TIGERLAKE2 || cpuid_info.model == GRANITERAPIDS))
         {
             ginfo->events[i] = malloc(14 * sizeof(char));
             ginfo->counters[i] = malloc(6 * sizeof(char));
