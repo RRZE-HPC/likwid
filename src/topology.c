@@ -94,6 +94,8 @@ static char* tigerlake_str = "Intel Tigerlake processor";
 static char* icelakesp_str = "Intel Icelake SP processor";
 static char* rocketlake_str = "Intel Rocketlake processor";
 static char* sapphire_rapids_str = "Intel SapphireRapids processor";
+static char* granite_rapids_str = "Intel GraniteRapids processor";
+static char* sierra_forrest_str = "Intel SierraForrest processor";
 //static char* snowridgex_str = "Intel SnowridgeX processor";
 
 static char* barcelona_str = "AMD K10 (Barcelona) processor";
@@ -170,6 +172,8 @@ static char* short_phi2 = "knl";
 static char* short_icelake = "ICL";
 static char* short_rocketlake = "RKL";
 static char* short_icelakesp = "ICX";
+static char* short_granite_rapids = "GNR";
+static char* short_sierra_forrest = "SRF";
 //static char* short_snowridgex = "SNR";
 
 static char* short_k8 = "k8";
@@ -1076,6 +1080,20 @@ topology_setName(void)
                     cpuid_info.supportClientmem = 0;
                     cpuid_info.name = sapphire_rapids_str;
                     cpuid_info.short_name = short_sapphire_rapids;
+                    break;
+
+                case GRANITERAPIDS:
+                    cpuid_info.supportUncore = 1;
+                    cpuid_info.supportClientmem = 0;
+                    cpuid_info.name = granite_rapids_str;
+                    cpuid_info.short_name = short_granite_rapids;
+                    break;
+
+                case SIERRAFORREST:
+                    cpuid_info.supportUncore = 0;
+                    cpuid_info.supportClientmem = 0;
+                    cpuid_info.name = sierra_forrest_str;
+                    cpuid_info.short_name = short_sierra_forrest;
                     break;
 
                 default:

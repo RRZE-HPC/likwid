@@ -1,7 +1,16 @@
 #ifndef INTEL_PERFMON_UNCORE_DISCOVERY_H
 #define INTEL_PERFMON_UNCORE_DISCOVERY_H
 
+#include <error.h>
+#include <registers.h>
+#include <topology.h>
+#include <pci_types.h>
+#include <perfmon_types.h>
+
 // Data structures provided by Intel
+typedef uint64_t u64;
+typedef uint32_t u32;
+typedef uint16_t u16;
 
 #define PCI_EXT_CAP_BASE_OFFSET                 0x100
 #define PCI_EXT_CAP_ID_MASK                     0xffff
@@ -39,6 +48,7 @@
 #define UNCORE_DISCOVERY_PCI_BOX_CTRL(data)	(data & 0xfff)
 
 #define PCI_ANY_ID (-1)
+#define PCI_VENDOR_ID_INTEL 0x8086
 
 #define uncore_discovery_invalid_unit(unit)                    \
        (!unit.table1 || \
@@ -48,27 +58,27 @@
 
 struct uncore_global_discovery {
     union {
-        uint64_t table1;
+        u64 table1;
         struct {
-            uint64_t type : 8;
-            uint64_t stride : 8;
-            uint64_t max_units : 10;
-            uint64_t __reserved_1 : 36;
-            uint64_t access_type : 2;
+            u64 type : 8;
+            u64 stride : 8;
+            u64 max_units : 10;
+            u64 __reserved_1 : 36;
+            u64 access_type : 2;
         };
     };
 
     union {
-        uint64_t table2;
-        uint64_t global_ctl;
+        u64 table2;
+        u64 global_ctl;
     };
 
     union {
-        uint64_t table3;
+        u64 table3;
         struct {
-            uint64_t status_offset : 8;
-            uint64_t num_status : 16;
-            uint64_t __reserved_2 : 40;
+            u64 status_offset : 8;
+            u64 num_status : 16;
+            u64 __reserved_2 : 40;
         };
     };
 };
@@ -76,66 +86,30 @@ struct uncore_global_discovery {
 
 struct uncore_unit_discovery {
     union {
-        uint64_t table1;
+        u64 table1;
         struct {
-            uint64_t num_regs : 8;
-            uint64_t ctl_offset : 8;
-            uint64_t bit_width : 8;
-            uint64_t ctr_offset : 8;
-            uint64_t status_offset : 8;
-            uint64_t __reserved_1 : 22;
-            uint64_t access_type : 2;
+            u64 num_regs : 8;
+            u64 ctl_offset : 8;
+            u64 bit_width : 8;
+            u64 ctr_offset : 8;
+            u64 status_offset : 8;
+            u64 __reserved_1 : 22;
+            u64 access_type : 2;
         };
     };
     union {
-        uint64_t table2;
-        uint64_t box_ctl;
+        u64 table2;
+        u64 box_ctl;
     };
     union {
-        uint64_t table3;
+        u64 table3;
         struct {
-            uint64_t box_type : 16;
-            uint64_t box_id : 16;
-            uint64_t __reserved_2 : 32;
+            u64 box_type : 16;
+            u64 box_id : 16;
+            u64 global_status_position : 16;
+            u64 __reserved_2 : 16;
         };
     };
-};
-
-typedef enum {
-    DEVICE_ID_CHA = 0,
-    DEVICE_ID_IIO = 1,
-    DEVICE_ID_IRP = 2,
-    DEVICE_ID_M2PCIe = 3,
-    DEVICE_ID_PCU = 4,
-    DEVICE_ID_5_UNKNOWN = 5,
-    DEVICE_ID_iMC = 6,
-    DEVICE_ID_M2M = 7,
-    DEVICE_ID_UPI = 8,
-    DEVICE_ID_M3UPI = 9,
-    DEVICE_ID_10_UNKNOWN = 10,
-    DEVICE_ID_MDF = 11,
-    DEVICE_ID_12_UNKNOWN = 12,
-    DEVICE_ID_13_UNKNOWN = 13,
-    DEVICE_ID_HBM = 14,
-    DEVICE_ID_MAX,
-} uncore_discovery_box_types;
-
-static char* uncore_discovery_box_type_names[DEVICE_ID_MAX] = {
-    [DEVICE_ID_CHA] = "CBOX",
-    [DEVICE_ID_IIO] = "IIO",
-    [DEVICE_ID_IRP] = "IRP",
-    [DEVICE_ID_M2PCIe] = "PBOX",
-    [DEVICE_ID_PCU] = "WBOX",
-    [DEVICE_ID_5_UNKNOWN] = "UNKNOWN",
-    [DEVICE_ID_iMC] = "MBOX",
-    [DEVICE_ID_M2M] = "M2M",
-    [DEVICE_ID_UPI] = "QBOX",
-    [DEVICE_ID_M3UPI] = "RBOX",
-    [DEVICE_ID_10_UNKNOWN] = "UNKNOWN",
-    [DEVICE_ID_MDF] = "MDF",
-    [DEVICE_ID_12_UNKNOWN] = "UNKNOWN",
-    [DEVICE_ID_13_UNKNOWN] = "UNKNOWN",
-    [DEVICE_ID_HBM] = "HBM",
 };
 
 typedef enum {
@@ -186,6 +160,11 @@ typedef enum {
     FAKE_UNC_GLOBAL_STATUS1,
     FAKE_UNC_GLOBAL_STATUS2,
     FAKE_UNC_GLOBAL_STATUS3,
+    FAKE_UNC_GLOBAL_STATUS4,
+    FAKE_UNC_GLOBAL_STATUS5,
+    FAKE_UNC_GLOBAL_STATUS6,
+    FAKE_UNC_GLOBAL_STATUS7,
+    FAKE_UNC_GLOBAL_STATUS8,
     FAKE_UNC_FILTER0,
     FAKE_UNC_CTR_FREERUN0,
     FAKE_UNC_CTR_FREERUN1,
@@ -201,7 +180,7 @@ typedef struct {
     uint64_t ctr_offset;
     uint64_t status_offset;
     AccessTypes access_type;
-    uncore_discovery_box_types box_type;
+    int box_type;
     uint64_t box_ctl;
     uint32_t box_id;
     uint64_t filter_offset;
@@ -210,7 +189,7 @@ typedef struct {
     uint64_t mmap_addr;
     uint64_t mmap_offset;
     size_t mmap_size;
-    void* io_addr;
+    void volatile* io_addr;
 } PerfmonDiscoveryUnit;
 
 typedef struct {
@@ -236,7 +215,7 @@ typedef struct {
 } PerfmonDiscovery;
 
 
-int perfmon_uncore_discovery(PerfmonDiscovery **perfmon);
+int perfmon_uncore_discovery(int model, PerfmonDiscovery **perfmon);
 void perfmon_uncore_discovery_free(PerfmonDiscovery* perfmon);
 
 

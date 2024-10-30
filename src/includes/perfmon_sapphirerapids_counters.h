@@ -1942,3 +1942,30 @@ static char* registerTypeNamesSapphireRapids[MAX_UNITS] = {
 
 };
 
+#define     SPR_DEVICE_ID_CHA 0
+#define     SPR_DEVICE_ID_IIO 1
+#define     SPR_DEVICE_ID_IRP 2
+#define     SPR_DEVICE_ID_M2PCIe 3
+#define     SPR_DEVICE_ID_PCU 4
+#define     SPR_DEVICE_ID_iMC 6
+#define     SPR_DEVICE_ID_M2M 7
+#define     SPR_DEVICE_ID_UPI 8
+#define     SPR_DEVICE_ID_M3UPI 9
+#define     SPR_DEVICE_ID_MDF 11
+#define     SPR_DEVICE_ID_HBM 14
+
+static PerfmonUncoreDiscovery sapphirerapids_uncore_discovery_map[] = {
+    {"CBOX", SPR_DEVICE_ID_CHA, 60, MSR_CBOX_DEVICE_C0},
+    {"MBOX", SPR_DEVICE_ID_iMC, 15, MMIO_IMC_DEVICE_0_CH_0},
+    {"PBOX", SPR_DEVICE_ID_M2PCIe, 15, PCI_R2PCIE_DEVICE0},
+    {"WBOX", SPR_DEVICE_ID_PCU, 1, MSR_PCU_DEVICE},
+    {"IRP", SPR_DEVICE_ID_IRP, 12, MSR_IRP_DEVICE_0},
+    {"IIO", SPR_DEVICE_ID_IIO, 12, MSR_IIO_DEVICE_0},
+    {"QBOX", SPR_DEVICE_ID_UPI, 3, PCI_QPI_DEVICE_PORT_0},
+    {"MDF", SPR_DEVICE_ID_MDF, 49, MSR_MDF_DEVICE_0},
+    {"M2M", SPR_DEVICE_ID_M2M, 31, MMIO_HBM_DEVICE_0},
+    {"RBOX", SPR_DEVICE_ID_M3UPI, 3, PCI_R3QPI_DEVICE_LINK_0},
+    {"HBM", SPR_DEVICE_ID_HBM, 31, MMIO_HBM_DEVICE_0},
+    {"INVALID", -1, 0, MSR_DEV}
+};
+

@@ -117,6 +117,8 @@ struct topology_functions {
 #define ALDERLAKE1           0x97U
 #define ALDERLAKE2           0x9AU
 #define ALDERLAKE3           0xBFU
+#define GRANITERAPIDS        0xADU
+#define SIERRAFORREST        0xAFU
 
 /* Intel MIC */
 #define XEON_PHI           0x01U

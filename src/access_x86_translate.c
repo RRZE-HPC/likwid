@@ -73,6 +73,7 @@ int access_x86_translate_open_unit(PerfmonDiscoveryUnit* unit)
     }
     if (unit->access_type == ACCESS_TYPE_MMIO)
     {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Opening /dev/mem at 0x%X, unit->mmap_addr);
         void* io_addr = mmap(NULL, unit->mmap_size, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, unit->mmap_addr);
         if (io_addr == MAP_FAILED)
         {
@@ -81,10 +82,12 @@ int access_x86_translate_open_unit(PerfmonDiscoveryUnit* unit)
             ERROR_PRINT(Failed to mmap offset 0x%lX (MMIO), unit->box_ctl);
             return -err;
         }
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Opening /dev/mem at 0x%X -> 0x%X, unit->mmap_addr, io_addr);
         unit->io_addr = io_addr;
     }
     else if (unit->access_type == ACCESS_TYPE_PCI)
     {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Opening /dev/mem at 0x%X, unit->mmap_addr);
         void* io_addr = mmap(NULL, unit->mmap_size, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, unit->mmap_addr );
         if (io_addr == MAP_FAILED)
         {
@@ -141,7 +144,7 @@ access_x86_translate_init(const int cpu_id)
     if (!perfmon_discovery)
     {
         DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Running Perfmon Discovery to populate counter lists);
-        int ret = perfmon_uncore_discovery(&perfmon_discovery);
+        int ret = perfmon_uncore_discovery(cpuid_info.model, &perfmon_discovery);
         if (ret != 0)
         {
             ERROR_PRINT(Failed to run Perfmon Discovery);
@@ -173,7 +176,7 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
             {
                 newreg = cur->global.global_ctl;
             }
-            else if ((reg >= FAKE_UNC_GLOBAL_STATUS0) && (reg <= FAKE_UNC_GLOBAL_STATUS3))
+            else if ((reg >= FAKE_UNC_GLOBAL_STATUS0) && (reg <= FAKE_UNC_GLOBAL_STATUS8))
             {
                 newreg = cur->global.global_ctl + cur->global.status_offset + ((reg - FAKE_UNC_GLOBAL_STATUS0));
             }
@@ -206,7 +209,7 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
                 ERROR_PRINT(Failed to find unit %s, pci_device_names[dev]);
                 return -ENODEV;
             }
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Read Uncore counter 0x%X (%s) on CPU %d (socket %d), reg, pci_device_names[dev], cpu_id, socket_id);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Read Uncore counter 0x%X (%s) on CPU %d (socket %d, access %s), reg, pci_device_names[dev], cpu_id, socket_id, AccessTypeNames[unit->access_type]);
             switch(reg)
             {
                 case FAKE_UNC_UNIT_CTRL:
@@ -275,10 +278,12 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
                             if ((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_1_CH_7) ||
                                 (dev >= MMIO_HBM_DEVICE_0 && dev <= MMIO_HBM_DEVICE_31))
                             {
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, 0x%X + 0x%X + 0x%X + (%d * %d), unit->io_addr, unit->mmap_offset, unit->ctrl_offset, sizeof(uint32_t), offset);
                                 *data = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset)));
                             }
                             else
                             {
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, 0x%X + 0x%X + 0x%X + (%d * %d), unit->io_addr, unit->mmap_offset, unit->ctrl_offset, reg_offset, offset);
                                 *data = (uint64_t)*((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (reg_offset * offset)));
                             }
                             break;
@@ -319,7 +324,6 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
                                 (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_3) ||
                                 (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_3))
                             {
-                                
                                 uint32_t lo = 0ULL, hi = 0ULL;
                                 lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset)));
                                 hi = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset) + sizeof(uint32_t)));
@@ -399,7 +403,7 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
             {
                 newreg = cur->global.global_ctl;
             }
-            else if ((reg >= FAKE_UNC_GLOBAL_STATUS0) && (reg <= FAKE_UNC_GLOBAL_STATUS3))
+            else if ((reg >= FAKE_UNC_GLOBAL_STATUS0) && (reg <= FAKE_UNC_GLOBAL_STATUS8))
             {
                 newreg = cur->global.global_ctl + cur->global.status_offset + ((reg - FAKE_UNC_GLOBAL_STATUS0));
             }
@@ -431,7 +435,7 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
                 ERROR_PRINT(Failed to find unit %s, pci_device_names[dev]);
                 return -ENODEV;
             }
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Write Uncore counter 0x%X (%s) on CPU %d (socket %d): 0x%lX, reg, pci_device_names[dev], cpu_id, socket_id, data);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Write Uncore counter 0x%X (%s) on CPU %d (socket %d, access %s): 0x%lX, reg, pci_device_names[dev], cpu_id, socket_id, AccessTypeNames[unit->access_type], data);
             switch(reg)
             {
                 case FAKE_UNC_UNIT_CTRL:
@@ -497,10 +501,12 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
                             if ((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_1_CH_7) ||
                                 (dev >= MMIO_HBM_DEVICE_0 && dev <= MMIO_HBM_DEVICE_31))
                             {
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, 0x%X + 0x%X + 0x%X + (%d * %d) = 0x%X, unit->io_addr, unit->mmap_offset, unit->ctrl_offset, sizeof(uint32_t), offset, (uint32_t)data);
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset))) = (uint32_t)data;
                             }
                             else
                             {
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, 0x%X + 0x%X + 0x%X + (%d * %d) = 0x%X, unit->io_addr, unit->mmap_offset, unit->ctrl_offset, reg_offset, offset, (uint64_t)data);
                                 *((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (reg_offset * offset))) = (uint64_t)data;
                             }
                             break;
@@ -612,14 +618,21 @@ access_x86_translate_check(PciDeviceIndex dev, int cpu_id)
         return 0;
     }
     int socket_id = affinity_thread2socket_lookup[cpu_id];
-    PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[socket_id];
-    if (cur->units && cur->socket_id == socket_id && cur->units[dev].num_regs > 0)
+    if (socket_id < 0)
     {
-        return 1;
+        return 0;
     }
-    if (dev == MSR_UBOX_DEVICE && cur->units)
+    PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[socket_id];
+    if (cur)
     {
-        return 1;
+        if (cur->units && cur->socket_id == socket_id && cur->units[dev].num_regs > 0)
+        {
+            return 1;
+        }
+        if (dev == MSR_UBOX_DEVICE && cur->units)
+        {
+            return 1;
+        }
     }
     return 0;
 }

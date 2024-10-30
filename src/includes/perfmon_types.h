@@ -283,5 +283,13 @@ extern int perfmon_numCoreCounters;
 extern int perfmon_numUncoreCounters;
 extern int perfmon_numArchEvents;
 
+typedef struct {
+    char* name;
+    int discovery_type;
+    int max_devices;
+    PciDeviceIndex base_device;
+} PerfmonUncoreDiscovery;
+
+//#define PERFMON_UNCORE_DISCOVERY_MAP_GUARD {"INVALID", -1, 0, MSR}
 
 #endif /*PERFMON_TYPES_H*/
