@@ -249,7 +249,7 @@ power_init(int cpuId)
         err = HPMaddThread(cpuId);
         if (err != 0)
         {
-            ERROR_PRINT(Cannot get access to RAPL counters)
+            ERROR_PRINT(Cannot get access to RAPL counters);
             return err;
         }
     }

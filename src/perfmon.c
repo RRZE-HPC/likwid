@@ -771,7 +771,7 @@ perfmon_check_counter_map(int cpu_id)
         HPMinit();
         if (HPMaddThread(cpu_id) != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot check counters without access to performance counters)
+            ERROR_PLAIN_PRINT(Cannot check counters without access to performance counters);
             return;
         }
         own_hpm = 1;
