@@ -154,8 +154,6 @@ OBJ := $(filter-out $(BUILD_DIR)/topology_rocm.o,$(OBJ))
 else
 ifeq ($(strip $(ROCM_SDK_CHECK)),0)
 OBJ := $(filter-out $(BUILD_DIR)/rocmon_sdk.o,$(OBJ))
-else
-OBJ := $(filter-out $(BUILD_DIR)/rocmon_v1.o,$(OBJ))
 endif
 endif
 ifeq ($(COMPILER),GCCPOWER)
