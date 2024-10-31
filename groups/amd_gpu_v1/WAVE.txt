@@ -1,0 +1,15 @@
+SHORT Wavefronts
+
+EVENTSET
+ROCM0 ROCP_SQ_WAVES
+
+
+METRICS
+GPU wavefronts ROCM0
+
+
+LONG
+Formulas:
+GPU wavefronts = ROCP_SQ_WAVES
+--
+Total Wavefronts

@@ -397,7 +397,6 @@ _rocmon_sdk_read_buffers(rocprofiler_context_id_t device_context,
         if(h->category == ROCPROFILER_BUFFER_CATEGORY_COUNTERS && h->kind == ROCPROFILER_COUNTER_RECORD_VALUE)
         {
             rocprofiler_record_counter_t* r = h->payload;
-            printf("Counter ID %d Value %f Dispatch %ld\n", r->id, r->counter_value, r->dispatch_id);
             rocprofiler_counter_id_t cid = {.handle = 0};
             (*rocprofiler_query_record_counter_id_ptr)(r->id, &cid);
             for (int j = 0; j < context->numDevices; j++)
@@ -619,8 +618,6 @@ _rocmon_sdk_set_profile(rocprofiler_context_id_t                 context_id,
 
 
 
-
-
 rocprofiler_tool_configure_result_t*
 rocprofiler_configure(uint32_t                 version,
                       const char*              runtime_version,
@@ -658,7 +655,6 @@ rocmon_sdk_init(RocmonContext* context, int numGpus, const int* gpuIds)
     }
     if (rocmon_sdk_initialized)
     {
-        
         return 0;
     }
 

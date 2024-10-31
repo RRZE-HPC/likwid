@@ -1156,7 +1156,7 @@ void rocmon_smi_finalize(RocmonContext* context)
     }
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Shutdown RSMI);
     RSMI_CALL(rsmi_shut_down, (), {
-        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Shutdown SMI);
+        ERROR_PRINT(DEBUGLEV_DEVELOP, Shutdown SMI failed);
         // fall through
     });
     rocmon_smi_initialized = FALSE;

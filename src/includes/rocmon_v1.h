@@ -575,7 +575,7 @@ rocmon_v1_finalize(RocmonContext* context)
     }
 
     ROCM_CALL(hsa_shut_down, (), {
-        //ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Shutdown HSA);
+        ERROR_PRINT(DEBUGLEV_DEVELOP, Shutdown HSA failed);
         // fall through
     });
 }
