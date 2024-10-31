@@ -38,10 +38,18 @@
 
 #include <bstrlib.h>
 
+#ifndef DEBUGLEV_ONLY_ERROR
 #define DEBUGLEV_ONLY_ERROR 0
+#endif
+#ifndef DEBUGLEV_INFO
 #define DEBUGLEV_INFO 1
+#endif
+#ifndef DEBUGLEV_DETAIL
 #define DEBUGLEV_DETAIL 2
+#endif
+#ifndef DEBUGLEV_DEVELOP
 #define DEBUGLEV_DEVELOP 3
+#endif
 
 #define LIKWID_VERSION "VERSION.RELEASE.MINORVERSION"
 #define LIKWID_COMMIT GITCOMMIT
