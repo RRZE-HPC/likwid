@@ -1036,10 +1036,15 @@ int
 gpustr_to_gpulist_rocm(const char* gpustr, int* gpulist, int length)
 {
     int insert = 0;
-    topology_rocm_init();
+    int ret = topology_rocm_init();
+    if (ret < 0)
+    {
+        return ret;
+    }
     RocmTopology_t gpu_topology = get_rocmTopology();
     bstring bgpustr = bfromcstr(gpustr);
     struct bstrList* commalist = bsplit(bgpustr, ',');
+    bdestroy(bgpustr);
     for (int i = 0; i < commalist->qty; i++)
     {
         if (bstrchrp(commalist->entry[i], '-', 0) != BSTR_ERR)
