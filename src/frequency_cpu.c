@@ -632,7 +632,7 @@ static int getAMDTurbo(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs);
             return err;
         }
     }
@@ -641,7 +641,7 @@ static int getAMDTurbo(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs);
             return err;
         }
     }
@@ -680,7 +680,7 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs);
             return err;
         }
     }
@@ -689,7 +689,7 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs);
             return err;
         }
     }
@@ -741,7 +741,7 @@ static int getIntelTurbo(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs);
             return err;
         }
     }
@@ -750,7 +750,7 @@ static int getIntelTurbo(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs);
             return err;
         }
     }
@@ -789,7 +789,7 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs);
             return err;
         }
     }
@@ -798,7 +798,7 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs);
             return err;
         }
     }
@@ -858,7 +858,7 @@ static int getIntelHWP(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs);
             return err;
         }
     }
@@ -867,7 +867,7 @@ static int getIntelHWP(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs);
             return err;
         }
     }
@@ -904,7 +904,7 @@ static int getBaseFreq(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs);
             return err;
         }
     }
@@ -913,7 +913,7 @@ static int getBaseFreq(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs);
             return err;
         }
     }

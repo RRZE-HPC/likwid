@@ -198,7 +198,7 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
     err = HPMaddThread(cpuId);
     if (err != 0)
     {
-        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        ERROR_PLAIN_PRINT(Cannot get access to MSRs);
         return 0;
     }
 
@@ -267,7 +267,7 @@ uint64_t freq_getUncoreFreqMin(const int socket_id)
     err = HPMaddThread(cpuId);
     if (err != 0)
     {
-        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        ERROR_PLAIN_PRINT(Cannot get access to MSRs);
         return 0;
     }
 
@@ -329,7 +329,7 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
     err = HPMaddThread(cpuId);
     if (err != 0)
     {
-        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        ERROR_PLAIN_PRINT(Cannot get access to MSRs);
         return 0;
     }
 
@@ -396,7 +396,7 @@ uint64_t freq_getUncoreFreqMax(const int socket_id)
     err = HPMaddThread(cpuId);
     if (err != 0)
     {
-        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        ERROR_PLAIN_PRINT(Cannot get access to MSRs);
         return 0;
     }
 
@@ -454,7 +454,7 @@ uint64_t freq_getUncoreFreqCur(const int socket_id)
         err = HPMaddThread(cpuId);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs);
             return 0;
         }
     }
