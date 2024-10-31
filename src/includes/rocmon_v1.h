@@ -203,10 +203,10 @@ _rocmon_v1_iterate_info_callback_add(const rocprofiler_info_data_t info, void* d
     iterate_info_cb_arg* arg = (iterate_info_cb_arg*) data;
 
     //ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, _rocmon_iterate_info_callback_add);
-    if (likwid_rocmon_verbosity == DEBUGLEV_DEVELOP)
-    {
-        _rocmon_v1_print_rocprofiler_info_data(info);
-    }
+/*    if (likwid_rocmon_verbosity == DEBUGLEV_DEVELOP)*/
+/*    {*/
+/*        _rocmon_v1_print_rocprofiler_info_data(info);*/
+/*    }*/
     // Check info kind
     if (info.kind != ROCPROFILER_INFO_KIND_METRIC)
     {
@@ -565,16 +565,6 @@ rocmon_v1_finalize(RocmonContext* context)
                 {
                     FREE_IF_NOT_NULL(device->v1_rocMetrics);
                     FREE_IF_NOT_NULL(device->v1_activeRocEvents);
-                }
-                if (device->groupResults)
-                {
-                    // Free events of event result lists
-                    for (int j = 0; j < device->numGroupResults; j++)
-                    {
-                        FREE_IF_NOT_NULL(device->groupResults[i].results);
-                    }
-                    // Free list
-                    free(device->groupResults);
                 }
                 if (device->v1_context)
                 {

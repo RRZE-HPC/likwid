@@ -1104,6 +1104,8 @@ int rocmon_smi_init(RocmonContext* context, int numGpus, const int* gpuIds)
             ERROR_PRINT(Failed to get SMI functions for device %d, device->deviceId);
             goto rocmon_init_rsmi_failed;
         }
+        device->activeSmiEvents = NULL;
+        device->smiMetrics = NULL;
     }
     rocmon_smi_initialized = TRUE;
     return 0;
@@ -1132,19 +1134,27 @@ void rocmon_smi_finalize(RocmonContext* context)
                 RocmonDevice* device = &context->devices[i];
                 if (device->activeSmiEvents)
                 {
+                    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Freeing active SMI events for device %d, device->deviceId);
                     free(device->activeSmiEvents);
                     device->activeSmiEvents = NULL;
                     device->numActiveSmiEvents = 0;
                 }
                 if (device->smiMetrics)
                 {
+                    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Freeing SMI event list for device %d, device->deviceId);
                     destroy_smap(device->smiMetrics);
                     device->smiMetrics = NULL;
                 }
             }
         }
+        if (context->smiEvents)
+        {
+            ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Freeing SMI event list);
+            destroy_smap(context->smiEvents);
+            context->smiEvents = NULL;
+        }
     }
-    
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Shutdown RSMI);
     RSMI_CALL(rsmi_shut_down, (), {
         ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Shutdown SMI);
         // fall through

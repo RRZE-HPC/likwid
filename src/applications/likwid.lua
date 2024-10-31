@@ -1576,7 +1576,7 @@ end
 likwid.getMarkerResultsCuda = getMarkerResultsCuda
 
 local function getMarkerResultsRocm(filename, gpulist, nan2value)
-    local gputopo = likwid.getGpuTopology_rocm()
+    local gputopo = likwid.getRocmTopology()
     local ret = likwid.readMarkerFileRocm(filename)
     if ret < 0 then
         return nil, nil
@@ -1627,7 +1627,7 @@ likwid.getMarkerResultsRocm = getMarkerResultsRocm
 
 local function printOutputRocm(results, metrics, gpulist, region, stats)
     local maxLineFields = 0
-    local gputopo = likwid.getGpuTopology_rocm()
+    local gputopo = likwid.getRocmTopology()
     local regionName = likwid.markerRegionTagRocm(region)
     local regionGPUs = likwid.markerRegionGpusRocm(region)
     local cur_gpulist = gpulist

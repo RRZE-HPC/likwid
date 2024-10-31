@@ -87,4 +87,6 @@ typedef struct {
 
 #define ARRAY_COUNT(arr) (sizeof(arr) / sizeof((arr)[0]))
 
+typedef int bool;
+
 #endif /*TYPES_H*/

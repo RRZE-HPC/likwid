@@ -241,6 +241,7 @@ rocmon_markerInit(void)
     {
         return;
     }
+    printf("rocmon_markerInit\n");
 
     // Get environment variables
     char* eventStr = getenv("LIKWID_ROCMON_EVENTS");
@@ -252,7 +253,7 @@ rocmon_markerInit(void)
     // Validate environment variables are set
     if ((eventStr == NULL) || (gpuStr == NULL) || (gpuFileStr == NULL))
     {
-        fprintf(stderr, "Running without GPU Marker API. Activate GPU Marker API with -m, -G and -W on commandline.\n");
+        fprintf(stderr, "Running without Rocmon Marker API. Activate Rocmon Marker API with -m, -I and -R on commandline.\n");
         return;
     }
     if (verbosityStr != NULL) {
@@ -309,7 +310,7 @@ rocmon_markerInit(void)
     ret = rocmon_init(num_gpus, gpu_ids);
     if (ret < 0)
     {
-        fprintf(stderr,"Error init Rocmon Marker API.\n");
+        fprintf(stderr,"Error initializing Rocmon Marker API with %d\n", ret);
         free(gpu_ids);
         free(gpu_maps);
         free(gpu_groups);
@@ -396,6 +397,7 @@ rocmon_markerClose(void)
     }
     else
     {
+        printf("Saving ROCMON MarkerAPI results to %s\n", markerfile);
         _rocmon_saveToFile(markerfile);
     }
 
@@ -728,6 +730,7 @@ rocmon_readMarkerFile(const char* filename)
         fprintf(stderr, "Error opening file %s\n", filename);
     }
     ptr = fgets(buf, sizeof(buf), fp);
+    printf("# %s\n", buf);
     ret = sscanf(buf, "%d %d %d", &gpus, &regions, &groups);
     if (ret != 3)
     {
@@ -778,6 +781,7 @@ rocmon_readMarkerFile(const char* filename)
     }
     while (fgets(buf, sizeof(buf), fp))
     {
+        printf("# %s\n", buf);
         if (strchr(buf,':'))
         {
             int regionid = 0, groupid = -1;

@@ -113,6 +113,8 @@ DECLARE_ROCPROFILER_SDK(rocprofiler_destroy_buffer, (rocprofiler_buffer_id_t));
 DECLARE_ROCPROFILER_SDK(rocprofiler_context_is_active, (rocprofiler_context_id_t, int*));
 DECLARE_ROCPROFILER_SDK(rocprofiler_create_callback_thread, (rocprofiler_callback_thread_t*));
 DECLARE_ROCPROFILER_SDK(rocprofiler_assign_callback_thread, (rocprofiler_buffer_id_t, rocprofiler_callback_thread_t));
+DECLARE_ROCPROFILER_SDK(rocprofiler_query_record_counter_id, (rocprofiler_counter_instance_id_t id, rocprofiler_counter_id_t* counter_id));
+DECLARE_ROCPROFILER_SDK(rocprofiler_is_initialized, (int*))
 
 const char *rocprofiler_get_status_string(rocprofiler_status_t);
 const char * (*rocprofiler_get_status_string_ptr)(rocprofiler_status_t);
@@ -122,6 +124,69 @@ const char * (*rocprofiler_get_status_string_ptr)(rocprofiler_status_t);
 #endif
 DECLAREFUNC_HSA(hsa_init, ());
 DECLAREFUNC_HSA(hsa_shut_down, ());
+
+
+static int
+_rocmon_sdk_link_libraries()
+{
+    if (rocmon_sdk_dl_hsa_lib && rocmon_sdk_dl_profiler_lib)
+    {
+        return 0;
+    }
+    #define DLSYM_AND_CHECK( dllib, name ) name##_ptr = dlsym( dllib, #name ); if ( dlerror() != NULL ) { ERROR_PRINT(Failed to link  #name); return -1; }
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Linking AMD ROCMm SDK libraries);
+    dlerror();
+    // Need to link in the ROCm HSA libraries
+    rocmon_sdk_dl_hsa_lib = dlopen("libhsa-runtime64.so", RTLD_NOW | RTLD_GLOBAL);
+    if (!rocmon_sdk_dl_hsa_lib)
+    {
+        ERROR_PRINT(ROCm HSA library libhsa-runtime64.so not found: %s, dlerror());
+        return -1;
+    }
+
+    // Need to link in the Rocprofiler libraries
+    rocmon_sdk_dl_profiler_lib = dlopen("librocprofiler-sdk.so", RTLD_NOW | RTLD_GLOBAL);
+    if (!rocmon_sdk_dl_profiler_lib)
+    {
+        // Delete last error
+        dlerror();
+        rocmon_sdk_dl_profiler_lib = dlopen("librocprofiler-sdk.so.1", RTLD_NOW | RTLD_GLOBAL);
+        if (!rocmon_sdk_dl_profiler_lib)
+        {
+            ERROR_PRINT(Rocprofiler library librocprofiler-sdk.so not found: %s, dlerror());
+            return -1;
+        }
+    }
+
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_create_context);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_get_status_string);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_create_buffer);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_query_available_agents);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_get_timestamp);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_start_context);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_stop_context);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_create_profile_config);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_destroy_profile_config);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_configure_agent_profile_counting_service);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_iterate_agent_supported_counters);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_flush_buffer);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_query_counter_info);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_sample_agent_profile_counting_service);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_force_configure);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_destroy_buffer);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_context_is_active);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_create_callback_thread);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_assign_callback_thread);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_query_record_counter_id);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_is_initialized);
+
+    DLSYM_AND_CHECK(rocmon_sdk_dl_hsa_lib, hsa_init);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_hsa_lib, hsa_shut_down);
+
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Linking AMD ROCMm SDK libraries done);
+    return 0;
+}
+
 
 
 typedef struct {
@@ -304,13 +369,13 @@ _rocmon_sdk_free_agent_counters(RocmonDevice *device)
 
 
 typedef struct {
-    rocprofiler_context_id_t* context;
-    rocprofiler_agent_t agent;
-    RocmonEventResultList* result;
+    RocmonContext** context;
+    rocprofiler_context_id_t devcontext;
+    int devid;
 } rocmon_sdk_read_buffers_cb;
 
 static void
-_rocmon_sdk_read_buffers(rocprofiler_context_id_t context,
+_rocmon_sdk_read_buffers(rocprofiler_context_id_t device_context,
                   rocprofiler_buffer_id_t buffer,
                   rocprofiler_record_header_t** headers,
                   size_t                        num_headers,
@@ -318,6 +383,8 @@ _rocmon_sdk_read_buffers(rocprofiler_context_id_t context,
                   uint64_t)
 {
     rocmon_sdk_read_buffers_cb* cbdata = (rocmon_sdk_read_buffers_cb*)udata;
+    RocmonContext** stat_context = (RocmonContext**)udata;
+    RocmonContext* context = *stat_context;
 
 /*    if (cbdata->result->numResults == 0)*/
 /*    {*/
@@ -331,6 +398,27 @@ _rocmon_sdk_read_buffers(rocprofiler_context_id_t context,
         {
             rocprofiler_record_counter_t* r = h->payload;
             printf("Counter ID %d Value %f Dispatch %ld\n", r->id, r->counter_value, r->dispatch_id);
+            rocprofiler_counter_id_t cid = {.handle = 0};
+            (*rocprofiler_query_record_counter_id_ptr)(r->id, &cid);
+            for (int j = 0; j < context->numDevices; j++)
+            {
+                RocmonDevice *dev = &context->devices[j];
+                if (dev->deviceId == cbdata->devid)
+                {
+                    for (int k = 0; k < dev->numActiveRocEvents; k++)
+                    {
+                        rocprofiler_counter_info_v0_t* cinfo = &dev->sdk_activeRocEvents[k];
+                        if (cinfo->id.handle == cid.handle)
+                        {
+                            RocmonEventResultList* resultlist = &dev->groupResults[dev->activeGroup];
+                            resultlist->results[k].fullValue += r->counter_value;
+                            resultlist->results[k].lastValue = resultlist->results[k].fullValue - resultlist->results[k].lastValue;
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
         }
     }
 
@@ -373,18 +461,27 @@ tool_init(rocprofiler_client_finalize_t fini, void* udata)
     RocmonContext* context = *stat_context;
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Running tool_init);
 
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Initialize HSA);
-    hsa_status_t hstat = (*hsa_init_ptr)();
-    if (hstat != HSA_STATUS_SUCCESS)
+    // initialize libraries
+    if (_rocmon_sdk_link_libraries() < 0)
     {
+        ERROR_PLAIN_PRINT(Failed to initialize libraries);
         return -EFAULT;
     }
+
+/*    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Initialize HSA);*/
+/*    hsa_status_t hstat = (*hsa_init_ptr)();*/
+/*    if (hstat != HSA_STATUS_SUCCESS)*/
+/*    {*/
+/*        ERROR_PRINT(Failed to initialize HSA);*/
+/*        return -EFAULT;*/
+/*    }*/
 
     //ROCPROFILER_CALL(rocprofiler_query_available_agents, (ROCPROFILER_AGENT_INFO_VERSION_0, _rocmon_sdk_count_agents_cb, sizeof(rocprofiler_agent_t), &agent_count), return -EFAULT;);
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Querying available agents);
     stat = (*rocprofiler_query_available_agents_ptr)(ROCPROFILER_AGENT_INFO_VERSION_0, _rocmon_sdk_count_agents_cb, sizeof(rocprofiler_agent_t), udata);
     if (stat != ROCPROFILER_STATUS_SUCCESS)
     {
+        ERROR_PRINT(Failed to query available agents);
         return -EFAULT;
     }
     if (context->numDevices == 0)
@@ -409,7 +506,12 @@ tool_init(rocprofiler_client_finalize_t fini, void* udata)
             return -EFAULT;
         }
         ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Creating buffer for device %d, device->deviceId);
-        stat = (*rocprofiler_create_buffer_ptr)(device_context, 100, 50, ROCPROFILER_BUFFER_POLICY_LOSSLESS, _rocmon_sdk_read_buffers, udata, &buffer);
+        rocmon_sdk_read_buffers_cb devdata = {
+            .context = stat_context,
+            .devid = device->deviceId,
+            .devcontext = device_context
+        };
+        stat = (*rocprofiler_create_buffer_ptr)(device_context, 100, 50, ROCPROFILER_BUFFER_POLICY_LOSSLESS, _rocmon_sdk_read_buffers, &devdata, &buffer);
         if (stat != ROCPROFILER_STATUS_SUCCESS)
         {
             errno = EFAULT;
@@ -517,60 +619,6 @@ _rocmon_sdk_set_profile(rocprofiler_context_id_t                 context_id,
 
 
 
-static int
-_rocmon_sdk_link_libraries()
-{
-    #define DLSYM_AND_CHECK( dllib, name ) name##_ptr = dlsym( dllib, #name ); if ( dlerror() != NULL ) { ERROR_PRINT(Failed to link  #name); return -1; }
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Linking AMD ROCMm SDK libraries);
-    dlerror();
-    // Need to link in the ROCm HSA libraries
-    rocmon_sdk_dl_hsa_lib = dlopen("libhsa-runtime64.so", RTLD_NOW | RTLD_GLOBAL);
-    if (!rocmon_sdk_dl_hsa_lib)
-    {
-        ERROR_PRINT(ROCm HSA library libhsa-runtime64.so not found: %s, dlerror());
-        return -1;
-    }
-
-    // Need to link in the Rocprofiler libraries
-    rocmon_sdk_dl_profiler_lib = dlopen("librocprofiler-sdk.so", RTLD_NOW | RTLD_GLOBAL);
-    if (!rocmon_sdk_dl_profiler_lib)
-    {
-        // Delete last error
-        dlerror();
-        rocmon_sdk_dl_profiler_lib = dlopen("librocprofiler-sdk.so.1", RTLD_NOW | RTLD_GLOBAL);
-        if (!rocmon_sdk_dl_profiler_lib)
-        {
-            ERROR_PRINT(Rocprofiler library librocprofiler-sdk.so not found: %s, dlerror());
-            return -1;
-        }
-    }
-
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_create_context);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_get_status_string);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_create_buffer);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_query_available_agents);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_get_timestamp);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_start_context);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_stop_context);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_create_profile_config);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_destroy_profile_config);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_configure_agent_profile_counting_service);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_iterate_agent_supported_counters);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_flush_buffer);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_query_counter_info);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_sample_agent_profile_counting_service);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_force_configure);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_destroy_buffer);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_context_is_active);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_create_callback_thread);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_assign_callback_thread);
-
-    DLSYM_AND_CHECK(rocmon_sdk_dl_hsa_lib, hsa_init);
-    DLSYM_AND_CHECK(rocmon_sdk_dl_hsa_lib, hsa_shut_down);
-
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Linking AMD ROCMm SDK libraries done);
-    return 0;
-}
 
 
 rocprofiler_tool_configure_result_t*
@@ -580,12 +628,22 @@ rocprofiler_configure(uint32_t                 version,
                       rocprofiler_client_id_t* client_id)
 {
     client_id->name = "LIKWID";
+    if (!rocmon_context)
+    {
+        rocmon_context = malloc(sizeof(RocmonContext));
+        if (!rocmon_context)
+        {
+            return NULL;
+        }
+        memset(rocmon_context, 0, sizeof(RocmonContext));
+    }
     static rocprofiler_tool_configure_result_t config_result = {
         .size = sizeof(rocprofiler_tool_configure_result_t),
         .initialize = tool_init,
         .finalize = tool_fini,
         .tool_data = &rocmon_context,
     };
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Initializing Rocprofiler SDK);
     return &config_result;
 }
 
@@ -600,6 +658,7 @@ rocmon_sdk_init(RocmonContext* context, int numGpus, const int* gpuIds)
     }
     if (rocmon_sdk_initialized)
     {
+        
         return 0;
     }
 
@@ -607,20 +666,21 @@ rocmon_sdk_init(RocmonContext* context, int numGpus, const int* gpuIds)
     ret = _rocmon_sdk_link_libraries();
     if (ret < 0)
     {
-        //ERROR_PLAIN_PRINT(Failed to initialize libraries);
+        ERROR_PLAIN_PRINT(Failed to initialize libraries);
         return ret;
     }
 
     stat = (*rocprofiler_force_configure_ptr)(rocprofiler_configure);
     if (stat != ROCPROFILER_STATUS_SUCCESS)
     {
+        ERROR_PLAIN_PRINT(Failed to configure rocprofiler);
         return -EFAULT;
     }
 
     if (context->numDevices == 0)
     {
         errno = ENODEV;
-        ERROR_PRINT(Cannot ROCm GPUs);
+        ERROR_PRINT(Cannot find any ROCm GPUs);
         return -ENODEV;
     }
 

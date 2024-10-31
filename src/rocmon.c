@@ -97,29 +97,37 @@ rocmon_finalize(void)
             RocmonDevice* dev = &rocmon_context->devices[i];
             if (dev->groupResults)
             {
-                if (dev->groupResults->results)
+                for (int j = 0; j < dev->numGroupResults; j++)
                 {
-                    free(dev->groupResults->results);
-                    dev->groupResults->results = NULL;
-                    dev->groupResults->numResults = 0;
+                    RocmonEventResultList* l = &dev->groupResults[j];
+                    if (l->results)
+                    {
+                        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Destroy group result %d for device %d, j, dev->deviceId);
+                        free(l->results);
+                        l->results = NULL;
+                        l->numResults = 0;
+                    }
                 }
+                ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Destroy group results for device %d, dev->deviceId);
                 free(dev->groupResults);
                 dev->groupResults = NULL;
             }
         }
+        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Destroy devices);
         free(rocmon_context->devices);
         rocmon_context->devices = NULL;
         rocmon_context->numDevices = 0;
     }
     if (rocmon_context->groups)
     {
+        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Destroy groups);
         free(rocmon_context->groups);
         rocmon_context->groups = NULL;
         rocmon_context->numGroups = 0;
         rocmon_context->numActiveGroups = 0;
         rocmon_context->activeGroup = -1;
     }
-
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Destroy context);
     free(rocmon_context);
     rocmon_context = NULL;
 
@@ -136,10 +144,6 @@ rocmon_init(int numGpus, const int* gpuIds)
     if (rocmon_initialized)
     {
         return 0;
-    }
-    if (rocmon_context != NULL)
-    {
-        return -EEXIST;
     }
     // Validate arguments
     if (numGpus <= 0)
@@ -314,6 +318,7 @@ rocmon_addEventSet(const char* eventString, int* gid)
             ERROR_PLAIN_PRINT(Cannot allocate event results);
             return -ENOMEM;
         }
+        memset(tmpResults, 0, numEvents * sizeof(RocmonEventResult));
 
         // Allocate memory for new event result list entry
         RocmonEventResultList* tmpGroupResults = (RocmonEventResultList*) realloc(device->groupResults, (device->numGroupResults+1) * sizeof(RocmonEventResultList));
@@ -322,7 +327,6 @@ rocmon_addEventSet(const char* eventString, int* gid)
             ERROR_PLAIN_PRINT(Cannot allocate new event group result list);
             return -ENOMEM;
         }
-
         device->groupResults = tmpGroupResults;
         device->groupResults[device->numGroupResults].results = tmpResults;
         device->groupResults[device->numGroupResults].numResults = numEvents;
