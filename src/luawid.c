@@ -33,6 +33,7 @@
 
 #include <pwd.h>
 #include <sched.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -3777,41 +3778,46 @@ lua_likwid_getSysFeatureList(lua_State *L)
 static int
 lua_likwid_getSysFeature(lua_State *L)
 {
-    if (sysfeatures_inititalized)
+    if (!sysfeatures_inititalized)
+        return luaL_error(L, "likwid sysfeatures not initialized");
+
+    const char *feature = luaL_checkstring(L, 1);
+    const LikwidDevice_t dev = *(LikwidDevice_t *)luaL_checkudata(L, 2, "LikwidDevice_t");
+    char *value = NULL;
+    int err = likwid_sysft_getByName(feature, dev, &value);
+    if (err < 0)
     {
-        const char* feature = luaL_checkstring(L, 1);
-        const LikwidDevice_t dev = *(LikwidDevice_t *)luaL_checkudata(L, 2, "LikwidDevice_t");
-        char* value = NULL;
-        int err = likwid_sysft_getByName(feature, dev, &value);
-        if (err == 0)
-        {
-            lua_pushstring(L, value);
-            free(value);
-            return 1;
-        }
-        free(value);
+        lua_pushnil(L);
+        lua_pushfstring(L, "Unable to get sysfeature: %s", strerror(-err));
+        return 2;
     }
+
+    lua_pushstring(L, value);
     lua_pushnil(L);
-    return 1;
+    free(value);
+    return 2;
 }
 
 static int
 lua_likwid_setSysFeature(lua_State *L)
 {
-    if (sysfeatures_inititalized)
+    if (!sysfeatures_inititalized)
+        return luaL_error(L, "likwid sysfeatures not initialized");
+
+    const char *feature = luaL_checkstring(L, 1);
+    const LikwidDevice_t dev = *(LikwidDevice_t *)luaL_checkudata(L, 2, "LikwidDevice_t");
+    const char *value = luaL_checkstring(L,3);
+    int err = likwid_sysft_modifyByName(feature, dev, value);
+    if (err < 0)
     {
-        const char *feature = luaL_checkstring(L, 1);
-        const LikwidDevice_t dev = *(LikwidDevice_t *)luaL_checkudata(L, 2, "LikwidDevice_t");
-        const char *value = luaL_checkstring(L,3);
-        int err = likwid_sysft_modifyByName(feature, dev, value);
-        if (err == 0)
-        {
-            lua_pushboolean(L, 1);
-            return 1;
-        }
+        lua_pushboolean(L, false);
+        lua_pushfstring(L, "Unable to set sysfeature: %s", strerror(-err));
+        return 2;
     }
-    lua_pushboolean(L, 0);
-    return 1;
+
+    lua_pushboolean(L, true);
+    lua_pushnil(L);
+    return 2;
 }
 
 static int lua_likwid_destroyDevice(lua_State *L)
