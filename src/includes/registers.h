@@ -3513,6 +3513,12 @@
 #define MSR_AMD19_DF_PERFEVTSEL15       0xC001025E
 #define MSR_AMD19_DF_PMC15              0xC001025F
 
+/* AMD 0x19 (Zen4c) additional to Zen4 regs */
+
+#define MSR_AMD19_GLOBAL_CTRL            0xC0000301
+#define MSR_AMD19_GLOBAL_STATUS          0xC0000300
+#define MSR_AMD19_GLOBAL_GLOBAL_OVF_CTRL 0xC0000302
+
 /* ARM Cortex A15 */
 #define A15_PMC0                        0x0000
 #define A15_PMC1                        0x0004

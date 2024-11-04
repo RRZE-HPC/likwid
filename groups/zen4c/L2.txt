@@ -1,0 +1,29 @@
+SHORT L2 cache bandwidth in MBytes/s (experimental)
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  CPU_CLOCKS_UNHALTED
+PMC2  REQUESTS_TO_L2_GRP1_ALL_NO_PF
+PMC3  L2_PF_HIT_IN_L2_ALLPREF
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  PMC1/PMC0
+L2 bandwidth [MBytes/s] 1.0E-06*(PMC2)*64.0/time
+L2 data volume [GBytes] 1.0E-09*(PMC2)*64.0
+Prefetch bandwidth [MBytes/s] 1.0E-06*(PMC3)*64.0/time
+Prefetch data volume [GBytes] 1.0E-09*(PMC3)*64.0
+
+LONG
+Formulas:
+L2 bandwidth [MBytes/s] = 1.0E-06*(REQUESTS_TO_L2_GRP1_ALL_NO_PF)*64/time
+L2 data volume [GBytes] = 1.0E-09*(REQUESTS_TO_L2_GRP1_ALL_NO_PF)*64
+Prefetch bandwidth [MBytes/s] = 1.0E-06*(L2_PF_HIT_IN_L2_ALLPREF)*64/time
+Prefetch data volume [GBytes] = 1.0E-09*(L2_PF_HIT_IN_L2_ALLPREF)*64
+-
+Profiling group to measure L2 cache load bandwidth including prefetchers.
+There are no events to count stores.

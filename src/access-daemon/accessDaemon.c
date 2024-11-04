@@ -1271,6 +1271,24 @@ allowed_amd19_zen4(uint32_t reg)
     }
     return 0;
 }
+
+static int
+allowed_amd19_zen4c(uint32_t reg)
+{
+    if (allowed_amd19_zen4(reg))
+    {
+        return 1;
+    }
+    else if ((reg == 0xC0000300) ||
+             (reg == 0xC0000301) ||
+             (reg == 0xC0000302) ||
+             (reg == 0xC0000303))
+    {
+        return 1;
+    }
+    return 0;
+}
+
 static int
 clientmem_getStartAddr(uint64_t* startAddr)
 {
@@ -3755,6 +3773,9 @@ int main(void)
                     case ZEN4_EPYC:
                     case ZEN4_RYZEN_PRO:
                         allowed = allowed_amd19_zen4;
+                        break;
+                    case ZEN4_EPYC_BERGAMO:
+                        allowed = allowed_amd19_zen4c;
                         break;
                     default:
                         allowed = allowed_amd17;

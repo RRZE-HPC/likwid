@@ -78,6 +78,7 @@
 #include <perfmon_zen2.h>
 #include <perfmon_zen3.h>
 #include <perfmon_zen4.h>
+#include <perfmon_zen4c.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
 #include <perfmon_tigerlake.h>
@@ -1300,7 +1301,6 @@ perfmon_init_maps(void)
                 case ZEN4_RYZEN:
                 case ZEN4_RYZEN2:
                 case ZEN4_EPYC:
-		case ZEN4_EPYC_BERGAMO:
                 case ZEN4_RYZEN_PRO:
                     eventHash = zen4_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen4;
@@ -1308,6 +1308,14 @@ perfmon_init_maps(void)
                     box_map = zen4_box_map;
                     perfmon_numCounters = perfmon_numCountersZen4;
                     translate_types = zen4_translate_types;
+                    break;
+                case ZEN4_EPYC_BERGAMO:
+                    eventHash = zen4c_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsZen4c;
+                    counter_map = zen4c_counter_map;
+                    box_map = zen4c_box_map;
+                    perfmon_numCounters = perfmon_numCountersZen4c;
+                    translate_types = zen4c_translate_types;
                     break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
@@ -1979,7 +1987,6 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                 case ZEN4_RYZEN:
                 case ZEN4_RYZEN2:
                 case ZEN4_EPYC:
-		case ZEN4_EPYC_BERGAMO:
                 case ZEN4_RYZEN_PRO:
                     initThreadArch = perfmon_init_zen4;
                     initialize_power = TRUE;
@@ -1988,6 +1995,15 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_readCountersThread = perfmon_readCountersThread_zen4;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_zen4;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen4;
+                    break;
+                case ZEN4_EPYC_BERGAMO:
+                    initThreadArch = perfmon_init_zen4c;
+                    initialize_power = TRUE;
+                    perfmon_startCountersThread = perfmon_startCountersThread_zen4c;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_zen4c;
+                    perfmon_readCountersThread = perfmon_readCountersThread_zen4c;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_zen4c;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen4c;
                     break;
                 default:
                     ERROR_PLAIN_PRINT(Unsupported AMD K19 Processor);
