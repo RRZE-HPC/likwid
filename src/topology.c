@@ -118,6 +118,7 @@ static char* amd_zenplus_str = "AMD K17 (Zen+) architecture";
 static char* amd_zen2_str = "AMD K17 (Zen2) architecture";
 static char* amd_zen3_str = "AMD K19 (Zen3) architecture";
 static char* amd_zen4_str = "AMD K19 (Zen4) architecture";
+static char* amd_zen4c_str = "AMD K19 (Zen4c) architecture";
 static char* armv7l_str = "ARM 7l architecture";
 static char* armv8_str = "ARM 8 architecture";
 static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
@@ -184,6 +185,7 @@ static char* short_zen = "zen";
 static char* short_zen2 = "zen2";
 static char* short_zen3 = "zen3";
 static char* short_zen4 = "zen4";
+static char* short_zen4c = "zen4c";
 
 static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
@@ -1274,6 +1276,11 @@ topology_setName(void)
                 case ZEN4_RYZEN_PRO:
                     cpuid_info.name = amd_zen4_str;
                     cpuid_info.short_name = short_zen4;
+                    cpuid_info.supportUncore = 1;
+                    break;
+                case ZEN4_EPYC_BERGAMO:
+                    cpuid_info.name = amd_zen4c_str;
+                    cpuid_info.short_name = short_zen4c;
                     cpuid_info.supportUncore = 1;
                     break;
                 default:
