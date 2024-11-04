@@ -1,7 +1,10 @@
 #ifndef HWFEATURES_COMMON_RAPL_H
 #define HWFEATURES_COMMON_RAPL_H
 
+#include <math.h>
+
 #include <likwid.h>
+#include <bitUtil.h>
 
 typedef struct {
     double powerUnit;   // unit W
