@@ -25,6 +25,12 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
         ERROR_PRINT(Failed to init AMD RAPL HWFetures);
         return err;
     }
+    err = likwid_sysft_init_amd_hsmp(out);
+    if (err < 0)
+    {
+        ERROR_PRINT(Failed to init AMD HSMP HWFeaturse);
+        return err;
+    }
     return 0;
 }
 
