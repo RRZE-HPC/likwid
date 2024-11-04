@@ -249,7 +249,7 @@ if listFeatures and #devList > 0 then
                 if f.WriteOnly then
                     table.insert(tab, "(wronly)")
                 else
-                    local v = likwid.sysFeatures_get(f.Name, dev)
+                    local v, err = likwid.sysFeatures_get(string.format("%s.%s", f.Category, f.Name), dev)
                     if v == nil then
                         table.insert(tab, "fail")
                     else
@@ -299,9 +299,9 @@ if #getList > 0 and #devList > 0 then
     for i, dev in pairs(devList) do
         local tab = {}
         for _,f in pairs(featList) do
-            local v = likwid.sysFeatures_get(f.Name, dev)
+            local v, err = likwid.sysFeatures_get(string.format("%s.%s", f.Category, f.Name), dev)
             if not v then
-                print_stderr(string.format("Failed to get feature '%s.%s' (Type %s, Resp %d)", f.Category, f.Name, f.Type, v))
+                print_stderr(string.format("Failed to get feature '%s.%s' (Type %s, Resp %s)", f.Category, f.Name, f.Type, err))
             else
                 print_stdout(v)
             end
@@ -345,9 +345,9 @@ if #setList > 0 and #devList > 0 then
             if verbose > 0 then
                 print_stdout(string.format("Setting '%s.%s' to '%s' (Type %s, Resp %d)", f.Category, f.Name, f.Value, f.Type, c))
             end
-            local v = likwid.sysFeatures_set(f.Name, dev, f.Value)
+            local v, err = likwid.sysFeatures_set(f.Name, dev, f.Value)
             if not v then
-                print_stderr(string.format("Failed to set feature '%s.%s' to '%s' (Type %s, Resp %d)", f.Category, f.Name, f.Value, f.Type, c))
+                print_stderr(string.format("Failed to set feature '%s.%s' to '%s' (Type %s, Resp %s)", f.Category, f.Name, f.Value, f.Type, err))
             end
         end
     end
