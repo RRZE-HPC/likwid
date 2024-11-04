@@ -14,7 +14,7 @@ typedef enum {
 
 typedef int (*hwfeature_getter_function)(const LikwidDevice_t device, char** value);
 typedef int (*hwfeature_setter_function)(const LikwidDevice_t device, const char* value);
-typedef int (*hwfeature_test_function)();
+typedef int (*hwfeature_test_function)(void);
 
 typedef struct {
     const char* name;
