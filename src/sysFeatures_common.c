@@ -120,7 +120,7 @@ int likwid_sysft_string_to_uint64(const char* str, uint64_t* value)
         return 0;
     }
     errno = 0;
-    uint64_t v = strtoull(str, &ptr, 10);
+    uint64_t v = strtoull(str, &ptr, 0);
     if (v == 0 && errno != 0)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Conversion of string '%s' to uint64_t failed %d: %s, str, v, strerror(errno));
