@@ -3,11 +3,13 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sched.h>
 #include <stdint.h>
 #include <sys/ioctl.h>
 #include <stdio.h>
 
 #include <amd_hsmp.h>
+#include <cpuid.h>
 #include <sysFeatures_common.h>
 #include <sysFeatures_common_rapl.h>
 #include <types.h>
@@ -166,6 +168,55 @@ static int amd_hsmp_sock_power_limit_max_getter(LikwidDevice_t dev, char **value
     return hsmp_arg0_res1_as_double(dev, HSMP_GET_SOCKET_POWER_LIMIT_MAX, 1e-3, value);
 }
 
+static int get_real_apic_id(const HWThread *hwt)
+{
+    /* This function get's the "real" APIC ID, since hwloc and likwid
+     * appear to use a wrong one in HWThread. */
+
+    /* sched_getaffinity/setaffinity may cause a condition!
+     * Though this is only a problem when the affinity is changed from outside during runtime. */
+    cpu_set_t old_mask;
+    int err = sched_getaffinity(0, sizeof(old_mask), &old_mask);
+    if (err != 0)
+        return -errno;
+
+    /* Make sure we are running on the right core. */
+    cpu_set_t new_mask;
+    CPU_ZERO(&new_mask);
+    CPU_SET(hwt->apicId, &new_mask);   // <-- we assume this "apicId" to be a Linux processor number to be scheduled onto.
+    err = sched_setaffinity(0, sizeof(new_mask), &new_mask);
+    if (err != 0)
+        return -errno;
+
+    /* First, query initial local APIC ID, then try to query x2APIC ID. */
+    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+    CPUID(eax, ebx, ecx, edx);
+    const uint32_t leaf_max = eax;
+
+    assert(leaf_max >= 1);
+
+    /* Retrieve initial APIC ID */
+    eax = 1;
+    CPUID(eax, ebx, ecx, edx);
+    uint32_t apic_id = field32(ebx, 24, 8);
+    if (leaf_max < 0xB)
+        goto cleanup;
+
+    /* Try to read extended local APIC ID */
+    eax = 0xB;
+    ecx = 0x0;
+    CPUID(eax, ebx, ecx, edx);
+    apic_id = edx;
+
+    /* Intel recommends to use 0x1F instead of 0xB, but AMD PPR does not mention
+     * the existence of such a CPUID leaf. */
+cleanup:
+    err = sched_setaffinity(0, sizeof(old_mask), &old_mask);
+    if (err != 0)
+        return -errno;
+    return (int)apic_id;
+}
+
 static HWThread *get_hwt_by_core(LikwidDevice_t dev)
 {
     assert(dev->type == DEVICE_TYPE_CORE);
@@ -184,9 +235,13 @@ static int amd_hsmp_core_boost_limit_getter(LikwidDevice_t dev, char **value)
     HWThread *hwt = get_hwt_by_core(dev);
     if (!hwt)
         return -EINVAL;
+    int err = get_real_apic_id(hwt);
+    if (err < 0)
+        return err;
+
+    const uint32_t real_apic_id = (uint32_t)err;
     uint32_t boost_limit;
-    // TODO FIXME the apicId is wrong. Please check PPR to apply the correcet mapping.
-    int err = hsmp_raw(hwt->packageId, HSMP_GET_BOOST_LIMIT, &hwt->apicId, 1, &boost_limit, 1);
+    err = hsmp_raw(hwt->packageId, HSMP_GET_BOOST_LIMIT, &real_apic_id, 1, &boost_limit, 1);
     if (err < 0)
         return err;
     return likwid_sysft_uint64_to_string(boost_limit, value);
@@ -197,15 +252,19 @@ static int amd_hsmp_core_boost_limit_setter(LikwidDevice_t dev, const char *valu
     HWThread *hwt = get_hwt_by_core(dev);
     if (!hwt)
         return -EINVAL;
+    int err = get_real_apic_id(hwt);
+    if (err < 0)
+        return err;
 
+    const uint32_t real_apic_id = (uint32_t)err;
     uint64_t boost_limit;
-    int err = likwid_sysft_string_to_uint64(value, &boost_limit);
+    err = likwid_sysft_string_to_uint64(value, &boost_limit);
     if (err < 0)
         return err;
 
     uint32_t arg0 = 0;
     field32set(&arg0, 0, 16, boost_limit);
-    field32set(&arg0, 16, 16, hwt->apicId);
+    field32set(&arg0, 16, 16, real_apic_id);
     return hsmp_raw(hwt->packageId, HSMP_SET_BOOST_LIMIT, &arg0, 1, NULL, 0);
 }
 
@@ -547,8 +606,13 @@ static int amd_hsmp_core_cclk_limit_getter(LikwidDevice_t dev, char **value)
     HWThread *hwt = get_hwt_by_core(dev);
     if (!hwt)
         return -EINVAL;
+    int err = get_real_apic_id(hwt);
+    if (err < 0)
+        return err;
+
+    const uint32_t real_apic_id = (uint32_t)err;
     uint32_t freq;
-    int err = hsmp_raw(hwt->packageId, HSMP_GET_CCLK_CORE_LIMIT, &hwt->apicId, 1, &freq, 1);
+    err = hsmp_raw(hwt->packageId, HSMP_GET_CCLK_CORE_LIMIT, &real_apic_id, 1, &freq, 1);
     if (err < 0)
         return err;
     return likwid_sysft_uint64_to_string(freq, value);
@@ -791,12 +855,16 @@ static int amd_hsmp_core_energy_getter(LikwidDevice_t dev, char **value)
     int err = amd_hsmp_rapl_init(dev);
     if (err < 0)
         return err;
-    HWThread *t = get_hwt_by_core(dev);
-    if (!t)
+    HWThread *hwt = get_hwt_by_core(dev);
+    if (!hwt)
         return -EINVAL;
+    err = get_real_apic_id(hwt);
+    if (err < 0)
+        return err;
+
+    const uint32_t real_apic_id = (uint32_t)err;
     uint32_t energy_raw[2];
-    const uint32_t apicId = t->coreId;
-    err = hsmp_raw(t->packageId, HSMP_GET_RAPL_CORE_COUNTER, &apicId, 1, energy_raw, 2);
+    err = hsmp_raw(hwt->packageId, HSMP_GET_RAPL_CORE_COUNTER, &real_apic_id, 1, energy_raw, 2);
     if (err < 0)
         return err;
     const uint64_t energy_real = energy_raw[0] | ((uint64_t)energy_raw[1] << 32);
