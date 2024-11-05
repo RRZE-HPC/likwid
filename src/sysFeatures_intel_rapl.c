@@ -502,7 +502,6 @@ static int dram_test_testFunc(uint64_t msrData, void *)
             (info->model == SKYLAKEX) ||
             (info->model == ICELAKEX1) ||
             (info->model == ICELAKEX2) ||
-            (info->model == SAPPHIRERAPIDS) ||
             (info->model == XEON_PHI_KNL) ||
             (info->model == XEON_PHI_KML))
         {

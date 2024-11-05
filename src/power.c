@@ -404,7 +404,6 @@ power_init(int cpuId)
                 (cpuid_info.model == SKYLAKEX) ||
                 (cpuid_info.model == ICELAKEX1) ||
                 (cpuid_info.model == ICELAKEX2) ||
-                (cpuid_info.model == SAPPHIRERAPIDS) ||
                 (cpuid_info.model == XEON_PHI_KNL) ||
                 (cpuid_info.model == XEON_PHI_KML)))
             {
