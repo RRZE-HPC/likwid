@@ -288,8 +288,10 @@ static int process_domain(const bstring domain_type, const bstring domain_select
     else if (strcmp(dt, "GA") == 0)
         return parse_gpu(domain_selector, DEVICE_TYPE_AMD_GPU, dev_list);
 #endif
-    ERROR_PRINT(Unknown domain type: '%s', dt);
-    return -EINVAL;
+    else if (strcmp(dt, "T") == 0)
+        return parse_simple(domain_selector, DEVICE_TYPE_HWTHREAD, dev_list);
+    /* If no domain prefix matches, assume legacy behavior and create hardware threads. */
+    return parse_simple(domain_type, DEVICE_TYPE_HWTHREAD, dev_list);
 }
 
 static int parse_domain(const bstring dev_bstr, LikwidDeviceList_t dev_list)
