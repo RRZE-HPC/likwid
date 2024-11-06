@@ -409,6 +409,10 @@ power_init(int cpuId)
             {
                 power_info.domains[DRAM].energyUnit = 15.3E-6;
             }
+            else if (cpuid_info.family == P6_FAMILY && cpuid_info.family == SAPPHIRERAPIDS)
+            {
+                power_info.domains[DRAM].energyUnit = 61E-6;
+            }
 
             for(i = 0; i < numDomains; i++)
             {

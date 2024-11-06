@@ -507,6 +507,10 @@ static int dram_test_testFunc(uint64_t msrData, void *)
         {
             intel_rapl_dram_info.energyUnit = 15.3e-6;
         }
+        else if (info->model == SAPPHIRERAPIDS)
+        {
+            intel_rapl_dram_info.energyUnit = 61e-6;
+        }
     }
     return 1;
 }
