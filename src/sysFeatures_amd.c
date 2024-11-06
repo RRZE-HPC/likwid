@@ -4,6 +4,7 @@
 
 #include <access.h>
 #include <bitUtil.h>
+#include <sysFeatures_amd_hsmp.h>
 #include <sysFeatures_amd_rapl.h>
 #include <sysFeatures_common.h>
 #include <topology.h>
