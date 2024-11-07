@@ -856,7 +856,7 @@ int perfmon_startCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* e
                     spr_power_start(thread_id, index, event, data);
                     break;
                 case METRICS:
-                    spr_metrics_start(thread_id, index, event, data);
+                    flags |= spr_metrics_start(thread_id, index, event, data);
                     break;
                 case THERMAL:
                 case VOLTAGE:
