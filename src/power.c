@@ -406,12 +406,16 @@ power_init(int cpuId)
                 (cpuid_info.model == SKYLAKEX) ||
                 (cpuid_info.model == ICELAKEX1) ||
                 (cpuid_info.model == ICELAKEX2) ||
-                (cpuid_info.model == SAPPHIRERAPIDS) ||
                 (cpuid_info.model == XEON_PHI_KNL) ||
-                (cpuid_info.model == XEON_PHI_KML) ||
-                (cpuid_info.model == GRANITERAPIDS)))
+                (cpuid_info.model == XEON_PHI_KML)))
             {
                 power_info.domains[DRAM].energyUnit = 15.3E-6;
+            }
+            else if ((cpuid_info.model == SAPPHIRERAPIDS) ||
+                     (cpuid_info.model == GRANITERAPIDS) ||
+                     (cpuid_info.model == SIERRAFORREST))
+            {
+                power_info.domains[DRAM].energyUnit = 61E-6;
             }
 
             for(i = 0; i < numDomains; i++)

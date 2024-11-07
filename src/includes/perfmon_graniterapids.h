@@ -350,7 +350,7 @@ int perfmon_startCountersThread_graniterapids(int thread_id, PerfmonEventSet* ev
                 if (haveLock)
                 {
                     uint64_t ret = unitFuncs->start(thread_id, index, event, data);
-                    if (type == FIXED || type == PMC)
+                    if (type == FIXED || type == PMC || type == METRICS)
                     {
                         flags |= ret;
                     }
