@@ -1,0 +1,42 @@
+SHORT Top down cycle allocation
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0 TOPDOWN_RETIRING_ALL
+PMC1 TOPDOWN_BAD_SPECULATION_ALL
+PMC2 TOPDOWN_FE_BOUND_ALL
+PMC3 TOPDOWN_BE_BOUND_ALL
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+IPC FIXC0/FIXC1
+Front End [%] (PMC2/(PMC0+PMC1+PMC2+PMC3))*100
+Speculation [%] (PMC1/(PMC0+PMC1+PMC2+PMC3))*100
+Retiring [%] (PMC0/(PMC0+PMC1+PMC2+PMC3))*100
+Back End [%] (PMC3/(PMC0+PMC1+PMC2+PMC3))*100
+
+LONG
+Formulas:
+Front End [%] = (TOPDOWN_FE_BOUND_ALL/(TOPDOWN_RETIRING_ALL+TOPDOWN_BAD_SPECULATION_ALL+TOPDOWN_FE_BOUND_ALL+TOPDOWN_BE_BOUND_ALL))*100
+Speculation [%] = (TOPDOWN_BAD_SPECULATION_ALL/(TOPDOWN_RETIRING_ALL+TOPDOWN_BAD_SPECULATION_ALL+TOPDOWN_FE_BOUND_ALL+TOPDOWN_BE_BOUND_ALL))*100
+Retiring [%] = (TOPDOWN_RETIRING_ALL/(TOPDOWN_RETIRING_ALL+TOPDOWN_BAD_SPECULATION_ALL+TOPDOWN_FE_BOUND_ALL+TOPDOWN_BE_BOUND_ALL))*100
+Back End [%] = (TOPDOWN_BE_BOUND_ALL/(TOPDOWN_RETIRING_ALL+TOPDOWN_BAD_SPECULATION_ALL+TOPDOWN_FE_BOUND_ALL+TOPDOWN_BE_BOUND_ALL))*100
+--
+This performance group measures cycles to determine percentage of time spent in
+front end, back end, retiring and speculation. These metrics are published and
+verified by Intel. Further information:
+Webpage describing Top-Down Method and its usage in Intel vTune:
+https://software.intel.com/en-us/vtune-amplifier-help-tuning-applications-using-a-top-down-microarchitecture-analysis-method
+Paper by Yasin Ahmad:
+https://sites.google.com/site/analysismethods/yasin-pubs/TopDown-Yasin-ISPASS14.pdf?attredirects=0
+Slides by Yasin Ahmad:
+http://www.cs.technion.ac.il/~erangi/TMA_using_Linux_perf__Ahmad_Yasin.pdf
+The Intel Sierra Forrest architecture does not provide a fixed-purpose register
+to get the TMA metrics. Also the 4th fixed-purpose counter per hwthread that
+measure the "slots" for TMA is not present.
+

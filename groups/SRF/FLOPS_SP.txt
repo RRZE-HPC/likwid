@@ -1,0 +1,33 @@
+SHORT Single Precision MFLOP/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  FP_ARITH_INST_RETIRED_128B_PACKED_SINGLE
+PMC1  FP_ARITH_INST_RETIRED_SCALAR_SINGLE
+PMC2  FP_FLOPS_RETIRED_FP32
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+SP [MFLOP/s]  1.0E-06*(PMC2)/time
+Packed [MUOPS/s]   1.0E-06*(PMC0+((PMC2-(PMC0*4+PMC1))/8))/time
+Scalar [MUOPS/s] 1.0E-06*PMC1/time
+Vectorization ratio [%] 100*(PMC0+((PMC2-(PMC0*4+PMC1))/8))/(PMC0+PMC1+((PMC2-(PMC0*4+PMC1))/8))
+
+
+LONG
+Formulas:
+SP [MFLOP/s] = 1.0E-06*(FP_ARITH_INST_RETIRED_128B_PACKED_SINGLE*4+FP_ARITH_INST_RETIRED_SCALAR_SINGLE)/runtime
+Packed [MUOPS/s] = 1.0E-06*(FP_ARITH_INST_RETIRED_128B_PACKED_SINGLE)/runtime
+Scalar [MUOPS/s] = 1.0E-06*FP_ARITH_INST_RETIRED_SCALAR_SINGLE/runtime
+Vectorization ratio [%] [%] = 100*(FP_ARITH_INST_RETIRED_128B_PACKED_SINGLE)/(FP_ARITH_INST_RETIRED_SCALAR_SINGLE+FP_ARITH_INST_RETIRED_128B_PACKED_SINGLE)
+-
+SSE scalar and packed single precision FLOP rates. On Intel Sierra Forrest,
+it is not possible to count the SP AVX instructions directly, so this group
+counts the single-precision FP operations and substracts the scalar and SSE FP
+operations to derive the SP AVX instruction count.
+
