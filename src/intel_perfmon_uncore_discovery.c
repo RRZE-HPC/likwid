@@ -342,7 +342,7 @@ PciDeviceIndex get_likwid_device(int type, int id)
     {
         if (uncore_discovery_map[i].discovery_type == type)
         {
-            if (id >= 0 && id <= uncore_discovery_map[i].max_devices)
+            if (id >= 0 && id < uncore_discovery_map[i].max_devices)
             {
                 return uncore_discovery_map[i].base_device + id;
             }

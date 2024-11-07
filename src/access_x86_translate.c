@@ -221,8 +221,8 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((dev >= PCI_HA_DEVICE_0 && dev <= PCI_HA_DEVICE_31) ||
-                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_3))
+                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 uint32_t lo = 0ULL, hi = 0ULL;
                                 lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset));
@@ -247,8 +247,8 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((dev >= PCI_HA_DEVICE_0 && dev <= PCI_HA_DEVICE_31) ||
-                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_3))
+                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 uint32_t lo = 0ULL, hi = 0ULL;
                                 lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset));
@@ -289,8 +289,8 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((dev >= PCI_HA_DEVICE_0 && dev <= PCI_HA_DEVICE_31) ||
-                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_3))
+                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 uint32_t lo = 0ULL, hi = 0ULL;
                                 lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset)));
@@ -321,8 +321,8 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((dev >= PCI_HA_DEVICE_0 && dev <= PCI_HA_DEVICE_31) ||
-                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_3))
+                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 uint32_t lo = 0ULL, hi = 0ULL;
                                 lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset)));
@@ -447,8 +447,8 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((dev >= PCI_HA_DEVICE_0 && dev <= PCI_HA_DEVICE_31) ||
-                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_3))
+                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset)) = (uint32_t)data;
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + sizeof(uint32_t))) = (uint32_t)(data>>32);
@@ -472,8 +472,8 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((dev >= PCI_HA_DEVICE_0 && dev <= PCI_HA_DEVICE_31) ||
-                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_3))
+                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset)) = (uint32_t)data;
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset + sizeof(uint32_t))) = (uint32_t)(data>>32);
@@ -512,8 +512,8 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((dev >= PCI_HA_DEVICE_0 && dev <= PCI_HA_DEVICE_31) ||
-                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_3))
+                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset))) = (uint32_t)data;
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset) + sizeof(uint32_t))) = (uint32_t)(data>>32);
@@ -541,8 +541,8 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((dev >= PCI_HA_DEVICE_0 && dev <= PCI_HA_DEVICE_31) ||
-                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_3))
+                                (dev >= PCI_R3QPI_DEVICE_LINK_0 && dev <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (dev >= PCI_QPI_DEVICE_PORT_0 && dev <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset))) = (uint32_t)data;
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset) + sizeof(uint32_t))) = (uint32_t)(data>>32);

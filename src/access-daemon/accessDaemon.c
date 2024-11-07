@@ -3049,8 +3049,8 @@ static void spr_read_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 uint32_t lo = 0ULL, hi = 0ULL;
                                 lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset));
@@ -3080,8 +3080,8 @@ static void spr_read_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 uint32_t lo = 0ULL, hi = 0ULL;
                                 lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset));
@@ -3125,8 +3125,8 @@ static void spr_read_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 uint32_t lo = 0ULL, hi = 0ULL;
                                 lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset)));
@@ -3162,8 +3162,8 @@ static void spr_read_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 uint32_t lo = 0ULL, hi = 0ULL;
                                 lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset)));
@@ -3314,8 +3314,8 @@ static void spr_write_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset)) = (uint32_t)record->data;
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + sizeof(uint32_t))) = (uint32_t)(record->data>>32);
@@ -3343,8 +3343,8 @@ static void spr_write_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset)) = (uint32_t)record->data;
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset + sizeof(uint32_t))) = (uint32_t)(record->data>>32);
@@ -3386,8 +3386,8 @@ static void spr_write_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset))) = (uint32_t)record->data;
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset) + sizeof(uint32_t))) = (uint32_t)(record->data>>32);
@@ -3420,8 +3420,8 @@ static void spr_write_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset))) = (uint32_t)record->data;
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset) + sizeof(uint32_t))) = (uint32_t)(record->data>>32);
