@@ -77,6 +77,16 @@ uint64_t srf_pmc_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, 
     return spr_pmc_setup(thread_id, index, event, data);
 }
 
+uint64_t srf_uncore_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter* data)
+{
+    return spr_setup_uncore(thread_id, index, event);
+}
+
+uint64_t srf_uncore_fixed_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter* data)
+{
+    return spr_setup_uncore_fixed(thread_id, index, event);
+}
+
 uint64_t srf_pmc_start(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
     return spr_pmc_start(thread_id, index, event, data);
@@ -90,6 +100,16 @@ uint64_t srf_power_start(int thread_id, RegisterIndex index, PerfmonEvent* event
 uint64_t srf_metrics_start(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
     return spr_metrics_start(thread_id, index, event, data);
+}
+
+uint64_t srf_uncore_start(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
+{
+    return spr_start_uncore(thread_id, index, event, data);
+}
+
+uint64_t srf_uncore_fixed_start(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
+{
+    return spr_start_uncore_fixed(thread_id, index, event, data);
 }
 
 uint64_t srf_fixed_stop(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
@@ -122,6 +142,16 @@ uint64_t srf_metrics_stop(int thread_id, RegisterIndex index, PerfmonEvent* even
     return spr_metrics_stop(thread_id, index, event, data);
 }
 
+uint64_t srf_uncore_stop(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
+{
+    return spr_stop_uncore(thread_id, index, event, data);
+}
+
+uint64_t srf_uncore_fixed_stop(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
+{
+    return spr_stop_uncore_fixed(thread_id, index, event, data);
+}
+
 uint64_t srf_fixed_read(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
     return spr_fixed_read(thread_id, index, event, data);
@@ -152,6 +182,15 @@ uint64_t srf_metrics_read(int thread_id, RegisterIndex index, PerfmonEvent* even
     return spr_metrics_read(thread_id, index, event, data);
 }
 
+uint64_t srf_uncore_read(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
+{
+    return spr_read_uncore(thread_id, index, event, data);
+}
+
+uint64_t srf_uncore_fixed_read(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
+{
+    return spr_read_uncore_fixed(thread_id, index, event, data);
+}
 
 static PerfmonFuncs SrfUnitFuncs[NUM_UNITS] = {
     [PMC] = {srf_pmc_setup, srf_pmc_start, srf_pmc_stop, srf_pmc_read, 0},
@@ -160,6 +199,18 @@ static PerfmonFuncs SrfUnitFuncs[NUM_UNITS] = {
     [THERMAL] = {NULL, NULL, srf_thermal_stop, srf_thermal_read, 0},
     [VOLTAGE] = {NULL, NULL, srf_voltage_stop, srf_voltage_read, 0},
     [METRICS] = {NULL, srf_metrics_start, srf_metrics_stop, srf_metrics_read, 0},
+    [MBOX0 ... MBOX15] = {srf_uncore_setup, srf_uncore_start, srf_uncore_stop, srf_uncore_read, PERFMON_LOCK_SOCKET},
+    //[MBOX0FIX ... MBOX15FIX] = {srf_uncore_fixed_setup, srf_uncore_fixed_start, srf_uncore_fixed_stop, srf_uncore_fixed_read, PERFMON_LOCK_SOCKET},
+    [UBOX] = {srf_uncore_setup, srf_uncore_start, srf_uncore_stop, srf_uncore_read, PERFMON_LOCK_SOCKET},
+    [MDF0 ... MDF49] = {srf_uncore_setup, srf_uncore_start, srf_uncore_stop, srf_uncore_read, PERFMON_LOCK_SOCKET},
+    [QBOX0 ... QBOX3] = {srf_uncore_setup, srf_uncore_start, srf_uncore_stop, srf_uncore_read, PERFMON_LOCK_SOCKET},
+    [WBOX0 ... WBOX3] = {srf_uncore_setup, srf_uncore_start, srf_uncore_stop, srf_uncore_read, PERFMON_LOCK_SOCKET},
+    [CBOX0 ... CBOX127] = {srf_uncore_setup, srf_uncore_start, srf_uncore_stop, srf_uncore_read, PERFMON_LOCK_SOCKET},
+    [BBOX0 ... BBOX31] = {srf_uncore_setup, srf_uncore_start, srf_uncore_stop, srf_uncore_read, PERFMON_LOCK_SOCKET},
+    [PBOX0 ... PBOX31] = {srf_uncore_setup, srf_uncore_start, srf_uncore_stop, srf_uncore_read, PERFMON_LOCK_SOCKET},
+    [RBOX0 ... RBOX3] = {srf_uncore_setup, srf_uncore_start, srf_uncore_stop, srf_uncore_read, PERFMON_LOCK_SOCKET},
+    [IRP0 ... IRP15] = {srf_uncore_setup, srf_uncore_start, srf_uncore_stop, srf_uncore_read, PERFMON_LOCK_SOCKET},
+    [IBOX0 ... IBOX15] = {srf_uncore_setup, srf_uncore_start, srf_uncore_stop, srf_uncore_read, PERFMON_LOCK_SOCKET},
 };
 
 int perfmon_setupCounterThread_sierraforrest(
@@ -524,14 +575,14 @@ int perfmon_finalizeCountersThread_sierraforrest(int thread_id, PerfmonEventSet*
             case FIXED:
                 ovf_values_core |= (1ULL<<(index+32));
                 break;
+            case PMC:
+                ovf_values_core |= (1ULL<<(getCounterTypeOffset(index)));
+                break;
             default:
                 break;
         }
         if ((reg) && (((type == PMC)||(type == FIXED))||(type == METRICS)|| ((type >= UNCORE && type < NUM_UNITS) && (haveLock))))
         {
-            CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, reg, &ovf_values_uncore));
-            VERBOSEPRINTPCIREG(cpu_id, dev, reg, ovf_values_uncore, SHOW_CTL);
-            ovf_values_uncore = 0x0ULL;
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
             if ((type >= SBOX0) && (type <= SBOX3))
