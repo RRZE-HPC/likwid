@@ -718,13 +718,32 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     FILE* fp = NULL;
     int perf_type = 0;
     uint64_t eventConfig = 0x0;
+    bstring perf_folder = NULL;
+    struct bstrList* folders = NULL;
     if (perf_event_paranoid > 0 && getuid() != 0)
     {
         return EPERM;
     }
     attr->type = 0;
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Get information for uncore counters from folder %s, translate_types[type]);
-    perf_type = read_perf_event_type(translate_types[type]);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Get information for uncore counters from folder(s): %s, translate_types[type]);
+    perf_folder = bfromcstr(translate_types[type]);
+    folders = bsplit(perf_folder, ' ');
+    bdestroy(perf_folder);
+    perf_folder = NULL;
+    for (int i = 0; i < folders->qty; i++)
+    {
+        if (!access(bdata(folders->entry[i]), R_OK|X_OK))
+        {
+            perf_folder = bstrcpy(folders->entry[i]);
+            break;
+        }
+    }
+    bstrListDestroy(folders);
+    if (!perf_folder)
+    {
+        return 1;
+    }
+    perf_type = read_perf_event_type(bdata(perf_folder));
     if (perf_type < 0)
     {
         if ((type == UBOX)||(type == UBOXFIX))
@@ -745,7 +764,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
 #else
     eventConfig = event->eventId;
 #endif
-    ret = parse_and_apply_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], eventConfig, attr);
+    ret = parse_and_apply_event_config(bdata(perf_folder), perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], eventConfig, attr);
 /*    num_formats = 0;*/
 /*    formats = NULL;*/
 /*    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);*/
@@ -775,7 +794,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     {
         num_formats = 0;
         formats = NULL;
-        ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_UNCORE_CONFIG], &num_formats, &formats);
+        ret = parse_event_config(bdata(perf_folder), perfEventOptionNames[EVENT_OPTION_UNCORE_CONFIG], &num_formats, &formats);
         if (ret == 0)
         {
             for (int i = 0; i < num_formats && umask != 0x0; i++)
@@ -802,7 +821,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     {
         num_formats = 0;
         formats = NULL;
-        ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], &num_formats, &formats);
+        ret = parse_event_config(bdata(perf_folder), perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], &num_formats, &formats);
         if (ret == 0)
         {
             uint64_t umask = event->umask;
@@ -865,7 +884,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                 case EVENT_OPTION_SLICE:
                     num_formats = 0;
                     formats = NULL;
-                    ret = parse_event_config(translate_types[type], perfEventOptionNames[event->options[j].type], &num_formats, &formats);
+                    ret = parse_event_config(bdata(perf_folder), perfEventOptionNames[event->options[j].type], &num_formats, &formats);
                     if (ret == 0)
                     {
                         uint64_t optval = event->options[j].value;
@@ -938,6 +957,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
             attr->config |= (1ULL<<46);
         }
     }
+    bdestroy(perf_folder);
     return 0;
 }
 

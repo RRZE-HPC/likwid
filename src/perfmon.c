@@ -819,15 +819,43 @@ perfmon_check_counter_map(int cpu_id)
             counter_map[i].optionMask = 0x0ULL;
         }
 #else
-        char* path = translate_types[counter_map[i].type];
-        if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO) {
-            path = translate_types[FPMC];
-        }
         struct stat st;
-        if (path == NULL || stat(path, &st) != 0)
+        struct bstrList* folders = NULL;
+        RegisterType type = counter_map[i].type;
+        if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO) {
+            type = FPMC;
+        }
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Counter %s at pos %d with dev %s (%d): %s, counter_map[i].key, i, pci_device_names[counter_map[i].device], counter_map[i].device, translate_types[type]);
+        if (!translate_types[type])
         {
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;
+            continue;
+        }
+        bstring perf_folder = bfromcstr(translate_types[type]);
+        folders = bsplit(perf_folder, ' ');
+        bdestroy(perf_folder);
+        perf_folder = NULL;
+        for (int i = 0; i < folders->qty; i++)
+        {
+            if (stat(bdata(folders->entry[i]), &st) == 0)
+            {
+                perf_folder = bstrcpy(folders->entry[i]);
+                break;
+            }
+            else
+            {
+            }
+        }
+        bstrListDestroy(folders);
+        if (perf_folder == NULL)
+        {
+            counter_map[i].type = NOTYPE;
+            counter_map[i].optionMask = 0x0ULL;
+        }
+        else
+        {
+            bdestroy(perf_folder);
         }
         if (counter_map[i].type != PMC && counter_map[i].type != FIXED && counter_map[i].type != PERF && counter_map[i].type != IPMC && counter_map[i].type != FPMC)
         {
@@ -2540,17 +2568,40 @@ perfmon_addEventSet(const char* eventCString)
                 goto past_checks;
             }
 #else
-            char* path = translate_types[counter_map[event->index].type];
+            RegisterType type = counter_map[event->index].type;
             if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO)
             {
-                path = translate_types[FPMC];
+                type = FPMC;
             }
-            struct stat st;
-            if (path == NULL || stat(path, &st) != 0)
+            if (!translate_types[type])
             {
                 DEBUG_PRINT(DEBUGLEV_INFO, Cannot access counter register %s, bdata(subtokens->entry[1]));
                 event->type = NOTYPE;
                 goto past_checks;
+            }
+            bstring perf_folder = bfromcstr(translate_types[type]);
+            struct bstrList* folders = bsplit(perf_folder, ' ');
+            bdestroy(perf_folder);
+            perf_folder = NULL;
+            struct stat st;
+            for (int i = 0; i < folders->qty; i++)
+            {
+                if (stat(bdata(folders->entry[i]), &st) == 0)
+                {
+                    perf_folder = bstrcpy(folders->entry[i]);
+                    break;
+                }
+            }
+            bstrListDestroy(folders);
+            if (perf_folder == NULL)
+            {
+                DEBUG_PRINT(DEBUGLEV_INFO, Cannot access counter register %s, bdata(subtokens->entry[1]));
+                event->type = NOTYPE;
+                goto past_checks;
+            }
+            else
+            {
+                bdestroy(perf_folder);
             }
 #endif
 
