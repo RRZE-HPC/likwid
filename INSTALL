@@ -146,6 +146,24 @@ on the executables. Not all file systems support capabilities.
 The only feasable way is to register the likwid-accessD and proxy all access
 over it.
 
+If you want to avoid the suid-root likwid-accessD, it is still possible to use
+direct mode access for normal users. Set the capabilities on the LIKWID binaries
+as described above and additionally assign rw file permissions to the user on
+/dev/cpu/*/msr (with groups, ACLs, etc.). However, beware of the security risk.
+
+In case access to MSRs is still not possible, you can additionally set
+cap_dac_override. Please be aware that this poses a severe security risk, since
+it allows accessD (accessdaemon mode) or one of the LIKWID binaries (direct mode)
+to read and write all files on the system. This is easily exploitable to become
+root. Do not do this unless you know what you are doing.
+
+Notes regarding Intel Sapphire Rapids (and possibly newer) CPUs:
+In order to support Uncore Discovery, LIKWID needs read and write access to
+/dev/mem. If required, set the capabilities the same way as you do for MSR device
+files. Please be reminded that user access to /dev/mem leaves the door open for
+anyone who wants to exploit the system. Accordingly, the usage of accessD with
+suid-root is highly recommended.
+
 Update for Linux kernel 5.9 and newer:
 With Linux 5.9, the msr kernel module got some security fixes. The major change for LIKWID is, that now all MSR are non-writable by default. In order to change that, you have to change the boot options of your operating system to contain msr.allow_writes=on to enable writes again. This affects only ACCESSMODE=direct and ACCESSMODE=accessdaemon. If you use the perf_event backend, you don't have to change anything.
 
