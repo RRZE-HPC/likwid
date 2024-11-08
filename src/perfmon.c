@@ -89,6 +89,8 @@
 #include <perfmon_hisilicon.h>
 #include <perfmon_graviton3.h>
 #include <perfmon_nvidiagrace.h>
+#include <perfmon_graniterapids.h>
+#include <perfmon_sierraforrest.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -243,7 +245,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
     err = HPMcheck(counter_map[index].device, 0);
     if (!err)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, WARNING: The device for counter %s does not exist ,bdata(reg));
+        DEBUG_PRINT(DEBUGLEV_INFO, WARNING: The device %s for counter %s does not exist, pci_device_names[counter_map[index].device], bdata(reg));
         return NOTYPE;
     }
     if ((type != THERMAL) && (type != VOLTAGE) && (type != POWER) && (type != WBOX0FIX))
@@ -777,6 +779,7 @@ perfmon_check_counter_map(int cpu_id)
         own_hpm = 1;
     }
 #endif
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Checking %d counters, perfmon_numCounters);
     int startpmcindex = -1;
     for (int i=0;i<perfmon_numCounters;i++)
     {
@@ -796,6 +799,7 @@ perfmon_check_counter_map(int cpu_id)
             counter_map[i].optionMask = 0x0ULL;
         }
 #ifndef LIKWID_USE_PERFEVENT
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Counter %s at pos %d with dev %s (%d), counter_map[i].key, i, pci_device_names[counter_map[i].device], counter_map[i].device, cpu_id);
         if (HPMcheck(counter_map[i].device, cpu_id))
         {
             uint32_t reg = counter_map[i].configRegister;
@@ -815,15 +819,43 @@ perfmon_check_counter_map(int cpu_id)
             counter_map[i].optionMask = 0x0ULL;
         }
 #else
-        char* path = translate_types[counter_map[i].type];
-        if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO) {
-            path = translate_types[FPMC];
-        }
         struct stat st;
-        if (path == NULL || stat(path, &st) != 0)
+        struct bstrList* folders = NULL;
+        RegisterType type = counter_map[i].type;
+        if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO) {
+            type = FPMC;
+        }
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Counter %s at pos %d with dev %s (%d): %s, counter_map[i].key, i, pci_device_names[counter_map[i].device], counter_map[i].device, translate_types[type]);
+        if (!translate_types[type])
         {
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;
+            continue;
+        }
+        bstring perf_folder = bfromcstr(translate_types[type]);
+        folders = bsplit(perf_folder, ' ');
+        bdestroy(perf_folder);
+        perf_folder = NULL;
+        for (int i = 0; i < folders->qty; i++)
+        {
+            if (stat(bdata(folders->entry[i]), &st) == 0)
+            {
+                perf_folder = bstrcpy(folders->entry[i]);
+                break;
+            }
+            else
+            {
+            }
+        }
+        bstrListDestroy(folders);
+        if (perf_folder == NULL)
+        {
+            counter_map[i].type = NOTYPE;
+            counter_map[i].optionMask = 0x0ULL;
+        }
+        else
+        {
+            bdestroy(perf_folder);
         }
         if (counter_map[i].type != PMC && counter_map[i].type != FIXED && counter_map[i].type != PERF && counter_map[i].type != IPMC && counter_map[i].type != FPMC)
         {
@@ -1192,8 +1224,30 @@ perfmon_init_maps(void)
                     archRegisterTypeNames = registerTypeNamesSapphireRapids;
                     break;
 
+                case GRANITERAPIDS:
+                    box_map = graniterapids_box_map;
+                    eventHash = graniterapids_arch_events;
+                    counter_map = graniterapids_counter_map;
+                    perfmon_numArchEvents = perfmon_numArchEventsGraniteRapids;
+                    perfmon_numCounters = perfmon_numCountersGraniteRapids;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersGraniteRapids;
+                    translate_types = graniterapids_translate_types;
+                    archRegisterTypeNames = registerTypeNamesGraniteRapids;
+                    break;
+
+                case SIERRAFORREST:
+                    box_map = sierraforrest_box_map;
+                    eventHash = sierraforrest_arch_events;
+                    counter_map = sierraforrest_counter_map;
+                    perfmon_numArchEvents = perfmon_numArchEventsSierraForrest;
+                    perfmon_numCounters = perfmon_numCountersSierraForrest;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersSierraForrest;
+                    translate_types = sierraforrest_translate_types;
+                    archRegisterTypeNames = registerTypeNamesSierraForrest;
+                    break;
+
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported Processor);
+                    ERROR_PLAIN_PRINT(Unsupported Intel Processor);
                     err = -EINVAL;
                     break;
             }
@@ -1546,13 +1600,16 @@ perfmon_init_maps(void)
             err = -EINVAL;
             break;
     }
-    if (eventHash && err == 0)
+    err = 1;
+    if ((eventHash != NULL) && (err == 0))
     {
         int cpu_id = sched_getcpu();
         HPMaddThread(cpu_id);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding GENERIC_EVENT);
         PerfmonEvent* tmp = malloc((perfmon_numArchEvents+10)*sizeof(PerfmonEvent));
         if (tmp)
         {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Copying %d events from input list, perfmon_numArchEvents);
             memcpy(tmp, eventHash, perfmon_numArchEvents*sizeof(PerfmonEvent));
             memset(tmp + perfmon_numArchEvents, '\0', 10*sizeof(PerfmonEvent));
             eventHash = tmp;
@@ -1579,8 +1636,9 @@ perfmon_init_maps(void)
                         for (int k = 0; k < perfmon_numCounters; k++)
                         {
                             bstring bkey = bfromcstr(counter_map[k].key);
-                            if (bstrcmp(xlist->entry[j], bkey) == BSTR_OK)
+                            if (bstrncmp(xlist->entry[j], bkey, blength(xlist->entry[j])) == BSTR_OK)
                             {
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, Checking counter %s (device %d (%s), HWThread %d), bdata(bkey), pci_device_names[counter_map[k].device], counter_map[k].device, cpu_id);
 #ifndef LIKWID_USE_PERFEVENT
                                 if (HPMcheck(counter_map[k].device, cpu_id))
 #else
@@ -1619,9 +1677,10 @@ perfmon_init_maps(void)
             perfmon_numArchEvents++;
             added_generic_event = 1;
         }
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding GENERIC_EVENT done);
     }
 
-    return err;
+    return 0;
 }
 
 int
@@ -1863,6 +1922,28 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_readCountersThread = perfmon_readCountersThread_sapphirerapids;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_sapphirerapids;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_sapphirerapids;
+                    break;
+
+                case GRANITERAPIDS:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    initThreadArch = perfmon_init_graniterapids;
+                    perfmon_startCountersThread = perfmon_startCountersThread_graniterapids;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_graniterapids;
+                    perfmon_readCountersThread = perfmon_readCountersThread_graniterapids;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_graniterapids;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_graniterapids;
+                    break;
+
+                case SIERRAFORREST:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    initThreadArch = perfmon_init_sierraforrest;
+                    perfmon_startCountersThread = perfmon_startCountersThread_sierraforrest;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_sierraforrest;
+                    perfmon_readCountersThread = perfmon_readCountersThread_sierraforrest;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_sierraforrest;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_sierraforrest;
                     break;
 
                 default:
@@ -2450,6 +2531,8 @@ perfmon_addEventSet(const char* eventCString)
     eventSet->regTypeMask2 = 0x0ULL;
     eventSet->regTypeMask3 = 0x0ULL;
     eventSet->regTypeMask4 = 0x0ULL;
+    eventSet->regTypeMask5 = 0x0ULL;
+    eventSet->regTypeMask6 = 0x0ULL;
 
     int forceOverwrite = 0;
     int valid_events = 0;
@@ -2485,17 +2568,40 @@ perfmon_addEventSet(const char* eventCString)
                 goto past_checks;
             }
 #else
-            char* path = translate_types[counter_map[event->index].type];
+            RegisterType type = counter_map[event->index].type;
             if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO)
             {
-                path = translate_types[FPMC];
+                type = FPMC;
             }
-            struct stat st;
-            if (path == NULL || stat(path, &st) != 0)
+            if (!translate_types[type])
             {
                 DEBUG_PRINT(DEBUGLEV_INFO, Cannot access counter register %s, bdata(subtokens->entry[1]));
                 event->type = NOTYPE;
                 goto past_checks;
+            }
+            bstring perf_folder = bfromcstr(translate_types[type]);
+            struct bstrList* folders = bsplit(perf_folder, ' ');
+            bdestroy(perf_folder);
+            perf_folder = NULL;
+            struct stat st;
+            for (int i = 0; i < folders->qty; i++)
+            {
+                if (stat(bdata(folders->entry[i]), &st) == 0)
+                {
+                    perf_folder = bstrcpy(folders->entry[i]);
+                    break;
+                }
+            }
+            bstrListDestroy(folders);
+            if (perf_folder == NULL)
+            {
+                DEBUG_PRINT(DEBUGLEV_INFO, Cannot access counter register %s, bdata(subtokens->entry[1]));
+                event->type = NOTYPE;
+                goto past_checks;
+            }
+            else
+            {
+                bdestroy(perf_folder);
             }
 #endif
 
@@ -2577,7 +2683,9 @@ past_checks:
         ((eventSet->regTypeMask1 != 0x0ULL) ||
         (eventSet->regTypeMask2 != 0x0ULL) ||
         (eventSet->regTypeMask3 != 0x0ULL) ||
-        (eventSet->regTypeMask4 != 0x0ULL)))
+        (eventSet->regTypeMask4 != 0x0ULL) ||
+        (eventSet->regTypeMask5 != 0x0ULL) ||
+        (eventSet->regTypeMask6 != 0x0ULL)))
     {
         eventSet->state = STATE_NONE;
         groupSet->numberOfActiveGroups++;

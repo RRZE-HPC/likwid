@@ -856,7 +856,7 @@ int perfmon_startCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* e
                     spr_power_start(thread_id, index, event, data);
                     break;
                 case METRICS:
-                    spr_metrics_start(thread_id, index, event, data);
+                    flags |= spr_metrics_start(thread_id, index, event, data);
                     break;
                 case THERMAL:
                 case VOLTAGE:
@@ -2214,14 +2214,14 @@ int perfmon_finalizeCountersThread_sapphirerapids(int thread_id, PerfmonEventSet
             case FIXED:
                 ovf_values_core |= (1ULL<<(index+32));
                 break;
+            case PMC:
+                ovf_values_core |= (1ULL<<(getCounterTypeOffset(index)));
+                break;
             default:
                 break;
         }
         if ((reg) && (((type == PMC)||(type == FIXED))||(type == METRICS)|| ((type >= UNCORE && type < NUM_UNITS) && (haveLock))))
         {
-            CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, reg, &ovf_values_uncore));
-            VERBOSEPRINTPCIREG(cpu_id, dev, reg, ovf_values_uncore, SHOW_CTL);
-            ovf_values_uncore = 0x0ULL;
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
             if ((type >= SBOX0) && (type <= SBOX3))

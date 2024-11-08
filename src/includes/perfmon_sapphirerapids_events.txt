@@ -2642,7 +2642,8 @@ UMASK_TXL_FLITS_DATA_SLOT0              0x09
 UMASK_TXL_FLITS_DATA_SLOT1              0x0A
 # Added by T. Gruber
 UMASK_TXL_FLITS_DATA_SLOT2              0x0C
-
+# Added by T. Gruber
+UMASK_TXL_FLITS_ALL_DATA                0x0F
 
 EVENT_RXL_FLITS                         0x03 UPI
 UMASK_RXL_FLITS_SLOT0                   0x01
@@ -2660,6 +2661,8 @@ UMASK_RXL_FLITS_DATA_SLOT0              0x09
 UMASK_RXL_FLITS_DATA_SLOT1              0x0A
 # Added by T. Gruber
 UMASK_RXL_FLITS_DATA_SLOT2              0x0C
+# Added by T. Gruber
+UMASK_RXL_FLITS_ALL_DATA                0x0F
 
 EVENT_TXL_BASIC_HDR_MATCH               0x04 UPI
 OPTIONS_TXL_BASIC_HDR_MATCH             EVENT_OPTION_MATCH0_MASK

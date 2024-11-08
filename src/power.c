@@ -141,6 +141,8 @@ power_init(int cpuId)
                 case ICELAKEX1:
                 case ICELAKEX2:
                 case SAPPHIRERAPIDS:
+                case GRANITERAPIDS:
+                case SIERRAFORREST:
                     core_limits = 1;
                     power_info.hasRAPL = 1;
                     numDomains = NUM_POWER_DOMAINS;
@@ -409,7 +411,9 @@ power_init(int cpuId)
             {
                 power_info.domains[DRAM].energyUnit = 15.3E-6;
             }
-            else if (cpuid_info.family == P6_FAMILY && cpuid_info.family == SAPPHIRERAPIDS)
+            else if (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == SAPPHIRERAPIDS) ||
+                     (cpuid_info.model == GRANITERAPIDS) ||
+                     (cpuid_info.model == SIERRAFORREST)))
             {
                 power_info.domains[DRAM].energyUnit = 61E-6;
             }

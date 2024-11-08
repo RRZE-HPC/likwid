@@ -64,6 +64,8 @@
 #include <perfmon_icelakeX_counters.h>
 #include <intel_perfmon_uncore_discovery.h>
 #include <perfmon_sapphirerapids_counters.h>
+#include <perfmon_graniterapids_counters.h>
+#include <perfmon_sierraforrest_counters.h>
 #include <topology.h>
 #include <cpuid.h>
 #include <lock.h>
@@ -3047,8 +3049,8 @@ static void spr_read_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 uint32_t lo = 0ULL, hi = 0ULL;
                                 lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset));
@@ -3078,8 +3080,8 @@ static void spr_read_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 uint32_t lo = 0ULL, hi = 0ULL;
                                 lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset));
@@ -3110,7 +3112,8 @@ static void spr_read_unit(AccessDataRecord *record)
                     {
                         case ACCESS_TYPE_MMIO:
                             if ((record->device >= MMIO_IMC_DEVICE_0_CH_0 && record->device <= MMIO_IMC_DEVICE_1_CH_7) ||
-                                (record->device >= MMIO_HBM_DEVICE_0 && record->device <= MMIO_HBM_DEVICE_31))
+                                (record->device >= MMIO_HBM_DEVICE_0 && record->device <= MMIO_HBM_DEVICE_31) ||
+                                (record->device >= PCI_R2PCIE_DEVICE0 && record->device <= PCI_R2PCIE_DEVICE31))
                             {
                                 record->data = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset)));
                             }
@@ -3122,8 +3125,8 @@ static void spr_read_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 uint32_t lo = 0ULL, hi = 0ULL;
                                 lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset)));
@@ -3159,8 +3162,8 @@ static void spr_read_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 uint32_t lo = 0ULL, hi = 0ULL;
                                 lo = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset)));
@@ -3311,8 +3314,8 @@ static void spr_write_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset)) = (uint32_t)record->data;
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + sizeof(uint32_t))) = (uint32_t)(record->data>>32);
@@ -3340,8 +3343,8 @@ static void spr_write_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset)) = (uint32_t)record->data;
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->status_offset + sizeof(uint32_t))) = (uint32_t)(record->data>>32);
@@ -3370,7 +3373,8 @@ static void spr_write_unit(AccessDataRecord *record)
                     {
                         case ACCESS_TYPE_MMIO:
                             if ((record->device >= MMIO_IMC_DEVICE_0_CH_0 && record->device <= MMIO_IMC_DEVICE_1_CH_7) ||
-                                (record->device >= MMIO_HBM_DEVICE_0 && record->device <= MMIO_HBM_DEVICE_31))
+                                (record->device >= MMIO_HBM_DEVICE_0 && record->device <= MMIO_HBM_DEVICE_31) ||
+                                (record->device >= PCI_R2PCIE_DEVICE0 && record->device <= PCI_R2PCIE_DEVICE31))
                             {
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset))) = (uint32_t)record->data;
                             }
@@ -3382,8 +3386,8 @@ static void spr_write_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset))) = (uint32_t)record->data;
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset) + sizeof(uint32_t))) = (uint32_t)(record->data>>32);
@@ -3416,8 +3420,8 @@ static void spr_write_unit(AccessDataRecord *record)
                             break;
                         case ACCESS_TYPE_PCI:
                             if ((record->device >= PCI_HA_DEVICE_0 && record->device <= PCI_HA_DEVICE_31) ||
-                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_3) ||
-                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_3))
+                                (record->device >= PCI_R3QPI_DEVICE_LINK_0 && record->device <= PCI_R3QPI_DEVICE_LINK_5) ||
+                                (record->device >= PCI_QPI_DEVICE_PORT_0 && record->device <= PCI_QPI_DEVICE_PORT_5))
                             {
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset))) = (uint32_t)record->data;
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctr_offset + (sizeof(uint32_t) * offset) + sizeof(uint32_t))) = (uint32_t)(record->data>>32);
@@ -3484,7 +3488,7 @@ static void spr_write_unit(AccessDataRecord *record)
 
 static void spr_read(AccessDataRecord *record)
 {
-    if (record->device == MSR_UBOX_DEVICE && ((record->reg == FAKE_UNC_GLOBAL_CTRL) || ((record->reg >= FAKE_UNC_GLOBAL_STATUS0) && (record->reg <= FAKE_UNC_GLOBAL_STATUS3))))
+    if (record->device == MSR_UBOX_DEVICE && ((record->reg == FAKE_UNC_GLOBAL_CTRL) || ((record->reg >= FAKE_UNC_GLOBAL_STATUS0) && (record->reg <= FAKE_UNC_GLOBAL_STATUS8))))
     {
         spr_read_global(record);
     }
@@ -3496,7 +3500,7 @@ static void spr_read(AccessDataRecord *record)
 
 static void spr_write(AccessDataRecord *record)
 {
-    if (record->device == MSR_UBOX_DEVICE && ((record->reg == FAKE_UNC_GLOBAL_CTRL) || ((record->reg >= FAKE_UNC_GLOBAL_STATUS0) && (record->reg <= FAKE_UNC_GLOBAL_STATUS3))))
+    if (record->device == MSR_UBOX_DEVICE && ((record->reg == FAKE_UNC_GLOBAL_CTRL) || ((record->reg >= FAKE_UNC_GLOBAL_STATUS0) && (record->reg <= FAKE_UNC_GLOBAL_STATUS8))))
     {
         spr_write_global(record);
     }
@@ -3696,6 +3700,22 @@ int main(void)
                     allowedPci = allowed_pci_spr;
                     isIntelUncoreDiscovery = 1;
                 }
+                else if (model == GRANITERAPIDS)
+                {
+                    isPCIUncore = 1;
+                    allowed = allowed_spr;
+                    isPCI64 = 1;
+                    allowedPci = allowed_pci_spr;
+                    isIntelUncoreDiscovery = 1;
+                }
+                else if (model == SIERRAFORREST)
+                {
+                    isPCIUncore = 1;
+                    allowed = allowed_spr;
+                    isPCI64 = 1;
+                    allowedPci = allowed_pci_spr;
+                    isIntelUncoreDiscovery = 1;
+                }
                 else if ((model == ATOM_SILVERMONT_C) ||
                          (model == ATOM_SILVERMONT_E) ||
                          (model == ATOM_SILVERMONT_Z1) ||
@@ -3711,11 +3731,6 @@ int main(void)
                     allowed = allowed_knl;
                     isPCIUncore = 1;
                     allowedPci = allowed_pci_knl;
-                }
-                else if (model == SAPPHIRERAPIDS)
-                {
-                    allowed = allowed_icx;
-                    isPCI64 = 1;
                 }
                 break;
             case K8_FAMILY:
@@ -3903,7 +3918,7 @@ int main(void)
             else if (isIntelUncoreDiscovery)
             {
                 pci_devices_daemon = NULL;
-                int err = perfmon_uncore_discovery(&perfmon_discovery);
+                int err = perfmon_uncore_discovery(model, &perfmon_discovery);
                 if (err < 0)
                 {
                     syslog(LOG_ERR, "Failed to run uncore discovery");

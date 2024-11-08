@@ -1,0 +1,24 @@
+SHORT MFLOP/s in double- and single-precision.
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  FP_FLOPS_RETIRED_FP64
+PMC1  FP_FLOPS_RETIRED_FP32
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+DP [MFLOP/s]  1.0E-06*(PMC0)/time
+SP [MFLOP/s]  1.0E-06*(PMC1)/time
+
+LONG
+Formulas:
+DP [MFLOP/s] = 1.0E-06*(FP_FLOPS_RETIRED_FP64)/runtime
+SP [MFLOP/s] = 1.0E-06*(FP_FLOPS_RETIRED_FP32)/runtime
+-
+Single and double precision FLOP rates.
+
