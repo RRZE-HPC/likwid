@@ -376,7 +376,38 @@ static void print_unit(PciDeviceIndex idx, PerfmonDiscoveryUnit* unit)
     }
 }
 
+static int perfmon_uncore_discovery_update_dev_location(PerfmonDiscoveryUnit* unit)
+{
+    struct pci_dev* dev = NULL;
+    uint32_t device = 0;
+    uint32_t devfn = 0;
+    switch (unit->box_type)
+    {
+        case SPR_DEVICE_ID_UPI:
+            device = 0x3241;
+            devfn = 0x9;
+            break;
+        case SPR_DEVICE_ID_M3UPI:
+            device = 0x3246;
+            devfn = 0x29;
+            break;
+        default:
+            return 0;
+    }
 
+    while ((dev = pci_get_device(PCI_VENDOR_ID_INTEL, device, dev)) != NULL)
+    {
+        if (dev->numa_node < 0)
+        {
+            continue;
+        }
+        unit->box_ctl = dev->domain  << UNCORE_DISCOVERY_PCI_DOMAIN_OFFSET |
+                        dev->bus << UNCORE_DISCOVERY_PCI_BUS_OFFSET |
+                        devfn << UNCORE_DISCOVERY_PCI_DEVFN_OFFSET |
+                        unit->box_ctl;
+    }
+    return 0;
+}
 
 int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
 {
@@ -539,13 +570,6 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
                         cur->units[idx].ctr_offset = unit.ctr_offset;
                         cur->units[idx].status_offset = unit.status_offset;
                         cur->units[idx].access_type = (AccessTypes)unit.access_type;
-/*                        if (cur->units[idx].access_type == ACCESS_TYPE_PCI)*/
-/*                        {*/
-/*                            // Workaround: When running the perfmon discovery in kernel-space, the*/
-/*                            // mapped PCI devices differ to the user-space discovery by bit 27 only*/
-/*                            // for the PCI based Uncore devices.*/
-/*                            unit.box_ctl |= (1<<27);*/
-/*                        }*/
                         cur->units[idx].box_ctl = unit.box_ctl;
                         cur->units[idx].filter_offset = 0x0;
                         cur->units[idx].fixed_ctrl_offset = 0x0;
@@ -563,6 +587,15 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
                                     cur->units[idx].fixed_ctrl_offset = 0x54;
                                     cur->units[idx].fixed_ctr_offset = 0x38;
                                 }
+                                break;
+                            default:
+                                break;
+                        }
+
+                        switch (model)
+                        {
+                            case SAPPHIRERAPIDS:
+                                perfmon_uncore_discovery_update_dev_location(&cur->units[idx]);
                                 break;
                             default:
                                 break;
