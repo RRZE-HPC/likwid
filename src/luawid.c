@@ -2688,25 +2688,24 @@ static int lua_likwid_gpustr_to_gpulist_cuda(lua_State *L) {
   int ret = 0;
   char *gpustr = (char *)luaL_checkstring(L, 1);
   if (!cudatopology_isInitialized) {
-    if (topology_cuda_init() == EXIT_SUCCESS) {
-      cudatopo = get_cudaTopology();
-      cudatopology_isInitialized = 1;
-    } else {
-      lua_pushnumber(L, 0);
-      lua_pushnil(L);
-      return 2;
-    }
+    int init = topology_cuda_init();
+    if (init != EXIT_SUCCESS)
+      return luaL_error(L, "Unable to init CUDA topology: %s", strerror(-init));
+
+    cudatopo = get_cudaTopology();
+    cudatopology_isInitialized = 1;
   }
   int *gpulist = (int *)malloc(cudatopo->numDevices * sizeof(int));
-  if (gpulist == NULL) {
-    lua_pushstring(L, "Cannot allocate data for the GPU list");
-    lua_error(L);
-  }
+  if (!gpulist)
+    return luaL_error(L, "Cannot allocate data for the GPU list");
+
   ret = gpustr_to_gpulist_cuda(gpustr, gpulist, cudatopo->numDevices);
-  if (ret <= 0) {
-    lua_pushstring(L, "Cannot parse GPU string");
-    lua_error(L);
+  if (ret <= 0)
+  {
+    free(gpulist);
+    return luaL_error(L, "Cannot parse GPU string: %d", ret);
   }
+
   lua_pushnumber(L, ret);
   lua_newtable(L);
   for (int i = 0; i < ret; i++) {
