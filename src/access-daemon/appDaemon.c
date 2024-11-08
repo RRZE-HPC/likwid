@@ -54,7 +54,7 @@ static FILE* output_file = NULL;
 static int stopIssued = 0;
 static pthread_mutex_t stopMutex;
 
-int appdaemon_register_exit(appdaemon_exit_func f)
+static int appdaemon_register_exit(appdaemon_exit_func f)
 {
     if (appdaemon_num_exit_funcs < APPDAEMON_MAX_EXIT_FUNCS)
     {
@@ -515,6 +515,7 @@ static void* appdaemon_timeline_main(void* arg)
 /*
 Main
 */
+__attribute__((visibility("default")))
 int __libc_start_main(int (*main) (int,char **,char **),
               int argc,char **ubp_av,
               void (*init) (void),
