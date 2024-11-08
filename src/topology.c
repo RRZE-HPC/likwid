@@ -1862,6 +1862,8 @@ print_supportedCPUs (void)
     printf("\t%s\n",rocketlake_str);
     printf("\t%s\n",icelakesp_str);
     printf("\t%s\n",sapphire_rapids_str);
+    printf("\t%s\n",granite_rapids_str);
+    printf("\t%s\n",sierra_forrest_str);
     printf("\n");
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);
@@ -1877,6 +1879,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",amd_zen2_str);
     printf("\t%s\n",amd_zen3_str);
     printf("\t%s\n",amd_zen4_str);
+    printf("\t%s\n",amd_zen4c_str);
     printf("\n");
     printf("Supported ARMv8 processors:\n");
     printf("\t%s\n",arm_cortex_a53);
