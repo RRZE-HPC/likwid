@@ -31,9 +31,6 @@
 #ifndef LIKWID_NVMON_PERFWORKS_H
 #define LIKWID_NVMON_PERFWORKS_H
 
-#if defined(CUDART_VERSION) && CUDART_VERSION >= 12000
-#error "NVMON Perfworks is currently not supported on CUDA 12+"
-#endif
 
 #if defined(CUDART_VERSION) && CUDART_VERSION > 10000
 
@@ -220,6 +217,126 @@ typedef struct {
 
 #define NVPW_CUDA_RawMetricsConfig_Create_V2_Params_STRUCT_SIZE 1
 
+#endif
+
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 12060
+typedef struct NVPA_MetricsContext NVPA_MetricsContext;
+typedef struct NVPW_CUDA_MetricsContext_Create_Params
+{
+    /// [in]
+    size_t structSize;
+    /// [in] assign to NULL
+    void* pPriv;
+    /// [in]
+    const char* pChipName;
+    /// [out]
+    struct NVPA_MetricsContext* pMetricsContext;
+} NVPW_CUDA_MetricsContext_Create_Params;
+#define NVPW_CUDA_MetricsContext_Create_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_CUDA_MetricsContext_Create_Params, pMetricsContext)
+typedef struct NVPW_MetricsContext_Destroy_Params
+{
+    /// [in]
+    size_t structSize;
+    /// [in] assign to NULL
+    void* pPriv;
+    NVPA_MetricsContext* pMetricsContext;
+} NVPW_MetricsContext_Destroy_Params;
+#define NVPW_MetricsContext_Destroy_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_MetricsContext_Destroy_Params, pMetricsContext)
+
+typedef struct NVPW_MetricsContext_GetMetricNames_Begin_Params
+{
+    /// [in]
+    size_t structSize;
+    /// [in] assign to NULL
+    void* pPriv;
+    NVPA_MetricsContext* pMetricsContext;
+    /// out: number of elements in array ppMetricNames
+    size_t numMetrics;
+    /// out: pointer to array of 'const char* pMetricName'
+    const char* const* ppMetricNames;
+    /// in : if true, doesn't enumerate \<metric\>.peak_{burst, sustained}
+    NVPA_Bool hidePeakSubMetrics;
+    /// in : if true, doesn't enumerate \<metric\>.per_{active,elapsed,region,frame}_cycle
+    NVPA_Bool hidePerCycleSubMetrics;
+    /// in : if true, doesn't enumerate \<metric\>.pct_of_peak_{burst,sustained}_{active,elapsed,region,frame}
+    NVPA_Bool hidePctOfPeakSubMetrics;
+    /// in : if false, enumerate \<unit\>__throughput.pct_of_peak_sustained_elapsed even if hidePctOfPeakSubMetrics
+    /// is true
+    NVPA_Bool hidePctOfPeakSubMetricsOnThroughputs;
+} NVPW_MetricsContext_GetMetricNames_Begin_Params;
+#define NVPW_MetricsContext_GetMetricNames_Begin_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_MetricsContext_GetMetricNames_Begin_Params, hidePctOfPeakSubMetricsOnThroughputs)
+
+typedef struct NVPW_MetricsContext_GetMetricNames_End_Params
+{
+    /// [in]
+    size_t structSize;
+    /// [in] assign to NULL
+    void* pPriv;
+    NVPA_MetricsContext* pMetricsContext;
+} NVPW_MetricsContext_GetMetricNames_End_Params;
+#define NVPW_MetricsContext_GetMetricNames_End_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_MetricsContext_GetMetricNames_End_Params, pMetricsContext)
+
+typedef struct NVPW_MetricsContext_GetMetricProperties_Begin_Params
+{
+    /// [in]
+    size_t structSize;
+    /// [in] assign to NULL
+    void* pPriv;
+    NVPA_MetricsContext* pMetricsContext;
+    const char* pMetricName;
+    /// out
+    const char* pDescription;
+    /// out
+    const char* pDimUnits;
+    /// out: a NULL-terminated array of pointers to RawMetric names that can be passed to
+    /// NVPW_RawMetricsConfig_AddMetrics()
+    const char** ppRawMetricDependencies;
+    /// out: metric.peak_burst.value.gpu
+    double gpuBurstRate;
+    /// out: metric.peak_sustained.value.gpu
+    double gpuSustainedRate;
+    /// out: a NULL-terminated array of pointers to RawMetric names that can be passed to
+    /// NVPW_RawMetricsConfig_AddMetrics().
+    const char** ppOptionalRawMetricDependencies;
+} NVPW_MetricsContext_GetMetricProperties_Begin_Params;
+#define NVPW_MetricsContext_GetMetricProperties_Begin_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_MetricsContext_GetMetricProperties_Begin_Params, ppOptionalRawMetricDependencies)
+
+typedef struct NVPW_MetricsContext_GetMetricProperties_End_Params
+{
+    /// [in]
+    size_t structSize;
+    /// [in] assign to NULL
+    void* pPriv;
+    NVPA_MetricsContext* pMetricsContext;
+} NVPW_MetricsContext_GetMetricProperties_End_Params;
+#define NVPW_MetricsContext_GetMetricProperties_End_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_MetricsContext_GetMetricProperties_End_Params, pMetricsContext)
+
+typedef struct NVPW_MetricsContext_SetCounterData_Params
+{
+    /// [in]
+    size_t structSize;
+    /// [in] assign to NULL
+    void* pPriv;
+    NVPA_MetricsContext* pMetricsContext;
+    const uint8_t* pCounterDataImage;
+    size_t rangeIndex;
+    NVPA_Bool isolated;
+} NVPW_MetricsContext_SetCounterData_Params;
+#define NVPW_MetricsContext_SetCounterData_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_MetricsContext_SetCounterData_Params, isolated)
+
+typedef struct NVPW_MetricsContext_EvaluateToGpuValues_Params
+{
+    /// [in]
+    size_t structSize;
+    /// [in] assign to NULL
+    void* pPriv;
+    NVPA_MetricsContext* pMetricsContext;
+    size_t numMetrics;
+    const char* const* ppMetricNames;
+    /// [out]
+    double* pMetricValues;
+} NVPW_MetricsContext_EvaluateToGpuValues_Params;
+#define NVPW_MetricsContext_EvaluateToGpuValues_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_MetricsContext_EvaluateToGpuValues_Params, pMetricValues)
 #endif
 
 #ifndef DECLARE_CUFUNC
@@ -999,9 +1116,9 @@ int nvmon_perfworks_createDevice(int id, NvmonDevice *dev) {
     }
   }
 
-  NVPW_CUDA_MetricsContext_Create_Params metricsContextCreateParams = {
+    NVPW_CUDA_MetricsContext_Create_Params metricsContextCreateParams = {
       NVPW_CUDA_MetricsContext_Create_Params_STRUCT_SIZE};
-  metricsContextCreateParams.pChipName = dev->chip;
+    metricsContextCreateParams.pChipName = dev->chip;
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Create metric context for chip '%s', dev->chip);
     LIKWID_NVPW_API_CALL(
         (*NVPW_CUDA_MetricsContext_CreatePtr)(&metricsContextCreateParams),
@@ -1449,7 +1566,6 @@ static int nvmon_perfworks_createConfigImage(char *chip,
 
   NVPA_RawMetricRequest *reqs = NULL;
   NVPA_RawMetricsConfig *pRawMetricsConfig = NULL;
-
   NVPW_CUDA_MetricsContext_Create_Params metricsContextCreateParams = {
       NVPW_CUDA_MetricsContext_Create_Params_STRUCT_SIZE};
   metricsContextCreateParams.pChipName = chip;
