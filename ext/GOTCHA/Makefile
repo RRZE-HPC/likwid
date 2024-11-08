@@ -18,6 +18,9 @@ DEBUG_FLAGS = -g
 else
 DEBUG_FLAGS =
 endif
+ifeq ($(strip $(SANITIZE)),true)
+DEBUG_FLAGS += -fsanitize=address -fno-omit-frame-pointer
+endif
 ifeq ($(strip $(COMPILER)),MIC)
 CFLAGS += -mmic
 LFLAGS += -mmic
@@ -50,7 +53,7 @@ $(STATIC_LIBGOTCHA): $(OBJ)
 	#$(Q)${AR} -cq $(LIBGOTCHA) $(OBJ)
 
 $(SHARED_LIBGOTCHA): $(OBJ)
-	$(Q)$(CC) $(LFLAGS) -Wl,-soname,$(LIBGOTCHA).$(VERSION).$(RELEASE) -shared -fPIC -o $(LIBGOTCHA) $(OBJ) $(LIBS)
+	$(Q)$(CC) $(DEBUG_FLAGS) $(LFLAGS) -Wl,-soname,$(LIBGOTCHA).$(VERSION).$(RELEASE) -shared -fPIC -o $(LIBGOTCHA) $(OBJ) $(LIBS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c

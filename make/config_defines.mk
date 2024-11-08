@@ -442,3 +442,6 @@ else
 DEBUG_FLAGS =
 endif
 
+ifeq ($(strip $(SANITIZE)),true)
+DEBUG_FLAGS += -fsanitize=address -fno-omit-frame-pointer
+endif

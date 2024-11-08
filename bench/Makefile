@@ -94,6 +94,10 @@ else
 DEBUG_FLAGS =
 endif
 
+ifeq ($(strip $(SANITIZE)),true)
+DEBUG_FLAGS += -fsanitize=address -fno-omit-frame-pointer
+endif
+
 VPATH     = $(SRC_DIR)
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
 ifeq ($(SHARED_LIBRARY),false)

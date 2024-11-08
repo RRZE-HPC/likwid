@@ -19,6 +19,9 @@ DEBUG_FLAGS = -g
 else
 DEBUG_FLAGS =
 endif
+ifeq ($(strip $(SANITIZE)),true)
+DEBUG_FLAGS += -fsanitize=address -fno-omit-frame-pointer
+endif
 ifeq ($(strip $(COMPILER)),MIC)
 CFLAGS += -mmic
 LFLAGS += -mmic
@@ -48,10 +51,10 @@ $(STATIC_LIBLUA): $(OBJ)
 	$(Q)${AR} -cq $(LIBLUA) $(OBJ)
 
 $(SHARED_LIBLUA): $(OBJ)
-	$(Q)$(CC) $(LFLAGS) -Wl,-soname,$(LIBLUA).$(VERSION).$(RELEASE) -shared -fPIC -o $(LIBLUA) $(OBJ) $(LIBS)
+	$(Q)$(CC) $(DEBUG_FLAGS) $(LFLAGS) -Wl,-soname,$(LIBLUA).$(VERSION).$(RELEASE) -shared -fPIC -o $(LIBLUA) $(OBJ) $(LIBS)
 
 $(INTERPRETER): $(LIBLUA) $(BUILD_DIR)/lua.o
-	$(Q)$(CC) -o $@ $(LFLAGS) $(BUILD_DIR)/lua.o $(RPATHS) $(LIBLUA) $(LIBS)
+	$(Q)$(CC) $(DEBUG_FLAGS) -o $@ $(LFLAGS) $(BUILD_DIR)/lua.o $(RPATHS) $(LIBLUA) $(LIBS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c

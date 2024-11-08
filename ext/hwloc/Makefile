@@ -20,6 +20,9 @@ DEBUG_FLAGS = -g
 else
 DEBUG_FLAGS =
 endif
+ifeq ($(strip $(SANITIZE)),true)
+DEBUG_FLAGS += -fsanitize=address -fno-omit-frame-pointer
+endif
 ifeq ($(COMPILER),MIC)
 CFLAGS += -mmic
 LFLAGS += -mmic

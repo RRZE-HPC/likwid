@@ -124,6 +124,9 @@ SHARED_LIBRARY = true#NO SPACE
 # Build LIKWID with debug flags
 DEBUG = false#NO SPACE
 
+# Build LIKWID with address sanitizer flags
+SANITIZE = false#NO SPACE
+
 # Basic configuration for some internal arrays.
 # Maximal number of hardware threads
 MAX_NUM_THREADS = 512
