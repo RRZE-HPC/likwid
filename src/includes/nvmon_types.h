@@ -127,6 +127,7 @@ typedef struct {
 typedef enum {
     LIKWID_NVMON_CUPTI_BACKEND = 0,
     LIKWID_NVMON_PERFWORKS_BACKEND,
+    LIKWID_NVMON_BACKEND_COUNT,
 } NvmonBackends;
 
 typedef struct {
@@ -200,7 +201,7 @@ typedef struct {
     int              numberOfGPUs; /*!< \brief Amount of GPUs in \a gpus */
     NvmonDevice*     gpus; /*!< \brief List of GPUs */
     int              numberOfBackends;
-    NvmonFunctions*  backends[3];
+    NvmonFunctions*  backends[LIKWID_NVMON_BACKEND_COUNT];
 
     int                   numGroupSources;
     NvmonGroupSourceInfo* groupSources;

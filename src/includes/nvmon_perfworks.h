@@ -31,6 +31,10 @@
 #ifndef LIKWID_NVMON_PERFWORKS_H
 #define LIKWID_NVMON_PERFWORKS_H
 
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 12000
+#error "NVMON Perfworks is currently not supported on CUDA 12+"
+#endif
+
 #if defined(CUDART_VERSION) && CUDART_VERSION > 10000
 
 #include <cuda.h>

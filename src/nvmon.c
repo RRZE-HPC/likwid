@@ -72,8 +72,7 @@ int likwid_nvmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
 #include <nvmon_cupti.h>
 #include <nvmon_nvml.h>
-//#include <nvmon_perfworks.h>
-
+#include <nvmon_perfworks.h>
 
 LikwidNvResults* gMarkerResults = NULL;
 int gMarkerRegions = 0;
@@ -118,7 +117,7 @@ nvmon_init(int nrGpus, const int* gpuIds)
 
     init_configuration();
 
-    nvGroupSet = (NvmonGroupSet*) malloc(sizeof(NvmonGroupSet));
+    nvGroupSet = calloc(1, sizeof(NvmonGroupSet));
     if (nvGroupSet == NULL)
     {
         ERROR_PLAIN_PRINT(Cannot allocate group descriptor);
@@ -327,7 +326,6 @@ nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
         return -EINVAL;
     }
 
-    //err = nvmon_cupti_functions.getEventList(available, list);
     if (gtopo->devices[available].ccapMajor < 7)
     {
         if (nvmon_cupti_functions.getEventList)
@@ -337,12 +335,10 @@ nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
     }
     else
     {
-#ifdef LIKWID_NVMON_PERFWORKS_H
         if (nvmon_perfworks_functions.getEventList)
         {
             err = nvmon_perfworks_functions.getEventList(available, list);
         }
-#endif
     }
 
     // Get nvml events and merge lists
@@ -450,7 +446,6 @@ nvmon_initEventSourceLookupMaps(int gid, int gpuId)
     GroupInfo* group = &nvGroupSet->groups[gid];
 
     // Allocate memory
-    NvmonGroupSourceInfo* info;
     if (gid >= nvGroupSet->numGroupSources)
     {
         int* tmpSourceTypes = (int*) malloc(group->nevents * sizeof(int));
@@ -475,7 +470,6 @@ nvmon_initEventSourceLookupMaps(int gid, int gpuId)
             return -ENOMEM;
         }
 
-        info = tmpInfo;
         nvGroupSet->groupSources = tmpInfo;
         nvGroupSet->groupSources[gid].numEvents = group->nevents;
         nvGroupSet->groupSources[gid].sourceTypes = tmpSourceTypes;
@@ -524,7 +518,6 @@ int
 nvmon_addEventSet(const char* eventCString)
 {
     int i = 0, j = 0, k = 0, l = 0, m = 0, err = 0;
-    int isPerfGroup = 0;
 
     int devId = 0;
     int configuredEvents = 0;
@@ -620,7 +613,6 @@ nvmon_addEventSet(const char* eventCString)
             ERROR_PRINT(Cannot read performance group %s, eventCString);
             return err;
         }
-        isPerfGroup = 1;
     }
 
     // Build source lookup
@@ -1140,6 +1132,7 @@ int nvmon_getGroups(int gpuId, char*** groups, char*** shortinfos, char*** longi
 int nvmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos)
 {
     perfgroup_returnGroups(nrgroups, groups, shortinfos, longinfos);
+    return 0;
 }
 
 int nvmon_getNumberOfMetrics(int groupId)
@@ -1355,7 +1348,7 @@ nvmon_readMarkerFile(const char* filename)
         return -ENOMEM;
     }
     gMarkerRegions = regions;
-    for ( uint32_t i=0; i < regions; i++ )
+    for (int i = 0; i < regions; i++)
     {
         regionGPUs[i] = 0;
         gMarkerResults[i].gpuCount = gpus;
@@ -1450,7 +1443,7 @@ nvmon_readMarkerFile(const char* filename)
             }
         }
     }
-    for ( uint32_t i=0; i < regions; i++ )
+    for (int i = 0; i < regions; i++)
     {
         gMarkerResults[i].gpuCount = regionGPUs[i];
     }

@@ -145,7 +145,7 @@ cuda_topo_init(void)
     CUresult cuErr = (*cuInitTopoPtr)(0);
     if (cuErr != CUDA_SUCCESS)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, CUDA cannot be found and initialized (cuInit failed));
+        DEBUG_PRINT(DEBUGLEV_INFO, CUDA cannot be found and initialized (cuInit failed): %d, cuErr);
         return -ENODEV;
     }
     return 0;
@@ -154,22 +154,20 @@ cuda_topo_init(void)
 static int
 cuda_topo_get_numDevices(void)
 {
-    CUresult cuErr;
     int count = 0;
+    CUresult cuErr = (*cuDeviceGetCountTopoPtr)(&count);
+    if (cuErr == CUDA_SUCCESS)
+        return count;
+
+    int ret = cuda_topo_init();
+    if (ret < 0)
+        return ret;
+
     cuErr = (*cuDeviceGetCountTopoPtr)(&count);
-    if(cuErr == CUDA_ERROR_NOT_INITIALIZED)
-    {
-        int ret = cuda_topo_init();
-        if (ret == 0)
-        {
-            cuErr = (*cuDeviceGetCountTopoPtr)(&count);
-        }
-        else
-        {
-            return ret;
-        }
-    }
-    return count;
+    if (cuErr == CUDA_SUCCESS)
+        return count;
+    DEBUG_PRINT(DEBUGLEV_INFO, uDeviceGetCount failed even though cuda_topo_init succeeded: %d, cuErr);
+    return -ELIBACC;
 }
 
 static int
@@ -197,14 +195,8 @@ static int topology_cuda_cleanup(int idx, int err)
 {
     for (int j = idx; j >= 0; j--)
     {
-        if (cudaTopology.devices[j].name)
-        {
-            free(cudaTopology.devices[j].name);
-        }
-        if (cudaTopology.devices[j].short_name)
-        {
-            free(cudaTopology.devices[j].short_name);
-        }
+        free(cudaTopology.devices[j].name);
+        free(cudaTopology.devices[j].short_name);
     }
     return err;
 }
@@ -228,7 +220,7 @@ topology_cuda_init()
     int num_devs = cuda_topo_get_numDevices();
     if (num_devs < 0)
     {
-        return EXIT_FAILURE;
+        return -ENODEV;
     }
     CUDA_CALL((*cudaDriverGetVersionTopoPtr)(&cuda_version), ret = -1; goto topology_gpu_init_error;);
     CUDA_CALL((*cudaRuntimeGetVersionTopoPtr)(&cudart_version), ret = -1; goto topology_gpu_init_error;);
@@ -262,18 +254,19 @@ topology_cuda_init()
 #else
             CU_CALL((*cuDeviceTotalMemTopoPtr)(&s, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
 #endif
+            const size_t NAME_LONG_MAX = 1024;
+            const size_t NAME_SHORT_MAX = 64;
             cudaTopology.devices[i].mem = (unsigned long long)s;
-            cudaTopology.devices[i].name = malloc(1024 * sizeof(char));
+            cudaTopology.devices[i].name = calloc(NAME_LONG_MAX, sizeof(char));
             if (!cudaTopology.devices[i].name)
             {
                 ERROR_PRINT(Cannot allocate space for name of GPU %d, i);
                 ret = -ENOMEM;
                 goto topology_gpu_init_error;
             }
-            CU_CALL((*cuDeviceGetNameTopoPtr)(cudaTopology.devices[i].name, 1023, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            cudaTopology.devices[i].name[1024] = '\0';
+            CU_CALL((*cuDeviceGetNameTopoPtr)(cudaTopology.devices[i].name, NAME_LONG_MAX-1, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
             cudaTopology.devices[i].devid = i;
-            cudaTopology.devices[i].short_name = malloc(50 * sizeof(char));
+            cudaTopology.devices[i].short_name = calloc(NAME_SHORT_MAX, sizeof(char));
             if (!cudaTopology.devices[i].short_name)
             {
                 ERROR_PRINT(Cannot allocate space for short name of GPU %d, i);
@@ -284,11 +277,11 @@ topology_cuda_init()
             CU_CALL((*cuDeviceComputeCapabilityTopoPtr)(&cudaTopology.devices[i].ccapMajor, &cudaTopology.devices[i].ccapMinor, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
             if (cudaTopology.devices[i].ccapMajor < 7)
             {
-                ret = snprintf(cudaTopology.devices[i].short_name, 49, "nvidia_gpu_cc_lt_7");
+                ret = snprintf(cudaTopology.devices[i].short_name, NAME_SHORT_MAX, "nvidia_gpu_cc_lt_7");
             }
             else if (cudaTopology.devices[i].ccapMajor >= 7)
             {
-                ret = snprintf(cudaTopology.devices[i].short_name, 49, "nvidia_gpu_cc_ge_7");
+                ret = snprintf(cudaTopology.devices[i].short_name, NAME_SHORT_MAX, "nvidia_gpu_cc_ge_7");
             }
             CUdevprop props;
             CU_CALL((*cuDeviceGetPropertiesTopoPtr)(&props, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
@@ -353,6 +346,8 @@ get_cudaTopology(void)
     {
         return &cudaTopology;
     }
+    ERROR_PRINT(Cannot get CUDA topology before initialization);
+    return NULL;
 }
 
 #endif /* LIKWID_WITH_NVMON */

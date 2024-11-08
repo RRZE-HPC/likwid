@@ -56,7 +56,7 @@ void (*_dl_non_dynamic_init) (void) __attribute__ ((weak));
         CUptiResult _status = (call);                                   \
         if (_status != CUPTI_SUCCESS) {                                 \
             const char *errstr;                                         \
-            (*cuptiGetResultString)(_status, &errstr);               \
+            (*cuptiGetResultStringPtr)(_status, &errstr);               \
             fprintf(stderr, "Error: function %s failed with error %s.\n", #call, errstr); \
             handleerror;                                                \
         }                                                               \
@@ -316,8 +316,8 @@ void nvmon_cupti_freeDevice(NvmonDevice_t dev)
 int
 nvmon_cupti_createDevice(int id, NvmonDevice *dev)
 {
-    int j = 0, k = 0, c = 0;
-    int numDomains = 0;
+    int c = 0;
+    unsigned numDomains = 0;
     CUpti_EventDomainID* eventDomainIds = NULL;
     int eventIdx = 0;
     uint32_t totalEvents = 0;
@@ -356,7 +356,7 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
 
     // Count the events in all domains to allocate the event list
     dev->numAllEvents = 0;
-    for (j = 0; j < numDomains; j++)
+    for (unsigned j = 0; j < numDomains; j++)
     {
         uint32_t domainNumEvents = 0;
         CUpti_EventDomainID domainID = eventDomainIds[j];
@@ -376,7 +376,7 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
     dev->eventHash = g_hash_table_new(g_str_hash, g_str_equal);
     dev->evIdHash = g_hash_table_new(g_int64_hash, g_int64_equal);
 
-    for (j = 0; j < numDomains; j++)
+    for (unsigned j = 0; j < numDomains; j++)
     {
         uint32_t domainNumEvents = 0;
         CUpti_EventDomainID domainID = eventDomainIds[j];
@@ -387,7 +387,7 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
         CUpti_EventID* cuEventIds = malloc(tmpSize);
         // Get the CUPTI events
         CUPTI_CALL((*cuptiEventDomainEnumEventsPtr)(domainID, &tmpSize, cuEventIds), return -1);
-        for (k = 0; k < domainNumEvents; k++)
+        for (unsigned k = 0; k < domainNumEvents; k++)
         {
             CUpti_EventID eventId = cuEventIds[k];
             // Name and description are limited in length
@@ -493,6 +493,8 @@ int nvmon_cupti_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
                             case NVMON_CUPTI_EVENT:
                                 ret = snprintf(out->limit, 9, "GPU");
                                 if (ret > 0) out->limit[ret] = '\0';
+                                break;
+                            default:
                                 break;
                         }
                     }
@@ -623,11 +625,11 @@ nvmon_cupti_addEventSets(NvmonDevice_t device, const char* eventString)
         CU_CALL((*cuCtxPopCurrentPtr)(&device->context), return -EFAULT);
     }
     device->numNvEventSets++;
+    return 0;
 }
 
 int nvmon_cupti_setupCounters(NvmonDevice_t device, NvmonEventSet* eventSet)
 {
-    int err = 0;
     int popContext = 0;
     int oldDevId = -1;
     CUpti_EventGroupSets * cuEventSets = NULL;
@@ -648,7 +650,7 @@ int nvmon_cupti_setupCounters(NvmonDevice_t device, NvmonEventSet* eventSet)
 
 
     size_t grpEventIdsSize = eventSet->numberOfEvents * sizeof(CUpti_EventID);
-    CUPTI_CALL((*cuptiEventGroupSetsCreatePtr)(device->context, grpEventIdsSize, eventSet->cuEventIDs, &cuEventSets), err = -1;);
+    CUPTI_CALL((*cuptiEventGroupSetsCreatePtr)(device->context, grpEventIdsSize, eventSet->cuEventIDs, &cuEventSets), return -1;);
     // Allocate temporary array to hold the group event IDs
     CUpti_EventID *grpEventIds = malloc(grpEventIdsSize);
     if (!grpEventIds)
@@ -694,13 +696,13 @@ int nvmon_cupti_setupCounters(NvmonDevice_t device, NvmonEventSet* eventSet)
     CUpti_EventGroup curGroup;
     uint32_t curNumInstances = 0, curNumTotalInstances = 0;
     CUpti_EventGroupSet *curEventGroupSet;
-    for (int j = 0; j < cuEventSets->numSets; j++)
+    for (unsigned j = 0; j < cuEventSets->numSets; j++)
     {
         size_t sizeofuint32t = sizeof(uint32_t);
         uint32_t numGEvents = 0, numGInstances = 0, numTotalGInstances = 0;
         CUpti_EventGroupSet* groupset = &cuEventSets->sets[j];
 
-        for (int k = 0; k < groupset->numEventGroups; k++)
+        for (unsigned k = 0; k < groupset->numEventGroups; k++)
         {
             uint32_t one = 1;
             CUpti_EventGroup group = groupset->eventGroups[k];
@@ -713,7 +715,7 @@ int nvmon_cupti_setupCounters(NvmonDevice_t device, NvmonEventSet* eventSet)
             // Get instance count for a group
             CUPTI_CALL((*cuptiEventGroupGetAttributePtr)(group, CUPTI_EVENT_GROUP_ATTR_INSTANCE_COUNT, &sizeofuint32t, &numGInstances), return -EFAULT);
 
-            for (int l = 0; l < numGEvents; l++)
+            for (unsigned l = 0; l < numGEvents; l++)
             {
                 for (int m = 0; m <  eventSet->numberOfEvents; m++)
                 {
@@ -823,27 +825,28 @@ int nvmon_cupti_startCounters(NvmonDevice_t device)
         GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Pop Context %ld for device %d, device->context, device->deviceId);
         CU_CALL((*cuCtxPopCurrentPtr)(&device->context), return -EFAULT);
     }
+    return 0;
 }
 
 
 int nvmon_cupti_stopCounters(NvmonDevice_t device)
 {
-    int i = 0, j = 0, k = 0;
+    (void)device; // unused
+
     int oldDevId = -1;
     uint64_t timestamp = 0;
     CUcontext curContext;
-
 
     CUDA_CALL((*cudaGetDevicePtr)(&oldDevId), return -EFAULT);
     // Take the timestamp, we assign it later for all devices
     CUPTI_CALL((*cuptiGetTimestampPtr)(&timestamp), return -EFAULT);
 
 
-    for (i = 0; i < nvGroupSet->numberOfGPUs; i++)
+    for (int i = 0; i < nvGroupSet->numberOfGPUs; i++)
     {
         int popContext = 0;
         uint32_t one = 1;
-        int maxTotalInstances = 0;
+        unsigned maxTotalInstances = 0;
         size_t valuesSize = 0;
         NvmonDevice_t device = &nvGroupSet->gpus[i];
         if (device->deviceId != oldDevId)
@@ -864,13 +867,13 @@ int nvmon_cupti_stopCounters(NvmonDevice_t device)
         // Are we in the proper context?
         popContext = check_nv_context(device, curContext);
 
-        for (j = 0; j < device->numActiveEvents; j++)
+        for (int j = 0; j < device->numActiveEvents; j++)
         {
             maxTotalInstances = MAX(maxTotalInstances, device->activeEvents[j].numTotalInstances);
         }
         uint64_t *tmpValues = (uint64_t *) malloc(maxTotalInstances * sizeof(uint64_t));
 
-        for (j = 0; j < device->numActiveEvents; j++)
+        for (int j = 0; j < device->numActiveEvents; j++)
         {
             NvmonActiveEvent_t event = &device->activeEvents[j];
             valuesSize = sizeof(uint64_t) * event->numTotalInstances;
@@ -878,7 +881,7 @@ int nvmon_cupti_stopCounters(NvmonDevice_t device)
             GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Read Grp %ld Ev %ld for device %d, event->cuGroup, event->cuEventId, device->deviceId);
             CUPTI_CALL((*cuptiEventGroupReadEventPtr)(event->cuGroup, CUPTI_EVENT_READ_FLAG_NONE, event->cuEventId, &valuesSize, tmpValues), free(tmpValues); return -EFAULT);
             uint64_t valuesum = 0;
-            for (k = 0; k < event->numInstances; k++)
+            for (unsigned k = 0; k < event->numInstances; k++)
             {
                 valuesum += tmpValues[k];
             }
@@ -889,7 +892,7 @@ int nvmon_cupti_stopCounters(NvmonDevice_t device)
             res->lastValue += res->stopValue - res->currentValue;
             res->currentValue = (double)valuesum;
         }
-        for (j = 0; j < device->numActiveCuGroups; j++)
+        for (int j = 0; j < device->numActiveCuGroups; j++)
         {
             GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Disable group %ld, device->activeCuGroups[j]);
             CUPTI_CALL((*cuptiEventGroupSetDisablePtr)(device->activeCuGroups[j]), return -EFAULT);
@@ -901,20 +904,20 @@ int nvmon_cupti_stopCounters(NvmonDevice_t device)
             CU_CALL((*cuCtxPopCurrentPtr)(&device->context), return -EFAULT);
         }
     }
+    return 0;
 }
 
 
 int nvmon_cupti_readCounters(NvmonDevice_t device)
 {
-    int j = 0, k = 0;
     int oldDevId = -1;
     uint64_t timestamp = 0;
     CUcontext curContext;
     size_t sizeofuint32num = sizeof(uint32_t);
-    int maxTotalInstances = 0;
+    unsigned maxTotalInstances = 0;
 
 
-    for (j = 0; j < device->numActiveEvents; j++)
+    for (int j = 0; j < device->numActiveEvents; j++)
     {
         maxTotalInstances = MAX(maxTotalInstances, device->activeEvents[j].numTotalInstances);
     }
@@ -961,7 +964,7 @@ int nvmon_cupti_readCounters(NvmonDevice_t device)
     CU_CALL((*cuCtxSynchronizePtr)(), return -EFAULT);
     NvmonEventSet* nvEventSet = &device->nvEventSets[nvGroupSet->activeGroup];
 
-    for (j = 0; j < device->numActiveEvents; j++)
+    for (int j = 0; j < device->numActiveEvents; j++)
     {
         NvmonActiveEvent_t event = &device->activeEvents[j];
         // Empty space for instance values
@@ -972,7 +975,7 @@ int nvmon_cupti_readCounters(NvmonDevice_t device)
         CUPTI_CALL((*cuptiEventGroupReadEventPtr)(event->cuGroup, CUPTI_EVENT_READ_FLAG_NONE, event->cuEventId, &valuesSize, tmpValues), return -EFAULT);
         // Sum all instance values
         uint64_t valuesum = 0;
-        for (k = 0; k < event->numInstances; k++)
+        for (unsigned k = 0; k < event->numInstances; k++)
         {
             valuesum += tmpValues[k];
         }
