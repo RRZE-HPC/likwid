@@ -109,6 +109,8 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage icelakesp
 - \subpage tigerlake
 - \subpage sapphirerapids
+- \subpage graniterapids
+- \subpage sierraforrest
 
 \subsubsection Architectures_AMD AMD&reg;
 - \subpage k8
@@ -119,6 +121,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage zen2
 - \subpage zen3
 - \subpage zen4
+- \subpage zen4c
 
 \subsection Architectures_ARM ARM architectures
 - \subpage armA15
