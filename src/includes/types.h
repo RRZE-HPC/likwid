@@ -88,10 +88,10 @@ typedef struct {
 #define ARRAY_COUNT(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 
-#if __STDC_VERSION__ <= 199901L
+/*#if __STDC_VERSION__ <= 199901L
 typedef int bool;
 #else
 #include <stdbool.h>
-#endif
+#endif*/
 
 #endif /*TYPES_H*/
