@@ -1,16 +1,16 @@
-/*! \page zen4 AMD&reg; Zen4 (Ryzen, Epyc)
+/*! \page zen4 AMD&reg; Zen4c (Ryzen, Epyc)
 
 <H1>Available performance monitors for the AMD&reg; Zen4 microarchitecture</H1>
 <UL>
-<LI>\ref ZEN4_FIXED "Fixed-purpose counters"</LI>
-<LI>\ref ZEN4_PMC "General-purpose counters"</LI>
-<LI>\ref ZEN4_POWER_CORE "CPU core energy counters"</LI>
-<LI>\ref ZEN4_CPMC "L3 cache general-purpose counters"</LI>
-<LI>\ref ZEN4_POWER_SOCKET "Socket energy counters"</LI>
-<LI> \ref ZEN4_DATA_FABRIC "Data Fabric counters"</LI>
+<LI>\ref ZEN4C_FIXED "Fixed-purpose counters"</LI>
+<LI>\ref ZEN4C_PMC "General-purpose counters"</LI>
+<LI>\ref ZEN4C_POWER_CORE "CPU core energy counters"</LI>
+<LI>\ref ZEN4C_CPMC "L3 cache general-purpose counters"</LI>
+<LI>\ref ZEN4C_POWER_SOCKET "Socket energy counters"</LI>
+<LI> \ref ZEN4C_DATA_FABRIC "Data Fabric counters"</LI>
 </UL>
 
-\anchor ZEN4_FIXED
+\anchor ZEN4C_FIXED
 <H2>Fixed-purpose counters</H2>
 <P>The AMD&reg; Zen4 microarchitecture provides three fixed-purpose counters for
 retired instructions, actual CPU core clock (MPerf: This register increments in 
@@ -39,7 +39,7 @@ P0 frequency while the core is in C0).</P>
 </TABLE>
 
 
-\anchor ZEN4_PMC
+\anchor ZEN4C_PMC
 <H2>General-purpose counters</H2>
 <P>The AMD&reg; Zen4 microarchitecture provides 6 general-purpose counters consisting of a config and a counter register.</P>
 <H3>Counter and events</H3>
@@ -108,7 +108,7 @@ P0 frequency while the core is in C0).</P>
 </TABLE>
 
 <H1>Counters available for one hardware thread per CPU core</H1>
-\anchor ZEN4_POWER_CORE
+\anchor ZEN4C_POWER_CORE
 <H2>Power counters</H2>
 <P>The AMD&reg; Zen4 microarchitecture provides measurements of the current power consumption through the RAPL interface.</P>
 <H3>Counter and events</H3>
@@ -122,11 +122,11 @@ P0 frequency while the core is in C0).</P>
   <TD>RAPL_CORE_ENERGY</TD>
 </TR>
 </TABLE>
-<P>There are more energy counters but only one for each L3 segment (aka CCD) (\ref ZEN4_POWER_L3)</P>
+<P>There are more energy counters but only one for each L3 segment (aka CCD) (\ref ZEN4C_POWER_L3)</P>
 
 
 <H1>Counters available for one hardware thread per shared L3 cache</H1>
-\anchor ZEN4_CPMC
+\anchor ZEN4C_CPMC
 <H2>L3 general-purpose counters</H2>
 <P>The AMD&reg; Zen4 microarchitecture provides 6 general-purpose counters for measuring L3 cache events. They consist of a config and a counter register.</P>
 <H3>Counter and events</H3>
@@ -189,7 +189,7 @@ P0 frequency while the core is in C0).</P>
 </TABLE>
 
 <H1>Counters available for one hardware thread per L3 segment (aka CCD)</H1>
-\anchor ZEN4_POWER_L3
+\anchor ZEN4C_POWER_L3
 <H2>Power counters</H2>
 <P>The AMD&reg; Zen4 microarchitecture provides measurements of the current power consumption through the RAPL interface.</P>
 <H3>Counter and events</H3>
@@ -203,9 +203,9 @@ P0 frequency while the core is in C0).</P>
   <TD>RAPL_DRAM_ENERGY</TD>
 </TR>
 </TABLE>
-<P>There are more energy counters for each CPU core (\ref ZEN4_POWER_CORE)</P>
+<P>There are more energy counters for each CPU core (\ref ZEN4C_POWER_CORE)</P>
 
-\anchor ZEN4_DATA_FABRIC
+\anchor ZEN4C_DATA_FABRIC
 <H2>Data Fabric counters</H2>
 <P>The AMD&reg; Zen4 microarchitecture provides additional Uncore counters for the so-called Data Fabric.</P>
 

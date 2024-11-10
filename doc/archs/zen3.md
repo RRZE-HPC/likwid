@@ -178,7 +178,7 @@
 
 \anchor ZEN3_DATA_FABRIC
 <H2>Data Fabric counters</H2>
-<P>The AMD&reg; Zen3 microarchitecture provides additional Uncore counters for the so-called Data Fabric. It is currently unclear whether the units are socket- or NUMA node-specific.</P>
+<P>The AMD&reg; Zen3 microarchitecture provides additional Uncore counters for the so-called Data Fabric.</P>
 
 <H3>Counter and events</H3>
 <TABLE>
