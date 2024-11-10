@@ -19,7 +19,6 @@
 <LI>\ref GNR_IBOX "IIO box counters"</LI>
 <LI>\ref GNR_BBOX "Mesh2Memory counters (B2CMI)"</LI>
 <LI>\ref GNR_PBOX "Mesh2PCIe counters (B2CXL)"</LI>
-<LI>\ref GNR_PBOX "Mesh2PCIe counters (B2CXL)"</LI>
 <LI>\ref GNR_IRP "IIO ring port counters (IRP)"</LI>
 <LI>\ref GNR_MDF "Embedded multi-die interconnect bridge (MDF)"</LI>
 </UL>
@@ -857,7 +856,7 @@ The IIO box counters are exposed to the operating system through the MSR interfa
 </TABLE>
 
 \anchor GNR_IRP
-<H2>Mesh2CXL counters (B2CXL)</H2>
+<H2>IIO ring ports counters (IRP)</H2>
 <P>The Intel&reg; Granite Rapids microarchitecture provides measurements of the IIO ring ports.
 </P>
 
