@@ -372,23 +372,8 @@ rocmon_setupCounters(int gid)
     //
     // Separate rocprofiler and SMI events
     //
-    const char **smiEvents = NULL, **rocEvents = NULL;
     int numSmiEvents = 0, numRocEvents = 0;
 
-    // Allocate memory for string arrays
-    smiEvents = (const char**) malloc(group->nevents * sizeof(const char*));
-    if (smiEvents == NULL)
-    {
-        ERROR_PLAIN_PRINT(Cannot allocate smiEvent name array);
-        return -ENOMEM;
-    }
-    rocEvents = (const char**) malloc(group->nevents * sizeof(const char*));
-    if (rocEvents == NULL)
-    {
-        ERROR_PLAIN_PRINT(Cannot allocate rocEvent name array);
-        free(smiEvents);
-        return -ENOMEM;
-    }
 
     // Go through each event and sort it
     for (int i = 0; i < group->nevents; i++)
@@ -397,13 +382,11 @@ rocmon_setupCounters(int gid)
         if (strncmp(name, "RSMI_", 5) == 0)
         {
             // RSMI event
-            smiEvents[numSmiEvents] = name + 5; // +5 removes 'RSMI_' prefix
             numSmiEvents++;
         }
         else if (strncmp(name, "ROCP_", 5) == 0)
         {
             // Rocprofiler event
-            rocEvents[numRocEvents] = name + 5; // +5 removes 'ROCP_' prefix
             numRocEvents++;
         }
         else
@@ -414,48 +397,66 @@ rocmon_setupCounters(int gid)
         }
     }
 
-    // Add events to each device
     for (int i = 0; i < rocmon_context->numDevices; i++)
     {
         RocmonDevice* device = &rocmon_context->devices[i];
+        device->numActiveSmiEvents = 0;
+        device->numActiveRocEvents = 0;
+    }
 
-        // Add rocprofiler events
-        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, SETUP ROCPROFILER WITH %d events, numRocEvents);
-        if (rocmon_context->use_rocprofiler_v1)
-        {
-            ret = rocmon_v1_setupCounters(rocmon_context, gid);
-        }
+    // Add rocprofiler events
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, SETUP ROCPROFILER WITH %d events, numRocEvents);
+    if (rocmon_context->use_rocprofiler_v1)
+    {
+        ret = rocmon_v1_setupCounters(rocmon_context, gid);
+    }
 #ifdef LIKWID_ROCPROF_SDK
-        else
-        {
-            ret = rocmon_sdk_setupCounters(rocmon_context, gid);
-        }
+    else
+    {
+        ret = rocmon_sdk_setupCounters(rocmon_context, gid);
+    }
 #endif
-        if (ret < 0)
-        {
-            ERROR_PRINT(Setting up rocprofiler counters failed);
-            free(smiEvents);
-            free(rocEvents);
-            return ret;
-        }
+    if (ret < 0)
+    {
+        ERROR_PRINT(Setting up rocprofiler counters failed);
+/*        free(smiEvents);*/
+/*        free(rocEvents);*/
+        return ret;
+    }
 
-        // Add SMI events
+    // Add SMI events
+    if (numSmiEvents > 0)
+    {
         ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, SETUP ROCM SMI WITH %d events, numSmiEvents);
         ret = rocmon_smi_setupCounters(rocmon_context, gid);
         if (ret < 0)
         {
             ERROR_PRINT(Setting up SMI counters failed);
-            free(smiEvents);
-            free(rocEvents);
+/*            free(smiEvents);*/
+/*            free(rocEvents);*/
             return ret;
         }
+    }
+    else
+    {
+        for (int i = 0; i < rocmon_context->numDevices; i++)
+        {
+            RocmonDevice* device = &rocmon_context->devices[i];
+            device->numActiveSmiEvents = 0;
+        }
+    }
+
+    // Add events to each device
+    for (int i = 0; i < rocmon_context->numDevices; i++)
+    {
+        RocmonDevice* device = &rocmon_context->devices[i];
         device->activeGroup = gid;
     }
     rocmon_context->activeGroup = gid;
     rocmon_context->state = ROCMON_STATE_SETUP;
-    // Cleanup
-    free(smiEvents);
-    free(rocEvents);
+/*    // Cleanup*/
+/*    free(smiEvents);*/
+/*    free(rocEvents);*/
 
     return 0;
 }

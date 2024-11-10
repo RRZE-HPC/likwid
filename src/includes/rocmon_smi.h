@@ -932,6 +932,7 @@ rocmon_smi_startCounters(RocmonContext* context)
     for (int i = 0; i < context->numDevices; i++)
     {
         RocmonDevice* device = &context->devices[i];
+        fprintf(stderr, "Device %d with %d SMI events\n", device->deviceId, device->numActiveSmiEvents);
         // Check if there are any counters to start
         if (device->numActiveSmiEvents <= 0)
         {
@@ -940,11 +941,11 @@ rocmon_smi_startCounters(RocmonContext* context)
 
         // Save baseline values
         RocmonEventResultList* groupResult = &device->groupResults[rocmon_context->activeGroup];
-        for (int i = 0; i < device->numActiveSmiEvents; i++)
+        for (int j = 0; j < device->numActiveSmiEvents; j++)
         {
             double value = 0;
-            RocmonSmiEvent* event = &device->activeSmiEvents[i];
-            RocmonEventResult* result = &groupResult->results[device->numActiveRocEvents+i];
+            RocmonSmiEvent* event = &device->activeSmiEvents[j];
+            RocmonEventResult* result = &groupResult->results[device->numActiveRocEvents+j];
 
             // Measure counter
             if (event->measureFunc)
@@ -1156,7 +1157,7 @@ void rocmon_smi_finalize(RocmonContext* context)
     }
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Shutdown RSMI);
     RSMI_CALL(rsmi_shut_down, (), {
-        ERROR_PRINT(DEBUGLEV_DEVELOP, Shutdown SMI failed);
+        ERROR_PRINT(Shutdown SMI failed);
         // fall through
     });
     rocmon_smi_initialized = FALSE;

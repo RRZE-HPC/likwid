@@ -179,6 +179,7 @@ _rocmon_sdk_link_libraries()
     DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_assign_callback_thread);
     DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_query_record_counter_id);
     DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_is_initialized);
+    DLSYM_AND_CHECK(rocmon_sdk_dl_profiler_lib, rocprofiler_get_status_string);
 
     DLSYM_AND_CHECK(rocmon_sdk_dl_hsa_lib, hsa_init);
     DLSYM_AND_CHECK(rocmon_sdk_dl_hsa_lib, hsa_shut_down);
@@ -452,32 +453,12 @@ _rocmon_sdk_read_buffers(rocprofiler_context_id_t device_context,
 }
 
 
-int
-tool_init(rocprofiler_client_finalize_t fini, void* udata)
+static int _rocmon_sdk_create_devices(RocmonContext** stat_context)
 {
     rocprofiler_status_t stat = ROCPROFILER_STATUS_SUCCESS;
-    RocmonContext** stat_context = (RocmonContext**)udata;
     RocmonContext* context = *stat_context;
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Running tool_init);
-
-    // initialize libraries
-    if (_rocmon_sdk_link_libraries() < 0)
-    {
-        ERROR_PLAIN_PRINT(Failed to initialize libraries);
-        return -EFAULT;
-    }
-
-/*    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Initialize HSA);*/
-/*    hsa_status_t hstat = (*hsa_init_ptr)();*/
-/*    if (hstat != HSA_STATUS_SUCCESS)*/
-/*    {*/
-/*        ERROR_PRINT(Failed to initialize HSA);*/
-/*        return -EFAULT;*/
-/*    }*/
-
-    //ROCPROFILER_CALL(rocprofiler_query_available_agents, (ROCPROFILER_AGENT_INFO_VERSION_0, _rocmon_sdk_count_agents_cb, sizeof(rocprofiler_agent_t), &agent_count), return -EFAULT;);
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Querying available agents);
-    stat = (*rocprofiler_query_available_agents_ptr)(ROCPROFILER_AGENT_INFO_VERSION_0, _rocmon_sdk_count_agents_cb, sizeof(rocprofiler_agent_t), udata);
+    stat = (*rocprofiler_query_available_agents_ptr)(ROCPROFILER_AGENT_INFO_VERSION_0, _rocmon_sdk_count_agents_cb, sizeof(rocprofiler_agent_t), stat_context);
     if (stat != ROCPROFILER_STATUS_SUCCESS)
     {
         ERROR_PRINT(Failed to query available agents);
@@ -488,7 +469,6 @@ tool_init(rocprofiler_client_finalize_t fini, void* udata)
         FREE_IF_NOT_NULL(context->devices);
         return -1;
     }
-
     for (int i = 0; i < context->numDevices; i++)
     {
         rocprofiler_context_id_t device_context;
@@ -542,6 +522,99 @@ tool_init(rocprofiler_client_finalize_t fini, void* udata)
         device->thread = thread;
     }
     return 0;
+}
+
+int
+tool_init(rocprofiler_client_finalize_t fini, void* udata)
+{
+    rocprofiler_status_t stat = ROCPROFILER_STATUS_SUCCESS;
+    RocmonContext** stat_context = (RocmonContext**)udata;
+    RocmonContext* context = *stat_context;
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Running tool_init);
+
+    // initialize libraries
+    if (_rocmon_sdk_link_libraries() < 0)
+    {
+        ERROR_PLAIN_PRINT(Failed to initialize libraries);
+        return -EFAULT;
+    }
+    return _rocmon_sdk_create_devices(stat_context);
+
+/*    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Initialize HSA);*/
+/*    hsa_status_t hstat = (*hsa_init_ptr)();*/
+/*    if (hstat != HSA_STATUS_SUCCESS)*/
+/*    {*/
+/*        ERROR_PRINT(Failed to initialize HSA);*/
+/*        return -EFAULT;*/
+/*    }*/
+
+    //ROCPROFILER_CALL(rocprofiler_query_available_agents, (ROCPROFILER_AGENT_INFO_VERSION_0, _rocmon_sdk_count_agents_cb, sizeof(rocprofiler_agent_t), &agent_count), return -EFAULT;);
+/*    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Querying available agents);*/
+/*    stat = (*rocprofiler_query_available_agents_ptr)(ROCPROFILER_AGENT_INFO_VERSION_0, _rocmon_sdk_count_agents_cb, sizeof(rocprofiler_agent_t), udata);*/
+/*    if (stat != ROCPROFILER_STATUS_SUCCESS)*/
+/*    {*/
+/*        ERROR_PRINT(Failed to query available agents);*/
+/*        return -EFAULT;*/
+/*    }*/
+/*    if (context->numDevices == 0)*/
+/*    {*/
+/*        FREE_IF_NOT_NULL(context->devices);*/
+/*        return -1;*/
+/*    }*/
+
+/*    for (int i = 0; i < context->numDevices; i++)*/
+/*    {*/
+/*        rocprofiler_context_id_t device_context;*/
+/*        rocprofiler_buffer_id_t buffer;*/
+/*        rocprofiler_callback_thread_t thread;*/
+/*        RocmonDevice* device = &context->devices[i];*/
+/*        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Creating context for device %d, device->deviceId);*/
+/*        stat = (*rocprofiler_create_context_ptr)(&device_context);*/
+/*        if (stat != ROCPROFILER_STATUS_SUCCESS)*/
+/*        {*/
+/*            errno = EFAULT;*/
+/*            ERROR_PRINT(Failed to create context for device %d: %s, device->deviceId, (*rocprofiler_get_status_string_ptr)(stat));*/
+/*            FREE_IF_NOT_NULL(context->devices);*/
+/*            return -EFAULT;*/
+/*        }*/
+/*        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Creating buffer for device %d, device->deviceId);*/
+/*        rocmon_sdk_read_buffers_cb devdata = {*/
+/*            .context = stat_context,*/
+/*            .devid = device->deviceId,*/
+/*            .devcontext = device_context*/
+/*        };*/
+/*        stat = (*rocprofiler_create_buffer_ptr)(device_context, 100, 50, ROCPROFILER_BUFFER_POLICY_LOSSLESS, _rocmon_sdk_read_buffers, &devdata, &buffer);*/
+/*        if (stat != ROCPROFILER_STATUS_SUCCESS)*/
+/*        {*/
+/*            errno = EFAULT;*/
+/*            ERROR_PRINT(Failed to create buffer for device %d: %s, device->deviceId, (*rocprofiler_get_status_string_ptr)(stat));*/
+/*            FREE_IF_NOT_NULL(context->devices);*/
+/*            return -EFAULT;*/
+/*        }*/
+/*        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Creating callback thread for device %d, device->deviceId);*/
+/*        stat = (*rocprofiler_create_callback_thread_ptr)(&thread);*/
+/*        if (stat != ROCPROFILER_STATUS_SUCCESS)*/
+/*        {*/
+/*            errno = EFAULT;*/
+/*            ERROR_PRINT(Failed to create callback thread for device %d: %s, device->deviceId, (*rocprofiler_get_status_string_ptr)(stat));*/
+/*            FREE_IF_NOT_NULL(context->devices);*/
+/*            return -EFAULT;*/
+/*        }*/
+/*        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Assign callback thread to buffer for device %d, device->deviceId);*/
+/*        stat = (*rocprofiler_assign_callback_thread_ptr)(buffer, thread);*/
+/*        if (stat != ROCPROFILER_STATUS_SUCCESS)*/
+/*        {*/
+/*            errno = EFAULT;*/
+/*            ERROR_PRINT(Failed to create callback thread for device %d: %s, device->deviceId, (*rocprofiler_get_status_string_ptr)(stat));*/
+/*            FREE_IF_NOT_NULL(context->devices);*/
+/*            return -EFAULT;*/
+/*        }*/
+/*        */
+/*        device->sdk_context = device_context;*/
+/*        device->buffer = buffer;*/
+/*        device->thread = thread;*/
+/*    }*/
+/*    return 0;*/
 }
 
 
@@ -648,6 +721,7 @@ int
 rocmon_sdk_init(RocmonContext* context, int numGpus, const int* gpuIds)
 {
     int ret = 0;
+    rocprofiler_context_id_t text_context;
     rocprofiler_status_t stat = ROCPROFILER_STATUS_SUCCESS;
     if ((numGpus < 0) || (!gpuIds) || (!context))
     {
@@ -666,11 +740,23 @@ rocmon_sdk_init(RocmonContext* context, int numGpus, const int* gpuIds)
         return ret;
     }
 
-    stat = (*rocprofiler_force_configure_ptr)(rocprofiler_configure);
-    if (stat != ROCPROFILER_STATUS_SUCCESS)
+/*    stat = (*rocprofiler_force_configure_ptr)(rocprofiler_configure);*/
+/*    if (stat != ROCPROFILER_STATUS_SUCCESS)*/
+/*    {*/
+/*        ERROR_PRINT(Failed to configure rocprofiler: %s, (*rocprofiler_get_status_string_ptr)(stat));*/
+/*        return -EFAULT;*/
+/*    }*/
+/*    stat = (*rocprofiler_create_context_ptr)(&text_context);*/
+/*    if (stat != ROCPROFILER_STATUS_SUCCESS)*/
+/*    {*/
+/*        ERROR_PRINT(Failed to create test context: %s, (*rocprofiler_get_status_string_ptr)(stat));*/
+/*        return -EFAULT;*/
+/*    }*/
+    ret = _rocmon_sdk_create_devices(&rocmon_context);
+    if (ret < 0)
     {
-        ERROR_PLAIN_PRINT(Failed to configure rocprofiler);
-        return -EFAULT;
+        ERROR_PRINT(Failed to create SDK devices);
+        return ret;
     }
 
     if (context->numDevices == 0)
@@ -1085,12 +1171,16 @@ _rocmon_readCounters_rocprofiler_sdk(RocmonDevice* device)
             return -EFAULT;
         }
     }
-/*    stat = (*rocprofiler_flush_buffer_ptr)(device->buffer);*/
-/*    if (stat != ROCPROFILER_STATUS_SUCCESS)*/
-/*    {*/
-/*        ERROR_PRINT(Failed to flush buffer for device %d: %s, device->deviceId, (*rocprofiler_get_status_string_ptr)(stat));*/
-/*        return -EFAULT;*/
-/*    }*/
+    else
+    {
+        ERROR_PRINT(Device context for device %d not active, device->deviceId);
+    }
+    stat = (*rocprofiler_flush_buffer_ptr)(device->buffer);
+    if (stat != ROCPROFILER_STATUS_SUCCESS)
+    {
+        ERROR_PRINT(Failed to flush buffer for device %d: %s, device->deviceId, (*rocprofiler_get_status_string_ptr)(stat));
+        return -EFAULT;
+    }
     return 0;
 }
 
