@@ -43,10 +43,10 @@
     exit(EXIT_FAILURE)
 
 #define ERROR_PLAIN_PRINT(msg) \
-   fprintf(stderr,  "ERROR - [%s:%s:%d] " str(msg) "\n", __FILE__, __func__,__LINE__);
+   fprintf(stderr,  "ERROR - [%s:%s:%d] " str(msg) "\n", __FILE__, __func__,__LINE__)
 
 #define ERROR_PRINT(fmt, ...) \
-   fprintf(stderr,  "ERROR - [%s:%s:%d] %s.\n" str(fmt) "\n", __FILE__,  __func__,__LINE__, strerror(errno), ##__VA_ARGS__);
+   fprintf(stderr,  "ERROR - [%s:%s:%d] %s.\n" str(fmt) "\n", __FILE__,  __func__,__LINE__, strerror(errno), ##__VA_ARGS__)
 
 #define CHECK_ERROR(func, msg)  \
     if ((func) < 0) { \
@@ -64,6 +64,19 @@
         fprintf(stderr,"ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); \
         exit(EXIT_FAILURE); \
     }
+
+#ifndef DEBUGLEV_ONLY_ERROR
+#define DEBUGLEV_ONLY_ERROR 0
+#endif
+#ifndef DEBUGLEV_INFO
+#define DEBUGLEV_INFO 1
+#endif
+#ifndef DEBUGLEV_DETAIL
+#define DEBUGLEV_DETAIL 2
+#endif
+#ifndef DEBUGLEV_DEVELOP
+#define DEBUGLEV_DEVELOP 3
+#endif
 
 #define VERBOSEPRINTREG(cpuid,reg,flags,msg) \
     if (perfmon_verbosity >= DEBUGLEV_DETAIL) \

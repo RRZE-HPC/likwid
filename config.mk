@@ -200,6 +200,5 @@ BUILDAPPDAEMON=false
 # to be in the LD_LIBRARY_PATH to dynamically load the libraries.
 # Include directory for ROCm headers
 HSAINCLUDE 			= $(ROCM_HOME)/include
-ROCPROFILERINCLUDE	        = $(ROCM_HOME)/include/rocprofiler
 HIPINCLUDE 			= $(ROCM_HOME)/include
 RSMIINCLUDE			= $(ROCM_HOME)/include

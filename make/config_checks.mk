@@ -84,7 +84,11 @@ INCLUDES += -I$(CUDAINCLUDE) -I$(CUPTIINCLUDE)
 endif
 
 ifeq ($(strip $(ROCM_INTERFACE)), true)
+ROCM_SDK_CHECK := $(shell which rocprofv3 2>/dev/null | wc -l)
 # HSA includes 'hsa/xxx.h' and rocprofiler 'xxx.h'
 DEFINES += -D__HIP_PLATFORM_AMD__
-INCLUDES += -I$(HIPINCLUDE) -I$(HSAINCLUDE) -I$(HSAINCLUDE)/hsa -I$(ROCPROFILERINCLUDE) -I$(RSMIINCLUDE)
+INCLUDES += -I$(HIPINCLUDE) -I$(HSAINCLUDE) -I$(HSAINCLUDE)/hsa -I$(RSMIINCLUDE)
+ifeq ($(strip $(ROCM_SDK_CHECK)),1)
+DEFINES += -DLIKWID_ROCPROF_SDK
+endif
 endif

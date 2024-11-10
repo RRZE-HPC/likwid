@@ -255,7 +255,7 @@ access_client_startDaemon_bridge(int cpu_id, const char *bridge_path, struct soc
     io_count = send(socket_fd, (char*) &io_buf, sizeof(io_buf), 0);
 
     if (io_count != sizeof(io_buf)) {
-        ERROR_PRINT(Failed to send msg to the bridge socket)
+        ERROR_PRINT(Failed to send msg to the bridge socket);
         close(socket_fd);
         return -1;
     }
@@ -263,7 +263,7 @@ access_client_startDaemon_bridge(int cpu_id, const char *bridge_path, struct soc
     io_count = recv(socket_fd, (char*) &io_buf, sizeof(io_buf), 0);
 
     if (io_count != sizeof(io_buf)) {
-        ERROR_PRINT(Failed to recv msg from the bridge socket)
+        ERROR_PRINT(Failed to recv msg from the bridge socket);
         close(socket_fd);
         return -1;
     }
