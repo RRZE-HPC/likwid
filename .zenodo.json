@@ -9,6 +9,10 @@
     },
     {
       "affiliation": "Reginales Rechenzentrum Erlangen, Friedrich-Alexander-Universität Erlangen-Nürnberg",
+      "name": "Michael Panzlaff"
+    },
+    {
+      "affiliation": "Reginales Rechenzentrum Erlangen, Friedrich-Alexander-Universität Erlangen-Nürnberg",
       "name": "Jan Eitzinger"
     },
     {
@@ -31,7 +35,7 @@
     "performance-analysis",
     "open-source"
   ],
-  "notes": "This research has been partially funded by grants: BMBF 01IH13009 and BMBF 01IH16012C",
+  "notes": "This research has been partially funded by grants: BMBF 01IH13009, BMBF 01IH16012C and BMBF 16ME0583K",
   "communities": [
     {"identifier": "fau"}
   ]
