@@ -129,7 +129,7 @@ SANITIZE = false#NO SPACE
 
 # Basic configuration for some internal arrays.
 # Maximal number of hardware threads
-MAX_NUM_THREADS = 512
+MAX_NUM_THREADS = 1024
 # Maximal number of sockets
 MAX_NUM_NODES = 128
 # Maximal number of CLI parameters
@@ -145,10 +145,10 @@ TOPO_FILE_PATH = /etc/likwid_topo.cfg
 # Versioning Information
 # The libraries are named liblikwid.<VERSION>.<RELEASE>
 VERSION = 5
-RELEASE = 3
+RELEASE = 4
 MINOR = 0
 # Date when the release is published
-DATE    = 10.11.2023
+DATE    = 15.11.2024
 
 # In come cases it is important to set the rpaths for the LIKWID library. One
 # example is the use of sudo because it resets environment variables like
