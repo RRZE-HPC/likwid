@@ -13,6 +13,18 @@ for L in $(sinfo -t idle -h --partition=work -o "%n %t" | grep "idle" | cut -d '
         arch="arm8"
         depend="build-arm8-perf"
     fi
+    if [ "$L" = "lukewarm" ]; then
+        arch="arm8"
+        depend="build-arm8-perf"
+    fi
+    if [ "$L" = "gracehop1" ]; then
+        arch="arm8"
+        depend="build-arm8-perf"
+    fi
+    if [ "$L" = "gracesup1" ]; then
+        arch="arm8"
+        depend="build-arm8-perf"
+    fi
 
     cat <<EOF
 test-$L-perf:
