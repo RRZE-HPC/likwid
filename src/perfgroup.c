@@ -1279,13 +1279,32 @@ perfgroup_addEvent(GroupInfo* ginfo, char* counter, char* event)
         return -ENOMEM;
     sprintf(ginfo->events[ginfo->nevents], "%s", event);
     sprintf(ginfo->counters[ginfo->nevents], "%s", counter);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Event %s:%s at pos %d, ginfo->events[ginfo->nevents], ginfo->counters[ginfo->nevents], ginfo->nevents);
     ginfo->nevents++;
     return 0;
 }
 
-void perfgroup_removeEvent(GroupInfo* ginfo, char* counter)
+int perfgroup_removeEvent(GroupInfo* ginfo, char* counter)
 {
-    fprintf(stderr, "perfgroup_removeEvent not implemented\n");
+    if ((!ginfo)|| (!counter))
+        return -EINVAL;
+    for (int i = 0; i < ginfo->nevents; i++)
+    {
+        if (strncmp(counter, ginfo->counters[i], strlen(ginfo->counters[i])) == 0)
+        {
+            DEBUG_PRINT(DEBUGLEV_INFO, Removing event %s:%s at pos %d, ginfo->events[i], ginfo->counters[i], i);
+            free(ginfo->events[i]);
+            free(ginfo->counters[i]);
+            for (int j = i+1; j < ginfo->nevents; j++)
+            {
+                ginfo->events[j-1] = ginfo->events[j];
+                ginfo->counters[j-1] = ginfo->counters[j];
+            }
+            ginfo->nevents--;
+            return 0;
+        }
+    }
+    return -ENOENT;
 }
 
 int
@@ -1332,9 +1351,27 @@ perfgroup_addMetric(GroupInfo* ginfo, char* mname, char* mcalc)
     return 0;
 }
 
-void perfgroup_removeMetric(GroupInfo* ginfo, char* mname)
+int perfgroup_removeMetric(GroupInfo* ginfo, char* mname)
 {
-    fprintf(stderr, "perfgroup_removeEvent not implemented\n");
+    if ((!ginfo)|| (!mname))
+        return -EINVAL;
+    for (int i = 0; i < ginfo->nmetrics; i++)
+    {
+        if (strncmp(mname, ginfo->metricnames[i], strlen(ginfo->metricnames[i])) == 0)
+        {
+            DEBUG_PRINT(DEBUGLEV_INFO, Removing metric %s at pos %d, ginfo->metricnames[i], i);
+            free(ginfo->metricnames[i]);
+            free(ginfo->metricformulas[i]);
+            for (int j = i+1; j < ginfo->nmetrics; j++)
+            {
+                ginfo->metricnames[j-1] = ginfo->metricnames[j];
+                ginfo->metricformulas[j-1] = ginfo->metricformulas[j];
+            }
+            ginfo->nmetrics--;
+            return 0;
+        }
+    }
+    return -ENOENT;
 }
 
 
@@ -1502,8 +1539,58 @@ perfgroup_returnGroup(GroupInfo* ginfo)
 
 int perfgroup_mergeGroups(GroupInfo* grp1, GroupInfo* grp2)
 {
-    fprintf(stderr, "perfgroup_mergeGroups not implemented\n");
-    return -1;
+    int ret = 0;
+    for (int i = 0; i < grp1->nevents; i++)
+    {
+        for (int j = 0; j < grp2->nevents; j++)
+        {
+            if (strncmp(grp1->counters[i], grp2->counters[j], strlen(grp1->counters[i])) == 0)
+            {
+                if (strncmp(grp1->events[i], grp2->events[j], strlen(grp1->events[i])) != 0)
+                {
+                    DEBUG_PRINT(DEBUGLEV_INFO, Cannot merge groups because counter %s is used for different events: %s and %s, grp1->counters[i], grp1->events[i], grp2->events[j]);
+                    return -EFAULT;
+                }
+                else
+                {
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Counter %s used in both groups but measure the same event %s, grp1->counters[i], grp1->events[i]);
+                }
+            }
+        }
+    }
+    for (int i = 0; i < grp2->nevents; i++)
+    {
+        int exists = 0;
+        for (int j = 0; j < grp1->nevents; j++)
+        {
+            if (strncmp(grp1->counters[j], grp2->counters[i], strlen(grp1->counters[j])) == 0)
+            {
+                exists = 1;
+                break;
+            }
+        }
+        if (!exists)
+        {
+            ret = perfgroup_addEvent(grp1, grp2->counters[i], grp2->events[i]);
+            if (ret < 0)
+            {
+                errno = -ret;
+                ERROR_PRINT(Cannot add event %s:%s, grp2->events[i], grp2->counters[i]);
+                return ret;
+            }
+        }
+    }
+    for (int i = 0; i < grp2->nmetrics; i++)
+    {
+        ret = perfgroup_addMetric(grp1, grp2->metricnames[i], grp2->metricformulas[i]);
+        if (ret < 0)
+        {
+            errno = -ret;
+            ERROR_PRINT(Cannot add metric %s, grp2->metricnames[i]);
+            return ret;
+        }
+    }
+    return 0;
 }
 
 

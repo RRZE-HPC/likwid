@@ -1314,7 +1314,7 @@ Remove a counter and event combination from a group
 @param [in] ginfo GroupInfo struct
 @param [in] counter String with counter name
 */
-void perfgroup_removeEvent(GroupInfo *ginfo, char *counter)
+int perfgroup_removeEvent(GroupInfo *ginfo, char *counter)
     __attribute__((visibility("default")));
 
 /*! \brief Add a metric to the group
@@ -1333,7 +1333,7 @@ Remove a metric from a group
 @param [in] ginfo GroupInfo struct
 @param [in] mname String with metric name/description
 */
-void perfgroup_removeMetric(GroupInfo *ginfo, char *mname)
+int perfgroup_removeMetric(GroupInfo *ginfo, char *mname)
     __attribute__((visibility("default")));
 
 /*! \brief Get the event string of a group needed for perfmon_addEventSet
