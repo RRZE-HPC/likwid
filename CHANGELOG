@@ -1,3 +1,21 @@
+# Changelog 5.4.0
+- Support for Intel Granite Rapids (core, energy, uncore)
+- Support for Intel Sierra Forrest (core, energy, uncore)
+- Support for AMD Bergamo (core, energy, uncore)
+- Support for Nvidia Grace (core, uncore)
+- Fix: AMD Zen4 DataFabric units
+- Fix: Multi-socket RAPL measurements on Sapphire Rapids
+- Fix: Energy unit for RAPL DRAM domain for SPR, GNR and SRF
+- Fix: Discovery mechanism workaround for UPI and M3UPI units of SPR
+- Fix: Intel Westmere Uncore with perf_event backend
+- Fix: Fujitsu A64FX (more counters, fixed topology, ...)
+- Container bridge to use LIKWID inside container
+- Sysfeatures interface reworked with support for various architectures and libraries
+- Fix build for NVMON for CUDA 12.6+
+- likwid-mpirun: SLURM pinning with cpu_mask feature
+- Update of internal hwloc (2.11.2) and Lua (5.4.7) version
+
+
 # Changelog 5.3.0
 - Support for Intel SapphireRapids (Core, Uncore, RAPL)
 - Support for AMD Zen4 (Core, Uncore, RAPL)
