@@ -187,7 +187,7 @@ if [ -e /sys/devices/virtual/powercap ]; then
 fi
 
 ##### Currently loaded modules
-if [ $(module 2>/dev/null || echo $?) -eq 0 ]; then
+if [ $(module 1>/dev/null 2>/dev/null; echo $?) -eq 0 ]; then
     header "Modules"
     module list
 fi
@@ -196,6 +196,8 @@ fi
 CC=""
 if [ $(which icc 2>/dev/null | wc -l ) == 1 ]; then
     CC=$(which icc)
+elif [ $(which icx 2>/dev/null | wc -l ) == 1 ]; then
+    CC=$(which icx)
 elif [ $(which gcc 2>/dev/null | wc -l ) == 1 ]; then
     CC=$(which gcc)
 elif [ $(which clang 2>/dev/null | wc -l ) == 1 ]; then
@@ -212,6 +214,10 @@ fi
 CXX=""
 if [ $(which g++ 2>/dev/null | wc -l ) == 1 ]; then
     CXX=$(which g++)
+elif [ $(which icpc 2>/dev/null | wc -l ) == 1 ]; then
+    CC=$(which icpc)
+elif [ $(which icpx 2>/dev/null | wc -l ) == 1 ]; then
+    CC=$(which icpx)
 elif [ $(which pgc++ 2>/dev/null | wc -l ) == 1 ]; then
     CC=$(which pgc++)
 fi
@@ -223,8 +229,12 @@ fi
 FORTRAN=""
 if [ $(which ifort 2>/dev/null | wc -l ) == 1 ]; then
     FORTRAN=$(which ifort)
+elif [ $(which ifx 2>/dev/null | wc -l ) == 1 ]; then
+    FORTRAN=$(which ifx)
 elif [ $(which gfortran 2>/dev/null | wc -l ) == 1 ]; then
     FORTRAN=$(which gfortran)
+elif [ $(which flang 2>/dev/null | wc -l ) == 1 ]; then
+    FORTRAN=$(which flang)
 elif [ $(which pgf90 2>/dev/null | wc -l ) == 1 ]; then
     FORTRAN=$(which pgf90)
 fi
@@ -297,4 +307,4 @@ if [ $# -ge 1 ]; then
     fi
 fi
 
-
+if [ -e ./1 ]; then rm ./1; fi
