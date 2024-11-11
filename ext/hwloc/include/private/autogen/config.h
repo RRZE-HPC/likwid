@@ -56,134 +56,138 @@
 /* Define to 1 if you have the <cuda_runtime_api.h> header file. */
 /* #undef HAVE_CUDA_RUNTIME_API_H */
 
-/* Define to 1 if you have the declaration of `bind', and to 0 if you don't.
+/* Define to 1 if you have the declaration of 'bind', and to 0 if you don't.
    */
 #define HAVE_DECL_BIND 1
 
-/* Define to 1 if you have the declaration of `CTL_HW', and to 0 if you don't.
+/* Define to 1 if you have the declaration of 'CTL_HW', and to 0 if you don't.
    */
 /* #undef HAVE_DECL_CTL_HW */
 
-/* Define to 1 if you have the declaration of `fabsf', and to 0 if you don't.
+/* Define to 1 if you have the declaration of 'fabsf', and to 0 if you don't.
    */
 #define HAVE_DECL_FABSF 1
 
-/* Define to 1 if you have the declaration of `getexecname', and to 0 if you
+/* Define to 1 if you have the declaration of 'getexecname', and to 0 if you
    don't. */
 #define HAVE_DECL_GETEXECNAME 0
 
-/* Define to 1 if you have the declaration of `GetModuleFileName', and to 0 if
+/* Define to 1 if you have the declaration of 'GetModuleFileName', and to 0 if
    you don't. */
 /* #undef HAVE_DECL_GETMODULEFILENAME */
 
-/* Define to 1 if you have the declaration of `getprogname', and to 0 if you
+/* Define to 1 if you have the declaration of 'getprogname', and to 0 if you
    don't. */
 #define HAVE_DECL_GETPROGNAME 0
 
-/* Define to 1 if you have the declaration of `HW_MEMSIZE', and to 0 if you
+/* Define to 1 if you have the declaration of 'HW_MEMSIZE', and to 0 if you
    don't. */
 /* #undef HAVE_DECL_HW_MEMSIZE */
 
-/* Define to 1 if you have the declaration of `HW_MEMSIZE64', and to 0 if you
+/* Define to 1 if you have the declaration of 'HW_MEMSIZE64', and to 0 if you
    don't. */
 /* #undef HAVE_DECL_HW_MEMSIZE64 */
 
-/* Define to 1 if you have the declaration of `HW_NCPU', and to 0 if you
+/* Define to 1 if you have the declaration of 'HW_NCPU', and to 0 if you
    don't. */
 /* #undef HAVE_DECL_HW_NCPU */
 
-/* Define to 1 if you have the declaration of `HW_PHYSMEM', and to 0 if you
+/* Define to 1 if you have the declaration of 'HW_PHYSMEM', and to 0 if you
    don't. */
 /* #undef HAVE_DECL_HW_PHYSMEM */
 
-/* Define to 1 if you have the declaration of `HW_PHYSMEM64', and to 0 if you
+/* Define to 1 if you have the declaration of 'HW_PHYSMEM64', and to 0 if you
    don't. */
 /* #undef HAVE_DECL_HW_PHYSMEM64 */
 
-/* Define to 1 if you have the declaration of `HW_REALMEM', and to 0 if you
+/* Define to 1 if you have the declaration of 'HW_REALMEM', and to 0 if you
    don't. */
 /* #undef HAVE_DECL_HW_REALMEM */
 
-/* Define to 1 if you have the declaration of `HW_REALMEM64', and to 0 if you
+/* Define to 1 if you have the declaration of 'HW_REALMEM64', and to 0 if you
    don't. */
 /* #undef HAVE_DECL_HW_REALMEM64 */
 
-/* Define to 1 if you have the declaration of `HW_USERMEM', and to 0 if you
+/* Define to 1 if you have the declaration of 'HW_USERMEM', and to 0 if you
    don't. */
 /* #undef HAVE_DECL_HW_USERMEM */
 
-/* Define to 1 if you have the declaration of `HW_USERMEM64', and to 0 if you
+/* Define to 1 if you have the declaration of 'HW_USERMEM64', and to 0 if you
    don't. */
 /* #undef HAVE_DECL_HW_USERMEM64 */
 
-/* Define to 1 if you have the declaration of `lgrp_latency_cookie', and to 0
+/* Define to 1 if you have the declaration of 'lgrp_latency_cookie', and to 0
    if you don't. */
 /* #undef HAVE_DECL_LGRP_LATENCY_COOKIE */
 
-/* Define to 1 if you have the declaration of `modff', and to 0 if you don't.
+/* Define to 1 if you have the declaration of 'modff', and to 0 if you don't.
    */
 #define HAVE_DECL_MODFF 1
 
 /* Define to 1 if you have the declaration of
-   `nvmlDeviceGetMaxPcieLinkGeneration', and to 0 if you don't. */
+   'nvmlDeviceGetCurrPcieLinkGeneration', and to 0 if you don't. */
 /* #undef HAVE_DECL_NVMLDEVICEGETMAXPCIELINKGENERATION */
 
-/* Define to 1 if you have the declaration of `pthread_getaffinity_np', and to
+/* Define to 1 if you have the declaration of
+   'nvmlDeviceGetNvLinkRemoteDeviceType', and to 0 if you don't. */
+/* #undef HAVE_DECL_NVMLDEVICEGETNVLINKREMOTEDEVICETYPE */
+
+/* Define to 1 if you have the declaration of 'pthread_getaffinity_np', and to
    0 if you don't. */
 #define HAVE_DECL_PTHREAD_GETAFFINITY_NP 1
 
-/* Define to 1 if you have the declaration of `pthread_setaffinity_np', and to
+/* Define to 1 if you have the declaration of 'pthread_setaffinity_np', and to
    0 if you don't. */
 #define HAVE_DECL_PTHREAD_SETAFFINITY_NP 1
 
 /* Embedded mode; just assume we do not have Valgrind support */
 #define HAVE_DECL_RUNNING_ON_VALGRIND 0
 
-/* Define to 1 if you have the declaration of `sched_getcpu', and to 0 if you
+/* Define to 1 if you have the declaration of 'sched_getcpu', and to 0 if you
    don't. */
 #define HAVE_DECL_SCHED_GETCPU 1
 
-/* Define to 1 if you have the declaration of `snprintf', and to 0 if you
+/* Define to 1 if you have the declaration of 'snprintf', and to 0 if you
    don't. */
 #define HAVE_DECL_SNPRINTF 1
 
-/* Define to 1 if you have the declaration of `strtoull', and to 0 if you
+/* Define to 1 if you have the declaration of 'strtoull', and to 0 if you
    don't. */
 #define HAVE_DECL_STRTOULL 1
 
-/* Define to 1 if you have the declaration of `_putenv', and to 0 if you
+/* Define to 1 if you have the declaration of '_putenv', and to 0 if you
    don't. */
 #define HAVE_DECL__PUTENV 0
 
-/* Define to 1 if you have the declaration of `_SC_LARGE_PAGESIZE', and to 0
+/* Define to 1 if you have the declaration of '_SC_LARGE_PAGESIZE', and to 0
    if you don't. */
 #define HAVE_DECL__SC_LARGE_PAGESIZE 0
 
-/* Define to 1 if you have the declaration of `_SC_NPROCESSORS_CONF', and to 0
+/* Define to 1 if you have the declaration of '_SC_NPROCESSORS_CONF', and to 0
    if you don't. */
 #define HAVE_DECL__SC_NPROCESSORS_CONF 1
 
-/* Define to 1 if you have the declaration of `_SC_NPROCESSORS_ONLN', and to 0
+/* Define to 1 if you have the declaration of '_SC_NPROCESSORS_ONLN', and to 0
    if you don't. */
 #define HAVE_DECL__SC_NPROCESSORS_ONLN 1
 
-/* Define to 1 if you have the declaration of `_SC_NPROC_CONF', and to 0 if
+/* Define to 1 if you have the declaration of '_SC_NPROC_CONF', and to 0 if
    you don't. */
 #define HAVE_DECL__SC_NPROC_CONF 0
 
-/* Define to 1 if you have the declaration of `_SC_NPROC_ONLN', and to 0 if
+/* Define to 1 if you have the declaration of '_SC_NPROC_ONLN', and to 0 if
    you don't. */
 #define HAVE_DECL__SC_NPROC_ONLN 0
 
-/* Define to 1 if you have the declaration of `_SC_PAGESIZE', and to 0 if you
+/* Define to 1 if you have the declaration of '_SC_PAGESIZE', and to 0 if you
    don't. */
 #define HAVE_DECL__SC_PAGESIZE 1
 
-/* Define to 1 if you have the declaration of `_SC_PAGE_SIZE', and to 0 if you
+/* Define to 1 if you have the declaration of '_SC_PAGE_SIZE', and to 0 if you
    don't. */
 #define HAVE_DECL__SC_PAGE_SIZE 1
 
-/* Define to 1 if you have the declaration of `_strdup', and to 0 if you
+/* Define to 1 if you have the declaration of '_strdup', and to 0 if you
    don't. */
 #define HAVE_DECL__STRDUP 0
 
@@ -325,11 +329,10 @@
 /* Define to '1' if program_invocation_name is present and usable */
 #define HAVE_PROGRAM_INVOCATION_NAME 1
 
-/* Define to 1 if the system has the type `PSAPI_WORKING_SET_EX_BLOCK'. */
+/* Define to 1 if the system has the type 'PSAPI_WORKING_SET_EX_BLOCK'. */
 /* #undef HAVE_PSAPI_WORKING_SET_EX_BLOCK */
 
-/* Define to 1 if the system has the type `PSAPI_WORKING_SET_EX_INFORMATION'.
-   */
+/* Define to 1 if the system has the type 'PSAPI_WORKING_SET_EX_INFORMATION'. */
 /* #undef HAVE_PSAPI_WORKING_SET_EX_INFORMATION */
 
 /* Define to 1 if you have the <pthread_np.h> header file. */
@@ -388,7 +391,7 @@
 /* #undef HAVE_SYSCTLBYNAME */
 
 /* Define to 1 if the system has the type
-   `SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX'. */
+   'SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX'. */
 /* #undef HAVE_SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX */
 
 /* Define to 1 if you have the <sys/cpuset.h> header file. */
@@ -833,7 +836,7 @@
 #define SIZEOF_VOID_P 4
 #endif
 
-/* Define to 1 if all of the C90 standard headers exist (not just the ones
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #define STDC_HEADERS 1

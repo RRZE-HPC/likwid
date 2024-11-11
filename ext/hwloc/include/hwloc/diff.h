@@ -257,6 +257,11 @@ HWLOC_DECLSPEC int hwloc_topology_diff_export_xml(hwloc_topology_diff_t diff, co
 
 /** \brief Load a list of topology differences from a XML buffer.
  *
+ * Build a list of differences from the XML memory buffer given
+ * at \p xmlbuffer and of length \p buflen (including an ending \0).
+ * This buffer may have been filled earlier with
+ * hwloc_topology_diff_export_xmlbuffer().
+ *
  * If not \c NULL, \p refname will be filled with the identifier
  * string of the reference topology for the difference file,
  * if any was specified in the XML file.

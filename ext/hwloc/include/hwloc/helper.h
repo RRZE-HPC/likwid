@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2023 Inria.  All rights reserved.
+ * Copyright © 2009-2024 Inria.  All rights reserved.
  * Copyright © 2009-2012 Université Bordeaux
  * Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -24,6 +24,86 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+/** \defgroup hwlocality_helper_types Kinds of object Type
+ * @{
+ *
+ * Each object type is
+ * either Normal (i.e. hwloc_obj_type_is_normal() returns 1),
+ * or Memory (i.e. hwloc_obj_type_is_memory() returns 1)
+ * or I/O (i.e. hwloc_obj_type_is_io() returns 1)
+ * or Misc (i.e. equal to ::HWLOC_OBJ_MISC).
+ * It cannot be of more than one of these kinds.
+ *
+ * See also Object Kind in \ref termsanddefs.
+ */
+
+/** \brief Check whether an object type is Normal.
+ *
+ * Normal objects are objects of the main CPU hierarchy
+ * (Machine, Package, Core, PU, CPU caches, etc.),
+ * but they are not NUMA nodes, I/O devices or Misc objects.
+ *
+ * They are attached to parent as Normal children,
+ * not as Memory, I/O or Misc children.
+ *
+ * \return 1 if an object of type \p type is a Normal object, 0 otherwise.
+ */
+HWLOC_DECLSPEC int
+hwloc_obj_type_is_normal(hwloc_obj_type_t type);
+
+/** \brief Check whether an object type is I/O.
+ *
+ * I/O objects are objects attached to their parents
+ * in the I/O children list.
+ * This current includes Bridges, PCI and OS devices.
+ *
+ * \return 1 if an object of type \p type is a I/O object, 0 otherwise.
+ */
+HWLOC_DECLSPEC int
+hwloc_obj_type_is_io(hwloc_obj_type_t type);
+
+/** \brief Check whether an object type is Memory.
+ *
+ * Memory objects are objects attached to their parents
+ * in the Memory children list.
+ * This current includes NUMA nodes and Memory-side caches.
+ *
+ * \return 1 if an object of type \p type is a Memory object, 0 otherwise.
+ */
+HWLOC_DECLSPEC int
+hwloc_obj_type_is_memory(hwloc_obj_type_t type);
+
+/** \brief Check whether an object type is a CPU Cache (Data, Unified or Instruction).
+ *
+ * Memory-side caches are not CPU caches.
+ *
+ * \return 1 if an object of type \p type is a Cache, 0 otherwise.
+ */
+HWLOC_DECLSPEC int
+hwloc_obj_type_is_cache(hwloc_obj_type_t type);
+
+/** \brief Check whether an object type is a CPU Data or Unified Cache.
+ *
+ * Memory-side caches are not CPU caches.
+ *
+ * \return 1 if an object of type \p type is a CPU Data or Unified Cache, 0 otherwise.
+ */
+HWLOC_DECLSPEC int
+hwloc_obj_type_is_dcache(hwloc_obj_type_t type);
+
+/** \brief Check whether an object type is a CPU Instruction Cache,
+ *
+ * Memory-side caches are not CPU caches.
+ *
+ * \return 1 if an object of type \p type is a CPU Instruction Cache, 0 otherwise.
+ */
+HWLOC_DECLSPEC int
+hwloc_obj_type_is_icache(hwloc_obj_type_t type);
+
+/** @} */
+
 
 
 /** \defgroup hwlocality_helper_find_inside Finding Objects inside a CPU set
@@ -504,9 +584,9 @@ hwloc_get_next_child (hwloc_topology_t topology __hwloc_attribute_unused, hwloc_
   if (prev) {
     if (prev->type == HWLOC_OBJ_MISC)
       state = 3;
-    else if (prev->type == HWLOC_OBJ_BRIDGE || prev->type == HWLOC_OBJ_PCI_DEVICE || prev->type == HWLOC_OBJ_OS_DEVICE)
+    else if (hwloc_obj_type_is_io(prev->type))
       state = 2;
-    else if (prev->type == HWLOC_OBJ_NUMANODE || prev->type == HWLOC_OBJ_MEMCACHE)
+    else if (hwloc_obj_type_is_memory(prev->type))
       state = 1;
     obj = prev->next_sibling;
   } else {
@@ -526,84 +606,6 @@ hwloc_get_next_child (hwloc_topology_t topology __hwloc_attribute_unused, hwloc_
   }
   return obj;
 }
-
-/** @} */
-
-
-
-/** \defgroup hwlocality_helper_types Kinds of object Type
- * @{
- *
- * Each object type is
- * either Normal (i.e. hwloc_obj_type_is_normal() returns 1),
- * or Memory (i.e. hwloc_obj_type_is_memory() returns 1)
- * or I/O (i.e. hwloc_obj_type_is_io() returns 1)
- * or Misc (i.e. equal to ::HWLOC_OBJ_MISC).
- * It cannot be of more than one of these kinds.
- */
-
-/** \brief Check whether an object type is Normal.
- *
- * Normal objects are objects of the main CPU hierarchy
- * (Machine, Package, Core, PU, CPU caches, etc.),
- * but they are not NUMA nodes, I/O devices or Misc objects.
- *
- * They are attached to parent as Normal children,
- * not as Memory, I/O or Misc children.
- *
- * \return 1 if an object of type \p type is a Normal object, 0 otherwise.
- */
-HWLOC_DECLSPEC int
-hwloc_obj_type_is_normal(hwloc_obj_type_t type);
-
-/** \brief Check whether an object type is I/O.
- *
- * I/O objects are objects attached to their parents
- * in the I/O children list.
- * This current includes Bridges, PCI and OS devices.
- *
- * \return 1 if an object of type \p type is a I/O object, 0 otherwise.
- */
-HWLOC_DECLSPEC int
-hwloc_obj_type_is_io(hwloc_obj_type_t type);
-
-/** \brief Check whether an object type is Memory.
- *
- * Memory objects are objects attached to their parents
- * in the Memory children list.
- * This current includes NUMA nodes and Memory-side caches.
- *
- * \return 1 if an object of type \p type is a Memory object, 0 otherwise.
- */
-HWLOC_DECLSPEC int
-hwloc_obj_type_is_memory(hwloc_obj_type_t type);
-
-/** \brief Check whether an object type is a CPU Cache (Data, Unified or Instruction).
- *
- * Memory-side caches are not CPU caches.
- *
- * \return 1 if an object of type \p type is a Cache, 0 otherwise.
- */
-HWLOC_DECLSPEC int
-hwloc_obj_type_is_cache(hwloc_obj_type_t type);
-
-/** \brief Check whether an object type is a CPU Data or Unified Cache.
- *
- * Memory-side caches are not CPU caches.
- *
- * \return 1 if an object of type \p type is a CPU Data or Unified Cache, 0 otherwise.
- */
-HWLOC_DECLSPEC int
-hwloc_obj_type_is_dcache(hwloc_obj_type_t type);
-
-/** \brief Check whether an object type is a CPU Instruction Cache,
- *
- * Memory-side caches are not CPU caches.
- *
- * \return 1 if an object of type \p type is a CPU Instruction Cache, 0 otherwise.
- */
-HWLOC_DECLSPEC int
-hwloc_obj_type_is_icache(hwloc_obj_type_t type);
 
 /** @} */
 
@@ -944,6 +946,14 @@ enum hwloc_distrib_flags_e {
  *
  * \return 0 on success, -1 on error.
  *
+ * \note On hybrid CPUs (or asymmetric platforms), distribution may be suboptimal
+ * since the number of cores or PUs inside packages or below caches may vary
+ * (the top-down recursive partitioning ignores these numbers until reaching their levels).
+ * Hence it is recommended to distribute only inside a single homogeneous domain.
+ * For instance on a CPU with energy-efficient E-cores and high-performance P-cores,
+ * one should distribute separately N tasks on E-cores and M tasks on P-cores
+ * instead of trying to distribute directly M+N tasks on the entire CPUs.
+ *
  * \note This function requires the \p roots objects to have a CPU set.
  */
 static __hwloc_inline int
@@ -958,7 +968,7 @@ hwloc_distrib(hwloc_topology_t topology,
   unsigned given, givenweight;
   hwloc_cpuset_t *cpusetp = set;
 
-  if (flags & ~HWLOC_DISTRIB_FLAG_REVERSE) {
+  if (!n || (flags & ~HWLOC_DISTRIB_FLAG_REVERSE)) {
     errno = EINVAL;
     return -1;
   }

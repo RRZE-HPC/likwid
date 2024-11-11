@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2022 Inria.  All rights reserved.
+ * Copyright © 2009-2024 Inria.  All rights reserved.
  * Copyright © 2009-2012 Université Bordeaux
  * Copyright © 2009-2020 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -112,7 +112,7 @@ extern "C" {
  * Two stable releases of the same series usually have the same ::HWLOC_API_VERSION
  * even if their HWLOC_VERSION are different.
  */
-#define HWLOC_API_VERSION 0x00020800
+#define HWLOC_API_VERSION 0x00020b00
 
 /** \brief Indicate at runtime which hwloc API version was used at build time.
  *
@@ -263,6 +263,11 @@ typedef enum {
 			  * This is the smallest object representing Memory resources,
 			  * it cannot have any child except Misc objects.
 			  * However it may have Memory-side cache parents.
+                          *
+                          * NUMA nodes may correspond to different kinds of memory
+                          * (DRAM, HBM, CXL-DRAM, etc.). When hwloc is able to guess
+                          * that kind, it is specified in the subtype field of the object.
+                          * See also \ref attributes_normal in the main documentation.
 			  *
 			  * There is always at least one such object in the topology
 			  * even if the machine is not NUMA.
@@ -338,6 +343,12 @@ typedef enum {
 
   HWLOC_OBJ_DIE,	/**< \brief Die within a physical package.
 			 * A subpart of the physical package, that contains multiple cores.
+			 *
+			 * Some operating systems (e.g. Linux) may expose a single die per package
+			 * even if the hardware does not support dies at all. To avoid showing
+			 * such non-existing dies, the corresponding hwloc backend may filter them out.
+			 * This is functionally equivalent to ::HWLOC_TYPE_FILTER_KEEP_STRUCTURE
+			 * being enforced.
 			 */
 
   HWLOC_OBJ_TYPE_MAX    /**< \private Sentinel value */
@@ -401,9 +412,7 @@ typedef enum hwloc_obj_osdev_type_e {
 HWLOC_DECLSPEC int hwloc_compare_types (hwloc_obj_type_t type1, hwloc_obj_type_t type2) __hwloc_attribute_const;
 
 /** \brief Value returned by hwloc_compare_types() when types can not be compared. \hideinitializer */
-#ifndef HWLOC_TYPE_UNORDERED
 #define HWLOC_TYPE_UNORDERED INT_MAX
-#endif
 
 /** @} */
 
@@ -658,33 +667,48 @@ union hwloc_obj_attr_u {
   /** \brief PCI Device specific Object Attributes */
   struct hwloc_pcidev_attr_s {
 #ifndef HWLOC_HAVE_32BITS_PCI_DOMAIN
-    unsigned short domain; /* Only 16bits PCI domains are supported by default */
+    unsigned short domain; /**< \brief Domain number (xxxx in the PCI BDF notation xxxx:yy:zz.t).
+                            *   Only 16bits PCI domains are supported by default. */
 #else
-    unsigned int domain; /* 32bits PCI domain support break the library ABI, hence it's disabled by default */
+    unsigned int domain; /**< \brief Domain number   (xxxx in the PCI BDF notation xxxx:yy:zz.t).
+                          *   32bits PCI domain support break the library ABI, hence it's disabled by default. */
 #endif
-    unsigned char bus, dev, func;
-    unsigned short class_id;
-    unsigned short vendor_id, device_id, subvendor_id, subdevice_id;
-    unsigned char revision;
-    float linkspeed; /* in GB/s */
+    unsigned char bus;   /**< \brief Bus number      (yy   in the PCI BDF notation xxxx:yy:zz.t). */
+    unsigned char dev;   /**< \brief Device number   (zz   in the PCI BDF notation xxxx:yy:zz.t). */
+    unsigned char func;  /**< \brief Function number (t    in the PCI BDF notation xxxx:yy:zz.t). */
+    unsigned short class_id;  /**< \brief The class number (first two bytes, without the prog_if). */
+    unsigned short vendor_id;    /**< \brief Vendor ID (xxxx in [xxxx:yyyy]). */
+    unsigned short device_id;    /**< \brief Device ID (yyyy in [xxxx:yyyy]). */
+    unsigned short subvendor_id; /**< \brief Sub-Vendor ID. */
+    unsigned short subdevice_id; /**< \brief Sub-Device ID. */
+    unsigned char revision;   /**< \brief Revision number. */
+    float linkspeed; /**< \brief Link speed in GB/s.
+                      *   This datarate is the currently configured speed of the entire PCI link
+                      *   (sum of the bandwidth of all PCI lanes in that link).
+                      *   It may change during execution since some devices are able to
+                      *   slow their PCI links down when idle.
+                      */
   } pcidev;
   /** \brief Bridge specific Object Attributes */
   struct hwloc_bridge_attr_s {
     union {
-      struct hwloc_pcidev_attr_s pci;
+      struct hwloc_pcidev_attr_s pci; /**< \brief PCI attribute of the upstream part as a PCI device. */
     } upstream;
-    hwloc_obj_bridge_type_t upstream_type;
+    hwloc_obj_bridge_type_t upstream_type; /**< \brief Upstream Bridge type. */
     union {
       struct {
 #ifndef HWLOC_HAVE_32BITS_PCI_DOMAIN
-	unsigned short domain; /* Only 16bits PCI domains are supported by default */
+        unsigned short domain; /**< \brief Domain number the downstream PCI buses.
+                                *   Only 16bits PCI domains are supported by default. */
 #else
-	unsigned int domain; /* 32bits PCI domain support break the library ABI, hence it's disabled by default */
+        unsigned int domain;   /**< \brief Domain number the downstream PCI buses.
+	                        *   32bits PCI domain support break the library ABI, hence it's disabled by default */
 #endif
-	unsigned char secondary_bus, subordinate_bus;
+        unsigned char secondary_bus;   /**< \brief First PCI bus number below the bridge. */
+        unsigned char subordinate_bus; /**< \brief Highest PCI bus number below the bridge. */
       } pci;
     } downstream;
-    hwloc_obj_bridge_type_t downstream_type;
+    hwloc_obj_bridge_type_t downstream_type; /**< \brief Downstream Bridge type. */
     unsigned depth;
   } bridge;
   /** \brief OS Device specific Object Attributes */
@@ -1135,6 +1159,22 @@ hwloc_obj_get_info_by_name(hwloc_obj_t obj, const char *name) __hwloc_attribute_
  */
 HWLOC_DECLSPEC int hwloc_obj_add_info(hwloc_obj_t obj, const char *name, const char *value);
 
+/** \brief Set (or replace) the subtype of an object.
+ *
+ * The given \p subtype is copied internally, the caller is responsible
+ * for freeing the original \p subtype if needed.
+ *
+ * If another subtype already exists in \p object, it is replaced.
+ * The given \p subtype may be \c NULL to remove the existing subtype.
+ *
+ * \note This function is mostly meant to initialize the subtype of user-added
+ * objects such as groups with hwloc_topology_alloc_group_object().
+ *
+ * \return \c 0 on success.
+ * \return \c -1 with \p errno set to \c ENOMEM on failure to allocate memory.
+ */
+HWLOC_DECLSPEC int hwloc_obj_set_subtype(hwloc_topology_t topology, hwloc_obj_t obj, const char *subtype);
+
 /** @} */
 
 
@@ -1503,6 +1543,16 @@ typedef enum {
    * the interleave will then balance the memory references.
    * \hideinitializer */
   HWLOC_MEMBIND_INTERLEAVE =	3,
+
+  /** \brief Allocate memory on the given nodes in an interleaved
+   * / weighted manner.  The precise layout of the memory across
+   * multiple NUMA nodes is OS/system specific. Weighted interleaving
+   * can be useful when threads distributed across the specified NUMA
+   * nodes with different bandwidth capabilities will all be accessing
+   * the whole memory range concurrently, since the interleave will then
+   * balance the memory references.
+   * \hideinitializer */
+  HWLOC_MEMBIND_WEIGHTED_INTERLEAVE = 5,
 
   /** \brief For each page bound with this policy, by next time
    * it is touched (and next time only), it is moved from its current
@@ -1874,6 +1924,10 @@ HWLOC_DECLSPEC int hwloc_free(hwloc_topology_t topology, void *addr, size_t len)
  * \note -1 is returned and errno is set to \c ENOSYS on platforms that do not
  * support this feature.
  *
+ * \note The PID will not actually be used until hwloc_topology_load().
+ * If the corresponding process exits in the meantime, hwloc will ignore the PID.
+ * If another process reuses the PID, the view of that process will be used.
+ *
  * \return 0 on success, -1 on error.
  */
 HWLOC_DECLSPEC int hwloc_topology_set_pid(hwloc_topology_t __hwloc_restrict topology, hwloc_pid_t pid);
@@ -1937,15 +1991,20 @@ HWLOC_DECLSPEC int hwloc_topology_set_synthetic(hwloc_topology_t __hwloc_restric
  * \note On success, the XML component replaces the previously enabled
  * component (if any), but the topology is not actually modified until
  * hwloc_topology_load().
+ *
+ * \note If an invalid XML input file is given, the error may be reported
+ * either here or later by hwloc_topology_load() depending on the XML library
+ * used by hwloc.
  */
 HWLOC_DECLSPEC int hwloc_topology_set_xml(hwloc_topology_t __hwloc_restrict topology, const char * __hwloc_restrict xmlpath);
 
 /** \brief Enable XML based topology using a memory buffer (instead of
  * a file, as with hwloc_topology_set_xml()).
  *
- * Gather topology information from the XML memory buffer given at \p
- * buffer and of length \p size.  This buffer may have been filled
- * earlier with hwloc_topology_export_xmlbuffer() in hwloc/export.h.
+ * Gather topology information from the XML memory buffer given at
+ * \p buffer and of length \p size (including an ending \0).
+ * This buffer may have been filled earlier with
+ * hwloc_topology_export_xmlbuffer() in hwloc/export.h.
  *
  * Note that this function does not actually load topology
  * information; it just tells hwloc where to load it from.  You'll
@@ -1966,6 +2025,10 @@ HWLOC_DECLSPEC int hwloc_topology_set_xml(hwloc_topology_t __hwloc_restrict topo
  * \note On success, the XML component replaces the previously enabled
  * component (if any), but the topology is not actually modified until
  * hwloc_topology_load().
+ *
+ * \note If an invalid XML input file is given, the error may be reported
+ * either here or later by hwloc_topology_load() depending on the XML library
+ * used by hwloc.
  */
 HWLOC_DECLSPEC int hwloc_topology_set_xmlbuffer(hwloc_topology_t __hwloc_restrict topology, const char * __hwloc_restrict buffer, int size);
 
@@ -2173,9 +2236,10 @@ enum hwloc_topology_flags_e {
    */
   HWLOC_TOPOLOGY_FLAG_NO_DISTANCES = (1UL<<7),
 
-  /** \brief Ignore memory attributes.
+  /** \brief Ignore memory attributes and tiers.
    *
-   * Ignore memory attribues from the operating systems (and from XML).
+   * Ignore memory attribues from the operating systems (and from XML)
+   * Hence also do not try to build memory tiers.
    */
   HWLOC_TOPOLOGY_FLAG_NO_MEMATTRS = (1UL<<8),
 
@@ -2308,6 +2372,8 @@ struct hwloc_topology_membind_support {
   unsigned char migrate_membind;
   /** Getting the last NUMA nodes where a memory area was allocated is supported */
   unsigned char get_area_memlocation;
+  /** Weighted interleave policy is supported. */
+  unsigned char weighted_interleave_membind;
 };
 
 /** \brief Flags describing miscellaneous features.
@@ -2364,8 +2430,8 @@ HWLOC_DECLSPEC const struct hwloc_topology_support *hwloc_topology_get_support(h
 /** \brief Type filtering flags.
  *
  * By default, most objects are kept (::HWLOC_TYPE_FILTER_KEEP_ALL).
- * Instruction caches, I/O and Misc objects are ignored by default (::HWLOC_TYPE_FILTER_KEEP_NONE).
- * Die and Group levels are ignored unless they bring structure (::HWLOC_TYPE_FILTER_KEEP_STRUCTURE).
+ * Instruction caches, memory-side caches, I/O and Misc objects are ignored by default (::HWLOC_TYPE_FILTER_KEEP_NONE).
+ * Group levels are ignored unless they bring structure (::HWLOC_TYPE_FILTER_KEEP_STRUCTURE).
  *
  * Note that group objects are also ignored individually (without the entire level)
  * when they do not bring structure.
@@ -2613,6 +2679,9 @@ HWLOC_DECLSPEC int hwloc_topology_allow(hwloc_topology_t __hwloc_restrict topolo
  *
  * The new leaf object will not have any \p cpuset.
  *
+ * The \p subtype object attribute may be defined with hwloc_obj_set_subtype()
+ * after successful insertion.
+ *
  * \return the newly-created object
  *
  * \return \c NULL on error.
@@ -2629,12 +2698,32 @@ HWLOC_DECLSPEC hwloc_obj_t hwloc_topology_insert_misc_object(hwloc_topology_t to
  * This function returns a new Group object.
  *
  * The caller should (at least) initialize its sets before inserting
- * the object in the topology. See hwloc_topology_insert_group_object().
+ * the object in the topology, see hwloc_topology_insert_group_object().
+ * Or it may decide not to insert and just free the group object
+ * by calling hwloc_topology_free_group_object().
  *
  * \return The allocated object on success.
  * \return \c NULL on error.
- */
+ *
+ * \note If successfully inserted by hwloc_topology_insert_group_object(),
+ * the object will be freed when the entire topology is freed.
+ * If insertion failed (e.g. \c NULL or empty CPU and node-sets),
+ * it is freed before returning the error.
+  */
 HWLOC_DECLSPEC hwloc_obj_t hwloc_topology_alloc_group_object(hwloc_topology_t topology);
+
+/** \brief Free a group object allocated with hwloc_topology_alloc_group_object().
+ *
+ * This function is only useful if the group object was not given
+ * to hwloc_topology_insert_group_object() as planned.
+ *
+ * \note \p topology must be the same as the one previously passed
+ * to hwloc_topology_alloc_group_object().
+ *
+ * \return \c 0 on success.
+ * \return \c -1 on error, for instance if an invalid topology is given.
+ */
+HWLOC_DECLSPEC int hwloc_topology_free_group_object(hwloc_topology_t topology, hwloc_obj_t group);
 
 /** \brief Add more structure to the topology by adding an intermediate Group
  *
@@ -2643,19 +2732,37 @@ HWLOC_DECLSPEC hwloc_obj_t hwloc_topology_alloc_group_object(hwloc_topology_t to
  * the final location of the Group in the topology.
  * Then the object can be passed to this function for actual insertion in the topology.
  *
- * Either the cpuset or nodeset field (or both, if compatible) must be set
- * to a non-empty bitmap. The complete_cpuset or complete_nodeset may be set
- * instead if inserting with respect to the complete topology
+ * The main use case for this function is to group a subset of
+ * siblings among the list of children below a single parent.
+ * For instance, if grouping 4 cores out of a 8-core socket,
+ * the logical list of cores will be reordered so that the 4 grouped
+ * ones are consecutive.
+ * Then, if needed, a new depth is added between the parent and those
+ * children, and the Group is inserted there.
+ * At the end, the 4 grouped cores are now children of the Group,
+ * which replaces them as a child of the original parent.
+ *
+ * In practice, the grouped objects are specified through cpusets
+ * and/or nodesets, for instance using hwloc_obj_add_other_obj_sets()
+ * iteratively.
+ * Hence it is possible to group objects that are not children of the
+ * same parent, for instance some PUs below the 4 cores in example above.
+ * However this general case may fail if the expected Group conflicts
+ * with the existing hierarchy.
+ * For instance if each core has two PUs, it is not possible to insert
+ * a Group containing a single PU of each core.
+ *
+ * To specify the objects to group, either the cpuset or nodeset field
+ * (or both, if compatible) must be set to a non-empty bitmap.
+ * The complete_cpuset or complete_nodeset may be set instead if
+ * inserting with respect to the complete topology
  * (including disallowed, offline or unknown objects).
- * If grouping several objects, hwloc_obj_add_other_obj_sets() is an easy way
- * to build the Group sets iteratively.
  * These sets cannot be larger than the current topology, or they would get
  * restricted silently.
  * The core will setup the other sets after actual insertion.
  *
- * The \p subtype object attribute may be defined (to a dynamically
- * allocated string) to display something else than "Group" as the
- * type name for this object in lstopo.
+ * The \p subtype object attribute may be defined with hwloc_obj_set_subtype()
+ * to display something else than "Group" as the type name for this object in lstopo.
  * Custom name-value info pairs may be added with hwloc_obj_add_info() after
  * insertion.
  *
@@ -2672,6 +2779,14 @@ HWLOC_DECLSPEC hwloc_obj_t hwloc_topology_alloc_group_object(hwloc_topology_t to
  * \note Inserting a group adds some locality information to the topology,
  * hence the existing objects may get reordered (including PUs and NUMA nodes),
  * and their logical indexes may change.
+ *
+ * \note If the insertion fails, the input group object is freed.
+ *
+ * \note If the group object should be discarded instead of inserted,
+ * it may be passed to hwloc_topology_free_group_object() instead.
+ *
+ * \note \p topology must be the same as the one previously passed
+ * to hwloc_topology_alloc_group_object().
  *
  * \return The inserted object if it was properly inserted.
  *
