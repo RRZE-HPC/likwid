@@ -198,18 +198,17 @@ nvmon_init(int nrGpus, const int* gpuIds)
         }
 
         NvmonFunctions* funcs = nvGroupSet->backends[device->backend];
-        if (funcs)
+        if (funcs && funcs->createDevice)
         {
-            if (funcs->createDevice)
-                ret = funcs->createDevice(device->deviceId, device);
-        }
-        if (ret < 0)
-        {
-            ERROR_PRINT(Cannot create device %d, device->deviceId);
-            free(nvGroupSet->gpus);
-            free(nvGroupSet);
-            nvGroupSet = NULL;
-            return -ENOMEM;
+            ret = funcs->createDevice(device->deviceId, device);
+            if (ret < 0)
+            {
+                ERROR_PRINT(Cannot create device %d (error: %d), device->deviceId, ret);
+                free(nvGroupSet->gpus);
+                free(nvGroupSet);
+                nvGroupSet = NULL;
+                return -ENOMEM;
+            }
         }
     }
 
