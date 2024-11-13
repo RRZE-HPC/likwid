@@ -37,17 +37,17 @@ print_stdout = print
 print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
 
 
-function version()
+local function version()
     print_stdout(string.format("likwid-features -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
-function example()
+local function example()
     print_stdout("Options:")
 end
 
-function usage()
+local function usage()
     version()
-    print_stdout("A tool list and modify the states of CPU features.\n")
+    print_stdout("A tool list and modify the states of system/OS features.\n")
     print_stdout("Options:")
     print_stdout("-h, --help\t\t Help message")
     print_stdout("-v, --version\t\t Version information")
@@ -56,12 +56,49 @@ function usage()
     print_stdout("-d, --devices <list>\t Perform operations on given devices")
     print_stdout("-g, --get <feature(s)>\t Get the value of the given feature(s)")
     print_stdout("                      \t feature format: <category>.<name> or just <name> if unique")
-    print_stdout("                      \t can be a list of features")
+    print_stdout("                      \t can be a comma-separated list of features")
     print_stdout("-s, --set <feature(s)>\t Set feature(s) to the given value")
     print_stdout("                      \t format: <category>.<name>=<value> or just <name>=<value> if unique")
-    print_stdout("                      \t can be a list of modifications")
+    print_stdout("                      \t can be a comma-separated list of features")
     print_stdout("-O\t\t\t Output results in CSV")
     print_stdout("-V, --verbose <level>\t Set verbosity\n")
+end
+
+local function toGetTable(devList, ft_list)
+    -- prepare output table
+    local all = {}
+    -- first column contains the feature category and name
+    local first = {}
+    table.insert(first, "Feature/Dev")
+    for _,f in pairs(ft_list) do
+        table.insert(first, string.format("%s.%s", f.Category, f.Name))
+    end
+    setmetatable(first, {align = "left"})
+    table.insert(all, first)
+    -- create one column per given device with the current value of the feature
+    for i, dev in pairs(devList) do
+        local tab = {}
+        table.insert(tab, string.format("%s %s", dev:typeName(), dev:id()))
+        for _,f in pairs(ft_list) do
+            if dev:typeId() == f.TypeID then
+                if f.WriteOnly then
+                    table.insert(tab, "(wronly)")
+                else
+                    local v, err = likwid.sysFeatures_get(string.format("%s.%s", f.Category, f.Name), dev)
+                    if v == nil then
+                        table.insert(tab, "fail")
+                    else
+                        table.insert(tab, v)
+                    end
+                end
+            else
+                table.insert(tab, "-")
+            end
+        end
+        -- add the hw thread column to the table
+        table.insert(all, tab)
+    end
+    return all
 end
 
 if #arg == 0 then
@@ -230,46 +267,16 @@ if allFeatures then
 end
 
 if listFeatures and #devList > 0 then
-    -- prepare output table
-    local all = {}
-    -- first column contains the feature category and name
-    local first = {}
-    table.insert(first, "Feature/Dev")
-    for _,f in pairs(ft_list) do
-        table.insert(first, string.format("%s.%s", f.Category, f.Name))
-    end
-    setmetatable(first, {align = "left"})
-    table.insert(all, first)
-    -- create one column per given device with the current value of the feature
-    for i, dev in pairs(devList) do
-        local tab = {}
-        table.insert(tab, string.format("%s %s", dev:typeName(), dev:id()))
-        for _,f in pairs(ft_list) do
-            if dev:typeId() == f.TypeID then
-                if f.WriteOnly then
-                    table.insert(tab, "(wronly)")
-                else
-                    local v, err = likwid.sysFeatures_get(string.format("%s.%s", f.Category, f.Name), dev)
-                    if v == nil then
-                        table.insert(tab, "fail")
-                    else
-                        table.insert(tab, v)
-                    end
-                end
-            else
-                table.insert(tab, "-")
-            end
-        end
-        -- add the hw thread column to the table
-        table.insert(all, tab)
-    end
+    -- prepare output table and get all features
+    local all = toGetTable(devList, ft_list)
 
     -- print the table
     if output_csv then
-        likwid.printcsv(all, num_hwts + 1)
+        likwid.printcsv(all, #devList + 1)
     else
         likwid.printtable(all)
     end
+
     -- finalize sysfeatures module and exit
     likwid.finalizeSysFeatures()
     os.exit(0)
@@ -296,17 +303,14 @@ if #getList > 0 and #devList > 0 then
     end
 
     -- get all features in the new list
-    for i, dev in pairs(devList) do
-        local tab = {}
-        for _,f in pairs(featList) do
-            local v, err = likwid.sysFeatures_get(string.format("%s.%s", f.Category, f.Name), dev)
-            if not v then
-                print_stderr(string.format("Failed to get feature '%s.%s' (Type %s, Resp %s)", f.Category, f.Name, f.Type, err))
-            else
-                print_stdout(v)
-            end
-        end
+    local tab = toGetTable(devList, featList)
+    -- print the table
+    if output_csv then
+        likwid.printcsv(tab, #devList + 1)
+    else
+        likwid.printtable(tab)
     end
+
     -- finalize sysfeatures module and exit
     likwid.finalizeSysFeatures()
     os.exit(0)
