@@ -1,4 +1,4 @@
-/*! \page skylakesp Intel&reg; Skylake SP
+\page skylakesp Intel&reg; Skylake SP
 
 <P>This page is valid for Skylake SP. The Skylake SP microarchitecture supports the UBOX and the CBOX Uncore devices.</P>
 
@@ -1010,4 +1010,3 @@ The IRP box counters are exposed to the operating system through the MSR interfa
 </TR>
 </TABLE>
 
-*/

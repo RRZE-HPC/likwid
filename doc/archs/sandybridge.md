@@ -1,4 +1,4 @@
-/*! \page sandybridge Intel&reg; SandyBridge
+\page sandybridge Intel&reg; SandyBridge
 
 <H1>Available performance monitors for the Intel&reg; SandyBridge microarchitecture</H1>
 <UL>
@@ -284,4 +284,4 @@
   <TD></TD>
 </TR>
 </TABLE>
-*/
+

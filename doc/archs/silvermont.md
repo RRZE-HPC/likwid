@@ -1,4 +1,4 @@
-/*! \page silvermont Intel&reg; Silvermont/Airmont
+\page silvermont Intel&reg; Silvermont/Airmont
 
 <H1>Available performance monitors for the Intel&reg; Silvermont microarchitecture</H1>
 <UL>
@@ -172,4 +172,4 @@
 </TR>
 </TABLE>
 <P>*) The PWR2 and PWR3 counter is commonly not implemented by Intel&reg; Silvermont systems.</P>
-*/
+

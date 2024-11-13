@@ -1,4 +1,4 @@
-/*! \page skylake Intel&reg; Icelake
+\page icelake Intel&reg; Icelake
 
 <P>This page is valid for Icelake. The Icelake microarchitecture supports the UBOX and the CBOX Uncore devices.</P>
 
@@ -328,4 +328,4 @@
   <TD>DRAM_WRITES</TD>
 </TR>
 </TABLE>
-*/
+

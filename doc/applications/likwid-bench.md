@@ -1,4 +1,4 @@
-/*! \page likwid-bench <CODE>likwid-bench</CODE>
+\page likwid-bench likwid-bench
 
 <H1>Information</H1>
 <CODE>likwid-bench</CODE> is a benchmark suite for low-level (assembly) benchmarks to measure bandwidths and instruction throughput for specific instruction code on x86 systems. The currently included benchmark codes include common data access patterns like load and store but also calculations like vector triad and sum.
@@ -70,6 +70,10 @@
   </TD>
   </TABLE>
 </TR>
+<TR>
+  <TD>-W &lt;workgroup&gt;</TD>
+  <TD>Set the workgroup for the benchmark but allocate all memory thread-local. For format, see -w &lt;workgroup&gt;</TD>
+</TR>
 </TABLE>
 
 
@@ -92,6 +96,3 @@ Run test <CODE>copy</CODE> using <CODE>2</CODE> threads in affinity domain <CODE
 </LI>
 </UL>
 
-
-
-*/

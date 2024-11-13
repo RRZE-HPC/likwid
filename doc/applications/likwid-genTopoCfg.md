@@ -1,4 +1,4 @@
-/*! \page likwid-genTopoCfg <CODE>likwid-genTopoCfg</CODE>
+\page likwid-genTopoCfg likwid-genTopoCfg
 
 <H1>Information</H1>
 <CODE>likwid-genTopoCfg</CODE> is a command line application that stores the system's CPU and NUMA topology to
@@ -24,6 +24,4 @@ file. LIKWID applications use this file to read in the topology fast instead of 
 </TR>
 </TABLE>
 
-
-*/
 

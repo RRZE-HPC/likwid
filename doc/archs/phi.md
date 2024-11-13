@@ -1,4 +1,4 @@
-/*! \page phi Intel&reg; Xeon Phi
+\page phi Intel&reg; Xeon Phi
 
 <P>To use LIKWID you have to turn of power management on the MIC. LIKWID relies on
 RDTSC being used for wallclock time. On the MIC this is only given if power
@@ -75,4 +75,3 @@ configuration worked:<BR>
 </TABLE>
 
 
-*/

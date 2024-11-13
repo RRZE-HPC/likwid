@@ -1,4 +1,4 @@
-/*! \page ivybridge Intel&reg; IvyBridge
+\page ivybridge Intel&reg; IvyBridge
 
 <H1>Available performance monitors for the Intel&reg; IvyBridge microarchitecture</H1>
 <UL>
@@ -283,7 +283,5 @@
   <TD></TD>
 </TR>
 </TABLE>
-
-*/
 
 

@@ -1,0 +1,158 @@
+.TH LIKWID-SYSFEATURES 1 <DATE> likwid\-VERSION
+.SH NAME
+likwid-sysfeatures \- retrieve and manipulate hardware and operating system features
+.SH SYNOPSIS
+.B likwid-sysfeatures
+.RB [\-vh]
+.RB [ \-V
+.IR <verbosity> ]
+.RB [ \-a, \-\-all ]
+.RB [ \-l, \-\-list ]
+.RB [ \-O ]
+.RB [ \-d, \-\-devices
+.IR <device_list> ]
+.RB [ \-g, \-\-get
+.IR <feature_list> ]
+.RB [ \-s, \-\-set
+.IR <feature_list> ]
+
+
+.SH DESCRIPTION
+.B likwid-sysfeatures
+is a command line application to retrieve and manipulate the state of hardware
+and operating system features. It is a common interface for various features
+like CPU frequencies, CPU prefetchers and OS-based NUMA balancing. These features
+commonly have a topological scope which means that they cover a specific topological
+entity. Some exist only once per node. In order to retrieve or manipulate
+feature values, all devices have to be specified in the device list.
+
+.SH OPTIONS
+.TP
+.B \-\^h,\-\-\^help
+prints a help message to standard output, then exits.
+.TP
+.B \-\^v,\-\-\^version
+prints version information to standard output, then exits.
+.TP
+.B \-\^V, \-\-\^verbose <level>
+verbose output during execution for debugging. 0 for only errors, 1 for informational output, 2 for detailed output and 3 for developer output
+.TP
+.B \-\^a,\-\-\^all
+list all provided features for the current system and OS
+.TP
+.B \-\^l,\-\-\^list
+list all features with their current value for given devices
+.TP
+.B \-\^d, \-\-\^devices <device_list>
+use devices for listing, getting and setting features
+.TP
+.B \-\^g, \-\-\^get <feature_list>
+Get the values of the specified features of the given devices (
+.B <category>.<name>
+or just
+.B <name>
+if unique in a comma-separated list ).
+.TP
+.B \-\^s, \-\-\^set <feature_list>
+Set the values of the specified features on the given devices (
+.B <category>.<name>=<value>
+or just
+.B <name>=<value>
+if unique in a comma-separated list ).
+.TP
+.B \-\^O
+Output in RFC-conform CSV
+
+.SH DEVICES
+With the
+.B \-\^d, \-\-\^devices <device_list>
+option, the devices for listing, getting and setting features can be specified.
+The syntax is closely related to the syntax used for specifying HW thread lists
+for
+.B likwid-pin(1)
+or
+.B likwid-perfctr(1)
+but extends it to allow more explicit specification of the topological entities.
+All device specifiers with their description:
+.RS
+.nf
+- T : hardware thread
+- C : CPU core
+- M : NUMA domain
+- D : CPU die
+- S : CPU socket
+- N : Whole node
+- GN : Nvidia GPU (if compiled with Nvidia CUDA support)
+- GA : AMD GPU (if compiled with AMD ROCm support)
+.RE
+The general syntax is <specifier>:<comma-separated list or ranges> like M:0,1,4-5.
+Multiple device specifiers can be combined with '@' like M:0,1@S:0.
+
+.IP 1. 5
+.TP
+Specification of hardware threads
+
+.B likwid-sysfeatures --devices T:0,1,4-5 --list
+
+or
+
+.B likwid-sysfeatures --devices 0,1,4-5 --list
+.PP
+List the current value of all features for the hardware threads with IDs 0, 1, 4
+and 5. 'T' is the specifier for hardware threads but can be omitted for convenience. If a
+feature is not in hardware threads scope, it will be printed with '-' as value.
+.IP 2. 5
+.TP
+Specification of CPU socket(s)
+
+.B likwid-sysfeatures --devices S:0-1 --list
+.PP
+List the current value of all features for the topological entity 'CPU socket 0' and 'CPU socket 1'.
+.IP 3. 5
+.TP
+Specification of NUMA domains
+
+.B likwid-sysfeatures --devices M:3,4 --list
+.PP
+List the current value of all features for the topological entity 'NUMA domain 3' and 'NUMA domain 4'
+.IP 4. 5
+.TP
+Specification of different devices
+
+.B likwid-sysfeatures --devices T:0,1@S:0 --list
+.PP
+List the current value of all features for hardware threads with ID 0 and 1 as well as 'CPU socket 0'.
+
+.SH EXAMPLES
+Some examples for listing the value of features for various devices can be found in the
+.B DEVICES
+section.
+.IP 1. 5
+.TP
+List all available hardware system and operating system features with information about category, name,
+scope, their access mode and a description.
+
+.B likwid-sysfeatures --all
+.IP 2. 5
+.TP
+Get the value of the feature 'prefetch.l2_hwpf' for the hardware thread with ID 0
+
+.B likwid-sysfeatures -d T:0 -g prefetch.l2_hwpf
+.IP 3. 5
+.TP
+Set the value of the feature 'prefetch.l2_hwpf' and 'prefetch.l2_adj_pf' for
+the hardware thread with ID 4 to 7 to '0'.
+
+.B likwid-sysfeatures -d T:4-7 -s prefetch.l2_hwpf=0,prefetch.l2_adj_pf=0
+
+.PP
+List the current value of all features for the hardware threads with IDs 0, 1, 4
+and 5. 'T' is the specifier for hardware threads but can be omitted for convenience. If a
+feature is not in hardware threads scope, it will be printed with '-' as value.
+
+.SH AUTHOR
+Written by Thomas Gruber <thomas.roehl@googlemail.com> and Michael Panzlaff <michael.panzlaff@fau.de>.
+.SH BUGS
+Report Bugs on <https://github.com/RRZE-HPC/likwid/issues>.
+.SH "SEE ALSO"
+likwid-features(1), likwid-powermeter(1), likwid-setFrequencies(1)

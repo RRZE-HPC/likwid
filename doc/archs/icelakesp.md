@@ -1,4 +1,4 @@
-/*! \page skylake Intel&reg; Icelake SP
+\page icelakesp Intel&reg; Icelake SP
 
 <P>This page is valid for Icelake SP.</P>
 
@@ -883,7 +883,7 @@ The IIO box counters are exposed to the operating system through the MSR interfa
 </TABLE>
 
 
-\anchor SKX_BBOX
+\anchor ICX_BBOX
 <H2>Mesh2Memory counters</H2>
 <P>The Intel&reg; Icelake SP microarchitecture provides measurements of the mesh (M2M) which connects the cores with the Uncore devices. The description from Intel&reg;:<br>
 <I>For all Boxes that must communicate with the Mesh, there are a common set of events
@@ -1002,4 +1002,3 @@ The M2M devices is first introduced in the Intel&reg; Skylake SP microarchitectu
 </TR>
 </TABLE>
 
-*/

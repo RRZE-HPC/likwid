@@ -1,0 +1,22 @@
+.TH LIKWID-BRIDGE 1 <DATE> likwid\-<VERSION>
+.SH NAME
+likwid-bridge \- This tool can be used as a proxy application when using LIKWID
+inside of containers.
+.SH DESCRIPTION
+.B likwid-bridge
+is a command line application that opens a UNIX file socket to wait for
+connection attempts from a LIKWID library from within a container. It starts a
+.B likwid-accessD
+instance outside of the container. All accesses of the LIKWID library inside
+the container are sent to the bridge, which proxies it to the
+.B likwid-accessD
+.SH SYNOPSIS
+.B likwid-bridge
+.B <container run command>
+
+.SH AUTHOR
+Written by Pawel Radtke but contact Thomas Gruber <thomas.roehl@googlemail.com>.
+.SH BUGS
+Report Bugs on <https://github.com/RRZE-HPC/likwid/issues>.
+.SH "SEE ALSO"
+likwid-accessD(1)

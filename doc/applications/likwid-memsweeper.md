@@ -1,4 +1,4 @@
-/*! \page likwid-memsweeper <CODE>likwid-memsweeper</CODE>
+\page likwid-memsweeper likwid-memsweeper
 
 <H1>Information</H1>
 <CODE>likwid-memsweeper</CODE> is a command line application to shrink the file buffer cache by filling the NUMA domain with random pages. Moreover, the tool invalidates all cachelines in the LLC.
@@ -31,4 +31,3 @@ Cleans the memory and LLC on NUMA nodes identified by the node IDs 0 and 1.
 </LI>
 </UL>
 
-*/

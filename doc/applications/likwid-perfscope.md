@@ -1,4 +1,4 @@
-/*! \page likwid-perfscope <CODE>likwid-perfscope</CODE>
+\page likwid-perfscope likwid-perfscope
 
 <H1>Information</H1>
 <CODE>likwid-perfscope</CODE> is a command line application written in Lua that uses the timeline daemon mode of \ref likwid-perfctr
@@ -103,4 +103,3 @@ Pin the executable <CODE>./a.out</CODE> to CPU 1 on Socket 0 and use the predefi
 </LI>
 </UL>
 
-*/

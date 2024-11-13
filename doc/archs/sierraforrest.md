@@ -1,4 +1,4 @@
-/*! \page sapphirerapids Intel&reg; SierraForrest
+\page sierraforrest Intel&reg; SierraForrest
 
 <P>This page is valid for SierraForrest.</P>
 
@@ -14,7 +14,7 @@
 <LI>\ref SRF_MBOX "Memory channel counters"</LI>
 <LI>\ref SRF_WBOX "Power control unit counters"</LI>
 <LI>\ref SRF_QBOX "UPI interface counters"</LI>
-<LI>\ref SRF_SBOX "Mesh-to-UPI counters (B2UPI)"</LI>
+<LI>\ref SRF_RBOX "Mesh-to-UPI counters (B2UPI)"</LI>
 <LI>\ref SRF_IBOX "IIO box counters"</LI>
 <LI>\ref SRF_BBOX "Mesh2Memory counters (B2CMI)"</LI>
 <LI>\ref SRF_PBOX "Mesh2PCIe counters (B2CXL)"</LI>
@@ -938,4 +938,3 @@ The IIO box counters are exposed to the operating system through the MSR interfa
 </TR>
 </TABLE>
 
-*/

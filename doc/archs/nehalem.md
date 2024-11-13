@@ -1,4 +1,4 @@
-/*! \page nehalem Intel&reg; Nehalem
+\page nehalem Intel&reg; Nehalem
 
 <H1>Available performance monitors for the Intel&reg; Nehalem microarchitecture</H1>
 <UL>
@@ -234,4 +234,3 @@
 </TR>
 </TABLE>
 
-*/

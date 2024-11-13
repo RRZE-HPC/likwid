@@ -1,4 +1,4 @@
-/*! \page phi_knm Intel&reg; Xeon Phi (Knights Mill)
+\page phi_knm Intel&reg; Xeon Phi (Knights Mill)
 
 <H1>Available performance monitors for the Intel&reg; Xeon Phi (Knights Mill) microarchitecture</H1>
 <UL>
@@ -685,4 +685,4 @@ components (clusters) within the processor by the internal mesh interconnect fab
   <td></td>
 </tr>
 </table>
-*/
+

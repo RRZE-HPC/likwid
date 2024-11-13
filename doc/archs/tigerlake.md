@@ -1,4 +1,4 @@
-/*! \page skylake Intel&reg; Tigerlake
+\page tigerlake Intel&reg; Tigerlake
 
 <P>This page is valid for Tigerlake.</P>
 
@@ -233,4 +233,3 @@
 </TR>
 </TABLE>
 
-*/

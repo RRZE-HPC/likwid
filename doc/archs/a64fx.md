@@ -1,4 +1,4 @@
-/*! \page a64fx Fujitsu&reg; A64FX
+\page a64fx Fujitsu&reg; A64FX
 
 <P>This page is valid for Fujitsu&reg; A64FX.</P>
 

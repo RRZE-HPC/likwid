@@ -1,4 +1,4 @@
-/*! \page goldmont Intel&reg; Goldmont/GoldmontPlus/Tremont
+\page goldmont Intel&reg; Goldmont/GoldmontPlus/Tremont
 
 <H1>Available performance monitors for the Intel&reg; Goldmont microarchitecture</H1>
 <UL>
@@ -180,4 +180,4 @@
 </TR>
 </TABLE>
 <P>*) The PWR2 and PWR3 counter is commonly not implemented by Intel&reg; Goldmont systems.</P>
-*/
+

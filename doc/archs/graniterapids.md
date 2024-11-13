@@ -1,4 +1,4 @@
-/*! \page sapphirerapids Intel&reg; GraniteRapids
+\page graniterapids Intel&reg; GraniteRapids
 
 <P>This page is valid for GraniteRapids.</P>
 
@@ -15,7 +15,7 @@
 <LI>\ref GNR_MBOX "Memory channel counters"</LI>
 <LI>\ref GNR_WBOX "Power control unit counters"</LI>
 <LI>\ref GNR_QBOX "UPI interface counters"</LI>
-<LI>\ref GNR_SBOX "Mesh-to-UPI counters (B2UPI)"</LI>
+<LI>\ref GNR_RBOX "Mesh-to-UPI counters (B2UPI)"</LI>
 <LI>\ref GNR_IBOX "IIO box counters"</LI>
 <LI>\ref GNR_BBOX "Mesh2Memory counters (B2CMI)"</LI>
 <LI>\ref GNR_PBOX "Mesh2PCIe counters (B2CXL)"</LI>
@@ -970,4 +970,3 @@ The IIO box counters are exposed to the operating system through the MSR interfa
 </TR>
 </TABLE>
 
-*/

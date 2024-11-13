@@ -1,4 +1,4 @@
-/*! \page ivybridgeep Intel&reg; IvyBridge EP/EN/EX
+\page ivybridgeep Intel&reg; IvyBridge EP/EN/EX
 
 <H1>Available performance monitors for the Intel&reg; IvyBridge microarchitecture</H1>
 <UL>
@@ -787,4 +787,3 @@ The R2PCIe performance counters are exposed to the operating system through a PC
 </TABLE>
 
 
-*/

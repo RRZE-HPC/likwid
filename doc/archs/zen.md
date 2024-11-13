@@ -1,4 +1,4 @@
-/*! \page zen AMD&reg; Zen (Ryzen, Epyc)
+\page zen AMD&reg; Zen (Ryzen, Epyc)
 
 <H1>Available performance monitors for the AMD&reg; Zen microarchitecture</H1>
 <UL>

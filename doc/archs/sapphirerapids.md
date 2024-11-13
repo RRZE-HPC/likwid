@@ -1,4 +1,4 @@
-/*! \page sapphirerapids Intel&reg; SapphireRapids
+\page sapphirerapids Intel&reg; SapphireRapids
 
 <P>This page is valid for SapphireRapids.</P>
 
@@ -18,7 +18,7 @@
 <LI>\ref SPR_SBOX "Mesh-to-UPI counters (M3UPI)"</LI>
 <LI>\ref SPR_IBOX "IIO box counters"</LI>
 <LI>\ref SPR_BBOX "Mesh2Memory counters"</LI>
-<LI>\ref SPR_PBOX "Mesh2PCIe counters"</LI>
+<!--<LI>\ref SPR_PBOX "Mesh2PCIe counters"</LI>-->
 <LI>\ref SPR_HBM "High bandwidth memory counters"</LI>
 </UL>
 
@@ -27,7 +27,8 @@
 <LI>free-running IIO counters</LI>
 <LI>fixed-purpose counters in \ref SPR_WBOX</LI>
 <LI>free-running memory controller counters</LI>
-<L1>M2HBM unit</LI>
+<LI>M2HBM unit</LI>
+</UL>
 
 <H1>Counters available for each hardware thread</H1>
 \anchor SPR_FIXED
@@ -976,5 +977,3 @@ Some SapphireRapids systems provide on-chip HBM. If it is available, there are a
 </TR>
 </TABLE>
 
-
-*/

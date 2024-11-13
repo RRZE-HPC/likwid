@@ -1,4 +1,4 @@
-/*! \page zen4 AMD&reg; Zen4 (Ryzen, Epyc)
+\page zen4 AMD&reg; Zen4 (Ryzen, Epyc)
 
 <H1>Available performance monitors for the AMD&reg; Zen4 microarchitecture</H1>
 <UL>
@@ -122,7 +122,7 @@ P0 frequency while the core is in C0).</P>
   <TD>RAPL_CORE_ENERGY</TD>
 </TR>
 </TABLE>
-<P>There are more energy counters but only one for each L3 segment (aka CCD) (\ref ZEN4_POWER_L3)</P>
+<P>There are more energy counters but only one for each L3 segment (aka CCD) (\ref ZEN4_POWER_SOCKET)</P>
 
 
 <H1>Counters available for one hardware thread per shared L3 cache</H1>
@@ -189,7 +189,7 @@ P0 frequency while the core is in C0).</P>
 </TABLE>
 
 <H1>Counters available for one hardware thread per L3 segment (aka CCD)</H1>
-\anchor ZEN4_POWER_L3
+\anchor ZEN4_POWER_SOCKET
 <H2>Power counters</H2>
 <P>The AMD&reg; Zen4 microarchitecture provides measurements of the current power consumption through the RAPL interface.</P>
 <H3>Counter and events</H3>

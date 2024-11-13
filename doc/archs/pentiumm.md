@@ -1,4 +1,4 @@
-/*! \page pentiumm Intel&reg; Pentium M
+\page pentiumm Intel&reg; Pentium M
 
 <H1>Available performance monitors for the Intel&reg; Pentium M microarchitecture</H1>
 <UL>
@@ -59,5 +59,3 @@ The Intel&reg; Pentium M microarchitecture provides 2 general-purpose counters c
 </TR>
 </TABLE>
 
-
-*/

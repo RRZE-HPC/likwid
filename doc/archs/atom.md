@@ -1,4 +1,4 @@
-/*! \page atom Intel&reg; Atom
+\page atom Intel&reg; Atom
 
 <P>The Intel&reg; Atom performance monitoring counters are equal to the ones of the Intel&reg; Core 2 microarchitecture but the event set is different.</P>
 <H1>Available performance monitors for the Intel&reg; Atom microarchitecture</H1>

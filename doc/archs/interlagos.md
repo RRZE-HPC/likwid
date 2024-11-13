@@ -1,4 +1,4 @@
-/*! \page interlagos AMD&reg; Interlagos
+\page interlagos AMD&reg; Interlagos
 
 <H1>Available performance monitors for the AMD&reg; Interlagos microarchitecture</H1>
 <UL>
@@ -103,5 +103,3 @@
 </TR>
 </TABLE>
 
-
-*/

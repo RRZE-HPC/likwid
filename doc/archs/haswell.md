@@ -1,4 +1,4 @@
-/*! \page haswell Intel&reg; Haswell
+\page haswell Intel&reg; Haswell
 
 <H1>Available performance monitors for the Intel&reg; Haswell microarchitecture</H1>
 <UL>
@@ -295,7 +295,4 @@
   <TD></TD>
 </TR>
 </TABLE>
-
-*/
-
 
