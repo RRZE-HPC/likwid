@@ -1,4 +1,4 @@
-/*! \page neoverseN1 ARM&reg; Neoverse N1 (AWS Graviton 2)
+\page neoverseN1 ARM&reg; Neoverse N1 (AWS Graviton 2)
 
 <P>This page is valid for ARM&reg; Neoverse N1 like the AWS Graviton 2.</P>
 

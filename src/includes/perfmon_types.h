@@ -283,13 +283,13 @@ extern int perfmon_numCoreCounters;
 extern int perfmon_numUncoreCounters;
 extern int perfmon_numArchEvents;
 
+/*! \brief Structure holding information for Intel's uncore discovery mechanism introduced with SapphireRapids */
 typedef struct {
-    char* name;
-    int discovery_type;
-    int max_devices;
-    PciDeviceIndex base_device;
+    char* name; /*!< \brief Name of unit */
+    int discovery_type; /*!< \brief Intel's device discovery type */
+    int max_devices; /*!< \brief Maximal amont of devices for this discovery type */
+    PciDeviceIndex base_device; /*!< \brief LIKWID unit device base */
 } PerfmonUncoreDiscovery;
 
-//#define PERFMON_UNCORE_DISCOVERY_MAP_GUARD {"INVALID", -1, 0, MSR}
 
 #endif /*PERFMON_TYPES_H*/

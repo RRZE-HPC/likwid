@@ -1,4 +1,4 @@
-/*! \page core2 Intel&reg; Core2
+\page core2 Intel&reg; Core2
 
 <H1>Available performance monitors for the Intel&reg; Core2 microarchitecture</H1>
 <UL>
@@ -98,6 +98,3 @@
 </TABLE>
 
 
-
-
-*/

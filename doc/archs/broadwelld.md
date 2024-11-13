@@ -1,4 +1,4 @@
-/*! \page broadwelld Intel&reg; Broadwell D
+\page broadwelld Intel&reg; Broadwell D
 
 <P>This page is valid for Broadwell D.</P>
 

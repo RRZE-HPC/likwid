@@ -1,4 +1,4 @@
-/*! \page phi_knl Intel&reg; Xeon Phi (Knights Landing)
+\page phi_knl Intel&reg; Xeon Phi (Knights Landing)
 
 <H1>Available performance monitors for the Intel&reg; Xeon Phi (Knights Landing) microarchitecture</H1>
 <UL>
@@ -685,4 +685,4 @@ components (clusters) within the processor by the internal mesh interconnect fab
   <td></td>
 </tr>
 </table>
-*/
+

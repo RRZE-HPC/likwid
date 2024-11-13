@@ -1,4 +1,4 @@
-/*! \page kabini AMD&reg; Kabini
+\page kabini AMD&reg; Kabini
 
 <H1>Available performance monitors for the AMD&reg; Kabini microarchitecture</H1>
 <UL>
@@ -158,5 +158,3 @@
 </TR>
 </TABLE>
 
-
-*/

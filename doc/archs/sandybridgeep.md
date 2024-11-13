@@ -1,4 +1,4 @@
-/*! \page sandybridgeep Intel&reg; SandyBridge EP/EN
+\page sandybridgeep Intel&reg; SandyBridge EP/EN
 
 <H1>Available performance monitors for the Intel&reg; IvyBridge microarchitecture</H1>
 <UL>
@@ -772,4 +772,3 @@ The R2PCIe performance counters are exposed to the operating system through a PC
 </TR>
 </TABLE>
 
-*/

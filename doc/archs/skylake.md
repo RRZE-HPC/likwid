@@ -1,4 +1,4 @@
-/*! \page skylake Intel&reg; Skylake
+\page skylake Intel&reg; Skylake
 
 <P>This page is valid for Skylake. The Skylake microarchitecture supports the UBOX and the CBOX Uncore devices.</P>
 
@@ -271,4 +271,4 @@
   <TD></TD>
 </TR>
 </TABLE>
-*/
+

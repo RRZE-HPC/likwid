@@ -23,6 +23,7 @@ LIKWID follows the philosophy:
 - \ref likwid-bench : A benchmarking framework for streaming benchmark kernels written in assembly.
 - \ref likwid-genTopoCfg : A config file writer that gets system topology and writes them to file for faster LIKWID startup.
 - \ref likwid-features : A tool to toggle the prefetchers and print available CPU features.
+- \ref likwid-sysfeatures : A tool to manipulate system features (successor of \ref likwid-features , \ref likwid-powermeter and \ref likwid-setFrequencies).
 
 Wrapper scripts using the basic likwid tools:
 - \ref likwid-mpirun : A wrapper script enabling simple and flexible pinning of MPI and MPI/threaded hybrid applications. With integrated \ref likwid-perfctr support.
@@ -31,6 +32,9 @@ Wrapper scripts using the basic likwid tools:
 LIKWID requires in most environments some daemon application to perform its operations with higher priviledges:
 - \ref likwid-accessD : Daemon to perform MSR and PCI read/write operations with higher priviledges.
 - \ref likwid-setFreq : Daemon to set the CPU frequencies with higher priviledges.
+
+If you are using LIKWID inside of containers, you probably want to use:
+- \ref likwid-bridge : Proxy application to use LIKWID inside of containers
 
 Optionally, a global configuration file \ref likwid.cfg can be given to modify some basic run time parameters of LIKWID.
 
@@ -43,7 +47,9 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \ref NumaTopology
 - \ref AffinityDomains
 - \ref CPUParse
+- \ref Devices
 - \ref PerfMon
+- \ref Sysfeatures
 - \ref PowerMon
 - \ref ThermalMon
 - \ref TimerMon
@@ -52,6 +58,8 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \ref CpuFreq
 - \ref NvMarkerAPI
 - \ref Nvmon
+- \ref RocMarkerAPI
+- \ref Rocmon
 
 \subsection Lua_Interface Lua Interface
 - \ref lua_Info
@@ -161,6 +169,11 @@ If you have problems with LIKWID:<BR>
 GitHub: <A HREF="https://github.com/RRZE-HPC/likwid">https://github.com/RRZE-HPC/likwid</A><BR>
 Bugs: <A HREF="https://github.com/RRZE-HPC/likwid/issues">https://github.com/RRZE-HPC/likwid/issues</A><BR>
 Mailinglist: <A HREF="http://groups.google.com/group/likwid-users">http://groups.google.com/group/likwid-users</A><BR>
+Matrix Chats:<BR>
+<UL>
+<LI>General: <A HREF="https://app.element.io/#/room/#likwid:matrix.org">https://app.element.io/#/room/#likwid:matrix.org</A></LI>
+<LI>Development: <A HREF="https://app.element.io/#/room/#likwid-dev:matrix.org">https://app.element.io/#/room/#likwid-dev:matrix.org</A></LI>
+</UL>
 
 
 \page build Build and install instructions
@@ -168,7 +181,7 @@ Mailinglist: <A HREF="http://groups.google.com/group/likwid-users">http://groups
 Likwid is build using GNU make and Perl. Besides the Linux kernel and the standard C library, all required dependencies are shipped with the archive (<A HREF="http://www.lua.org/">Lua</A>, <A HREF="http://www.open-mpi.org/projects/hwloc/">hwloc</A> and <A HREF="https://github.com/LLNL/GOTCHA">GOTCHA</A>).
 It should build on any Linux distribution with a recent GCC compiler or CLANG compiler and 2.6 or newer kernel without any changes.
 
-There is one generic top level <CODE>Makefile</CODE>, the main <CODE>config.mk</CODE> configuration file and <CODE>make/include_<COMPILER>.mk</CODE>for each
+There is one generic top level <CODE>Makefile</CODE>, the main <CODE>config.mk</CODE> configuration file and <CODE>make/include_&lt;COMPILER&gt;.mk</CODE>for each
 compiler. Please note that for x86 systems we test LIKWID only with GCC. CLANG and ICC is only tested for basic functionality.
 
 If you want to use LIKWID on a Intel Xeon Phi card you have to choose the MIC as compiler in config.mk, which is based on Intel ICC compiler.

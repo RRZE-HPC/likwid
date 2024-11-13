@@ -1,4 +1,4 @@
-/*! \page neoverseV1 ARM&reg; Neoverse V1 
+\page neoverseV1 ARM&reg; Neoverse V1 
 
 
 <H1>Available performance monitors for the ARM&reg; Neoverse V1 microarchitecture</H1>

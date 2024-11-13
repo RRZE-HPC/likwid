@@ -1,4 +1,4 @@
-/*! \page likwid-mpirun <CODE>likwid-mpirun</CODE>
+\page likwid-mpirun likwid-mpirun
 
 <H1>Information</H1>
 <CODE>likwid-mpirun</CODE>
@@ -44,7 +44,7 @@ A tool to start and monitor MPI applications with LIKWID. It can be used as supp
 </TR>
 <TR>
   <TD>--mpi &lt;mpitype&gt;</TD>
-  <TD>Specify the type of the MPI implementation.<BR><CODE>likwid-mpirun</CODE> tries to read the MPI implementation from the <A HREF="http://modules.sourceforge.net/">modules</A> system.<BR>If not recognized automatically, possible values are <B>intelmpi</B>, <B>openmpi</B> and <B>mvapich2</B>.</TD>
+  <TD>Specify the type of the MPI implementation.<BR><CODE>likwid-mpirun</CODE> tries to read the MPI implementation from the <A HREF="http://modules.sourceforge.net/">modules</A> system.<BR>If not recognized automatically, possible values are <B>intelmpi</B>, <B>openmpi</B>, <B>slurm</B> and <B>mvapich2</B>.</TD>
 </TR>
 <TR>
   <TD>--omp &lt;omptype&gt;</TD>
@@ -84,4 +84,4 @@ Runs <CODE>./a.out</CODE> with 2 MPI processes per socket on each host in <CODE>
 Only one process per socket measures the Uncore/RAPL counters, the other one(s) only core-local counters.
 </LI>
 </UL>
-*/
+

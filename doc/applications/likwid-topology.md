@@ -1,4 +1,4 @@
-/*! \page likwid-topology <CODE>likwid-topology</CODE>
+\page likwid-topology likwid-topology
 
 <H1>Information</H1>
 <CODE>likwid-topology</CODE> is a command line application to print the thread and cache topology on multicore x86 processors. Used with mono spaced fonts it can
@@ -64,5 +64,3 @@ draw the processor topology of a machine in ASCII art. Beyond topology <CODE>lik
 </TABLE>
 
 
-
-*/

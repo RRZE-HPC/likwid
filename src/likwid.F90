@@ -76,7 +76,7 @@ interface
 !! Gathers all data of regions and writes them out to file.
 !! \note Must be called in serial region of the application.
   subroutine likwid_markerWriteFile( markerfile )
-!> \param markerfile [in] The file to write to
+!> @param markerfile [in] The file to write to
   character(*) :: markerfile
   end subroutine likwid_markerWriteFile
 
@@ -85,7 +85,7 @@ interface
 !! Initializes the hash table with an empty entry to reduce the overhead
 !! at likwid_markerStartRegion()
   subroutine likwid_markerRegisterRegion( regionTag )
-!> \param regionTag Name for the code region for later identification
+!> @param regionTag Name for the code region for later identification
   character(*) :: regionTag
   end subroutine likwid_markerRegisterRegion
 
@@ -95,7 +95,7 @@ interface
 !! Reads the currently running event set and store the results as start values.
 !! for the measurement group identified by regionTag
   subroutine likwid_markerStartRegion( regionTag )
-!> \param regionTag Name for the code region for later identification
+!> @param regionTag Name for the code region for later identification
   character(*) :: regionTag
   end subroutine likwid_markerStartRegion
 
@@ -104,7 +104,7 @@ interface
 !! Reads the currently running event set and accumulate the difference between
 !! stop and start data in the measurement group identified by regionTag.
   subroutine likwid_markerStopRegion( regionTag )
-!> \param regionTag Name for the code region for later identification
+!> @param regionTag Name for the code region for later identification
   character(*) :: regionTag
   end subroutine likwid_markerStopRegion
 
@@ -114,11 +114,11 @@ interface
 !! for the current thread.
 !! \warning Experimental
   subroutine likwid_markerGetRegion( regionTag, nr_events, events, time, count )
-!> \param regionTag [in] Name for the code region for later identification
-!! \param nr_events [in,out] Length of the events array
-!! \param events [out] Events array to store intermediate results
-!! \param time [out] Accumulated measurement time
-!! \param count [out] Call count of the region
+!> @param regionTag [in] Name for the code region for later identification
+!! @param nr_events [in,out] Length of the events array
+!! @param events [out] Events array to store intermediate results
+!! @param time [out] Accumulated measurement time
+!! @param count [out] Call count of the region
   character(*) :: regionTag
   INTEGER :: nr_events
   DOUBLE PRECISION, DIMENSION(*) :: events
@@ -134,6 +134,8 @@ interface
   end subroutine likwid_markerResetRegion
 
 #ifdef LIKWID_WITH_NVMON
+!> \defgroup Fortran_NvGPU_Interface Likwid Nvmon Fortran90 Module
+
 !> \ingroup Fortran_NvGPU_Interface
 !! \brief Initialize the Likwid NvMarker API
 !! This routine initializes the NvMarker API for Fortran. It reads some
@@ -152,8 +154,8 @@ interface
   end subroutine likwid_NvMarkerNextGroup
 
 !> \ingroup Fortran_NvGPU_Interface
-!! \brief Close the Likwid Marker API
-!! Close the Likwid Marker API and write measured results to temporary file
+!! \brief Close the Nvmon Likwid Marker API
+!! Close the Nvmon Likwid Marker API and write measured results to temporary file
 !! for evaluation done by likwid-perfctr
 !! \note Must be called once in a serial region and no further
 !! Likwid calls should be used
@@ -165,7 +167,7 @@ interface
 !! Initializes the hash table with an empty entry to reduce the overhead
 !! at likwid_markerStartRegion()
   subroutine likwid_NvMarkerRegisterRegion( regionTag )
-!> \param regionTag Name for the code region for later identification
+!> @param regionTag Name for the code region for later identification
   character(*) :: regionTag
   end subroutine likwid_NvMarkerRegisterRegion
 
@@ -175,7 +177,7 @@ interface
 !! Reads the currently running event set and store the results as start values.
 !! for the measurement group identified by regionTag
   subroutine likwid_NvMarkerStartRegion( regionTag )
-!> \param regionTag Name for the code region for later identification
+!> @param regionTag Name for the code region for later identification
   character(*) :: regionTag
   end subroutine likwid_NvMarkerStartRegion
 
@@ -184,44 +186,28 @@ interface
 !! Reads the currently running event set and accumulate the difference between
 !! stop and start data in the measurement group identified by regionTag.
   subroutine likwid_NvMarkerStopRegion( regionTag )
-!> \param regionTag Name for the code region for later identification
+!> @param regionTag Name for the code region for later identification
   character(*) :: regionTag
   end subroutine likwid_NvMarkerStopRegion
 
 !> \ingroup Fortran_NvGPU_Interface
-!! \brief Get accumulated measurement results for a code region
-!! Get the accumulated data in the measurement group identified by regionTag
-!! for the current thread.
-!! \warning Experimental
-!! subroutine likwid_markerGetRegion( regionTag, nr_events, events, time, count )
-!> \param regionTag [in] Name for the code region for later identification
-!! \param nr_events [in,out] Length of the events array
-!! \param events [out] Events array to store intermediate results
-!! \param time [out] Accumulated measurement time
-!! \param count [out] Call count of the region
-!! character(*) :: regionTag
-!! INTEGER :: nr_events
-!! DOUBLE PRECISION, DIMENSION(*) :: events
-!! DOUBLE PRECISION :: time
-!! INTEGER :: count
-!! end subroutine likwid_markerGetRegion
-
-!> \ingroup Fortran_NvGPU_Interface
 !! \brief Reset the counters for a code region to zero
   subroutine likwid_NvMarkerResetRegion( regionTag )
-!> \param regionTag Name for the code region for later identification
+!> @param regionTag Name for the code region for later identification
   character(*) :: regionTag
   end subroutine likwid_NvMarkerResetRegion
 
 !> \ingroup Fortran_NvGPU_Interface
 !! \brief Write the current results to file
   subroutine likwid_NvMarkerWriteFile( filename )
-!> \param filename Filename to write data
+!> @param filename Filename to write data
   character(*) :: filename
   end subroutine likwid_NvMarkerWriteFile
 #endif /* LIKWID_WITH_NVMON */
 
 #ifdef LIKWID_WITH_ROCMON
+!> \defgroup Fortran_RocmGPU_Interface Likwid Rocmon Fortran90 Module
+
 !> \ingroup Fortran_RocmGPU_Interface
 !! \brief Initialize the Likwid RocmonMarker API
 !! This routine initializes the RocmonMarker API for Fortran. It reads some
@@ -253,7 +239,7 @@ interface
 !! Initializes the hash table with an empty entry to reduce the overhead
 !! at likwid_RocmMarkerStartRegion()
   subroutine likwid_RocmMarkerRegisterRegion( regionTag )
-!> \param regionTag Name for the code region for later identification
+!> @param regionTag Name for the code region for later identification
   character(*) :: regionTag
   end subroutine likwid_RocmMarkerRegisterRegion
 
@@ -263,7 +249,7 @@ interface
 !! Reads the currently running event set and store the results as start values.
 !! for the measurement group identified by regionTag
   subroutine likwid_RocmMarkerStartRegion( regionTag )
-!> \param regionTag Name for the code region for later identification
+!> @param regionTag Name for the code region for later identification
   character(*) :: regionTag
   end subroutine likwid_RocmMarkerStartRegion
 
@@ -272,39 +258,22 @@ interface
 !! Reads the currently running event set and accumulate the difference between
 !! stop and start data in the measurement group identified by regionTag.
   subroutine likwid_RocmMarkerStopRegion( regionTag )
-!> \param regionTag Name for the code region for later identification
+!> @param regionTag Name for the code region for later identification
   character(*) :: regionTag
   end subroutine likwid_RocmMarkerStopRegion
 
-!> \ingroup Fortran_RocmGPU_Interface
-!! \brief Get accumulated measurement results for a code region
-!! Get the accumulated data in the measurement group identified by regionTag
-!! for the current thread.
-!! \warning Experimental
-!! subroutine likwid_markerGetRegion( regionTag, nr_events, events, time, count )
-!> \param regionTag [in] Name for the code region for later identification
-!! \param nr_events [in,out] Length of the events array
-!! \param events [out] Events array to store intermediate results
-!! \param time [out] Accumulated measurement time
-!! \param count [out] Call count of the region
-!! character(*) :: regionTag
-!! INTEGER :: nr_events
-!! DOUBLE PRECISION, DIMENSION(*) :: events
-!! DOUBLE PRECISION :: time
-!! INTEGER :: count
-!! end subroutine likwid_markerGetRegion
 
 !> \ingroup Fortran_RocmGPU_Interface
 !! \brief Reset the counters for a code region to zero
   subroutine likwid_RocmMarkerResetRegion( regionTag )
-!> \param regionTag Name for the code region for later identification
+!> @param regionTag Name for the code region for later identification
   character(*) :: regionTag
   end subroutine likwid_RocmMarkerResetRegion
 
 !> \ingroup Fortran_RocmGPU_Interface
 !! \brief Write the current results to file
   subroutine likwid_RocmMarkerWriteFile( filename )
-!> \param filename Filename to write data
+!> @param filename Filename to write data
   character(*) :: filename
   end subroutine likwid_RocmMarkerWriteFile
 
@@ -312,5 +281,5 @@ interface
 
 end interface
 
-end module likwid
+end module
 

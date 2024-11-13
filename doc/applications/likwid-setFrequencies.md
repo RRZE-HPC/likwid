@@ -1,4 +1,4 @@
-/*! \page likwid-setFrequencies <CODE>likwid-setFrequencies</CODE>
+\page likwid-setFrequencies likwid-setFrequencies
 
 <H1>Information</H1>
 <CODE>likwid-setFrequencies</CODE> is a command line application to set the clock frequency of CPU cores. Since only priviledged users are allowed to change the frequency of CPU cores, the application works in combination with a daemon
@@ -55,4 +55,3 @@
 <H1>Notice</H1>
 Shortly before releasing the first version of LIKWID 4, the CPU frequency module and its behavior have changed compared to the previous <B>cpufreq</B> module. It is not possible anymore to set the CPU clock to a fixed frequency, you can only define a performance level called P-State. Inside that level, the CPU can vary its clock frequency. <CODE>likwid-setFrequencies</CODE> and its daemon \ref likwid-setFreq do not have support for the new kernel module <B>intel_pstate</B>. Therefore, the loaded driver is checked in the beginning.
 
-*/

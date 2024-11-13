@@ -1,4 +1,4 @@
-/*! \page power8 IBM&reg; POWER8
+\page power8 IBM&reg; POWER8
 
 <H1>Available performance monitors for the IBM&reg; POWER8 microarchitecture</H1>
 <UL>

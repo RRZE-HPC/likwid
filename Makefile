@@ -229,11 +229,14 @@ docs:
 	@echo "===>  GENERATE DOXYGEN DOCS"
 	@cp doc/lua-doxygen.md doc/lua-doxygen.md.safe
 	@cp doc/likwid-doxygen.md doc/likwid-doxygen.md.safe
-	@sed -i -e s#'<PREFIX>'#$(PREFIX)#g -e s#'<VERSION>'#$(VERSION)#g -e s#'<DATE>'#'$(DATE)'#g -e s#'<RELEASE>'#$(RELEASE)#g -e s#'<MINOR>'#$(MINOR)#g -e s#'<GITCOMMIT>'#$(GITCOMMIT)#g doc/lua-doxygen.md
-	@sed -i -e s#'<PREFIX>'#$(PREFIX)#g -e s#'<VERSION>'#$(VERSION)#g -e s#'<DATE>'#'$(DATE)'#g -e s#'<RELEASE>'#$(RELEASE)#g -e s#'<MINOR>'#$(MINOR)#g -e s#'<GITCOMMIT>'#$(GITCOMMIT)#g doc/likwid-doxygen.md
+	@cp doc/Doxyfile doc/Doxyfile.safe
+	@sed -i -e 's#<PREFIX>#$(PREFIX)#g' -e 's#<VERSION>#$(VERSION)#g' -e 's#<DATE>#$(DATE)#g' -e 's#<RELEASE>#$(RELEASE)#g' -e 's#<MINOR>#$(MINOR)#g' -e 's#<GITCOMMIT>#$(GITCOMMIT)#g' doc/lua-doxygen.md
+	@sed -i -e 's#<PREFIX>#$(PREFIX)#g' -e 's#<VERSION>#$(VERSION)#g' -e 's#<DATE>#$(DATE)#g' -e 's#<RELEASE>#$(RELEASE)#g' -e 's#<MINOR>#$(MINOR)#g' -e 's#<GITCOMMIT>#$(GITCOMMIT)#g' doc/likwid-doxygen.md
+	@sed -i -e 's#<PREFIX>#$(PREFIX)#g' -e 's#<VERSION>#$(VERSION)#g' -e 's#<DATE>#$(DATE)#g' -e 's#<RELEASE>#$(RELEASE)#g' -e 's#<MINOR>#$(MINOR)#g' -e 's#<GITCOMMIT>#$(GITCOMMIT)#g' doc/Doxyfile
 	$(Q)doxygen doc/Doxyfile
 	@mv doc/lua-doxygen.md.safe doc/lua-doxygen.md
 	@mv doc/likwid-doxygen.md.safe doc/likwid-doxygen.md
+	@mv doc/Doxyfile.safe doc/Doxyfile
 
 $(L_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$(L_APPS)))
 	@echo "===>  ADJUSTING  $@"

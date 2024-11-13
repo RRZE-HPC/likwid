@@ -1,4 +1,4 @@
-/*! \page haswellep Intel&reg; Haswell EP/EN/EX
+\page haswellep Intel&reg; Haswell EP/EN/EX
 
 
 <H1>Available performance monitors for the Intel&reg; Haswell EP/EN/EX microarchitecture</H1>
@@ -892,5 +892,3 @@ The Ring-to-PCIe performance counters are exposed to the operating system throug
 </TR>
 </TABLE>
 
-
-*/

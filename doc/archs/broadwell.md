@@ -1,4 +1,4 @@
-/*! \page broadwell Intel&reg; Broadwell
+\page broadwell Intel&reg; Broadwell
 
 <P>This page is valid for Broadwell. The Broadwell microarchitecture supports the UBOX and the CBOX Uncore devices.</P>
 

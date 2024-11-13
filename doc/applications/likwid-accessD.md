@@ -1,4 +1,4 @@
-/*! \page likwid-accessD <CODE>likwid-accessD</CODE>
+\page likwid-accessD likwid-accessD
 
 <H1>Information</H1>
 
@@ -24,7 +24,7 @@ root: # chown root:root likwid-accessD<BR>
 root: # chmod u+s likwid-accessD<BR>
 </CODE>
 </LI>
-<LI>GUID Method: (PCI devices cannot be accesses with this method but we are working on it)<BR>
+<LI>GUID Method: (PCI devices cannot be accesses with this method)<BR>
 <CODE>
 root: # groupadd likwid<BR>
 root: # chown root:likwid likwid-accessD<BR>
@@ -33,11 +33,11 @@ root: # chmod g+s likwid-accessD<BR>
 </LI>
 <LI>Libcap Method:<BR>
 <CODE>
-root: # setcap cap_sys_rawio+ep likwid-accessD
+root: # setcap cap_sys_rawio,cap_sys_admin,cap_dac_override=ep likwid-accessD
 </CODE>
 </LI>
 </UL>
-There are Linux distributions where settings the suid permission on <CODE>likwid-accessD</CODE> is not enough. Try also to set the capabilities for <CODE>likwid-accessD</CODE>. 
+There are Linux distributions where settings the suid permission on <CODE>likwid-accessD</CODE> is not enough. Try also to set the capabilities for <CODE>likwid-accessD</CODE>. It is important that the user of the devices files have to fit, e.g. changing the owner of <CODE>/dev/cpu/*/msr</CODE> and <CODE>/dev/mem</CODE> either directly or through ACLs. Be aware that this gives users the permissions to read ALL memory.
 
 <H1>Protocol</H1>
 Every likwid instance will start its own daemon. This client-server pair will communicate with a socket file in <CODE>/tmp</CODE>  named <CODE>likwid-$PID</CODE>. The daemon only accepts one connection. As soon as the connect is successful the socket file will be deleted.
@@ -52,4 +52,4 @@ The daemon has the following error handling:
 <LI>If the client prematurely disconnects the daemon terminates.</LI>
 <LI>If the client disconnects between a read and write the daemon catches <CODE>SIGPIPE</CODE>  and disconnects.</LI>
 </UL>
-*/
+

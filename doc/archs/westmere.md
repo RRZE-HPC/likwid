@@ -1,4 +1,4 @@
-/*! \page westmere Intel&reg; Westmere
+\page westmere Intel&reg; Westmere
 
 <P>The Intel&reg; Westmere microarchitecture has the same features as the Intel&reg; Nehalem architecture. There are some additional features like a second OFFCORE_RESPONSE register and an addr/opcode matching unit for general-purpose counters in the Uncore.</P>
 
@@ -236,4 +236,3 @@
 </TR>
 </TABLE>
 
-*/

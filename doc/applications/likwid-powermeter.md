@@ -1,4 +1,4 @@
-/*! \page likwid-powermeter <CODE>likwid-powermeter</CODE>
+\page likwid-powermeter likwid-powermeter
 
 <H1>Information</H1>
 likwid-powermeter is a command line application to get the energy comsumption on Intel RAPL capable processors. Currently
@@ -72,4 +72,4 @@ Please note that the RAPL counters are also accessible as normal events withing 
   <TD>Print dynamic clocking and CPI values, uses \ref likwid-perfctr</TD>
 </TR>
 </TABLE>
-*/
+

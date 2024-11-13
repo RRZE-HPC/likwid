@@ -1,4 +1,4 @@
-/*! \page applem1 Apple&reg; M1
+\page applem1 Apple&reg; M1
 
 <P>This page is valid for Apple&reg; M1.</P>
 

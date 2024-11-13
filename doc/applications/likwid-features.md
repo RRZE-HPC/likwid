@@ -1,4 +1,4 @@
-/*! \page likwid-features <CODE>likwid-features</CODE>
+\page likwid-features likwid-features
 
 <H1>Information</H1>
 <CODE>likwid-features</CODE> is a command line application to print and change some features of the CPU. Most of the features cannot be changed during runtime, but the prefetchers <CODE>HW_PREFETCHER</CODE>, <CODE>CL_PREFETCHER</CODE>, <CODE>DCU_PREFETCHER</CODE>, <CODE>IP_PREFETCHER</CODE> can be altered.<BR>
@@ -39,6 +39,5 @@
 </TR>
 </TABLE>
 
-<B><CODE>likwid-features</CODE> will be deprecated in 5.4</B>
+<B><CODE>likwid-features</CODE> will be deprecated in in future versions and replaced with \ref likwid-sysfeatures</B>
 
-*/

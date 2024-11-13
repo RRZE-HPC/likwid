@@ -1,4 +1,4 @@
-/*! \page hisilicontsv110 HiSilicon&reg; TSV110
+\page hisilicontsv110 HiSilicon&reg; TSV110
 
 
 <H1>Available performance monitors for the HiSilicon&reg; TSV110 microarchitecture</H1>

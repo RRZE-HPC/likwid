@@ -1,4 +1,4 @@
-/*! \page armThunderX2 Marvell&reg;/Cavium&reg; Thunder X2
+\page armThunderX2 Marvell&reg;/Cavium&reg; Thunder X2
 
 <P>This page is valid for Marvell&reg;/Cavium&reg; Thunder X2.</P>
 

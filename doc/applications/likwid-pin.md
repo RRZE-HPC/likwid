@@ -1,4 +1,4 @@
-/*! \page likwid-pin <CODE>likwid-pin</CODE>
+\page likwid-pin likwid-pin
 
 <H1>Information</H1>
 <CODE>likwid-pin</CODE> is a command line application to pin a sequential or multithreaded application to dedicated processors. It can be used as replacement for taskset.
@@ -96,12 +96,20 @@ While gathering the system topology, LIKWID groups the CPUs into so-called threa
   <TD>Includes all CPUs that reside on CPU socket x</TD>
 </TR>
 <TR>
+  <TD><CODE>D&lt;number&gt;</CODE></TD>
+  <TD>Includes all CPUs that are attached to the same CPU die</TD>
+</TR>
+<TR>
   <TD><CODE>C&lt;number&gt;</CODE></TD>
   <TD>Includes all CPUs that share the same LLC with ID <CODE>&lt;number&gt;</CODE>.<BR>This domain often contains the same CPUs as the <CODE>S&lt;number&gt;</CODE> domain because many CPU socket have a LLC shared by all CPUs of the socket</TD>
 </TR>
 <TR>
   <TD><CODE>M&lt;number&gt;</CODE></TD>
   <TD>Includes all CPUs that are attached to the same NUMA memory domain</TD>
+</TR>
+<TR>
+  <TD><CODE>G&lt;number&gt;</CODE></TD>
+  <TD>Includes all CPUs that are attached to the same NUMA memory domain as the GPU with index &lt;number&gt;. Only when compiled with Nvidia CUDA or AMD ROCm support.</TD>
 </TR>
 </TABLE>
 
@@ -157,8 +165,8 @@ Selects 1 CPU in a row and skips 1 entries thus we get CPUs 0 and 1
 Selects in total 4 CPUs, 2 in a row with a stride of 4, thus CPUs 0,4,2,6
 </LI>
 </UL>
-<H3>Scatter expression:</H3>
-The scatter expression distributes the threads evenly over the desired affinity domains. In contrast to the previous selection methods, the scatter expression schedules threads over multiple affinity domains. Although you can also select <CODE>N</CODE> as scatter domain, the intended domains are <CODE>S</CODE>, <CODE>C</CODE> and <CODE>M</CODE>. The scattering selects physical cores first. For the examples we assume that the socket affinity domain looks like this: <CODE>S0 = 0,4,1,5</CODE> and <CODE>S1 = 2,6,3,7</CODE>, hence 8 hardware threads on a system with 2 SMT threads per CPU core.
+<H3>Scatter/Balanced expression:</H3>
+The <CODE>scatter</CODE> expression distributes the threads evenly over the desired affinity domains. In contrast to the previous selection methods, the scatter expression schedules threads over multiple affinity domains. Although you can also select <CODE>N</CODE> as scatter domain, the intended domains are <CODE>S</CODE>, <CODE>D</CODE>, <CODE>C</CODE> and <CODE>M</CODE>. The scattering selects physical cores first. For the examples we assume that the socket affinity domain looks like this: <CODE>S0 = 0,4,1,5</CODE> and <CODE>S1 = 2,6,3,7</CODE>, hence 8 hardware threads on a system with 2 SMT threads per CPU core (4-7 are SMT threads).
 <UL>
 <LI><CODE>-c S:scatter</CODE><BR>
 The resulting CPU list is 0,2,1,3,4,6,5,7
@@ -166,5 +174,17 @@ The resulting CPU list is 0,2,1,3,4,6,5,7
 <LI><CODE>-c M:scatter</CODE><BR>
 Scatter the threads evenly over all NUMA memory domains. A kind of interleaved thread policy.
 </LI>
+<LI><CODE>-c S:scatter:4</CODE><BR>
+The resulting CPU list is 0,2,1,3.
+</LI>
 </UL>
-*/
+Besides the scatter expression, there is also <CODE>balanced</CODE> and <CODE>cbalanced</CODE> as keywords. While <CODE>cbalanced</CODE> uses a physical HW threads first policy, <CODE>balanced</CODE> includes SMT threads
+<UL>
+<LI><CODE>-c S:balanced:4</CODE><BR>
+The resulting CPU list is 0,4,2,6
+</LI>
+<LI><CODE>-c S:cbalanced:4</CODE><BR>
+The resulting CPU list is 0,1,2,3.
+</LI>
+</UL>
+

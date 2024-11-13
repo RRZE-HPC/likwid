@@ -1,4 +1,4 @@
-/*! \page westmereex Intel&reg; Westmere EX
+\page westmereex Intel&reg; Westmere EX
 
 <P>The Intel&reg; Westmere EX microarchitecture has the same features as the Intel&reg; Westmere architecture. There are some additional features like a second OFFCORE_RESPONSE register and an addr/opcode matching unit for general-purpose counters in the uncore.</P>
 
@@ -552,4 +552,3 @@ The Intel&reg; Westmere EX microarchitecture has one UBOX and it offers a single
 </TR>
 </TABLE>
 
-*/

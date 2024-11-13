@@ -1,4 +1,4 @@
-/*! \page armA57 ARM&reg; A57
+\page armA57 ARM&reg; A57
 
 <P>This page is valid for ARM&reg; A57.</P>
 

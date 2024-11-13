@@ -1,4 +1,4 @@
-/*! \page nehalemex Intel&reg; Nehalem EX
+\page nehalemex Intel&reg; Nehalem EX
 
 <H1>Available performance monitors for the Intel&reg; Nehalem EX microarchitecture</H1>
 <UL>
@@ -551,4 +551,4 @@ The Intel&reg; Nehalem EX microarchitecture has one UBOX and it offers a single 
   <TD></TD>
 </TR>
 </TABLE>
-*/
+
