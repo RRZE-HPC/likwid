@@ -87,8 +87,8 @@ int main(int argc, char **argv) {
   int deviceCount = 0;
   GPU_ERROR(cudaGetDeviceCount(&deviceCount));
 
-  LIKWID_NVMARKER_INIT;
-  LIKWID_NVMARKER_REGISTER("triad");
+  NVMON_MARKER_INIT;
+  NVMON_MARKER_REGISTER("triad");
 
 #pragma omp parallel num_threads(deviceCount)
   {
@@ -124,10 +124,10 @@ int main(int argc, char **argv) {
     GPU_ERROR(cudaDeviceSynchronize());
     double t1 = dtime();
     for (int i = 0; i < iters; i++) {
-      LIKWID_NVMARKER_START("triad");
+      NVMON_MARKER_START("triad");
       sch_triad_kernel<double>
           <<<max_blocks, block_size>>>(dA, dB, dC, dD, buffer_size);
-      LIKWID_NVMARKER_STOP("triad");
+      NVMON_MARKER_STOP("triad");
     }
     GPU_ERROR(cudaGetLastError());
     GPU_ERROR(cudaDeviceSynchronize());
@@ -145,6 +145,6 @@ int main(int argc, char **argv) {
     GPU_ERROR(cudaFree(dC));
     GPU_ERROR(cudaFree(dD));
   }
-  LIKWID_NVMARKER_CLOSE;
+  NVMON_MARKER_CLOSE;
   return 0;
 }

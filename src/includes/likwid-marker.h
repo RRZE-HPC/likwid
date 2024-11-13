@@ -107,43 +107,43 @@ Shortcut for likwid_markerWriteFile() if compiled with -DLIKWID_PERFMON. Otherwi
 *  @{
 */
 /*!
-\def LIKWID_NVMARKER_INIT
+\def NVMON_MARKER_INIT
 Shortcut for nvmon_markerInit() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
-\def LIKWID_NVMARKER_THREADINIT
+\def NVMON_MARKER_THREADINIT
 No operation is performed, this macro exists only to be similar as CPU MarkerAPI
 */
 /*!
-\def LIKWID_NVMARKER_REGISTER(regionTag)
+\def NVMON_MARKER_REGISTER(regionTag)
 Shortcut for nvmon_markerRegisterRegion() with \a regionTag if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /*!
-\def LIKWID_NVMARKER_START(regionTag)
+\def NVMON_MARKER_START(regionTag)
 Shortcut for nvmon_markerStartRegion() with \a regionTag if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /*!
-\def LIKWID_NVMARKER_STOP(regionTag)
+\def NVMON_MARKER_STOP(regionTag)
 Shortcut for nvmon_markerStopRegion() with \a regionTag if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /*!
-\def LIKWID_NVMARKER_GET(regionTag, ngpus, nevents, events, time, count)
+\def NVMON_MARKER_GET(regionTag, ngpus, nevents, events, time, count)
 Shortcut for nvmon_markerGetRegion() for \a regionTag if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /*!
-\def LIKWID_NVMARKER_SWITCH
+\def NVMON_MARKER_SWITCH
 Shortcut for nvmon_markerNextGroup() if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /*!
-\def LIKWID_NVMARKER_RESET(regionTag)
+\def NVMON_MARKER_RESET(regionTag)
 Shortcut for nvmon_markerResetRegion() if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /*!
-\def LIKWID_NVMARKER_CLOSE
+\def NVMON_MARKER_CLOSE
 Shortcut for nvmon_markerClose() if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /*!
-\def LIKWID_NVMARKER_WRITE_FILE
+\def NVMON_MARKER_WRITE_FILE
 Shortcut for nvmon_markerWriteFile() with \a filename if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /** @}*/
@@ -153,29 +153,29 @@ Shortcut for nvmon_markerWriteFile() with \a filename if compiled with -DLIKWID_
 #define LIKWID_WITH_NVMON
 #endif
 #include <likwid.h>
-#define LIKWID_NVMARKER_INIT nvmon_markerInit()
-#define LIKWID_NVMARKER_THREADINIT
-#define LIKWID_NVMARKER_SWITCH nvmon_markerNextGroup()
-#define LIKWID_NVMARKER_REGISTER(regionTag) nvmon_markerRegisterRegion(regionTag)
-#define LIKWID_NVMARKER_START(regionTag) nvmon_markerStartRegion(regionTag)
-#define LIKWID_NVMARKER_STOP(regionTag) nvmon_markerStopRegion(regionTag)
-#define LIKWID_NVMARKER_CLOSE nvmon_markerClose()
-#define LIKWID_NVMARKER_RESET(regionTag) nvmon_markerResetRegion(regionTag)
-#define LIKWID_NVMARKER_GET(regionTag, ngpus, nevents, events, time, count) \
+#define NVMON_MARKER_INIT nvmon_markerInit()
+#define NVMON_MARKER_THREADINIT
+#define NVMON_MARKER_SWITCH nvmon_markerNextGroup()
+#define NVMON_MARKER_REGISTER(regionTag) nvmon_markerRegisterRegion(regionTag)
+#define NVMON_MARKER_START(regionTag) nvmon_markerStartRegion(regionTag)
+#define NVMON_MARKER_STOP(regionTag) nvmon_markerStopRegion(regionTag)
+#define NVMON_MARKER_CLOSE nvmon_markerClose()
+#define NVMON_MARKER_RESET(regionTag) nvmon_markerResetRegion(regionTag)
+#define NVMON_MARKER_GET(regionTag, ngpus, nevents, events, time, count) \
     nvmon_markerGetRegion(regionTag, ngpus, nevents, events, time, count)
-#define LIKWID_NVMARKER_WRITE_FILE(markerfile) \
+#define NVMON_MARKER_WRITE_FILE(markerfile) \
     nvmon_markerWriteFile(markerfile)
 #else /* LIKWID_NVMON */
-#define LIKWID_NVMARKER_INIT
-#define LIKWID_NVMARKER_THREADINIT
-#define LIKWID_NVMARKER_SWITCH
-#define LIKWID_NVMARKER_REGISTER(regionTag)
-#define LIKWID_NVMARKER_START(regionTag)
-#define LIKWID_NVMARKER_STOP(regionTag)
-#define LIKWID_NVMARKER_CLOSE
-#define LIKWID_NVMARKER_GET(regionTag, nevents, events, time, count)
-#define LIKWID_NVMARKER_RESET(regionTag)
-#define LIKWID_NVMARKER_WRITE_FILE(markerfile)
+#define NVMON_MARKER_INIT
+#define NVMON_MARKER_THREADINIT
+#define NVMON_MARKER_SWITCH
+#define NVMON_MARKER_REGISTER(regionTag)
+#define NVMON_MARKER_START(regionTag)
+#define NVMON_MARKER_STOP(regionTag)
+#define NVMON_MARKER_CLOSE
+#define NVMON_MARKER_GET(regionTag, nevents, events, time, count)
+#define NVMON_MARKER_RESET(regionTag)
+#define NVMON_MARKER_WRITE_FILE(markerfile)
 #endif /* LIKWID_NVMON */
 
 

@@ -147,7 +147,7 @@ int main(int argn, char** argc)
     printf("Using likwid\n");
 #endif
 
-    LIKWID_NVMARKER_INIT;
+    NVMON_MARKER_INIT;
 
     dim3 dimBlock(blockSize);
     dim3 dimGrid(SIZE/dimBlock.x );
@@ -159,19 +159,19 @@ int main(int argn, char** argc)
     initKernel<<<dimGrid,dimBlock>>>(d, 1.0, SIZE);
     cudaDeviceSynchronize();
 
-    LIKWID_NVMARKER_REGISTER("copy");
-    LIKWID_NVMARKER_REGISTER("scale");
-    LIKWID_NVMARKER_REGISTER("add");
-    LIKWID_NVMARKER_REGISTER("triad");
+    NVMON_MARKER_REGISTER("copy");
+    NVMON_MARKER_REGISTER("scale");
+    NVMON_MARKER_REGISTER("add");
+    NVMON_MARKER_REGISTER("triad");
 
 
     time_start(&timer);
     for (int k=0; k<ITER; k++)
     {
-        LIKWID_NVMARKER_START("copy");
+        NVMON_MARKER_START("copy");
         Copykernel<<<dimGrid,dimBlock>>>(a, c, SIZE);
         cudaDeviceSynchronize();
-        LIKWID_NVMARKER_STOP("copy");
+        NVMON_MARKER_STOP("copy");
     }
     time_stop(&timer);
     copy_time = time_print(&timer)/(double)ITER;
@@ -179,10 +179,10 @@ int main(int argn, char** argc)
     time_start(&timer);
     for (int k=0; k<ITER; k++)
     {
-        LIKWID_NVMARKER_START("scale");
+        NVMON_MARKER_START("scale");
         Scalekernel<<<dimGrid,dimBlock>>>(b, c, scalar, SIZE);
         cudaDeviceSynchronize();
-        LIKWID_NVMARKER_STOP("scale");
+        NVMON_MARKER_STOP("scale");
     }
     time_stop(&timer);
     scale_time = time_print(&timer)/(double)ITER;
@@ -190,10 +190,10 @@ int main(int argn, char** argc)
     time_start(&timer);
     for (int k=0; k<ITER; k++)
     {
-        LIKWID_NVMARKER_START("add");
+        NVMON_MARKER_START("add");
         Addkernel<<<dimGrid,dimBlock>>>(a, b, c, SIZE);
         cudaDeviceSynchronize();
-        LIKWID_NVMARKER_STOP("add");
+        NVMON_MARKER_STOP("add");
     }
     time_stop(&timer);
     add_time = time_print(&timer)/(double)ITER;
@@ -201,10 +201,10 @@ int main(int argn, char** argc)
     time_start(&timer);
     for (int k=0; k<ITER; k++)
     {
-        LIKWID_NVMARKER_START("triad");
+        NVMON_MARKER_START("triad");
         Triadkernel<<<dimGrid,dimBlock>>>(a, b, c, scalar, SIZE);
         cudaDeviceSynchronize();
-        LIKWID_NVMARKER_STOP("triad");
+        NVMON_MARKER_STOP("triad");
     }
     time_stop(&timer);
     triad_time = time_print(&timer)/(double)ITER;
@@ -230,7 +230,7 @@ int main(int argn, char** argc)
                         1E-6*((2*SIZE)/triad_time));
 
 
-    LIKWID_NVMARKER_CLOSE;
+    NVMON_MARKER_CLOSE;
     cudaFree(a);
     cudaFree(b);
     cudaFree(c);

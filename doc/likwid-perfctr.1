@@ -303,7 +303,7 @@ This runs the application in NvMarkerAPI mode on GPUs 0 and 1 and measures the s
 #include <likwid-marker.h>
 
 /* Initialize the library and add configured eventset */
-LIKWID_NVMARKER_INIT;
+NVMON_MARKER_INIT;
 
 /* If you run the code region only once, register
  * the region tag previously to reduce the overhead
@@ -315,12 +315,12 @@ LIKWID_NVMARKER_INIT;
  * Note: No whitespace characters are allowed in the region tags
  * This call is optional but RECOMMENDED, START will do the same operations.
  */
-LIKWID_NVMARKER_REGISTER("name");
+NVMON_MARKER_REGISTER("name");
 
 /* Start measurement on Nvidia GPUs
  * Note: No whitespace characters are allowed in the region tags
  */
-LIKWID_NVMARKER_START("name");
+NVMON_MARKER_START("name");
 /*
  * Your code to be measured is here
  * You can also nest named regions
@@ -329,12 +329,12 @@ LIKWID_NVMARKER_START("name");
 /* Stop measurment on Nvidia GPUs
  * No whitespaces are allowed in the region names!
  */
-LIKWID_NVMARKER_STOP("name");
+NVMON_MARKER_STOP("name");
 
 /* If you want to measure multiple groups/event sets
  * Switches through groups in round-robin fashion.
  */
-LIKWID_NVMARKER_SWITCH;
+NVMON_MARKER_SWITCH;
 
 /* If you want to get the data of a region inside your application
  * nevents in an (int*) and used as input length of the events array. After the
@@ -343,14 +343,14 @@ LIKWID_NVMARKER_SWITCH;
  * retrieve the measured runtime of the region and count is a pointer to int
  * and is filled with the call count of the region.
  */
-LIKWID_NVMARKER_GET("name", ngpus, nevents, events, time, count);
+NVMON_MARKER_GET("name", ngpus, nevents, events, time, count);
 
 /* If you want to reset the counts for a region
  */
-LIKWID_NVMARKER_RESET("name");
+NVMON_MARKER_RESET("name");
 
 /* Finally */
-LIKWID_NVMARKER_CLOSE;
+NVMON_MARKER_CLOSE;
 .fi
 
 
