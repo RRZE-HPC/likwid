@@ -205,7 +205,7 @@ void nvmon_markerClose(void) {
     return;
   }
   nvmon_stopCounters();
-  markerfile = getenv("LIKWID_GPUFILEPATH");
+  markerfile = getenv("LIKWID_NVMON_FILEPATH");
   if (markerfile == NULL) {
     fprintf(stderr, "Is the application executed with LIKWID wrapper? No file "
                     "path for the GPU Marker API output defined.\n");
