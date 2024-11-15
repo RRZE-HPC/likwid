@@ -304,6 +304,8 @@ topology_cuda_init()
             CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].pciBus, CU_DEVICE_ATTRIBUTE_PCI_BUS_ID, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
             CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].pciDev, CU_DEVICE_ATTRIBUTE_PCI_DEVICE_ID, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
             CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].pciDom, CU_DEVICE_ATTRIBUTE_PCI_DOMAIN_ID, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            // TODO: Get PCI function through nvmlDeviceGetPciInfo_v3, nvmlPciInfo_t->function
+            cudaTopology.devices[i].pciFunc = 0;
             CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].maxBlockRegs, CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
             CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].numMultiProcs, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
             CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].maxThreadPerMultiProc, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR, dev), ret = -ENOMEM; goto topology_gpu_init_error;);

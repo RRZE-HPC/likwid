@@ -329,6 +329,7 @@ if likwid.nvSupported() then
                 table.insert(output_csv, string.format("PCI bus:\t\t0x%x", gpu["pciBus"]))
                 table.insert(output_csv, string.format("PCI domain:\t\t0x%x", gpu["pciDom"]))
                 table.insert(output_csv, string.format("PCI device:\t\t0x%x", gpu["pciDev"]))
+                table.insert(output_csv, string.format("PCI function:\t\t0x%x", gpu["pciFunc"]))
             end
             table.insert(output_csv, likwid.hline)
         end

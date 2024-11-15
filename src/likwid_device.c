@@ -551,10 +551,11 @@ int likwid_device_get_available(LikwidDeviceType type, char ***id_list)
         {
 #ifdef LIKWID_WITH_NVMON
             case DEVICE_TYPE_NVIDIA_GPU:
-                snprintf(id_str, sizeof(id_str), "GN:%08x:%02x:%02x.0",
+                snprintf(id_str, sizeof(id_str), "GN:%08x:%02x:%02x.%01x",
                         cuda_topo->devices[i].pciDom,
                         cuda_topo->devices[i].pciBus,
-                        cuda_topo->devices[i].pciDev);
+                        cuda_topo->devices[i].pciDev,
+                        cuda_topo->devices[i].pciFunc);
                 break;
 #endif
 #ifdef LIKWID_WITH_ROCMON

@@ -3724,6 +3724,10 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
       <TD>PCI domain identifier of the device</TD>
     </TR>
     <TR>
+      <TD>\a pciFunc</TD>
+      <TD>PCI function identifier of the device</TD>
+    </TR>
+    <TR>
       <TD>\a maxBlockRegs</TD>
       <TD>Maximum number of 32-bit registers available to a thread block</TD>
     </TR>

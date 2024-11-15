@@ -2625,6 +2625,9 @@ static int lua_likwid_getCudaTopology(lua_State *L) {
     lua_pushstring(L, "pciDom");
     lua_pushinteger(L, (lua_Integer)(gpu->pciDom));
     lua_settable(L, -3);
+    lua_pushstring(L, "pciFunc");
+    lua_pushinteger(L, (lua_Integer)(gpu->pciFunc));
+    lua_settable(L, -3);
     lua_pushstring(L, "maxBlockRegs");
     lua_pushinteger(L, (lua_Integer)(gpu->maxBlockRegs));
     lua_settable(L, -3);
