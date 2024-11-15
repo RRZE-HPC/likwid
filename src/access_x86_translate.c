@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  access_x86.c
+ *      Filename:  access_x86_translate.c
  *
  *      Description:  Interface to x86 related functions for the access module.
  *

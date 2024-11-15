@@ -5,8 +5,8 @@
  *
  *      Description:  Header file for infix calculator
  *
- *      Version:   4.2
- *      Released:  22.12.2016
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Gruber (tr), thomas.roehl@gmail.com

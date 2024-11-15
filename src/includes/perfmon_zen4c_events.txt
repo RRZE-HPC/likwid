@@ -1,8 +1,8 @@
 # =======================================================================================
 #
-#      Filename:  perfmon_zen4bergamo_events.txt
+#      Filename:  perfmon_zen4c_events.txt
 #
-#      Description:  Event list for AMD Zen (Gen4, Bergamo)
+#      Description:  Event list for AMD Zen4c (Bergamo)
 #
 #      Version:   <VERSION>
 #      Released:  <DATE>
@@ -10,7 +10,7 @@
 #      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2017 RRZE, University Erlangen-Nuremberg
+#      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software

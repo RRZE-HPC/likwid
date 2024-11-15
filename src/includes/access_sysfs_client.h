@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  frequency_client.h
+ *      Filename:  access_sysfs_client.h
  *
- *      Description:  Header File frequency module, the interface to the frequency daemon
+ *      Description:  Header File sysFeatures module, the interface to the sysfs daemon
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>

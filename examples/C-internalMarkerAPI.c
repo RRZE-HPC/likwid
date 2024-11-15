@@ -1,5 +1,5 @@
 /*
- * ==========================================================================
+ * =======================================================================================
  *
  *      Filename:  C-internalMarkerAPI.c
  *
@@ -27,7 +27,6 @@
  *      You should have received a copy of the GNU General Public License along
  *      with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * ==========================================================================
  *
  *      Usage:
  *
@@ -35,7 +34,6 @@
  *      `make C-internalMarkerAPI` to compile and
  *      `make C-internalMarkerAPI-run` to run.
  *
- * ==========================================================================
  */
 
 #include <stdlib.h>

@@ -1,6 +1,6 @@
 # =======================================================================================
 #
-#      Filename:  perfmon_icelakeX_events.txt
+#      Filename:  perfmon_sapphirerapids_events.txt
 #
 #      Description:  Event list for Intel Sapphire Rapids
 #
@@ -10,7 +10,7 @@
 #      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+#      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software

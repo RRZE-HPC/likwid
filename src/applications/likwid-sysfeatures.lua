@@ -2,12 +2,12 @@
 --[[
  * =======================================================================================
  *
- *      Filename:  likwid-features.lua
+ *      Filename:  likwid-sysfeatures.lua
  *
  *      Description:  A application to retrieve and manipulate CPU features.
  *
- *      Version:   4.0
- *      Released:  28.04.2015
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid

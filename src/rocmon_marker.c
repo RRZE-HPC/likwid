@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  libnvctr.c
+ *      Filename:  rocmon_marker.c
  *
  *      Description:  Marker API interface of module rocmon
  *
