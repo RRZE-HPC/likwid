@@ -265,6 +265,10 @@ static int topo_init(void)
     if (err < 0)
         return err;
 
+    err = numa_init();
+    if (err < 0)
+        return err;
+
 #ifdef LIKWID_WITH_NVMON
     /* The topology init functions currently return both positive and negative
      * error numbers :-/, so use this workaround for now. */
@@ -470,4 +474,117 @@ void likwid_device_fmt_pci(char *buf, size_t size, LikwidDevice_t device)
     const uint8_t dev = device->id.pci.pci_dev;
     const uint8_t func = device->id.pci.pci_func;
     snprintf(buf, size, "%08x:%02x:%02x.%01x", dom, bus, dev, func);
+}
+
+int likwid_device_get_available(LikwidDeviceType type, char ***id_list)
+{
+    if (type <= DEVICE_TYPE_INVALID || type >= MAX_DEVICE_TYPE || !id_list)
+        return -EINVAL;
+
+    int err = topo_init();
+    if (err < 0)
+        return err;
+
+    CpuTopology_t cpu_topo = get_cpuTopology();
+    NumaTopology_t numa_topo = get_numaTopology();
+#ifdef LIKWID_WITH_NVMON
+    CudaTopology_t cuda_topo = get_cudaTopology();
+#endif
+#ifdef LIKWID_WITH_ROCMON
+    RocmTopology_t rocm_topo = get_rocmTopology();
+#endif
+
+    const char *id_prefix = NULL;
+    size_t id_count = 0;
+
+    switch (type)
+    {
+        case DEVICE_TYPE_HWTHREAD:
+            id_prefix = "T";
+            id_count = cpu_topo->numHWThreads;
+            break;
+        case DEVICE_TYPE_CORE:
+            id_prefix = "C";
+            id_count = cpu_topo->numCoresPerSocket * cpu_topo->numSockets;
+            break;
+        case DEVICE_TYPE_NUMA:
+            id_prefix = "M";
+            id_count = numa_topo->numberOfNodes;
+            break;
+        case DEVICE_TYPE_DIE:
+            id_prefix = "D";
+            id_count = cpu_topo->numDies;
+            break;
+        case DEVICE_TYPE_SOCKET:
+            id_prefix = "S";
+            id_count = cpu_topo->numSockets;
+            break;
+        case DEVICE_TYPE_NODE:
+            id_prefix = "N";
+            id_count = 1;
+            break;
+#ifdef LIKWID_WITH_NVMON
+        case DEVICE_TYPE_NVIDIA_GPU:
+            // no need to set id_prefix, hardcoded below
+            id_count = cuda_topo->numDevices;
+            break;
+#endif
+#ifdef LIKWID_WITH_ROCMON
+        case DEVICE_TYPE_AMD_GPU:
+            // no need to set id_prefix, hardcoded below
+            id_count = rocm_topo->numDevices;
+            break;
+#endif
+        default:
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Unimplemented device type: %d, type);
+            return -EINVAL;
+    }
+
+    char **name_list = calloc(id_count, sizeof(name_list[0]));
+    if (!name_list)
+        return -errno;
+
+    for (size_t i = 0; i < id_count; i++)
+    {
+        char id_str[64];
+        switch (type)
+        {
+#ifdef LIKWID_WITH_NVMON
+            case DEVICE_TYPE_NVIDIA_GPU:
+                snprintf(id_str, sizeof(id_str), "GN:%08x:%02x:%02x.0",
+                        cuda_topo->devices[i].pciDom,
+                        cuda_topo->devices[i].pciBus,
+                        cuda_topo->devices[i].pciDev);
+                break;
+#endif
+#ifdef LIKWID_WITH_ROCMON
+            case DEVICE_TYPE_AMD_GPU:
+                snprintf(id_str, sizeof(id_str), "GA:%08x:%02x:%02x.0",
+                        rocm_topo->devices[i].pciDom,
+                        rocm_topo->devices[i].pciBus,
+                        rocm_topo->devices[i].pciDev);
+                break;
+#endif
+            default:
+                snprintf(id_str, sizeof(id_str), "%s:%zu", id_prefix, i);
+        }
+
+        name_list[i] = strdup(id_str);
+        if (!name_list[i])
+        {
+            err = -errno;
+            break;
+        }
+    }
+
+    if (err < 0)
+    {
+        for (size_t i = 0; i < id_count; i++)
+            free(name_list[i]);
+        free(name_list);
+        return err;
+    }
+
+    *id_list = name_list;
+    return 0;
 }
