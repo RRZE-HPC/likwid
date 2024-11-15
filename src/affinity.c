@@ -523,6 +523,12 @@ static int affinity_addNodeDomain(AffinityDomain* domain, int* help)
         {
             return -ENOMEM;
         }
+        domain->tag = malloc(2);
+        if (!domain->tag)
+        {
+            free(domain->processorList);
+            return -ENOMEM;
+        }
         int offset = 0;
         int cores = 0;
         for (int i = 0; i < MAX(cputopo->numSockets, 1); i++)
@@ -537,7 +543,8 @@ static int affinity_addNodeDomain(AffinityDomain* domain, int* help)
         }
         domain->numberOfProcessors = offset;
         domain->numberOfCores = cores;
-        domain->tag = bformat("N");
+        domain->tag[0] = 'N';
+        domain->tag[1] = '\0';
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain N: %d HW threads on %d cores, domain->numberOfProcessors, domain->numberOfCores);
         return 0;
     }
@@ -559,6 +566,12 @@ static int affinity_addSocketDomain(int socket, AffinityDomain* domain, int* hel
         {
             return -ENOMEM;
         }
+        domain->tag = malloc(10);
+        if (!domain->tag)
+        {
+            free(domain->processorList);
+            return -ENOMEM;
+        }
         int tmp = treeFillNextEntries(cputopo->topologyTree,
                                       domain->processorList,
                                       0,
@@ -568,7 +581,7 @@ static int affinity_addSocketDomain(int socket, AffinityDomain* domain, int* hel
         tmp = MIN(tmp, domain->numberOfProcessors);
         domain->numberOfProcessors = tmp;
         domain->numberOfCores = affinity_countSocketCores(domain->numberOfProcessors, domain->processorList, help);
-        domain->tag = bformat("S%d", socket);
+        snprintf(domain->tag, 9, "S%d", socket);
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain S%d: %d HW threads on %d cores, socket, domain->numberOfProcessors, domain->numberOfCores);
         return 0;
     }
@@ -594,6 +607,12 @@ static int affinity_addDieDomain(int socket, int die, AffinityDomain* domain, in
         {
             return -ENOMEM;
         }
+        domain->tag = malloc(10);
+        if (!domain->tag)
+        {
+            free(domain->processorList);
+            return -ENOMEM;
+        }
         domain->numberOfProcessors = numThreadsPerDie;
         domain->numberOfCores = numCoresPerDie;
         int tmp = treeFillNextEntries(cputopo->topologyTree,
@@ -605,7 +624,7 @@ static int affinity_addDieDomain(int socket, int die, AffinityDomain* domain, in
                                       domain->numberOfProcessors);
         domain->numberOfProcessors = tmp;
         domain->numberOfCores = affinity_countSocketCores(domain->numberOfProcessors, domain->processorList, help);
-        domain->tag = bformat("D%d", dieId);
+        snprintf(domain->tag, 9, "D%d", dieId);
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain D%d: %d HW threads on %d cores, dieId, domain->numberOfProcessors, domain->numberOfCores);
         return 0;
     }
@@ -630,6 +649,12 @@ static int affinity_addCacheDomain(int socket, int cacheId, AffinityDomain* doma
         {
             return -ENOMEM;
         }
+        domain->tag = malloc(10);
+        if (!domain->tag)
+        {
+            free(domain->processorList);
+            return -ENOMEM;
+        }
         domain->numberOfProcessors = numThreadsPerCache;
         domain->numberOfCores = numCoresPerCache;
         int tmp = treeFillNextEntries(cputopo->topologyTree,
@@ -641,7 +666,7 @@ static int affinity_addCacheDomain(int socket, int cacheId, AffinityDomain* doma
                                       domain->numberOfProcessors);
         domain->numberOfProcessors = tmp;
         domain->numberOfCores = affinity_countSocketCores(domain->numberOfProcessors, domain->processorList, help);
-        domain->tag = bformat("C%d", cid);
+        snprintf(domain->tag, 9, "C%d", cid);
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain C%d: %d HW threads on %d cores, cid, domain->numberOfProcessors, domain->numberOfCores);
         return 0;
     }
@@ -666,6 +691,12 @@ static int _affinity_addMemoryDomain(int nodeId, AffinityDomain* domain, int* he
             {
                 return -ENOMEM;
             }
+            domain->tag = malloc(10);
+            if (!domain->tag)
+            {
+                free(domain->processorList);
+                return -ENOMEM;
+            }
             for (int i = 0; i < numatopo->nodes[nodeId].numberOfProcessors; i++)
             {
                 for (int j = 0; j < cputopo->numHWThreads; j++)
@@ -678,8 +709,7 @@ static int _affinity_addMemoryDomain(int nodeId, AffinityDomain* domain, int* he
             }
             domain->numberOfProcessors = num_hwthreads;
             domain->numberOfCores = affinity_countSocketCores(domain->numberOfProcessors, domain->processorList, help);
-            domain->tag = bformat("M%d", nodeId);
-            
+            snprintf(domain->tag, 9, "M%d", nodeId);
             return 0;
         }
     }
@@ -718,9 +748,8 @@ static int affinity_addCudaDomain(int nodeId, AffinityDomain* domain, int offset
                 err = _affinity_addMemoryDomain(cudadev->numaNode, domain, help);
                 if (err == 0)
                 {
-                    bdestroy(domain->tag);
-                    domain->tag = bformat("G%d", nodeId+offset);
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain %s: %d HW threads on %d cores, bdata(domain->tag), domain->numberOfProcessors, domain->numberOfCores);
+                    snprintf(domain->tag, 9, "G%d", nodeId+offset);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain %s: %d HW threads on %d cores, domain->tag, domain->numberOfProcessors, domain->numberOfCores);
                     return 0;
                 }
             }
@@ -752,9 +781,8 @@ static int affinity_addRocmDomain(int nodeId, AffinityDomain* domain, int offset
                 err = _affinity_addMemoryDomain(rocmdev->numaNode, domain, help);
                 if (err == 0)
                 {
-                    bdestroy(domain->tag);
-                    domain->tag = bformat("G%d", nodeId+offset);
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain %s: %d HW threads on %d cores, bdata(domain->tag), domain->numberOfProcessors, domain->numberOfCores);
+                    snprintf(domain->tag, 9, "G%d", nodeId+offset);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain %s: %d HW threads on %d cores, domain->tag, domain->numberOfProcessors, domain->numberOfCores);
                     return 0;
                 }
             }
@@ -1022,8 +1050,10 @@ affinity_finalize()
     }
     for ( int i=0; i < affinityDomains.numberOfAffinityDomains; i++ )
     {
-        if (affinityDomains.domains[i].tag)
-            bdestroy(affinityDomains.domains[i].tag);
+        if (affinityDomains.domains[i].tag != NULL)
+        {
+            free(affinityDomains.domains[i].tag);
+        }
         if (affinityDomains.domains[i].processorList != NULL)
         {
             free(affinityDomains.domains[i].processorList);
@@ -1179,12 +1209,12 @@ affinity_pinProcesses(int cpu_count, const int* processorIds)
 }
 
 const AffinityDomain*
-affinity_getDomain(bstring domain)
+affinity_getDomain(char* domain)
 {
 
     for ( int i=0; i < affinity_numberOfDomains; i++ )
     {
-        if ( biseq(domain, domains[i].tag) )
+        if ( strncmp(domains[i].tag, domain, strlen(domains[i].tag)) == 0 )
         {
             return domains+i;
         }
@@ -1199,7 +1229,7 @@ affinity_printDomains()
     for ( int i=0; i < affinity_numberOfDomains; i++ )
     {
         printf("Domain %d:\n",i);
-        printf("\tTag %s:",bdata(domains[i].tag));
+        printf("\tTag %s:", domains[i].tag);
 
         for ( uint32_t j=0; j < domains[i].numberOfProcessors; j++ )
         {

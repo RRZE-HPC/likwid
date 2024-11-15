@@ -112,7 +112,7 @@ allocator_allocateVector(
 
     for (i=0;i<domains->numberOfAffinityDomains;i++)
     {
-        if (biseq(domainString, domains->domains[i].tag))
+        if (strncmp(domains->domains[i].tag, bdata(domainString), strlen(domains->domains[i].tag)) == 0)
         {
             domain = domains->domains + i;
         }
@@ -157,7 +157,7 @@ allocator_allocateVector(
     affinity_pinProcess(domain->processorList[0]);
     printf("Allocate: Process running on hwthread %d (Domain %s) - Vector length %llu/%llu Offset %d Alignment %llu\n",
             affinity_processGetProcessorId(),
-            bdata(domain->tag),
+            domain->tag,
             LLU_CAST size,
             LLU_CAST bytesize,
             offset,

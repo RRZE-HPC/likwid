@@ -51,6 +51,6 @@ extern int *affinity_thread2die_lookup;
 extern int *affinity_thread2sharedl3_lookup;
 extern int affinity_processGetProcessorId();
 extern int affinity_threadGetProcessorId();
-extern const AffinityDomain* affinity_getDomain(bstring domain);
+extern const AffinityDomain* affinity_getDomain(char* domain);
 
 #endif /*AFFINITY_H*/
