@@ -1308,6 +1308,7 @@ static int nvmon_perfworks_populateEvents_cuptiProfilerHost(NvmonDevice *dev) {
      * appear to have an explicit free functions. */
 
 deinit:
+    err = 0;
     CUpti_Profiler_Host_Deinitialize_Params deinitParams = {
         .structSize = CUpti_Profiler_Host_Deinitialize_Params_STRUCT_SIZE,
         .pHostObject = hobj,
