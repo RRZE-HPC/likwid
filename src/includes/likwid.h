@@ -3379,13 +3379,14 @@ const char *likwid_device_type_name(LikwidDeviceType type) __attribute__ ((visib
 @param [in] device Likwid device 
 */
 void likwid_device_fmt_pci(char *buf, size_t size, LikwidDevice_t device) __attribute__ ((visibility ("default") ));
-/*! \brief Get available device strings
+/*! \brief Get available device strings. If an error occurs, the out parameters are kept unchanged.
 
 @params [in] type Likwid device type
 @params [out] string list of all available devices for the type specified
+@params [out] number of list entries.
 @return error code (<0 on failure)
 */
-int likwid_device_get_available(LikwidDeviceType type, char ***id_list) __attribute__((visibility ("default") ));
+int likwid_device_get_available(LikwidDeviceType type, char ***id_list, size_t *id_list_count) __attribute__((visibility ("default") ));
 
 /** @}*/
 

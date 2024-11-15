@@ -476,7 +476,7 @@ void likwid_device_fmt_pci(char *buf, size_t size, LikwidDevice_t device)
     snprintf(buf, size, "%08x:%02x:%02x.%01x", dom, bus, dev, func);
 }
 
-int likwid_device_get_available(LikwidDeviceType type, char ***id_list)
+int likwid_device_get_available(LikwidDeviceType type, char ***id_list, size_t *id_list_count)
 {
     if (type <= DEVICE_TYPE_INVALID || type >= MAX_DEVICE_TYPE || !id_list)
         return -EINVAL;
@@ -587,5 +587,6 @@ int likwid_device_get_available(LikwidDeviceType type, char ***id_list)
     }
 
     *id_list = name_list;
+    *id_list_count = id_count;
     return 0;
 }
