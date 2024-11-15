@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <likwid.h>
 #include <topology.h>
@@ -476,8 +477,65 @@ void likwid_device_fmt_pci(char *buf, size_t size, LikwidDevice_t device)
     snprintf(buf, size, "%08x:%02x:%02x.%01x", dom, bus, dev, func);
 }
 
-int likwid_device_get_available(LikwidDeviceType type, char ***id_list, size_t *id_list_count)
+static bool device_in_cpuset(LikwidDeviceType type, size_t id)
 {
+#ifdef LIKWID_WITH_NVMON
+    assert(type != DEVICE_TYPE_NVIDIA_GPU);
+#endif
+#ifdef LIKWID_WITH_ROCMON
+    assert(type != DEVICE_TYPE_AMD_GPU);
+#endif
+
+    CpuTopology_t cpu_topo = get_cpuTopology();
+    NumaTopology_t numa_topo = get_numaTopology();
+
+    for (size_t i = 0; i < cpu_topo->numHWThreads; i++)
+    {
+        const HWThread* t = &cpu_topo->threadPool[i];
+        switch (type)
+        {
+            case DEVICE_TYPE_HWTHREAD:
+                if (t->apicId == id)
+                    return t->inCpuSet;
+                break;
+            case DEVICE_TYPE_CORE:
+                if (t->coreId == id && t->inCpuSet)
+                    return true;
+                break;
+            case DEVICE_TYPE_NUMA:
+                assert(id < numa_topo->numberOfNodes);
+                const NumaNode *n = &numa_topo->nodes[id];
+                for (size_t j = 0; j < n->numberOfProcessors; j++)
+                {
+                    if (n->processors[j] == t->apicId && t->inCpuSet)
+                        return true;
+                }
+                break;
+            case DEVICE_TYPE_DIE:
+                if (t->dieId == id && t->inCpuSet)
+                    return true;
+                break;
+            case DEVICE_TYPE_SOCKET:
+                if (t->packageId == id && t->inCpuSet)
+                    return true;
+                break;
+            case DEVICE_TYPE_NODE:
+                return true;
+            default:
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Unimplemented device type: %d, type);
+                return false;
+        }
+    }
+
+    return false;
+}
+
+static int likwid_device_get_list(LikwidDeviceType type, char ***id_list, size_t *id_list_count, bool cpuset_only)
+{
+    /* There seems to be a bug in this function, fix in a later commit. */
+    ERROR_PRINT(not implemented);
+    return -EPERM;
+
     if (type <= DEVICE_TYPE_INVALID || type >= MAX_DEVICE_TYPE || !id_list)
         return -EINVAL;
 
@@ -494,33 +552,26 @@ int likwid_device_get_available(LikwidDeviceType type, char ***id_list, size_t *
     RocmTopology_t rocm_topo = get_rocmTopology();
 #endif
 
-    const char *id_prefix = NULL;
     size_t id_count = 0;
 
     switch (type)
     {
         case DEVICE_TYPE_HWTHREAD:
-            id_prefix = "T";
             id_count = cpu_topo->numHWThreads;
             break;
         case DEVICE_TYPE_CORE:
-            id_prefix = "C";
             id_count = cpu_topo->numCoresPerSocket * cpu_topo->numSockets;
             break;
         case DEVICE_TYPE_NUMA:
-            id_prefix = "M";
             id_count = numa_topo->numberOfNodes;
             break;
         case DEVICE_TYPE_DIE:
-            id_prefix = "D";
             id_count = cpu_topo->numDies;
             break;
         case DEVICE_TYPE_SOCKET:
-            id_prefix = "S";
             id_count = cpu_topo->numSockets;
             break;
         case DEVICE_TYPE_NODE:
-            id_prefix = "N";
             id_count = 1;
             break;
 #ifdef LIKWID_WITH_NVMON
@@ -567,7 +618,10 @@ int likwid_device_get_available(LikwidDeviceType type, char ***id_list, size_t *
                 break;
 #endif
             default:
-                snprintf(id_str, sizeof(id_str), "%s:%zu", id_prefix, i);
+                if (cpuset_only && !device_in_cpuset(type, i))
+                    continue;
+                snprintf(id_str, sizeof(id_str), "%zu", i);
+                break;
         }
 
         name_list[i] = strdup(id_str);
@@ -586,7 +640,45 @@ int likwid_device_get_available(LikwidDeviceType type, char ***id_list, size_t *
         return err;
     }
 
+    if (cpuset_only)
+    {
+        /* Shrink list again and remove all entries which were left blank. */
+        size_t write_index = 0;
+        for (size_t read_index = 0; read_index < id_count; read_index++)
+        {
+            if (!name_list[read_index])
+                continue;
+
+            name_list[write_index++] = name_list[read_index];
+        }
+
+        for (size_t i = write_index; i < id_count; i++)
+            name_list[i] = NULL;
+
+        char **shrink_name_list = realloc(name_list, write_index * sizeof(name_list[0]));
+        if (!shrink_name_list)
+        {
+            for (size_t i = 0; i < id_count; i++)
+                free(name_list[i]);
+            free(name_list);
+            return -errno;
+        }
+
+        name_list = shrink_name_list;
+        id_count = write_index;
+    }
+
     *id_list = name_list;
     *id_list_count = id_count;
     return 0;
+}
+
+int likwid_device_get_available(LikwidDeviceType type, char ***id_list, size_t *id_list_count)
+{
+    return likwid_device_get_list(type, id_list, id_list_count, true);
+}
+
+int likwid_device_get_all(LikwidDeviceType type, char ***id_list, size_t *id_list_count)
+{
+    return likwid_device_get_list(type, id_list, id_list_count, false);
 }
