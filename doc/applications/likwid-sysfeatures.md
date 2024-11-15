@@ -83,6 +83,10 @@ is the successor or \ref likwid-features , \ref likwid-powermeter and
   <TD>List the value of all system features for the specified devices (-d)</TD>
 </TR>
 <TR>
+  <TD>-p, --print</TD>
+  <TD>list available devices for all available device types.</TD>
+</TR>
+<TR>
   <TD>-g, --get &lt;feature(s)&gt;</TD>
   <TD>Get the values of the specified features (comma-separated list) for the specified devices (-d)</TD>
 </TR>
