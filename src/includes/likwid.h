@@ -3328,7 +3328,7 @@ static char* LikwidDeviceTypeNames[MAX_DEVICE_TYPE] = {
 /*!  \brief Read LikwidDevice selection string and create specified devices.
 
 Read the LikwidDevice selection string and creates list with created devices.
-The format is 'type:id_list'. 'type' is N (node), S (socket), C (last level cache), T (thread),
+The format is 'type:id_list'. 'type' is N (node), S (socket), C (CPU core), T (thread),
 M (NUMA node), D (die), GN (Nvidia GPU), GA (AMD GPU). N does not have id_list,
 since there is always one node only. 'id_list' is a comma separated list of
 integers or integer ranges specified as '2-15' (inclusive bounds).
