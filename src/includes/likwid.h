@@ -2195,6 +2195,7 @@ typedef struct {
   int pciDev; /*!< \brief PCI device (also known as slot) identifier of the
                  device */
   int pciDom; /*!< \brief PCI domain identifier of the device */
+  int pciFunc; /*!< \brief PCI function identifier of the device */
   int maxBlockRegs;  /*!< \brief Maximum number of 32-bit registers available to
                         a thread block */
   int numMultiProcs; /*!< \brief Number of multiprocessors on the device */

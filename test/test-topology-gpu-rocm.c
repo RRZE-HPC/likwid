@@ -45,6 +45,7 @@ int main()
         printf("pciBus: %d\n", device->pciBus);
         printf("pciDev: %d\n", device->pciDev);
         printf("pciDom: %d\n", device->pciDom);
+        printf("pciFunc: %d\n", device->pciFunc);
         printf("numMultiProcs: %d\n", device->numMultiProcs);
         printf("maxThreadPerMultiProc: %d\n", device->maxThreadPerMultiProc);
         printf("memBusWidth: %d\n", device->memBusWidth);
