@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_a64fx_counters.h
+ *      Filename:  perfmon_applem1_counters.h
  *
- *      Description:  Counter Header File of perfmon module for Fujitsu A64FX
+ *      Description:  Counter Header File of perfmon module for Apple M1
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
