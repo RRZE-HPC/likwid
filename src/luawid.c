@@ -1222,7 +1222,7 @@ static int lua_likwid_getAffinityInfo(lua_State *L) {
     lua_pushinteger(L, (lua_Integer)(i + 1));
     lua_newtable(L);
     lua_pushstring(L, "tag");
-    lua_pushstring(L, bdata(affinity->domains[i].tag));
+    lua_pushstring(L, affinity->domains[i].tag);
     lua_settable(L, -3);
     lua_pushstring(L, "numberOfProcessors");
     lua_pushinteger(L, (lua_Integer)(affinity->domains[i].numberOfProcessors));

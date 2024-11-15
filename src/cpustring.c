@@ -122,13 +122,13 @@ cpu_in_domain(int domainidx, int cpu)
 }
 
 static int
-get_domain_idx(bstring bdomain)
+get_domain_idx(char* bdomain)
 {
     affinity_init();
     AffinityDomains_t affinity = get_affinityDomains();
     for (int i=0;i<affinity->numberOfAffinityDomains; i++)
     {
-        if (bstrcmp(affinity->domains[i].tag, bdomain) == BSTR_OK)
+        if (strncmp(affinity->domains[i].tag, bdomain, strlen(affinity->domains[i].tag)) == BSTR_OK)
         {
             return i;
         }
@@ -155,7 +155,7 @@ cpuexpr_to_list(bstring bcpustr, bstring prefix, int* list, int length)
         oldinsert = insert;
         for (int j = 0; j < affinity->numberOfAffinityDomains; j++)
         {
-            if (bstrcmp(affinity->domains[j].tag, newstr) == 0)
+            if (strncmp(affinity->domains[j].tag, bdata(newstr), strlen(affinity->domains[j].tag)) == 0)
             {
                 tmp = check_and_atoi(bdata(strlist->entry[i]));
                 if (tmp >= 0)
@@ -213,7 +213,7 @@ cpustr_to_cpulist_method(bstring bcpustr, int* cpulist, int length)
         }
         for (int i=0; i<affinity->numberOfAffinityDomains; i++)
         {
-            if (binstr(affinity->domains[i].tag, 0, parts->entry[0]) != BSTR_ERR &&
+            if (strstr(affinity->domains[i].tag, bdata(parts->entry[0])) != NULL &&
                 affinity->domains[i].numberOfProcessors > 0)
             {
                 suitable[suitidx] = i;
@@ -387,12 +387,12 @@ cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int length)
     CpuTopology_t cpuid_topology = get_cpuTopology();
     affinity_init();
     AffinityDomains_t affinity = get_affinityDomains();
-    bstring bdomain;
     int domainidx = -1;
     int count = 0;
     int stride = 0;
     int chunk = 0;
     int off = 0;
+    bstring bdomain;
     if (bstrchrp(bcpustr, 'E', 0) != 0)
     {
         fprintf(stderr, "Not a valid CPU expression\n");
@@ -436,7 +436,7 @@ cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int length)
         bstrListDestroy(strlist);
         return 0;
     }
-    domainidx = get_domain_idx(bdomain);
+    domainidx = get_domain_idx(bdata(bdomain));
     if (domainidx < 0)
     {
         fprintf(stderr, "Cannot find domain %s\n", bdata(bdomain));
@@ -505,7 +505,7 @@ cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
     bdomain = bstrcpy(strlist->entry[1]);
     blist = bstrcpy(strlist->entry[2]);
     bstrListDestroy(strlist);
-    domainidx = get_domain_idx(bdomain);
+    domainidx = get_domain_idx(bdata(bdomain));
     if (domainidx < 0)
     {
         fprintf(stderr, "ERROR: Cannot find domain %s\n", bdata(bdomain));
@@ -565,7 +565,7 @@ cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
     {
         fprintf(stderr,
                 "WARN: Selected affinity domain %s has only %d hardware threads, but selection string evaluates to %d threads.\n",
-                bdata(affinity->domains[domainidx].tag), ret, require);
+                affinity->domains[domainidx].tag, ret, require);
         fprintf(stderr, "      This results in multiple threads on the same hardware thread.\n");
         return 0;
     }
@@ -680,7 +680,7 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
         bdomain = bformat("N");
         blist = bstrcpy(bcpustr);
     }
-    domainidx = get_domain_idx(bdomain);
+    domainidx = get_domain_idx(bdata(bdomain));
     if (domainidx < 0)
     {
         fprintf(stderr, "Cannot find domain %s\n", bdata(bdomain));
@@ -688,7 +688,7 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
         bdestroy(blist);
         return 0;
     }
-    bstring domtag = affinity->domains[domainidx].tag;
+    char* domtag = affinity->domains[domainidx].tag;
 
     strlist = bsplit(blist, ',');
     int insert = 0;
@@ -731,7 +731,7 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
                                 notInCpuSet = 1;
                             }
                         }
-                        fprintf(stderr, "CPU %d not in domain %s.", j, bdata(domtag));
+                        fprintf(stderr, "CPU %d not in domain %s.", j, domtag);
                         if (notInCpuSet)
                         {
                             fprintf(stderr, " It is not in the given cpuset\n");
@@ -767,7 +767,7 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
                                 notInCpuSet = 1;
                             }
                         }
-                        fprintf(stderr, "CPU %d not in domain %s.", j, bdata(domtag));
+                        fprintf(stderr, "CPU %d not in domain %s.", j, domtag);
                         if (notInCpuSet)
                         {
                             fprintf(stderr, " It is not in the given cpuset\n");
@@ -808,7 +808,7 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
                         notInCpuSet = 1;
                     }
                 }
-                fprintf(stderr, "CPU %d not in domain %s.", cpu, bdata(domtag));
+                fprintf(stderr, "CPU %d not in domain %s.", cpu, domtag);
                 if (notInCpuSet)
                 {
                     fprintf(stderr, " It is not in the given cpuset\n");
@@ -889,7 +889,7 @@ cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
             }
             else
             {
-                int dom = get_domain_idx(strlist->entry[i]);
+                int dom = get_domain_idx(bdata(strlist->entry[i]));
                 if (dom >= 0)
                 {
                     AffinityDomains_t affinity = get_affinityDomains();

@@ -442,7 +442,7 @@ int main(int argc, char** argv)
         for (i=0; i < affinity->numberOfAffinityDomains; i++ )
         {
             ownprintf("Domain %d:\n",i);
-            ownprintf("\tTag %s:",bdata(affinity->domains[i].tag));
+            ownprintf("\tTag %s:",affinity->domains[i].tag);
 
             for ( uint32_t j=0; j < affinity->domains[i].numberOfProcessors; j++ )
             {

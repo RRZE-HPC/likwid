@@ -677,7 +677,7 @@ system. Example domains are NUMA nodes, CPU sockets/packages or LLC (Last Level
 Cache) cache domains. \extends AffinityDomains
 */
 typedef struct {
-  bstring tag; /*!< \brief Bstring with the ID for the affinity domain.
+  char* tag; /*!< \brief Bstring with the ID for the affinity domain.
                   Currently possible values: N (node), SX (socket/package X), CX
                   (LLC cache domain X) and MX (memory domain X) */
   uint32_t numberOfProcessors; /*!< \brief Number of HW threads in the domain

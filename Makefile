@@ -617,7 +617,6 @@ install: install_daemon install_freq install_appdaemon install_container_helper
 	@install -m 644 $(SRC_DIR)/includes/likwid.h  $(PREFIX)/include/
 	@sed -i -e "s#<VERSION>#$(VERSION)#g" -e "s#<DATE>#$(DATE)#g" -e "s#<GITCOMMIT>#$(GITCOMMIT)#g" -e "s#<MINOR>#$(MINOR)#g" $(PREFIX)/include/likwid.h
 	@install -m 644 $(SRC_DIR)/includes/likwid-marker.h  $(PREFIX)/include/
-	@install -m 644 $(SRC_DIR)/includes/bstrlib.h  $(PREFIX)/include/
 	$(FORTRAN_INSTALL)
 	@echo "===> INSTALL groups to $(PREFIX)/share/likwid/perfgroups"
 	@mkdir -p $(PREFIX)/share/likwid/perfgroups
@@ -629,7 +628,6 @@ install: install_daemon install_freq install_appdaemon install_container_helper
 	@echo "===> INSTALL docs and examples to $(PREFIX)/share/likwid/docs"
 	@mkdir -p $(PREFIX)/share/likwid/docs
 	@chmod 755 $(PREFIX)/share/likwid/docs
-	@install -m 644 $(DOC_DIR)/bstrlib.txt $(PREFIX)/share/likwid/docs
 	@mkdir -p $(PREFIX)/share/likwid/examples
 	@chmod 755 $(PREFIX)/share/likwid/examples
 	@install -m 644 $(EXAMPLES_DIR)/* $(PREFIX)/share/likwid/examples
@@ -686,7 +684,6 @@ move: move_daemon move_freq move_appdaemon move_container_helper
 	@chmod 755 $(INSTALLED_PREFIX)/include
 	@install -m 644 $(PREFIX)/include/likwid.h $(INSTALLED_PREFIX)/include/likwid.h
 	@install -m 644 $(PREFIX)/include/likwid-marker.h $(INSTALLED_PREFIX)/include/likwid-marker.h
-	@install -m 644 $(PREFIX)/include/bstrlib.h $(INSTALLED_PREFIX)/include/bstrlib.h
 	@if [ -e $(PREFIX)/include/likwid.mod ]; then install $(PREFIX)/include/likwid.mod $(INSTALLED_PREFIX)/include/likwid.mod; fi
 	@echo "===> MOVE groups from $(PREFIX)/share/likwid/perfgroups to $(INSTALLED_PREFIX)/share/likwid/perfgroups"
 	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/perfgroups
@@ -697,7 +694,6 @@ move: move_daemon move_freq move_appdaemon move_container_helper
 	@find $(INSTALLED_PREFIX)/share/likwid/perfgroups -name "*.txt" -exec chmod 644 {} \;
 	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/docs
 	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/docs
-	@install -m 644 $(PREFIX)/share/likwid/docs/bstrlib.txt $(INSTALLED_PREFIX)/share/likwid/docs
 	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/examples
 	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/examples
 	@install -m 644 $(EXAMPLES_DIR)/* $(INSTALLED_PREFIX)/share/likwid/examples
@@ -740,7 +736,6 @@ uninstall: uninstall_daemon uninstall_freq uninstall_appdaemon uninstall_contain
 	@echo "===> REMOVING header from $(PREFIX)/include"
 	@rm -f $(PREFIX)/include/likwid.h
 	@rm -f $(PREFIX)/include/likwid-marker.h
-	@rm -f $(PREFIX)/include/bstrlib.h
 	$(FORTRAN_REMOVE)
 	@echo "===> REMOVING filter, groups and default configs from $(PREFIX)/share/likwid"
 	@rm -rf $(abspath $(PREFIX)/share/likwid/filter)
@@ -777,7 +772,6 @@ uninstall_moved: uninstall_daemon_moved uninstall_freq_moved uninstall_appdaemon
 	@echo "===> REMOVING header from $(INSTALLED_PREFIX)/include"
 	@rm -f $(INSTALLED_PREFIX)/include/likwid.h
 	@rm -f $(PREFIX)/include/likwid-marker.h
-	@rm -f $(INSTALLED_PREFIX)/include/bstrlib.h
 	$(FORTRAN_REMOVE)
 	@echo "===> REMOVING filter, groups and default configs from $(INSTALLED_PREFIX)/share/likwid"
 	@rm -rf $(LIKWIDFILTERPATH)
