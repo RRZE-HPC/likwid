@@ -5,14 +5,14 @@
  *
  *      Description:  Topology module for AMD GPUs
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.4.0
+ *      Released:  15.11.2024
  *
  *      Author:   Thomas Gruber (tg), thomas.roehl@googlemail.com
  *                Various people at HPE
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2024 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
