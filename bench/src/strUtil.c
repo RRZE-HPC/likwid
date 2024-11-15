@@ -142,7 +142,7 @@ parse_workgroup(Workgroup* group, const_bstring str, DataType type)
 
         for (int i = 0; i < doms->numberOfAffinityDomains; i++)
         {
-            if (bstrcmp(doms->domains[i].tag, tokens->entry[0]) == BSTR_OK)
+            if (strncmp(doms->domains[i].tag, bdata(tokens->entry[0]), strlen(doms->domains[i].tag)) == 0)
             {
                 domidx = i;
                 break;
