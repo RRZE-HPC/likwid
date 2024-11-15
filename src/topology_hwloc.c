@@ -387,6 +387,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     int consecutive_cores = -1;
     int from_file = (getenv("HWLOC_FSROOT") != NULL);
     hwloc_obj_type_t socket_type = HWLOC_OBJ_SOCKET;
+    hwloc_obj_type_t die_type = HWLOC_OBJ_DIE;
     if (!from_file)
     {
         for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
@@ -418,9 +419,14 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     {
         socket_type = HWLOC_OBJ_NODE;
     }
+    if (LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, die_type) == 0)
+    {
+        die_type = socket_type;
+    }
+    
 
     maxNumSockets = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, socket_type);
-    maxNumDies = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_DIE);
+    maxNumDies = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, die_type);
     obj = LIKWID_HWLOC_NAME(get_obj_by_type)(hwloc_topology, socket_type, 0);
 
     if (obj)
@@ -514,34 +520,6 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             }
         }
 #endif
-        if (maxNumSockets < maxNumDies)
-        {
-            while (obj->type != HWLOC_OBJ_DIE) {
-                obj = obj->parent;
-                if (!obj)
-                {
-                    skip = 1;
-                    break;
-                }
-            }
-            if (skip)
-            {
-                hwThreadPool[id].dieId = 0;
-                continue;
-            }
-            if (obj->type == HWLOC_OBJ_DIE)
-            {
-                hwThreadPool[id].dieId = obj->os_index;
-            }
-            else
-            {
-                hwThreadPool[id].dieId = 0;
-            }
-        }
-        else
-        {
-            hwThreadPool[id].dieId = 0;
-        }
         while (obj->type != socket_type) {
             obj = obj->parent;
             if (!obj)
@@ -567,6 +545,40 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
 #else
         hwThreadPool[id].packageId = obj->os_index;
 #endif
+        if (maxNumSockets < maxNumDies)
+        {
+            printf("Searching for socket of die\n");
+            hwloc_obj_t t = obj->parent;
+            while (t->type != die_type) {
+                t = t->parent;
+                if (!t)
+                {
+                    printf("Cannot find type %d\n", die_type);
+                    skip = 1;
+                    break;
+                }
+            }
+            if (skip)
+            {
+                printf("setting die id = 0\n");
+                hwThreadPool[id].dieId = 0;
+                continue;
+            }
+            if (t->type == die_type)
+            {
+                printf("setting die id = %d\n", t->os_index);
+                hwThreadPool[id].dieId = t->os_index;
+            }
+            else
+            {
+                printf("setting die id = 0 (else)\n");
+                hwThreadPool[id].dieId = 0;
+            }
+        }
+        else
+        {
+            hwThreadPool[id].dieId = 0;
+        }
         DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Die %d Socket %d inCpuSet %d,
                             hwThreadPool[id].apicId,
                             hwThreadPool[id].threadId,
