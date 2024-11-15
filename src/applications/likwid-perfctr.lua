@@ -7,8 +7,8 @@
  *      Description:  An application to read out performance counter registers
  *                    on x86 processors
  *
- *      Version:   4.2
- *      Released:  22.12.2016
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

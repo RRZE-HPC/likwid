@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  topology_gpu.c
+ *      Filename:  topology_cuda.c
  *
- *      Description:  Topology module for GPUs
+ *      Description:  Topology module for Nvidia GPUs
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>

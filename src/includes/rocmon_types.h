@@ -1,19 +1,20 @@
 /*
  * =======================================================================================
  *
- *      Filename:  nvmon_types.h
+ *      Filename:  rocmon_types.h
  *
- *      Description:  Header File of nvmon module.
+ *      Description:  Header File of rocmon module.
  *                    Configures and reads out performance counters
- *                    on NVIDIA GPUs. Supports multi GPUs.
+ *                    on AMD GPUs. Supports multi GPUs.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
  *      Author:   Thomas Gruber (tg), thomas.gruber@googlemail.com
+ *                Various people at HPE
  *      Project:  likwid
  *
- *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

@@ -9,7 +9,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:   Thoams Roehl (tr), thomas.roehl@gmail.com
+ *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg

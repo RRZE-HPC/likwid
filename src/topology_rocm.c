@@ -1,14 +1,15 @@
 /*
  * =======================================================================================
  *
- *      Filename:  topology_gpu.c
+ *      Filename:  topology_rocm.c
  *
- *      Description:  Topology module for GPUs
+ *      Description:  Topology module for AMD GPUs
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
  *      Author:   Thomas Gruber (tg), thomas.roehl@googlemail.com
+ *                Various people at HPE
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
