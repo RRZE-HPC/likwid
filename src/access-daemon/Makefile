@@ -67,7 +67,7 @@ $(SETFREQ_TARGET): setFreqDaemon.c
 	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(SETFREQ_TARGET) setFreqDaemon.c
 
 $(APPDAEMON_TARGET): $(GOTCHA_TARGET) appDaemon.c ../bstrlib.c ../bstrlib_helper.c
-	$(Q)$(CC) -shared -fvisibility=hidden -fPIC $(CPPFLAGS) -Wl,-soname,$(APPDAEMON_TARGET).$(VERSION).$(RELEASE),--no-undefined -fstack-protector -I. -I$(GOTCHA_FOLDER)/include  -L$(GOTCHA_FOLDER) appDaemon.c ../bstrlib.c ../bstrlib_helper.c -o ../../$(APPDAEMON_TARGET)  -llikwid -llikwid-gotcha
+	$(Q)$(CC) -pthread -shared -fvisibility=hidden -fPIC $(CPPFLAGS) -Wl,-soname,$(APPDAEMON_TARGET).$(VERSION).$(RELEASE),--no-undefined -fstack-protector -I. -I$(GOTCHA_FOLDER)/include  -L$(GOTCHA_FOLDER) appDaemon.c ../bstrlib.c ../bstrlib_helper.c -o ../../$(APPDAEMON_TARGET)  -llikwid -llikwid-gotcha -ldl
 
 $(SYSFSDAEMON_TARGET): sysfsDaemon.c
 	$(Q)$(CC) -g -fsanitize=address -fsanitize=leak -fomit-frame-pointer  $(CFLAGS) $(CPPFLAGS) -o ../../sysfsD sysfsDaemon.c
