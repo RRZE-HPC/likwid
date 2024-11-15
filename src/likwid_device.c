@@ -532,10 +532,6 @@ static bool device_in_cpuset(LikwidDeviceType type, size_t id)
 
 static int likwid_device_get_list(LikwidDeviceType type, char ***id_list, size_t *id_list_count, bool cpuset_only)
 {
-    /* There seems to be a bug in this function, fix in a later commit. */
-    ERROR_PRINT(not implemented);
-    return -EPERM;
-
     if (type <= DEVICE_TYPE_INVALID || type >= MAX_DEVICE_TYPE || !id_list)
         return -EINVAL;
 

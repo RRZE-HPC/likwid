@@ -208,17 +208,17 @@ local ft_list = likwid.sysFeatures_list()
 -- print available devices
 if printDevices then
     device_types = {}
-    device_types[likwid.hwthread] = "HWThread"
-    device_types[likwid.core] = "Core"
-    device_types[likwid.numa] = "NUMA"
-    device_types[likwid.die] = "Die"
-    device_types[likwid.socket] = "Socket"
-    device_types[likwid.node] = "Node"
+    device_types[likwid.hwthread] = "HWThread (T)"
+    device_types[likwid.core] = "Core (C)"
+    device_types[likwid.numa] = "NUMA (M)"
+    device_types[likwid.die] = "Die (D)"
+    device_types[likwid.socket] = "Socket (S)"
+    device_types[likwid.node] = "Node (N)"
     if likwid.nvSupported() then
-        device_types[likwid.nvidia_gpu] = "Nvidia GPU"
+        device_types[likwid.nvidia_gpu] = "Nvidia GPU (GN)"
     end
     if likwid.rocmSupported() then
-        device_types[likwid.amd_gpu] = "AMD GPU"
+        device_types[likwid.amd_gpu] = "AMD GPU (GA)"
     end
     for devtype, name in pairs(device_types) do
         print(string.format("%s:", name))
