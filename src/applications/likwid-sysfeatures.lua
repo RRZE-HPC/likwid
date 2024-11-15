@@ -53,6 +53,7 @@ local function usage()
     print_stdout("-v, --version\t\t Version information")
     print_stdout("-a, --all\t\t List all available features")
     print_stdout("-l, --list\t\t List features and state for given devices")
+    print_stdout("-p, --print\t\t List available devices")
     print_stdout("-d, --devices <list>\t Perform operations on given devices")
     print_stdout("-g, --get <feature(s)>\t Get the value of the given feature(s)")
     print_stdout("                      \t feature format: <category>.<name> or just <name> if unique")
@@ -109,6 +110,7 @@ end
 -- main variables with defaults
 local listFeatures = false
 local allFeatures = false
+local printDevices = false
 local devList = {}
 local getList = {}
 local setList = {}
@@ -119,7 +121,7 @@ local verbose = 0
 local output_csv = false
 
 -- parse the command line
-for opt,arg in likwid.getopt(arg, {"h","v","l","d:","g:","s:","a", "O","help","version","list", "set:", "get:","all", "cpus:", "V:", "verbose:"}) do
+for opt,arg in likwid.getopt(arg, {"h","v","l","p","d:","g:","s:","a", "O","help","version","list", "print", "set:", "get:","all", "cpus:", "V:", "verbose:"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -138,6 +140,8 @@ for opt,arg in likwid.getopt(arg, {"h","v","l","d:","g:","s:","a", "O","help","v
         devList = likwid.createDevicesFromString(arg)
     elseif opt == "l" or opt == "list" then
         listFeatures = true
+    elseif opt == "p" or opt == "print" then
+        printDevices = true
     elseif opt == "O" then
         output_csv = true
     elseif opt == "V" or opt == "verbose" then
@@ -159,11 +163,11 @@ end
 
 
 -- validate command line input
-if (not listFeatures) and (not allFeatures) and (#getList == 0) and (#setList == 0) then
+if (not printDevices) and (not listFeatures) and (not allFeatures) and (#getList == 0) and (#setList == 0) then
     print_stderr("No operations specified, exiting...")
     os.exit(1)
 end
-if (listFeatures or allFeatures) and (#getList > 0 or #setList > 0) then
+if (printDevices or listFeatures or allFeatures) and (#getList > 0 or #setList > 0) then
     print_stderr("Cannot list features and get/set at the same time")
     os.exit(1)
 end
@@ -200,6 +204,32 @@ end
 
 -- get a list of all features for the system
 local ft_list = likwid.sysFeatures_list()
+
+-- print available devices
+if printDevices then
+    device_types = {}
+    device_types[likwid.hwthread] = "HWThread"
+    device_types[likwid.core] = "Core"
+    device_types[likwid.numa] = "NUMA"
+    device_types[likwid.die] = "Die"
+    device_types[likwid.socket] = "Socket"
+    device_types[likwid.node] = "Node"
+    if likwid.nvSupported() then
+        device_types[likwid.nvidia_gpu] = "Nvidia GPU"
+    end
+    if likwid.rocmSupported() then
+        device_types[likwid.amd_gpu] = "AMD GPU"
+    end
+    for devtype, name in pairs(device_types) do
+        print(string.format("%s:", name))
+        devices = likwid.getAvailableDevices(devtype)
+        if #devices == 0 then
+            print("\t<none>")
+        else
+            print("\t" .. table.concat(devices, ","))
+        end
+    end
+end
 
 -- print the list
 if allFeatures then
