@@ -1188,8 +1188,7 @@ double nvmon_getMetric(int groupId, int metricId, int gpuId)
     {
         return NAN;
     }
-
-    char* f = ginfo->metricformulas[metricId];
+    
     NvmonDevice_t device = &nvGroupSet->gpus[gpuId];
     if (groupId < 0 || groupId >= device->numNvEventSets)
     {
@@ -1207,7 +1206,14 @@ double nvmon_getMetric(int groupId, int metricId, int gpuId)
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
 
-    e = calc_metric(f, &clist, &result);
+    double result2;
+    e = calc_metric(ginfo->metricformulas[metricId], &clist, &result);
+    e = calc_metric_new(ginfo->metrictrees[metricId], &clist, &result2);
+    if(fabs(result - result2) > 1.0E-6) {
+        fprintf(stderr "Error: results don't match");
+        exit(EXIT_FAILURE);
+    }
+    
     if (e < 0)
     {
         result = NAN;
@@ -1251,7 +1257,7 @@ double nvmon_getLastMetric(int groupId, int metricId, int gpuId)
     {
         return NAN;
     }
-    char* f = ginfo->metricformulas[metricId];
+    
     NvmonDevice_t device = &nvGroupSet->gpus[gpuId];
     if (groupId < 0 || groupId >= device->numNvEventSets)
     {
@@ -1268,9 +1274,14 @@ double nvmon_getLastMetric(int groupId, int metricId, int gpuId)
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
-
-
-    e = calc_metric(f, &clist, &result);
+    double result2;
+    e = calc_metric(ginfo->metricformulas[metricId], &clist, &result);
+    e = calc_metric_new(ginfo->metrictrees[metricId], &clist, &result2);
+    if(fabs(result - result2) > 1.0E-6) {
+        fprintf(stderr "Error: results don't match");
+        exit(EXIT_FAILURE);
+    }
+    
     if (e < 0)
     {
         result = NAN;
@@ -1685,7 +1696,7 @@ double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
     {
         return NAN;
     }
-    char *f = ginfo->metricformulas[metricId];
+    
     timer_init();
     init_clist(&clist);
     for (e = 0; e < gMarkerResults[region].eventCount; e++)
@@ -1699,7 +1710,14 @@ double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
 
-    err = calc_metric(f, &clist, &result);
+    double result2;
+    e = calc_metric(ginfo->metricformulas[metricId], &clist, &result);
+    e = calc_metric_new(ginfo->metrictrees[metricId], &clist, &result2);
+    if(fabs(result - result2) > 1.0E-6) {
+        fprintf(stderr "Error: results don't match");
+        exit(EXIT_FAILURE);
+    }
+    
     if (err < 0)
     {
         ERROR_PRINT(Cannot calculate formula %s, f);
