@@ -35,8 +35,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <bstrlib.h>
-
 #define DEBUGLEV_ONLY_ERROR 0
 #define DEBUGLEV_INFO 1
 #define DEBUGLEV_DETAIL 2
