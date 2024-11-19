@@ -1,14 +1,20 @@
 #include <bstrlib.h>
 #include <bstrlib_helper.h>
-#include <perfgroup.h> /* CounterList */
 #include "calculator_exptree.h"
+#include <perfgroup.h> /* CounterList */
+#include <ctype.h>  /* isspace */
+#include <errno.h>  /* errno */
+#include <math.h>   /* NAN / isnan */
+#include <stdio.h>  /* printf / fprintf */
+#include <stdlib.h> /* malloc / free */
+#include <string.h> /* strncmp / strlen */
 
-#include <ctype.h>
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef NAN
+#   define NAN (0.0/0.0)
+#endif
 
+#define NODE_NULL_VALUE    NAN
+#define NODE_NULL_OPERATOR '\0'
 
 struct exptree_node {
     struct exptree_node *left;  // Left child
@@ -23,9 +29,6 @@ struct exptree_node {
 static struct exptree_node *_make_expression_tree(const char **expr);
 static struct exptree_node *_make_term_tree(const char **expr);
 static struct exptree_node *_make_factor_tree(const char **expr);
-
-#define NODE_NULL_VALUE    0.0
-#define NODE_NULL_OPERATOR '\0'
 
 static void _skip_spaces(const char **expr)
 {
@@ -52,8 +55,7 @@ static struct exptree_node *_make_value_node(double value)
 // Set counter and create a leaf node
 static struct exptree_node *_make_counter_node(char *counter)
 {
-    struct exptree_node *node =
-        (struct exptree_node *)malloc(sizeof(struct exptree_node));
+    struct exptree_node *node = malloc(sizeof(struct exptree_node));
     if (!node) {
         return NULL;
     }
@@ -61,7 +63,7 @@ static struct exptree_node *_make_counter_node(char *counter)
                                   .right        = NULL,
                                   .value        = NODE_NULL_VALUE,
                                   .counter_name = counter,
-                                  .operator= NODE_NULL_OPERATOR };
+                                  .operator     = NODE_NULL_OPERATOR };
     return node;
 }
 
@@ -69,8 +71,7 @@ static struct exptree_node *_make_counter_node(char *counter)
 static struct exptree_node *
 _make_operator_node(char operator, struct exptree_node *left, struct exptree_node *right)
 {
-    struct exptree_node *node =
-        (struct exptree_node *)malloc(sizeof(struct exptree_node));
+    struct exptree_node *node = malloc(sizeof(struct exptree_node));
     if (!node) {
         return NULL;
     }
@@ -78,7 +79,7 @@ _make_operator_node(char operator, struct exptree_node *left, struct exptree_nod
                                   .right        = right,
                                   .value        = NODE_NULL_VALUE,
                                   .counter_name = NULL,
-                                  .operator= operator};
+                                  .operator     = operator};
     return node;
 }
 
@@ -100,9 +101,10 @@ static struct exptree_node *_make_factor_tree(const char **expr)
         return subtree;
     } else {
         char  *endptr;
+        errno = 0;
         double value = strtod(*expr, &endptr);
         if (*expr == endptr) {
-            // no conversion performed
+            // No conversion performed
             char *counter_name;
             if (sscanf(*expr, " %m[^()+-*/ \n] %*s", &counter_name) == 1) {
                 *expr += strlen(counter_name);
@@ -111,6 +113,9 @@ static struct exptree_node *_make_factor_tree(const char **expr)
                 fprintf(stderr, "Error: Could not parse: %s\n", *expr);
                 exit(EXIT_FAILURE);
             }
+        } else if (errno) {
+            /* Underflow or Overflow */
+            /* value is DBL_MIN / HUGE_VAL (TODO: is this ok?) */
         }
         *expr = endptr;
         return _make_value_node(value);
@@ -124,7 +129,7 @@ static struct exptree_node *_make_term_tree(const char **expr)
     while (1) {
         _skip_spaces(expr);
         if (**expr == '*' || **expr == '/') {
-            char operator= ** expr;
+            char operator = **expr;
             (*expr)++;
             struct exptree_node *right = _make_factor_tree(expr);
             left                       = _make_operator_node(operator, left, right);
@@ -142,7 +147,7 @@ static struct exptree_node *_make_expression_tree(const char **expr)
     while (1) {
         _skip_spaces(expr);
         if (**expr == '+' || **expr == '-') {
-            char operator= ** expr;
+            char operator = **expr;
             (*expr)++;
             struct exptree_node *right = _make_term_tree(expr);
             left                       = _make_operator_node(operator, left, right);
@@ -204,7 +209,7 @@ void free_expression_tree(struct exptree_node *node)
     free(node);
 }
 
-// Get node value
+// Gets node's value (returns NAN on error)
 static double _get_value(const struct exptree_node *node, const CounterList *clist)
 {
     if (!node->counter_name) {
@@ -219,32 +224,42 @@ static double _get_value(const struct exptree_node *node, const CounterList *cli
         const char *cname = bdata(clist->cnames->entry[ctr]);
         
         if (len == strlen(cname) && !strncmp(node->counter_name, cname, len)) {
-            const char *val_str = bdata(clist->cvalues->entry[ctr]);
-            /* TODO: why are counter values stored as strings instead of unsigned long
-             * long ? */
-            double val = strtod(val_str, NULL);
-            /* TODO error handling of strtod */
-            return val;
+            const char *value_str = bdata(clist->cvalues->entry[ctr]);
+            /* TODO: why are counter values stored as strings instead of
+             * unsigned long long ? */
+
+            char  *endptr;
+            errno = 0;
+            double value = strtod(value_str, &endptr);
+            if (value_str == endptr) {
+                // no conversion performed
+                fprintf(stderr, "Error: no conversion performed on %s\n", value_str);
+                return NODE_NULL_VALUE;
+            } else if (errno) {
+                /* Underflow or Overflow */
+                /* value is DBL_MIN / HUGE_VAL (TODO: is this ok?) */
+            }
+            return value;
         }
     }
 
     fprintf(stderr, "Error: counter not found: %s\n", node->counter_name);
-    return NODE_NULL_VALUE; // TODO: error handling
+    return NODE_NULL_VALUE;
 }
 
-// Evaluate the expression tree recursively
+// Evaluates the expression tree recursively (returns NAN on error)
 double evaluate_expression_tree(const struct exptree_node *node, const CounterList *clist)
 {
-    // TODO: maybe return NAN to indicate error ?
-    // need to check for NULL in child node evaluation in this case
     if (!node) {
-        return 0.0;
+        return NODE_NULL_VALUE;
     }
 
     // If it's a leaf node (number/counter), return its value
-    if (node->operator== NODE_NULL_OPERATOR) {
+    if (node->operator == NODE_NULL_OPERATOR) {
         return _get_value(node, clist);
     }
+
+    // If it's not a leaf node, it must have two child (may change in case of unary operators)
 
     // Recursively evaluate left and right subtrees
     double val_left  = evaluate_expression_tree(node->left, clist);
@@ -261,11 +276,11 @@ double evaluate_expression_tree(const struct exptree_node *node, const CounterLi
     case '/':
         if (val_right == 0.0) {
             fprintf(stderr, "Error: Division by zero\n");
-            exit(EXIT_FAILURE);
+            return NODE_NULL_VALUE;
         }
         return val_left / val_right;
     default:
         fprintf(stderr, "Error: Unknown operator '%c'\n", node->operator);
-        exit(EXIT_FAILURE);
+        return NODE_NULL_VALUE;
     }
 }
