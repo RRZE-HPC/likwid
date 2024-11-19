@@ -1210,7 +1210,7 @@ double nvmon_getMetric(int groupId, int metricId, int gpuId)
     e = calc_metric(ginfo->metricformulas[metricId], &clist, &result);
     e = calc_metric_new(ginfo->metrictrees[metricId], &clist, &result2);
     if(fabs(result - result2) > 1.0E-6) {
-        fprintf(stderr "Error: results don't match");
+        fprintf(stderr, "Error: results don't match");
         exit(EXIT_FAILURE);
     }
     
@@ -1278,7 +1278,7 @@ double nvmon_getLastMetric(int groupId, int metricId, int gpuId)
     e = calc_metric(ginfo->metricformulas[metricId], &clist, &result);
     e = calc_metric_new(ginfo->metrictrees[metricId], &clist, &result2);
     if(fabs(result - result2) > 1.0E-6) {
-        fprintf(stderr "Error: results don't match");
+        fprintf(stderr, "Error: results don't match");
         exit(EXIT_FAILURE);
     }
     
@@ -1711,10 +1711,11 @@ double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
     add_to_clist(&clist, "false", 0);
 
     double result2;
-    e = calc_metric(ginfo->metricformulas[metricId], &clist, &result);
+    char *f = ginfo->metricformulas[metricId];
+    e = calc_metric(f, &clist, &result);
     e = calc_metric_new(ginfo->metrictrees[metricId], &clist, &result2);
     if(fabs(result - result2) > 1.0E-6) {
-        fprintf(stderr "Error: results don't match");
+        fprintf(stderr, "Error: results don't match");
         exit(EXIT_FAILURE);
     }
     
