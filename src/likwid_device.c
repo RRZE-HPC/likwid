@@ -629,7 +629,7 @@ static int likwid_device_get_list(LikwidDeviceType type, char ***id_list, size_t
         {
 #ifdef LIKWID_WITH_NVMON
             case DEVICE_TYPE_NVIDIA_GPU:
-                snprintf(id_str, sizeof(id_str), "GN:%08x:%02x:%02x.%01x",
+                snprintf(id_str, sizeof(id_str), "%08x:%02x:%02x.%01x",
                         cuda_topo->devices[i].pciDom,
                         cuda_topo->devices[i].pciBus,
                         cuda_topo->devices[i].pciDev,
@@ -638,7 +638,7 @@ static int likwid_device_get_list(LikwidDeviceType type, char ***id_list, size_t
 #endif
 #ifdef LIKWID_WITH_ROCMON
             case DEVICE_TYPE_AMD_GPU:
-                snprintf(id_str, sizeof(id_str), "GA:%08x:%02x:%02x.0",
+                snprintf(id_str, sizeof(id_str), "%08x:%02x:%02x.0",
                         rocm_topo->devices[i].pciDom,
                         rocm_topo->devices[i].pciBus,
                         rocm_topo->devices[i].pciDev);
