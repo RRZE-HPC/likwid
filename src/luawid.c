@@ -283,7 +283,7 @@ static int lua_likwid_addEventSet(lua_State *L) {
 
 static int lua_likwid_setupCounters(lua_State *L) {
   int ret;
-  int groupId = lua_tonumber(L, 1);
+  int groupId = luaL_checkinteger(L, 1);
   if (perfmon_isInitialized == 0) {
     return 0;
   }
@@ -324,7 +324,7 @@ static int lua_likwid_readCounters(lua_State *L) {
 
 static int lua_likwid_switchGroup(lua_State *L) {
   int ret = -1;
-  int newgroup = lua_tonumber(L, 1) - 1;
+  int newgroup = luaL_checkinteger(L, 1) - 1;
   if (perfmon_isInitialized == 0) {
     return 0;
   }
@@ -376,9 +376,9 @@ static int lua_likwid_finalize(lua_State *L) {
 static int lua_likwid_getResult(lua_State *L) {
   int groupId, eventId, threadId;
   double result = 0;
-  groupId = lua_tonumber(L, 1);
-  eventId = lua_tonumber(L, 2);
-  threadId = lua_tonumber(L, 3);
+  groupId = luaL_checkinteger(L, 1);
+  eventId = luaL_checkinteger(L, 2);
+  threadId = luaL_checkinteger(L, 3);
   result = perfmon_getResult(groupId - 1, eventId - 1, threadId - 1);
   lua_pushnumber(L, result);
   return 1;
@@ -387,9 +387,9 @@ static int lua_likwid_getResult(lua_State *L) {
 static int lua_likwid_getLastResult(lua_State *L) {
   int groupId, eventId, threadId;
   double result = 0;
-  groupId = lua_tonumber(L, 1);
-  eventId = lua_tonumber(L, 2);
-  threadId = lua_tonumber(L, 3);
+  groupId = luaL_checkinteger(L, 1);
+  eventId = luaL_checkinteger(L, 2);
+  threadId = luaL_checkinteger(L, 3);
   result = perfmon_getLastResult(groupId - 1, eventId - 1, threadId - 1);
   lua_pushnumber(L, result);
   return 1;
@@ -398,9 +398,9 @@ static int lua_likwid_getLastResult(lua_State *L) {
 static int lua_likwid_getMetric(lua_State *L) {
   int groupId, metricId, threadId;
   double result = 0;
-  groupId = lua_tonumber(L, 1);
-  metricId = lua_tonumber(L, 2);
-  threadId = lua_tonumber(L, 3);
+  groupId = luaL_checkinteger(L, 1);
+  metricId = luaL_checkinteger(L, 2);
+  threadId = luaL_checkinteger(L, 3);
   result = perfmon_getMetric(groupId - 1, metricId - 1, threadId - 1);
   lua_pushnumber(L, result);
   return 1;
@@ -409,9 +409,9 @@ static int lua_likwid_getMetric(lua_State *L) {
 static int lua_likwid_getLastMetric(lua_State *L) {
   int groupId, metricId, threadId;
   double result = 0;
-  groupId = lua_tonumber(L, 1);
-  metricId = lua_tonumber(L, 2);
-  threadId = lua_tonumber(L, 3);
+  groupId = luaL_checkinteger(L, 1);
+  metricId = luaL_checkinteger(L, 2);
+  threadId = luaL_checkinteger(L, 3);
   result = perfmon_getLastMetric(groupId - 1, metricId - 1, threadId - 1);
   lua_pushnumber(L, result);
   return 1;
@@ -443,7 +443,7 @@ static int lua_likwid_getRuntimeOfGroup(lua_State *L) {
   if (perfmon_isInitialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
+  groupId = luaL_checkinteger(L, 1);
   time = perfmon_getTimeOfGroup(groupId - 1);
   lua_pushnumber(L, time);
   return 1;
@@ -454,7 +454,7 @@ static int lua_likwid_getNumberOfEvents(lua_State *L) {
   if (perfmon_isInitialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
+  groupId = luaL_checkinteger(L, 1);
   number = perfmon_getNumberOfEvents(groupId - 1);
   lua_pushinteger(L, number);
   return 1;
@@ -476,8 +476,8 @@ static int lua_likwid_getNameOfEvent(lua_State *L) {
   if (perfmon_isInitialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
-  eventId = lua_tonumber(L, 2);
+  groupId = luaL_checkinteger(L, 1);
+  eventId = luaL_checkinteger(L, 2);
   tmp = perfmon_getEventName(groupId - 1, eventId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -489,8 +489,8 @@ static int lua_likwid_getNameOfCounter(lua_State *L) {
   if (perfmon_isInitialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
-  eventId = lua_tonumber(L, 2);
+  groupId = luaL_checkinteger(L, 1);
+  eventId = luaL_checkinteger(L, 2);
   tmp = perfmon_getCounterName(groupId - 1, eventId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -501,7 +501,7 @@ static int lua_likwid_getNumberOfMetrics(lua_State *L) {
   if (perfmon_isInitialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
+  groupId = luaL_checkinteger(L, 1);
   number = perfmon_getNumberOfMetrics(groupId - 1);
   lua_pushinteger(L, number);
   return 1;
@@ -513,8 +513,8 @@ static int lua_likwid_getNameOfMetric(lua_State *L) {
   if (perfmon_isInitialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
-  metricId = lua_tonumber(L, 2);
+  groupId = luaL_checkinteger(L, 1);
+  metricId = luaL_checkinteger(L, 2);
   tmp = perfmon_getMetricName(groupId - 1, metricId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -526,7 +526,7 @@ static int lua_likwid_getNameOfGroup(lua_State *L) {
   if (perfmon_isInitialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
+  groupId = luaL_checkinteger(L, 1);
   tmp = perfmon_getGroupName(groupId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -538,7 +538,7 @@ static int lua_likwid_getShortInfoOfGroup(lua_State *L) {
   if (perfmon_isInitialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
+  groupId = luaL_checkinteger(L, 1);
   tmp = perfmon_getGroupInfoShort(groupId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -550,7 +550,7 @@ static int lua_likwid_getLongInfoOfGroup(lua_State *L) {
   if (perfmon_isInitialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
+  groupId = luaL_checkinteger(L, 1);
   tmp = perfmon_getGroupInfoLong(groupId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -1549,7 +1549,7 @@ static int lua_likwid_putPowerInfo(lua_State *L) {
 
 static int lua_likwid_startPower(lua_State *L) {
   PowerData pwrdata;
-  int cpuId = lua_tonumber(L, 1);
+  int cpuId = luaL_checkinteger(L, 1);
   luaL_argcheck(L, cpuId >= 0, 1, "CPU ID must be greater than 0");
 #if LUA_VERSION_NUM == 501
   PowerType type = (PowerType)((lua_Integer)lua_tointeger(L, 2));
@@ -1565,7 +1565,7 @@ static int lua_likwid_startPower(lua_State *L) {
 
 static int lua_likwid_stopPower(lua_State *L) {
   PowerData pwrdata;
-  int cpuId = lua_tonumber(L, 1);
+  int cpuId = luaL_checkinteger(L, 1);
   luaL_argcheck(L, cpuId >= 0, 1, "CPU ID must be greater than 0");
 #if LUA_VERSION_NUM == 501
   PowerType type = (PowerType)((lua_Integer)lua_tointeger(L, 2));
@@ -1581,17 +1581,17 @@ static int lua_likwid_stopPower(lua_State *L) {
 
 static int lua_likwid_printEnergy(lua_State *L) {
   PowerData pwrdata;
-  pwrdata.before = lua_tonumber(L, 1);
-  pwrdata.after = lua_tonumber(L, 2);
-  pwrdata.domain = lua_tonumber(L, 3);
+  pwrdata.before = luaL_checkinteger(L, 1);
+  pwrdata.after = luaL_checkinteger(L, 2);
+  pwrdata.domain = luaL_checkinteger(L, 3);
   lua_pushnumber(L, power_printEnergy(&pwrdata));
   return 1;
 }
 
 static int lua_likwid_power_limitGet(lua_State *L) {
   int err;
-  int cpuId = lua_tonumber(L, 1);
-  int domain = lua_tonumber(L, 2);
+  int cpuId = luaL_checkinteger(L, 1);
+  int domain = luaL_checkinteger(L, 2);
   double power = 0.0;
   double time = 0.0;
   err = power_limitGet(cpuId, domain, &power, &time);
@@ -1605,18 +1605,18 @@ static int lua_likwid_power_limitGet(lua_State *L) {
 }
 
 static int lua_likwid_power_limitSet(lua_State *L) {
-  int cpuId = lua_tonumber(L, 1);
-  int domain = lua_tonumber(L, 2);
-  double power = lua_tonumber(L, 3);
-  double time = lua_tonumber(L, 4);
-  int clamp = lua_tonumber(L, 5);
+  int cpuId = luaL_checkinteger(L, 1);
+  int domain = luaL_checkinteger(L, 2);
+  double power = luaL_checknumber(L, 3);
+  double time = luaL_checknumber(L, 4);
+  int clamp = luaL_checkinteger(L, 5);
   lua_pushinteger(L, power_limitSet(cpuId, domain, power, time, clamp));
   return 1;
 }
 
 static int lua_likwid_power_limitState(lua_State *L) {
-  int cpuId = lua_tonumber(L, 1);
-  int domain = lua_tonumber(L, 2);
+  int cpuId = luaL_checkinteger(L, 1);
+  int domain = luaL_checkinteger(L, 2);
   lua_pushnumber(L, power_limitState(cpuId, domain));
   return 1;
 }
@@ -1677,8 +1677,8 @@ static int lua_likwid_stopClock(lua_State *L) {
 static int lua_likwid_getClockCycles(lua_State *L) {
   TimerData timer;
   double start, stop;
-  start = lua_tonumber(L, 1);
-  stop = lua_tonumber(L, 2);
+  start = luaL_checknumber(L, 1);
+  stop = luaL_checknumber(L, 2);
   timer.start.int64 = (uint64_t)start;
   timer.stop.int64 = (uint64_t)stop;
   if (timer_isInitialized == 0) {
@@ -1696,8 +1696,8 @@ static int lua_likwid_getClock(lua_State *L) {
     timer_init();
     timer_isInitialized = 1;
   }
-  start = lua_tonumber(L, 1);
-  stop = lua_tonumber(L, 2);
+  start = luaL_checknumber(L, 1);
+  stop = luaL_checknumber(L, 2);
   timer.start.int64 = (uint64_t)start;
   timer.stop.int64 = (uint64_t)stop;
   runtime = timer_print(&timer);
@@ -1886,7 +1886,7 @@ static int lua_likwid_checkProgram(lua_State *L) {
   if (lua_gettop(L) == 1) {
     int status = 0;
     pid_t retpid = 0;
-    pid_t pid = lua_tonumber(L, 1);
+    pid_t pid = luaL_checknumber(L, 1);
     retpid = waitpid(pid, &status, WNOHANG | WUNTRACED | WCONTINUED);
     if (retpid == pid) {
       if (WIFEXITED(status)) {
@@ -1906,7 +1906,7 @@ static int lua_likwid_checkProgram(lua_State *L) {
 }
 
 static int lua_likwid_killProgram(lua_State *L) {
-  pid_t pid = lua_tonumber(L, 1);
+  pid_t pid = luaL_checkinteger(L, 1);
   kill(pid, SIGTERM);
   return 0;
 }
@@ -1914,7 +1914,7 @@ static int lua_likwid_killProgram(lua_State *L) {
 static int lua_likwid_waitpid(lua_State *L) {
   int status = 0;
   int ret = -1;
-  pid_t pid = lua_tonumber(L, 1);
+  pid_t pid = luaL_checkinteger(L, 1);
   pid_t retpid = waitpid(pid, &status, 0);
   if (pid == retpid) {
     if (WIFEXITED(status)) {
@@ -2469,7 +2469,7 @@ static int lua_likwid_geteuid(lua_State *L) {
 }
 
 static int lua_likwid_setuid(lua_State *L) {
-  int id = (int)lua_tonumber(L, 1);
+  int id = luaL_checkinteger(L, 1);
   int r = setuid((uid_t)id);
   if (r == 0) {
     lua_pushboolean(L, 1);
@@ -2480,7 +2480,7 @@ static int lua_likwid_setuid(lua_State *L) {
 }
 
 static int lua_likwid_seteuid(lua_State *L) {
-  int id = (int)lua_tonumber(L, 1);
+  int id = luaL_checkinteger(L, 1);
   int r = seteuid((uid_t)id);
   if (r == 0) {
     lua_pushboolean(L, 1);
@@ -2491,9 +2491,9 @@ static int lua_likwid_seteuid(lua_State *L) {
 }
 
 static int lua_likwid_setresuid(lua_State *L) {
-  int ruid = (int)lua_tonumber(L, 1);
-  int euid = (int)lua_tonumber(L, 2);
-  int suid = (int)lua_tonumber(L, 3);
+  int ruid = luaL_checkinteger(L, 1);
+  int euid = luaL_checkinteger(L, 2);
+  int suid = luaL_checkinteger(L, 3);
   int r = setresuid((uid_t)ruid, (uid_t)euid, (uid_t)suid);
   if (r == 0) {
     lua_pushboolean(L, 1);
@@ -2772,7 +2772,7 @@ static int lua_likwid_getCudaEventsAndCounters(lua_State *L) {
 static int lua_likwid_getCudaGroups(lua_State *L) {
   int i, ret;
   char **tmp, **infos, **longs;
-  int gpuId = lua_tonumber(L, 1);
+  int gpuId = luaL_checknumber(L, 1);
   if (!cudatopology_isInitialized) {
     if (topology_cuda_init() == EXIT_SUCCESS) {
       cudatopo = get_cudaTopology();
@@ -2811,8 +2811,8 @@ static int lua_likwid_nvGetNameOfEvent(lua_State *L) {
   if (nvmon_initialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
-  eventId = lua_tonumber(L, 2);
+  groupId = luaL_checknumber(L, 1);
+  eventId = luaL_checknumber(L, 2);
   tmp = nvmon_getEventName(groupId - 1, eventId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -2824,8 +2824,8 @@ static int lua_likwid_nvGetNameOfCounter(lua_State *L) {
   if (nvmon_initialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
-  eventId = lua_tonumber(L, 2);
+  groupId = luaL_checkinteger(L, 1);
+  eventId = luaL_checkinteger(L, 2);
   tmp = nvmon_getCounterName(groupId - 1, eventId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -2837,8 +2837,8 @@ static int lua_likwid_nvGetNameOfMetric(lua_State *L) {
   if (nvmon_initialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
-  metricId = lua_tonumber(L, 2);
+  groupId = luaL_checkinteger(L, 1);
+  metricId = luaL_checkinteger(L, 2);
   tmp = nvmon_getMetricName(groupId - 1, metricId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -2850,7 +2850,7 @@ static int lua_likwid_nvGetNameOfGroup(lua_State *L) {
   if (nvmon_initialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
+  groupId = luaL_checkinteger(L, 1);
   tmp = nvmon_getGroupName(groupId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -3327,7 +3327,7 @@ static int lua_likwid_getShortInfoOfGroup_rocm(lua_State *L) {
   if (rocmon_initialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
+  groupId = luaL_checkinteger(L, 1);
   tmp = rocmon_getGroupInfoShort(groupId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -3339,7 +3339,7 @@ static int lua_likwid_getLongInfoOfGroup_rocm(lua_State *L) {
   if (rocmon_initialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
+  groupId = luaL_checkinteger(L, 1);
   tmp = rocmon_getGroupInfoLong(groupId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -3348,7 +3348,7 @@ static int lua_likwid_getLongInfoOfGroup_rocm(lua_State *L) {
 static int lua_likwid_getRocmGroups(lua_State *L) {
   int i, ret;
   char **tmp, **infos, **longs;
-  int gpuId = lua_tonumber(L, 1);
+  int gpuId = luaL_checkinteger(L, 1);
   if (!rocmtopology_isInitialized) {
     if (topology_rocm_init() == EXIT_SUCCESS) {
       rocmtopo = get_rocmTopology();
@@ -3387,8 +3387,8 @@ static int lua_likwid_getNameOfEvent_rocm(lua_State *L) {
   if (rocmon_initialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
-  eventId = lua_tonumber(L, 2);
+  groupId = luaL_checkinteger(L, 1);
+  eventId = luaL_checkinteger(L, 2);
   tmp = rocmon_getEventName(groupId - 1, eventId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -3400,8 +3400,8 @@ static int lua_likwid_getNameOfCounter_rocm(lua_State *L) {
   if (rocmon_initialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
-  eventId = lua_tonumber(L, 2);
+  groupId = luaL_checkinteger(L, 1);
+  eventId = luaL_checkinteger(L, 2);
   tmp = rocmon_getCounterName(groupId - 1, eventId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -3413,8 +3413,8 @@ static int lua_likwid_getNameOfMetric_rocm(lua_State *L) {
   if (rocmon_initialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
-  metricId = lua_tonumber(L, 2);
+  groupId = luaL_checkinteger(L, 1);
+  metricId = luaL_checkinteger(L, 2);
   tmp = rocmon_getMetricName(groupId - 1, metricId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -3426,7 +3426,7 @@ static int lua_likwid_getNameOfGroup_rocm(lua_State *L) {
   if (rocmon_initialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
+  groupId = luaL_checkinteger(L, 1);
   tmp = rocmon_getGroupName(groupId - 1);
   lua_pushstring(L, tmp);
   return 1;
@@ -3565,7 +3565,7 @@ static int lua_likwid_addEventSet_rocm(lua_State *L) {
 
 static int lua_likwid_setupCounters_rocm(lua_State *L) {
   int ret;
-  int groupId = lua_tonumber(L, 1);
+  int groupId = luaL_checkinteger(L, 1);
   if (rocmon_initialized == 0) {
     return 0;
   }
@@ -3606,7 +3606,7 @@ static int lua_likwid_readCounters_rocm(lua_State *L) {
 
 static int lua_likwid_switchGroup_rocm(lua_State *L) {
   int ret = -1;
-  int newgroup = lua_tonumber(L, 1) - 1;
+  int newgroup = luaL_checkinteger(L, 1) - 1;
   if (rocmon_initialized == 0) {
     return 0;
   }
@@ -3625,9 +3625,9 @@ static int lua_likwid_switchGroup_rocm(lua_State *L) {
 static int lua_likwid_getResult_rocm(lua_State *L) {
   int groupId, eventId, threadId;
   double result = 0;
-  groupId = lua_tonumber(L, 1);
-  eventId = lua_tonumber(L, 2);
-  threadId = lua_tonumber(L, 3);
+  groupId = luaL_checkinteger(L, 1);
+  eventId = luaL_checkinteger(L, 2);
+  threadId = luaL_checkinteger(L, 3);
   result = rocmon_getResult(groupId - 1, eventId - 1, threadId - 1);
   lua_pushnumber(L, result);
   return 1;
@@ -3636,9 +3636,9 @@ static int lua_likwid_getResult_rocm(lua_State *L) {
 static int lua_likwid_getLastResult_rocm(lua_State *L) {
   int groupId, eventId, threadId;
   double result = 0;
-  groupId = lua_tonumber(L, 1);
-  eventId = lua_tonumber(L, 2);
-  threadId = lua_tonumber(L, 3);
+  groupId = luaL_checkinteger(L, 1);
+  eventId = luaL_checkinteger(L, 2);
+  threadId = luaL_checkinteger(L, 3);
   result = rocmon_getLastResult(groupId - 1, eventId - 1, threadId - 1);
   lua_pushnumber(L, result);
   return 1;
@@ -3660,7 +3660,7 @@ static int lua_likwid_getRuntimeOfGroup_rocm(lua_State *L) {
   if (rocmon_initialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
+  groupId = luaL_checkinteger(L, 1);
   time = rocmon_getTimeOfGroup(groupId - 1);
   lua_pushnumber(L, time);
   return 1;
@@ -3672,7 +3672,7 @@ static int lua_likwid_getLastTimeOfGroup_rocm(lua_State *L) {
   if (rocmon_initialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
+  groupId = luaL_checkinteger(L, 1);
   time = rocmon_getLastTimeOfGroup(groupId - 1);
   lua_pushnumber(L, time);
   return 1;
@@ -3684,7 +3684,7 @@ static int lua_likwid_getTimeToLastReadOfGroup_rocm(lua_State *L) {
   if (rocmon_initialized == 0) {
     return 0;
   }
-  groupId = lua_tonumber(L, 1);
+  groupId = luaL_checkinteger(L, 1);
   time = rocmon_getTimeToLastReadOfGroup(groupId - 1);
   lua_pushnumber(L, time);
   return 1;
