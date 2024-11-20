@@ -70,7 +70,6 @@ end
 local config = likwid.getConfiguration();
 
 print_info = false
-use_perfctr = false
 stethoscope = false
 fahrenheit = false
 print_temp = false
@@ -80,20 +79,16 @@ if config["daemonMode"] < 0 then
 else
     access_mode = config["daemonMode"]
 end
-time_interval = 2.E06
+time_interval = 2
 time_orig = "2s"
-read_interval = 30.E06
-sockets = {}
-raw_selection = nil
+read_interval = 10
+cpustr = nil
 cpuinfo = likwid.getCpuInfo()
-if cpuinfo["isIntel"] == 1 then
-    domainList = {"PKG", "PP0", "PP1", "DRAM", "PLATFORM"}
-else
-    domainList = {"CORE", "PKG"}
-end
-cputopo = likwid.getCpuTopology()
-numatopo = likwid.getNumaInfo()
-affinity = likwid_getAffinityInfo()
+--if cpuinfo["isIntel"] == 1 then
+--    domainList = {"PKG", "PP0", "PP1", "DRAM", "PLATFORM"}
+--else
+--    domainList = {"CORE", "PKG"}
+--end
 
 for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "f", "t", "help", "info", "version", "verbose:"}) do
     if (type(arg) == "string") then
@@ -111,11 +106,8 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
         version()
         os.exit(0)
     elseif (opt == "c") then
-        num_sockets, sockets = likwid.sockstr_to_socklist(arg)
-        if num_sockets == 0 then
-            os.exit(1)
-        end
-        raw_selection = arg
+        error("-c is currently unsupported. Please run likwid-powermeter with likwid-pin")
+        cpustr = arg
     elseif (opt == "M") then
         access_mode = tonumber(arg)
         if (access_mode == nil) then
@@ -129,8 +121,6 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
         end
     elseif opt == "i" or opt == "info" then
         print_info = true
-    elseif (opt == "p") then
-        use_perfctr = true
     elseif (opt == "f") then
         fahrenheit = true
         print_temp = true
@@ -140,7 +130,7 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
         verbose = tonumber(arg)
         likwid.setVerbosity(verbose)
     elseif (opt == "s") then
-        time_interval = likwid.parse_time(arg)
+        time_interval = likwid.parse_time(arg) / 1000000
         time_orig = arg
         stethoscope = true
     elseif opt == "?" then
@@ -152,53 +142,44 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
     end
 end
 
-
-
-cpulist = {}
-before = {}
-after = {}
-sock_cpulist = {}
-if #sockets == 0 then
-    for i, domain in pairs(affinity["domains"]) do
-        if domain["tag"]:match("S%d+") and domain["numberOfProcessors"] > 0 then
-            sid = domain["tag"]:match("S(%d+)")
-            table.insert(sockets, sid)
-        end
-    end
-end
-for i, sid in pairs(sockets) do
-    pin = string.format("S%s", tostring(sid))
-    _, sock_cpulist[sid] = likwid.cpustr_to_cpulist(pin)
-    before[sock_cpulist[sid][1]] = {}
-    after[sock_cpulist[sid][1]] = {}
-    for _, id in pairs(domainList) do
-        before[sock_cpulist[sid][1]][id] = 0
-        after[sock_cpulist[sid][1]][id] = 0
-    end
+-- initialize sysfeatures module
+local err = likwid.initSysFeatures()
+if err < 0 then
+    print_stderr("Cannot initialize LIKWID sysfeatures")
+    os.exit(1)
 end
 
+-- enumerate available devices
+local device_types = { likwid.hwthread, likwid.core, likwid.die, likwid.socket, likwid.node }
+if likwid.nvSupported() then
+    table.insert(device_types, likwid.nvidia_gpu)
+end
+if likwid_rocmSupported() then
+    table.insert(device_types, likwid.amd_gpu)
+end
+
+local devices = {}
+for _, devtype in pairs(device_types) do
+    -- getAvailableDevices returns a list of integers IDs for a particular device type
+    devices[devtype] = {}
+    for _, devid in pairs(likwid.getAvailableDevices(devtype)) do
+        devices[devtype][devid] = likwid.createDevice(devtype, devid)
+    end
+end
+
+-- set client access mode
 if likwid.setAccessClientMode(access_mode) ~= 0 then
     os.exit(1)
 end
 
-if #sockets == 0 or likwid.tablelength(sock_cpulist) == 0 then
-    if raw_selection then
-        print_stderr(string.format("No CPU accessible for selection -c %s", raw_selection))
-    else
-        print_stderr(string.format("No CPU accessible in all sockets"))
-    end
+-- check if stethoscope mode is enabled simultaneous with a program parameter
+if #arg ~= 0 and stethoscope then
+    print_stderr("Stethoscope mode cannot be used to launch programs")
     os.exit(1)
 end
 
-
-power = likwid.getPowerInfo()
-if not power then
-    print_stderr(string.format("The %s does not support reading power data or access is locked", cpuinfo["name"]))
-    os.exit(1)
-end
-
-
-if not use_perfctr then
+-- print device information
+if print_info then
     print_stdout(likwid.hline);
     print_stdout(string.format("CPU name:\t%s", cpuinfo["osname"]))
     print_stdout(string.format("CPU type:\t%s", cpuinfo["name"]))
@@ -210,65 +191,25 @@ if not use_perfctr then
     print_stdout(likwid.hline)
 end
 
-if print_info or verbose > 0 then
-    if (power["turbo"]["numSteps"] > 0) then
-        print_stdout(string.format("Base clock:\t%.2f MHz", power["baseFrequency"]))
-        print_stdout(string.format("Minimal clock:\t%.2f MHz", power["minFrequency"]))
-        print_stdout("Turbo Boost Steps:")
-        for i,step in pairs(power["turbo"]["steps"]) do
-            print_stdout(string.format("C%d %.2f MHz", i-1, power["turbo"]["steps"][i]))
-        end
-    end
-    print_stdout(likwid.hline)
+-- TODO print clock speeds and power information when print_info is enabled
+
+-- Check if time interval is not too short TODO, we currently do not have a way to retrieve
+-- the timeUnit and it may also differ between metric types.
+if time_interval < 1 then
+    print_stderr("Warning: Time interval too short, measurement may be inaccurate")
 end
 
-if power["hasRAPL"] == 0 then
-    print_stderr("Measuring power is not supported on this machine")
-    os.exit(1)
-end
-
-if (print_info) then
-    for i, dname in pairs(domainList) do
-        local domain = power["domains"][dname]
-        if domain and domain["supportInfo"] then
-            print_stdout(string.format("Info for RAPL domain %s:", dname));
-            print_stdout(string.format("Thermal Spec Power: %g Watt", domain["tdp"]*1E-6))
-            print_stdout(string.format("Minimum Power: %g Watt", domain["minPower"]*1E-6))
-            print_stdout(string.format("Maximum Power: %g Watt", domain["maxPower"]*1E-6))
-            print_stdout(string.format("Maximum Time Window: %g micro sec", domain["maxTimeWindow"]))
-            print_stdout()
-        end
-    end
-    if power["minUncoreFreq"] > 0 and power["maxUncoreFreq"] > 0 then
-        print_stdout("Info about Uncore:")
-        print_stdout(string.format("Minimal Uncore frequency: %g MHz", power["minUncoreFreq"]))
-        print_stdout(string.format("Maximal Uncore frequency: %g MHz", power["maxUncoreFreq"]))
-        print_stdout()
-    end
-    if power["perfBias"] then
-        print_stdout(string.format("Performance energy bias: %.0f (0=highest performance, 15 = lowest energy)", power["perfBias"]))
-        print_stdout()
-    end
-    print_stdout(likwid.hline)
-end
-
-if (stethoscope) and (time_interval < power["timeUnit"]) then
-    print_stderr("Time interval too short, minimum measurement time is "..tostring(power["timeUnit"]).. " us")
-    os.exit(1)
-end
-
-local execString = ""
-affinity = likwid.getAffinityInfo()
+-- TODO begin: do we still need this?
 local pinList = {}
-for i,socket in pairs(sockets) do
-    table.insert(pinList, string.format("S%u:0-%u",socket,(cputopo["numCoresPerSocket"]*cputopo["numThreadsPerCore"])-1))
-end
+local execString = ""
 if use_perfctr then
     execString = string.format("<INSTALLED_PREFIX>/bin/likwid-perfctr -C %s -f -g CLOCK ",table.concat(pinList, "@"))
 elseif not stethoscope then
     execString = string.format("<INSTALLED_PREFIX>/bin/likwid-pin -c %s -q ",table.concat(pinList, "@"))
 end
+-- TODO end
 
+-- TODO begin: what does this do?
 local execList = {}
 if #arg == 0 then
     if use_perfctr then
@@ -287,164 +228,205 @@ else
     end
     execString = execString .. table.concat(execList," ")
 end
+-- TODO end
 
+-- Read all metrics from power_metrics, but filter them by the features which are actually available
+local power_features_wanted = {
+    "rapl.pkg_energy", "rapl.dram_energy", "rapl.pp0_energy", "rapl.pp1_energy", "rapl.psys_energy",
+    "nvml.energy",
+}
+local features_available = likwid.sysFeatures_list()
+local power_features_available = {}
+for _, wanted in pairs(power_features_wanted) do
+    for _, available in pairs(features_available) do
+        if wanted == available.FullName then
+            table.insert(power_features_available, available)
+            break
+        end
+    end
+end
+
+if #power_features_available == 0 then
+    print_stderr("No power features available. Cannot measure power.")
+    os.exit(1)
+end
+
+-- start measure time
+local time_before = likwid.getTimeOfDay()
+local prev_time = time_before
+local energy = {} -- structure: energy[dev_type][dev_idx][metric_type][X] (X=1: raw measurement, X=2: corrected measurement)
+
+next_power2 = function(x)
+    local l2x = math.log(x) / math.log(2)
+    return 2 ^ (math.ceil(l2x))
+end
+
+-- launch program (if any)
+if not stethoscope then
+    pid = likwid.startProgram(execString, 0, {})
+    if not pid then
+        print_stderr(string.format("Failed to execute %s!", execString))
+        os.exit(1)
+    end
+    -- in order to avoid wait times when the program has exited, we cap the maximum wait time
+    read_interval = math.min(read_interval, 1)
+end
+
+-- loop and measure until either the launched program exits or if the time elapses
 local exitvalue = 0
-if not print_info and not print_temp then
-    if stethoscope or (#arg > 0 and not use_perfctr) then
-        for i,socket in pairs(sockets) do
-            for idx, dom in pairs(domainList) do
-                if dom ~= "CORE" then
-                    if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
-                        cpu = sock_cpulist[socket][1]
-                        before[cpu][dom] = likwid.startPower(cpu, idx)
-                    end
-                else
-                    if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
-                        local sum = 0
-                        for j, c in pairs(sock_cpulist[socket]) do
-                            sum = sum + likwid.startPower(c, idx)
-                        end
-                        before[sock_cpulist[socket][1]][dom] = sum
-                    end
+local quit = false
+while true do
+    -- Iterate over all device types, devices, and features.
+    for devtype, devlist in pairs(devices) do
+        if energy[devtype] == nil then
+            energy[devtype] = {}
+        end
+        energy_for_devtype = energy[devtype]
+        for _, dev in pairs(devlist) do
+            if energy_for_devtype[dev:id()] == nil then
+                energy_for_devtype[dev:id()] = {}
+            end
+            energy_for_device = energy_for_devtype[dev:id()]
+            for _, power_feature in pairs(power_features_available) do
+                if power_feature.TypeID ~= devtype then
+                    goto continue
                 end
+                if energy_for_device[power_feature.FullName] == nil then
+                    energy_for_device[power_feature.FullName] = {}
+                end
+                energy_for_feature = energy_for_device[power_feature.FullName]
+                -- Read old and new value.
+                -- We have to keep track of raw and aggregated values separately in order to be able to notice
+                -- if the counters overflow.
+                local old_value_raw = energy_for_feature[1]
+                local old_value_aggr = energy_for_feature[2]
+                local new_value_raw, err = likwid.sysFeatures_get(power_feature.FullName, dev)
+                new_value_raw = tonumber(new_value_raw)
+
+                if new_value_raw ~= nil and old_value_aggr == nil then
+                    -- if old value is not set, simply initialize
+                    energy_for_feature[2] = 0
+                elseif new_value_raw ~= nil and old_value_aggr ~= nil then
+                    -- if old and new value are set, update energy, overflow adjusted
+                    local delta = new_value_raw - old_value_raw
+                    if new_value_raw < old_value_raw then
+                        -- This case should only occur if the counter overflowed.
+                        -- Get next power-of-two of old value in order to determine overflow point.
+                        local overflow_point = next_power2(old_value)
+                        delta = (new_value_raw + overflow_point) - old_value_raw
+                    end
+                    energy_for_feature[2] = energy_for_feature[2] + delta
+                end
+
+                -- unconditionally store the raw value, in order to do proper overflow detection
+                energy_for_feature[1] = new_value_raw
+                ::continue::
             end
         end
+    end
 
-        time_before = likwid.startClock()
-        if stethoscope then
-            if read_interval < time_interval then
-                while ((read_interval <= time_interval) and (time_interval > 0)) do
-                    likwid.sleep(read_interval)
-                    for i,socket in pairs(sockets) do
-                        for idx, dom in pairs(domainList) do
-                            if dom ~= "CORE" then
-                                cpu = sock_cpulist[socket][1]
-                                if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
-                                    after[cpu][dom] = likwid.stopPower(cpu, idx)
-                                end
-                            else
-                                if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
-                                    local sum = 0
-                                    for j, c in pairs(sock_cpulist[socket]) do
-                                        sum = sum + likwid.stopPower(c, idx)
-                                    end
-                                    after[sock_cpulist[socket][1]][dom] = sum
-                                end
-                            end
-                        end
-                    end
-                    time_interval = time_interval - read_interval
-                    if time_interval < read_interval then
-                        read_interval = time_interval
-                    end
-                end
-            else
-                likwid.sleep(time_interval)
-            end
+    -- Instead of breaking out immediatley, we always delay breaking until here.
+    -- This makes sure there is always a measurement taken after e.g. the program has exited.
+    if quit then
+        time_after = likwid.getTimeOfDay()
+        break
+    end
+
+    -- Wait depending on the measurement mode
+    if stethoscope then
+        -- In stethoscope mode, we simply sleep periodically.
+        local cur_time = likwid.getTimeOfDay()
+        if cur_time > time_before + time_interval then
+            quit = true
+            sleep_duration = 0
+        elseif cur_time - time_before + read_interval > time_interval then
+            sleep_duration = time_interval - (cur_time - time_before)
         else
-            local pid = likwid.startProgram(execString, 0, {})
-            if not pid then
-                print_stderr(string.format("Failed to execute %s!",execString))
-                likwid.finalize()
-                os.exit(1)
-            end
-            while true do
-                if likwid.getSignalState() ~= 0 then
-                    likwid.killProgram()
-                    break
-                end
-                local remain = likwid.sleep(read_interval)
-                for i,socket in pairs(sockets) do
-                    cpu = sock_cpulist[socket][1]
-                    for idx, dom in pairs(domainList) do
-                        if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
-                            after[cpu][dom] = likwid.stopPower(cpu, idx)
-                        end
-                    end
-                end
-                exitvalue, exited = likwid.checkProgram(pid)
-                if exited then
-                    io.stdout:flush()
-                    break
-                end
-            end
+            sleep_duration = read_interval - (cur_time - prev_time)
         end
-        time_after = likwid.stopClock()
+        sleep_duration = math.max(sleep_duration, 0)
 
-        for i,socket in pairs(sockets) do
-            cpu = sock_cpulist[socket][1]
-            for idx, dom in pairs(domainList) do
-                if dom ~= "CORE" then
-                    cpu = sock_cpulist[socket][1]
-                    if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
-                        after[cpu][dom] = likwid.stopPower(cpu, idx)
-                    end
-                else
-                    if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
-                        local sum = 0
-                        for j, c in pairs(sock_cpulist[socket]) do
-                            sum = sum + likwid.stopPower(c, idx)
-                        end
-                        after[sock_cpulist[socket][1]][dom] = sum
-                    end
-                end
-            end
-        end
-        runtime = likwid.getClock(time_before, time_after)
-
-        print_stdout(likwid.hline)
-        print_stdout(string.format("Runtime: %g s",runtime))
-
-        for i,socket in pairs(sockets) do
-            cpu = sock_cpulist[socket][1]
-            print_stdout(string.format("Measure for socket %d on CPU %d", socket, cpu))
-            for j, dom in pairs(domainList) do
-                if power["domains"][dom] and power["domains"][dom]["supportStatus"] then
-                    local energy = likwid.calcPower(before[cpu][dom], after[cpu][dom], j-1)
-                    print_stdout(string.format("Domain %s:", dom))
-                    print_stdout(string.format("Energy consumed: %g Joules", energy))
-                    print_stdout(string.format("Power consumed: %g Watt", energy/runtime))
-                end
-            end
-            if i < #sockets then print_stdout("") end
-        end
-        print_stdout(likwid.hline)
+        -- sleep accepts its parameters in microsecond range
+        likwid.nanosleep(sleep_duration)
+        prev_time = likwid.getTimeOfDay()
     else
-        err = os.execute(execString)
-        if err == false then
-            print_stderr(string.format("Failed to execute %s!", execString))
-            likwid.putPowerInfo()
-            likwid.finalize()
-            os.exit(1)
-        end
-    end
-end
-
-if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
-    print_stdout(likwid.hline)
-    print_stdout("Current HW thread temperatures:");
-    for i=1,cputopo["numSockets"] do
-        local tag = "S" .. tostring(i-1)
-        for _, domain in pairs(affinity["domains"]) do
-            if domain["tag"] == tag then
-                for j=1,#domain["processorList"] do
-                    local cpuid = domain["processorList"][j]
-                    likwid.initTemp(cpuid);
-                    if (fahrenheit) then
-                        local f = 1.8*tonumber(likwid.readTemp(cpuid))+32
-                        print_stdout(string.format("Socket %d HWThread %d: %.0f F",i-1,cpuid, f));
-                    else
-                        print_stdout(string.format("Socket %d HWThread %d: %.0f C",i-1,cpuid, tonumber(likwid.readTemp(cpuid))));
-                    end
-                end
+        -- In execution wrapper mode, we simply check and wait
+        if likwid.getSignalState() ~= 0 then
+            likwid.killProgram()
+            quit = true
+        else
+            exitvalue, exited = likwid.checkProgram(pid)
+            if exited then
+                io.stdout:flush()
+                quit = true
+            else
+                likwid.sleep(read_interval)
             end
         end
     end
-    print_stdout(likwid.hline)
-elseif print_temp then
-    print_stdout("Architecture does not support temperature reading")
 end
 
-likwid.putPowerInfo()
+runtime = time_after - time_before
+
+print_stdout(likwid.hline)
+print_stdout(string.format("Runtime: %.2fs", runtime))
+
+for dev_type, energy_for_devtype in pairs(energy) do
+    -- First check if there actually are any features recorded for this device type.
+    -- This avoids printing headers without any results.
+    local has_measurement = false
+    for _, energy_for_device in pairs(energy_for_devtype) do
+        for _, energy_for_feature in pairs(energy_for_device) do
+            if #energy_for_feature > 0 then
+                has_measurement = true
+                goto outer_break
+            end
+        end
+    end
+    ::outer_break::
+
+    if not has_measurement then
+        goto continue
+    end
+
+    -- At this point we know that devices[dev_type] contains at least one device.
+    -- However, because dev_type is a string and doesn't always start at 0, we cannot simply index the first
+    -- entry in devices[dev_type] to retrieve the device type name.
+    -- To solve this, loop over devices[dev_type] and just remember the first entry.
+    local first_dev_id = nil
+    for dev_id, dev in pairs(devices[dev_type]) do
+        first_dev_id = dev_id
+        break
+    end
+
+    print_stdout(string.format("Device Type: %s", devices[dev_type][first_dev_id]:typeName()))
+    for dev_id, energy_for_device in pairs(energy_for_devtype) do
+        print_stdout(string.format("  ID: %s", dev_id))
+        for feature_name, energy_for_feature in pairs(energy_for_device) do
+            local joules = energy_for_feature[2]
+            if energy_for_feature[2] == nil then
+                joules = "ERR"
+                watts = "ERR"
+            else
+                joules = string.format("%11.3f", joules)
+                watts = string.format("%11.3f", joules / runtime)
+            end
+
+            print_stdout(string.format("    %s:", feature_name))
+            print_stdout(string.format("      Energy consumed:    %s J", joules))
+            print_stdout(string.format("      Average power draw: %s W", watts))
+        end
+    end
+    ::continue::
+end
+
+print_stdout(likwid.hline)
+
+if print_temp then
+    print_stderr("Printing temperature is not yet implemented")
+    os.exit(1)
+end
+
+likwid.finalizeSysFeatures()
 likwid.finalize()
 os.exit(exitvalue)
