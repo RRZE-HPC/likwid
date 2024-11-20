@@ -3738,10 +3738,8 @@ static int
 lua_likwid_getSysFeatureList(lua_State *L)
 {
     if (!sysfeatures_inititalized)
-    {
-        lua_newtable(L);
-        return 1;
-    }
+        return luaL_error(L, "likwid sysfeatures not initialized");
+
     LikwidSysFeatureList list = {0, NULL};
     likwid_sysft_list(&list);
     lua_newtable(L);
@@ -3754,6 +3752,11 @@ lua_likwid_getSysFeatureList(lua_State *L)
         lua_settable(L,-3);
         lua_pushstring(L, "Category");
         lua_pushstring(L, list.features[i].category);
+        lua_settable(L,-3);
+        lua_pushstring(L, "FullName");
+        char full_name[1024];
+        snprintf(full_name, sizeof(full_name), "%s.%s", list.features[i].category, list.features[i].name);
+        lua_pushstring(L, full_name);
         lua_settable(L,-3);
         lua_pushstring(L, "Description");
         lua_pushstring(L, list.features[i].description);
