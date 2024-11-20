@@ -49,7 +49,7 @@ static int parse_pci_addr(const char *id, uint16_t *domain, uint8_t *bus, uint8_
     int err = 0;
 
     char *id_tokenized = strdup(id);
-    if (id_tokenized)
+    if (!id_tokenized)
         return -ENOMEM;
 
     char *saveptr = NULL;
