@@ -30,6 +30,7 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
+#include <math.h>
 #include <pwd.h>
 #include <sched.h>
 #include <stdbool.h>
@@ -1646,6 +1647,30 @@ static int lua_sleep(lua_State *L) {
   lua_pushnumber(L, timer_sleep(((lua_Unsigned)lua_tointegerx(L, -1, NULL))));
 #endif
   return 1;
+}
+
+static int lua_likwid_getTimeOfDay(lua_State *L) {
+  struct timeval tv;
+  if (gettimeofday(&tv, NULL) < 0)
+    return luaL_error(L, "gettimeofday failed: %s", strerror(-errno));
+
+  const double t = (double)tv.tv_sec + ((double)tv.tv_usec / 1e6);
+  lua_pushnumber(L, t);
+  return 1;
+}
+
+static int lua_likwid_nanosleep(lua_State *L) {
+  double t = luaL_checknumber(L, 1);
+  struct timespec duration = {
+    .tv_sec = (time_t)floor(t),
+    .tv_nsec = (int)((t - floor(t)) * 1e9),
+  };
+  if (nanosleep(&duration, NULL) == 0)
+      return 0;
+  /* If sleep was interrupted, ignore it. */
+  if (errno == EINTR)
+      return 0;
+  return luaL_error(L, "nanosleep failed: %s", strerror(errno));
 }
 
 static int lua_likwid_startClock(lua_State *L) {
@@ -4070,6 +4095,8 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
   lua_register(L, "likwid_getClockCycles", lua_likwid_getClockCycles);
   lua_register(L, "likwid_getClock", lua_likwid_getClock);
   lua_register(L, "sleep", lua_sleep);
+  lua_register(L, "likwid_getTimeOfDay", lua_likwid_getTimeOfDay);
+  lua_register(L, "likwid_nanosleep", lua_likwid_nanosleep);
   // Power functions
   lua_register(L, "likwid_startPower", lua_likwid_startPower);
   lua_register(L, "likwid_stopPower", lua_likwid_stopPower);
