@@ -408,14 +408,8 @@ int likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *ms
 
 int likwid_sysft_readmsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t *value)
 {
-    int err = HPMinit();
-    if (err < 0)
-        return err;
-    err = HPMaddThread(device->id.simple.id);
-    if (err < 0)
-        return err;
-    uint64_t msrData = 0x0;
-    err = HPMread(device->id.simple.id, MSR_DEV, reg, &msrData);
+    uint64_t msrData;
+    int err = likwid_sysft_readmsr(device, reg, &msrData);
     if (err < 0)
         return err;
     *value = field64(msrData, bitoffset, width);
