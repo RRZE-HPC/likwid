@@ -54,7 +54,6 @@ LIBS      += -ldl
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
-Q         ?= @
 GENGROUPLOCK = .gengroup
 
 VPATH     = $(SRC_DIR)
@@ -201,15 +200,15 @@ endif
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
 ifeq ($(BUILDDAEMON),false)
-all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(FREQ_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET)
+all: $(TARGET_LIB) $(FORTRAN_IF) $(PINLIB) $(L_APPS) $(L_HELPER) $(FREQ_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET)
 else
 ifeq ($(BUILDFREQ),false)
-all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET)
+all: $(TARGET_LIB) $(FORTRAN_IF) $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET)
 else
 ifeq ($(CONTAINER_HELPER),false)
-all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(FREQ_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET)
+all: $(TARGET_LIB) $(FORTRAN_IF) $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(FREQ_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET)
 else
-all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(FREQ_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET) $(CONTAINER_HELPER_TARGET)
+all: $(TARGET_LIB) $(FORTRAN_IF) $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(FREQ_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET) $(CONTAINER_HELPER_TARGET)
 endif
 endif
 endif
@@ -261,9 +260,9 @@ $(L_HELPER):
 		-e s#'<GITCOMMIT>'#$(GITCOMMIT)#g \
 		$(SRC_DIR)/applications/$@ > $@
 
-$(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
+$(STATIC_TARGET_LIB): $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE STATIC LIB  $(TARGET_LIB)"
-	$(Q)${AR} -crs $(STATIC_TARGET_LIB) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
+	$(Q)$(AR) -crs $(STATIC_TARGET_LIB) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@sed -e s#'@PREFIX@'#$(INSTALLED_PREFIX)#g \
 		-e s#'@NVIDIA_INTERFACE@'#$(NVIDIA_INTERFACE)#g \
 		-e s#'@FORTRAN_INTERFACE@'#$(FORTRAN_INTERFACE)#g \
@@ -271,9 +270,9 @@ $(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) 
 		-e s#'@BINPREFIX@'#$(INSTALLED_BINPREFIX)#g \
 		make/likwid-config.cmake > likwid-config.cmake
 
-$(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
+$(DYNAMIC_TARGET_LIB): $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE SHARED LIB  $(TARGET_LIB)"
-	$(CC) $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION).$(RELEASE) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB) $(RPATHS)
+	$(Q)$(CC) $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION).$(RELEASE),--no-undefined $(SHARED_CFLAGS) -o $@ $^ $(LIBS) $(RPATHS)
 	@ln -sf $(TARGET_LIB) $(TARGET_LIB).$(VERSION).$(RELEASE)
 	@sed -e s#'@PREFIX@'#$(INSTALLED_PREFIX)#g \
 		-e s#'@NVIDIA_INTERFACE@'#$(NVIDIA_INTERFACE)#g \
@@ -291,7 +290,7 @@ $(FREQ_TARGET): $(SRC_DIR)/access-daemon/setFreqDaemon.c
 	@echo "===>  BUILD frequency daemon likwid-setFreq"
 	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-setFreq
 
-$(APPDAEMON_TARGET): $(SRC_DIR)/access-daemon/appDaemon.c $(TARGET_GOTCHA_LIB)
+$(APPDAEMON_TARGET): $(SRC_DIR)/access-daemon/appDaemon.c $(TARGET_LIB) $(TARGET_GOTCHA_LIB)
 	@echo "===>  BUILD application interface likwid-appDaemon.so"
 	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-appDaemon.so
 
@@ -299,15 +298,13 @@ $(CONTAINER_HELPER_TARGET): $(SRC_DIR)/bridge/bridge.c
 	@echo "===>  BUILD container helper likwid-bridge"
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(SRC_DIR)/bridge/bridge.c -o $@
 
-$(BUILD_DIR):
-	@mkdir $(BUILD_DIR)
-
 $(PINLIB):
 	@echo "===>  CREATE LIB  $(PINLIB)"
 	$(Q)$(MAKE) -C src/pthread-overload/ $(PINLIB)
 
 $(GENGROUPLOCK): $(foreach directory,$(shell ls $(GROUP_DIR)), $(wildcard $(GROUP_DIR)/$(directory)/*.txt))
 	@echo "===>  GENERATE GROUP HEADERS"
+	@mkdir -p $(BUILD_DIR)
 	$(Q)$(GEN_GROUPS) ./groups  $(BUILD_DIR) ./perl/templates
 	$(Q)touch $(GENGROUPLOCK)
 
@@ -319,7 +316,7 @@ $(FORTRAN_IF): $(SRC_DIR)/likwid.F90
 ifeq ($(LUA_INTERNAL),true)
 $(TARGET_LUA_LIB):
 	@echo "===>  ENTER  $(LUA_FOLDER)"
-	$(Q)$(MAKE) --no-print-directory -C $(LUA_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) -C $(LUA_FOLDER)
 else
 $(TARGET_LUA_LIB):
 	@echo "===>  EXTERNAL LUA"
@@ -327,63 +324,71 @@ endif
 
 $(TARGET_GOTCHA_LIB):
 	@echo "===>  ENTER  $(GOTCHA_FOLDER)"
-	$(Q)$(MAKE) --no-print-directory -C $(GOTCHA_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) -C $(GOTCHA_FOLDER)
 
 ifeq ($(USE_INTERNAL_HWLOC),true)
 $(TARGET_HWLOC_LIB):
 	@echo "===>  ENTER  $(HWLOC_FOLDER)"
-	$(Q)$(MAKE) --no-print-directory -C $(HWLOC_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) -C $(HWLOC_FOLDER)
 else
 $(TARGET_HWLOC_LIB):
 	@echo "===>  EXTERNAL HWLOC"
 endif
 
 
-$(BENCH_TARGET):
+$(BENCH_TARGET): $(TARGET_LIB)
 	@echo "===>  ENTER  $(BENCH_FOLDER)"
-	$(Q)$(MAKE) --no-print-directory -C $(BENCH_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) -C $(BENCH_FOLDER)
 
 #PATTERN RULES
-$(BUILD_DIR)/%.o:  %.c
+$(BUILD_DIR)/%.o: %.c $(PERFMONHEADERS)
 	@echo "===>  COMPILE  $@"
+	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 $(BUILD_DIR)/rocmon_marker.o:  rocmon_marker.c
 	@echo "===>  COMPILE  $@"
+	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)objcopy --redefine-sym HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE=HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE2 $@
 
 $(BUILD_DIR)/%.o:  %.cc
 	@echo "===>  COMPILE  $@"
+	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CXX) -c $(DEBUG_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CXX) $(DEBUG_FLAGS) $(CXXFLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 $(BUILD_DIR)/%.o:  %.S
 	@echo "===>  COMPILE  $@"
+	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CPP) $(CPPFLAGS) $< -o $@.tmp
 	$(Q)$(AS) $(ASFLAGS) $@.tmp -o $@
 	@rm $@.tmp
 
+# Keep generated headers. Because all sources (unfortunately) depend on the
+# PERFMONHEADERS, they all get rebuilt if a single source file is rebuilt.
+# That is because make usually cleans up those headers, which causes them to be
+# all regenerated every time, thus causing all .c files to be rebuilt.
+.PRECIOUS: $(PERFMONHEADERS)
 $(BUILD_DIR)/%.h:  $(SRC_DIR)/includes/%.txt
 	@echo "===>  GENERATE HEADER $@"
+	@mkdir -p $(BUILD_DIR)
 	$(Q)$(GEN_PMHEADER) $< $@
 
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
 endif
 
-.PHONY: clean distclean install uninstall help $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TARGET)
+.PHONY: all clean distclean install uninstall help $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TARGET)
 
-.PRECIOUS: $(BUILD_DIR)/%.pas
-
-.NOTPARALLEL:
-
-clean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TARGET)
+clean:
 	@echo "===>  CLEAN"
-	@for APP in $(L_APPS) likwid-sysfeatures; do \
-		rm -f $$APP; \
-	done
+	$(Q)$(MAKE) -C $(LUA_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) -C $(HWLOC_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) -C $(GOTCHA_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) -C $(BENCH_FOLDER) $(MAKECMDGOALS)
+	@rm -f $(L_APPS) likwid-sysfeatures likwid-setFrequencies
 	@rm -f likwid.lua
 	@rm -f $(STATIC_TARGET_LIB)
 	@rm -f $(DYNAMIC_TARGET_LIB)*
@@ -392,23 +397,13 @@ clean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TARGET
 	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET) $(APPDAEMON_TARGET) $(CONTAINER_HELPER_TARGET)
 	@rm -f likwid-config.cmake
 
-distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TARGET)
+distclean: clean
 	@echo "===>  DIST CLEAN"
-	@for APP in $(L_APPS) likwid-sysfeatures; do \
-		rm -f $$APP; \
-	done
-	@rm -f likwid.lua
-	@rm -f $(STATIC_TARGET_LIB)
-	@rm -f $(DYNAMIC_TARGET_LIB)*
-	@rm -f $(PINLIB)*
-	@rm -f $(FORTRAN_IF_NAME)
-	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET) $(APPDAEMON_TARGET) $(CONTAINER_HELPER_TARGET)
 	@rm -rf $(BUILD_DIR)
 	@if [ "$(LUA_INTERNAL)" = "true" ]; then rm -f $(TARGET_LUA_LIB).* $(shell basename $(TARGET_LUA_LIB)).*; fi
 	@if [ "$(USE_INTERNAL_HWLOC)" = "true" ]; then rm -f $(TARGET_HWLOC_LIB).* $(shell basename $(TARGET_HWLOC_LIB)).*; fi
 	@rm -f $(TARGET_GOTCHA_LIB).* $(shell basename $(TARGET_GOTCHA_LIB)).*
 	@rm -f $(GENGROUPLOCK)
-	@rm -f likwid-config.cmake
 	@rm -rf doc/html
 	@rm -f tags
 
@@ -832,7 +827,6 @@ help:
 	@echo "If PREFIX and INSTALLED_PREFIX differ, you have to move anything after 'make install' to"
 	@echo "the INSTALLED_PREFIX. You can also use 'make move' which does the job for you."
 
-.ONESHELL:
 .PHONY: RPM
 RPM: packaging/rpm/likwid.spec
 	@WORKSPACE="$${PWD}"
