@@ -40,24 +40,20 @@ CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 LIBLUA = $(shell basename $(TARGET_LUA_LIB))
 INTERPRETER = lua
 
-.NOTPARALLEL: all
-
-all: $(BUILD_DIR) $(OBJ)  $(LIBLUA) $(INTERPRETER)
-
-$(BUILD_DIR):
-	@mkdir $(BUILD_DIR)
+all: $(LIBLUA) $(INTERPRETER)
 
 $(STATIC_LIBLUA): $(OBJ)
-	$(Q)${AR} -cq $(LIBLUA) $(OBJ)
+	$(Q)$(AR) -cq $@ $(OBJ)
 
 $(SHARED_LIBLUA): $(OBJ)
-	$(Q)$(CC) $(DEBUG_FLAGS) $(LFLAGS) -Wl,-soname,$(LIBLUA).$(VERSION).$(RELEASE) -shared -fPIC -o $(LIBLUA) $(OBJ) $(LIBS)
+	$(Q)$(CC) $(DEBUG_FLAGS) $(LFLAGS) -Wl,-soname,$(LIBLUA).$(VERSION).$(RELEASE),--no-undefined -shared -fPIC -o $@ $(OBJ) $(LIBS)
 
 $(INTERPRETER): $(LIBLUA) $(BUILD_DIR)/lua.o
 	$(Q)$(CC) $(DEBUG_FLAGS) -o $@ $(LFLAGS) $(BUILD_DIR)/lua.o $(RPATHS) $(LIBLUA) $(LIBS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
+	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 

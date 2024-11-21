@@ -49,5 +49,5 @@ CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 all: $(TARGET)
 
 $(TARGET): pthread-overload.c
-	$(Q)$(CC) -Wl,-soname,$(TARGET).$(VERSION).$(RELEASE) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(INCLUDES) $(SHARED_CFLAGS) $(SHARED_LFLAGS) -o ../../$(TARGET) pthread-overload.c $(LIBS)
+	$(Q)$(CC) -Wl,-soname,$(TARGET).$(VERSION).$(RELEASE),--no-undefined $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(INCLUDES) $(SHARED_CFLAGS) $(SHARED_LFLAGS) -o ../../$(TARGET) pthread-overload.c $(LIBS)
 

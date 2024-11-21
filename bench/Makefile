@@ -105,40 +105,46 @@ OBJ := $(filter-out $(BUILD_DIR)/bstrlib.o,$(OBJ))
 TARGET_LIB = $(STATIC_TARGET_LIB)
 LIBS += -ldl
 endif
-OBJ_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
+PTT_BENCH  =  $(wildcard $(BENCH_DIR)/*.ptt)
+OBJ_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(PTT_BENCH))
+PAS_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.pas,$(PTT_BENCH))
 BENCH = $(shell basename $(BENCH_TARGET))
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: $(BUILD_DIR) $(OBJ) $(OBJ_BENCH) $(BENCH_TARGET)
+all: $(BENCH_TARGET)
 
 
 $(BENCH_TARGET): $(BENCH)
-$(BENCH): likwid-bench.c $(BUILD_DIR) $(OBJ) $(OBJ_BENCH)
+$(BENCH): likwid-bench.c $(OBJ) $(OBJ_BENCH)
 	@echo "===>  LINKING  $(BENCH)"
-	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS}  likwid-bench.c $(BENCH_LIBS) $(OBJ_BENCH) $(OBJ) -o $(BENCH) $(TARGET_LIB) $(LIBS) $(RPATHS)
-
-
-$(BUILD_DIR):
-	@mkdir $(BUILD_DIR)
-
+	$(Q)$(CC) $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(LFLAGS) -Wl,-z,noexecstack $^ $(BENCH_LIBS) -o $(BENCH) $(TARGET_LIB) $(LIBS) $(RPATHS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
 	@echo "===>  COMPILE C $@"
+	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) -g -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) -g $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 
-$(BUILD_DIR)/%.pas:  $(BENCH_DIR)/%.ptt
+# Note: GEN_PAS can only create *.pas from *.ptt all at once, so build the rule accordingly.
+# The &: operator only works with GNU make 4.3+, so keep backwards compatibility.
+ifneq ($(shell [ "$(MAKE_VERSION)" = "$(echo -e "$(MAKE_VERSION)\n4.3" | sort -V | head -n1)" ] && echo TOO_OLD || echo OK),TOO_OLD)
+$(PAS_BENCH) &: $(PTT_BENCH)
+else
+.NOTPARALLEL: $(PAS_BENCH)
+$(PAS_BENCH) : $(PTT_BENCH)
+endif
 	@echo "===>  GENERATE BENCHMARKS"
+	@mkdir -p $(BUILD_DIR)
 	$(Q)$(GEN_PAS) $(BENCH_DIR) $(BUILD_DIR) ./perl/templates
-
 
 $(BUILD_DIR)/%.o:  $(BUILD_DIR)/%.pas
 	@echo "===>  ASSEMBLE  $@"
-	$(Q)$(PAS) -i $(PASFLAGS) -o $(BUILD_DIR)/$*.s $<  '$(DEFINES)'
-	$(Q)$(AS) $(ASFLAGS)  $(BUILD_DIR)/$*.s -o $@
+	@mkdir -p $(BUILD_DIR)
+	$(Q)$(PAS) -i $(PASFLAGS) -o $(BUILD_DIR)/$*.s $< '$(DEFINES)'
+	$(Q)$(AS) $(ASFLAGS) $(BUILD_DIR)/$*.s -o $@
 
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
@@ -148,14 +154,13 @@ endif
 
 .PRECIOUS: $(BUILD_DIR)/%.pas
 
-.NOTPARALLEL:
-
 clean:
+	@echo "===>  CLEAN"
 	@rm -rf likwid-bench
 
-distclean:
+distclean: clean
+	@echo "===>  DIST CLEAN"
 	@rm -rf $(BUILD_DIR)
-	@rm -rf likwid-bench
 
 install:
 	@echo "===> INSTALL applications to $(BINPREFIX)"
