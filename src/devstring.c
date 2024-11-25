@@ -29,6 +29,7 @@
  */
 
 #include <devstring.h>
+#include <bstrlib.h>
 
 #include <limits.h>
 #include <stdbool.h>
