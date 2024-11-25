@@ -64,13 +64,16 @@ CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 all: $(LIBHWLOC)
 
 $(STATIC_LIBHWLOC): $(OBJ)
+	@echo "===>  CREATE STATIC LIB  $@"
 	$(Q)${AR} -cq $(LIBHWLOC) $(OBJ)
 
 $(SHARED_LIBHWLOC): $(OBJ)
+	@echo "===>  CREATE SHARED LIB  $@"
 	$(Q)$(CC) $(DEBUG_FLAGS) $(LFLAGS) -Wl,-soname,$(LIBHWLOC).$(VERSION).$(RELEASE),--no-undefined -Wall -shared -fPIC -o $(LIBHWLOC) $^ $(LIBS) $(RPATHS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
+	@echo "===>  COMPILE  $@"
 	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d

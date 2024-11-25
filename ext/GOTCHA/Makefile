@@ -73,13 +73,16 @@ all: $(LIBGOTCHA)
 
 $(STATIC_LIBGOTCHA): $(OBJ)
 	$(info "GOTCHA cannot be build statically in LIKWID")
+	#@echo "===>  CREATE STATIC LIB  $@"
 	#$(Q)${AR} -cq $(LIBGOTCHA) $(OBJ)
 
 $(SHARED_LIBGOTCHA): $(OBJ)
+	@echo "===>  CREATE SHARED LIB  $@"
 	$(Q)$(CC) $(DEBUG_FLAGS) $(LFLAGS) -Wl,-soname,$(LIBGOTCHA).$(VERSION).$(RELEASE),--no-undefined -shared -fPIC -o $(LIBGOTCHA) $(OBJ) $(LIBS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
+	@echo "===>  COMPILE  $@"
 	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d

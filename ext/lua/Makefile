@@ -43,16 +43,20 @@ INTERPRETER = lua
 all: $(LIBLUA) $(INTERPRETER)
 
 $(STATIC_LIBLUA): $(OBJ)
+	@echo "===>  CREATE STATIC LIB  $@"
 	$(Q)$(AR) -cq $@ $(OBJ)
 
 $(SHARED_LIBLUA): $(OBJ)
+	@echo "===>  CREATE SHARED LIB  $@"
 	$(Q)$(CC) $(DEBUG_FLAGS) $(LFLAGS) -Wl,-soname,$(LIBLUA).$(VERSION).$(RELEASE),--no-undefined -shared -fPIC -o $@ $(OBJ) $(LIBS)
 
 $(INTERPRETER): $(LIBLUA) $(BUILD_DIR)/lua.o
+	@echo "===>  LINKING  $@"
 	$(Q)$(CC) $(DEBUG_FLAGS) -o $@ $(LFLAGS) $(BUILD_DIR)/lua.o $(RPATHS) $(LIBLUA) $(LIBS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
+	@echo "===>  COMPILE  $@"
 	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
