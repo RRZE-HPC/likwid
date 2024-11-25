@@ -284,15 +284,15 @@ $(DYNAMIC_TARGET_LIB): $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  BUILD access daemon likwid-accessD"
-	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-accessD
+	$(Q)$(MAKE) --no-print-directory -C  $(SRC_DIR)/access-daemon ../../likwid-accessD
 
 $(FREQ_TARGET): $(SRC_DIR)/access-daemon/setFreqDaemon.c
 	@echo "===>  BUILD frequency daemon likwid-setFreq"
-	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-setFreq
+	$(Q)$(MAKE) --no-print-directory -C  $(SRC_DIR)/access-daemon ../../likwid-setFreq
 
 $(APPDAEMON_TARGET): $(SRC_DIR)/access-daemon/appDaemon.c $(TARGET_LIB) $(TARGET_GOTCHA_LIB)
 	@echo "===>  BUILD application interface likwid-appDaemon.so"
-	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-appDaemon.so
+	$(Q)$(MAKE) --no-print-directory -C  $(SRC_DIR)/access-daemon ../../likwid-appDaemon.so
 
 $(CONTAINER_HELPER_TARGET): $(SRC_DIR)/bridge/bridge.c
 	@echo "===>  BUILD container helper likwid-bridge"
@@ -300,7 +300,7 @@ $(CONTAINER_HELPER_TARGET): $(SRC_DIR)/bridge/bridge.c
 
 $(PINLIB):
 	@echo "===>  CREATE LIB  $(PINLIB)"
-	$(Q)$(MAKE) -C src/pthread-overload/ $(PINLIB)
+	$(Q)$(MAKE) --no-print-directory -C src/pthread-overload/ ../../$(PINLIB)
 
 $(GENGROUPLOCK): $(foreach directory,$(shell ls $(GROUP_DIR)), $(wildcard $(GROUP_DIR)/$(directory)/*.txt))
 	@echo "===>  GENERATE GROUP HEADERS"
@@ -314,31 +314,37 @@ $(FORTRAN_IF): $(SRC_DIR)/likwid.F90
 	@rm -f likwid.o
 
 ifeq ($(LUA_INTERNAL),true)
+# we usually don't change lua, so don't unconditionally rebuild it
+#.PHONY: $(TARGET_LUA_LIB)
 $(TARGET_LUA_LIB):
 	@echo "===>  ENTER  $(LUA_FOLDER)"
-	$(Q)$(MAKE) -C $(LUA_FOLDER)
+	$(Q)$(MAKE) --no-print-directory -C $(LUA_FOLDER)
 else
 $(TARGET_LUA_LIB):
 	@echo "===>  EXTERNAL LUA"
 endif
 
+# we usually don't change GOTCHA, so don't unconditionally rebuild it
+#.PHONY: $(TARGET_GOTCHA_LIB)
 $(TARGET_GOTCHA_LIB):
 	@echo "===>  ENTER  $(GOTCHA_FOLDER)"
-	$(Q)$(MAKE) -C $(GOTCHA_FOLDER)
+	$(Q)$(MAKE) --no-print-directory -C $(GOTCHA_FOLDER)
 
 ifeq ($(USE_INTERNAL_HWLOC),true)
+# we usually don't change hwloc, so don't unconditionally rebuild it
+#.PHONY: $(TARGET_HWLOC_LIB)
 $(TARGET_HWLOC_LIB):
 	@echo "===>  ENTER  $(HWLOC_FOLDER)"
-	$(Q)$(MAKE) -C $(HWLOC_FOLDER)
+	$(Q)$(MAKE) --no-print-directory -C $(HWLOC_FOLDER)
 else
 $(TARGET_HWLOC_LIB):
 	@echo "===>  EXTERNAL HWLOC"
 endif
 
-
+.PHONY: $(BENCH_TARGET)
 $(BENCH_TARGET): $(TARGET_LIB)
 	@echo "===>  ENTER  $(BENCH_FOLDER)"
-	$(Q)$(MAKE) -C $(BENCH_FOLDER)
+	$(Q)$(MAKE) --no-print-directory -C $(BENCH_FOLDER)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o: %.c $(PERFMONHEADERS)
@@ -380,7 +386,7 @@ ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
 endif
 
-.PHONY: all clean distclean install uninstall help $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TARGET)
+.PHONY: all clean distclean install uninstall help
 
 clean:
 	@echo "===>  CLEAN"

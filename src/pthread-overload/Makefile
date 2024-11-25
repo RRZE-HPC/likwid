@@ -35,7 +35,7 @@ include  ../../make/config_defines.mk
 
 Q         ?= @
 
-TARGET   = $(PINLIB)
+TARGET   = ../../$(PINLIB)
 
 ifneq ($(COLOR),NONE)
 DEFINES += -DCOLOR=$(COLOR)
@@ -46,8 +46,8 @@ INCLUDES += -I../includes
 LIBS     += -ldl
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: $(TARGET)
+all: ../../$(TARGET)
 
 $(TARGET): pthread-overload.c
-	$(Q)$(CC) -Wl,-soname,$(TARGET).$(VERSION).$(RELEASE),--no-undefined $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(INCLUDES) $(SHARED_CFLAGS) $(SHARED_LFLAGS) -o ../../$(TARGET) pthread-overload.c $(LIBS)
+	$(Q)$(CC) -Wl,-soname,$(notdir $(TARGET)).$(VERSION).$(RELEASE),--no-undefined $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(INCLUDES) $(SHARED_CFLAGS) $(SHARED_LFLAGS) -o $@ pthread-overload.c $(LIBS)
 

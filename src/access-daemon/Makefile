@@ -30,9 +30,9 @@
 include  ../../config.mk
 include  ../../make/include_$(COMPILER).mk
 
-DAEMON_TARGET = likwid-accessD
-SETFREQ_TARGET = likwid-setFreq
-APPDAEMON_TARGET = likwid-appDaemon.so
+DAEMON_TARGET = ../../likwid-accessD
+SETFREQ_TARGET = ../../likwid-setFreq
+APPDAEMON_TARGET = ../../likwid-appDaemon.so
 SYSFSDAEMON_TARGET = ../../likwid-sysD
 GOTCHA_FOLDER = ../../ext/GOTCHA
 Q         ?= @
@@ -61,13 +61,13 @@ all: $(DAEMON_TARGET) $(SETFREQ_TARGET) $(APPDAEMON_TARGET)
 endif
 
 $(DAEMON_TARGET): accessDaemon.c ../intel_perfmon_uncore_discovery.c
-	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) accessDaemon.c ../intel_perfmon_uncore_discovery.c
+	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ accessDaemon.c ../intel_perfmon_uncore_discovery.c
 
 $(SETFREQ_TARGET): setFreqDaemon.c
-	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(SETFREQ_TARGET) setFreqDaemon.c
+	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ setFreqDaemon.c
 
 $(APPDAEMON_TARGET): $(GOTCHA_TARGET) appDaemon.c ../bstrlib.c ../bstrlib_helper.c
-	$(Q)$(CC) -pthread -shared -fvisibility=hidden -fPIC $(CPPFLAGS) -Wl,-soname,$(APPDAEMON_TARGET).$(VERSION).$(RELEASE),--no-undefined -fstack-protector -I. -I$(GOTCHA_FOLDER)/include  -L$(GOTCHA_FOLDER) appDaemon.c ../bstrlib.c ../bstrlib_helper.c -o ../../$(APPDAEMON_TARGET)  -llikwid -llikwid-gotcha -ldl
+	$(Q)$(CC) -pthread -shared -fvisibility=hidden -fPIC $(CPPFLAGS) -Wl,-soname,$(notdir $(APPDAEMON_TARGET)).$(VERSION).$(RELEASE),--no-undefined -fstack-protector -I. -I$(GOTCHA_FOLDER)/include  -L$(GOTCHA_FOLDER) appDaemon.c ../bstrlib.c ../bstrlib_helper.c -o $@  -llikwid -llikwid-gotcha -ldl
 
 $(SYSFSDAEMON_TARGET): sysfsDaemon.c
-	$(Q)$(CC) -g -fsanitize=address -fsanitize=leak -fomit-frame-pointer  $(CFLAGS) $(CPPFLAGS) -o ../../sysfsD sysfsDaemon.c
+	$(Q)$(CC) -g -fsanitize=address -fsanitize=leak -fomit-frame-pointer  $(CFLAGS) $(CPPFLAGS) -o $@ sysfsDaemon.c
