@@ -199,6 +199,7 @@ endif
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
+.PHONY: all
 ifeq ($(BUILDDAEMON),false)
 all: $(TARGET_LIB) $(FORTRAN_IF) $(PINLIB) $(L_APPS) $(L_HELPER) $(FREQ_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET)
 else
@@ -213,10 +214,12 @@ endif
 endif
 endif
 
+.PHONY: tags
 tags:
 	@echo "===>  GENERATE  TAGS"
 	$(Q)ctags -R
 
+.PHONY: docs
 docs:
 	@echo "===>  GENERATE DOXYGEN DOCS"
 	@cp doc/lua-doxygen.md doc/lua-doxygen.md.safe
@@ -386,8 +389,7 @@ ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
 endif
 
-.PHONY: all clean distclean install uninstall help
-
+.PHONY: clean
 clean:
 	@echo "===>  CLEAN"
 	$(Q)$(MAKE) -C $(LUA_FOLDER) $(MAKECMDGOALS)
@@ -403,6 +405,7 @@ clean:
 	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET) $(APPDAEMON_TARGET) $(CONTAINER_HELPER_TARGET)
 	@rm -f likwid-config.cmake
 
+.PHONY: distclean
 distclean: clean
 	@echo "===>  DIST CLEAN"
 	@rm -rf $(BUILD_DIR)
@@ -413,6 +416,7 @@ distclean: clean
 	@rm -rf doc/html
 	@rm -f tags
 
+.PHONY: install_daemon move_daemon uninstall_daemon uninstall_daemon_moved
 ifeq ($(BUILDDAEMON),true)
 ifneq ($(COMPILER),MIC)
 install_daemon:
@@ -450,6 +454,7 @@ uninstall_daemon_moved:
 	@echo "===> No UNINSTALL of the access daemon"
 endif
 
+.PHONY: install_freq move_freq uninstall_freq uninstall_freq_moved
 ifeq ($(BUILDFREQ),true)
 ifneq ($(COMPILER),MIC)
 install_freq:
@@ -487,6 +492,7 @@ uninstall_freq_moved:
 	@echo "===> No UNINSTALL of setFrequencies tool"
 endif
 
+.PHONY: install_appdaemon move_appdaemon uninstall_appdaemon uninstall_appdaemon_moved
 ifeq ($(BUILDAPPDAEMON),true)
 install_appdaemon:
 	@echo "===> INSTALL application interface appDaemon to $(PREFIX)/lib/$(APPDAEMON_TARGET)"
@@ -513,6 +519,7 @@ uninstall_appdaemon_moved:
 	@echo "===> No UNINSTALL of the application interface appDaemon"
 endif
 
+.PHONY: install_container_helper move_container_helper uninstall_container_helper uninstall_container_helper_moved
 ifeq ($(CONTAINER_HELPER),true)
 install_container_helper: $(CONTAINER_HELPER_TARGET)
 	@echo "===> INSTALL container helper likwid-bridge to $(SBINPREFIX)/likwid-bridge"
@@ -539,6 +546,7 @@ uninstall_container_helper_moved:
 	@echo "===> No UNINSTALL of the container helper likwid-bridge"
 endif
 
+.PHONY: install
 install: install_daemon install_freq install_appdaemon install_container_helper
 	@echo "===> INSTALL applications to $(BINPREFIX)"
 	@mkdir -p $(BINPREFIX)
@@ -634,6 +642,7 @@ install: install_daemon install_freq install_appdaemon install_container_helper
 	@echo "===> INSTALL cmake to $(abspath $(PREFIX)/share/likwid)"
 	@install -m 644 $(PWD)/likwid-config.cmake $(PREFIX)/share/likwid
 
+.PHONY: move
 move: move_daemon move_freq move_appdaemon move_container_helper
 	@echo "===> MOVE applications from $(BINPREFIX) to $(INSTALLED_BINPREFIX)"
 	@mkdir -p $(INSTALLED_BINPREFIX)
@@ -703,6 +712,7 @@ move: move_daemon move_freq move_appdaemon move_container_helper
 		$(PREFIX)/share/likwid/likwid-config.cmake > $(INSTALLED_PREFIX)/share/likwid/likwid-config.cmake
 	@chmod 644 $(INSTALLED_PREFIX)/share/likwid/likwid-config.cmake
 
+.PHONY: uninstall
 uninstall: uninstall_daemon uninstall_freq uninstall_appdaemon uninstall_container_helper
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
 	@rm -f $(addprefix $(BINPREFIX)/,$(addsuffix  .lua,$(L_APPS)))
@@ -739,6 +749,7 @@ uninstall: uninstall_daemon uninstall_freq uninstall_appdaemon uninstall_contain
 	@rm -rf $(PREFIX)/share/likwid/likwid-config.cmake
 	@rm -rf $(PREFIX)/share/likwid
 
+.PHONY: uninstall_moved
 uninstall_moved: uninstall_daemon_moved uninstall_freq_moved uninstall_appdaemon_moved uninstall_container_helper_moved
 	@echo "===> REMOVING applications from $(INSTALLED_PREFIX)/bin"
 	@rm -f $(addprefix $(INSTALLED_BINPREFIX)/,$(addsuffix  .lua,$(L_APPS)))
@@ -775,9 +786,9 @@ uninstall_moved: uninstall_daemon_moved uninstall_freq_moved uninstall_appdaemon
 	@rm -rf $(INSTALLED_PREFIX)/share/likwid/likwid-config.cmake
 	@rm -rf $(INSTALLED_PREFIX)/share/likwid
 
+.PHONY: local
 local: $(L_APPS) likwid.lua
 	@echo "===> Setting Lua scripts to run from current directory"
-	@PWD=$(shell pwd)
 	@for APP in $(L_APPS); do \
 		sed -i -e "s#<VERSION>/#$(VERSION)#g" -e "s#<DATE>#$(DATE)#g" -e "s#<RELEASE>#$(RELEASE)#g" -e "s#<GITCOMMIT>#$(GITCOMMIT)#g" -e "s#<MINOR>#$(MINOR)#g" -e "s#$(PREFIX)/bin/likwid-lua#$(PWD)/ext/lua/lua#" -e "s#$(PREFIX)/share/lua/?.lua#$(PWD)/?.lua#" -e "s#$(PREFIX)/bin/likwid-pin#$(PWD)/likwid-pin#" -e "s#$(PREFIX)/bin/likwid-perfctr#$(PWD)/likwid-perfctr#" -e "s#$(PREFIX)/lib#$(PWD)#" $$APP; \
 		chmod +x $$APP; \
@@ -800,11 +811,13 @@ local: $(L_APPS) likwid.lua
 	@if [ -e $(PINLIB) ]; then ln -sf $(PINLIB) $(PINLIB).$(VERSION).$(RELEASE); fi
 	@if [ -e $(CUDA_HOME)/extras/CUPTI/lib64 ]; then echo "export LD_LIBRARY_PATH=$(PWD):$(CUDA_HOME)/extras/CUPTI/lib64:$$LD_LIBRARY_PATH"; else echo "export LD_LIBRARY_PATH=$(PWD):$$LD_LIBRARY_PATH"; fi
 
+.PHONY: testit
 testit: test/test-likwidAPI.c
 	make -C test test-likwidAPI
 	test/test-likwidAPI
 	make -C test/executable_tests
 
+.PHONY: help
 help:
 	@echo "Help for building LIKWID:"
 	@echo
