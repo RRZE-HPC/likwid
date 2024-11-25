@@ -87,6 +87,73 @@ Configuration_t configfile = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
+static size_t lua_helper_tableElementCount(lua_State *L, int index) {
+    /* Count the number of elements in a table on stack position 'index'.
+     * Only populated elements are counted, so gaps are not counted.
+     * This is not the same as #table like in a Lua script. */
+
+    /* For details see: https://stackoverflow.com/a/6142700. */
+
+    // <none>
+    lua_pushvalue(L, index);
+    // -1 => table
+    lua_pushnil(L);
+    // -1 => nil, -2 => table
+
+    size_t element_count = 0;
+
+    /* First, do a dummy iteration and count the number of elements. */
+    while (lua_next(L, -2)) {
+        // -1 => value, -2 => key, -3 => table
+        element_count += 1;
+        lua_pop(L, 1);
+        // -1 => key, -2 => table
+    }
+    // -1 => table
+    lua_pop(L, 1);
+    // <none>
+    return element_count;
+}
+
+static void lua_helper_populateStringsFromTable(lua_State *L, int index, const char **string_list, size_t string_count) {
+    /* Populate a C string list from a Lua table */
+    lua_pushvalue(L, index);
+    lua_pushnil(L);
+    // -1 => nil, -2 => lua table
+
+    /* Retrieve the string values from the lua table. */
+    for (size_t i = 0; lua_next(L, -2); i++) {
+        // -1 => value, -2 => key, -3 => lua table
+        if (!lua_isstring(L, -1))
+            luaL_error(L, "Non-string element in argv[%s]", lua_tostring(L, -2));
+        if (i >= string_count)
+            luaL_error(L, "Cannot populate string list with not enough entries.");
+        string_list[i] = lua_tostring(L, -1);
+        lua_pop(L, 1);
+        // -1 => key, -2 => argv table
+    }
+    // -1 => table
+    lua_pop(L, 1);
+    // <none>
+}
+
+static void lua_helper_populateIntsFromTable(lua_State *L, int index, int *int_list, size_t int_count) {
+    /* Populate a C integer list from a Lua table */
+    lua_pushvalue(L, index);
+    lua_pushnil(L);
+
+    /* Retrieve the string values from the lua table. */
+    for (size_t i = 0; lua_next(L, -2); i++) {
+        if (!lua_isinteger(L, -1))
+            luaL_error(L, "Non-integer element in argv[%s]", lua_tostring(L, -2));
+        if (i >= int_count)
+            luaL_error(L, "Cannot populate int list with not enough entries.");
+        int_list[i] = lua_tointeger(L, -1);
+        lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+}
+
 static int lua_likwid_getConfiguration(lua_State *L) {
   int ret = 0;
   if (config_isInitialized == 0) {
@@ -1827,6 +1894,81 @@ int parse(char *line, char **argv, int maxlen) {
 static void catch_sigchild(int signo) {
   ;
   ;
+}
+
+static int lua_likwid_startProgramArgvList(lua_State *L) {
+    /* Same as lua_likwid_startProgram, but instead of a single string,
+     * which is prone to escaping errors, we use an argv list. */
+    if (!lua_istable(L, 1))
+        return luaL_error(L, "1st argument must be a table");
+    const bool has_cpulist = lua_gettop(L) >= 2;
+    if (has_cpulist && !lua_istable(L, 2))
+        return luaL_error(L, "2nd (optional) argument must be a table");
+
+    /* Allocate extra elements for the terminating NULL. */
+    const size_t num_arguments = lua_helper_tableElementCount(L, 1);
+    const size_t argv_count = num_arguments + 1;
+    const size_t argv_size = argv_count * sizeof(const char *);
+    const char **argv = lua_newuserdatauv(L, argv_size, 0);
+
+    lua_helper_populateStringsFromTable(L, 1, argv, num_arguments);
+    argv[num_arguments] = NULL;
+
+    int *cpus;
+    size_t cpulist_count;
+
+    if (has_cpulist) {
+        cpulist_count = lua_helper_tableElementCount(L, 2);
+        const size_t cpulist_size = cpulist_count * sizeof(int);
+        cpus = lua_newuserdatauv(L, cpulist_size, 0);
+        lua_helper_populateIntsFromTable(L, 2, cpus, cpulist_count);
+    }
+
+    // TODO this signal implementation is absolutely disgustingly wrong.
+    // Ideally we would like for the child to exit, possibly with timeout.
+    // E.g. likwid-powermeter currently uses sleep, however this has a race condition.
+    // This race condition can only be avoided with proper signal handlers, masks,
+    // and sigtimedwait.
+    // However, I won't fix it today as the solution probably won't make
+    // work in a free standing function like this.
+
+    pid_t fork_pid = fork();
+    if (fork_pid < 0)
+        return luaL_error(L, "fork() failed: %s", strerror(errno));
+
+    if (fork_pid == 0) {
+        /* Do not call any lua functions here, since they may longjmp outside of the scope. */
+        if (has_cpulist)
+            affinity_pinProcesses((int)cpulist_count, cpus);
+
+        /* execvp wants a mutable list, so copy the list. */
+        char **exec_argv = calloc(argv_count, sizeof(exec_argv[0]));
+        if (!exec_argv) {
+            perror("calloc");
+            exit(EXIT_FAILURE);
+        }
+
+        for (size_t i = 0; i < argv_count; i++) {
+            if (!argv[i]) {
+                exec_argv[i] = NULL;
+                continue;
+            }
+            exec_argv[i] = strdup(argv[i]);
+            if (!exec_argv[i]) {
+                perror("strdup");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        timer_sleep(10); // TODO fix this properly, probably avoids triggering the SIGCHLD before the handler is setup?
+        execvp(*exec_argv, exec_argv);
+        perror("execvp");
+        exit(EXIT_FAILURE);
+    }
+
+    signal(SIGCHLD, catch_sigchild);
+    lua_pushnumber(L, fork_pid);
+    return 1;
 }
 
 static int lua_likwid_startProgram(lua_State *L) {
@@ -4119,6 +4261,7 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
   lua_register(L, "likwid_getpid", lua_likwid_getpid);
   lua_register(L, "likwid_access", lua_likwid_access);
   lua_register(L, "likwid_startProgram", lua_likwid_startProgram);
+  lua_register(L, "likwid_startProgramArgvList", lua_likwid_startProgramArgvList);
   lua_register(L, "likwid_checkProgram", lua_likwid_checkProgram);
   lua_register(L, "likwid_killProgram", lua_likwid_killProgram);
   lua_register(L, "likwid_catchSignal", lua_likwid_catch_signal);

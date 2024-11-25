@@ -121,6 +121,7 @@ likwid.setVerbosity = likwid_setVerbosity
 likwid.getVerbosity = likwid_getVerbosity
 likwid.access = likwid_access
 likwid.startProgram = likwid_startProgram
+likwid.startProgramArgvList = likwid_startProgramArgvList
 likwid.checkProgram = likwid_checkProgram
 likwid.killProgram = likwid_killProgram
 likwid.catchSignal = likwid_catchSignal

@@ -84,11 +84,6 @@ time_orig = "2s"
 read_interval = 10
 cpustr = nil
 cpuinfo = likwid.getCpuInfo()
---if cpuinfo["isIntel"] == 1 then
---    domainList = {"PKG", "PP0", "PP1", "DRAM", "PLATFORM"}
---else
---    domainList = {"CORE", "PKG"}
---end
 
 for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "f", "t", "help", "info", "version", "verbose:"}) do
     if (type(arg) == "string") then
@@ -106,7 +101,6 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
         version()
         os.exit(0)
     elseif (opt == "c") then
-        error("-c is currently unsupported. Please run likwid-powermeter with likwid-pin")
         cpustr = arg
     elseif (opt == "M") then
         access_mode = tonumber(arg)
@@ -191,44 +185,11 @@ if print_info then
     print_stdout(likwid.hline)
 end
 
--- TODO print clock speeds and power information when print_info is enabled
-
 -- Check if time interval is not too short TODO, we currently do not have a way to retrieve
 -- the timeUnit and it may also differ between metric types.
 if time_interval < 1 then
     print_stderr("Warning: Time interval too short, measurement may be inaccurate")
 end
-
--- TODO begin: do we still need this?
-local pinList = {}
-local execString = ""
-if use_perfctr then
-    execString = string.format("<INSTALLED_PREFIX>/bin/likwid-perfctr -C %s -f -g CLOCK ",table.concat(pinList, "@"))
-elseif not stethoscope then
-    execString = string.format("<INSTALLED_PREFIX>/bin/likwid-pin -c %s -q ",table.concat(pinList, "@"))
-end
--- TODO end
-
--- TODO begin: what does this do?
-local execList = {}
-if #arg == 0 then
-    if use_perfctr then
-        execString = execString .. string.format(" -S %s ", time_orig)
-        stethoscope = false
-    else
-        stethoscope = true
-    end
-else
-    for i=1, likwid.tablelength(arg)-2 do
-        if string.find(arg[i], " ") then
-            table.insert(execList, "\""..arg[i].."\"")
-        else
-            table.insert(execList, arg[i])
-        end
-    end
-    execString = execString .. table.concat(execList," ")
-end
--- TODO end
 
 -- Read all metrics from power_metrics, but filter them by the features which are actually available
 local power_features_wanted = {
@@ -263,12 +224,22 @@ end
 
 -- launch program (if any)
 if not stethoscope then
-    pid = likwid.startProgram(execString, 0, {})
-    if not pid then
-        print_stderr(string.format("Failed to execute %s!", execString))
-        os.exit(1)
+    if cpustr then
+        execArgv = { "<INSTALLED_PREFIX>/bin/likwid-pin", "-c", cpustr, "-q" }
+    else
+        execArgv = {}
     end
-    -- in order to avoid wait times when the program has exited, we cap the maximum wait time
+
+    -- omit arg[-1] and arg[0] and construct new argv table
+    for _, s in pairs({table.unpack(arg, 1)}) do
+        table.insert(execArgv, s)
+    end
+
+    pid = likwid.startProgramArgvList(execArgv, {})
+    if not pid then
+        print_stderr(string.format("Failed to execute %s!", execArgv))
+        os.exit(1)
+    end -- in order to avoid wait times when the program has exited, we cap the maximum wait time
     read_interval = math.min(read_interval, 1)
 end
 
@@ -312,7 +283,7 @@ while true do
                     if new_value_raw < old_value_raw then
                         -- This case should only occur if the counter overflowed.
                         -- Get next power-of-two of old value in order to determine overflow point.
-                        local overflow_point = next_power2(old_value)
+                        local overflow_point = next_power2(old_value_raw)
                         delta = (new_value_raw + overflow_point) - old_value_raw
                     end
                     energy_for_feature[2] = energy_for_feature[2] + delta
