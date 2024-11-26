@@ -6,8 +6,8 @@ DESC Double-precision stream triad A(i) = B(i)*c + C(i), uses scalar arithmetic 
 LOADS 2
 STORES 1
 INSTR_CONST 17
-INSTR_LOOP 7
-UOPS 8
+INSTR_LOOP 19
+UOPS 22
 movsd FPR5, [rip+SCALAR]
 LOOP 4
 movsd    FPR1, [STR1 + GPR1*8]
