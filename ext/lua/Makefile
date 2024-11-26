@@ -68,9 +68,11 @@ endif
 .PHONY: clean distclean
 
 clean:
+	@echo "===>  CLEAN LUA"
 	@rm -f $(TARGET) $(INTERPRETER) $(SHARED_LIBLUA) $(STATIC_LIBLUA) $(LIBLUA).$(VERSION).$(RELEASE) $(LIBLUA).$(VERSION)
 
 distclean: clean
+	@echo "===>  DIST CLEAN LUA"
 	@rm -f $(TARGET) $(INTERPRETER) $(SHARED_LIBLUA) $(STATIC_LIBLUA) $(LIBLUA).$(VERSION).$(RELEASE) $(LIBLUA).$(VERSION)
 	@rm -rf $(BUILD_DIR)
 

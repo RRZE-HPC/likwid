@@ -155,11 +155,11 @@ endif
 .PRECIOUS: $(BUILD_DIR)/%.pas
 
 clean:
-	@echo "===>  CLEAN"
+	@echo "===>  CLEAN BENCH"
 	@rm -rf likwid-bench
 
 distclean: clean
-	@echo "===>  DIST CLEAN"
+	@echo "===>  DIST CLEAN BENCH"
 	@rm -rf $(BUILD_DIR)
 
 install:

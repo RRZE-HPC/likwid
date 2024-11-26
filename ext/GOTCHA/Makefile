@@ -94,8 +94,10 @@ endif
 .PHONY: clean distclean
 
 clean:
+	@echo "===>  CLEAN GOTCHA"
 	@rm -f $(TARGET) $(SHARED_LIBGOTCHA) $(STATIC_LIBGOTCHA) $(LIBGOTCHA).$(VERSION).$(RELEASE) $(LIBGOTCHA).$(VERSION)
 
 distclean: clean
+	@echo "===>  DIST CLEAN GOTCHA"
 	@rm -f $(TARGET) $(SHARED_LIBGOTCHA) $(STATIC_LIBGOTCHA) $(LIBGOTCHA).$(VERSION).$(RELEASE) $(LIBGOTCHA).$(VERSION)
 	@rm -rf $(BUILD_DIR)

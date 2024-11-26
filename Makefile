@@ -392,10 +392,10 @@ endif
 .PHONY: clean
 clean:
 	@echo "===>  CLEAN"
-	$(Q)$(MAKE) -C $(LUA_FOLDER) $(MAKECMDGOALS)
-	$(Q)$(MAKE) -C $(HWLOC_FOLDER) $(MAKECMDGOALS)
-	$(Q)$(MAKE) -C $(GOTCHA_FOLDER) $(MAKECMDGOALS)
-	$(Q)$(MAKE) -C $(BENCH_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) --no-print-directory -C $(LUA_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) --no-print-directory -C $(HWLOC_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) --no-print-directory -C $(GOTCHA_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) --no-print-directory -C $(BENCH_FOLDER) $(MAKECMDGOALS)
 	@rm -f $(L_APPS) likwid-sysfeatures likwid-setFrequencies
 	@rm -f likwid.lua
 	@rm -f $(STATIC_TARGET_LIB)
