@@ -85,9 +85,11 @@ endif
 .PHONY: clean distclean
 
 clean:
+	@echo "===>  CLEAN HWLOC"
 	@rm -f $(TARGET) $(SHARED_LIBHWLOC) $(STATIC_LIBHWLOC) $(LIBHWLOC).$(VERSION).$(RELEASE) $(LIBHWLOC).$(VERSION)
 
 distclean: clean
+	@echo "===>  DIST CLEAN HWLOC"
 	@rm -rf $(BUILD_DIR)
 
 
