@@ -5,8 +5,8 @@
  *
  *      Description:  Marker API interface of module nvmon
  *
- *      Version:   5.4.0
- *      Released:  15.11.2024
+ *      Version:   5.4.1
+ *      Released:  27.11.2024
  *
  *      Authors:  Thomas Gruber (tg), thomas.roehl@googlemail.com
  *      Project:  likwid

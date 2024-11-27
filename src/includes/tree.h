@@ -6,8 +6,8 @@
  *      Description:  Header File tree Module.
  *                    Implements a simple tree data structure.
  *
- *      Version:   5.4.0
- *      Released:  15.11.2024
+ *      Version:   5.4.1
+ *      Released:  27.11.2024
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid

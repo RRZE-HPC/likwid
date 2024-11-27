@@ -5,8 +5,8 @@
  *
  *      Description:  Bridge to forward LIKWID access from within containers
  *
- *      Version:   5.4.0
- *      Released:  15.11.2024
+ *      Version:   5.4.1
+ *      Released:  27.11.2024
  *
  *      Author:   Pawel Radtke,
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com

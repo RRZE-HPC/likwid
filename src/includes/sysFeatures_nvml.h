@@ -5,8 +5,8 @@
  *
  *      Description:  Interface to control various Nvidia NVML based features
  *
- *      Version:   5.4.0
- *      Released:  15.11.2024
+ *      Version:   5.4.1
+ *      Released:  27.11.2024
  *
  *      Authors:  Michael Panzlaff, michael.panzlaff@fau.de
  *      Project:  likwid

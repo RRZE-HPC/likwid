@@ -6,8 +6,8 @@
  *      Description:  Header File bitUtil Module.
  *                    Helper routines for dealing with bit manipulations
  *
- *      Version:   5.4.0
- *      Released:  15.11.2024
+ *      Version:   5.4.1
+ *      Released:  27.11.2024
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid

@@ -5,8 +5,8 @@
  *
  *      Description:  Header file of perfmon module for AMD Family 19 (ZEN4)
  *
- *      Version:   5.4.0
- *      Released:  15.11.2024
+ *      Version:   5.4.1
+ *      Released:  27.11.2024
  *
  *      Author:   Thomas Gruber (tg), thomas.roehl@googlemail.com
  *      Project:  likwid

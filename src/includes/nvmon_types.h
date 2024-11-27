@@ -7,8 +7,8 @@
  *                    Configures and reads out performance counters
  *                    on NVIDIA GPUs. Supports multi GPUs.
  *
- *      Version:   5.4.0
- *      Released:  15.11.2024
+ *      Version:   5.4.1
+ *      Released:  27.11.2024
  *
  *      Author:   Thomas Gruber (tg), thomas.gruber@googlemail.com
  *      Project:  likwid

@@ -4,8 +4,8 @@
  *
  *      Description:  Definitions used for dynamically compile benchmarks for x86 systems
  *
- *      Version:   5.4.0
- *      Released:  15.11.2024
+ *      Version:   5.4.1
+ *      Released:  27.11.2024
  *
  *      Author:   Thomas Gruber (tg), thomas.roehl@gmail.com
  *      Project:  likwid
