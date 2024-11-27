@@ -46,6 +46,7 @@ test-$L-perf:
     - likwid-topology
     - likwid-pin -p
     - likwid-perfctr -i
+    - likwid-sysfeatures -a
   after_script:
     - rm -rf /tmp/$depend
 EOF
@@ -79,6 +80,7 @@ test-$L-daemon:
     - likwid-topology
     - likwid-pin -p
     - likwid-perfctr -i
+    - likwid-sysfeatures -a
   after_script:
     - rm -rf /tmp/$depend
 EOF
