@@ -1,3 +1,7 @@
+# Changelog 5.4.1
+- Fixes linking errors due to missing bstrlib.h
+- Fix for likwid-bench kernel stream_mem
+
 # Changelog 5.4.0
 - Support for Intel Granite Rapids (core, energy, uncore)
 - Support for Intel Sierra Forrest (core, energy, uncore)
