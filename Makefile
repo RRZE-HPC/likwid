@@ -849,9 +849,10 @@ help:
 .PHONY: rpm RPM
 rpm: RPM
 RPM: packaging/rpm/likwid.spec
-	$(BASE_DIR)/packaging/deb/package.sh
+	FROM_MAKEFILE=1 $(BASE_DIR)/packaging/rpm/package.sh
 
 .PHONY: deb DEB
 deb: DEB
 DEB: packaging/deb/likwid.deb.control
-	$(BASE_DIR)/packaging/rpm/package.sh
+	NAME=$(NAME) VERSION=$(VERSION) RELEASE=$(RELEASE) MINOR=$(MINOR) \
+		 PREFIX=$(PREFIX) FROM_MAKEFILE=1 $(BASE_DIR)/packaging/deb/package.sh

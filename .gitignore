@@ -35,3 +35,6 @@ doc/html
 
 # core dumps
 /core
+
+# generated packages
+/*.deb
