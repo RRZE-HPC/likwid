@@ -18,7 +18,7 @@ my $YEAR  = '2016';
 my $AUTHOR = 'RRZE, University Erlangen-Nuremberg';
 my $LICENSE = 'gpl';
 
-my @SKIPLIST = ('ghash.c','ghash.h','loadData.S','loadDataARM.S','bstrlib.c','bstrlib.h', 'calculator_stack.h', 'calculator_stack.c', 'voltage.c', 'voltage.h', 'likwid-benchmark.sh', 'calculator.c', 'calculator.h');
+my @SKIPLIST = ('ghash.c','ghash.h','loadData.S','loadDataARM.S','bstrlib.c','bstrlib.h', 'calculator_stack.h', 'calculator_stack.c', 'voltage.c', 'voltage.h', 'likwid-benchmark.sh', 'calculator.c', 'calculator.h', 'amd_hsmp.h');
 
 sub print_copyright
 {
