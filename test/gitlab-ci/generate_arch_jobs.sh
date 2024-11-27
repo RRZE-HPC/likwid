@@ -38,6 +38,7 @@ test-$L-perf:
   tags:
     - testcluster
   before_script:
+    - rm -rf /tmp/$depend
     - cp -r $depend /tmp/$depend
     - cd /tmp/$depend
     - export PATH=/tmp/$depend/bin:\$PATH
@@ -72,6 +73,7 @@ test-$L-daemon:
   tags:
     - testcluster
   before_script:
+    - rm -rf /tmp/$depend
     - cp -r $depend /tmp/$depend
     - cd /tmp/$depend
     - export PATH=/tmp/$depend/bin:\$PATH
