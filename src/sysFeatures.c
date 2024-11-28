@@ -70,6 +70,7 @@ static int get_device_access(LikwidDevice_t device)
     {
         return -EINVAL;
     }
+
     switch (device->type) {
         case DEVICE_TYPE_HWTHREAD:
             if (device->id.simple.id >= 0 && device->id.simple.id < (int)topo->numHWThreads)
@@ -122,11 +123,15 @@ static int get_device_access(LikwidDevice_t device)
             ERROR_PRINT(get_device_access: Unimplemented device type: %d\n, device->type);
             return -EPERM;
     }
+#if defined(__x86_64) || defined(__i386__)
     if (hwt >= 0)
     {
         return HPMaddThread(hwt);
     }
     return -EINVAL;
+#else
+    return (hwt >= 0 ? 0 : -EINVAL);
+#endif
 }
 
 
@@ -136,6 +141,7 @@ int likwid_sysft_init(void)
 
     topology_init();
     CpuInfo_t cpuinfo = get_cpuInfo();
+#if defined(__x86_64) || defined(__i386__)
     if (!HPMinitialized())
     {
         err = HPMinit();
@@ -163,7 +169,7 @@ int likwid_sysft_init(void)
             return err;
         }
     }
-    
+#endif
     err = likwid_sysft_init_cpufreq(&_feature_list);
     if (err < 0)
     {

@@ -301,6 +301,38 @@ static const _SysFeatureList cpufreq_intel_cpufreq_feature_list = {
     .features = cpufreq_intel_cpufreq_features,
 };
 
+/* cppc driver */
+
+static int cpufreq_cppc_boost_getter(const LikwidDevice_t device, char** value)
+{
+    return cpufreq_sysfs_getter(device, value, "boost");
+}
+
+static int cpufreq_cppc_boost_setter(const LikwidDevice_t device, const char* value)
+{
+    return cpufreq_sysfs_setter(device, value, "boost");
+}
+
+static int cpufreq_cppc_test(void)
+{
+    return cpufreq_driver_test("cppc_cpufreq");
+}
+
+static _SysFeature cpufreq_cppc_features[] = {
+    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
+    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
+    {"boost", "cpu_freq", "Turbo boost", cpufreq_cppc_boost_getter, cpufreq_cppc_boost_setter, DEVICE_TYPE_HWTHREAD},
+    {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD},
+    {"avail_governors", "cpu_freq", "Available CPU frequencies", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
+};
+
+static const _SysFeatureList cpufreq_cppc_feature_list = {
+    .num_features = ARRAY_COUNT(cpufreq_cppc_features),
+    .tester = cpufreq_cppc_test,
+    .features = cpufreq_cppc_features,
+};
+
 /* Energy Performance Preference */
 
 static int cpufreq_epp_test(void)
@@ -383,6 +415,15 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering ACPI cpufreq knobs for cpufreq)
         likwid_sysft_register_features(out, &cpufreq_acpi_feature_list);
+        if (err < 0)
+        {
+            return err;
+        }
+    }
+    else if (cpufreq_cppc_test())
+    {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering CPPC cpufreq knobs for cpufreq)
+        likwid_sysft_register_features(out, &cpufreq_cppc_feature_list);
         if (err < 0)
         {
             return err;
