@@ -200,7 +200,7 @@ static _SysFeature cpufreq_acpi_features[] = {
     {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_acpi_max_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
     {"avail_freqs", "cpu_freq", "Available CPU frequencies", cpufreq_acpi_avail_cpu_freqs_getter, NULL, DEVICE_TYPE_HWTHREAD},
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_acpi_governor_getter, cpufreq_acpi_governor_setter, DEVICE_TYPE_HWTHREAD},
-    {"avail_governors", "cpu_freq", "Available CPU frequency governor", cpufreq_acpi_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_acpi_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
 };
 
 static const _SysFeatureList cpufreq_acpi_feature_list = {
@@ -269,7 +269,7 @@ static _SysFeature cpufreq_pstate_features[] = {
     {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
     {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD},
-    {"avail_governors", "cpu_freq", "Available CPU frequencies", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
 };
 
 static const _SysFeatureList cpufreq_pstate_feature_list = {
@@ -292,7 +292,7 @@ static _SysFeature cpufreq_intel_cpufreq_features[] = {
     {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
     {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD},
-    {"avail_governors", "cpu_freq", "Available CPU frequencies", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
 };
 
 static const _SysFeatureList cpufreq_intel_cpufreq_feature_list = {
@@ -324,7 +324,7 @@ static _SysFeature cpufreq_cppc_features[] = {
     {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
     {"boost", "cpu_freq", "Turbo boost", cpufreq_cppc_boost_getter, cpufreq_cppc_boost_setter, DEVICE_TYPE_HWTHREAD},
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD},
-    {"avail_governors", "cpu_freq", "Available CPU frequencies", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
 };
 
 static const _SysFeatureList cpufreq_cppc_feature_list = {
@@ -332,6 +332,29 @@ static const _SysFeatureList cpufreq_cppc_feature_list = {
     .tester = cpufreq_cppc_test,
     .features = cpufreq_cppc_features,
 };
+
+/* apple-cpufreq driver */
+
+static int cpufreq_apple_cpufreq_test(void)
+{
+    return cpufreq_driver_test("apple-cpufreq");
+}
+
+static _SysFeature cpufreq_apple_cpufreq_features[] = {
+    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
+    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
+    {"avail_freqs", "cpu_freq", "Available CPU frequencies", cpufreq_acpi_avail_cpu_freqs_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD},
+    {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
+};
+
+static const _SysFeatureList cpufreq_apple_cpufreq_feature_list = {
+    .num_features = ARRAY_COUNT(cpufreq_apple_cpufreq_features),
+    .tester = cpufreq_apple_cpufreq_test,
+    .features = cpufreq_apple_cpufreq_features,
+};
+
 
 /* Energy Performance Preference */
 
@@ -424,6 +447,15 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering CPPC cpufreq knobs for cpufreq)
         likwid_sysft_register_features(out, &cpufreq_cppc_feature_list);
+        if (err < 0)
+        {
+            return err;
+        }
+    }
+    else if (cpufreq_apple_cpufreq_test())
+    {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering Apple cpufreq knobs for cpufreq)
+        likwid_sysft_register_features(out, &cpufreq_apple_cpufreq_feature_list);
         if (err < 0)
         {
             return err;
