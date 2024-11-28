@@ -145,10 +145,10 @@ TOPO_FILE_PATH = /etc/likwid_topo.cfg
 # Versioning Information
 # The libraries are named liblikwid.<VERSION>.<RELEASE>
 VERSION = 5
-RELEASE = 3
+RELEASE = 4
 MINOR = 0
 # Date when the release is published
-DATE    = 10.11.2023
+DATE    = 28.11.2024
 
 # In come cases it is important to set the rpaths for the LIKWID library. One
 # example is the use of sudo because it resets environment variables like
