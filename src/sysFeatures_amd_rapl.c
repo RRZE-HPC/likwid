@@ -68,7 +68,7 @@ static int amd_rapl_energy_status_getter(const LikwidDevice_t device, char** val
 }
 
 /*********************************************************************************************************************/
-/*                          Amd RAPL (PKG domain)                                                                  */
+/*                          AMD RAPL (PKG domain)                                                                  */
 /*********************************************************************************************************************/
 
 static int pkg_test_testFunc(uint64_t msrData, void * value)
@@ -214,11 +214,11 @@ int likwid_sysft_init_amd_rapl(_SysFeatureList* out)
     }
     if (amd_rapl_pkg_test())
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Register Amd RAPL PKG domain);
+        DEBUG_PRINT(DEBUGLEV_INFO, Register AMD RAPL PKG domain);
         err = likwid_sysft_register_features(out, &amd_rapl_pkg_feature_list);
         if (err < 0)
         {
-            DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PKG not supported);
+            DEBUG_PRINT(DEBUGLEV_INFO, AMD RAPL domain PKG not supported);
         }
     }
     else
@@ -227,11 +227,11 @@ int likwid_sysft_init_amd_rapl(_SysFeatureList* out)
     }
     if (amd_rapl_core_test())
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Register Amd RAPL CORE domain);
+        DEBUG_PRINT(DEBUGLEV_INFO, Register AMD RAPL CORE domain);
         err = likwid_sysft_register_features(out, &amd_rapl_core_feature_list);
         if (err < 0)
         {
-            DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain CORE not supported);
+            DEBUG_PRINT(DEBUGLEV_INFO, AMD RAPL domain CORE not supported);
         }
     }
     else
@@ -240,11 +240,11 @@ int likwid_sysft_init_amd_rapl(_SysFeatureList* out)
     }
     if (amd_rapl_l3_test())
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Register Amd RAPL L3 domain);
+        DEBUG_PRINT(DEBUGLEV_INFO, Register AMD RAPL L3 domain);
         err = likwid_sysft_register_features(out, &amd_rapl_l3_feature_list);
         if (err < 0)
         {
-            DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain L3 not supported);
+            DEBUG_PRINT(DEBUGLEV_INFO, AMD RAPL domain L3 not supported);
         }
     }
     else

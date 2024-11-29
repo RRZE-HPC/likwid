@@ -53,20 +53,26 @@ static const _HWArchFeatures intel_arch_features[];
 
 int likwid_sysft_init_x86_intel(_SysFeatureList* out)
 {
+    int c = 0;
     int err = likwid_sysft_init_generic(intel_arch_features, out);
     if (err < 0)
     {
-        ERROR_PRINT(Failed to init general Intel HWFetures);
-        return err;
+        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init general Intel HWFetures);
+    }
+    else
+    {
+        c++;
     }
     err = likwid_sysft_init_intel_rapl(out);
     if (err < 0)
     {
-        ERROR_PRINT(Failed to init Intel RAPL HWFetures);
-        return err;
+        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init Intel RAPL HWFetures);
     }
-
-    return 0;
+    else
+    {
+        c++;
+    }
+    return (c > 0 ? 0 : -ENOTSUP);
 }
 
 static const _SysFeatureList* intel_arch_feature_inputs[] = {

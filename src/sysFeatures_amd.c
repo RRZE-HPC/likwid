@@ -31,6 +31,7 @@
 #include <sysFeatures_amd.h>
 
 #include <stdbool.h>
+#include <errno.h>
 
 #include <access.h>
 #include <bitUtil.h>
@@ -44,25 +45,35 @@ static const _HWArchFeatures amd_arch_features[];
 
 int likwid_sysft_init_x86_amd(_SysFeatureList* out)
 {
+    int c = 0;
     int err = likwid_sysft_init_generic(amd_arch_features, out);
     if (err < 0)
     {
-        ERROR_PRINT(Failed to init general x86 HWFetures);
-        return err;
+        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init general x86 HWFeatures);
+    }
+    else
+    {
+        c++;
     }
     err = likwid_sysft_init_amd_rapl(out);
     if (err < 0)
     {
-        ERROR_PRINT(Failed to init AMD RAPL HWFetures);
-        return err;
+        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init AMD RAPL HWFeatures);
+    }
+    else
+    {
+        c++;
     }
     err = likwid_sysft_init_amd_hsmp(out);
     if (err < 0)
     {
-        ERROR_PRINT(Failed to init AMD HSMP HWFeaturse);
-        return err;
+        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init AMD HSMP HWFeatures);
     }
-    return 0;
+    else
+    {
+        c++;
+    }
+    return (c > 0 ? 0 : -ENOTSUP);
 }
 
 static int amd_cpu_register_access_test()
@@ -201,6 +212,12 @@ static _SysFeature amd_k19_cpu_speculation_features[] = {
     {"psfd", "spec_ctrl", "Predictive Store Forwarding", amd_cpu_spec_pfsd_getter, amd_cpu_spec_pfsd_setter, DEVICE_TYPE_HWTHREAD},
 };
 
+static _SysFeature amd_k17_cpu_speculation_features[] = {
+    {"ibrs", "spec_ctrl", "Indirect branch restriction speculation", amd_cpu_spec_ibrs_getter, amd_cpu_spec_ibrs_setter, DEVICE_TYPE_HWTHREAD},
+    {"stibp", "spec_ctrl", "Single thread indirect branch predictor", amd_cpu_spec_stibp_getter, amd_cpu_spec_stibp_setter, DEVICE_TYPE_HWTHREAD},
+    {"ssbd", "spec_ctrl", "Speculative Store Bypass", amd_cpu_spec_ssbd_getter, amd_cpu_spec_ssbd_setter, DEVICE_TYPE_HWTHREAD},
+};
+
 static const _SysFeatureList amd_k19_cpu_speculation_feature_list = {
     .num_features = ARRAY_COUNT(amd_k19_cpu_speculation_features),
     .features = amd_k19_cpu_speculation_features,
@@ -211,6 +228,11 @@ static const _SysFeatureList amd_k17_cpu_speculation_feature_list = {
     .num_features = ARRAY_COUNT(amd_k17_cpu_speculation_features),
     .features = amd_k17_cpu_speculation_features,
     .tester = amd_cpu_register_access_test,
+};
+
+static const _SysFeatureList amd_k17_cpu_speculation_feature_list = {
+    .num_features = ARRAY_COUNT(amd_k17_cpu_speculation_features),
+    .features = amd_k17_cpu_speculation_features,
 };
 
 static int amd_cpu_flush_l1(const LikwidDevice_t device, const char* value)
@@ -249,13 +271,13 @@ static int amd_cpu_hwconfig_cpddis_setter(const LikwidDevice_t device, const cha
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD17_HW_CONFIG, 25, true, value);
 }
 
-static _SysFeature amd_k19_cpu_hwconfig_features[] = {
+static _SysFeature amd_k17_cpu_hwconfig_features[] = {
     {"TurboMode", "cpufreq", "Specifies whether core performance boost is requested to be enabled or disabled", amd_cpu_hwconfig_cpddis_getter, amd_cpu_hwconfig_cpddis_setter, DEVICE_TYPE_HWTHREAD},
 };
 
-static const _SysFeatureList amd_k19_cpu_hwconfig_feature_list = {
-    .num_features = ARRAY_COUNT(amd_k19_cpu_hwconfig_features),
-    .features = amd_k19_cpu_hwconfig_features,
+static const _SysFeatureList amd_k17_cpu_hwconfig_feature_list = {
+    .num_features = ARRAY_COUNT(amd_k17_cpu_hwconfig_features),
+    .features = amd_k17_cpu_hwconfig_features,
 };
 
 static _SysFeature amd_k17_cpu_hwconfig_features[] = {
@@ -273,13 +295,48 @@ static const _SysFeatureList* amd_k19_cpu_feature_inputs[] = {
     &amd_k19_cpu_speculation_feature_list,
     &amd_k19_cpu_l1dflush_feature_list,
     &amd_k19_cpu_hwconfig_feature_list,
+};
+
+// models 0xA0 - 0xAF, 0x18
+static const _SysFeatureList* amd_k17_cpu_feature_inputs[] = {
+    //&amd_k19_cpu_prefetch_feature_list,
+    &amd_k17_cpu_speculation_feature_list,
+    //&amd_k19_cpu_l1dflush_feature_list,
+    &amd_k17_cpu_hwconfig_feature_list,
     NULL,
 };
 
+static const _SysFeatureList* amd_k19_zen3_cpu_feature_inputs[] = {
+    &amd_k19_cpu_prefetch_feature_list,
+    &amd_k19_cpu_speculation_feature_list,
+    &amd_k17_cpu_hwconfig_feature_list,
+    NULL,
+};
+
+static const _SysFeatureList* amd_k19_zen4_cpu_feature_inputs[] = {
+    &amd_k19_cpu_prefetch_feature_list,
+    &amd_k19_cpu_speculation_feature_list,
+    &amd_k19_cpu_l1dflush_feature_list,
+    &amd_k17_cpu_hwconfig_feature_list,
+    NULL,
+};
+
+
+
 static const _HWArchFeatures amd_arch_features[] = {
-    {ZEN3_FAMILY, ZEN4_RYZEN, amd_k19_cpu_feature_inputs},
-    {ZEN3_FAMILY, ZEN4_RYZEN_PRO, amd_k19_cpu_feature_inputs},
-    {ZEN3_FAMILY, ZEN4_EPYC, amd_k19_cpu_feature_inputs},
-    {ZEN3_FAMILY, ZEN4_EPYC_BERGAMO, amd_k19_cpu_feature_inputs},
+    {ZEN_FAMILY, ZEN_RYZEN, amd_k17_cpu_feature_inputs},
+    {ZEN_FAMILY, ZENPLUS_RYZEN, amd_k17_cpu_feature_inputs},
+    {ZEN_FAMILY, ZENPLUS_RYZEN2, amd_k17_cpu_feature_inputs},
+    {ZEN_FAMILY, ZEN2_RYZEN, amd_k17_cpu_feature_inputs},
+    {ZEN_FAMILY, ZEN2_RYZEN2, amd_k17_cpu_feature_inputs},
+    {ZEN_FAMILY, ZEN2_RYZEN3, amd_k17_cpu_feature_inputs},
+    {ZEN3_FAMILY, ZEN3_RYZEN, amd_k19_zen3_cpu_feature_inputs},
+    {ZEN3_FAMILY, ZEN3_RYZEN2, amd_k19_zen3_cpu_feature_inputs},
+    {ZEN3_FAMILY, ZEN3_RYZEN3, amd_k19_zen3_cpu_feature_inputs},
+    {ZEN3_FAMILY, ZEN3_EPYC_TRENTO, amd_k19_zen3_cpu_feature_inputs},
+    {ZEN3_FAMILY, ZEN4_RYZEN, amd_k19_zen4_cpu_feature_inputs},
+    {ZEN3_FAMILY, ZEN4_RYZEN_PRO, amd_k19_zen4_cpu_feature_inputs},
+    {ZEN3_FAMILY, ZEN4_EPYC, amd_k19_zen4_cpu_feature_inputs},
+    {ZEN3_FAMILY, ZEN4_EPYC_BERGAMO, amd_k19_zen4_cpu_feature_inputs},
     {-1, -1, NULL},
 };

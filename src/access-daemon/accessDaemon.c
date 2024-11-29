@@ -1258,7 +1258,7 @@ allowed_amd17_zen2(uint32_t reg)
 }
 
 static int
-allowed_amd19_zen4(uint32_t reg)
+allowed_amd19_zen3(uint32_t reg)
 {
     if (allowed_amd17_zen2(reg))
     {
@@ -1277,7 +1277,7 @@ allowed_amd19_zen4(uint32_t reg)
 static int
 allowed_amd19_zen4c(uint32_t reg)
 {
-    if (allowed_amd19_zen4(reg))
+    if (allowed_amd19_zen3(reg))
     {
         return 1;
     }
@@ -3781,13 +3781,13 @@ int main(void)
                     case ZEN3_RYZEN2:
                     case ZEN3_RYZEN3:
                     case ZEN3_EPYC_TRENTO:
-                        allowed = allowed_amd17_zen2;
+                        allowed = allowed_amd19_zen3;
                         break;
                     case ZEN4_RYZEN:
                     case ZEN4_RYZEN2:
                     case ZEN4_EPYC:
                     case ZEN4_RYZEN_PRO:
-                        allowed = allowed_amd19_zen4;
+                        allowed = allowed_amd19_zen3;
                         break;
                     case ZEN4_EPYC_BERGAMO:
                         allowed = allowed_amd19_zen4c;
