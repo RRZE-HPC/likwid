@@ -105,7 +105,8 @@ static int numa_balancing_test(void)
     {
         return 1;
     }
-    DEBUG_PRINT(DEBUGLEV_INFO, NUMA balancing not available. System has only a single NUMA domain); return 0;
+    DEBUG_PRINT(DEBUGLEV_INFO, NUMA balancing not available. System has only a single NUMA domain);
+    return 0;
 }
 
 static int numa_balancing_state_getter(const LikwidDevice_t device, char** value)
@@ -182,6 +183,7 @@ int likwid_sysft_init_linux_numa_balancing(_SysFeatureList* out)
 {
     if (numa_balancing_test())
     {
+        DEBUG_PRINT(DEBUGLEV_INFO, Register OS NUMA balancing);
         return likwid_sysft_register_features(out, &numa_balancing_feature_list);
     }
     return 0;

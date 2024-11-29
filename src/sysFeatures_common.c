@@ -107,7 +107,8 @@ int likwid_sysft_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList
     }
     if (!feature_list)
     {
-        ERROR_PRINT(No feature list found for current architecture);
+        errno = ENOTSUP;
+        DEBUG_PRINT(DEBUGLEV_INFO, No architectural sysFeatures for family 0x%X and model 0x%X, cpuinfo->family, cpuinfo->model);
         return -ENOTSUP;
     }
 
