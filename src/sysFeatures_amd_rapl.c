@@ -198,6 +198,20 @@ static const _SysFeatureList amd_rapl_l3_feature_list = {
 int likwid_sysft_init_amd_rapl(_SysFeatureList* out)
 {
     int err = 0;
+    Configuration_t config = NULL;
+    err = init_configuration();
+    if (err < 0)
+    {
+        errno = -err;
+        ERROR_PRINT(Failed to initialize configuration);
+        return err;
+    }
+    config = get_configuration();
+    if (config->daemonMode == ACCESSMODE_PERF)
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, No AMD RAPL support with accessmode=perf_event);
+        return 0;
+    }
     if (amd_rapl_pkg_test())
     {
         DEBUG_PRINT(DEBUGLEV_INFO, Register Amd RAPL PKG domain);
@@ -206,6 +220,10 @@ int likwid_sysft_init_amd_rapl(_SysFeatureList* out)
         {
             DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PKG not supported);
         }
+    }
+    else
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, AMD RAPL domain PKG not supported);
     }
     if (amd_rapl_core_test())
     {
@@ -216,6 +234,10 @@ int likwid_sysft_init_amd_rapl(_SysFeatureList* out)
             DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain CORE not supported);
         }
     }
+    else
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, AMD RAPL domain CORE not supported);
+    }
     if (amd_rapl_l3_test())
     {
         DEBUG_PRINT(DEBUGLEV_INFO, Register Amd RAPL L3 domain);
@@ -224,6 +246,10 @@ int likwid_sysft_init_amd_rapl(_SysFeatureList* out)
         {
             DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain L3 not supported);
         }
+    }
+    else
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, AMD RAPL domain L3 not supported);
     }
     return 0;
 }

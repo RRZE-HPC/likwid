@@ -261,6 +261,14 @@ init_configuration(void)
             {
                 config.daemonMode = ACCESSMODE_DIRECT;
             }
+            else if (strcmp(value, "perf_event") == 0)
+            {
+#ifdef LIKWID_USE_PERFEVENT
+                config.daemonMode = ACCESSMODE_PERF;
+#else
+                ERROR_PRINT(Invalid access mode 'perf_event'. Library not built with 'perf_event' support);
+#endif
+            }
         }
         else if (strcmp(name, "max_threads") == 0)
         {
