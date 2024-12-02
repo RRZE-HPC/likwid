@@ -397,9 +397,12 @@ _nvml_linkLibraries()
     // Load NVML libary and link functions
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Init NVML Libaries);
     dl_nvml = dlopen("libnvidia-ml.so", RTLD_NOW | RTLD_GLOBAL);
-    if (!dl_nvml || dlerror() != NULL)
+    if (!dl_nvml)
+        dl_nvml = dlopen("libnvidia-ml.so.1", RTLD_NOW | RTLD_GLOBAL);
+
+    if (!dl_nvml)
     {
-        fprintf(stderr, "NVML library libnvidia-ml.so not found.");
+        fprintf(stderr, "Unable to open NVML library libnvidia-ml.so: %s", dlerror());
         return -1;
     }
 
