@@ -547,31 +547,26 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
 #endif
         if (maxNumSockets < maxNumDies)
         {
-            printf("Searching for socket of die\n");
             hwloc_obj_t t = obj->parent;
             while (t->type != die_type) {
                 t = t->parent;
                 if (!t)
                 {
-                    printf("Cannot find type %d\n", die_type);
                     skip = 1;
                     break;
                 }
             }
             if (skip)
             {
-                printf("setting die id = 0\n");
                 hwThreadPool[id].dieId = 0;
                 continue;
             }
             if (t->type == die_type)
             {
-                printf("setting die id = %d\n", t->os_index);
                 hwThreadPool[id].dieId = t->os_index;
             }
             else
             {
-                printf("setting die id = 0 (else)\n");
                 hwThreadPool[id].dieId = 0;
             }
         }
