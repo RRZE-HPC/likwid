@@ -943,7 +943,7 @@ _freqInit(void)
     if (freq_init_f == NULL)
     {
 #if defined(__x86_64__) || defined(__i386__)
-        if (config.daemonMode == -1)
+        if (config.daemonMode == -2)
         {
             config.daemonMode = ACCESSMODE_DAEMON;
         }

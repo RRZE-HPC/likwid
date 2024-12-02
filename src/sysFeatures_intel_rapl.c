@@ -1041,6 +1041,20 @@ static const _SysFeatureList intel_rapl_pp1_feature_list = {
 int likwid_sysft_init_intel_rapl(_SysFeatureList* out)
 {
     int err = 0;
+    Configuration_t config = NULL;
+    err = init_configuration();
+    if (err < 0)
+    {
+        errno = -err;
+        ERROR_PRINT(Failed to initialize configuration);
+        return err;
+    }
+    config = get_configuration();
+    if (config->daemonMode == ACCESSMODE_PERF)
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, No Intel RAPL support with accessmode=perf_event);
+        return 0;
+    }
     if (intel_rapl_pkg_test())
     {
         DEBUG_PRINT(DEBUGLEV_INFO, Register Intel RAPL PKG domain);
@@ -1055,12 +1069,12 @@ int likwid_sysft_init_intel_rapl(_SysFeatureList* out)
         err = likwid_sysft_register_features(out, &intel_rapl_pkg_feature_list);
         if (err < 0)
         {
-            DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PKG not supported);
+            DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL domain PKG not supported);
         }
     }
     else
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PKG not supported);
+        DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL domain PKG not supported);
     }
     if (intel_rapl_dram_test())
     {
@@ -1076,12 +1090,12 @@ int likwid_sysft_init_intel_rapl(_SysFeatureList* out)
         err = likwid_sysft_register_features(out, &intel_rapl_dram_feature_list);
         if (err < 0)
         {
-            DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain DRAM not supported);
+            DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL domain DRAM not supported);
         }
     }
     else
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain DRAM not supported);
+        DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL domain DRAM not supported);
     }
     if (intel_rapl_pp0_test())
     {
@@ -1097,12 +1111,12 @@ int likwid_sysft_init_intel_rapl(_SysFeatureList* out)
         err = likwid_sysft_register_features(out, &intel_rapl_pp0_feature_list);
         if (err < 0)
         {
-            DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PP0 not supported);
+            DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL domain PP0 not supported);
         }
     }
     else
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PP0 not supported);
+        DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL domain PP0 not supported);
     }
     if (intel_rapl_pp1_test())
     {
@@ -1118,12 +1132,12 @@ int likwid_sysft_init_intel_rapl(_SysFeatureList* out)
         err = likwid_sysft_register_features(out, &intel_rapl_pp1_feature_list);
         if (err < 0)
         {
-            DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PP1 not supported);
+            DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL domain PP1 not supported);
         }
     }
     else
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PP1 not supported);
+        DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL domain PP1 not supported);
     }
     if (intel_rapl_psys_test())
     {
@@ -1139,12 +1153,12 @@ int likwid_sysft_init_intel_rapl(_SysFeatureList* out)
         err = likwid_sysft_register_features(out, &intel_rapl_psys_feature_list);
         if (err < 0)
         {
-            DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PSYS not supported);
+            DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL domain PSYS not supported);
         }
     }
     else
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, RAPL domain PSYS not supported);
+        DEBUG_PRINT(DEBUGLEV_INFO, Intel RAPL domain PSYS not supported);
     }
     return 0;
 }

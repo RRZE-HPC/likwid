@@ -166,10 +166,10 @@ static int numa_balancing_rate_limit_getter(const LikwidDevice_t device, char** 
 
 static _SysFeature numa_balancing_features[] = {
     {"numa_balancing", "os", "Current state of NUMA balancing", numa_balancing_state_getter, NULL, DEVICE_TYPE_NODE},
-    {"numa_balancing_scan_delay_ms", "os", "Time between page scans", numa_balancing_scan_delay_getter, NULL, DEVICE_TYPE_NODE, numa_balancing_scan_delay_test},
-    {"numa_balancing_scan_period_min_ms", "os", "Minimal time for scan period", numa_balancing_scan_period_min_getter, NULL, DEVICE_TYPE_NODE, numa_balancing_scan_period_min_test},
-    {"numa_balancing_scan_period_max_ms", "os", "Maximal time for scan period", numa_balancing_scan_period_max_getter, NULL, DEVICE_TYPE_NODE, numa_balancing_scan_period_max_test},
-    {"numa_balancing_scan_size_mb", "os", "Scan size for NUMA balancing", numa_balancing_scan_size_getter, NULL, DEVICE_TYPE_NODE, numa_balancing_scan_size_test},
+    {"numa_balancing_scan_delay", "os", "Time between page scans", numa_balancing_scan_delay_getter, NULL, DEVICE_TYPE_NODE, numa_balancing_scan_delay_test, "ms"},
+    {"numa_balancing_scan_period_min", "os", "Minimal time for scan period", numa_balancing_scan_period_min_getter, NULL, DEVICE_TYPE_NODE, numa_balancing_scan_period_min_test, "ms"},
+    {"numa_balancing_scan_period_max", "os", "Maximal time for scan period", numa_balancing_scan_period_max_getter, NULL, DEVICE_TYPE_NODE, numa_balancing_scan_period_max_test, "ms"},
+    {"numa_balancing_scan_size", "os", "Scan size for NUMA balancing", numa_balancing_scan_size_getter, NULL, DEVICE_TYPE_NODE, numa_balancing_scan_size_test, "MB/s"},
     {"numa_balancing_promote_rate_limit", "os", "Rate limit for NUMA balancing", numa_balancing_rate_limit_getter, NULL, DEVICE_TYPE_NODE, numa_balancing_rate_limit_test, "MB/s"},
 };
 

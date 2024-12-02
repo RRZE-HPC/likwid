@@ -76,6 +76,31 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     return (c > 0 ? 0 : -ENOTSUP);
 }
 
+static int amd_cpu_register_access_test()
+{
+    int err = 0;
+    Configuration_t config = NULL;
+    err = init_configuration();
+    if (err < 0)
+    {
+        errno = -err;
+        ERROR_PRINT(Failed to initialize configuration);
+        return err;
+    }
+    config = get_configuration();
+    if (config->daemonMode == ACCESSMODE_PERF)
+    {
+        return 0;
+    }
+    err = HPMinit();
+    if (err < 0)
+        return err;
+    err = HPMaddThread(0);
+    if (err < 0)
+        return err;
+    return 1;
+}
+
 static int amd_cpu_l1_stream_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_PREFETCH_CONTROL, 0, true, value);
@@ -137,6 +162,7 @@ static _SysFeature amd_k19_cpu_prefetch_features[] = {
 static const _SysFeatureList amd_k19_cpu_prefetch_feature_list = {
     .num_features = ARRAY_COUNT(amd_k19_cpu_prefetch_features),
     .features = amd_k19_cpu_prefetch_features,
+    .tester = amd_cpu_register_access_test,
 };
 
 static int amd_cpu_spec_ibrs_getter(const LikwidDevice_t device, char** value)
@@ -195,16 +221,19 @@ static _SysFeature amd_k17_cpu_speculation_features[] = {
 static const _SysFeatureList amd_k19_cpu_speculation_feature_list = {
     .num_features = ARRAY_COUNT(amd_k19_cpu_speculation_features),
     .features = amd_k19_cpu_speculation_features,
+    .tester = amd_cpu_register_access_test,
 };
 
 static const _SysFeatureList amd_k17_cpu_speculation_feature_list = {
     .num_features = ARRAY_COUNT(amd_k17_cpu_speculation_features),
     .features = amd_k17_cpu_speculation_features,
+    .tester = amd_cpu_register_access_test,
 };
 
 static int amd_cpu_flush_l1(const LikwidDevice_t device, const char* value)
 {
     uint64_t flush;
+    
     int err = likwid_sysft_string_to_uint64(value, &flush);
     if (err < 0)
         return err;
@@ -224,6 +253,7 @@ static _SysFeature amd_k19_cpu_l1dflush_features[] = {
 static const _SysFeatureList amd_k19_cpu_l1dflush_feature_list = {
     .num_features = ARRAY_COUNT(amd_k19_cpu_l1dflush_features),
     .features = amd_k19_cpu_l1dflush_features,
+    .tester = amd_cpu_register_access_test,
 };
 
 static int amd_cpu_hwconfig_cpddis_getter(const LikwidDevice_t device, char** value)
@@ -237,12 +267,13 @@ static int amd_cpu_hwconfig_cpddis_setter(const LikwidDevice_t device, const cha
 }
 
 static _SysFeature amd_k17_cpu_hwconfig_features[] = {
-    {"TurboMode", "cpufreq", "Specifies whether core performance boost is requested to be enabled or disabled", amd_cpu_hwconfig_cpddis_getter, amd_cpu_hwconfig_cpddis_setter, DEVICE_TYPE_HWTHREAD},
+    {"turbo_mode", "cpu_freq", "Specifies whether core performance boost is requested to be enabled or disabled", amd_cpu_hwconfig_cpddis_getter, amd_cpu_hwconfig_cpddis_setter, DEVICE_TYPE_HWTHREAD},
 };
 
 static const _SysFeatureList amd_k17_cpu_hwconfig_feature_list = {
     .num_features = ARRAY_COUNT(amd_k17_cpu_hwconfig_features),
     .features = amd_k17_cpu_hwconfig_features,
+    .tester = amd_cpu_register_access_test,
 };
 
 // models 0xA0 - 0xAF, 0x18

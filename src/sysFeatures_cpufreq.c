@@ -195,11 +195,11 @@ static int cpufreq_acpi_test(void)
 }
 
 static _SysFeature cpufreq_acpi_features[] = {
-    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_acpi_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
-    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_acpi_min_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
-    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_acpi_max_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
+    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_acpi_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_acpi_min_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_acpi_max_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
     {"avail_freqs", "cpu_freq", "Available CPU frequencies", cpufreq_acpi_avail_cpu_freqs_getter, NULL, DEVICE_TYPE_HWTHREAD},
-    {"governor", "cpu_freq", "CPU frequency governor", cpufreq_acpi_governor_getter, cpufreq_acpi_governor_setter, DEVICE_TYPE_HWTHREAD},
+    {"governor", "cpu_freq", "CPU frequency governor", cpufreq_acpi_governor_getter, /*cpufreq_acpi_governor_setter*/ NULL, DEVICE_TYPE_HWTHREAD},
     {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_acpi_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
 };
 
@@ -264,10 +264,10 @@ static int cpufreq_intel_pstate_test(void)
 }
 
 static _SysFeature cpufreq_pstate_features[] = {
-    {"base_freq", "cpu_freq", "Base CPU frequency", cpufreq_intel_pstate_base_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
-    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
-    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
-    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
+    {"base_freq", "cpu_freq", "Base CPU frequency", cpufreq_intel_pstate_base_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD},
     {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
 };
@@ -288,9 +288,9 @@ static int cpufreq_intel_cpufreq_test(void)
 /* INFO: Most sysfs entries are the same as for the intel_pstate driver,
  * so they share the same getters. */
 static _SysFeature cpufreq_intel_cpufreq_features[] = {
-    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
-    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
-    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
+    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD},
     {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
 };
@@ -319,9 +319,9 @@ static int cpufreq_cppc_test(void)
 }
 
 static _SysFeature cpufreq_cppc_features[] = {
-    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
-    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
-    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
+    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
     {"boost", "cpu_freq", "Turbo boost", cpufreq_cppc_boost_getter, cpufreq_cppc_boost_setter, DEVICE_TYPE_HWTHREAD},
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD},
     {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
@@ -341,9 +341,9 @@ static int cpufreq_apple_cpufreq_test(void)
 }
 
 static _SysFeature cpufreq_apple_cpufreq_features[] = {
-    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD},
-    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
-    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD},
+    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
     {"avail_freqs", "cpu_freq", "Available CPU frequencies", cpufreq_acpi_avail_cpu_freqs_getter, NULL, DEVICE_TYPE_HWTHREAD},
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD},
     {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD},
@@ -418,7 +418,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     int err = 0;
     if (cpufreq_intel_pstate_test())
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering Intel Pstate knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, Registering Intel Pstate knobs for cpufreq)
         err = likwid_sysft_register_features(out, &cpufreq_pstate_feature_list);
         if (err < 0)
         {
@@ -427,7 +427,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     }
     else if (cpufreq_intel_cpufreq_test())
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering Intel Cpufreq knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, Registering Intel Cpufreq knobs for cpufreq)
         err = likwid_sysft_register_features(out, &cpufreq_intel_cpufreq_feature_list);
         if (err < 0)
         {
@@ -436,7 +436,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     }
     else if (cpufreq_acpi_test())
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering ACPI cpufreq knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, Registering ACPI cpufreq knobs for cpufreq)
         likwid_sysft_register_features(out, &cpufreq_acpi_feature_list);
         if (err < 0)
         {
@@ -445,7 +445,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     }
     else if (cpufreq_cppc_test())
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering CPPC cpufreq knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, Registering CPPC cpufreq knobs for cpufreq)
         likwid_sysft_register_features(out, &cpufreq_cppc_feature_list);
         if (err < 0)
         {
@@ -454,7 +454,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     }
     else if (cpufreq_apple_cpufreq_test())
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering Apple cpufreq knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, Registering Apple cpufreq knobs for cpufreq)
         likwid_sysft_register_features(out, &cpufreq_apple_cpufreq_feature_list);
         if (err < 0)
         {
@@ -464,7 +464,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
 
     if (cpufreq_epp_test())
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering Energy Performance Preference knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, Registering Energy Performance Preference knobs for cpufreq)
         err = likwid_sysft_register_features(out, &cpufreq_epp_feature_list);
         if (err < 0)
         {
@@ -473,7 +473,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     }
     if (cpufreq_scaling_driver_test())
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering Scaling Driver knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, Registering Scaling Driver knobs for cpufreq)
         err = likwid_sysft_register_features(out, &cpufreq_scaling_driver_feature_list);
         if (err < 0)
         {

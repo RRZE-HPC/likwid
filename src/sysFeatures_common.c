@@ -309,6 +309,7 @@ int likwid_sysft_foreach_socket_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_f
     int err = topology_init();
     if (err < 0)
         return err;
+
     err = HPMinit();
     if (err < 0)
         return err;

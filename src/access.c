@@ -79,7 +79,22 @@ int
 HPMinit(void)
 {
     int ret = 0;
-    topology_init();
+    Configuration_t config = NULL;
+    ret = topology_init();
+    if (ret < 0)
+    {
+        errno = -ret;
+        ERROR_PRINT(Failed to initialize topology);
+        return ret;
+    }
+    ret = init_configuration();
+    if (ret < 0)
+    {
+        errno = -ret;
+        ERROR_PRINT(Failed to initialize configuration);
+        return ret;
+    }
+    config = get_configuration();
     if (registeredCpuList == NULL)
     {
         registeredCpuList = malloc(cpuid_topology.numHWThreads* sizeof(int));
@@ -89,11 +104,11 @@ HPMinit(void)
     if (access_init == NULL)
     {
 #if defined(__x86_64__) || defined(__i386__)
-        if (config.daemonMode == -1)
+        if (config->daemonMode == -2)
         {
-            config.daemonMode = ACCESSMODE_DAEMON;
+            config->daemonMode = ACCESSMODE_DAEMON;
         }
-        if (config.daemonMode == ACCESSMODE_DAEMON)
+        if (config->daemonMode == ACCESSMODE_DAEMON)
         {
             DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for x86 architecture in daemon mode);
             access_init = &access_client_init;
@@ -102,7 +117,7 @@ HPMinit(void)
             access_finalize = &access_client_finalize;
             access_check = &access_client_check;
         }
-        else if (config.daemonMode == ACCESSMODE_DIRECT)
+        else if (config->daemonMode == ACCESSMODE_DIRECT)
         {
             DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for x86 architecture in direct mode);
             access_init = &access_x86_init;
@@ -110,6 +125,10 @@ HPMinit(void)
             access_write = &access_x86_write;
             access_finalize = &access_x86_finalize;
             access_check = &access_x86_check;
+        }
+        else
+        {
+            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, HPMinit called in perf_event mode);
         }
 #endif
     }
