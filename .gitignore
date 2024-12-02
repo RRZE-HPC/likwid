@@ -4,6 +4,12 @@ GCCX86
 CLANG
 ICC
 MIC
+GCCARM*
+ARMCLANG
+FCC
+GCCPOWER
+XLC
+PGI
 
 # libraries
 *.so*
@@ -35,6 +41,3 @@ doc/html
 
 # core dumps
 /core
-
-# generated packages
-/*.deb
