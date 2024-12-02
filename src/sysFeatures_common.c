@@ -362,16 +362,46 @@ static int readmsr_socket(const LikwidDevice_t device, uint64_t reg, uint64_t *m
         if ((int)t->packageId == device->id.simple.id && t->inCpuSet)
         {
             err = HPMaddThread(t->apicId);
-            if (err < 0) continue;
+            if (err < 0)
+                continue;
             err = HPMread(t->apicId, MSR_DEV, reg, msrData);
-            if (err < 0) continue;
+            if (err < 0)
+                continue;
             return 0;
         }
     }
+
     if (err < 0)
-    {
         return err;
+    return -ENODEV;
+}
+
+static int readmsr_core(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
+{
+    assert(device->type == DEVICE_TYPE_CORE);
+
+    int err = topology_init();
+    if (err < 0)
+        return err;
+
+    CpuTopology_t topo = get_cpuTopology();
+    for (unsigned i = 0; i < topo->numHWThreads; i++)
+    {
+        HWThread* t = &topo->threadPool[i];
+        if ((int)t->coreId == device->id.simple.id && t->inCpuSet)
+        {
+            err = HPMaddThread(t->apicId);
+            if (err < 0)
+                continue;
+            err = HPMread(t->apicId, MSR_DEV, reg, msrData);
+            if (err < 0)
+                continue;
+            return 0;
+        }
     }
+
+    if (err < 0)
+        return err;
     return -ENODEV;
 }
 
@@ -397,6 +427,9 @@ int likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *ms
     {
     case DEVICE_TYPE_SOCKET:
         err = readmsr_socket(device, reg, msrData);
+        break;
+    case DEVICE_TYPE_CORE:
+        err = readmsr_core(device, reg, msrData);
         break;
     case DEVICE_TYPE_HWTHREAD:
         err = readmsr_hwthread(device, reg, msrData);
