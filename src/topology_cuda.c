@@ -215,7 +215,7 @@ topology_cuda_init()
     ret = cuda_topo_link_libraries();
     if (ret != 0)
     {
-        return EXIT_FAILURE;
+        return ret;
     }
     int num_devs = cuda_topo_get_numDevices();
     if (num_devs < 0)

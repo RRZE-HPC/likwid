@@ -828,21 +828,23 @@ affinity_init()
     NumaTopology_t numatopo = get_numaTopology();
 
 #ifdef LIKWID_WITH_NVMON
+    int doCudaDomains = 1;
     int numCudaDomains = 0;
     CudaTopology_t cudatopo = NULL;
     err = topology_cuda_init();
     if (err != 0)
     {
-        return err;
+        doCudaDomains = 0;
     }
 #endif
 #ifdef LIKWID_WITH_ROCMON
+    int doRocmDomains = 1;
     int numRocmDomains = 0;
     RocmTopology_t rocmtopo = NULL;
     err = topology_rocm_init();
     if (err != 0)
     {
-        return err;
+        doRocmDomains = 0;
     }
 #endif
 
@@ -878,30 +880,36 @@ affinity_init()
 #if defined(LIKWID_WITH_NVMON) || defined(LIKWID_WITH_ROCMON)
     int gpuDomains = 0;
 #ifdef LIKWID_WITH_NVMON
-    cudatopo = get_cudaTopology();
-    for (int i = 0; i < cudatopo->numDevices; i++)
+    if (doCudaDomains)
     {
-        CudaDevice* dev = &cudatopo->devices[i];
-        if (dev->numaNode >= 0)
+        cudatopo = get_cudaTopology();
+        for (int i = 0; i < cudatopo->numDevices; i++)
         {
-            numCudaDomains++;
+            CudaDevice* dev = &cudatopo->devices[i];
+            if (dev->numaNode >= 0)
+            {
+                numCudaDomains++;
+            }
         }
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CUDA domains %d (%d device(s)), numCudaDomains, cudatopo->numDevices);
+        gpuDomains += numCudaDomains;
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CUDA domains %d (%d device(s)), numCudaDomains, cudatopo->numDevices);
-    gpuDomains += numCudaDomains;
 #endif
 #ifdef LIKWID_WITH_ROCMON
-    rocmtopo = get_rocmTopology();
-    for (int i = 0; i < rocmtopo->numDevices; i++)
+    if (doRocmDomains)
     {
-        RocmDevice* dev = &rocmtopo->devices[i];
-        if (dev->numaNode >= 0)
+        rocmtopo = get_rocmTopology();
+        for (int i = 0; i < rocmtopo->numDevices; i++)
         {
-            numRocmDomains++;
+            RocmDevice* dev = &rocmtopo->devices[i];
+            if (dev->numaNode >= 0)
+            {
+                numRocmDomains++;
+            }
         }
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: ROCm domains %d (%d device(s)), numRocmDomains, rocmtopo->numDevices);
+        gpuDomains += numRocmDomains;
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: ROCm domains %d (%d device(s)), numRocmDomains, rocmtopo->numDevices);
-    gpuDomains += numRocmDomains;
 #endif
     numberOfDomains += gpuDomains;
 #endif
@@ -986,13 +994,16 @@ affinity_init()
         }
     }
 #ifdef LIKWID_WITH_NVMON
-    for (int i = 0; i < cudatopo->numDevices; i++)
+    if (doCudaDomains)
     {
-        err = affinity_addCudaDomain(i, &domains[domid], 0, helper);
-        if (!err)
+        for (int i = 0; i < cudatopo->numDevices; i++)
         {
-            domid++;
-            finalNumberOfDomains++;
+            err = affinity_addCudaDomain(i, &domains[domid], 0, helper);
+            if (!err)
+            {
+                domid++;
+                finalNumberOfDomains++;
+            }
         }
     }
 #endif
@@ -1001,13 +1012,16 @@ affinity_init()
 #ifdef LIKWID_WITH_NVMON
     gpuOffset = numCudaDomains;
 #endif
-    for (int i = 0; i < rocmtopo->numDevices; i++)
+    if (doRocmDomains)
     {
-        err = affinity_addRocmDomain(i, &domains[domid], gpuOffset, helper);
-        if (!err)
+        for (int i = 0; i < rocmtopo->numDevices; i++)
         {
-            domid++;
-            finalNumberOfDomains++;
+            err = affinity_addRocmDomain(i, &domains[domid], gpuOffset, helper);
+            if (!err)
+            {
+                domid++;
+                finalNumberOfDomains++;
+            }
         }
     }
 #endif
