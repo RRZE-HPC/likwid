@@ -143,6 +143,9 @@ int likwid_sysft_init_nvml(_SysFeatureList *list)
 
     dl_nvml = dlopen("libnvidia-ml.so", RTLD_NOW | RTLD_GLOBAL);
     if (!dl_nvml)
+        dl_nvml = dlopen("libnvidia-ml.so.1", RTLD_NOW | RTLD_GLOBAL);
+
+    if (!dl_nvml)
     {
         ERROR_PRINT(dlopen(libnvidia-ml.so) failed: %s, dlerror());
         return -ELIBACC;
