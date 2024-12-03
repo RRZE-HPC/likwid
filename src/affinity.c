@@ -799,7 +799,7 @@ static int affinity_addRocmDomain(int nodeId, AffinityDomain* domain, int offset
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int
-affinity_init()
+affinity_init(void)
 {
     int err = 0;
     int numberOfDomains = 1; /* all systems have the node domain */
@@ -1052,7 +1052,7 @@ affinity_init()
 }
 
 void
-affinity_finalize()
+affinity_finalize(void)
 {
     if (affinity_initialized == 0)
     {
@@ -1154,7 +1154,7 @@ affinity_finalize()
 }
 
 int
-affinity_processGetProcessorId()
+affinity_processGetProcessorId(void)
 {
     int ret;
     cpu_set_t cpu_set;
@@ -1170,7 +1170,7 @@ affinity_processGetProcessorId()
 }
 
 int
-affinity_threadGetProcessorId()
+affinity_threadGetProcessorId(void)
 {
     cpu_set_t  cpu_set;
     CPU_ZERO(&cpu_set);
@@ -1238,7 +1238,7 @@ affinity_getDomain(char* domain)
 }
 
 void
-affinity_printDomains()
+affinity_printDomains(void)
 {
     for ( int i=0; i < affinity_numberOfDomains; i++ )
     {

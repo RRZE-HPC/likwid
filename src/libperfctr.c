@@ -920,7 +920,7 @@ likwid_markerResetRegion(const char* regionTag)
 }
 
 int
-likwid_getProcessorId()
+likwid_getProcessorId(void)
 {
     int i;
     cpu_set_t  cpu_set;
