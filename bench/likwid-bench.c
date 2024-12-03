@@ -40,6 +40,7 @@
 #include <inttypes.h>
 #include <math.h>
 #include <signal.h>
+#include <getopt.h>
 
 #include <bstrlib.h>
 #include <errno.h>
@@ -61,25 +62,26 @@ extern void* getIterSingle(void* arg);
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-#define HELP_MSG printf("Threaded Memory Hierarchy Benchmark --  Version  %d.%d \n\n",VERSION,RELEASE); \
+#define HELP_MSG printf("Threaded Memory Hierarchy Benchmark -- Version %d.%d.%d \n\n",VERSION,RELEASE,MINORVERSION); \
     printf("\n"); \
     printf("Supported Options:\n"); \
-    printf("-h\t\t Help message\n"); \
-    printf("-a\t\t List available benchmarks \n"); \
-    printf("-d\t\t Delimiter used for physical hwthread list (default ,) \n"); \
-    printf("-p\t\t List available thread domains\n"); \
-    printf("\t\t or the physical ids of the hwthreads selected by the -c expression \n"); \
-    printf("-s <TIME>\t Seconds to run the test minimally (default 1)\n");\
-    printf("\t\t If resulting iteration count is below 10, it is normalized to 10.\n");\
-    printf("-i <ITERS>\t Specify the number of iterations per thread manually. \n"); \
-    printf("-l <TEST>\t list properties of benchmark \n"); \
-    printf("-t <TEST>\t type of test \n"); \
-    printf("-w\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>]\n"); \
-    printf("-W\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]]\n"); \
-    printf("\t\t <size> in kB, MB or GB (mandatory)\n"); \
+    printf("-h/--help\t\t Help message\n"); \
+    printf("-v/--version\t\t Version\n"); \
+    printf("-a/--all\t\t List available benchmarks \n"); \
+    printf("-d/--delim\t\t Delimiter used for physical hwthread list (default ,) \n"); \
+    printf("-p/--printdomains\t List available thread domains\n"); \
+    printf("\t\t\t\t or the physical ids of the hwthreads selected by the -c expression \n"); \
+    printf("-s/--runtime <TIME>\t Seconds to run the test minimally (default 1)\n");\
+    printf("\t\t\t\t If resulting iteration count is below 10, it is normalized to 10.\n");\
+    printf("-i/--iters <ITERS>\t Specify the number of iterations per thread manually. \n"); \
+    printf("-l/--list <TEST>\t list properties of benchmark \n"); \
+    printf("-t/--test <TEST>\t type of test \n"); \
+    printf("-w/--workgroup\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>]\n"); \
+    printf("-W/--Workgroup\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]]\n"); \
+    printf("\t\t\t\t <size> in kB, MB or GB (mandatory)\n"); \
     printf("For dynamically loaded benchmarks\n"); \
-    printf("-f <PATH>\t Specify a folder for the temporary files. default: /tmp\n"); \
-    printf("-o <FILE>\t Save generated assembly to file\n"); \
+    printf("-f/--tempdir <PATH>\t Specify a folder for the temporary files. default: /tmp\n"); \
+    printf("-o/--asmout <FILE>\t Save generated assembly to file\n"); \
     printf("\n"); \
     printf("Difference between -w and -W :\n"); \
     printf("-w allocates the streams in the thread_domain with one thread and support placement of streams\n"); \
@@ -97,6 +99,24 @@ extern void* getIterSingle(void* arg);
 
 #define VERSION_MSG \
     printf("likwid-bench -- Version %d.%d.%d\n",VERSION,RELEASE,MINORVERSION); \
+    
+static struct option bench_cli_options[] =
+{
+    {"help", no_argument, NULL, 'h'},
+    {"all", no_argument, NULL, 'a'},
+    {"version", no_argument, NULL, 'v'},
+    {"delim", required_argument, NULL, 'd'},
+    {"printdomains", no_argument, NULL, 'p'},
+    {"runtime", required_argument, NULL, 's'},
+    {"iters", required_argument, NULL, 'i'},
+    {"list", required_argument, NULL, 'l'},
+    {"test", required_argument, NULL, 't'},
+    {"workgroup", required_argument, NULL, 'w'},
+    {"Workgroup", required_argument, NULL, 'W'},
+    {"tempdir", required_argument, NULL, 'f'},
+    {"asmout", required_argument, NULL, 'o'},
+    {NULL, 0, NULL, 0}
+};
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE  ############ */
 
@@ -182,7 +202,7 @@ int main(int argc, char** argv)
         exit(EXIT_SUCCESS);
     }
 
-    while ((c = getopt (argc, argv, "W:w:t:s:l:aphvi:f:o:")) != -1) {
+    while ((c = getopt_long (argc, argv, "W:w:t:s:l:aphvi:f:o:", bench_cli_options, NULL)) != -1) {
         switch (c)
         {
             case 'f':
@@ -203,7 +223,7 @@ int main(int argc, char** argv)
     }
     optind = 0;
 
-    while ((c = getopt (argc, argv, "W:w:t:s:l:aphvi:f:o:")) != -1) {
+    while ((c = getopt_long (argc, argv, "W:w:t:s:l:aphvi:f:o:", bench_cli_options, NULL)) != -1) {
         switch (c)
         {
             case 'h':
