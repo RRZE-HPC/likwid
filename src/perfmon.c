@@ -4231,7 +4231,7 @@ perfmon_readMarkerFile(const char* filename)
 }
 
 void
-perfmon_destroyMarkerResults()
+perfmon_destroyMarkerResults(void)
 {
     int i = 0, j = 0;
     if (markerResults != NULL)

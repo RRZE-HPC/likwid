@@ -264,7 +264,7 @@ cpuFeatureNamesFixed[CPUFEATURES_MAX] = {};
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void
-cpuFeatures_init()
+cpuFeatures_init(void)
 {
     if (features_initialized)
     {

@@ -177,7 +177,7 @@ HPMaddThread(int cpu_id)
 }
 
 void
-HPMfinalize()
+HPMfinalize(void)
 {
     topology_init();
     if (registeredCpuList)
