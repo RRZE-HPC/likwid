@@ -186,10 +186,7 @@ int likwid_sysft_init(void)
 #ifdef LIKWID_WITH_NVMON
     err = likwid_sysft_init_nvml(&_feature_list);
     if (err < 0)
-    {
-        ERROR_PRINT(Failed to initialize SysFeatures nvml module);
-        return err;
-    }
+        DEBUG_PRINT(DEBUGLEV_INFO, Failed to initialize SysFeatures nvml module);
 #endif
     
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Initialized %d features, _feature_list.num_features);
