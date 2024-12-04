@@ -126,7 +126,6 @@ static int create_paths(void)
     {
         char d_name_tokenized[sizeof(pcidevice_file->d_name)];
         snprintf(d_name_tokenized, sizeof(d_name_tokenized), "%s", pcidevice_file->d_name); // <-- manual strlcpy
-                                                                                  //
         /* Read all entries in the k10temp directory.
          * Find all entries, which look like a PCI address in order to determine
          * which devices are associated with the k10temp driver.
