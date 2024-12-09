@@ -230,11 +230,6 @@ static const _SysFeatureList amd_k17_cpu_speculation_feature_list = {
     .tester = amd_cpu_register_access_test,
 };
 
-static const _SysFeatureList amd_k17_cpu_speculation_feature_list = {
-    .num_features = ARRAY_COUNT(amd_k17_cpu_speculation_features),
-    .features = amd_k17_cpu_speculation_features,
-};
-
 static int amd_cpu_flush_l1(const LikwidDevice_t device, const char* value)
 {
     uint64_t flush;
@@ -271,14 +266,6 @@ static int amd_cpu_hwconfig_cpddis_setter(const LikwidDevice_t device, const cha
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD17_HW_CONFIG, 25, true, value);
 }
 
-static _SysFeature amd_k17_cpu_hwconfig_features[] = {
-    {"TurboMode", "cpufreq", "Specifies whether core performance boost is requested to be enabled or disabled", amd_cpu_hwconfig_cpddis_getter, amd_cpu_hwconfig_cpddis_setter, DEVICE_TYPE_HWTHREAD},
-};
-
-static const _SysFeatureList amd_k17_cpu_hwconfig_feature_list = {
-    .num_features = ARRAY_COUNT(amd_k17_cpu_hwconfig_features),
-    .features = amd_k17_cpu_hwconfig_features,
-};
 
 static _SysFeature amd_k17_cpu_hwconfig_features[] = {
     {"turbo_mode", "cpu_freq", "Specifies whether core performance boost is requested to be enabled or disabled", amd_cpu_hwconfig_cpddis_getter, amd_cpu_hwconfig_cpddis_setter, DEVICE_TYPE_HWTHREAD},
@@ -294,7 +281,7 @@ static const _SysFeatureList* amd_k19_cpu_feature_inputs[] = {
     &amd_k19_cpu_prefetch_feature_list,
     &amd_k19_cpu_speculation_feature_list,
     &amd_k19_cpu_l1dflush_feature_list,
-    &amd_k19_cpu_hwconfig_feature_list,
+    &amd_k17_cpu_hwconfig_feature_list,
 };
 
 // models 0xA0 - 0xAF, 0x18
