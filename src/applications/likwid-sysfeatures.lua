@@ -184,12 +184,6 @@ if #devList == 0 then
     end
 end
 
---[[local access_mode = likwid.getAccessClientMode()
-if access_mode < 0 or access_mode > 1 then
-    print_stderr("Manipulation of HW features only for access mode 'direct' or 'accessdaemon'")
-    os.exit(1)
-end]]
-
 -- set verbosity
 if verbose > 0 and verbose <= 3 then
     likwid.setVerbosity(verbose)
