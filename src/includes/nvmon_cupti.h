@@ -6,7 +6,7 @@
  *      Description:  Header File of nvmon module (CUPTI backend).
  *
  *      Version:   5.4.1
- *      Released:  27.11.2024
+ *      Released:  09.12.2024
  *
  *      Author:   Thomas Gruber (tg), thomas.gruber@googlemail.com
  *      Project:  likwid

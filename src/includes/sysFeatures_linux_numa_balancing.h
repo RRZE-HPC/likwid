@@ -7,7 +7,7 @@
  *                    component
  *
  *      Version:   5.4.1
- *      Released:  27.11.2024
+ *      Released:  09.12.2024
  *
  *      Authors:  Thomas Gruber (tg), thomas.roehl@googlemail.com
  *                Michael Panzlaff, michael.panzlaff@fau.de

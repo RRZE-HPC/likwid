@@ -6,7 +6,7 @@
  *      Description:  Implementation of access daemon for procfs and sysfs files.
  *
  *      Version:   5.4.1
- *      Released:  27.11.2024
+ *      Released:  09.12.2024
  *
  *      Authors:  Michael Meier, michael.meier@rrze.fau.de
  *                Jan Treibig (jt), jan.treibig@gmail.com,

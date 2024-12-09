@@ -8,7 +8,7 @@
  *      consumption on architectures implementing the RAPL interface.
  *
  *      Version:   5.4.1
- *      Released:  27.11.2024
+ *      Released:  09.12.2024
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid

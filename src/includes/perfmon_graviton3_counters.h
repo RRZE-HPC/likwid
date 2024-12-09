@@ -6,7 +6,7 @@
  *      Description:  Counter Header File of perfmon module for ARM AWS Graviton3
  *
  *      Version:   5.4.1
- *      Released:  27.11.2024
+ *      Released:  09.12.2024
  *
  *      Author:   Carlos Falquez, c.falquez@fz-juelich.de
  *      Project:  likwid

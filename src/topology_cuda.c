@@ -6,7 +6,7 @@
  *      Description:  Topology module for Nvidia GPUs
  *
  *      Version:   5.4.1
- *      Released:  27.11.2024
+ *      Released:  09.12.2024
  *
  *      Author:   Thomas Gruber (tg), thomas.roehl@googlemail.com
  *      Project:  likwid

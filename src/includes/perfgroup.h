@@ -6,7 +6,7 @@
  *      Description:  Header File of performance group and event set handler
  *
  *      Version:   5.4.1
- *      Released:  27.11.2024
+ *      Released:  09.12.2024
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid
