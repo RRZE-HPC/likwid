@@ -3828,14 +3828,24 @@ static int lua_likwid_destroyDevice(lua_State *L)
     return 0;
 }
 
-static int lua_likwid_getAvailableDevices(lua_State *L)
+static int lua_likwid_getDevices(lua_State *L, bool all)
 {
     const LikwidDeviceType type = luaL_checknumber(L, 1);
     char **id_list = NULL;
     size_t id_list_len = 0;
-    int err = likwid_device_get_available(type, &id_list, &id_list_len);
-    if (err < 0)
-        luaL_error(L, "likwid_device_get_available failed: %s", strerror(-err));
+    int err;
+    if (all)
+    {
+        err = likwid_device_get_all(type, &id_list, &id_list_len);
+        if (err < 0)
+            luaL_error(L, "likwid_device_get_all failed: %s", strerror(-err));
+    }
+    else
+    {
+        err = likwid_device_get_available(type, &id_list, &id_list_len);
+        if (err < 0)
+            luaL_error(L, "likwid_device_get_available failed: %s", strerror(-err));
+    }
 
     lua_newtable(L);
 
@@ -3848,6 +3858,16 @@ static int lua_likwid_getAvailableDevices(lua_State *L)
 
     free(id_list);
     return 1;
+}
+
+static int lua_likwid_getAvailableDevices(lua_State *L)
+{
+    return lua_likwid_getDevices(L, false);
+}
+
+static int lua_likwid_getAllDevices(lua_State *L)
+{
+    return lua_likwid_getDevices(L, true);
 }
 
 static int lua_likwiddevice_get_typeId(lua_State *L)
@@ -4249,6 +4269,7 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
     lua_register(L, "likwid_createDevicesFromString",lua_likwid_createDevicesFromString);
     lua_register(L, "likwid_createDevice",lua_likwid_createDevice);
     lua_register(L, "likwid_getAvailableDevices",lua_likwid_getAvailableDevices);
+    lua_register(L, "likwid_getAllDevices",lua_likwid_getAllDevices);
 #endif /* LIKWID_WITH_SYSFEATURES */
 #ifdef __MIC__
   setuid(0);
