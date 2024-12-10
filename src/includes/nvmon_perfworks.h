@@ -230,6 +230,37 @@ typedef struct {
 
 #endif
 
+#if defined(CUDART_VERSION) && CUDART_VERSION < 11060
+typedef struct NVPW_MetricsEvaluator_EvaluateToGpuValues_Params
+    {
+        /// [in]
+        size_t structSize;
+        /// [in] assign to NULL
+        void* pPriv;
+        /// [in]
+        struct NVPW_MetricsEvaluator* pMetricsEvaluator;
+        /// [in]
+        const struct NVPW_MetricEvalRequest* pMetricEvalRequests;
+        /// [in]
+        size_t numMetricEvalRequests;
+        /// [in] set to 'NVPW_MetricEvalRequest_STRUCT_SIZE'
+        size_t metricEvalRequestStructSize;
+        /// [in] set to sizeof('NVPW_MetricEvalRequest')
+        size_t metricEvalRequestStrideSize;
+        /// [in]
+        const uint8_t* pCounterDataImage;
+        /// [in]
+        size_t counterDataImageSize;
+        /// [in]
+        size_t rangeIndex;
+        /// [in]
+        NVPA_Bool isolated;
+        /// [inout] 'pMetricValues' is in, '*pMetricValues' is out
+        double* pMetricValues;
+    } NVPW_MetricsEvaluator_EvaluateToGpuValues_Params;
+#define NVPW_MetricsEvaluator_EvaluateToGpuValues_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_MetricsEvaluator_EvaluateToGpuValues_Params, pMetricValues)
+#endif
+
 #if defined(CUDART_VERSION) && CUDART_VERSION >= 12060
 typedef struct NVPA_MetricsContext NVPA_MetricsContext;
 typedef struct NVPW_CUDA_MetricsContext_Create_Params

@@ -33,6 +33,8 @@
 #include <math.h>
 #include <dlfcn.h>
 #include <nvml.h>
+#include <cuda.h>
+#include <cuda_runtime_api.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -72,7 +74,6 @@
     } while (0)
 
 DECLAREFUNC_NVML(nvmlDeviceGetBAR1MemoryInfo, nvmlDevice_t device, nvmlBAR1Memory_t* bar1Memory);
-DECLAREFUNC_NVML(nvmlDeviceGetBusType, nvmlDevice_t device, nvmlBusType_t *type);
 DECLAREFUNC_NVML(nvmlDeviceGetClock, nvmlDevice_t device, nvmlClockType_t clockType, nvmlClockId_t clockId, unsigned int* clockMHz);
 DECLAREFUNC_NVML(nvmlDeviceGetClockInfo, nvmlDevice_t device, nvmlClockType_t type, unsigned int* clock);
 DECLAREFUNC_NVML(nvmlDeviceGetCurrPcieLinkGeneration, nvmlDevice_t device, unsigned int *currLinkGen);
@@ -123,6 +124,14 @@ static const char *(*nvmlErrorString_ptr)(nvmlReturn_t result);
 DECLAREFUNC_NVML(nvmlInit_v2, void);
 DECLAREFUNC_NVML(nvmlShutdown, void);
 
+#if defined(CUDART_VERSION) && CUDART_VERSION < 11060
+typedef unsigned int nvmlBusType_t;
+#define NVML_BUS_TYPE_UNKNOWN  0
+#else
+DECLAREFUNC_NVML(nvmlDeviceGetBusType, nvmlDevice_t device, nvmlBusType_t *type);
+#endif
+
+
 static const _SysFeatureList nvidia_gpu_feature_list;
 static bool nvml_initialized = false;
 static void *dl_nvml = NULL;
@@ -152,7 +161,9 @@ int likwid_sysft_init_nvml(_SysFeatureList *list)
     }
 
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetBAR1MemoryInfo);
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 11060
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetBusType);
+#endif
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetClock);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetClockInfo);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetCurrPcieLinkGeneration);
@@ -394,8 +405,10 @@ static int nvidia_gpu_bar1_total_getter(const LikwidDevice_t device, char **valu
 static int nvidia_gpu_bus_type_getter(const LikwidDevice_t device, char **value)
 {
     LWD_TO_NVMLD(device, nvmlDevice);
-    nvmlBusType_t type;
+    nvmlBusType_t type = NVML_BUS_TYPE_UNKNOWN;
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 11060
     NVML_CALL(nvmlDeviceGetBusType, nvmlDevice, &type);
+#endif
     static const char *types[] = {
         "Unknown", "PCI", "PCIe", "FPCI", "AGP",
     };
@@ -757,10 +770,12 @@ static int nvidia_gpu_encoder_capacity_hevc_getter(const LikwidDevice_t device, 
     return nvidia_gpu_encoder_capacity_getter(device, NVML_ENCODER_QUERY_HEVC, value);
 }
 
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 12030
 static int nvidia_gpu_encoder_capacity_av1_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_encoder_capacity_getter(device, NVML_ENCODER_QUERY_AV1, value);
 }
+#endif
 
 static int nvidia_gpu_encoder_usage_getter(const LikwidDevice_t device, char **value)
 {
@@ -869,6 +884,7 @@ static int nvidia_gpu_temp_thresh_gpu_max_getter(const LikwidDevice_t device, ch
     return nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_GPU_MAX, value);
 }
 
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 11020
 static int nvidia_gpu_temp_thresh_acou_min_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MIN, value);
@@ -883,11 +899,14 @@ static int nvidia_gpu_temp_thresh_acou_max_getter(const LikwidDevice_t device, c
 {
     return nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MAX, value);
 }
+#endif
 
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 12060
 static int nvidia_gpu_temp_thresh_gps_cur_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_GPS_CURR, value);
 }
+#endif
 
 static int nvidia_gpu_temp_thresh_setter(const LikwidDevice_t device, nvmlTemperatureThresholds_t t, const char *value)
 {
@@ -923,6 +942,7 @@ static int nvidia_gpu_temp_thresh_gpu_max_setter(const LikwidDevice_t device, co
     return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_GPU_MAX, value);
 }
 
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 11020
 static int nvidia_gpu_temp_thresh_acou_min_setter(const LikwidDevice_t device, const char *value)
 {
     return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MIN, value);
@@ -937,11 +957,14 @@ static int nvidia_gpu_temp_thresh_acou_max_setter(const LikwidDevice_t device, c
 {
     return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MAX, value);
 }
+#endif
 
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 12060
 static int nvidia_gpu_temp_thresh_gps_cur_setter(const LikwidDevice_t device, const char *value)
 {
     return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_GPS_CURR, value);
 }
+#endif
 
 static int nvidia_gpu_ofa_usage_getter(const LikwidDevice_t device, char **value)
 {
@@ -1090,7 +1113,9 @@ static _SysFeature nvidia_gpu_features[] = {
     {"power_usage", "nvml", "Current power usage", nvidia_gpu_power_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "W"},
     {"encoder_cap_h264", "nvml", "Video encoder H264 capacity", nvidia_gpu_encoder_capacity_h264_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
     {"encoder_cap_hevc", "nvml", "Video encoder HEVC capacity", nvidia_gpu_encoder_capacity_hevc_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 12030
     {"encoder_cap_av1", "nvml", "Video encoder AV1 capacity", nvidia_gpu_encoder_capacity_av1_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
+#endif
     {"encoder_usage", "nvml", "Video encoder usage", nvidia_gpu_encoder_usage_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
     {"gom_cur", "nvml", "Current GPU operation mode (all_on, compute_only, graphics_only)", nvidia_gpu_gom_cur_getter, nvidia_gpu_gom_setter, DEVICE_TYPE_NVIDIA_GPU, NULL},
     {"gom_pend", "nvml", "Pending (after reboot) GPU operation mode (all_on, compute_only, graphics_only)", nvidia_gpu_gom_pend_getter, nvidia_gpu_gom_setter, DEVICE_TYPE_NVIDIA_GPU, NULL},
@@ -1102,10 +1127,14 @@ static _SysFeature nvidia_gpu_features[] = {
     {"temp_thresh_slow", "nvml", "Slowdown Temperature threshold", nvidia_gpu_temp_thresh_slow_getter, nvidia_gpu_temp_thresh_slow_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
     {"temp_thresh_mem_max", "nvml", "Maximum memory temperature threshold", nvidia_gpu_temp_thresh_mem_max_getter, nvidia_gpu_temp_thresh_mem_max_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
     {"temp_thresh_gpu_max", "nvml", "Maximum GPU temperature threshold", nvidia_gpu_temp_thresh_gpu_max_getter, nvidia_gpu_temp_thresh_gpu_max_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 11020
     {"temp_thresh_acou_min", "nvml", "Minimum acoustic temperature threshold", nvidia_gpu_temp_thresh_acou_min_getter, nvidia_gpu_temp_thresh_acou_min_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
     {"temp_thresh_acou_cur", "nvml", "Current acoustic temperature threshold", nvidia_gpu_temp_thresh_acou_cur_getter, nvidia_gpu_temp_thresh_acou_cur_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
     {"temp_thresh_acou_max", "nvml", "Maximum acoustic temperature threshold", nvidia_gpu_temp_thresh_acou_max_getter, nvidia_gpu_temp_thresh_acou_max_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
+#endif
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 12060
     {"temp_thresh_gps_cur", "nvml", "Current GPS temperature threshold", nvidia_gpu_temp_thresh_gps_cur_getter, nvidia_gpu_temp_thresh_gps_cur_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "degrees C"},
+#endif
     {"ofa_usage", "nvml", "Optical Flow Accelerator usage", nvidia_gpu_ofa_usage_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
     {"energy", "nvml", "Energy consumed since driver reload", nvidia_gpu_energy_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "J"},
     {"gpu_usage", "nvml", "GPU usage", nvidia_gpu_gpu_usage_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
