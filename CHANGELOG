@@ -1,6 +1,11 @@
 # Changelog 5.4.1
 - Fixes linking errors due to missing bstrlib.h
 - Fix for likwid-bench kernel stream_mem
+- Fix builds with CUDA for versions 11.2 to 12.6
+- Fix sysfeatures with ACCESSMODE=perf_event
+- Add AMD Zen1 to Zen3 to sysfeatures
+- Add support for apple-cpufreq and cppc driver to sysfeatures
+- Fix sysfeatures on ARM architectures
 
 # Changelog 5.4.0
 - Support for Intel Granite Rapids (core, energy, uncore)
