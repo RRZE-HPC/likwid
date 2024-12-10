@@ -15,7 +15,7 @@ COMPILER = GCC#NO SPACE
 # install location, e.g. for packaging, use PREFIX for the intermediate
 # location and INSTALLED_PREFIX for the final location. You can use
 # 'make move' to copy it from PREFIX to INSTALLED_PREFIX.
-PREFIX ?= /home/unrz139/.modules/likwid-5.4.0rc1#NO SPACE
+PREFIX ?= /usr/local#NO SPACE
 
 # Set the default mode for MSR access.
 # This can usually be overriden on the commandline.
