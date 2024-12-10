@@ -1,4 +1,4 @@
-#include <sysFeatures_intel_freq.h>
+#include <sysFeatures_x86_tsc.h>
 
 #include <bitUtil.h>
 #include <cpuid.h>
@@ -106,7 +106,7 @@ static int invariant_getter(LikwidDevice_t device, char **value)
     return likwid_sysft_uint64_to_string(field32(edx, 8, 1), value);
 }
 
-static _SysFeature intel_freq_features[] = {
+static _SysFeature freq_features[] = {
     {"denominator", "tsc", "Denominator of Time Stamp Counter ratio", denominator_getter, NULL, DEVICE_TYPE_SOCKET, ratio_tester},
     {"numerator", "tsc", "Numerator of Time Stamp Counter ratio", numerator_getter, NULL, DEVICE_TYPE_SOCKET, ratio_tester},
     {"crystal_freq", "tsc", "Crystal frequency of Time Stamp Counter", crystal_freq_getter, NULL, DEVICE_TYPE_SOCKET, crystal_freq_tester, "Hz"},
@@ -114,7 +114,7 @@ static _SysFeature intel_freq_features[] = {
     {"invariant", "tsc", "Time Stamp Counter operates at a fixed frequency", invariant_getter, NULL, DEVICE_TYPE_SOCKET, invariant_tester},
 };
 
-const _SysFeatureList likwid_sysft_intel_cpu_freq_feature_list = {
-    .num_features = ARRAY_COUNT(intel_freq_features),
-    .features = intel_freq_features,
+const _SysFeatureList likwid_sysft_x86_cpu_freq_feature_list = {
+    .num_features = ARRAY_COUNT(freq_features),
+    .features = freq_features,
 };

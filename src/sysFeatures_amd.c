@@ -38,6 +38,7 @@
 #include <sysFeatures_amd_hsmp.h>
 #include <sysFeatures_amd_rapl.h>
 #include <sysFeatures_amd_thermal.h>
+#include <sysFeatures_x86_tsc.h>
 #include <sysFeatures_common.h>
 #include <topology.h>
 #include <registers.h>
@@ -284,6 +285,7 @@ static const _SysFeatureList* amd_k17_cpu_feature_inputs[] = {
     //&amd_k19_cpu_l1dflush_feature_list,
     &amd_k17_cpu_hwconfig_feature_list,
     &likwid_sysft_amd_k10_cpu_thermal_feature_list,
+    &likwid_sysft_x86_cpu_freq_feature_list,
     NULL,
 };
 
@@ -292,6 +294,7 @@ static const _SysFeatureList* amd_k19_zen3_cpu_feature_inputs[] = {
     &amd_k19_cpu_speculation_feature_list,
     &amd_k17_cpu_hwconfig_feature_list,
     &likwid_sysft_amd_k10_cpu_thermal_feature_list,
+    &likwid_sysft_x86_cpu_freq_feature_list,
     NULL,
 };
 
@@ -301,6 +304,7 @@ static const _SysFeatureList* amd_k19_zen4_cpu_feature_inputs[] = {
     &amd_k19_cpu_l1dflush_feature_list,
     &amd_k17_cpu_hwconfig_feature_list,
     &likwid_sysft_amd_k10_cpu_thermal_feature_list,
+    &likwid_sysft_x86_cpu_freq_feature_list,
     NULL,
 };
 
