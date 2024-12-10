@@ -34,7 +34,6 @@
 #include <stdint.h>
 
 #include <registers.h>
-#include <cpuid.h>
 #include <pci_types.h>
 #include <sysFeatures_types.h>
 #include <likwid.h>
