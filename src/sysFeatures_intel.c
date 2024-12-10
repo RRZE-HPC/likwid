@@ -49,6 +49,7 @@
 #include <sysFeatures_intel_uncorefreq.h>
 #include <sysFeatures_intel_spec_ctrl.h>
 #include <sysFeatures_intel_thermal.h>
+#include <sysFeatures_intel_hwp.h>
 
 static const _HWArchFeatures intel_arch_features[];
 
@@ -83,6 +84,7 @@ static const _SysFeatureList* intel_arch_feature_inputs[] = {
     &likwid_sysft_intel_uncorefreq_feature_list,
     &likwid_sysft_intel_cpu_spec_ctrl_feature_list,
     &likwid_sysft_intel_cpu_thermal_feature_list,
+    &likwid_sysft_intel_hwp_feature_list,
     NULL,
 };
 
