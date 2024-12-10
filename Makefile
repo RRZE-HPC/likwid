@@ -617,7 +617,7 @@ install: install_daemon install_freq install_appdaemon install_container_helper
 	@mkdir -p $(PREFIX)/include
 	@chmod 755 $(PREFIX)/include
 	@install -m 644 $(SRC_DIR)/includes/likwid.h  $(PREFIX)/include/
-	@sed -i -e "s#<VERSION>#$(VERSION)#g" -e "s#<DATE>#$(DATE)#g" -e "s#<GITCOMMIT>#$(GITCOMMIT)#g" -e "s#<MINOR>#$(MINOR)#g" $(PREFIX)/include/likwid.h
+	@sed -i -e "s#<VERSION>#$(VERSION)#g" -e "s#<DATE>#$(DATE)#g" -e "s#<GITCOMMIT>#$(GITCOMMIT)#g" -e "s#<MINOR>#$(MINOR)#g" -e "s#VERSION.RELEASE.MINORVERSION#$(VERSION).$(RELEASE).$(MINOR)#g" -e "s#LIKWID_COMMIT GITCOMMIT#LIKWID_COMMIT \"$(GITCOMMIT)\"#g" $(PREFIX)/include/likwid.h
 	@install -m 644 $(SRC_DIR)/includes/likwid-marker.h  $(PREFIX)/include/
 	$(FORTRAN_INSTALL)
 	@echo "===> INSTALL groups to $(PREFIX)/share/likwid/perfgroups"
