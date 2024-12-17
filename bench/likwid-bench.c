@@ -356,6 +356,7 @@ int main(int argc, char** argv)
                     }
                 }
                 bdestroy(testcase);
+                testcase = bfromcstr("none");
                 if (!builtin)
                 {
                     dynbench_close(test, NULL);
@@ -411,6 +412,7 @@ int main(int argc, char** argv)
                     return EXIT_FAILURE;
                 }
                 bdestroy(testcase);
+                testcase = bfromcstr("none");
                 break;
             case 'o':
             case 'f':
