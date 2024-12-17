@@ -101,10 +101,13 @@ bstr_to_doubleSize(const_bstring str, DataType type)
     int ret;
     bstring unit = bmidstr(str, blength(str)-2, 2);
     bstring single_unit = bmidstr(str, blength(str)-1, 1);
+    bstring triple_unit = bmidstr(str, blength(str)-3, 3);
     bstring sizeStr = bmidstr(str, 0, blength(str)-2);
     bstring single_sizeStr = bmidstr(str, 0, blength(str)-1);
+    bstring triple_sizeStr = bmidstr(str, 0, blength(str)-3);
     uint64_t sizeU = 0;
     uint64_t single_sizeU = 0;
+    uint64_t triple_sizeU = 0;
     uint64_t junk = 0;
     uint64_t bytesize = 0;
     if (blength(sizeStr) == 0)
@@ -117,6 +120,11 @@ bstr_to_doubleSize(const_bstring str, DataType type)
         return 0;
     }
     ret = str2uint64_t(bdata(single_sizeStr), &single_sizeU);
+    if (ret < 0)
+    {
+        return 0;
+    }
+    ret = str2uint64_t(bdata(triple_sizeStr), &triple_sizeU);
     if (ret < 0)
     {
         return 0;
@@ -136,14 +144,28 @@ bstr_to_doubleSize(const_bstring str, DataType type)
     {
         junk = (sizeU *1000000000)/bytesize;
     }
+    else if ((biseqcstr(triple_unit, "kiB"))||(biseqcstr(triple_unit, "KiB")))
+    {
+        junk = (triple_sizeU *1024)/bytesize;
+    }
+    else if (biseqcstr(triple_unit, "MiB"))
+    {
+        junk = (triple_sizeU *1024*1024)/bytesize;
+    }
+    else if (biseqcstr(triple_unit, "GiB"))
+    {
+        junk = (triple_sizeU *1024*1024*1024)/bytesize;
+    }
     else if (biseqcstr(single_unit, "B"))
     {
         junk = (single_sizeU)/bytesize;
     }
     bdestroy(unit);
     bdestroy(single_unit);
+    bdestroy(triple_unit);
     bdestroy(sizeStr);
     bdestroy(single_sizeStr);
+    bdestroy(triple_sizeStr);
     return junk;
 }
 
