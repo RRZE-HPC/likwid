@@ -61,6 +61,38 @@ str2int(const char* str)
     return (int) val;
 }
 
+static int
+str2uint64_t(const char* str, uint64_t* result)
+{
+    char* endptr;
+    errno = 0;
+    unsigned long long val;
+    val = strtoull(str, &endptr, 10);
+
+    if ((errno == ERANGE && val == ULLONG_MAX)
+        || (errno != 0 && val == 0))
+    {
+        fprintf(stderr, "Value in string %s out of range\n", str);
+        return -EINVAL;
+    }
+
+    if (endptr == str)
+    {
+        fprintf(stderr, "No digits were found in %s\n", str);
+        return -EINVAL;
+    }
+
+    // long long could be larger than 64 bits
+    if (val > 0xFFFFFFFFFFFFFFFF)
+    {
+        fprintf(stderr, "Value in string %s out of range for uint64_t\n", str);
+        return -EINVAL;
+    }
+
+    *result = val;
+    return 1;
+}
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 uint64_t
@@ -79,21 +111,13 @@ bstr_to_doubleSize(const_bstring str, DataType type)
     {
         return 0;
     }
-    ret = str2int(bdata(sizeStr));
-    if (ret >= 0)
-    {
-        sizeU = str2int(bdata(sizeStr));
-    }
-    else
+    ret = str2uint64_t(bdata(sizeStr), &sizeU);
+    if (ret < 0)
     {
         return 0;
     }
-    ret = str2int(bdata(single_sizeStr));
-    if (ret >= 0)
-    {
-        single_sizeU = str2int(bdata(single_sizeStr));
-    }
-    else
+    ret = str2uint64_t(bdata(single_sizeStr), &single_sizeU);
+    if (ret < 0)
     {
         return 0;
     }
