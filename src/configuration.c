@@ -121,7 +121,7 @@ use_hardcoded:
     {
         if (getenv("LIKWID_NO_ACCESS") == NULL)
         {
-            ERROR_PLAIN_PRINT(Unable to get path to access daemon. Maybe your PATH environment variable does not contain the folder where you installed it or the file was moved away / not copied to that location?);
+            ERROR_PLAIN_PRINT("Unable to get path to access daemon. Maybe your PATH environment variable does not contain the folder where you installed it or the file was moved away / not copied to that location?");
             return -1;
         }
     }
@@ -162,7 +162,7 @@ init_configuration(void)
     {
         if (1023 == strlen(filename) && access(filename, R_OK))
         {
-            ERROR_PLAIN_PRINT(Topology file path too long for internal buffer);
+            ERROR_PLAIN_PRINT("Topology file path too long for internal buffer");
             return -1;
         }
         config.topologyCfgFileName = (char*)malloc((strlen(filename)+1) * sizeof(char));
@@ -187,7 +187,7 @@ init_configuration(void)
     {
         if (1023 == strlen(filename) && access(filename, R_OK))
         {
-            ERROR_PLAIN_PRINT(Config file path too long for internal buffer);
+            ERROR_PLAIN_PRINT("Config file path too long for internal buffer");
             if (config.topologyCfgFileName) free(config.topologyCfgFileName);
             return -1;
         }
@@ -199,7 +199,7 @@ init_configuration(void)
         return default_configuration();
     }
 
-    DEBUG_PRINT(DEBUGLEV_INFO, Reading configuration from %s, config.configFileName)
+    DEBUG_PRINT(DEBUGLEV_INFO, "Reading configuration from %s", config.configFileName);
     fp = fopen(config.configFileName, "r");
     while (fgets(line, 512, fp) != NULL) {
         if (sscanf(line,"%s = %s", name, value) != 2)
@@ -223,7 +223,7 @@ init_configuration(void)
             {
                 if (default_configuration() < 0)
                 {
-                    ERROR_PLAIN_PRINT(Unable to get path to access daemon);
+                    ERROR_PLAIN_PRINT("Unable to get path to access daemon");
                     fclose(fp);
                     if (config.topologyCfgFileName) free(config.topologyCfgFileName);
                     if (config.configFileName) free(config.configFileName);
@@ -243,7 +243,7 @@ init_configuration(void)
             }
             else
             {
-                ERROR_PRINT(Path to group files %s is not a directory, value);
+                ERROR_PRINT("Path to group files %s is not a directory", value);
                 fclose(fp);
                 if (config.topologyCfgFileName) free(config.topologyCfgFileName);
                 if (config.configFileName) free(config.configFileName);
@@ -266,7 +266,7 @@ init_configuration(void)
 #ifdef LIKWID_USE_PERFEVENT
                 config.daemonMode = ACCESSMODE_PERF;
 #else
-                ERROR_PRINT(Invalid access mode 'perf_event'. Library not built with 'perf_event' support);
+                ERROR_PRINT("Invalid access mode 'perf_event'. Library not built with 'perf_event' support");
 #endif
             }
         }

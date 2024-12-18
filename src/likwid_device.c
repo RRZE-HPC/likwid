@@ -347,7 +347,7 @@ int likwid_device_create(LikwidDeviceType type, int id, LikwidDevice_t* device)
             return device_create_amdgpu_by_index(id, device);
 #endif
         default:
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Unimplemented device type: %d, type);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Unimplemented device type: %d", type);
             break;
     }
     return -ENODEV;
@@ -385,7 +385,7 @@ int likwid_device_create_from_string(LikwidDeviceType type, const char *id, Likw
 
         if (type == DEVICE_TYPE_INVALID)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot create device from string type: %s, type_token);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Cannot create device from string type: %s", type_token);
             err = -EINVAL;
             goto cleanup;
         }
@@ -424,7 +424,7 @@ int likwid_device_create_from_string(LikwidDeviceType type, const char *id, Likw
 #endif
             default:
                 err = -EINVAL;
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Unable to use PCI address to create device type: %d, type);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Unable to use PCI address to create device type: %d", type);
                 break;
         }
     }
@@ -463,7 +463,7 @@ int likwid_device_create_from_string(LikwidDeviceType type, const char *id, Likw
 #endif
             default:
                 err = -EPERM;
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Unimplemented device type: %d, type);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Unimplemented device type: %d", type);
                 break;
         }
     }
@@ -474,7 +474,7 @@ int likwid_device_create_from_string(LikwidDeviceType type, const char *id, Likw
     }
     else
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Unable to parse '%s' as valid PCI address or integer, id_token);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Unable to parse '%s' as valid PCI address or integer", id_token);
         err = -EINVAL;
     }
 
@@ -553,7 +553,7 @@ static bool device_in_cpuset(LikwidDeviceType type, size_t id)
             case DEVICE_TYPE_NODE:
                 return true;
             default:
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Unimplemented device type: %d, type);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Unimplemented device type: %d", type);
                 return false;
         }
     }
@@ -614,7 +614,7 @@ static int likwid_device_get_list(LikwidDeviceType type, char ***id_list, size_t
             break;
 #endif
         default:
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Unimplemented device type: %d, type);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Unimplemented device type: %d", type);
             return -EINVAL;
     }
 

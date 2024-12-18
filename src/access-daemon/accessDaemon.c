@@ -2642,7 +2642,7 @@ kill_client(void)
 {
     if (connfd != -1)
     {
-        CHECK_ERROR(close(connfd), socket close failed);
+        CHECK_ERROR(close(connfd), "socket close failed");
     }
 
     connfd = -1;
@@ -2655,7 +2655,7 @@ stop_daemon(void)
 
     if (sockfd != -1)
     {
-        CHECK_ERROR(close(sockfd), socket close sockfd failed);
+        CHECK_ERROR(close(sockfd), "socket close sockfd failed");
     }
 
     free(filepath);
@@ -3819,7 +3819,7 @@ int main(void)
     /* Change the file mode mask so only the calling user has access
      * and switch the user/gid with which the following socket creation runs. */
     oldumask = umask(077);
-    CHECK_ERROR(setfsuid(getuid()), setfsuid failed);
+    CHECK_ERROR(setfsuid(getuid()), "setfsuid failed");
 
     /* bind and listen on socket */
     LOG_AND_EXIT_IF_ERROR(bind(sockfd, (SA*) &addr1, sizeof(addr1)), bind failed);
@@ -3851,16 +3851,16 @@ int main(void)
         {
             syslog(LOG_ERR, "accept() failed:  %s", strerror(errno));
         }
-        CHECK_ERROR(unlink(filepath), unlink of socket failed);
+        CHECK_ERROR(unlink(filepath), "unlink of socket failed");
         exit(EXIT_FAILURE);
     }
 
     alarm(0);
-    CHECK_ERROR(unlink(filepath), unlink of socket failed);
+    CHECK_ERROR(unlink(filepath), "unlink of socket failed");
 
     /* Restore the old umask and fs ids. */
     (void) umask(oldumask);
-    CHECK_ERROR(setfsuid(geteuid()), setfsuid failed);
+    CHECK_ERROR(setfsuid(geteuid()), "setfsuid failed");
 
     {
         char* msr_file_name = (char*) malloc(MAX_PATH_LENGTH * sizeof(char));

@@ -53,7 +53,7 @@ static void *dl_perfworks_libcudart = NULL;
   do {                                                                         \
     CUresult _status = (call);                                                 \
     if (_status != CUDA_SUCCESS) {                                             \
-      ERROR_PRINT(Function % s failed with error % d, #call, _status);         \
+      ERROR_PRINT("Function %s failed with error %d", #call, _status);         \
       handleerror;                                                             \
     }                                                                          \
   } while (0)
@@ -62,7 +62,7 @@ static void *dl_perfworks_libcudart = NULL;
   do {                                                                         \
     NVPA_Status _status = (call);                                              \
     if (_status != NVPA_STATUS_SUCCESS) {                                      \
-      ERROR_PRINT(Function % s failed with error % d, #call, _status);         \
+      ERROR_PRINT("Function %s failed with error %d", #call, _status);         \
       handleerror;                                                             \
     }                                                                          \
   } while (0)
@@ -71,12 +71,12 @@ static void *dl_perfworks_libcudart = NULL;
   do {                                                                         \
     CUptiResult _status = (call);                                              \
     if (_status != CUPTI_SUCCESS) {                                            \
-      ERROR_PRINT(Function % s failed with error % d, #call, _status);         \
+      ERROR_PRINT("Function %s failed with error %d", #call, _status);         \
       if (cuptiGetResultStringPtr) {                                           \
         const char *es = NULL;                                                 \
         (*cuptiGetResultStringPtr)(_status, &es);                              \
         if (es)                                                                \
-          ERROR_PRINT(% s, es);                                                \
+          ERROR_PRINT("%s", es);                                               \
       }                                                                        \
       handleerror;                                                             \
     }                                                                          \
@@ -86,7 +86,7 @@ static void *dl_perfworks_libcudart = NULL;
   do {                                                                         \
     cudaError_t _status = (call);                                              \
     if (_status != cudaSuccess) {                                              \
-      ERROR_PRINT(Function %s failed with error %d, #call, _status);          \
+      ERROR_PRINT("Function %s failed with error %d", #call, _status);         \
       handleerror;                                                             \
     }                                                                          \
   } while (0)
@@ -666,12 +666,12 @@ static int link_perfworks_libraries(void) {
         snprintf(libnvperfpath, sizeof(libnvperfpath), "libnvperf_host.so");
         snprintf(libcuptipath, sizeof(libcuptipath), "libcupti.so");
     }
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, LD_LIBRARY_PATH = % s,
-            getenv("LD_LIBRARY_PATH"))
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, CUDA_HOME = % s, getenv("CUDA_HOME"))
-        dl_perfworks_libcuda = dlopen("libcuda.so", RTLD_NOW | RTLD_GLOBAL);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "LD_LIBRARY_PATH = %s",
+            getenv("LD_LIBRARY_PATH"));
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "CUDA_HOME = %s", getenv("CUDA_HOME"));
+    dl_perfworks_libcuda = dlopen("libcuda.so", RTLD_NOW | RTLD_GLOBAL);
     if (!dl_perfworks_libcuda || dlerror() != NULL) {
-        DEBUG_PRINT(DEBUGLEV_INFO, CUDA library libcuda.so not found);
+        DEBUG_PRINT(DEBUGLEV_INFO, "CUDA library libcuda.so not found");
         return -1;
     }
     cuCtxGetCurrentPtr = DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuCtxGetCurrent");
@@ -696,7 +696,7 @@ static int link_perfworks_libraries(void) {
     dl_perfworks_libcudart =
         dlopen(libcudartpath, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
     if ((!dl_perfworks_libcudart) || (dlerror() != NULL)) {
-        DEBUG_PRINT(DEBUGLEV_INFO, CUDA library libcudart.so not found);
+        DEBUG_PRINT(DEBUGLEV_INFO, "CUDA library libcudart.so not found");
         return -1;
     }
     cudaGetDevicePtr = DLSYM_AND_CHECK(dl_perfworks_libcudart, "cudaGetDevice");
@@ -715,7 +715,7 @@ static int link_perfworks_libraries(void) {
         dl_libhost =
             dlopen("libnvperf_host.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
         if ((!dl_libhost) || (dlerror() != NULL)) {
-            DEBUG_PRINT(DEBUGLEV_INFO, CUDA library libnvperf_host.so not found);
+            DEBUG_PRINT(DEBUGLEV_INFO, "CUDA library libnvperf_host.so not found");
             return -1;
         }
     }
@@ -801,7 +801,7 @@ static int link_perfworks_libraries(void) {
     if ((!dl_cupti) || (dlerror() != NULL)) {
         dl_cupti = dlopen("libcupti.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
         if ((!dl_cupti) || (dlerror() != NULL)) {
-            DEBUG_PRINT(DEBUGLEV_INFO, CUpti library libcupti.so not found);
+            DEBUG_PRINT(DEBUGLEV_INFO, "CUpti library libcupti.so not found");
             return -1;
         }
     }
@@ -854,21 +854,21 @@ static int link_perfworks_libraries(void) {
 
     dlerror();
     int curDeviceId = -1;
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Run cuInit);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Run cuInit");
     LIKWID_CU_CALL(cuInitPtr(0), return -EFAULT);
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Run cuDeviceGetCount);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Run cuDeviceGetCount");
     LIKWID_CU_CALL(cuDeviceGetCountPtr(&curDeviceId), return -EFAULT);
-    // GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Run cudaGetDevice);
+    // GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Run cudaGetDevice");
     // LIKWID_CUDA_API_CALL(cudaGetDevicePtr(&curDeviceId), return -EFAULT);
     CUdevice dev;
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Run cuDeviceGet);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Run cuDeviceGet");
     LIKWID_CU_CALL(cuDeviceGetPtr(&dev, 0), return -EFAULT);
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Run cuDeviceGetAttribute for major CC);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Run cuDeviceGetAttribute for major CC");
     LIKWID_CU_CALL(
             cuDeviceGetAttributePtr(
                 &curDeviceId, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, dev),
             return -EFAULT);
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Run cuDeviceGetAttribute for minor CC);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Run cuDeviceGetAttribute for minor CC");
     LIKWID_CU_CALL(
             cuDeviceGetAttributePtr(
                 &curDeviceId, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, dev),
@@ -895,7 +895,7 @@ static int link_perfworks_libraries(void) {
 }
 
 static void release_perfworks_libraries(void) {
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Finalize PerfWorks Libaries);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Finalize PerfWorks Libaries");
     if (dl_perfworks_libcuda) {
         dlclose(dl_perfworks_libcuda);
         dl_perfworks_libcuda = NULL;
@@ -917,7 +917,7 @@ static void release_perfworks_libraries(void) {
 static int perfworks_check_nv_context(NvmonDevice_t device,
                                       CUcontext currentContext) {
     int need_pop = 0;
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Current context % ld DevContext % ld,
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Current context %ld DevContext %ld",
             currentContext, device->context);
     if (!device->context) {
         int context_of_dev = -1;
@@ -931,28 +931,28 @@ static int perfworks_check_nv_context(NvmonDevice_t device,
         if (context_of_dev < 0) // && !device->context)
         {
             device->context = currentContext;
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Reuse context %ld for device %d, device->context, device->deviceId);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Reuse context %ld for device %d", device->context, device->deviceId);
         } else {
             LIKWID_CUDA_API_CALL(cudaSetDevicePtr(device->deviceId), return -EFAULT);
             LIKWID_CUDA_API_CALL(cudaFreePtr(NULL), return -EFAULT);
             LIKWID_CU_CALL(
                     cuDevicePrimaryCtxRetainPtr(&device->context, device->cuDevice),
                     return -EFAULT);
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, New context %ld for device %d, device->context, device->deviceId);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "New context %ld for device %d", device->context, device->deviceId);
         }
     } else if (device->context != currentContext) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Use context %ld for device %d, device->context, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Use context %ld for device %d", device->context, device->deviceId);
         LIKWID_CU_CALL(cuCtxPushCurrentPtr(device->context), return -EFAULT);
         need_pop = 1;
     } else {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Context %ld fits for device %d, device->context, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Context %ld fits for device %d", device->context, device->deviceId);
     }
     return need_pop;
 }
 
 static int cuptiProfiler_init() {
     if (!cuptiProfiler_initialized) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Init CUpti Profiler);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Init CUpti Profiler");
         if (dl_perfworks_libcuda == NULL || dl_perfworks_libcudart == NULL ||
                 dl_libhost == NULL || dl_cupti == NULL) {
             if (link_perfworks_libraries() < 0)
@@ -977,7 +977,7 @@ static int cuptiProfiler_init() {
 
 static void cuptiProfiler_finalize() {
     if (cuptiProfiler_initialized) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Finalize CUpti Profiler);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Finalize CUpti Profiler");
         CUpti_Profiler_DeInitialize_Params profilerDeInitializeParams = {
             .structSize = CUpti_Profiler_DeInitialize_Params_STRUCT_SIZE,
         };
@@ -1152,7 +1152,7 @@ static int nvmon_perfworks_getChipName(int id, char **name) {
         .deviceIndex = id,
     };
     LIKWID_CUPTI_API_CALL(cuptiDeviceGetChipNamePtr(&getChipNameParams), return -ENODEV);
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Current GPU chip %s,
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Current GPU chip %s",
                    getChipNameParams.pChipName);
     *name = strdup(getChipNameParams.pChipName);
     if (!name)
@@ -1223,7 +1223,7 @@ static int nvmon_perfworks_populateEvents_nvpw(NvmonDevice *dev) {
     };
     LIKWID_NVPW_API_CALL(
         NVPW_CUDA_MetricsContext_CreatePtr(&metricsContextCreateParams), return -EPERM);
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, NVPW Metrics Context created, dev->deviceId);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "NVPW Metrics Context created", dev->deviceId);
 
     NVPW_MetricsContext_GetMetricNames_Begin_Params getMetricNameBeginParams = {
         .structSize = NVPW_MetricsContext_GetMetricNames_Begin_Params_STRUCT_SIZE,
@@ -1234,7 +1234,7 @@ static int nvmon_perfworks_populateEvents_nvpw(NvmonDevice *dev) {
         // .hidePctOfPeakSubMetricsOnThroughputs = 1,
     };
     int err = 0;
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Create metric context getMetricNames);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Create metric context getMetricNames");
     LIKWID_NVPW_API_CALL(NVPW_MetricsContext_GetMetricNames_BeginPtr(
                              &getMetricNameBeginParams), err = -EPERM; goto deinit);
 
@@ -1243,7 +1243,7 @@ static int nvmon_perfworks_populateEvents_nvpw(NvmonDevice *dev) {
             getMetricNameBeginParams.numMetrics);
 
     /* Cleanup NVPW stuff */
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Destroy metric context getMetricNames);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Destroy metric context getMetricNames");
     NVPW_MetricsContext_GetMetricNames_End_Params getMetricNameEndParams = {
         .structSize = NVPW_MetricsContext_GetMetricNames_End_Params_STRUCT_SIZE,
         .pMetricsContext = metricsContextCreateParams.pMetricsContext,
@@ -1252,7 +1252,7 @@ static int nvmon_perfworks_populateEvents_nvpw(NvmonDevice *dev) {
         NVPW_MetricsContext_GetMetricNames_EndPtr(&getMetricNameEndParams),);
 
 deinit:
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Destroy metric context);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Destroy metric context");
     NVPW_MetricsContext_Destroy_Params metricsContextDestroyParams = {
         .structSize = NVPW_MetricsContext_Destroy_Params_STRUCT_SIZE,
         .pMetricsContext = metricsContextCreateParams.pMetricsContext,
@@ -1298,7 +1298,7 @@ static int nvmon_perfworks_populateEvents_cuptiProfilerHost(NvmonDevice *dev) {
     };
     LIKWID_CUPTI_API_CALL(cuptiProfilerHostInitializePtr(&initParams), return -EPERM);
     CUpti_Profiler_Host_Object *hobj = initParams.pHostObject;
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, CUDA12.6+ CUPTI Profiler Host created, dev->deviceId);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "CUDA12.6+ CUPTI Profiler Host created", dev->deviceId);
 
     /* Get base metrics. */
     static const char *suffixesCnt[] = { "avg", "max", "min", "sum" };
@@ -1333,7 +1333,7 @@ static int nvmon_perfworks_populateEvents_cuptiProfilerHost(NvmonDevice *dev) {
     if (err < 0)
         goto deinit;
 
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Got supported metrics list, dev->deviceId);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Got supported metrics list", dev->deviceId);
 
     /* hopefully CUPTI auto frees ppMetricNames on deinit, because it does not
      * appear to have an explicit free functions. */
@@ -1351,7 +1351,7 @@ deinit:
 static int nvmon_perfworks_createDevice(int id, NvmonDevice *dev) {
     if (dl_perfworks_libcuda == NULL || dl_perfworks_libcudart == NULL ||
             dl_libhost == NULL || dl_cupti == NULL) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, link_perfworks_libraries in createDevice);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "link_perfworks_libraries in createDevice");
         int err = link_perfworks_libraries();
         if (err < 0)
             return err;
@@ -1367,7 +1367,7 @@ static int nvmon_perfworks_createDevice(int id, NvmonDevice *dev) {
         printf("GPU %d not available\n", id);
         return -1;
     }
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Found % d GPUs, count);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Found %d GPUs", count);
 
     // Assign device ID and get cuDevice from CUDA
     CU_CALL(cuDeviceGetPtr(&dev->cuDevice, id), return -1);
@@ -1375,7 +1375,7 @@ static int nvmon_perfworks_createDevice(int id, NvmonDevice *dev) {
     dev->context = NULL;
 
     /* initialize */
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Current GPU % d, id);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Current GPU %d", id);
     CUpti_Profiler_Initialize_Params profilerInitializeParams = {
         .structSize = CUpti_Profiler_Initialize_Params_STRUCT_SIZE,
     };
@@ -1393,7 +1393,7 @@ static int nvmon_perfworks_createDevice(int id, NvmonDevice *dev) {
         return err;
 
     /* Get events. Different implementation for different CUDA versions. */
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Get events for chip '%s', dev->chip);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Get events for chip '%s'", dev->chip);
     dev->allevents = NULL;
     dev->numAllEvents = 0;
     if (cuda_runtime_version >= 12060)
@@ -1411,7 +1411,7 @@ int nvmon_perfworks_getEventsOfGpu(int gpuId, NvmonEventList_t *list) {
     NvmonDevice device;
     int err = nvmon_perfworks_createDevice(gpuId, &device);
     if (err < 0) {
-        ERROR_PRINT(No such device %d, gpuId);
+        ERROR_PRINT("No such device %d", gpuId);
         return err;
     }
 
@@ -1481,7 +1481,7 @@ static int nvmon_perfworks_getMetricRequests114(
             NVPW_CUDA_MetricsEvaluator_CalculateScratchBufferSizePtr(
                 &calculateScratchBufferSizeParam),
             return -1);
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Create scratch buffer for %s and %p, chip, availImage);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Create scratch buffer for %s and %p", chip, availImage);
     uint8_t *scratch =
         malloc(calculateScratchBufferSizeParam.scratchBufferSize);
     if (!scratch)
@@ -1494,7 +1494,7 @@ static int nvmon_perfworks_getMetricRequests114(
         .pChipName = chip,
         .pCounterAvailabilityImage = availImage,
     };
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Init Metric evaluator);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Init Metric evaluator");
     LIKWID_NVPW_API_CALL(NVPW_CUDA_MetricsEvaluator_InitializePtr(
                 &metricEvaluatorInitializeParams),
             free(scratch);
@@ -1598,7 +1598,7 @@ static int nvmon_perfworks_getMetricRequests114(
             raw_metrics++;
         }
     }
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Destroy Metric evaluator);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Destroy Metric evaluator");
     NVPW_MetricsEvaluator_Destroy_Params metricEvaluatorDestroyParams = {
         .structSize = NVPW_MetricsEvaluator_Destroy_Params_STRUCT_SIZE,
         .pMetricsEvaluator = metricEvaluator,
@@ -1706,7 +1706,7 @@ static int nvmon_perfworks_getMetricRequests(NVPA_MetricsContext *context,
         // nvmon_perfworks_parse_metric(events->entry[i], &isolated,
         // &keepInstances);
         //keepInstances = 1; /* Bug in Nvidia API */
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Metric % s, bdata(events->entry[i]));
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Metric %s", bdata(events->entry[i]));
         NVPW_MetricsContext_GetMetricProperties_Begin_Params
             getMetricPropertiesBeginParams = {
                 .structSize = NVPW_MetricsContext_GetMetricProperties_Begin_Params_STRUCT_SIZE,
@@ -1722,7 +1722,7 @@ static int nvmon_perfworks_getMetricRequests(NVPA_MetricsContext *context,
         for (const char **dep =
                 getMetricPropertiesBeginParams.ppRawMetricDependencies;
                 *dep; ++dep) {
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Metric depend % s, *dep);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Metric depend %s", *dep);
             bstrListAddChar(temp, (char *)*dep);
         }
 
@@ -1753,7 +1753,7 @@ static int nvmon_perfworks_getMetricRequests(NVPA_MetricsContext *context,
         }
         req->structSize = NVPA_RAW_METRIC_REQUEST_STRUCT_SIZE;
         req->pMetricName = s;
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Metric Request % s, s);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Metric Request %s", s);
         req->isolated = isolated;
         req->keepInstances = keepInstances;
         num_reqs++;
@@ -1780,13 +1780,13 @@ static int nvmon_perfworks_createConfigImage(const char *chip,
     NVPA_RawMetricRequest *reqs = NULL;
     NVPA_RawMetricsConfig *pRawMetricsConfig = NULL;
     if (cuda_runtime_version < 11040 && NVPA_RawMetricsConfig_CreatePtr) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Create Metrics Context);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Create Metrics Context");
         LIKWID_NVPW_API_CALL(
                 NVPW_CUDA_MetricsContext_CreatePtr(&metricsContextCreateParams),
                 return -1;);
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Create config image for chip %s, chip);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Create config image for chip %s", chip);
         num_reqs = nvmon_perfworks_getMetricRequests3(metricsContextCreateParams.pMetricsContext, events, &reqs);
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Create config image for chip %s with %d metric requests, chip, num_reqs);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Create config image for chip %s with %d metric requests", chip, num_reqs);
 
         NVPA_RawMetricsConfigOptions metricsConfigOptions = {
             .structSize = NVPA_RAW_METRICS_CONFIG_OPTIONS_STRUCT_SIZE,
@@ -1796,9 +1796,9 @@ static int nvmon_perfworks_createConfigImage(const char *chip,
         LIKWID_NVPW_API_CALL(NVPA_RawMetricsConfig_CreatePtr(&metricsConfigOptions, &pRawMetricsConfig), ierr = -1; goto nvmon_perfworks_createConfigImage_out);
     }
     else if (cuda_runtime_version >= 11040 && NVPW_CUDA_RawMetricsConfig_Create_V2Ptr) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Create config image for chip %s, chip);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Create config image for chip %s", chip);
         num_reqs = nvmon_perfworks_getMetricRequests114(chip, events, availImage, &reqs);
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Create config image for chip %s with %d metric requests, chip, num_reqs);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Create config image for chip %s with %d metric requests", chip, num_reqs);
 
         NVPW_CUDA_RawMetricsConfig_Create_V2_Params rawMetricsConfigCreateParams = {
             .structSize = NVPW_CUDA_RawMetricsConfig_Create_V2_Params_STRUCT_SIZE,
@@ -1866,8 +1866,8 @@ static int nvmon_perfworks_createConfigImage(const char *chip,
             1) {
         errno = 1; // why do we set errno here an nowhere else ???
         ierr = -errno;
-        ERROR_PRINT(Given GPU eventset requires multiple passes
-                .Currently not supported.);
+        ERROR_PRINT("Given GPU eventset requires multiple passes. "
+                "Currently not supported.");
         goto nvmon_perfworks_createConfigImage_out;
     }
 
@@ -1898,7 +1898,7 @@ static int nvmon_perfworks_createConfigImage(const char *chip,
         goto nvmon_perfworks_createConfigImage_out;
     }
     int ci_size = getConfigImageParams.bytesCopied;
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Allocated %d byte for configImage, ci_size);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Allocated %d byte for configImage", ci_size);
 
     getConfigImageParams.bytesAllocated = getConfigImageParams.bytesCopied;
     getConfigImageParams.pBuffer = cimage;
@@ -1909,8 +1909,8 @@ static int nvmon_perfworks_createConfigImage(const char *chip,
 
 nvmon_perfworks_createConfigImage_out:
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP,
-            nvmon_perfworks_createConfigImage_out enter % d, ierr);
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, NVPW_RawMetricsConfig_Destroy);
+            "nvmon_perfworks_createConfigImage_out enter %d", ierr);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "NVPW_RawMetricsConfig_Destroy");
     NVPW_RawMetricsConfig_Destroy_Params rawMetricsConfigDestroyParams = {
         .structSize = NVPW_RawMetricsConfig_Destroy_Params_STRUCT_SIZE,
         .pRawMetricsConfig = pRawMetricsConfig,
@@ -1920,7 +1920,7 @@ nvmon_perfworks_createConfigImage_out:
             return -1;);
 
     if (metricsContextCreateParams.pMetricsContext) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, NVPW_MetricsContext_Destroy);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "NVPW_MetricsContext_Destroy");
         NVPW_MetricsContext_Destroy_Params metricsContextDestroyParams = {
             .structSize = NVPW_MetricsContext_Destroy_Params_STRUCT_SIZE,
             .pMetricsContext = metricsContextCreateParams.pMetricsContext,
@@ -1942,7 +1942,7 @@ nvmon_perfworks_createConfigImage_out:
     }
 
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP,
-            nvmon_perfworks_createConfigImage returns % d, ierr);
+            "nvmon_perfworks_createConfigImage returns %d", ierr);
     return ierr;
 }
 
@@ -2006,7 +2006,7 @@ static int nvmon_perfworks_createCounterDataPrefixImage(
         goto nvmon_perfworks_createCounterDataPrefixImage_out;
     }
     int pi_size = getCounterDataPrefixParams.bytesCopied;
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Allocated %d byte for configPrefixImage, pi_size);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Allocated %d byte for configPrefixImage", pi_size);
 
     getCounterDataPrefixParams.bytesAllocated =
         getCounterDataPrefixParams.bytesCopied + 10; // why +10?
@@ -2019,7 +2019,7 @@ static int nvmon_perfworks_createCounterDataPrefixImage(
 
 nvmon_perfworks_createCounterDataPrefixImage_out:
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP,
-                   nvmon_perfworks_createCounterDataPrefixImage_out enter % d,
+                   "nvmon_perfworks_createCounterDataPrefixImage_out enter %d",
                    err);
     // for (i = 0; i < num_reqs; i++)
     // {
@@ -2056,7 +2056,7 @@ nvmon_perfworks_createCounterDataPrefixImage_out:
         free(cdp);
     }
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP,
-                   nvmon_perfworks_createCounterDataPrefixImage returns % d,
+                   "nvmon_perfworks_createCounterDataPrefixImage returns %d",
                    err);
     return err;
 }
@@ -2074,11 +2074,11 @@ static int nvmon_perfworks_addEventSet(NvmonDevice_t device,
     CUcontext curContext;
     LIKWID_CU_CALL(cuCtxGetCurrentPtr(&curContext), return -EFAULT);
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP,
-            Add events to GPU device % d with context % u,
+            "Add events to GPU device %d with context %u",
             device->deviceId, curContext);
 
     if (curDeviceId != device->deviceId) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Switching to GPU device % d,
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Switching to GPU device %d",
                 device->deviceId);
         LIKWID_CUDA_API_CALL(cudaSetDevicePtr(device->deviceId),
                 return -EFAULT);
@@ -2087,7 +2087,7 @@ static int nvmon_perfworks_addEventSet(NvmonDevice_t device,
     int popContext = perfworks_check_nv_context(device, curContext);
     if (popContext < 0) {
         errno = -popContext;
-        ERROR_PRINT(Failed to get context);
+        ERROR_PRINT("Failed to get context");
     }
 
     bstring eventBString = bfromcstr(eventString);
@@ -2103,13 +2103,13 @@ static int nvmon_perfworks_addEventSet(NvmonDevice_t device,
 
     for (int i = 0; i < tmp->qty; i++) {
         struct bstrList *parts = bsplit(tmp->entry[i], ':');
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, % s, bdata(parts->entry[0]));
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(parts->entry[0]));
         for (int j = 0; j < device->numAllEvents; j++) {
             bstring bname = bfromcstr(device->allevents[j]->name);
             if (bstrcmp(parts->entry[0], bname) == BSTR_OK) {
                 bstrListAddChar(eventtokens, device->allevents[j]->real);
                 nvEvents[i] = device->allevents[j];
-                GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Adding real event % s,
+                GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding real event %s",
                         device->allevents[j]->real);
             }
         }
@@ -2117,14 +2117,14 @@ static int nvmon_perfworks_addEventSet(NvmonDevice_t device,
     }
     bstrListDestroy(tmp);
     if (eventtokens->qty == 0) {
-        ERROR_PRINT(No event in eventset);
+        ERROR_PRINT("No event in eventset");
         bstrListDestroy(eventtokens);
         if (popContext > 0) {
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Pop Context %ld for device %d, device->context, device->deviceId);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %ld for device %d", device->context, device->deviceId);
             LIKWID_CU_CALL(cuCtxPopCurrentPtr(&device->context), return -EFAULT);
         }
         if (curDeviceId != device->deviceId) {
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Switching to GPU device % d,
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Switching to GPU device %d",
                     device->deviceId);
             LIKWID_CUDA_API_CALL(cudaSetDevicePtr(device->deviceId),
                     return -EFAULT);
@@ -2133,19 +2133,19 @@ static int nvmon_perfworks_addEventSet(NvmonDevice_t device,
     }
 
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP,
-            Increase size of eventSet space on device % d,
+            "Increase size of eventSet space on device %d",
             device->deviceId);
     NvmonEventSet *tmpEventSet =
         realloc(device->nvEventSets,
                 (device->numNvEventSets + 1) * sizeof(NvmonEventSet));
     if (!tmpEventSet) {
-        ERROR_PRINT(Cannot enlarge GPU % d eventSet list, device->deviceId);
+        ERROR_PRINT("Cannot enlarge GPU %d eventSet list", device->deviceId);
         bstrListDestroy(eventtokens);
         return -ENOMEM;
     }
     device->nvEventSets = tmpEventSet;
     NvmonEventSet *newEventSet = &device->nvEventSets[device->numNvEventSets];
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Filling eventset % d on device % d,
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Filling eventset %d on device %d",
             device->numNvEventSets, device->deviceId);
 
     size_t availImageSize = 0;
@@ -2181,7 +2181,7 @@ static int nvmon_perfworks_addEventSet(NvmonDevice_t device,
     int pi_size = nvmon_perfworks_createCounterDataPrefixImage(
             device->chip, eventtokens, &prefixImage);
 
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Filling eventset % d on device % d,
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Filling eventset %d on device %d",
             device->numNvEventSets, device->deviceId);
 
     int gid = -1;
@@ -2202,7 +2202,7 @@ static int nvmon_perfworks_addEventSet(NvmonDevice_t device,
         gid = device->numNvEventSets;
         newEventSet->nvEvents = calloc(eventtokens->qty, sizeof(NvmonEvent_t));
         if (newEventSet->nvEvents == NULL) {
-            ERROR_PRINT(Cannot allocate event list for group %d\n, gid);
+            ERROR_PRINT("Cannot allocate event list for group %d", gid);
             return -ENOMEM;
         }
         for (int i = 0; i < eventtokens->qty; i++) {
@@ -2215,16 +2215,16 @@ static int nvmon_perfworks_addEventSet(NvmonDevice_t device,
         }
         newEventSet->results = calloc(eventtokens->qty, sizeof(NvmonEventResult));
         if (newEventSet->results == NULL) {
-            ERROR_PRINT(Cannot allocate result list for group %d\n, gid);
+            ERROR_PRINT("Cannot allocate result list for group %d", gid);
             return -ENOMEM;
         }
         newEventSet->nvEvents = nvEvents;
         device->numNvEventSets++;
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Adding eventset % d, gid);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding eventset %d", gid);
     }
 
     if (popContext > 0) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Pop Context %ld for device %d, device->context, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %ld for device %d", device->context, device->deviceId);
         LIKWID_CU_CALL(cuCtxPopCurrentPtr(&device->context), return -EFAULT);
     }
     if (curDeviceId != device->deviceId) {
@@ -2234,7 +2234,7 @@ static int nvmon_perfworks_addEventSet(NvmonDevice_t device,
 }
 
 static int nvmon_perfworks_setupCounterImageData(NvmonEventSet *eventSet) {
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, counterDataPrefixSize % ld,
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "counterDataPrefixSize %ld",
             eventSet->counterDataImagePrefixSize);
 
     CUpti_Profiler_CounterDataImageOptions counterDataImageOptions = {
@@ -2253,7 +2253,7 @@ static int nvmon_perfworks_setupCounterImageData(NvmonEventSet *eventSet) {
             cuptiProfilerCounterDataImageCalculateSizePtr(&calculateSizeParams),
             return -EFAULT);
 
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Resize counterDataImage to % ld,
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Resize counterDataImage to %ld",
             calculateSizeParams.counterDataImageSize);
     uint8_t *tmp = realloc(eventSet->counterDataImage,
             calculateSizeParams.counterDataImageSize);
@@ -2262,7 +2262,7 @@ static int nvmon_perfworks_setupCounterImageData(NvmonEventSet *eventSet) {
 
     eventSet->counterDataImage = tmp;
     eventSet->counterDataImageSize = calculateSizeParams.counterDataImageSize;
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Resized counterDataImage to % ld,
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Resized counterDataImage to %ld",
             eventSet->counterDataImageSize);
 
     CUpti_Profiler_CounterDataImage_Initialize_Params initializeParams = {
@@ -2287,7 +2287,7 @@ static int nvmon_perfworks_setupCounterImageData(NvmonEventSet *eventSet) {
                 &scratchBufferSizeParams),
             return -EFAULT);
 
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Resize counterDataScratchBuffer to % ld,
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Resize counterDataScratchBuffer to %ld",
             scratchBufferSizeParams.counterDataScratchBufferSize);
     tmp = realloc(eventSet->counterDataScratchBuffer,
             scratchBufferSizeParams.counterDataScratchBufferSize);
@@ -2297,7 +2297,7 @@ static int nvmon_perfworks_setupCounterImageData(NvmonEventSet *eventSet) {
     eventSet->counterDataScratchBuffer = tmp;
     eventSet->counterDataScratchBufferSize =
         scratchBufferSizeParams.counterDataScratchBufferSize;
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Resized counterDataScratchBuffer to % ld,
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Resized counterDataScratchBuffer to %ld",
             eventSet->counterDataScratchBufferSize);
 
     CUpti_Profiler_CounterDataImage_InitializeScratchBuffer_Params
@@ -2398,8 +2398,8 @@ static int nvmon_perfworks_getMetricValue12(
     };
     LIKWID_NVPW_API_CALL(NVPW_MetricsEvaluator_EvaluateToGpuValuesPtr(&evalParams), err = -EPERM; goto cleanup);
     for (int i = 0; i < eventSet->events->qty; i++) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Final Eval %s
-                : %f, bdata(eventSet->events->entry[i]), gpuValues[i]);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Final Eval %s: %f",
+                bdata(eventSet->events->entry[i]), gpuValues[i]);
     }
     *values = gpuValues;
 cleanup:
@@ -2476,8 +2476,8 @@ static int nvmon_perfworks_getMetricValue11(
     //     r->values[j] += gpuValues[j];
     // }
     for (int j = 0; j < eventSet->events->qty; j++) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Final Eval % s
-                : % f, bdata(eventSet->events->entry[j]), gpuValues[j]);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Final Eval %s: %f",
+                bdata(eventSet->events->entry[j]), gpuValues[j]);
     }
     *values = gpuValues;
 
@@ -2522,9 +2522,9 @@ static int nvmon_perfworks_setupCounters(NvmonDevice_t device,
     int popContext = perfworks_check_nv_context(device, curContext);
     if (popContext < 0) {
         errno = -popContext;
-        ERROR_PRINT(Failed to get context)
+        ERROR_PRINT("Failed to get context");
     }
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Setup Counters on device % d,
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Setup Counters on device %d",
             device->deviceId);
 
     // cuptiProfiler_init();
@@ -2533,7 +2533,7 @@ static int nvmon_perfworks_setupCounters(NvmonDevice_t device,
     device->activeEventSet = eventSet->id;
     nvGroupSet->activeGroup = eventSet->id;
     if (popContext > 0) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Pop Context %ld for device %d, device->context, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %ld for device %d", device->context, device->deviceId);
         LIKWID_CU_CALL(cuCtxPopCurrentPtr(&device->context), return -EFAULT);
     }
     if (curDeviceId != device->deviceId) {
@@ -2555,10 +2555,10 @@ static int nvmon_perfworks_startCounters(NvmonDevice_t device) {
     int popContext = perfworks_check_nv_context(device, curContext);
     if (popContext < 0) {
         errno = -popContext;
-        ERROR_PRINT(Failed to get context)
+        ERROR_PRINT("Failed to get context");
     }
 
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Start Counters on device % d(Eventset % d),
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Start Counters on device %d (Eventset %d)",
             device->deviceId, device->activeEventSet);
     NvmonEventSet *eventSet = &device->nvEventSets[device->activeEventSet];
 
@@ -2574,9 +2574,9 @@ static int nvmon_perfworks_startCounters(NvmonDevice_t device) {
         .maxRangesPerPass = 1,
         .maxLaunchesPerPass = 1,
     };
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, (START)counterDataImageSize % ld,
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "(START)counterDataImageSize %ld",
             eventSet->counterDataImageSize);
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, (START)counterDataScratchBufferSize % ld,
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "(START)counterDataScratchBufferSize %ld",
             eventSet->counterDataScratchBufferSize);
     LIKWID_CUPTI_API_CALL(cuptiProfilerBeginSessionPtr(&beginSessionParams), return -1);
 
@@ -2593,7 +2593,7 @@ static int nvmon_perfworks_startCounters(NvmonDevice_t device) {
         .passIndex = 0,
         .targetNestingLevel = 1,
     };
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, (START)configImage % ld,
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "(START)configImage %ld",
             eventSet->configImageSize);
     LIKWID_CUPTI_API_CALL(cuptiProfilerSetConfigPtr(&setConfigParams), return -1);
 
@@ -2617,7 +2617,7 @@ static int nvmon_perfworks_startCounters(NvmonDevice_t device) {
     LIKWID_CUPTI_API_CALL(cuptiProfilerPushRangePtr(&pushRangeParams), return -1);
 
     if (popContext > 0) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Pop Context %ld for device %d, device->context, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %ld for device %d", device->context, device->deviceId);
         LIKWID_CU_CALL(cuCtxPopCurrentPtr(&device->context), return -EFAULT);
     }
     if (curDeviceId != device->deviceId) {
@@ -2642,9 +2642,9 @@ static int nvmon_perfworks_stopCounters(NvmonDevice_t device) {
     int popContext = perfworks_check_nv_context(device, curContext);
     if (popContext < 0) {
         errno = -popContext;
-        ERROR_PRINT(Failed to get context);
+        ERROR_PRINT("Failed to get context");
     }
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Stop Counters on device % d(Eventset % d),
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Stop Counters on device %d (Eventset %d)",
             device->deviceId, device->activeEventSet);
     NvmonEventSet *eventSet = &device->nvEventSets[device->activeEventSet];
 
@@ -2684,8 +2684,8 @@ static int nvmon_perfworks_stopCounters(NvmonDevice_t device) {
     LIKWID_CUPTI_API_CALL(cuptiProfilerEndPassPtr(&endPassParams),
             return -1);
     if (endPassParams.allPassesSubmitted != 1) {
-        ERROR_PRINT(Events cannot be measured in a single pass and
-                multi - pass / kernel replay is current not supported);
+        ERROR_PRINT("Events cannot be measured in a single pass and "
+                "multi - pass / kernel replay is current not supported");
     }
     CUpti_Profiler_FlushCounterData_Params flushCounterDataParams = {
         .structSize = CUpti_Profiler_FlushCounterData_Params_size,
@@ -2708,7 +2708,7 @@ static int nvmon_perfworks_stopCounters(NvmonDevice_t device) {
     };
     LIKWID_CUPTI_API_CALL(cuptiProfilerEndSessionPtr(&endSessionParams),
             return -1);
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Get results on device % d(Eventset % d),
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Get results on device %d (Eventset %d)",
             device->deviceId, device->activeEventSet);
 
     double *values;
@@ -2740,14 +2740,14 @@ static int nvmon_perfworks_stopCounters(NvmonDevice_t device) {
         }
         eventSet->results[j].stopValue = eventSet->results[j].fullValue;
         eventSet->results[j].overflows = 0;
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, % s Last % f Full % f,
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "%s Last %f Full %f",
                 bdata(eventSet->events->entry[j]),
                 eventSet->results[j].lastValue,
                 eventSet->results[j].fullValue);
     }
 
     if (popContext > 0) {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Pop Context %ld for device %d, device->context, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %ld for device %d", device->context, device->deviceId);
         LIKWID_CU_CALL(cuCtxPopCurrentPtr(&device->context), return -EFAULT);
     }
     if (curDeviceId != device->deviceId) {

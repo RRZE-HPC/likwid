@@ -57,7 +57,7 @@
     } while (0)
 
 #define CHECK_AND_RETURN_ERROR(func, msg)  \
-    while { \
+    do { \
         if ((func) < 0) { \
             ERROR_PRINT(msg); \
             return errno; \
@@ -65,7 +65,7 @@
     } while (0)
 
 #define EXIT_IF_ERROR(func, msg)  \
-    while { \
+    do { \
         if ((func) < 0) {  \
             fprintf(stderr,"ERROR - [%s:%d] %s - %s \n", __FILE__, __LINE__, msg, strerror(errno)); \
             exit(EXIT_FAILURE); \
@@ -106,7 +106,7 @@
             fprintf(stdout, "DEBUG - [%s:%d] " fmt "\n", __func__, __LINE__, ##__VA_ARGS__); \
             fflush(stdout); \
         } \
-    while (0)
+    } while (0)
 
 #define ROCMON_DEBUG_PRINT(lev, fmt, ...) \
     do { \

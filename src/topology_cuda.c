@@ -50,7 +50,7 @@
     do {                                                                \
         CUresult _status = (call);                                      \
         if (_status != CUDA_SUCCESS) {                                  \
-            ERROR_PRINT(Function %s failed with error %d, #call, _status); \
+            ERROR_PRINT("Function %s failed with error %d", #call, _status); \
             handleerror;                                                \
         }                                                               \
     } while (0)
@@ -63,7 +63,7 @@
     do {                                                                \
         cudaError_t _status = (call);                                   \
         if (_status != cudaSuccess) {                                   \
-            ERROR_PRINT(Function %s failed with error %d, #call, _status); \
+            ERROR_PRINT("Function %s failed with error %d", #call, _status); \
             handleerror;                                                \
         }                                                               \
     } while (0)
@@ -111,13 +111,13 @@ cuda_topo_link_libraries(void)
     topo_dl_libcuda = dlopen("libcuda.so", RTLD_NOW | RTLD_GLOBAL);
     if (!topo_dl_libcuda)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, CUDA library libcuda.so not found);
+        DEBUG_PRINT(DEBUGLEV_INFO, "CUDA library libcuda.so not found");
         return -1;
     }
     topo_dl_libcudart = dlopen("libcudart.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
     if (!topo_dl_libcudart)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, CUDA library libcudart.so not found);
+        DEBUG_PRINT(DEBUGLEV_INFO, "CUDA library libcudart.so not found");
         return -1;
     }
     cuDeviceGetTopoPtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGet");
@@ -145,7 +145,7 @@ cuda_topo_init(void)
     CUresult cuErr = (*cuInitTopoPtr)(0);
     if (cuErr != CUDA_SUCCESS)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, CUDA cannot be found and initialized (cuInit failed): %d, cuErr);
+        DEBUG_PRINT(DEBUGLEV_INFO, "CUDA cannot be found and initialized (cuInit failed): %d", cuErr);
         return -ENODEV;
     }
     return 0;
@@ -166,7 +166,7 @@ cuda_topo_get_numDevices(void)
     cuErr = (*cuDeviceGetCountTopoPtr)(&count);
     if (cuErr == CUDA_SUCCESS)
         return count;
-    DEBUG_PRINT(DEBUGLEV_INFO, uDeviceGetCount failed even though cuda_topo_init succeeded: %d, cuErr);
+    DEBUG_PRINT(DEBUGLEV_INFO, "uDeviceGetCount failed even though cuda_topo_init succeeded: %d", cuErr);
     return -ELIBACC;
 }
 
@@ -260,7 +260,7 @@ topology_cuda_init()
             cudaTopology.devices[i].name = calloc(NAME_LONG_MAX, sizeof(char));
             if (!cudaTopology.devices[i].name)
             {
-                ERROR_PRINT(Cannot allocate space for name of GPU %d, i);
+                ERROR_PRINT("Cannot allocate space for name of GPU %d", i);
                 ret = -ENOMEM;
                 goto topology_gpu_init_error;
             }
@@ -269,7 +269,7 @@ topology_cuda_init()
             cudaTopology.devices[i].short_name = calloc(NAME_SHORT_MAX, sizeof(char));
             if (!cudaTopology.devices[i].short_name)
             {
-                ERROR_PRINT(Cannot allocate space for short name of GPU %d, i);
+                ERROR_PRINT("Cannot allocate space for short name of GPU %d", i);
                 ret = -ENOMEM;
                 goto topology_gpu_init_error;
             }
@@ -348,7 +348,7 @@ get_cudaTopology(void)
     {
         return &cudaTopology;
     }
-    ERROR_PRINT(Cannot get CUDA topology before initialization);
+    ERROR_PRINT("Cannot get CUDA topology before initialization");
     return NULL;
 }
 

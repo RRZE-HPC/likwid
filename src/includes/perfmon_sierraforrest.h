@@ -229,13 +229,13 @@ int perfmon_setupCounterThread_sierraforrest(
 
     if (MEASURE_CORE(eventSet))
     {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, "FREEZE_PMC_AND_FIXED");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0xC00000070000000F));
     }
     if (haveLock && MEASURE_UNCORE(eventSet))
     {
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST (1ULL<<0), FREEZE_UNCORE);
+        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST (1ULL<<0), "FREEZE_UNCORE");
         HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, (1ULL<<0));
     }
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -276,7 +276,7 @@ int perfmon_setupCounterThread_sierraforrest(
     }
     if ((fixed_flags > 0x0ULL))
     {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_FIXED_CTR_CTRL, LLU_CAST fixed_flags, SETUP_FIXED)
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_FIXED_CTR_CTRL, LLU_CAST fixed_flags, "SETUP_FIXED");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_FIXED_CTR_CTRL, fixed_flags));
     }
     return 0;
@@ -345,23 +345,23 @@ int perfmon_startCountersThread_sierraforrest(int thread_id, PerfmonEventSet* ev
         {
             if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV)
             {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST 0x0ULL, UNFREEZE_UNIT);
+                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST 0x0ULL, "UNFREEZE_UNIT");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
             }
         }
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, UNFREEZE_UNCORE);
+        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, "UNFREEZE_UNCORE");
         HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, 0x0ULL);
     }
     if (MEASURE_CORE(eventSet))
     {
         if (flags & (1ULL << 48))
         {
-            VERBOSEPRINTREG(cpu_id, MSR_PERF_METRICS, 0x0ULL, CLEAR_METRICS)
+            VERBOSEPRINTREG(cpu_id, MSR_PERF_METRICS, 0x0ULL, "CLEAR_METRICS");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_METRICS, 0x0ULL));
         }
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST (1ULL<<63)|(1ULL<<62)|flags, CLEAR_PMC_AND_FIXED_OVERFLOW)
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST (1ULL<<63)|(1ULL<<62)|flags, "CLEAR_PMC_AND_FIXED_OVERFLOW");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<63)|(1ULL<<62)|flags));
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, UNFREEZE_PMC_AND_FIXED)
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, "UNFREEZE_PMC_AND_FIXED");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
     }
     return 0;
@@ -383,7 +383,7 @@ int perfmon_stopCountersThread_sierraforrest(int thread_id, PerfmonEventSet* eve
 
     if (MEASURE_CORE(eventSet))
     {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, "FREEZE_PMC_AND_FIXED");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
     if (haveLock && MEASURE_UNCORE(eventSet))
@@ -392,11 +392,11 @@ int perfmon_stopCountersThread_sierraforrest(int thread_id, PerfmonEventSet* eve
         {
             if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV)
             {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST (1ULL<<0), FREEZE_UNIT);
+                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST (1ULL<<0), "FREEZE_UNIT");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, (1ULL<<0));
             }
         }
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST (1ULL<<0), FREEZE_UNCORE);
+        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST (1ULL<<0), "FREEZE_UNCORE");
         HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, (1ULL<<0));
     }
 
@@ -462,9 +462,9 @@ int perfmon_readCountersThread_sierraforrest(int thread_id, PerfmonEventSet* eve
     if (MEASURE_CORE(eventSet))
     {
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, &flags));
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, SAFE_PMC_FLAGS)
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, "SAFE_PMC_FLAGS");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, RESET_PMC_FLAGS)
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, "RESET_PMC_FLAGS");
     }
     if (haveLock && MEASURE_UNCORE(eventSet))
     {
@@ -472,11 +472,11 @@ int perfmon_readCountersThread_sierraforrest(int thread_id, PerfmonEventSet* eve
         {
             if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV)
             {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST (1ULL<<0), FREEZE_UNIT);
+                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST (1ULL<<0), "FREEZE_UNIT");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, (1ULL<<0));
             }
         }
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST (1ULL<<0), FREEZE_UNCORE);
+        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST (1ULL<<0), "FREEZE_UNCORE");
         HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, (1ULL<<0));
     }
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -525,16 +525,16 @@ int perfmon_readCountersThread_sierraforrest(int thread_id, PerfmonEventSet* eve
         {
             if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV)
             {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST 0x0ULL, UNFREEZE_UNIT);
+                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST 0x0ULL, "UNFREEZE_UNIT");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
             }
         }
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, UNFREEZE_UNCORE);
+        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, "UNFREEZE_UNCORE");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, 0x0ULL));
     }
     if (MEASURE_CORE(eventSet))
     {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, RESTORE_PMC_FLAGS)
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, "RESTORE_PMC_FLAGS");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
     }
     return 0;
@@ -583,17 +583,17 @@ int perfmon_finalizeCountersThread_sierraforrest(int thread_id, PerfmonEventSet*
         }
         if ((reg) && (((type == PMC)||(type == FIXED))||(type == METRICS)|| ((type >= UNCORE && type < NUM_UNITS) && (haveLock))))
         {
-            VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
+            VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, "CLEAR_CTL");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
             if ((type >= SBOX0) && (type <= SBOX3))
             {
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
             }
-            VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, CLEAR_CTR);
+            VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
             if (box_map[type].filterRegister1 != 0x0)
             {
-                VERBOSEPRINTPCIREG(cpu_id, dev, box_map[type].filterRegister1, 0x0ULL, CLEAR_FILTER);
+                VERBOSEPRINTPCIREG(cpu_id, dev, box_map[type].filterRegister1, 0x0ULL, "CLEAR_FILTER");
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, box_map[type].filterRegister1, 0x0ULL));
             }
         }
@@ -601,9 +601,9 @@ int perfmon_finalizeCountersThread_sierraforrest(int thread_id, PerfmonEventSet*
     }
     if (MEASURE_CORE(eventSet))
     {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, CLEAR_GLOBAL_OVF)
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, "CLEAR_GLOBAL_OVF");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core));
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, CLEAR_GLOBAL_CTRL)
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, "CLEAR_GLOBAL_CTRL");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
     return 0;

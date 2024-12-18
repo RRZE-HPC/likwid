@@ -628,7 +628,7 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
 #ifdef LIKWID_WITH_NVMON
     bstring gpu = bformat("GPU");
 #endif
-    DEBUG_PRINT(DEBUGLEV_INFO, Creating custom group for event string %s, eventStr);
+    DEBUG_PRINT(DEBUGLEV_INFO, "Creating custom group for event string %s", eventStr);
     ginfo->shortinfo = malloc(7 * sizeof(char));
     if (ginfo->shortinfo == NULL)
     {
@@ -854,10 +854,10 @@ perfgroup_readGroup(
 
     if (access(bdata(fullpath), R_OK))
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Cannot read group file %s. Trying %s, bdata(fullpath), bdata(homepath));
+        DEBUG_PRINT(DEBUGLEV_INFO, "Cannot read group file %s. Trying %s", bdata(fullpath), bdata(homepath));
         if (access(bdata(homepath), R_OK))
         {
-            ERROR_PRINT(Cannot read group file %s.txt. Searched in %s and %s, groupname, bdata(fullpath), bdata(homepath));
+            ERROR_PRINT("Cannot read group file %s.txt. Searched in %s and %s", groupname, bdata(fullpath), bdata(homepath));
             bdestroy(REQUIRE);
             bdestroy(fullpath);
             bdestroy(homepath);
@@ -870,7 +870,7 @@ perfgroup_readGroup(
         }
     }
 
-    DEBUG_PRINT(DEBUGLEV_INFO, Reading group %s from %s, groupname, bdata(fullpath));
+    DEBUG_PRINT(DEBUGLEV_INFO, "Reading group %s from %s", groupname, bdata(fullpath));
 
     ginfo->shortinfo = NULL;
     ginfo->nevents = 0;
@@ -1279,7 +1279,7 @@ perfgroup_addEvent(GroupInfo* ginfo, char* counter, char* event)
         return -ENOMEM;
     sprintf(ginfo->events[ginfo->nevents], "%s", event);
     sprintf(ginfo->counters[ginfo->nevents], "%s", counter);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Event %s:%s at pos %d, ginfo->events[ginfo->nevents], ginfo->counters[ginfo->nevents], ginfo->nevents);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Event %s:%s at pos %d", ginfo->events[ginfo->nevents], ginfo->counters[ginfo->nevents], ginfo->nevents);
     ginfo->nevents++;
     return 0;
 }
@@ -1292,7 +1292,7 @@ int perfgroup_removeEvent(GroupInfo* ginfo, char* counter)
     {
         if (strncmp(counter, ginfo->counters[i], strlen(ginfo->counters[i])) == 0)
         {
-            DEBUG_PRINT(DEBUGLEV_INFO, Removing event %s:%s at pos %d, ginfo->events[i], ginfo->counters[i], i);
+            DEBUG_PRINT(DEBUGLEV_INFO, "Removing event %s:%s at pos %d", ginfo->events[i], ginfo->counters[i], i);
             free(ginfo->events[i]);
             free(ginfo->counters[i]);
             for (int j = i+1; j < ginfo->nevents; j++)
@@ -1315,28 +1315,28 @@ perfgroup_addMetric(GroupInfo* ginfo, char* mname, char* mcalc)
     ginfo->metricnames = realloc(ginfo->metricnames, (ginfo->nmetrics + 1) * sizeof(char*));
     if (!ginfo->metricnames)
     {
-        ERROR_PRINT(Cannot increase space for metricnames to %d bytes, (ginfo->nmetrics + 1) * sizeof(char*));
+        ERROR_PRINT("Cannot increase space for metricnames to %d bytes", (ginfo->nmetrics + 1) * sizeof(char*));
         return -ENOMEM;
     }
     ginfo->metricformulas = realloc(ginfo->metricformulas, (ginfo->nmetrics + 1) * sizeof(char*));
     if (!ginfo->metricformulas)
     {
-        ERROR_PRINT(Cannot increase space for metricformulas to %d bytes, (ginfo->nmetrics + 1) * sizeof(char*));
+        ERROR_PRINT("Cannot increase space for metricformulas to %d bytes", (ginfo->nmetrics + 1) * sizeof(char*));
         return -ENOMEM;
     }
     ginfo->metricnames[ginfo->nmetrics] = malloc((strlen(mname) + 1) * sizeof(char));
     if (!ginfo->metricnames[ginfo->nmetrics])
     {
-        ERROR_PRINT(Cannot increase space for metricname to %d bytes, (strlen(mname) + 1) * sizeof(char));
+        ERROR_PRINT("Cannot increase space for metricname to %d bytes", (strlen(mname) + 1) * sizeof(char));
         return -ENOMEM;
     }
     ginfo->metricformulas[ginfo->nmetrics] = malloc((strlen(mcalc) + 1) * sizeof(char));
     if (!ginfo->metricformulas[ginfo->nmetrics])
     {
-        ERROR_PRINT(Cannot increase space for metricformula to %d bytes, (strlen(mcalc) + 1) * sizeof(char));
+        ERROR_PRINT("Cannot increase space for metricformula to %d bytes", (strlen(mcalc) + 1) * sizeof(char));
         return -ENOMEM;
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding metric %s = %s, mname, mcalc);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding metric %s = %s", mname, mcalc);
     int ret = sprintf(ginfo->metricnames[ginfo->nmetrics], "%s", mname);
     if (ret > 0)
     {
@@ -1359,7 +1359,7 @@ int perfgroup_removeMetric(GroupInfo* ginfo, char* mname)
     {
         if (strncmp(mname, ginfo->metricnames[i], strlen(ginfo->metricnames[i])) == 0)
         {
-            DEBUG_PRINT(DEBUGLEV_INFO, Removing metric %s at pos %d, ginfo->metricnames[i], i);
+            DEBUG_PRINT(DEBUGLEV_INFO, "Removing metric %s at pos %d", ginfo->metricnames[i], i);
             free(ginfo->metricnames[i]);
             free(ginfo->metricformulas[i]);
             for (int j = i+1; j < ginfo->nmetrics; j++)
@@ -1407,10 +1407,10 @@ perfgroup_setGroupName(GroupInfo* ginfo, char* groupName)
     ginfo->groupname = realloc(ginfo->groupname, size * sizeof(char));
     if (ginfo->groupname == NULL)
     {
-        ERROR_PRINT(Cannot increase space for groupname to %d bytes, size * sizeof(char));
+        ERROR_PRINT("Cannot increase space for groupname to %d bytes", size * sizeof(char));
         return -ENOMEM;
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Setting group name to %s, groupName);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Setting group name to %s", groupName);
     int ret = sprintf(ginfo->groupname, "%s", groupName);
     if (ret > 0)
     {
@@ -1548,12 +1548,12 @@ int perfgroup_mergeGroups(GroupInfo* grp1, GroupInfo* grp2)
             {
                 if (strncmp(grp1->events[i], grp2->events[j], strlen(grp1->events[i])) != 0)
                 {
-                    DEBUG_PRINT(DEBUGLEV_INFO, Cannot merge groups because counter %s is used for different events: %s and %s, grp1->counters[i], grp1->events[i], grp2->events[j]);
+                    DEBUG_PRINT(DEBUGLEV_INFO, "Cannot merge groups because counter %s is used for different events: %s and %s", grp1->counters[i], grp1->events[i], grp2->events[j]);
                     return -EFAULT;
                 }
                 else
                 {
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Counter %s used in both groups but measure the same event %s, grp1->counters[i], grp1->events[i]);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Counter %s used in both groups but measure the same event %s", grp1->counters[i], grp1->events[i]);
                 }
             }
         }
@@ -1575,7 +1575,7 @@ int perfgroup_mergeGroups(GroupInfo* grp1, GroupInfo* grp2)
             if (ret < 0)
             {
                 errno = -ret;
-                ERROR_PRINT(Cannot add event %s:%s, grp2->events[i], grp2->counters[i]);
+                ERROR_PRINT("Cannot add event %s:%s", grp2->events[i], grp2->counters[i]);
                 return ret;
             }
         }
@@ -1586,7 +1586,7 @@ int perfgroup_mergeGroups(GroupInfo* grp1, GroupInfo* grp2)
         if (ret < 0)
         {
             errno = -ret;
-            ERROR_PRINT(Cannot add metric %s, grp2->metricnames[i]);
+            ERROR_PRINT("Cannot add metric %s", grp2->metricnames[i]);
             return ret;
         }
     }

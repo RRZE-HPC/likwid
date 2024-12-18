@@ -220,13 +220,13 @@ void nvmon_markerClose(void) {
   file = fopen(markerfile, "w");
   if (file != NULL) {
     DEBUG_PRINT(DEBUGLEV_DEVELOP,
-                Creating GPU Marker file % s with % d regions % d groups and
-                    % d GPUs,
+                "Creating GPU Marker file % s with % d regions % d groups and "
+                    "%d GPUs",
                 markerfile, numberOfRegions, numberOfCudaGroups, numberOfGPUs);
     bstring thread_regs_grps =
         bformat("%d %d %d", numberOfGPUs, numberOfRegions, numberOfCudaGroups);
     fprintf(file, "%s\n", bdata(thread_regs_grps));
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, % s, bdata(thread_regs_grps));
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(thread_regs_grps));
     bdestroy(thread_regs_grps);
 
     for (int j = 0; j < numberOfRegions; j++) {
@@ -235,7 +235,7 @@ void nvmon_markerClose(void) {
       if (ret == 0) {
         bstring tmp = bformat("%d:%s", j, bdata(results->label));
         fprintf(file, "%s\n", bdata(tmp));
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, % s, bdata(tmp));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(tmp));
         bdestroy(tmp);
       }
     }
@@ -256,7 +256,7 @@ void nvmon_markerClose(void) {
             bdestroy(tmp);
           }
           fprintf(file, "%s\n", bdata(l));
-          DEBUG_PRINT(DEBUGLEV_DEVELOP, % s, bdata(l));
+          DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(l));
           bdestroy(l);
         }
         free(results);
@@ -292,13 +292,13 @@ int nvmon_markerWriteFile(const char* markerfile)
   file = fopen(markerfile, "w");
   if (file != NULL) {
     DEBUG_PRINT(DEBUGLEV_DEVELOP,
-                Creating GPU Marker file % s with % d regions % d groups and
-                    % d GPUs,
+                "Creating GPU Marker file %s with %d regions %d groups and "
+                    "%d GPUs",
                 markerfile, numberOfRegions, numberOfCudaGroups, numberOfGPUs);
     bstring thread_regs_grps =
         bformat("%d %d %d", numberOfGPUs, numberOfRegions, numberOfCudaGroups);
     fprintf(file, "%s\n", bdata(thread_regs_grps));
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, % s, bdata(thread_regs_grps));
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(thread_regs_grps));
     bdestroy(thread_regs_grps);
 
     for (int j = 0; j < numberOfRegions; j++) {
@@ -307,7 +307,7 @@ int nvmon_markerWriteFile(const char* markerfile)
       if (ret == 0) {
         bstring tmp = bformat("%d:%s", j, bdata(results->label));
         fprintf(file, "%s\n", bdata(tmp));
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, % s, bdata(tmp));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(tmp));
         bdestroy(tmp);
       }
     }
@@ -328,7 +328,7 @@ int nvmon_markerWriteFile(const char* markerfile)
             bdestroy(tmp);
           }
           fprintf(file, "%s\n", bdata(l));
-          DEBUG_PRINT(DEBUGLEV_DEVELOP, % s, bdata(l));
+          DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(l));
           bdestroy(l);
         }
         free(results);
@@ -421,8 +421,8 @@ int nvmon_markerStartRegion(const char *regionTag) {
             nvmon_getLastResult(results->groupID, j, i);
       else if (device->backend == LIKWID_NVMON_PERFWORKS_BACKEND)
         results->StartPMcounters[j] = nvmon_getResult(results->groupID, j, i);
-      GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, START Device % d Event % d
-                     : % f, i, j, results->StartPMcounters[j]);
+      GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "START Device %d Event %d"
+                     ": %f", i, j, results->StartPMcounters[j]);
     }
     results->state = GPUMARKER_STATE_START;
     timer_start(&(results->startTime));
@@ -471,8 +471,8 @@ int nvmon_markerStopRegion(const char *regionTag) {
       /*                */
       /*            }*/
       results->PMcounters[j] += end - results->StartPMcounters[j];
-      GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, STOP Device % d Event % d
-                     : % f - % f, i, j, end, results->StartPMcounters[j]);
+      GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "STOP Device %d Event %d"
+                     ": %f - %f", i, j, end, results->StartPMcounters[j]);
     }
     results->state = GPUMARKER_STATE_STOP;
   }
@@ -563,7 +563,7 @@ void nvmon_markerNextGroup(void) {
   }
   int next_group = (activeCudaGroup + 1) % numberOfCudaGroups;
   if (next_group != activeCudaGroup) {
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Switch from GPU group % d to group % d,
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Switch from GPU group %d to group %d",
                 activeCudaGroup, next_group);
     nvmon_switchActiveGroup(next_group);
   }

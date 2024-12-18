@@ -93,13 +93,13 @@ nvmon_init(int nrGpus, const int* gpuIds)
 
     if (nrGpus <= 0)
     {
-        ERROR_PRINT(Number of gpus must be greater than 0 but only %d given, nrGpus);
+        ERROR_PRINT("Number of gpus must be greater than 0 but only %d given", nrGpus);
         return -EINVAL;
     }
 
     // if (!lock_check())
     // {
-    //     ERROR_PLAIN_PRINT(Access to performance monitoring locked);
+    //     ERROR_PLAIN_PRINT("Access to performance monitoring locked");
     //     return -EINVAL;
     // }
 
@@ -120,13 +120,13 @@ nvmon_init(int nrGpus, const int* gpuIds)
     nvGroupSet = calloc(1, sizeof(NvmonGroupSet));
     if (nvGroupSet == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate group descriptor);
+        ERROR_PLAIN_PRINT("Cannot allocate group descriptor");
         return -ENOMEM;
     }
     nvGroupSet->gpus = (NvmonDevice*) malloc(nrGpus * sizeof(NvmonDevice));
     if (nvGroupSet->gpus == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate set of GPUs);
+        ERROR_PLAIN_PRINT("Cannot allocate set of GPUs");
         free(nvGroupSet);
         nvGroupSet = NULL;
         return -ENOMEM;
@@ -165,7 +165,7 @@ nvmon_init(int nrGpus, const int* gpuIds)
         }
         if (!available)
         {
-            ERROR_PRINT(No device with ID %d, gpuIds[i]);
+            ERROR_PRINT("No device with ID %d", gpuIds[i]);
             free(nvGroupSet->gpus);
             free(nvGroupSet);
             nvGroupSet = NULL;
@@ -174,13 +174,13 @@ nvmon_init(int nrGpus, const int* gpuIds)
         NvmonDevice_t device = &nvGroupSet->gpus[i];
         if (gtopo->devices[gpuIds[i]].ccapMajor < 7)
         {
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Device %d runs with CUPTI Event API backend, gpuIds[i]);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Device %d runs with CUPTI Event API backend", gpuIds[i]);
             device->backend = LIKWID_NVMON_CUPTI_BACKEND;
             cputicount++;
         }
         else
         {
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Device %d runs with CUPTI Profiling API backend, gpuIds[i]);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Device %d runs with CUPTI Profiling API backend", gpuIds[i]);
             device->backend = LIKWID_NVMON_PERFWORKS_BACKEND;
             perfworkscount++;
         }
@@ -190,7 +190,7 @@ nvmon_init(int nrGpus, const int* gpuIds)
         device->timeRead = 0;
         if (cputicount > 0 && perfworkscount > 0)
         {
-            ERROR_PRINT(Cannot use GPUs with different backends in a session, gpuIds[i]);
+            ERROR_PRINT("Cannot use GPUs with different backends in a session", gpuIds[i]);
             free(nvGroupSet->gpus);
             free(nvGroupSet);
             nvGroupSet = NULL;
@@ -203,7 +203,7 @@ nvmon_init(int nrGpus, const int* gpuIds)
             ret = funcs->createDevice(device->deviceId, device);
             if (ret < 0)
             {
-                ERROR_PRINT(Cannot create device %d (error: %d), device->deviceId, ret);
+                ERROR_PRINT("Cannot create device %d (error: %d)", device->deviceId, ret);
                 free(nvGroupSet->gpus);
                 free(nvGroupSet);
                 nvGroupSet = NULL;
@@ -352,7 +352,7 @@ nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
     err = concatNvmonEventLists(*list, nvmlList);
     if (err < 0)
     {
-        ERROR_PLAIN_PRINT(Failed to concatenate event lists);
+        ERROR_PLAIN_PRINT("Failed to concatenate event lists");
         nvmon_returnEventsOfGpu(*list);
         nvml_returnEventsOfGpu(nvmlList);
         *list = NULL;
@@ -405,7 +405,7 @@ nvmon_splitEventSet(GroupInfo* backendEvents, GroupInfo* nvmlEvents, int gid)
             ret = perfgroup_addEvent(nvmlEvents, info->counters[i], info->events[i]);
             if (ret < 0)
             {
-                ERROR_PRINT(Failed to add event while splitting);
+                ERROR_PRINT("Failed to add event while splitting");
                 return ret;
             }
         }
@@ -414,7 +414,7 @@ nvmon_splitEventSet(GroupInfo* backendEvents, GroupInfo* nvmlEvents, int gid)
             ret = perfgroup_addEvent(backendEvents, info->counters[i], info->events[i]);
             if (ret < 0)
             {
-                ERROR_PRINT(Failed to add event while splitting);
+                ERROR_PRINT("Failed to add event while splitting");
                 return ret;
             }
         }
@@ -450,20 +450,20 @@ nvmon_initEventSourceLookupMaps(int gid, int gpuId)
         int* tmpSourceTypes = (int*) malloc(group->nevents * sizeof(int));
         if (tmpSourceTypes == NULL)
         {
-            ERROR_PLAIN_PRINT(Failed to allocate source type map);
+            ERROR_PLAIN_PRINT("Failed to allocate source type map");
             return -ENOMEM;
         }
         int* tmpSourceIds = (int*) malloc(group->nevents * sizeof(int));
         if (tmpSourceIds == NULL)
         {
-            ERROR_PLAIN_PRINT(Failed to allocate source id map);
+            ERROR_PLAIN_PRINT("Failed to allocate source id map");
             free(tmpSourceTypes);
             return -ENOMEM;
         }
         NvmonGroupSourceInfo* tmpInfo = (NvmonGroupSourceInfo*) realloc(nvGroupSet->groupSources, (gid+1) * sizeof(NvmonGroupSourceInfo));
         if (tmpInfo == NULL)
         {
-            ERROR_PLAIN_PRINT(Failed to allocate source infos);
+            ERROR_PLAIN_PRINT("Failed to allocate source infos");
             free(tmpSourceTypes);
             free(tmpSourceIds);
             return -ENOMEM;
@@ -542,25 +542,25 @@ nvmon_addEventSet(const char* eventCString)
         GroupInfo* tmpInfo = (GroupInfo*)realloc(nvGroupSet->groups, (nvGroupSet->numberOfGroups+1)*sizeof(GroupInfo));
         if (tmpInfo == NULL)
         {
-            ERROR_PLAIN_PRINT(Cannot allocate additional group);
+            ERROR_PLAIN_PRINT("Cannot allocate additional group");
             return -ENOMEM;
         }
         nvGroupSet->groups = tmpInfo;
         nvGroupSet->numberOfGroups++;
-        GPUDEBUG_PRINT(DEBUGLEV_INFO, Allocating new group structure for group.);
+        GPUDEBUG_PRINT(DEBUGLEV_INFO, "Allocating new group structure for group.");
     }
-    GPUDEBUG_PRINT(DEBUGLEV_INFO, NVMON: Currently %d groups of %d active,
+    GPUDEBUG_PRINT(DEBUGLEV_INFO, "NVMON: Currently %d groups of %d active",
                                         nvGroupSet->numberOfActiveGroups+1,
                                         nvGroupSet->numberOfGroups+1);
 
     bstring eventBString = bfromcstr(eventCString);
     if (bstrchrp(eventBString, ':', 0) != BSTR_ERR)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Custom eventset);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Custom eventset");
         err = perfgroup_customGroup(eventCString, &nvGroupSet->groups[nvGroupSet->numberOfGroups-1]);
         if (err)
         {
-            ERROR_PRINT(Cannot transform %s to performance group, eventCString);
+            ERROR_PRINT("Cannot transform %s to performance group", eventCString);
             return err;
         }
     }
@@ -582,34 +582,34 @@ nvmon_addEventSet(const char* eventCString)
         }
         if (cputicount > 0 && perfworkscount > 0)
         {
-            ERROR_PRINT(GPUs with compute capability <7 and >= 7 are not allowed);
+            ERROR_PRINT("GPUs with compute capability <7 and >= 7 are not allowed");
             return -ENODEV;
         }
         if (cputicount > 0)
         {
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Performance group for CUPTI backend);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Performance group for CUPTI backend");
             err = perfgroup_readGroup(config->groupPath, "nvidia_gpu_cc_lt_7", eventCString,
                                       &nvGroupSet->groups[nvGroupSet->numberOfGroups-1]);
         }
         else if (perfworkscount > 0)
         {
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Performance group for PerfWorks backend);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Performance group for PerfWorks backend");
             err = perfgroup_readGroup(config->groupPath, "nvidia_gpu_cc_ge_7", eventCString,
                                       &nvGroupSet->groups[nvGroupSet->numberOfGroups-1]);
         }
         if (err == -EACCES)
         {
-            ERROR_PRINT(Access to performance group %s not allowed, eventCString);
+            ERROR_PRINT("Access to performance group %s not allowed", eventCString);
             return err;
         }
         else if (err == -ENODEV)
         {
-            ERROR_PRINT(Performance group %s only available with deactivated HyperThreading, eventCString);
+            ERROR_PRINT("Performance group %s only available with deactivated HyperThreading", eventCString);
             return err;
         }
         else if (err < 0)
         {
-            ERROR_PRINT(Cannot read performance group %s, eventCString);
+            ERROR_PRINT("Cannot read performance group %s", eventCString);
             return err;
         }
     }
@@ -618,7 +618,7 @@ nvmon_addEventSet(const char* eventCString)
     err = nvmon_initEventSourceLookupMaps(nvGroupSet->numberOfGroups - 1, nvGroupSet->gpus[0].deviceId); // it is assumed that all gpus split the same
     if (err < 0)
     {
-        ERROR_PRINT(Failed to init source lookup for group %d, nvGroupSet->numberOfGroups - 1);
+        ERROR_PRINT("Failed to init source lookup for group %d", nvGroupSet->numberOfGroups - 1);
         return err;
     }
 
@@ -628,7 +628,7 @@ nvmon_addEventSet(const char* eventCString)
     err = nvmon_splitEventSet(&backendEvents, &nvmlEvents, nvGroupSet->numberOfGroups-1);
     if (err < 0)
     {
-        ERROR_PRINT(Failed to split events);
+        ERROR_PRINT("Failed to split events");
         return -1;
     }
 
@@ -636,14 +636,14 @@ nvmon_addEventSet(const char* eventCString)
     err = nvml_addEventSet(nvmlEvents.events, nvmlEvents.nevents);
     if (err < 0)
     {
-        ERROR_PRINT(Failed to add nvml events);
+        ERROR_PRINT("Failed to add nvml events");
         return -1;
     }
 
     bdestroy(eventBString);
     char * evstr = perfgroup_getEventStr(&backendEvents);
 /*    eventBString = bfromcstr(evstr);*/
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, EventStr %s, evstr);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "EventStr %s", evstr);
 /*    eventtokens = bsplit(eventBString, ',');*/
 /*    bdestroy(eventBString);*/
 
@@ -657,16 +657,16 @@ nvmon_addEventSet(const char* eventCString)
             NvmonFunctions* funcs = nvGroupSet->backends[device->backend];
             if (!funcs)
             {
-                ERROR_PRINT(Backend functions undefined?);
+                ERROR_PRINT("Backend functions undefined?");
             }
             if (funcs->addEvents)
             {
-                GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Calling addevents);
+                GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Calling addevents");
                 err = funcs->addEvents(device, evstr);
                 if (err < 0)
                 {
                     errno = -err;
-                    ERROR_PRINT(Failed to add event set for GPU %d, devId);
+                    ERROR_PRINT("Failed to add event set for GPU %d", devId);
                     return err;
                 }
             }
@@ -677,7 +677,7 @@ nvmon_addEventSet(const char* eventCString)
             NvmonEventSet* tmpEventSet = realloc(device->nvEventSets, (device->numNvEventSets+1)*sizeof(NvmonEventSet));
             if (!tmpEventSet)
             {
-                ERROR_PRINT(Cannot enlarge GPU %d eventSet list, device->deviceId);
+                ERROR_PRINT("Cannot enlarge GPU %d eventSet list", device->deviceId);
                 return -ENOMEM;
             }
             device->nvEventSets = tmpEventSet;
@@ -1164,7 +1164,7 @@ double nvmon_getMetric(int groupId, int metricId, int gpuId)
     }
     if (nvmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
+        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
         return NAN;
     }
     if (nvGroupSet->numberOfActiveGroups == 0)
@@ -1227,7 +1227,7 @@ double nvmon_getLastMetric(int groupId, int metricId, int gpuId)
     }
     if (nvmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
+        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
         return NAN;
     }
     if (nvGroupSet->numberOfActiveGroups == 0)
@@ -1481,7 +1481,7 @@ nvmon_getCountOfRegion(int region, int gpu)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
+        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1504,7 +1504,7 @@ nvmon_getTimeOfRegion(int region, int gpu)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
+        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1528,7 +1528,7 @@ nvmon_getGpulistOfRegion(int region, int count, int* gpulist)
     int i;
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
+        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1551,7 +1551,7 @@ nvmon_getGpusOfRegion(int region)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
+        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1566,7 +1566,7 @@ nvmon_getMetricsOfRegion(int region)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
+        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1581,7 +1581,7 @@ nvmon_getNumberOfRegions()
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
+        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     return gMarkerRegions;
@@ -1592,7 +1592,7 @@ nvmon_getGroupOfRegion(int region)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
+        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1607,7 +1607,7 @@ nvmon_getTagOfRegion(int region)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
+        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
         return NULL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1622,7 +1622,7 @@ nvmon_getEventsOfRegion(int region)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
+        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1636,7 +1636,7 @@ double nvmon_getResultOfRegionGpu(int region, int eventId, int gpuId)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PLAIN_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1665,7 +1665,7 @@ double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
     CounterList clist;
     if (nvmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
+        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
         return NAN;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1702,7 +1702,7 @@ double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
     err = calc_metric(f, &clist, &result);
     if (err < 0)
     {
-        ERROR_PRINT(Cannot calculate formula %s, f);
+        ERROR_PRINT("Cannot calculate formula %s", f);
         return NAN;
     }
     destroy_clist(&clist);

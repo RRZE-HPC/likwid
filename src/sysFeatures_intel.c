@@ -58,7 +58,7 @@ int likwid_sysft_init_x86_intel(_SysFeatureList* out)
     int err = likwid_sysft_init_generic(intel_arch_features, out);
     if (err < 0)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init general Intel HWFetures);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init general Intel HWFetures");
     }
     else
     {
@@ -67,7 +67,7 @@ int likwid_sysft_init_x86_intel(_SysFeatureList* out)
     err = likwid_sysft_init_intel_rapl(out);
     if (err < 0)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init Intel RAPL HWFetures);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init Intel RAPL HWFetures");
     }
     else
     {

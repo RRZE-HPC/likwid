@@ -1155,7 +1155,7 @@ static char* RegisterTypeNames[MAX_UNITS] = {
         } \
         else \
         { \
-            ERROR_PRINT(Cannot set out-of-bounds type %d, (type)); \
+            ERROR_PRINT("Cannot set out-of-bounds type %d", (type)); \
         }
 #define MEASURE_CORE(eventset) \
         (eventset->regTypeMask1 & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(METRICS)))

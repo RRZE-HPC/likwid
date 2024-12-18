@@ -187,7 +187,7 @@ static int check_nv_context(NvmonDevice_t device, CUcontext currentContext)
 {
     int j = 0;
     int need_pop = 0;
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Current context %ld DevContext %ld, currentContext, device->context);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Current context %ld DevContext %ld", currentContext, device->context);
     if (!device->context)
     {
         int context_of_dev = -1;
@@ -203,25 +203,25 @@ static int check_nv_context(NvmonDevice_t device, CUcontext currentContext)
         if (context_of_dev < 0 && !device->context)
         {
             device->context = currentContext;
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Reuse context %ld for device %d, device->context, device->deviceId);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Reuse context %ld for device %d", device->context, device->deviceId);
         }
         else
         {
             CUDA_CALL((*cudaSetDevicePtr)(device->deviceId), return -EFAULT);
             CUDA_CALL((*cudaFreePtr)(NULL), return -EFAULT);
             CU_CALL((*cuCtxGetCurrentPtr)(&device->context), return -EFAULT);
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, New context %ld for device %d, device->context, device->deviceId);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "New context %ld for device %d", device->context, device->deviceId);
         }
     }
     else if (device->context != currentContext)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Use context %ld for device %d, device->context, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Use context %ld for device %d", device->context, device->deviceId);
         CU_CALL((*cuCtxPushCurrentPtr)(device->context), return -EFAULT);
         need_pop = 1;
     }
     else
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Context %ld fits for device %d, device->context, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Context %ld fits for device %d", device->context, device->deviceId);
     }
     return need_pop;
 }
@@ -345,7 +345,7 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
 
     // Get the number of event domains of the device
     CUPTI_CALL((*cuptiDeviceGetNumEventDomainsPtr)(dev->cuDevice, &numDomains), return -1);
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Nvmon: Dev %d Domains %d, id, numDomains);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Nvmon: Dev %d Domains %d", id, numDomains);
 
     // Get the domain IDs for the device
     size_t domainarraysize = numDomains * sizeof(CUpti_EventDomainID);
@@ -361,7 +361,7 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
         uint32_t domainNumEvents = 0;
         CUpti_EventDomainID domainID = eventDomainIds[j];
         CUPTI_CALL((*cuptiEventDomainGetNumEventsPtr)(domainID, &domainNumEvents), return -1);
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Nvmon: Dev %d Domain %d Events %d, id, j, domainNumEvents);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Nvmon: Dev %d Domain %d Events %d", id, j, domainNumEvents);
         totalEvents += domainNumEvents;
     }
     // Now we now how many events are provided by the device, so allocate a big enough event list
@@ -423,7 +423,7 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
             event->domainId = j;
             event->type = NVMON_CUPTI_EVENT;
             event->active = 0;
-            //GPUDEBUG_PRINT(DEBUGLEV_DETAIL, New Event %d CuEvent %d Domain %d CuDomain %d Name %s, event->eventId, (int)event->cuEventId, event->domainId, (int)event->cuDomainId, event->name);
+            //GPUDEBUG_PRINT(DEBUGLEV_DETAIL, "New Event %d CuEvent %d Domain %d CuDomain %d Name %s", event->eventId, (int)event->cuEventId, event->domainId, (int)event->cuDomainId, event->name);
             // Add the object to the event list
             dev->allevents[dev->numAllEvents] = event;
             dev->numAllEvents++;
@@ -512,7 +512,7 @@ int nvmon_cupti_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
     }
     else
     {
-        ERROR_PRINT(No such device %d, gpuId);
+        ERROR_PRINT("No such device %d, gpuId");
     }
     return 0;
 }
@@ -549,7 +549,7 @@ nvmon_cupti_addEventSets(NvmonDevice_t device, const char* eventString)
     NvmonEventSet* tmpEventSet = realloc(device->nvEventSets, (device->numNvEventSets+1)*sizeof(NvmonEventSet));
     if (!tmpEventSet)
     {
-        ERROR_PRINT(Cannot enlarge GPU %d eventSet list, device->deviceId);
+        ERROR_PRINT("Cannot enlarge GPU %d eventSet list", device->deviceId);
         return -ENOMEM;
     }
     device->nvEventSets = tmpEventSet;
@@ -558,20 +558,20 @@ nvmon_cupti_addEventSets(NvmonDevice_t device, const char* eventString)
     devEventSet->nvEvents = (NvmonEvent_t*) malloc(eventtokens->qty * sizeof(NvmonEvent_t));
     if (devEventSet->nvEvents == NULL)
     {
-        ERROR_PRINT(Cannot allocate event list for group %d\n, groupSet->numberOfActiveGroups);
+        ERROR_PRINT("Cannot allocate event list for group %d", groupSet->numberOfActiveGroups);
         return -ENOMEM;
     }
     devEventSet->cuEventIDs = (CUpti_EventID*) malloc(eventtokens->qty * sizeof(CUpti_EventID));
     if (devEventSet->cuEventIDs == NULL)
     {
-        ERROR_PRINT(Cannot allocate event ID list for group %d\n, groupSet->numberOfActiveGroups);
+        ERROR_PRINT("Cannot allocate event ID list for group %d", groupSet->numberOfActiveGroups);
         free(devEventSet->nvEvents);
         return -ENOMEM;
     }
     devEventSet->results = malloc(eventtokens->qty * sizeof(NvmonEventResult));
     if (devEventSet->cuEventIDs == NULL)
     {
-        ERROR_PRINT(Cannot allocate result list for group %d\n, groupSet->numberOfActiveGroups);
+        ERROR_PRINT("Cannot allocate result list for group %d", groupSet->numberOfActiveGroups);
         free(devEventSet->cuEventIDs);
         free(devEventSet->nvEvents);
         return -ENOMEM;
@@ -591,16 +591,16 @@ nvmon_cupti_addEventSets(NvmonDevice_t device, const char* eventString)
         struct bstrList* evset = bsplit(eventtokens->entry[i], ':');
         if (evset->qty != 2)
         {
-            ERROR_PRINT(NVMON: Event %s invalid: Format <event>:<gpucounter>, bdata(eventtokens->entry[i]));
+            ERROR_PRINT("NVMON: Event %s invalid: Format <event>:<gpucounter>", bdata(eventtokens->entry[i]));
         }
         if (blength(evset->entry[0]) == 0 || blength(evset->entry[1]) == 0)
         {
-            ERROR_PRINT(NVMON: Event %s invalid: Format <event>:<gpucounter>, bdata(eventtokens->entry[i]));
+            ERROR_PRINT("NVMON: Event %s invalid: Format <event>:<gpucounter>", bdata(eventtokens->entry[i]));
         }
         NvmonEvent_t event = g_hash_table_lookup(device->eventHash, (gpointer)bdata(evset->entry[0]));
         if (!event)
         {
-            GPUDEBUG_PRINT(DEBUGLEV_INFO, NVMON: Event %s unknown. Skipping..., bdata(evset->entry[0]));
+            GPUDEBUG_PRINT(DEBUGLEV_INFO, "NVMON: Event %s unknown. Skipping...", bdata(evset->entry[0]));
             continue; //unknown event
         }
         else
@@ -613,7 +613,7 @@ nvmon_cupti_addEventSets(NvmonDevice_t device, const char* eventString)
             CUPTI_CALL((*cuptiEventGroupSetsCreatePtr)(device->context, s, devEventSet->cuEventIDs, &cuEventSets), devEventSet->numberOfEvents--;);
             if (cuEventSets->numSets > 1)
             {
-                ERROR_PRINT(Error adding event %s. Multiple measurement runs are required. skipping event ..., bdata(evset->entry[i]));
+                ERROR_PRINT("Error adding event %s. Multiple measurement runs are required. skipping event ...", bdata(evset->entry[i]));
                 continue;
             }
         }
@@ -637,7 +637,7 @@ int nvmon_cupti_setupCounters(NvmonDevice_t device, NvmonEventSet* eventSet)
 
     if (eventSet->numberOfEvents == 0)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DETAIL, Skipping GPU%d it has no events in group %d, device->deviceId, eventSet->id);
+        GPUDEBUG_PRINT(DEBUGLEV_DETAIL, "Skipping GPU%d it has no events in group %d", device->deviceId, eventSet->id);
         return -EINVAL;
     }
     // Currently we are on which device?
@@ -750,7 +750,7 @@ int nvmon_cupti_setupCounters(NvmonDevice_t device, NvmonEventSet* eventSet)
                         }
                         // Mark event as active. This is used to avoid measuring the same event on the same device twice
                         eventSet->nvEvents[m]->active = 1;
-                        GPUDEBUG_PRINT(DEBUGLEV_INFO, Setup event %s (%d) for GPU %d, eventSet->nvEvents[m]->name, device->activeEvents[m].cuEventId, device->deviceId);
+                        GPUDEBUG_PRINT(DEBUGLEV_INFO, "Setup event %s (%d) for GPU %d", eventSet->nvEvents[m]->name, device->activeEvents[m].cuEventId, device->deviceId);
                         device->numActiveEvents++;
                     }
                 }
@@ -786,12 +786,12 @@ int nvmon_cupti_startCounters(NvmonDevice_t device)
     //NvmonDevice_t device = &nvGroupSet->gpus[i];
     if (device->numActiveCuGroups == 0)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DETAIL, Skipping GPU%d it has no events in group %d, device->deviceId, nvGroupSet->activeGroup);
+        GPUDEBUG_PRINT(DEBUGLEV_DETAIL, "Skipping GPU%d it has no events in group %d", device->deviceId, nvGroupSet->activeGroup);
         return 0;
     }
     if (device->deviceId != oldDevId)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Change GPU device %d -> %d, oldDevId, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Change GPU device %d -> %d", oldDevId, device->deviceId);
         CUDA_CALL((*cudaSetDevicePtr)(device->deviceId), return -EFAULT);
         CUDA_CALL((*cudaGetDevicePtr)(&oldDevId), return -EFAULT);
     }
@@ -815,14 +815,14 @@ int nvmon_cupti_startCounters(NvmonDevice_t device)
 
     for (j = 0; j < device->numActiveCuGroups; j++)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Enable group %ld on Dev %d, device->activeCuGroups[j], device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Enable group %ld on Dev %d", device->activeCuGroups[j], device->deviceId);
         CUPTI_CALL((*cuptiEventGroupSetEnablePtr)(device->activeCuGroups[j]), return -EFAULT);
     }
 
     // If we added the device context to the stack, pop it again
     if (popContext)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Pop Context %ld for device %d, device->context, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %ld for device %d", device->context, device->deviceId);
         CU_CALL((*cuCtxPopCurrentPtr)(&device->context), return -EFAULT);
     }
     return 0;
@@ -851,7 +851,7 @@ int nvmon_cupti_stopCounters(NvmonDevice_t device)
         NvmonDevice_t device = &nvGroupSet->gpus[i];
         if (device->deviceId != oldDevId)
         {
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Change GPU device %d -> %d, oldDevId, device->deviceId);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Change GPU device %d -> %d", oldDevId, device->deviceId);
             CUDA_CALL((*cudaSetDevicePtr)(device->deviceId), return -EFAULT);
             CUDA_CALL((*cudaGetDevicePtr)(&oldDevId), return -EFAULT);
         }
@@ -859,7 +859,7 @@ int nvmon_cupti_stopCounters(NvmonDevice_t device)
         NvmonEventSet* nvEventSet = &device->nvEventSets[nvGroupSet->activeGroup];
         if (device->numActiveCuGroups == 0)
         {
-            GPUDEBUG_PRINT(DEBUGLEV_DETAIL, Skipping GPU%d it has no events in group %d, device->deviceId, nvGroupSet->activeGroup);
+            GPUDEBUG_PRINT(DEBUGLEV_DETAIL, "Skipping GPU%d it has no events in group %d", device->deviceId, nvGroupSet->activeGroup);
             continue;
         }
         device->timeStop = timestamp;
@@ -878,7 +878,7 @@ int nvmon_cupti_stopCounters(NvmonDevice_t device)
             NvmonActiveEvent_t event = &device->activeEvents[j];
             valuesSize = sizeof(uint64_t) * event->numTotalInstances;
             memset(tmpValues, 0, valuesSize);
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Read Grp %ld Ev %ld for device %d, event->cuGroup, event->cuEventId, device->deviceId);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Read Grp %ld Ev %ld for device %d", event->cuGroup, event->cuEventId, device->deviceId);
             CUPTI_CALL((*cuptiEventGroupReadEventPtr)(event->cuGroup, CUPTI_EVENT_READ_FLAG_NONE, event->cuEventId, &valuesSize, tmpValues), free(tmpValues); return -EFAULT);
             uint64_t valuesum = 0;
             for (unsigned k = 0; k < event->numInstances; k++)
@@ -894,13 +894,13 @@ int nvmon_cupti_stopCounters(NvmonDevice_t device)
         }
         for (int j = 0; j < device->numActiveCuGroups; j++)
         {
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Disable group %ld, device->activeCuGroups[j]);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Disable group %ld", device->activeCuGroups[j]);
             CUPTI_CALL((*cuptiEventGroupSetDisablePtr)(device->activeCuGroups[j]), return -EFAULT);
         }
         // If we added the device context to the stack, pop it again
         if (popContext)
         {
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Pop Context %ld for device %d, device->context, device->deviceId);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %ld for device %d", device->context, device->deviceId);
             CU_CALL((*cuCtxPopCurrentPtr)(&device->context), return -EFAULT);
         }
     }
@@ -928,7 +928,7 @@ int nvmon_cupti_readCounters(NvmonDevice_t device)
     uint64_t *tmpValues = (uint64_t *) malloc(valuesSize);
     if (!tmpValues)
     {
-        ERROR_PRINT(Not enough memory to allocate space for instance values);
+        ERROR_PRINT("Not enough memory to allocate space for instance values");
         return -ENOMEM;
     }
 
@@ -944,12 +944,12 @@ int nvmon_cupti_readCounters(NvmonDevice_t device)
     int popContext = 0;
     if (device->numActiveEvents == 0)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DETAIL, Skipping GPU%d it has no events in group %d, device->deviceId, nvGroupSet->activeGroup);
+        GPUDEBUG_PRINT(DEBUGLEV_DETAIL, "Skipping GPU%d it has no events in group %d", device->deviceId, nvGroupSet->activeGroup);
         return 0;
     }
     if (device->deviceId != oldDevId)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Change GPU device %d -> %d, oldDevId, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Change GPU device %d -> %d", oldDevId, device->deviceId);
         CUDA_CALL((*cudaSetDevicePtr)(device->deviceId), return -EFAULT);
         CUDA_CALL((*cudaGetDevicePtr)(&oldDevId), return -EFAULT);
     }
@@ -971,7 +971,7 @@ int nvmon_cupti_readCounters(NvmonDevice_t device)
         valuesSize = sizeof(uint64_t) * event->numTotalInstances;
         memset(tmpValues, 0, valuesSize);
         // Read all instance values
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Read Grp %ld Ev %ld for device %d, event->cuGroup, event->cuEventId, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Read Grp %ld Ev %ld for device %d", event->cuGroup, event->cuEventId, device->deviceId);
         CUPTI_CALL((*cuptiEventGroupReadEventPtr)(event->cuGroup, CUPTI_EVENT_READ_FLAG_NONE, event->cuEventId, &valuesSize, tmpValues), return -EFAULT);
         // Sum all instance values
         uint64_t valuesum = 0;
@@ -988,7 +988,7 @@ int nvmon_cupti_readCounters(NvmonDevice_t device)
     }
     if (popContext)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Pop Context %ld for device %d, device->context, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %ld for device %d", device->context, device->deviceId);
         CU_CALL((*cuCtxPopCurrentPtr)(&device->context), return -EFAULT);
     }
     free(tmpValues);
