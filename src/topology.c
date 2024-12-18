@@ -275,7 +275,7 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
     fp = fopen(filename, "r");
     if (!fp)
     {
-        ERROR_PRINT(Failed to open topology file %s, filename);
+        ERROR_PRINT("Failed to open topology file %s", filename);
         return -errno;
     }
 
@@ -300,7 +300,7 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
     }
     if (numHWThreads < 0 || numCacheLevels < 0 || numberOfNodes < 0)
     {
-        ERROR_PRINT(Cannot read topology information from file %s, filename);
+        ERROR_PRINT("Cannot read topology information from file %s", filename);
         fclose(fp);
         return -EINVAL;
     }
@@ -1121,7 +1121,7 @@ topology_setName(void)
 
             if (cpuid_info.isIntel)
             {
-                ERROR_PLAIN_PRINT(Netburst architecture is not supported);
+                ERROR_PLAIN_PRINT("Netburst architecture is not supported");
                 err = -EFAULT;
                 break;
             }
@@ -1472,7 +1472,7 @@ void topology_setupTree(void)
         if (!tree_nodeExists(cpuid_topology.topologyTree,
                     hwThreadPool[i].packageId))
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding socket %d, hwThreadPool[i].packageId);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding socket %d", hwThreadPool[i].packageId);
             tree_insertNode(cpuid_topology.topologyTree,
                     hwThreadPool[i].packageId);
         }
@@ -1486,7 +1486,7 @@ void topology_setupTree(void)
         currentNode = tree_getNode(currentNode, hwThreadPool[i].dieId);*/
         if (!tree_nodeExists(currentNode, hwThreadPool[i].coreId))
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding core %d to socket %d, hwThreadPool[i].coreId, hwThreadPool[i].packageId);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding core %d to socket %d", hwThreadPool[i].coreId, hwThreadPool[i].packageId);
             tree_insertNode(currentNode, hwThreadPool[i].coreId);
         }
         currentNode = tree_getNode(currentNode, hwThreadPool[i].coreId);
@@ -1495,23 +1495,23 @@ void topology_setupTree(void)
             /*
                printf("WARNING: Thread already exists!\n");
                */
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding hwthread %d at core %d on socket %d, hwThreadPool[i].apicId, hwThreadPool[i].coreId, hwThreadPool[i].packageId);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding hwthread %d at core %d on socket %d", hwThreadPool[i].apicId, hwThreadPool[i].coreId, hwThreadPool[i].packageId);
             tree_insertNode(currentNode, hwThreadPool[i].apicId);
         }
 
     }
     i = tree_countChildren(cpuid_topology.topologyTree);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Determine number of sockets. tree tells %d, i);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Determine number of sockets. tree tells %d", i);
     if (cpuid_topology.numSockets == 0)
         cpuid_topology.numSockets = i;
     currentNode = tree_getChildNode(cpuid_topology.topologyTree);
     i = tree_countChildren(currentNode);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Determine number of cores per socket. tree tells %d, i);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Determine number of cores per socket. tree tells %d", i);
     if (cpuid_topology.numCoresPerSocket == 0)
         cpuid_topology.numCoresPerSocket = i;
     currentNode = tree_getChildNode(currentNode);
     i = tree_countChildren(currentNode);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Determine number of hwthreads per cores. tree tells %d, i);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Determine number of hwthreads per cores. tree tells %d", i);
     if (cpuid_topology.numThreadsPerCore == 0)
         cpuid_topology.numThreadsPerCore = i;
     return;
@@ -1530,7 +1530,7 @@ topology_init(void)
 
     if (init_configuration())
     {
-        ERROR_PLAIN_PRINT(Cannot initialize configuration module to check for topology file name);
+        ERROR_PLAIN_PRINT("Cannot initialize configuration module to check for topology file name");
         return EXIT_FAILURE;
     }
 
@@ -1568,20 +1568,20 @@ standard_init:
         if (ret < 0)
         {
             errno = ret;
-            ERROR_PRINT(Failed to read cpuinfo);
+            ERROR_PRINT("Failed to read cpuinfo");
             cpuid_topology.activeHWThreads = 0;
             return ret;
         }
         ret = topology_setName();
         if (ret < 0)
         {
-            DEBUG_PRINT(DEBUGLEV_INFO, Cannot use machine-given CPU name);
+            DEBUG_PRINT(DEBUGLEV_INFO, "Cannot use machine-given CPU name");
         }
         ret = funcs.init_cpuFeatures();
         if (ret < 0)
         {
             errno = ret;
-            ERROR_PRINT(Failed to detect CPU features);
+            ERROR_PRINT("Failed to detect CPU features");
             free(cpuid_info.osname);
             memset(&cpuid_info, 0, sizeof(CpuInfo));
             memset(&cpuid_topology, 0, sizeof(CpuTopology));
@@ -1591,7 +1591,7 @@ standard_init:
         if (ret < 0)
         {
             errno = ret;
-            ERROR_PRINT(Failed to setup system topology);
+            ERROR_PRINT("Failed to setup system topology");
             free(cpuid_info.osname);
             free(cpuid_info.features);
             free(cpuid_topology.threadPool);
@@ -1611,7 +1611,7 @@ standard_init:
         if (ret < 0)
         {
             errno = ret;
-            ERROR_PRINT(Failed to setup cache topology);
+            ERROR_PRINT("Failed to setup cache topology");
             free(cpuid_info.osname);
             free(cpuid_topology.threadPool);
             memset(&cpuid_info, 0, sizeof(CpuInfo));
@@ -1716,7 +1716,7 @@ standard_init:
                     break;
             }
         }
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Setting up tree);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Setting up tree");
         topology_setupTree();
         sched_setaffinity(0, sizeof(cpu_set_t), &cpuSet);
     }
@@ -1737,7 +1737,7 @@ standard_init:
                 }
             }
         }
-        DEBUG_PRINT(DEBUGLEV_INFO, Reading topology information from %s, config.topologyCfgFileName);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Reading topology information from %s", config.topologyCfgFileName);
         ret = readTopologyFile(config.topologyCfgFileName, cpuSet);
         if (ret < 0)
             goto standard_init;

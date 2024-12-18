@@ -84,14 +84,14 @@ HPMinit(void)
     if (ret < 0)
     {
         errno = -ret;
-        ERROR_PRINT(Failed to initialize topology);
+        ERROR_PRINT("Failed to initialize topology");
         return ret;
     }
     ret = init_configuration();
     if (ret < 0)
     {
         errno = -ret;
-        ERROR_PRINT(Failed to initialize configuration);
+        ERROR_PRINT("Failed to initialize configuration");
         return ret;
     }
     config = get_configuration();
@@ -110,7 +110,7 @@ HPMinit(void)
         }
         if (config->daemonMode == ACCESSMODE_DAEMON)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for x86 architecture in daemon mode);
+            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "Adjusting functions for x86 architecture in daemon mode");
             access_init = &access_client_init;
             access_read = &access_client_read;
             access_write = &access_client_write;
@@ -119,7 +119,7 @@ HPMinit(void)
         }
         else if (config->daemonMode == ACCESSMODE_DIRECT)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for x86 architecture in direct mode);
+            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "Adjusting functions for x86 architecture in direct mode");
             access_init = &access_x86_init;
             access_read = &access_x86_read;
             access_write = &access_x86_write;
@@ -128,7 +128,7 @@ HPMinit(void)
         }
         else
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, HPMinit called in perf_event mode);
+            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "HPMinit called in perf_event mode");
         }
 #endif
     }
@@ -159,7 +159,7 @@ HPMaddThread(int cpu_id)
             ret = access_init(cpu_id);
             if (ret == 0)
             {
-                DEBUG_PRINT(DEBUGLEV_DETAIL, Adding CPU %d to access module, cpu_id);
+                DEBUG_PRINT(DEBUGLEV_DETAIL, "Adding CPU %d to access module", cpu_id);
                 registeredCpus++;
                 registeredCpuList[cpu_id] = 1;
             }
@@ -186,7 +186,7 @@ HPMfinalize(void)
         {
             if (registeredCpuList[i] == 1)
             {
-                DEBUG_PRINT(DEBUGLEV_DETAIL, Removing CPU %d from access module, i);
+                DEBUG_PRINT(DEBUGLEV_DETAIL, "Removing CPU %d from access module", i);
                 access_finalize(i);
                 registeredCpus--;
                 registeredCpuList[i] = 0;
@@ -242,7 +242,7 @@ HPMwrite(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data)
     }
     if ((cpu_id < 0) || (cpu_id >= cpuid_topology.numHWThreads))
     {
-        ERROR_PRINT(MSR WRITE C %d OUT OF RANGE, cpu_id);
+        ERROR_PRINT("MSR WRITE C %d OUT OF RANGE", cpu_id);
         return -ERANGE;
     }
     if (registeredCpuList[cpu_id] == 0)

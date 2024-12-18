@@ -328,12 +328,12 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
         }
 
 #endif
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d,
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "PROC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d",
                             cpuid_info.family,
                             cpuid_info.model,
                             cpuid_info.stepping,
                             cpuid_info.isIntel,
-                            cpuid_topology.numHWThreads)
+                            cpuid_topology.numHWThreads);
     }
     return 0;
 }
@@ -716,13 +716,13 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         if (hwThreadPool[i].dieId == -1)
             hwThreadPool[i].dieId = 0;
 #endif
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC Thread Pool PU %d Thread %d Core %d Die %d Socket %d inCpuSet %d,
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "PROC Thread Pool PU %d Thread %d Core %d Die %d Socket %d inCpuSet %d",
                             hwThreadPool[i].apicId,
                             hwThreadPool[i].threadId,
                             hwThreadPool[i].coreId,
                             hwThreadPool[i].dieId,
                             hwThreadPool[i].packageId,
-                            hwThreadPool[i].inCpuSet)
+                            hwThreadPool[i].inCpuSet);
         bdestroy(cpudir);
     }
     int* helper = malloc(cpuid_topology.numHWThreads * sizeof(int));
@@ -1100,7 +1100,7 @@ proc_init_cacheTopology(void)
                 cachePool[i].inclusive = 0;
                 break;
             default:
-                ERROR_PLAIN_PRINT(Processor is not supported);
+                ERROR_PLAIN_PRINT("Processor is not supported");
                 break;
         }
     }

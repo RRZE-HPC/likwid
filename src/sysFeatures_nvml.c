@@ -50,7 +50,7 @@
     do {                                                                \
         const char *err = dlerror();                                    \
         if (err) {                                                      \
-            ERROR_PRINT(Error: dlsym on symbol '%s' failed with error: %s, #name, err); \
+            ERROR_PRINT("Error: dlsym on symbol '%s' failed with error: %s", #name, err); \
             return -EINVAL;                                             \
         }                                                               \
     } while (0)
@@ -59,7 +59,7 @@
     do {                                                \
         nvmlReturn_t s = (*func##_ptr)(__VA_ARGS__);    \
         if (s != NVML_SUCCESS) {                        \
-            ERROR_PRINT(Error: function %s failed with error: '%s' (nvmlReturn=%d).\n, #func, nvmlErrorString_ptr(s), s);   \
+            ERROR_PRINT("Error: function %s failed with error: '%s' (nvmlReturn=%d).", #func, nvmlErrorString_ptr(s), s);   \
             return -EPERM;                              \
         }                                               \
     } while (0)
@@ -156,7 +156,7 @@ int likwid_sysft_init_nvml(_SysFeatureList *list)
 
     if (!dl_nvml)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, dlopen(libnvidia-ml.so) failed: %s, dlerror());
+        DEBUG_PRINT(DEBUGLEV_INFO, "dlopen(libnvidia-ml.so) failed: %s", dlerror());
         return -ELIBACC;
     }
 
@@ -217,7 +217,7 @@ int likwid_sysft_init_nvml(_SysFeatureList *list)
     if (nverr != NVML_SUCCESS)
     {
         dlclose(dl_nvml);
-        ERROR_PRINT(nvmlInit_v2() failed: %s, nvmlErrorString_ptr(nverr));
+        ERROR_PRINT("nvmlInit_v2() failed: %s", nvmlErrorString_ptr(nverr));
         return -EPERM;
     }
 

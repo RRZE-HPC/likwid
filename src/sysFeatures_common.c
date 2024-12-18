@@ -56,21 +56,21 @@ int likwid_sysft_register_features(_SysFeatureList *features, const _SysFeatureL
     for (int i = 0; i < in->num_features; i++)
     {
         _SysFeature *f = &in->features[i];
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Registering feature %s.%s, f->category, f->name);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Registering feature %s.%s", f->category, f->name);
         if (f->tester)
         {
             if (f->tester())
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Running test for feature %s.%s, f->category, f->name);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Running test for feature %s.%s", f->category, f->name);
                 int err = _add_to_feature_list(features, f);
                 if (err < 0)
                 {
-                    ERROR_PRINT(Failed to add HW feature %s.%s to feature list, f->category, f->name);
+                    ERROR_PRINT("Failed to add HW feature %s.%s to feature list", f->category, f->name);
                 }
             }
             else
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Test function for feature %s.%s failed, f->category, f->name);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test function for feature %s.%s failed", f->category, f->name);
             }
         }
         else
@@ -78,7 +78,7 @@ int likwid_sysft_register_features(_SysFeatureList *features, const _SysFeatureL
             int err = _add_to_feature_list(features, f);
             if (err < 0)
             {
-                ERROR_PRINT(Failed to add HW feature %s.%s to feature list, f->category, f->name);
+                ERROR_PRINT("Failed to add HW feature %s.%s to feature list", f->category, f->name);
             }
         }
     }
@@ -90,7 +90,7 @@ int likwid_sysft_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList
     int err = topology_init();
     if (err < 0)
     {
-        ERROR_PRINT(Failed to initialize topology module);
+        ERROR_PRINT("Failed to initialize topology module");
         return err;
     }
     CpuInfo_t cpuinfo = get_cpuInfo();
@@ -100,7 +100,7 @@ int likwid_sysft_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList
     {
         if ((unsigned)infeatures[c].family == cpuinfo->family && (unsigned)infeatures[c].model == cpuinfo->model)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Using feature list for CPU family 0x%X and model 0x%X, cpuinfo->family, cpuinfo->model);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Using feature list for CPU family 0x%X and model 0x%X", cpuinfo->family, cpuinfo->model);
             feature_list = infeatures[c].features;
             break;
         }
@@ -108,7 +108,7 @@ int likwid_sysft_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList
     if (!feature_list)
     {
         errno = ENOTSUP;
-        DEBUG_PRINT(DEBUGLEV_INFO, No architectural sysFeatures for family 0x%X and model 0x%X, cpuinfo->family, cpuinfo->model);
+        DEBUG_PRINT(DEBUGLEV_INFO, "No architectural sysFeatures for family 0x%X and model 0x%X", cpuinfo->family, cpuinfo->model);
         return -ENOTSUP;
     }
 
@@ -125,7 +125,7 @@ int likwid_sysft_uint64_to_string(uint64_t value, char** str)
     const int len = snprintf(s, sizeof(s), "%llu", value);
     if (len < 0)
     {
-        ERROR_PRINT(Conversion of uint64_t %lld failed: %s, value, strerror(errno));
+        ERROR_PRINT("Conversion of uint64_t %lld failed: %s", value, strerror(errno));
         return -errno;
     }
     char *newstr = realloc(*str, len+1);
@@ -155,7 +155,7 @@ int likwid_sysft_string_to_uint64(const char* str, uint64_t* value)
     uint64_t v = strtoull(str, &ptr, 0);
     if (v == 0 && errno != 0)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Conversion of string '%s' to uint64_t failed %d: %s, str, v, strerror(errno));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Conversion of string '%s' to uint64_t failed %d: %s", str, v, strerror(errno));
         return -errno;
     }
     *value = v;
@@ -168,7 +168,7 @@ int likwid_sysft_double_to_string(double value, char **str)
     const int len = snprintf(s, sizeof(s), "%f", value);
     if (len < 0)
     {
-        ERROR_PRINT(Conversion of double %f failed: %s, value, strerror(errno));
+        ERROR_PRINT("Conversion of double %f failed: %s", value, strerror(errno));
         return -errno;
     }
     char* newstr = realloc(*str, len+1);
@@ -188,12 +188,12 @@ int likwid_sysft_string_to_double(const char* str, double *value)
     const double result = strtod(str, &endptr);
     if (!endptr)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Conversion of string '%s' to double failed: %s, str, strerror(errno));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Conversion of string '%s' to double failed: %s", str, strerror(errno));
         return -errno;
     }
     if (errno != 0)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Conversion of string '%s' to double failed: %s, str, result, strerror(errno));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Conversion of string '%s' to double failed: %s", str, result, strerror(errno));
         return -errno;
     }
     *value = result;

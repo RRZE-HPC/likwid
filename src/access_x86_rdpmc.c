@@ -158,14 +158,14 @@ access_x86_rdpmc_init(const int cpu_id)
     if (rdpmc_works_pmc < 0)
     {
         rdpmc_works_pmc = test_rdpmc(cpu_id, 0, 0);
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for PMC counters returned %d, rdpmc_works_pmc);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for PMC counters returned %d", rdpmc_works_pmc);
     }
     if (rdpmc_works_fixed_inst < 0 && cpuid_info.isIntel)
     {
         if (eventSupportedCount > 1 && (!(ebx & (1<<1))))
         {
             rdpmc_works_fixed_inst = test_rdpmc(cpu_id, (1<<30), 0);
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED instruction counter returned %d, rdpmc_works_fixed_inst);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for FIXED instruction counter returned %d", rdpmc_works_fixed_inst);
         }
     }
     if (rdpmc_works_fixed_cyc < 0 && cpuid_info.isIntel)
@@ -173,7 +173,7 @@ access_x86_rdpmc_init(const int cpu_id)
         if (eventSupportedCount > 0 && (!(ebx & (1<<0))))
         {
             rdpmc_works_fixed_cyc = test_rdpmc(cpu_id, (1<<30) + 1, 0);
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED core cycles counter returned %d, rdpmc_works_fixed_cyc);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for FIXED core cycles counter returned %d", rdpmc_works_fixed_cyc);
         }
     }
     if (rdpmc_works_fixed_ref < 0 && cpuid_info.isIntel)
@@ -181,7 +181,7 @@ access_x86_rdpmc_init(const int cpu_id)
         if (eventSupportedCount > 2 && (!(ebx & (1<<2))))
         {
             rdpmc_works_fixed_ref = test_rdpmc(cpu_id, (1<<30) + 2, 0);
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED reference cycle counter returned %d, rdpmc_works_fixed_ref);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for FIXED reference cycle counter returned %d", rdpmc_works_fixed_ref);
         }
     }
     if (rdpmc_works_fixed_slots < 0 && cpuid_info.isIntel)
@@ -189,7 +189,7 @@ access_x86_rdpmc_init(const int cpu_id)
         if (eventSupportedCount > 7 && (!(ebx & (1<<7))))
         {
             rdpmc_works_fixed_slots = test_rdpmc(cpu_id, (1<<30) + 3, 0);
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED slots counter returned %d, rdpmc_works_fixed_slots);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for FIXED slots counter returned %d", rdpmc_works_fixed_slots);
         }
     }
     if (rdpmc_works_llc < 0 && (!cpuid_info.isIntel))
@@ -198,11 +198,11 @@ access_x86_rdpmc_init(const int cpu_id)
         {
             case 0x17:
                 rdpmc_works_llc = test_rdpmc(cpu_id, 0xA, 0);
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for L3 counters returned %d, rdpmc_works_llc);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for L3 counters returned %d", rdpmc_works_llc);
                 break;
             case 0x19:
                 rdpmc_works_llc = test_rdpmc(cpu_id, 0xA, 0);
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for L3 counters returned %d, rdpmc_works_llc);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for L3 counters returned %d", rdpmc_works_llc);
                 break;
             default:
                 break;
@@ -214,11 +214,11 @@ access_x86_rdpmc_init(const int cpu_id)
         {
             case 0x17:
                 rdpmc_works_mem = test_rdpmc(cpu_id, 0x6, 0);
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for DataFabric counters returned %d, rdpmc_works_mem);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for DataFabric counters returned %d", rdpmc_works_mem);
                 break;
             case 0x19:
                 rdpmc_works_mem = test_rdpmc(cpu_id, 0x6, 0);
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for DataFabric counters returned %d, rdpmc_works_mem);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for DataFabric counters returned %d", rdpmc_works_mem);
                 break;
             default:
                 break;
@@ -259,7 +259,7 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
         case MSR_PMC7:
             if (rdpmc_works_pmc == 1)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read PMC counter with RDPMC instruction with index 0x%X, reg - MSR_PMC0);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read PMC counter with RDPMC instruction with index 0x%X", reg - MSR_PMC0);
                 ret = __rdpmc(cpu_id, reg - MSR_PMC0, data);
                 if (ret)
                 {
@@ -275,7 +275,7 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
             if (rdpmc_works_pmc == 1 && !cpuid_info.isIntel)
             {
                 int index = (reg - MSR_AMD17_PMC0)/2;
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read PMC counter with RDPMC instruction with index 0x%X, index);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read PMC counter with RDPMC instruction with index 0x%X", index);
                 ret = __rdpmc(cpu_id, index, data);
                 if (ret)
                 {
@@ -291,7 +291,7 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
             if (rdpmc_works_pmc == 1 && !cpuid_info.isIntel)
             {
                 int index = (reg - MSR_AMD16_PMC0)/2;
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read PMC counter with RDPMC instruction with index 0x%X, index);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read PMC counter with RDPMC instruction with index 0x%X", index);
                 ret = __rdpmc(cpu_id, index, data);
                 if (ret)
                 {
@@ -303,7 +303,7 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
         case MSR_PERF_FIXED_CTR0:
             if (rdpmc_works_fixed_inst == 1)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED instruction counter with RDPMC instruction with index 0x%X, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read FIXED instruction counter with RDPMC instruction with index 0x%X", (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
                 ret = __rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data);
                 if (ret)
                 {
@@ -315,7 +315,7 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
         case MSR_PERF_FIXED_CTR1:
             if (rdpmc_works_fixed_cyc == 1)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED core cycle counter with RDPMC instruction with index 0x%X, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read FIXED core cycle counter with RDPMC instruction with index 0x%X", (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
                 ret = __rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data);
                 if (ret)
                 {
@@ -327,7 +327,7 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
         case MSR_PERF_FIXED_CTR2:
             if (rdpmc_works_fixed_ref == 1)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED reference cycle counter with RDPMC instruction with index 0x%X, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read FIXED reference cycle counter with RDPMC instruction with index 0x%X", (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
                 ret = __rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data);
                 if (ret)
                 {
@@ -339,7 +339,7 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
         case MSR_PERF_FIXED_CTR3: //Fixed-purpose counter for TOPDOWN_SLOTS is not readable with RDPMC
             if (rdpmc_works_fixed_slots == 1)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED slots counter with RDPMC instruction with index 0x%X, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read FIXED slots counter with RDPMC instruction with index 0x%X", (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
                 ret = __rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data);
                 if (ret)
                 {
@@ -358,7 +358,7 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
             {
                 int index = (reg - MSR_AMD17_L3_PMC0)/2;
 
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read AMD L3 counter with RDPMC instruction with index 0x%X, 0xA + index);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read AMD L3 counter with RDPMC instruction with index 0x%X", 0xA + index);
                 ret = __rdpmc(cpu_id, 0xA + index, data);
                 if (ret)
                 {
@@ -375,7 +375,7 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
             {
                 int index = (reg - MSR_AMD17_2_DF_PMC0)/2;
 
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read AMD DF counter with RDPMC instruction with index 0x%X, 0x6 + index);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read AMD DF counter with RDPMC instruction with index 0x%X", 0x6 + index);
                 ret = __rdpmc(cpu_id, 0x6 + index, data);
                 if (ret)
                 {

@@ -68,32 +68,32 @@ int access_x86_translate_open_unit(PerfmonDiscoveryUnit* unit)
     if (pcihandle < 0)
     {
         err = errno;
-        ERROR_PRINT(Failed to open /dev/mem);
+        ERROR_PRINT("Failed to open /dev/mem");
         return -err;
     }
     if (unit->access_type == ACCESS_TYPE_MMIO)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Opening /dev/mem at 0x%X, unit->mmap_addr);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Opening /dev/mem at 0x%X", unit->mmap_addr);
         void* io_addr = mmap(NULL, unit->mmap_size, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, unit->mmap_addr);
         if (io_addr == MAP_FAILED)
         {
             err = errno;
             close(pcihandle);
-            ERROR_PRINT(Failed to mmap offset 0x%lX (MMIO), unit->box_ctl);
+            ERROR_PRINT("Failed to mmap offset 0x%lX (MMIO)", unit->box_ctl);
             return -err;
         }
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Opening /dev/mem at 0x%X -> 0x%X, unit->mmap_addr, io_addr);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Opening /dev/mem at 0x%X -> 0x%X", unit->mmap_addr, io_addr);
         unit->io_addr = io_addr;
     }
     else if (unit->access_type == ACCESS_TYPE_PCI)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Opening /dev/mem at 0x%X, unit->mmap_addr);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Opening /dev/mem at 0x%X", unit->mmap_addr);
         void* io_addr = mmap(NULL, unit->mmap_size, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, unit->mmap_addr );
         if (io_addr == MAP_FAILED)
         {
             err = errno;
             close(pcihandle);
-            ERROR_PRINT(Failed to mmap offset 0x%lX (PCI), unit->box_ctl);
+            ERROR_PRINT("Failed to mmap offset 0x%lX (PCI)", unit->box_ctl);
             return -err;
         }
         unit->io_addr = io_addr;
@@ -143,11 +143,11 @@ access_x86_translate_init(const int cpu_id)
 {
     if (!perfmon_discovery)
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Running Perfmon Discovery to populate counter lists);
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "Running Perfmon Discovery to populate counter lists");
         int ret = perfmon_uncore_discovery(cpuid_info.model, &perfmon_discovery);
         if (ret != 0)
         {
-            ERROR_PRINT(Failed to run Perfmon Discovery);
+            ERROR_PRINT("Failed to run Perfmon Discovery");
             return ret;
         }
     }
@@ -181,7 +181,7 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
                 newreg = cur->global.global_ctl + cur->global.status_offset + ((reg - FAKE_UNC_GLOBAL_STATUS0));
             }
             uint64_t tmp = 0x0;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Read Uncore counter 0x%X (%s) on CPU %d (socket %d), newreg, pci_device_names[dev], cpu_id, socket_id);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read Uncore counter 0x%X (%s) on CPU %d (socket %d)", newreg, pci_device_names[dev], cpu_id, socket_id);
             err = access_x86_msr_read(cpu_id, newreg, &tmp);
             if (err == 0)
             {
@@ -200,16 +200,16 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
                 int err = access_x86_translate_open_unit(unit);
                 if (err < 0)
                 {
-                    ERROR_PRINT(Failed to open unit %s, pci_device_names[dev]);
+                    ERROR_PRINT("Failed to open unit %s", pci_device_names[dev]);
                     return -ENODEV;
                 }
             }
             else if (!unit->mmap_addr)
             {
-                ERROR_PRINT(Failed to find unit %s, pci_device_names[dev]);
+                ERROR_PRINT("Failed to find unit %s", pci_device_names[dev]);
                 return -ENODEV;
             }
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Read Uncore counter 0x%X (%s) on CPU %d (socket %d, access %s), reg, pci_device_names[dev], cpu_id, socket_id, AccessTypeNames[unit->access_type]);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read Uncore counter 0x%X (%s) on CPU %d (socket %d, access %s)", reg, pci_device_names[dev], cpu_id, socket_id, AccessTypeNames[unit->access_type]);
             switch(reg)
             {
                 case FAKE_UNC_UNIT_CTRL:
@@ -278,12 +278,12 @@ access_x86_translate_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, ui
                             if ((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_1_CH_7) ||
                                 (dev >= MMIO_HBM_DEVICE_0 && dev <= MMIO_HBM_DEVICE_31))
                             {
-                                DEBUG_PRINT(DEBUGLEV_DEVELOP, 0x%X + 0x%X + 0x%X + (%d * %d), unit->io_addr, unit->mmap_offset, unit->ctrl_offset, sizeof(uint32_t), offset);
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "0x%X + 0x%X + 0x%X + (%d * %d)", unit->io_addr, unit->mmap_offset, unit->ctrl_offset, sizeof(uint32_t), offset);
                                 *data = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset)));
                             }
                             else
                             {
-                                DEBUG_PRINT(DEBUGLEV_DEVELOP, 0x%X + 0x%X + 0x%X + (%d * %d), unit->io_addr, unit->mmap_offset, unit->ctrl_offset, reg_offset, offset);
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "0x%X + 0x%X + 0x%X + (%d * %d)", unit->io_addr, unit->mmap_offset, unit->ctrl_offset, reg_offset, offset);
                                 *data = (uint64_t)*((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (reg_offset * offset)));
                             }
                             break;
@@ -409,7 +409,7 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
             }
             if (newreg != 0x0)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Write Uncore counter 0x%X (%s) on CPU %d (socket %d): 0x%lX, newreg, pci_device_names[dev], cpu_id, socket_id, data);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Write Uncore counter 0x%X (%s) on CPU %d (socket %d): 0x%lX", newreg, pci_device_names[dev], cpu_id, socket_id, data);
                 err = access_x86_msr_write(cpu_id, newreg, data);
             }
         }
@@ -426,16 +426,16 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
                 int err = access_x86_translate_open_unit(unit);
                 if (err < 0)
                 {
-                    ERROR_PRINT(Failed to open unit %s, pci_device_names[dev]);
+                    ERROR_PRINT("Failed to open unit %s", pci_device_names[dev]);
                     return -ENODEV;
                 }
             }
             else if (!unit->mmap_addr)
             {
-                ERROR_PRINT(Failed to find unit %s, pci_device_names[dev]);
+                ERROR_PRINT("Failed to find unit %s", pci_device_names[dev]);
                 return -ENODEV;
             }
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Write Uncore counter 0x%X (%s) on CPU %d (socket %d, access %s): 0x%lX, reg, pci_device_names[dev], cpu_id, socket_id, AccessTypeNames[unit->access_type], data);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Write Uncore counter 0x%X (%s) on CPU %d (socket %d, access %s): 0x%lX", reg, pci_device_names[dev], cpu_id, socket_id, AccessTypeNames[unit->access_type], data);
             switch(reg)
             {
                 case FAKE_UNC_UNIT_CTRL:
@@ -501,12 +501,12 @@ access_x86_translate_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, u
                             if ((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_1_CH_7) ||
                                 (dev >= MMIO_HBM_DEVICE_0 && dev <= MMIO_HBM_DEVICE_31))
                             {
-                                DEBUG_PRINT(DEBUGLEV_DEVELOP, 0x%X + 0x%X + 0x%X + (%d * %d) = 0x%X, unit->io_addr, unit->mmap_offset, unit->ctrl_offset, sizeof(uint32_t), offset, (uint32_t)data);
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "0x%X + 0x%X + 0x%X + (%d * %d) = 0x%X", unit->io_addr, unit->mmap_offset, unit->ctrl_offset, sizeof(uint32_t), offset, (uint32_t)data);
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset))) = (uint32_t)data;
                             }
                             else
                             {
-                                DEBUG_PRINT(DEBUGLEV_DEVELOP, 0x%X + 0x%X + 0x%X + (%d * %d) = 0x%X, unit->io_addr, unit->mmap_offset, unit->ctrl_offset, reg_offset, offset, (uint64_t)data);
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "0x%X + 0x%X + 0x%X + (%d * %d) = 0x%X", unit->io_addr, unit->mmap_offset, unit->ctrl_offset, reg_offset, offset, (uint64_t)data);
                                 *((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (reg_offset * offset))) = (uint64_t)data;
                             }
                             break;
@@ -614,7 +614,7 @@ access_x86_translate_check(PciDeviceIndex dev, int cpu_id)
 {
     if (cpu_id < 0 || (!perfmon_discovery))
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, CPU < 0 or no perfmon_initialization)
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "CPU < 0 or no perfmon_initialization");
         return 0;
     }
     int socket_id = affinity_thread2socket_lookup[cpu_id];

@@ -78,7 +78,7 @@ int ilg_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     }
     if (flags != currentConfig[cpu_id][index])
     {
-        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_PMC");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
@@ -97,7 +97,7 @@ int ilg_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
     if (flags != currentConfig[cpu_id][index])
     {
-        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_UNCORE);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_UNCORE");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
@@ -245,11 +245,11 @@ int perfmon_readCountersThread_interlagos(int thread_id, PerfmonEventSet* eventS
             {
                 case PMC:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &tmp));
-                    VERBOSEPRINTREG(cpu_id, counter, LLU_CAST tmp, READ_PMC);
+                    VERBOSEPRINTREG(cpu_id, counter, LLU_CAST tmp, "READ_PMC");
                     break;
                 case UNCORE:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &tmp));
-                    VERBOSEPRINTREG(cpu_id, counter, LLU_CAST tmp, READ_UNCORE);
+                    VERBOSEPRINTREG(cpu_id, counter, LLU_CAST tmp, "READ_UNCORE");
                     break;
                 default:
                     break;
@@ -281,9 +281,9 @@ int perfmon_finalizeCountersThread_interlagos(int thread_id, PerfmonEventSet* ev
         uint32_t reg = counter_map[index].configRegister;
         if ((reg) && (((type == PMC)||(type == FIXED))||((type >= UNCORE) && (haveLock))))
         {
-            VERBOSEPRINTREG(cpu_id, reg, LLU_CAST 0x0ULL, CLEAR_CTRL);
+            VERBOSEPRINTREG(cpu_id, reg, LLU_CAST 0x0ULL, "CLEAR_CTRL");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, 0x0ULL));
-            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST 0x0ULL, CLEAR_CTR);
+            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST 0x0ULL, "CLEAR_CTR");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;

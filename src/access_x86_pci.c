@@ -105,7 +105,7 @@ access_x86_pci_init(const int socket)
         /* PCI is only provided by Intel systems */
         if (!cpuid_info.isIntel)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, PCI based Uncore performance monitoring only supported on Intel systems);
+            DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, "PCI based Uncore performance monitoring only supported on Intel systems");
             return -ENODEV;
         }
         switch (cpuid_info.model)
@@ -137,7 +137,7 @@ access_x86_pci_init(const int socket)
                 testDevice = 0x344A;
                 break;
             default:
-                DEBUG_PRINT(DEBUGLEV_INFO,CPU model %s does not support PCI based Uncore performance monitoring, cpuid_info.name);
+                DEBUG_PRINT(DEBUGLEV_INFO, "CPU model %s does not support PCI based Uncore performance monitoring", cpuid_info.name);
                 return -ENODEV;
                 break;
         }
@@ -160,20 +160,20 @@ access_x86_pci_init(const int socket)
 
         ret = 1;
 #ifdef LIKWID_USE_HWLOC
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using hwloc to find pci devices);
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, "Using hwloc to find pci devices");
         ret = hwloc_pci_init(testDevice, socket_bus, &nr_sockets);
         if (ret)
         {
-            ERROR_PLAIN_PRINT(Using hwloc to find pci devices failed);
+            ERROR_PLAIN_PRINT("Using hwloc to find pci devices failed");
         }
 #endif
         if (ret)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using procfs to find pci devices);
+            DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, "Using procfs to find pci devices");
             ret = proc_pci_init(testDevice, socket_bus, &nr_sockets);
             if (ret)
             {
-                ERROR_PLAIN_PRINT(Using procfs to find pci devices failed);
+                ERROR_PLAIN_PRINT("Using procfs to find pci devices failed");
                 return -ENODEV;
             }
         }
@@ -193,10 +193,10 @@ access_x86_pci_init(const int socket)
                 if (access_x86_initialized == 0)
                 {
                     DEBUG_PRINT(DEBUGLEV_DETAIL,
-                            PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, socket,bdata(filepath));
+                            "PCI device %s (%d) online for socket %d at path %s", pci_devices[j].name,j, socket,bdata(filepath));
                     if (ownaccess(bdata(filepath),R_OK|W_OK))
                     {
-                        ERROR_PRINT(PCI device %s (%d) online for socket %d at path %s but not accessible, pci_devices[j].name,j, socket,bdata(filepath));
+                        ERROR_PRINT("PCI device %s (%d) online for socket %d at path %s but not accessible", pci_devices[j].name,j, socket,bdata(filepath));
                     }
                 }
             }
@@ -254,19 +254,19 @@ access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t
 
         if ( FD[socket][dev] < 0)
         {
-            ERROR_PRINT(Failed to open PCI device %s at path %s\n,
+            ERROR_PRINT("Failed to open PCI device %s at path %s\n",
                             pci_devices[dev].name,
                             bdata(filepath));
             *data = 0ULL;
             return -EACCES;
         }
-        DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s: %s, pci_devices[dev].name, bdata(filepath));
+        DEBUG_PRINT(DEBUGLEV_DETAIL, "Opened PCI device %s: %s", pci_devices[dev].name, bdata(filepath));
     }
 
     if ( FD[socket][dev] > 0 &&
          pread(FD[socket][dev], &tmp, sizeof(tmp), reg) != sizeof(tmp) )
     {
-        ERROR_PRINT(Read from PCI device %s at register 0x%x failed, pci_devices[dev].name, reg);
+        ERROR_PRINT("Read from PCI device %s at register 0x%x failed", pci_devices[dev].name, reg);
         *data = 0ULL;
         return -EIO;
     }
@@ -297,18 +297,18 @@ access_x86_pci_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_
 
         if ( FD[socket][dev] < 0)
         {
-            ERROR_PRINT(Failed to open PCI device %s at path %s\n,
+            ERROR_PRINT("Failed to open PCI device %s at path %s\n",
                                 pci_devices[dev].name,
                                 bdata(filepath));
             return -EACCES;
         }
-        DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s: %s, pci_devices[dev].name, bdata(filepath));
+        DEBUG_PRINT(DEBUGLEV_DETAIL, "Opened PCI device %s: %s", pci_devices[dev].name, bdata(filepath));
     }
 
     if ( FD[socket][dev] > 0 &&
          pwrite(FD[socket][dev], &tmp, sizeof tmp, reg) != sizeof tmp)
     {
-        ERROR_PRINT(Write to PCI device %s at register 0x%x failed, pci_devices[dev].name, reg);
+        ERROR_PRINT("Write to PCI device %s at register 0x%x failed", pci_devices[dev].name, reg);
         return -EIO;
     }
     return 0;

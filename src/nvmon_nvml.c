@@ -395,7 +395,7 @@ static int
 _nvml_linkLibraries()
 {
     // Load NVML libary and link functions
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Init NVML Libaries);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Init NVML Libaries");
     dl_nvml = dlopen("libnvidia-ml.so", RTLD_NOW | RTLD_GLOBAL);
     if (!dl_nvml)
         dl_nvml = dlopen("libnvidia-ml.so.1", RTLD_NOW | RTLD_GLOBAL);
@@ -425,7 +425,7 @@ _nvml_linkLibraries()
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetUtilizationRates);
 
     // Load CUPTI library and link functions
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Init NVML Libaries);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Init NVML Libaries");
     dl_cupti = dlopen("libcupti.so", RTLD_NOW | RTLD_GLOBAL);
     if (!dl_cupti || dlerror() != NULL)
     {
@@ -821,7 +821,7 @@ _nvml_createDevice(int idx, NvmlDevice* device)
 
     // Get NVML device handle
     NVML_CALL(nvmlDeviceGetHandleByIndex_v2, (device->nvDevice->deviceId, &device->nvmlDevice), {
-        ERROR_PRINT(Failed to get device handle for GPU %d, device->nvDevice->deviceId);
+        ERROR_PRINT("Failed to get device handle for GPU %d", device->nvDevice->deviceId);
         return -1;
     });
 
@@ -832,7 +832,7 @@ _nvml_createDevice(int idx, NvmlDevice* device)
     device->allEvents = (NvmlEvent*) malloc(device->numAllEvents * sizeof(NvmlEvent));
     if (device->allEvents == NULL)
     {
-        ERROR_PRINT(Failed to allocate memory for event list of GPU %d, device->nvDevice->deviceId);
+        ERROR_PRINT("Failed to allocate memory for event list of GPU %d", device->nvDevice->deviceId);
         return -ENOMEM;
     }
 
@@ -935,7 +935,7 @@ nvml_init()
     ret = _nvml_linkLibraries();
     if (ret < 0)
     {
-        ERROR_PLAIN_PRINT(Failed to link libraries);
+        ERROR_PLAIN_PRINT("Failed to link libraries");
         return -1;
     }
 
@@ -944,7 +944,7 @@ nvml_init()
     nvmlContext.devices = (NvmlDevice*) malloc(nvmlContext.numDevices * sizeof(NvmlDevice));
     if (nvmlContext.devices == NULL)
     {   
-        ERROR_PLAIN_PRINT(Cannot allocate NVML device structures);
+        ERROR_PLAIN_PRINT("Cannot allocate NVML device structures");
         return -ENOMEM;
     }
 
@@ -958,7 +958,7 @@ nvml_init()
         ret = _nvml_createDevice(i, device);
         if (ret < 0)
         {
-            ERROR_PRINT(Failed to create device #%d, i);
+            ERROR_PRINT("Failed to create device #%d", i);
             return ret;
         }
     }
@@ -1005,20 +1005,20 @@ nvml_addEventSet(char** events, int numEvents)
         NvmlEvent* tmpEvents = (NvmlEvent*) malloc(numEvents * sizeof(NvmlEvent));
         if (tmpEvents == NULL)
         {
-            ERROR_PLAIN_PRINT(Cannot allocate events for new event set);
+            ERROR_PLAIN_PRINT("Cannot allocate events for new event set");
             return -ENOMEM;
         }
         NvmlEventResult* tmpResults = (NvmlEventResult*) malloc(numEvents * sizeof(NvmlEventResult));
         if (tmpResults == NULL)
         {
-            ERROR_PLAIN_PRINT(Cannot allocate event results);
+            ERROR_PLAIN_PRINT("Cannot allocate event results");
             free(tmpEvents);
             return -ENOMEM;
         }
         NvmlEventSet* tmpEventSets = (NvmlEventSet*) realloc(device->eventSets, (device->numEventSets+1) * sizeof(NvmlEventSet));
         if (tmpEventSets == NULL)
         {
-            ERROR_PLAIN_PRINT(Cannot allocate new event set);
+            ERROR_PLAIN_PRINT("Cannot allocate new event set");
             free(tmpEvents);
             free(tmpResults);
             return -ENOMEM;
@@ -1041,7 +1041,7 @@ nvml_addEventSet(char** events, int numEvents)
             // Check if event was found
             if (idx < 0)
             {
-                ERROR_PRINT(Could not find event %s, events[j]);
+                ERROR_PRINT("Could not find event %s", events[j]);
                 return -EINVAL;
             }
 
@@ -1100,13 +1100,13 @@ nvml_getEventsOfGpu(int gpuId, NvmonEventList_t* output)
     NvmonEventListEntry* entries = (NvmonEventListEntry*) malloc(device->numAllEvents * sizeof(NvmonEventListEntry));
     if (entries == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate event list entries);
+        ERROR_PLAIN_PRINT("Cannot allocate event list entries");
         return -ENOMEM;
     }
     NvmonEventList* list = (NvmonEventList*) malloc(sizeof(NvmonEventList));
     if (list == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate event list);
+        ERROR_PLAIN_PRINT("Cannot allocate event list");
         free(entries);
         return -ENOMEM;
     }

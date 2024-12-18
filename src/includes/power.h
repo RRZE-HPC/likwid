@@ -94,20 +94,20 @@ power_start(PowerData* data, int cpuId, PowerType type)
         {
             uint64_t result = 0;
             data->before = 0;
-            CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, power_regs[type], &result))
+            CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, power_regs[type], &result));
             data->before = field64(result, 0, power_info.statusRegWidth);
             data->domain = type;
             return 0;
         }
         else
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL domain %s not supported, power_names[type]);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "RAPL domain %s not supported", power_names[type]);
             return -EFAULT;
         }
     }
     else
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, No RAPL support);
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
         return -EIO;
     }
 }
@@ -121,20 +121,20 @@ power_stop(PowerData* data, int cpuId, PowerType type)
         {
             uint64_t result = 0;
             data->after = 0;
-            CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, power_regs[type], &result))
+            CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, power_regs[type], &result));
             data->after = field64(result, 0, power_info.statusRegWidth);
             data->domain = type;
             return 0;
         }
         else
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL domain %s not supported, power_names[type]);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "RAPL domain %s not supported", power_names[type]);
             return -EFAULT;
         }
     }
     else
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, No RAPL support);
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
         return -EIO;
     }
 }
@@ -159,19 +159,19 @@ power_read(int cpuId, uint64_t reg, uint32_t *data)
         {
             uint64_t result = 0;
             *data = 0;
-            CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, reg, &result))
+            CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, reg, &result));
             *data = field64(result, 0, power_info.statusRegWidth);
             return 0;
         }
         else
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL domain %s not supported, power_names[type]);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "RAPL domain %s not supported", power_names[type]);
             return -EFAULT;
         }
     }
     else
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, No RAPL support);
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
         return -EIO;
     }
 }
@@ -195,19 +195,19 @@ power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
         {
             uint64_t result = 0;
             *data = 0;
-            CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, reg, &result))
+            CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, reg, &result));
             *data = field64(result, 0, power_info.statusRegWidth);
             return 0;
         }
         else
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL domain %s not supported, power_names[type]);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "RAPL domain %s not supported", power_names[type]);
             return -EFAULT;
         }
     }
     else
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, No RAPL support);
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
         return -EIO;
     }
 }
