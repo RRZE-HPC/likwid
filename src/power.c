@@ -156,7 +156,7 @@ power_init(int cpuId)
                     break;
 
                 default:
-                    DEBUG_PLAIN_PRINT(DEBUGLEV_INFO, "NO RAPL SUPPORT");
+                    DEBUG_PRINT(DEBUGLEV_INFO, "NO RAPL SUPPORT");
                     return 0;
                     break;
             }

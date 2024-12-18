@@ -44,9 +44,6 @@
         exit(EXIT_FAILURE); \
     } while (0)
 
-#define ERROR_PLAIN_PRINT(msg) \
-   fprintf(stderr,  "ERROR - [%s:%s:%d] %s\n", __FILE__, __func__,__LINE__, msg)
-
 #define ERROR_PRINT(fmt, ...) \
    fprintf(stderr,  "ERROR - [%s:%s:%d] %s.\n" fmt "\n", __FILE__,  __func__,__LINE__, strerror(errno), ##__VA_ARGS__)
 
@@ -112,14 +109,6 @@
     do { \
         if ((lev) >= 0 && (lev) <= likwid_rocmon_verbosity) { \
             fprintf(stdout, "ROCMON DEBUG - [%s:%d] " fmt "\n", __func__, __LINE__, ##__VA_ARGS__); \
-            fflush(stdout); \
-        } \
-    } while (0)
-
-#define DEBUG_PLAIN_PRINT(lev, msg) \
-    do { \
-        if ((lev) >= 0 && (lev) <= perfmon_verbosity) { \
-            fprintf(stdout, "DEBUG - [%s:%d] %s\n",__func__, __LINE__, msg); \
             fflush(stdout); \
         } \
     } while (0)

@@ -123,8 +123,8 @@ access_x86_msr_init(const int cpu_id)
     if (fd < 0)
     {
         ERROR_PRINT("Cannot access MSR device file %s: %s.", msr_file_name , strerror(errno));
-        ERROR_PLAIN_PRINT("Please check if 'msr' module is loaded and device files have correct permissions");
-        ERROR_PLAIN_PRINT("Alternatively you might want to look into (sys)daemonmode");
+        ERROR_PRINT("Please check if 'msr' module is loaded and device files have correct permissions");
+        ERROR_PRINT("Alternatively you might want to look into (sys)daemonmode");
         free(msr_file_name);
         return -EPERM;
     }

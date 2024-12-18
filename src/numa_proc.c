@@ -248,7 +248,7 @@ nodeProcessorList(int node, uint32_t** list)
 
             if (endptr == (char*) tokens->entry[i]->data)
             {
-                ERROR_PLAIN_PRINT("No digits were found");
+                ERROR_PRINT("No digits were found");
                 return -EFAULT;
             }
 

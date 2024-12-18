@@ -123,7 +123,7 @@ tree_insertNode(TreeNode* nodePtr, int id)
 
     if (nodePtr == NULL)
     {
-        ERROR_PLAIN_PRINT("Node invalid");
+        ERROR_PRINT("Node invalid");
     }
 
     newNode = (TreeNode*) malloc(sizeof(TreeNode));
@@ -175,7 +175,7 @@ tree_nodeExists(TreeNode* nodePtr, int id)
 
     if (nodePtr == NULL)
     {
-        ERROR_PLAIN_PRINT("Node invalid");
+        ERROR_PRINT("Node invalid");
         return 0;
     }
 
@@ -204,7 +204,7 @@ tree_countChildren(TreeNode* nodePtr)
 
     if (nodePtr == NULL)
     {
-        ERROR_PLAIN_PRINT("Node invalid");
+        ERROR_PRINT("Node invalid");
         return 0;
     }
     if (nodePtr->llink == NULL)
@@ -230,7 +230,7 @@ tree_getNode(TreeNode* nodePtr, int id)
 
     if (nodePtr == NULL)
     {
-        ERROR_PLAIN_PRINT("Node invalid");
+        ERROR_PRINT("Node invalid");
         return NULL;
     }
     if (nodePtr->llink == NULL)
@@ -260,7 +260,7 @@ tree_getChildNode(TreeNode* nodePtr)
 {
     if (nodePtr == NULL)
     {
-        ERROR_PLAIN_PRINT("Node invalid");
+        ERROR_PRINT("Node invalid");
         return NULL;
     }
     if (nodePtr->llink == NULL)
@@ -276,7 +276,7 @@ tree_getNextNode(TreeNode* nodePtr)
 {
     if (nodePtr == NULL)
     {
-        ERROR_PLAIN_PRINT("Node invalid");
+        ERROR_PRINT("Node invalid");
     }
 
     if (nodePtr->rlink == NULL)

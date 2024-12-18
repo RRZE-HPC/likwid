@@ -99,7 +99,7 @@ nvmon_init(int nrGpus, const int* gpuIds)
 
     // if (!lock_check())
     // {
-    //     ERROR_PLAIN_PRINT("Access to performance monitoring locked");
+    //     ERROR_PRINT("Access to performance monitoring locked");
     //     return -EINVAL;
     // }
 
@@ -120,13 +120,13 @@ nvmon_init(int nrGpus, const int* gpuIds)
     nvGroupSet = calloc(1, sizeof(NvmonGroupSet));
     if (nvGroupSet == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate group descriptor");
+        ERROR_PRINT("Cannot allocate group descriptor");
         return -ENOMEM;
     }
     nvGroupSet->gpus = (NvmonDevice*) malloc(nrGpus * sizeof(NvmonDevice));
     if (nvGroupSet->gpus == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate set of GPUs");
+        ERROR_PRINT("Cannot allocate set of GPUs");
         free(nvGroupSet);
         nvGroupSet = NULL;
         return -ENOMEM;
@@ -352,7 +352,7 @@ nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
     err = concatNvmonEventLists(*list, nvmlList);
     if (err < 0)
     {
-        ERROR_PLAIN_PRINT("Failed to concatenate event lists");
+        ERROR_PRINT("Failed to concatenate event lists");
         nvmon_returnEventsOfGpu(*list);
         nvml_returnEventsOfGpu(nvmlList);
         *list = NULL;
@@ -450,20 +450,20 @@ nvmon_initEventSourceLookupMaps(int gid, int gpuId)
         int* tmpSourceTypes = (int*) malloc(group->nevents * sizeof(int));
         if (tmpSourceTypes == NULL)
         {
-            ERROR_PLAIN_PRINT("Failed to allocate source type map");
+            ERROR_PRINT("Failed to allocate source type map");
             return -ENOMEM;
         }
         int* tmpSourceIds = (int*) malloc(group->nevents * sizeof(int));
         if (tmpSourceIds == NULL)
         {
-            ERROR_PLAIN_PRINT("Failed to allocate source id map");
+            ERROR_PRINT("Failed to allocate source id map");
             free(tmpSourceTypes);
             return -ENOMEM;
         }
         NvmonGroupSourceInfo* tmpInfo = (NvmonGroupSourceInfo*) realloc(nvGroupSet->groupSources, (gid+1) * sizeof(NvmonGroupSourceInfo));
         if (tmpInfo == NULL)
         {
-            ERROR_PLAIN_PRINT("Failed to allocate source infos");
+            ERROR_PRINT("Failed to allocate source infos");
             free(tmpSourceTypes);
             free(tmpSourceIds);
             return -ENOMEM;
@@ -542,7 +542,7 @@ nvmon_addEventSet(const char* eventCString)
         GroupInfo* tmpInfo = (GroupInfo*)realloc(nvGroupSet->groups, (nvGroupSet->numberOfGroups+1)*sizeof(GroupInfo));
         if (tmpInfo == NULL)
         {
-            ERROR_PLAIN_PRINT("Cannot allocate additional group");
+            ERROR_PRINT("Cannot allocate additional group");
             return -ENOMEM;
         }
         nvGroupSet->groups = tmpInfo;
@@ -1164,7 +1164,7 @@ double nvmon_getMetric(int groupId, int metricId, int gpuId)
     }
     if (nvmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
+        ERROR_PRINT("Nvmon module not properly initialized");
         return NAN;
     }
     if (nvGroupSet->numberOfActiveGroups == 0)
@@ -1227,7 +1227,7 @@ double nvmon_getLastMetric(int groupId, int metricId, int gpuId)
     }
     if (nvmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
+        ERROR_PRINT("Nvmon module not properly initialized");
         return NAN;
     }
     if (nvGroupSet->numberOfActiveGroups == 0)
@@ -1481,7 +1481,7 @@ nvmon_getCountOfRegion(int region, int gpu)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
+        ERROR_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1504,7 +1504,7 @@ nvmon_getTimeOfRegion(int region, int gpu)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
+        ERROR_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1528,7 +1528,7 @@ nvmon_getGpulistOfRegion(int region, int count, int* gpulist)
     int i;
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
+        ERROR_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1551,7 +1551,7 @@ nvmon_getGpusOfRegion(int region)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
+        ERROR_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1566,7 +1566,7 @@ nvmon_getMetricsOfRegion(int region)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
+        ERROR_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1581,7 +1581,7 @@ nvmon_getNumberOfRegions()
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
+        ERROR_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     return gMarkerRegions;
@@ -1592,7 +1592,7 @@ nvmon_getGroupOfRegion(int region)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
+        ERROR_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1607,7 +1607,7 @@ nvmon_getTagOfRegion(int region)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
+        ERROR_PRINT("Nvmon module not properly initialized");
         return NULL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1622,7 +1622,7 @@ nvmon_getEventsOfRegion(int region)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
+        ERROR_PRINT("Nvmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1636,7 +1636,7 @@ double nvmon_getResultOfRegionGpu(int region, int eventId, int gpuId)
 {
     if (gMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Perfmon module not properly initialized");
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= gMarkerRegions)
@@ -1665,7 +1665,7 @@ double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
     CounterList clist;
     if (nvmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT("Nvmon module not properly initialized");
+        ERROR_PRINT("Nvmon module not properly initialized");
         return NAN;
     }
     if (region < 0 || region >= gMarkerRegions)

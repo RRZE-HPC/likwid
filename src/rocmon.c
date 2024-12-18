@@ -552,14 +552,14 @@ _rocmon_iterate_agents_callback(hsa_agent_t agent, void* argv)
     device->rocMetrics = (rocprofiler_info_data_t*) malloc(device->numRocMetrics * sizeof(rocprofiler_info_data_t));
     if (device->rocMetrics == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate set of rocMetrics");
+        ERROR_PRINT("Cannot allocate set of rocMetrics");
         return HSA_STATUS_ERROR;
     }
 
     // Initialize SMI events map
     if (init_map(&device->smiMetrics, MAP_KEY_TYPE_STR, 0, &free) < 0)
     {
-        ERROR_PLAIN_PRINT("Cannot init smiMetrics map");
+        ERROR_PRINT("Cannot init smiMetrics map");
         return HSA_STATUS_ERROR;
     }
 
@@ -1168,7 +1168,7 @@ rocmon_init(int numGpus, const int* gpuIds)
     int ret = _rocmon_link_libraries();
     if (ret < 0)
     {
-	ERROR_PLAIN_PRINT("Failed to initialize libraries");
+	ERROR_PRINT("Failed to initialize libraries");
         return ret;
     }
 
@@ -1176,7 +1176,7 @@ rocmon_init(int numGpus, const int* gpuIds)
     rocmon_context = (RocmonContext*) malloc(sizeof(RocmonContext));
     if (rocmon_context == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate Rocmon context");
+        ERROR_PRINT("Cannot allocate Rocmon context");
         return -ENOMEM;
     }
     rocmon_context->groups = NULL;
@@ -1187,7 +1187,7 @@ rocmon_init(int numGpus, const int* gpuIds)
     rocmon_context->numDevices = numGpus;
     if (rocmon_context->devices == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate set of GPUs");
+        ERROR_PRINT("Cannot allocate set of GPUs");
         free(rocmon_context);
         rocmon_context = NULL;
         return -ENOMEM;
@@ -1197,7 +1197,7 @@ rocmon_init(int numGpus, const int* gpuIds)
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Initializing HSA");
     ROCM_CALL(hsa_init, (),
     {
-        ERROR_PLAIN_PRINT("Failed to init hsa library");
+        ERROR_PRINT("Failed to init hsa library");
         goto rocmon_init_hsa_failed;
     });
 
@@ -1205,7 +1205,7 @@ rocmon_init(int numGpus, const int* gpuIds)
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Initializing RSMI");
     RSMI_CALL(rsmi_init, (0),
     {
-        ERROR_PLAIN_PRINT("Failed to init rocm_smi");
+        ERROR_PRINT("Failed to init rocm_smi");
         goto rocmon_init_rsmi_failed;
     });
 
@@ -1214,7 +1214,7 @@ rocmon_init(int numGpus, const int* gpuIds)
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Getting HSA timestamp factor");
     ROCM_CALL(hsa_system_get_info, (HSA_SYSTEM_INFO_TIMESTAMP_FREQUENCY, &frequency_hz),
     {
-        ERROR_PLAIN_PRINT("Failed to get HSA timestamp factor");
+        ERROR_PRINT("Failed to get HSA timestamp factor");
         goto rocmon_init_info_agents_failed;
     });
     rocmon_context->hsa_timestamp_factor = (long double)1000000000 / (long double)frequency_hz;
@@ -1343,7 +1343,7 @@ rocmon_addEventSet(const char* eventString, int* gid)
         GroupInfo* tmpInfo = (GroupInfo*) realloc(rocmon_context->groups, (rocmon_context->numGroups+1) * sizeof(GroupInfo));
         if (tmpInfo == NULL)
         {
-            ERROR_PLAIN_PRINT("Cannot allocate additional group");
+            ERROR_PRINT("Cannot allocate additional group");
             return -ENOMEM;
         }
         rocmon_context->groups = tmpInfo;
@@ -1367,7 +1367,7 @@ rocmon_addEventSet(const char* eventString, int* gid)
         RocmonEventResult* tmpResults = (RocmonEventResult*) malloc(numEvents * sizeof(RocmonEventResult));
         if (tmpResults == NULL)
         {
-            ERROR_PLAIN_PRINT("Cannot allocate event results");
+            ERROR_PRINT("Cannot allocate event results");
             return -ENOMEM;
         }
 
@@ -1375,7 +1375,7 @@ rocmon_addEventSet(const char* eventString, int* gid)
         RocmonEventResultList* tmpGroupResults = (RocmonEventResultList*) realloc(device->groupResults, (device->numGroupResults+1) * sizeof(RocmonEventResultList));
         if (tmpGroupResults == NULL)
         {
-            ERROR_PLAIN_PRINT("Cannot allocate new event group result list");
+            ERROR_PRINT("Cannot allocate new event group result list");
             return -ENOMEM;
         }
 
@@ -1411,7 +1411,7 @@ _rocmon_setupCounters_rocprofiler(RocmonDevice* device, const char** events, int
     rocprofiler_feature_t* features = (rocprofiler_feature_t*) malloc(numEvents * sizeof(rocprofiler_feature_t));
     if (features == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate feature list");
+        ERROR_PRINT("Cannot allocate feature list");
         return -ENOMEM;
     }
     for (int i = 0; i < numEvents; i++)
@@ -1462,7 +1462,7 @@ _rocmon_setupCounters_smi(RocmonDevice* device, const char** events, int numEven
     RocmonSmiEvent* activeEvents = (RocmonSmiEvent*) malloc(numEvents * sizeof(RocmonSmiEvent));
     if (activeEvents == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate active event list");
+        ERROR_PRINT("Cannot allocate active event list");
         return -ENOMEM;
     }
 
@@ -1597,13 +1597,13 @@ rocmon_setupCounters(int gid)
     smiEvents = (const char**) malloc(group->nevents * sizeof(const char*));
     if (smiEvents == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate smiEvent name array");
+        ERROR_PRINT("Cannot allocate smiEvent name array");
         return -ENOMEM;
     }
     rocEvents = (const char**) malloc(group->nevents * sizeof(const char*));
     if (rocEvents == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate rocEvent name array");
+        ERROR_PRINT("Cannot allocate rocEvent name array");
         free(smiEvents);
         return -ENOMEM;
     }
@@ -1919,7 +1919,7 @@ rocmon_getEventsOfGpu(int gpuIdx, EventList_rocm_t* list)
     EventList_rocm_t tmpList = (EventList_rocm_t) malloc(sizeof(EventList_rocm));
     if (tmpList == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate event list");
+        ERROR_PRINT("Cannot allocate event list");
         return -ENOMEM;
     }
     
@@ -1938,7 +1938,7 @@ rocmon_getEventsOfGpu(int gpuIdx, EventList_rocm_t* list)
     tmpList->events = (Event_rocm_t*) malloc(tmpList->numEvents * sizeof(Event_rocm_t));
     if (tmpList->events == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate events for event list");
+        ERROR_PRINT("Cannot allocate events for event list");
         free(tmpList);
         return -ENOMEM;
     }

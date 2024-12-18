@@ -935,7 +935,7 @@ nvml_init()
     ret = _nvml_linkLibraries();
     if (ret < 0)
     {
-        ERROR_PLAIN_PRINT("Failed to link libraries");
+        ERROR_PRINT("Failed to link libraries");
         return -1;
     }
 
@@ -944,7 +944,7 @@ nvml_init()
     nvmlContext.devices = (NvmlDevice*) malloc(nvmlContext.numDevices * sizeof(NvmlDevice));
     if (nvmlContext.devices == NULL)
     {   
-        ERROR_PLAIN_PRINT("Cannot allocate NVML device structures");
+        ERROR_PRINT("Cannot allocate NVML device structures");
         return -ENOMEM;
     }
 
@@ -1005,20 +1005,20 @@ nvml_addEventSet(char** events, int numEvents)
         NvmlEvent* tmpEvents = (NvmlEvent*) malloc(numEvents * sizeof(NvmlEvent));
         if (tmpEvents == NULL)
         {
-            ERROR_PLAIN_PRINT("Cannot allocate events for new event set");
+            ERROR_PRINT("Cannot allocate events for new event set");
             return -ENOMEM;
         }
         NvmlEventResult* tmpResults = (NvmlEventResult*) malloc(numEvents * sizeof(NvmlEventResult));
         if (tmpResults == NULL)
         {
-            ERROR_PLAIN_PRINT("Cannot allocate event results");
+            ERROR_PRINT("Cannot allocate event results");
             free(tmpEvents);
             return -ENOMEM;
         }
         NvmlEventSet* tmpEventSets = (NvmlEventSet*) realloc(device->eventSets, (device->numEventSets+1) * sizeof(NvmlEventSet));
         if (tmpEventSets == NULL)
         {
-            ERROR_PLAIN_PRINT("Cannot allocate new event set");
+            ERROR_PRINT("Cannot allocate new event set");
             free(tmpEvents);
             free(tmpResults);
             return -ENOMEM;
@@ -1100,13 +1100,13 @@ nvml_getEventsOfGpu(int gpuId, NvmonEventList_t* output)
     NvmonEventListEntry* entries = (NvmonEventListEntry*) malloc(device->numAllEvents * sizeof(NvmonEventListEntry));
     if (entries == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate event list entries");
+        ERROR_PRINT("Cannot allocate event list entries");
         return -ENOMEM;
     }
     NvmonEventList* list = (NvmonEventList*) malloc(sizeof(NvmonEventList));
     if (list == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate event list");
+        ERROR_PRINT("Cannot allocate event list");
         free(entries);
         return -ENOMEM;
     }
