@@ -362,7 +362,7 @@ likwid_markerThreadInit(void)
         if ((CPU_COUNT(&cpuset) > 1) || (likwid_getProcessorId() != threads2Cpu[myID % num_cpus]))
         {
             likwid_pinThread(threads2Cpu[myID % num_cpus]);
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Pin thread %lu to CPU %d currently %d, gettid(), threads2Cpu[myID % num_cpus], sched_getcpu());
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Pin thread %lu to CPU %d currently %d", gettid(), threads2Cpu[myID % num_cpus], sched_getcpu());
         }
     }
 }
@@ -381,7 +381,7 @@ likwid_markerNextGroup(void)
     next_group = (groupSet->activeGroup + 1) % numberOfGroups;
     if (next_group != groupSet->activeGroup)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Switch from group %d to group %d, groupSet->activeGroup, next_group);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Switch from group %d to group %d", groupSet->activeGroup, next_group);
         i = perfmon_switchActiveGroup(next_group);
     }
     return;
@@ -455,11 +455,11 @@ likwid_markerClose(void)
             fprintf(stderr, "      - The region was never started but stopped\n");
         }
         DEBUG_PRINT(DEBUGLEV_DEVELOP,
-                Creating Marker file %s with %d regions %d groups and %d threads,
+                "Creating Marker file %s with %d regions %d groups and %d threads",
                 markerfile, newNumberOfRegions, numberOfGroups, numberOfThreads);
         bstring thread_regs_grps = bformat("%d %d %d", numberOfThreads, newNumberOfRegions, numberOfGroups);
         fprintf(file,"%s\n", bdata(thread_regs_grps));
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, %s, bdata(thread_regs_grps));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(thread_regs_grps));
         bdestroy(thread_regs_grps);
 
         for (int i=0; i<numberOfRegions; i++)
@@ -468,7 +468,7 @@ likwid_markerClose(void)
                 continue;
             bstring tmp = bformat("%d:%s", newRegionID, bdata(results[i].tag));
             fprintf(file,"%s\n", bdata(tmp));
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, %s, bdata(tmp));
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(tmp));
             bdestroy(tmp);
             newRegionID++;
         }
@@ -494,7 +494,7 @@ likwid_markerClose(void)
                     bdestroy(tmp);
                 }
                 fprintf(file,"%s\n", bdata(l));
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, %s, bdata(l));
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(l));
                 bdestroy(l);
             }
             newRegionID++;
@@ -593,11 +593,11 @@ likwid_markerWriteFile(const char* markerfile)
             fprintf(stderr, "      - The region was never started but stopped\n");
         }
         DEBUG_PRINT(DEBUGLEV_DEVELOP,
-                Creating Marker file %s with %d regions %d groups and %d threads,
+                "Creating Marker file %s with %d regions %d groups and %d threads",
                 markerfile, newNumberOfRegions, numberOfGroups, numberOfThreads);
         bstring thread_regs_grps = bformat("%d %d %d", numberOfThreads, newNumberOfRegions, numberOfGroups);
         fprintf(file,"%s\n", bdata(thread_regs_grps));
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, %s, bdata(thread_regs_grps));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(thread_regs_grps));
         bdestroy(thread_regs_grps);
 
         for (int i=0; i<numberOfRegions; i++)
@@ -606,7 +606,7 @@ likwid_markerWriteFile(const char* markerfile)
                 continue;
             bstring tmp = bformat("%d:%s", newRegionID, perfmon_getTagOfRegion(i));
             fprintf(file,"%s\n", bdata(tmp));
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, %s, bdata(tmp));
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(tmp));
             bdestroy(tmp);
             newRegionID++;
         }
@@ -644,7 +644,7 @@ likwid_markerWriteFile(const char* markerfile)
                     bdestroy(tmp);
                 }
                 fprintf(file,"%s\n", bdata(l));
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, %s, bdata(l));
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(l));
                 bdestroy(l);
             }
             newRegionID++;
@@ -722,7 +722,7 @@ likwid_markerStartRegion(const char* regionTag)
     {
         if (groupSet->groups[groupSet->activeGroup].events[i].type != NOTYPE)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, START [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu,
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "START [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu",
                     regionTag, thread_id, cpu_id, i,
                     LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
             //groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].startData =
@@ -805,7 +805,7 @@ likwid_markerStopRegion(const char* regionTag)
                                             groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData,
                                             groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows -
                                             results->StartOverflows[i]);
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu DIFF %f, regionTag, thread_id, cpu_id, i,
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu DIFF %f", regionTag, thread_id, cpu_id, i,
                             LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData, result);
             if ((counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != THERMAL) &&
                 (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != VOLTAGE) &&

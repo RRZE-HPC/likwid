@@ -428,7 +428,7 @@ static int amd_hsmp_dimm_temp_getter(LikwidDevice_t dev, uint32_t channel, bool 
     const double refresh_pre_scale = field32(range_raw, 3, 1) ? 2.0 : 1.0;
     if (field32(range_raw, 0, 3) != 0x1 && field32(range_raw, 0, 3) != 0x5)
     {
-        ERROR_PRINT(AMD HSMP: received invalid or unknown temperature range: %x, field32(range_raw, 0, 3));
+        ERROR_PRINT("AMD HSMP: received invalid or unknown temperature range: %x", field32(range_raw, 0, 3));
         return -EBADE;
     }
     const double temp_pre_scale = (field32(range_raw, 0, 3) == 0x1) ? 1.0 : 2.0;
@@ -613,7 +613,7 @@ static int amd_hsmp_sock_freq_limit_getter(LikwidDevice_t dev, bool show_reason,
     }
 
     if (reason)
-        ERROR_PRINT(Found unexpected bits in HSMP Freq Limit string: %04x, reason);
+        ERROR_PRINT("Found unexpected bits in HSMP Freq Limit string: %04x", reason);
 
     err = likwid_sysft_copystr(bdata(reasons), value);
     bdestroy(reasons);

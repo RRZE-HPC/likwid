@@ -52,7 +52,7 @@ static int numa_balancing_procfs_getter(const LikwidDevice_t device, char** valu
         return -EINVAL;
     }
     bstring filename = bformat("/proc/sys/kernel/%s", sysfsfile);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Reading file %s, bdata(filename));
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Reading file %s", bdata(filename));
 #pragma GCC diagnostic ignored "-Wnonnull"
     if (!access(bdata(filename), R_OK))
     {
@@ -105,7 +105,7 @@ static int numa_balancing_test(void)
     {
         return 1;
     }
-    DEBUG_PRINT(DEBUGLEV_INFO, NUMA balancing not available. System has only a single NUMA domain);
+    DEBUG_PRINT(DEBUGLEV_INFO, "NUMA balancing not available. System has only a single NUMA domain");
     return 0;
 }
 
@@ -183,7 +183,7 @@ int likwid_sysft_init_linux_numa_balancing(_SysFeatureList* out)
 {
     if (numa_balancing_test())
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Register OS NUMA balancing);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Register OS NUMA balancing");
         return likwid_sysft_register_features(out, &numa_balancing_feature_list);
     }
     return 0;

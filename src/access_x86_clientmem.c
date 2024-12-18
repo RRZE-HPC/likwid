@@ -84,20 +84,20 @@ clientmem_getStartAddr(uint64_t* startAddr)
     int pcihandle = open("/proc/bus/pci/00/00.0", O_RDONLY);
     if (pcihandle < 0)
     {
-        ERROR_PLAIN_PRINT(Cannot get start address: failed to open /proc/bus/pci/00/00.0);
+        ERROR_PRINT("Cannot get start address: failed to open /proc/bus/pci/00/00.0");
         return -1;
     }
 
     ssize_t ret = pread(pcihandle, &imcbar, sizeof(uint64_t), PCM_CLIENT_IMC_BAR_OFFSET);
     if (ret < 0)
     {
-        ERROR_PLAIN_PRINT(Cannot get start address: mmap failed);
+        ERROR_PRINT("Cannot get start address: mmap failed");
         close(pcihandle);
         return -1;
     }
     if (!imcbar)
     {
-        ERROR_PLAIN_PRINT(Cannot get start address: imcbar is zero);
+        ERROR_PRINT("Cannot get start address: imcbar is zero");
         close(pcihandle);
         return -1;
     }
@@ -121,14 +121,14 @@ access_x86_clientmem_init(const int socket)
         int ret = clientmem_getStartAddr(&startAddr);
         if (ret < 0)
         {
-            ERROR_PLAIN_PRINT(Failed to get clientmem start address);
+            ERROR_PRINT("Failed to get clientmem start address");
             return -1;
         }
         
         clientmem_handle = open("/dev/mem", O_RDONLY);
         if (clientmem_handle < 0)
         {
-            ERROR_PLAIN_PRINT(Unable to open /dev/mem for clientmem);
+            ERROR_PRINT("Unable to open /dev/mem for clientmem");
             return -1;
         }
 
@@ -136,7 +136,7 @@ access_x86_clientmem_init(const int socket)
         if (clientmem_addr == MAP_FAILED)
         {
             close(clientmem_handle);
-            ERROR_PLAIN_PRINT(Mapping of clientmem device failed);
+            ERROR_PRINT("Mapping of clientmem device failed");
             clientmem_addr = NULL;
             return -1;
         }
@@ -195,7 +195,7 @@ access_x86_clientmem_read(PciDeviceIndex dev, const int socket, uint32_t reg, ui
             d = d & 0xFF;
             break;
         default:
-            ERROR_PRINT(Read from clientmem device at reg 0x%X failed, reg);
+            ERROR_PRINT("Read from clientmem device at reg 0x%X failed", reg);
             break;
     }
     *data = d;

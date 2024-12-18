@@ -143,7 +143,7 @@ static int
 _smi_wrapper_pci_throughput_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t value;
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, _smi_wrapper_pci_throughput_get(%d, %d), deviceId, event->extra);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "_smi_wrapper_pci_throughput_get(%d, %d)", deviceId, event->extra);
     // Internal variant: 0 for sent, 1 for received bytes and 2 for max packet size
     if (event->extra == 0)       RSMI_CALL(rsmi_dev_pci_throughput_get, (deviceId, &value, NULL, NULL), return -1);
     else if (event->extra == 1)  RSMI_CALL(rsmi_dev_pci_throughput_get, (deviceId, NULL, &value, NULL), return -1);
@@ -345,14 +345,14 @@ _smi_wrapper_compute_process_info_get(int deviceId, RocmonSmiEvent* event, Rocmo
 static int
 _rocmon_link_libraries()
 {
-    #define DLSYM_AND_CHECK( dllib, name ) name##_ptr = dlsym( dllib, #name ); if ( dlerror() != NULL ) { ERROR_PRINT(Failed to link  #name); return -1; }
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Linking AMD ROCMm libraries);
+    #define DLSYM_AND_CHECK( dllib, name ) name##_ptr = dlsym( dllib, #name ); if ( dlerror() != NULL ) { ERROR_PRINT("Failed to link " #name); return -1; }
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Linking AMD ROCMm libraries");
   
     // Need to link in the ROCm HSA libraries
     dl_hsa_lib = dlopen("libhsa-runtime64.so", RTLD_NOW | RTLD_GLOBAL);
     if (!dl_hsa_lib)
     {
-        ERROR_PRINT(ROCm HSA library libhsa-runtime64.so not found: %s, dlerror());
+        ERROR_PRINT("ROCm HSA library libhsa-runtime64.so not found: %s", dlerror());
         return -1;
     }
 
@@ -363,7 +363,7 @@ _rocmon_link_libraries()
         dl_profiler_lib = dlopen("librocprofiler64.so.1", RTLD_NOW | RTLD_GLOBAL);
         if (!dl_profiler_lib)
         {
-            ERROR_PRINT(Rocprofiler library librocprofiler64.so not found: %s, dlerror());
+            ERROR_PRINT("Rocprofiler library librocprofiler64.so not found: %s", dlerror());
             return -1;
         }
     }
@@ -372,7 +372,7 @@ _rocmon_link_libraries()
     dl_rsmi_lib = dlopen("librocm_smi64.so", RTLD_NOW | RTLD_GLOBAL);
     if (!dl_rsmi_lib)
     {
-        ERROR_PRINT(ROCm SMI library librocm_smi64.so not found: %s, dlerror());
+        ERROR_PRINT("ROCm SMI library librocm_smi64.so not found: %s", dlerror());
         return -1;
     }
 
@@ -417,7 +417,7 @@ _rocmon_link_libraries()
     DLSYM_AND_CHECK(dl_rsmi_lib, rsmi_dev_overdrive_level_get);
     DLSYM_AND_CHECK(dl_rsmi_lib, rsmi_dev_ecc_count_get);
     DLSYM_AND_CHECK(dl_rsmi_lib, rsmi_compute_process_info_get);
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Linking AMD ROCMm libraries done);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Linking AMD ROCMm libraries done");
     return 0;
 }
 
@@ -464,7 +464,7 @@ _rocmon_iterate_info_callback_add(const rocprofiler_info_data_t info, void* data
 {
     iterate_info_cb_arg* arg = (iterate_info_cb_arg*) data;
 
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, _rocmon_iterate_info_callback_add);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "_rocmon_iterate_info_callback_add");
     if (likwid_rocmon_verbosity == DEBUGLEV_DEVELOP)
     {
         _rocmon_print_rocprofiler_info_data(info);
@@ -472,14 +472,14 @@ _rocmon_iterate_info_callback_add(const rocprofiler_info_data_t info, void* data
     // Check info kind
     if (info.kind != ROCPROFILER_INFO_KIND_METRIC)
     {
-        ERROR_PRINT(Wrong info kind %u, info.kind);
+        ERROR_PRINT("Wrong info kind %u", info.kind);
         return HSA_STATUS_ERROR;
     }
 
     // Check index
     if (arg->currIndex >= arg->device->numRocMetrics)
     {
-        ERROR_PRINT(Metric index out of bounds: %d, arg->currIndex);
+        ERROR_PRINT("Metric index out of bounds: %d", arg->currIndex);
         return HSA_STATUS_ERROR;
     }
 
@@ -525,7 +525,7 @@ _rocmon_iterate_agents_callback(hsa_agent_t agent, void* argv)
     {
         return HSA_STATUS_SUCCESS;
     }
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Initializing agent %d, gpuIndex);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Initializing agent %d", gpuIndex);
 
     // Add agent to context
     RocmonDevice *device = &arg->context->devices[gpuIndex];
@@ -540,7 +540,7 @@ _rocmon_iterate_agents_callback(hsa_agent_t agent, void* argv)
     // Get number of available metrics
     device->numRocMetrics = 0;
     ROCM_CALL(rocprofiler_iterate_info, (&agent, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_count, device), return HSA_STATUS_ERROR);
-    ROCMON_DEBUG_PRINT(DEBUGLEV_INFO, RocProfiler provides %d events, device->numRocMetrics);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_INFO, "RocProfiler provides %d events", device->numRocMetrics);
 
     // workaround for bug in ROCm 5.4.0
     if(device->numRocMetrics == 0) {
@@ -552,14 +552,14 @@ _rocmon_iterate_agents_callback(hsa_agent_t agent, void* argv)
     device->rocMetrics = (rocprofiler_info_data_t*) malloc(device->numRocMetrics * sizeof(rocprofiler_info_data_t));
     if (device->rocMetrics == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate set of rocMetrics);
+        ERROR_PRINT("Cannot allocate set of rocMetrics");
         return HSA_STATUS_ERROR;
     }
 
     // Initialize SMI events map
     if (init_map(&device->smiMetrics, MAP_KEY_TYPE_STR, 0, &free) < 0)
     {
-        ERROR_PLAIN_PRINT(Cannot init smiMetrics map);
+        ERROR_PRINT("Cannot init smiMetrics map");
         return HSA_STATUS_ERROR;
     }
 
@@ -568,7 +568,7 @@ _rocmon_iterate_agents_callback(hsa_agent_t agent, void* argv)
         .device = device,
         .currIndex = 0,
     };
-    ROCMON_DEBUG_PRINT(DEBUGLEV_INFO, Read %d RocProfiler events for device %d, device->numRocMetrics, device->deviceId);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_INFO, "Read %d RocProfiler events for device %d", device->numRocMetrics, device->deviceId);
 
     // If the call fails with agent, call rocprofiler_iterate_info without agent
     if(noAgent)
@@ -595,7 +595,7 @@ _rocmon_parse_eventstring(const char* eventString, GroupInfo* group)
         err = perfgroup_customGroup(eventString, group);
         if (err < 0)
         {
-            ERROR_PRINT(Cannot transform %s to performance group, eventString);
+            ERROR_PRINT("Cannot transform %s to performance group", eventString);
             return err;
         }
     }
@@ -605,17 +605,17 @@ _rocmon_parse_eventstring(const char* eventString, GroupInfo* group)
         err = perfgroup_readGroup(config->groupPath, "amd_gpu", eventString, group);
         if (err == -EACCES)
         {
-            ERROR_PRINT(Access to performance group %s not allowed, eventString);
+            ERROR_PRINT("Access to performance group %s not allowed", eventString);
             return err;
         }
         else if (err == -ENODEV)
         {
-            ERROR_PRINT(Performance group %s only available with deactivated HyperThreading, eventString);
+            ERROR_PRINT("Performance group %s only available with deactivated HyperThreading", eventString);
             return err;
         }
         if (err < 0)
         {
-            ERROR_PRINT(Cannot read performance group %s, eventString);
+            ERROR_PRINT("Cannot read performance group %s", eventString);
             return err;
         }
     }
@@ -838,7 +838,7 @@ _rocmon_smi_add_event_to_device(RocmonDevice* device, const char* funcname, Rocm
             ret = get_smap_by_key(device->smiMetrics, event->name, (void**)&existingEvent);
             if (ret < 0)
             {
-                ERROR_PRINT(Failed to find previous instance for event %s, event->name);
+                ERROR_PRINT("Failed to find previous instance for event %s", event->name);
                 return -1;
             }
 
@@ -856,7 +856,7 @@ _rocmon_smi_add_event_to_device(RocmonDevice* device, const char* funcname, Rocm
         RocmonSmiEvent* tmpEvent = (RocmonSmiEvent*) malloc(sizeof(RocmonSmiEvent));
         if (tmpEvent == NULL)
         {
-            ERROR_PRINT(Failed to allocate memory for SMI event in device list %s, event->name);
+            ERROR_PRINT("Failed to allocate memory for SMI event in device list %s", event->name);
             return -ENOMEM;
         }
 
@@ -972,7 +972,7 @@ _rocmon_smi_get_functions(RocmonDevice* device)
         // Get function information
         //(*rsmi_func_iter_value_get_ptr)(iter_handle, &value);
         RSMI_CALL(rsmi_func_iter_value_get, (iter_handle, &value), {
-            ERROR_PRINT(Failed to get smi function value for device %d, device->deviceId);
+            ERROR_PRINT("Failed to get smi function value for device %d", device->deviceId);
             RSMI_CALL(rsmi_dev_supported_func_iterator_close, (&iter_handle), );
             return -1;
         });
@@ -981,7 +981,7 @@ _rocmon_smi_get_functions(RocmonDevice* device)
         ret = _rocmon_smi_get_function_variants(device, value.name, iter_handle);
         if (ret < 0)
         {
-            ERROR_PRINT(Failed to get smi function variants for device %d, device->deviceId);
+            ERROR_PRINT("Failed to get smi function variants for device %d", device->deviceId);
             RSMI_CALL(rsmi_dev_supported_func_iterator_close, (&iter_handle), );
             return -1;
         }
@@ -1022,7 +1022,7 @@ _rocmon_smi_add_event_to_map(char* name, RocmonSmiEventType type, char* smifunc,
         list = (RocmonSmiEventList*) malloc(sizeof(RocmonSmiEventList));
         if (list == NULL)
         {
-            ERROR_PRINT(Failed to allocate memory for SMI event list %s, name);
+            ERROR_PRINT("Failed to allocate memory for SMI event list %s", name);
             return -ENOMEM;
         }
         list->entries = NULL;
@@ -1037,7 +1037,7 @@ _rocmon_smi_add_event_to_map(char* name, RocmonSmiEventType type, char* smifunc,
     list->entries = (RocmonSmiEvent*) realloc(list->entries, list->numEntries * sizeof(RocmonSmiEvent));
     if (list->entries == NULL)
     {
-        ERROR_PRINT(Failed to allocate memory for SMI event %s, name);
+        ERROR_PRINT("Failed to allocate memory for SMI event %s", name);
         return -ENOMEM;
     }
 
@@ -1077,7 +1077,7 @@ _rocmon_smi_init_events()
     ret = init_map(&rocmon_context->smiEvents, MAP_KEY_TYPE_STR, 0, &_rcomon_smi_free_event_list);
     if (ret < 0)
     {
-        ERROR_PRINT(Failed to create map for ROCm SMI events);
+        ERROR_PRINT("Failed to create map for ROCm SMI events");
         return -1;
     }
 
@@ -1157,7 +1157,7 @@ rocmon_init(int numGpus, const int* gpuIds)
     // Validate arguments
     if (numGpus <= 0)
     {
-        ERROR_PRINT(Number of gpus must be greater than 0 but only %d given, numGpus);
+        ERROR_PRINT("Number of gpus must be greater than 0 but only %d given", numGpus);
         return -EINVAL;
     }
     
@@ -1168,7 +1168,7 @@ rocmon_init(int numGpus, const int* gpuIds)
     int ret = _rocmon_link_libraries();
     if (ret < 0)
     {
-	ERROR_PLAIN_PRINT(Failed to initialize libraries);
+	ERROR_PRINT("Failed to initialize libraries");
         return ret;
     }
 
@@ -1176,7 +1176,7 @@ rocmon_init(int numGpus, const int* gpuIds)
     rocmon_context = (RocmonContext*) malloc(sizeof(RocmonContext));
     if (rocmon_context == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate Rocmon context);
+        ERROR_PRINT("Cannot allocate Rocmon context");
         return -ENOMEM;
     }
     rocmon_context->groups = NULL;
@@ -1187,34 +1187,34 @@ rocmon_init(int numGpus, const int* gpuIds)
     rocmon_context->numDevices = numGpus;
     if (rocmon_context->devices == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate set of GPUs);
+        ERROR_PRINT("Cannot allocate set of GPUs");
         free(rocmon_context);
         rocmon_context = NULL;
         return -ENOMEM;
     }
 
     // init hsa library
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Initializing HSA);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Initializing HSA");
     ROCM_CALL(hsa_init, (),
     {
-        ERROR_PLAIN_PRINT(Failed to init hsa library);
+        ERROR_PRINT("Failed to init hsa library");
         goto rocmon_init_hsa_failed;
     });
 
     // init rocm smi library
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Initializing RSMI);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Initializing RSMI");
     RSMI_CALL(rsmi_init, (0),
     {
-        ERROR_PLAIN_PRINT(Failed to init rocm_smi);
+        ERROR_PRINT("Failed to init rocm_smi");
         goto rocmon_init_rsmi_failed;
     });
 
     // Get hsa timestamp factor
     uint64_t frequency_hz;
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Getting HSA timestamp factor);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Getting HSA timestamp factor");
     ROCM_CALL(hsa_system_get_info, (HSA_SYSTEM_INFO_TIMESTAMP_FREQUENCY, &frequency_hz),
     {
-        ERROR_PLAIN_PRINT(Failed to get HSA timestamp factor);
+        ERROR_PRINT("Failed to get HSA timestamp factor");
         goto rocmon_init_info_agents_failed;
     });
     rocmon_context->hsa_timestamp_factor = (long double)1000000000 / (long double)frequency_hz;
@@ -1225,10 +1225,10 @@ rocmon_init(int numGpus, const int* gpuIds)
         .numGpus = numGpus,
         .gpuIds = gpuIds,
     };
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Iterating through %d available agents, numGpus);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Iterating through %d available agents", numGpus);
     ROCM_CALL(hsa_iterate_agents, (_rocmon_iterate_agents_callback, &arg),
     {
-        ERROR_PRINT(Error while iterating through available agents);
+        ERROR_PRINT("Error while iterating through available agents");
         goto rocmon_init_info_agents_failed;
     });
 
@@ -1238,7 +1238,7 @@ rocmon_init(int numGpus, const int* gpuIds)
     {
         if (_rocmon_smi_get_functions(&rocmon_context->devices[i]) < 0)
         {
-            ERROR_PRINT(Failed to get SMI functions for device %d, rocmon_context->devices[i].deviceId);
+            ERROR_PRINT("Failed to get SMI functions for device %d", rocmon_context->devices[i].deviceId);
             goto rocmon_init_info_agents_failed;
         }
     }
@@ -1270,7 +1270,7 @@ rocmon_finalize(void)
     {
         return;
     }
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Finalize LIKWID ROCMON);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Finalize LIKWID ROCMON");
 
     if (context)
     {
@@ -1312,11 +1312,11 @@ rocmon_finalize(void)
     }
 
     RSMI_CALL(rsmi_shut_down, (), {
-        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Shutdown SMI);
+        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Shutdown SMI");
         // fall through
     });
     ROCM_CALL(hsa_shut_down, (), {
-        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Shutdown HSA);
+        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Shutdown HSA");
         // fall through
     });
 }
@@ -1343,7 +1343,7 @@ rocmon_addEventSet(const char* eventString, int* gid)
         GroupInfo* tmpInfo = (GroupInfo*) realloc(rocmon_context->groups, (rocmon_context->numGroups+1) * sizeof(GroupInfo));
         if (tmpInfo == NULL)
         {
-            ERROR_PLAIN_PRINT(Cannot allocate additional group);
+            ERROR_PRINT("Cannot allocate additional group");
             return -ENOMEM;
         }
         rocmon_context->groups = tmpInfo;
@@ -1367,7 +1367,7 @@ rocmon_addEventSet(const char* eventString, int* gid)
         RocmonEventResult* tmpResults = (RocmonEventResult*) malloc(numEvents * sizeof(RocmonEventResult));
         if (tmpResults == NULL)
         {
-            ERROR_PLAIN_PRINT(Cannot allocate event results);
+            ERROR_PRINT("Cannot allocate event results");
             return -ENOMEM;
         }
 
@@ -1375,7 +1375,7 @@ rocmon_addEventSet(const char* eventString, int* gid)
         RocmonEventResultList* tmpGroupResults = (RocmonEventResultList*) realloc(device->groupResults, (device->numGroupResults+1) * sizeof(RocmonEventResultList));
         if (tmpGroupResults == NULL)
         {
-            ERROR_PLAIN_PRINT(Cannot allocate new event group result list);
+            ERROR_PRINT("Cannot allocate new event group result list");
             return -ENOMEM;
         }
 
@@ -1397,7 +1397,7 @@ _rocmon_setupCounters_rocprofiler(RocmonDevice* device, const char** events, int
     // Close previous rocprofiler context
     if (device->context)
     {
-        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, Closing previous rocprofiler context);
+        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Closing previous rocprofiler context");
         ROCM_CALL(rocprofiler_close, (device->context), return -1);
     }
 
@@ -1411,14 +1411,14 @@ _rocmon_setupCounters_rocprofiler(RocmonDevice* device, const char** events, int
     rocprofiler_feature_t* features = (rocprofiler_feature_t*) malloc(numEvents * sizeof(rocprofiler_feature_t));
     if (features == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate feature list);
+        ERROR_PRINT("Cannot allocate feature list");
         return -ENOMEM;
     }
     for (int i = 0; i < numEvents; i++)
     {
         features[i].kind = ROCPROFILER_FEATURE_KIND_METRIC;
         features[i].name = events[i];
-        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, SETUP EVENT %d %s, i, events[i]);
+        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "SETUP EVENT %d %s", i, events[i]);
     }
 
     // Free previous feature array if present
@@ -1462,7 +1462,7 @@ _rocmon_setupCounters_smi(RocmonDevice* device, const char** events, int numEven
     RocmonSmiEvent* activeEvents = (RocmonSmiEvent*) malloc(numEvents * sizeof(RocmonSmiEvent));
     if (activeEvents == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate active event list);
+        ERROR_PRINT("Cannot allocate active event list");
         return -ENOMEM;
     }
 
@@ -1482,7 +1482,7 @@ _rocmon_setupCounters_smi(RocmonDevice* device, const char** events, int numEven
             // Check if number fit in 'withoutBrackets'
             if (partlen - 2 > instanceNumLen)
             {
-                ERROR_PRINT(Instance number in '%s' is too large, event);
+                ERROR_PRINT("Instance number in '%s' is too large", event);
                 free(activeEvents);
                 return -EINVAL;
             }
@@ -1499,7 +1499,7 @@ _rocmon_setupCounters_smi(RocmonDevice* device, const char** events, int numEven
             char* endOfString = &withoutBrackets[partlen-2];
             if (endParsed != endOfString)
             {
-                ERROR_PRINT(Failed to parse instance number in '%s', event);
+                ERROR_PRINT("Failed to parse instance number in '%s'", event);
                 free(activeEvents);
                 return -EINVAL;
             }
@@ -1520,7 +1520,7 @@ _rocmon_setupCounters_smi(RocmonDevice* device, const char** events, int numEven
         ret = get_smap_by_key(device->smiMetrics, eventName, (void**)&metric);
         if (ret < 0)
         {
-            ERROR_PRINT(RSMI event '%s' not found for device %d, eventName, device->deviceId);
+            ERROR_PRINT("RSMI event '%s' not found for device %d", eventName, device->deviceId);
             free(activeEvents);
             return -EINVAL;
         }
@@ -1532,7 +1532,7 @@ _rocmon_setupCounters_smi(RocmonDevice* device, const char** events, int numEven
         // Check if event supports instances
         if (instance >= 0 && tmpEvent->type != ROCMON_SMI_EVENT_TYPE_INSTANCES)
         {
-            ERROR_PRINT(Instance number given but event '%s' does not support one, eventName);
+            ERROR_PRINT("Instance number given but event '%s' does not support one", eventName);
             free(activeEvents);
             return -EINVAL;
         }
@@ -1540,7 +1540,7 @@ _rocmon_setupCounters_smi(RocmonDevice* device, const char** events, int numEven
         // Check if event requires instances
         if (instance < 0 && tmpEvent->type == ROCMON_SMI_EVENT_TYPE_INSTANCES)
         {
-            ERROR_PRINT(No instance number given but event '%s' requires one, eventName);
+            ERROR_PRINT("No instance number given but event '%s' requires one", eventName);
             free(activeEvents);
             return -EINVAL;
         }
@@ -1548,7 +1548,7 @@ _rocmon_setupCounters_smi(RocmonDevice* device, const char** events, int numEven
         // Check if event has enough instances
         if (instance >= 0 && instance >= metric->instances)
         {
-            ERROR_PRINT(Instance %d seleced but event '%s' has only %d, instance, eventName, metric->instances);
+            ERROR_PRINT("Instance %d seleced but event '%s' has only %d", instance, eventName, metric->instances);
             free(activeEvents);
             return -EINVAL;
         }
@@ -1597,13 +1597,13 @@ rocmon_setupCounters(int gid)
     smiEvents = (const char**) malloc(group->nevents * sizeof(const char*));
     if (smiEvents == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate smiEvent name array);
+        ERROR_PRINT("Cannot allocate smiEvent name array");
         return -ENOMEM;
     }
     rocEvents = (const char**) malloc(group->nevents * sizeof(const char*));
     if (rocEvents == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate rocEvent name array);
+        ERROR_PRINT("Cannot allocate rocEvent name array");
         free(smiEvents);
         return -ENOMEM;
     }
@@ -1627,7 +1627,7 @@ rocmon_setupCounters(int gid)
         else
         {
             // Unknown event
-            ERROR_PRINT(Event '%s' has no prefix ('ROCP_' or 'RSMI_'), name);
+            ERROR_PRINT(""Event '%s' has no prefix ('ROCP_' or 'RSMI_'")", name);
             return -EINVAL;
         }
     }
@@ -1638,7 +1638,7 @@ rocmon_setupCounters(int gid)
         RocmonDevice* device = &rocmon_context->devices[i];
 
         // Add rocprofiler events
-        ROCMON_DEBUG_PRINT(DEBUGLEV_INFO, SETUP ROCPROFILER WITH %d events, numRocEvents);
+        ROCMON_DEBUG_PRINT(DEBUGLEV_INFO, "SETUP ROCPROFILER WITH %d events", numRocEvents);
         ret = _rocmon_setupCounters_rocprofiler(device, rocEvents, numRocEvents);
         if (ret < 0)
         {
@@ -1648,7 +1648,7 @@ rocmon_setupCounters(int gid)
         }
 
         // Add SMI events
-        ROCMON_DEBUG_PRINT(DEBUGLEV_INFO, SETUP ROCM SMI WITH %d events, numSmiEvents);
+        ROCMON_DEBUG_PRINT(DEBUGLEV_INFO, "SETUP ROCM SMI WITH %d events", numSmiEvents);
         ret = _rocmon_setupCounters_smi(device, smiEvents, numSmiEvents);
         if (ret < 0)
         {
@@ -1919,7 +1919,7 @@ rocmon_getEventsOfGpu(int gpuIdx, EventList_rocm_t* list)
     EventList_rocm_t tmpList = (EventList_rocm_t) malloc(sizeof(EventList_rocm));
     if (tmpList == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate event list);
+        ERROR_PRINT("Cannot allocate event list");
         return -ENOMEM;
     }
     
@@ -1938,7 +1938,7 @@ rocmon_getEventsOfGpu(int gpuIdx, EventList_rocm_t* list)
     tmpList->events = (Event_rocm_t*) malloc(tmpList->numEvents * sizeof(Event_rocm_t));
     if (tmpList->events == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate events for event list);
+        ERROR_PRINT("Cannot allocate events for event list");
         free(tmpList);
         return -ENOMEM;
     }

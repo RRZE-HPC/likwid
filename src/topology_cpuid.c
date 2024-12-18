@@ -353,13 +353,13 @@ cpuid_init_cpuInfo(cpu_set_t cpuSet)
     {
         cpuid_topology.numHWThreads = cpus_in_set;
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, CPU-ID CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d activeHWThreads %d,
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "CPU-ID CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d activeHWThreads %d",
                             cpuid_info.family,
                             cpuid_info.model,
                             cpuid_info.stepping,
                             cpuid_info.isIntel,
                             cpuid_topology.numHWThreads,
-                            cpuid_topology.activeHWThreads)
+                            cpuid_topology.activeHWThreads);
     return 0;
 }
 
@@ -611,7 +611,7 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
                 }
                 prevOffset = currOffset;
             }
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d], i, id,
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d]", i, id,
                                     hwThreadPool[id].apicId, hwThreadPool[id].threadId,
                                     hwThreadPool[id].coreId, hwThreadPool[id].packageId);
         }
@@ -668,7 +668,7 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
                                 8-getBitFieldWidth(maxNumLogicalProcs),
                                 getBitFieldWidth(maxNumLogicalProcs));
 
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d], i, id,
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d]", i, id,
                                     hwThreadPool[id].apicId, hwThreadPool[id].threadId,
                                     hwThreadPool[id].coreId, hwThreadPool[id].packageId);
                 }
@@ -719,7 +719,7 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
                         extractBitField(hwThreadPool[i].apicId,
                                 8-getBitFieldWidth(maxNumCores),
                                 getBitFieldWidth(maxNumCores));
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d], i, id,
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d]", i, id,
                                     hwThreadPool[id].apicId, hwThreadPool[id].threadId,
                                     hwThreadPool[id].coreId, hwThreadPool[id].packageId);
                 }
@@ -767,7 +767,7 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
                     hwThreadPool[id].packageId =
                         extractBitField(hwThreadPool[i].apicId,
                                 (8-width), width);
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d], i, id,
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d]", i, id,
                                     hwThreadPool[id].apicId, hwThreadPool[id].threadId,
                                     hwThreadPool[id].coreId, hwThreadPool[id].packageId);
                 }
@@ -943,7 +943,7 @@ cpuid_init_cacheTopology(void)
             }
             break;
         default:
-            ERROR_PLAIN_PRINT(Processor is not supported);
+            ERROR_PRINT("Processor is not supported");
             break;
     }
 

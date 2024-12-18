@@ -164,7 +164,7 @@ static int appdaemon_setup_nvmon(char* gpuStr, char* eventStr)
     ret = parse_gpustr(gpuStr, &nvmon_numgpus, &nvmon_gpulist);
     if (ret < 0)
     {
-        ERROR_PRINT(Failed to get nvmon gpulist from '%s', gpuStr);
+        ERROR_PRINT("Failed to get nvmon gpulist from '%s'", gpuStr);
         goto appdaemon_setup_nvmon_cleanup;
     }
 
@@ -175,7 +175,7 @@ static int appdaemon_setup_nvmon(char* gpuStr, char* eventStr)
     nvmon_gids = malloc(nvmon_eventlist->qty * sizeof(int));
     if (!nvmon_gids)
     {
-        ERROR_PRINT(Failed to allocate space for nvmon group IDs);
+        ERROR_PRINT("Failed to allocate space for nvmon group IDs");
         goto appdaemon_setup_nvmon_cleanup;
     }
 
@@ -183,7 +183,7 @@ static int appdaemon_setup_nvmon(char* gpuStr, char* eventStr)
     ret = nvmon_init(nvmon_numgpus, nvmon_gpulist);
     if (ret < 0)
     {
-        ERROR_PRINT(Failed to initialize nvmon);
+        ERROR_PRINT("Failed to initialize nvmon");
         goto appdaemon_setup_nvmon_cleanup;
     }
     nvmon_initialized = 1;
@@ -194,14 +194,14 @@ static int appdaemon_setup_nvmon(char* gpuStr, char* eventStr)
         ret = nvmon_addEventSet(bdata(nvmon_eventlist->entry[i]));
         if (ret < 0)
         {
-            ERROR_PRINT(Failed to add nvmon group: %s, bdata(nvmon_eventlist->entry[i]));
+            ERROR_PRINT("Failed to add nvmon group: %s", bdata(nvmon_eventlist->entry[i]));
             continue;
         }
         nvmon_gids[nvmon_numgids++] = ret;
     }
     if (nvmon_numgids == 0)
     {
-        ERROR_PRINT(Failed to add any events to nvmon);
+        ERROR_PRINT("Failed to add any events to nvmon");
         goto appdaemon_setup_nvmon_cleanup;
     }
 
@@ -209,7 +209,7 @@ static int appdaemon_setup_nvmon(char* gpuStr, char* eventStr)
     ret = nvmon_setupCounters(nvmon_gids[0]);
     if (ret < 0)
     {
-        ERROR_PRINT(Failed to setup nvmon);
+        ERROR_PRINT("Failed to setup nvmon");
         goto appdaemon_setup_nvmon_cleanup;
     }
 
@@ -217,7 +217,7 @@ static int appdaemon_setup_nvmon(char* gpuStr, char* eventStr)
     ret = nvmon_startCounters();
     if (ret < 0)
     {
-        ERROR_PRINT(Failed to start nvmon);
+        ERROR_PRINT("Failed to start nvmon");
         goto appdaemon_setup_nvmon_cleanup;
     }
     return 0;
@@ -253,7 +253,7 @@ static void appdaemon_close_nvmon(void)
     int ret = nvmon_stopCounters();
     if (ret < 0)
     {
-        ERROR_PRINT(Failed to stop nvmon);
+        ERROR_PRINT("Failed to stop nvmon");
     }
 
     // Print results
@@ -335,7 +335,7 @@ static int appdaemon_setup_rocmon(char* gpuStr, char* eventStr)
     ret = parse_gpustr(gpuStr, &rocmon_numgpus, &rocmon_gpulist);
     if (ret < 0)
     {
-        ERROR_PRINT(Failed to get rocmon gpulist from '%s', gpuStr);
+        ERROR_PRINT("Failed to get rocmon gpulist from '%s'", gpuStr);
         goto appdaemon_setup_rocmon_cleanup;
     }
 
@@ -346,7 +346,7 @@ static int appdaemon_setup_rocmon(char* gpuStr, char* eventStr)
     rocmon_gids = malloc(rocmon_eventlist->qty * sizeof(int));
     if (!rocmon_gids)
     {
-        ERROR_PRINT(Failed to allocate space for rocmon group IDs);
+        ERROR_PRINT("Failed to allocate space for rocmon group IDs");
         goto appdaemon_setup_rocmon_cleanup;
     }
 
@@ -354,7 +354,7 @@ static int appdaemon_setup_rocmon(char* gpuStr, char* eventStr)
     ret = rocmon_init(rocmon_numgpus, rocmon_gpulist);
     if (ret < 0)
     {
-        ERROR_PRINT(Failed to initialize rocmon);
+        ERROR_PRINT("Failed to initialize rocmon");
         goto appdaemon_setup_rocmon_cleanup;
     }
     rocmon_initialized = 1;
@@ -365,12 +365,12 @@ static int appdaemon_setup_rocmon(char* gpuStr, char* eventStr)
         ret = rocmon_addEventSet(bdata(rocmon_eventlist->entry[i]), &rocmon_gids[rocmon_numgids++]);
         if (ret < 0)
         {
-            ERROR_PRINT(Failed to add rocmon group: %s, bdata(rocmon_eventlist->entry[i]));
+            ERROR_PRINT("Failed to add rocmon group: %s", bdata(rocmon_eventlist->entry[i]));
         }
     }
     if (rocmon_numgids == 0)
     {
-        ERROR_PRINT(Failed to add any events to rocmon);
+        ERROR_PRINT("Failed to add any events to rocmon");
         goto appdaemon_setup_rocmon_cleanup;
     }
 
@@ -378,7 +378,7 @@ static int appdaemon_setup_rocmon(char* gpuStr, char* eventStr)
     ret = rocmon_setupCounters(rocmon_gids[0]);
     if (ret < 0)
     {
-        ERROR_PRINT(Failed to setup rocmon);
+        ERROR_PRINT("Failed to setup rocmon");
         goto appdaemon_setup_rocmon_cleanup;
     }
 
@@ -386,7 +386,7 @@ static int appdaemon_setup_rocmon(char* gpuStr, char* eventStr)
     ret = rocmon_startCounters();
     if (ret < 0)
     {
-        ERROR_PRINT(Failed to start rocmon);
+        ERROR_PRINT("Failed to start rocmon");
         goto appdaemon_setup_rocmon_cleanup;
     }
     return 0;
@@ -422,7 +422,7 @@ static void appdaemon_close_rocmon(void)
     int ret = rocmon_stopCounters();
     if (ret < 0)
     {
-        ERROR_PRINT(Failed to stop rocmon);
+        ERROR_PRINT("Failed to stop rocmon");
     }
 
     // Print results

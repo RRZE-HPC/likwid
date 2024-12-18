@@ -124,7 +124,7 @@ static int getBusFromSocketByDevid(const uint32_t socket, uint16_t testDevice)
     }
     else
     {
-        ERROR_PLAIN_PRINT(Failed read file /proc/bus/pci/devices);
+        ERROR_PRINT("Failed read file /proc/bus/pci/devices");
     }
 
     while (cur_socket >= 0)

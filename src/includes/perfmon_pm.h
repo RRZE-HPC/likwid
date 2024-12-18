@@ -77,7 +77,7 @@ int pm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     if (flags != currentConfig[cpu_id][index])
     {
-        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_PMC");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
@@ -121,7 +121,7 @@ int perfmon_startCountersThread_pm(int thread_id, PerfmonEventSet* eventSet)
             RegisterIndex index = eventSet->events[i].index;
             eventSet->events[i].threadCounter[thread_id].startData = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
-            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST 0x0ULL, SETUP_PMC_CTR);
+            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST 0x0ULL, "SETUP_PMC_CTR");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister , 0x0ULL));
         }
     }
@@ -133,7 +133,7 @@ int perfmon_startCountersThread_pm(int thread_id, PerfmonEventSet* eventSet)
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERFEVTSEL0, &flags));
         flags |= (1<<22);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERFEVTSEL0, flags));
-        VERBOSEPRINTREG(cpu_id, MSR_PERFEVTSEL0, LLU_CAST flags, UNFREEZE_PMC);
+        VERBOSEPRINTREG(cpu_id, MSR_PERFEVTSEL0, LLU_CAST flags, "UNFREEZE_PMC");
     }
     return 0;
 }
@@ -145,7 +145,7 @@ int perfmon_stopCountersThread_pm(int thread_id, PerfmonEventSet* eventSet)
 
     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERFEVTSEL0, &counter_result));
     counter_result &= ~(1<<22);
-    VERBOSEPRINTREG(cpu_id, MSR_PERFEVTSEL0, counter_result, FREEZE_PMC);
+    VERBOSEPRINTREG(cpu_id, MSR_PERFEVTSEL0, counter_result, "FREEZE_PMC");
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERFEVTSEL0, counter_result));
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -160,7 +160,7 @@ int perfmon_stopCountersThread_pm(int thread_id, PerfmonEventSet* eventSet)
             counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter_map[index].counterRegister, &counter_result));
-            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, counter_result, READ_PMC);
+            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, counter_result, "READ_PMC");
             if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
             {
                 eventSet->events[i].threadCounter[thread_id].overflows++;
@@ -179,7 +179,7 @@ int perfmon_readCountersThread_pm(int thread_id, PerfmonEventSet* eventSet)
 
     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERFEVTSEL0, &pmc_flags));
     pmc_flags &= ~(1<<22);
-    VERBOSEPRINTREG(cpu_id, MSR_PERFEVTSEL0, pmc_flags & ~(1<<22), FREEZE_PMC);
+    VERBOSEPRINTREG(cpu_id, MSR_PERFEVTSEL0, pmc_flags & ~(1<<22), "FREEZE_PMC");
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERFEVTSEL0, pmc_flags & ~(1<<22)));
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -203,7 +203,7 @@ int perfmon_readCountersThread_pm(int thread_id, PerfmonEventSet* eventSet)
         }
     }
 
-    VERBOSEPRINTREG(cpu_id, MSR_PERFEVTSEL0, pmc_flags, UNFREEZE_PMC);
+    VERBOSEPRINTREG(cpu_id, MSR_PERFEVTSEL0, pmc_flags, "UNFREEZE_PMC");
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERFEVTSEL0, pmc_flags));
     return 0;
 }
@@ -224,9 +224,9 @@ int perfmon_finalizeCountersThread_pm(int thread_id, PerfmonEventSet* eventSet)
         if ((reg) && ((type == PMC)||(type == FIXED)))
         {
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, 0x0ULL));
-            VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, reg, 0x0ULL, CLEAR_CTL);
+            VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, reg, 0x0ULL, "CLEAR_CTL");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
-            VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL, CLEAR_CTR);
+            VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }

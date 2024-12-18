@@ -358,7 +358,7 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
             cpuid_topology.numHWThreads = cpuid_topology.activeHWThreads;
         }
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d Vendor 0x%X Part 0x%X isIntel %d numHWThreads %d activeHWThreads %d,
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "HWLOC CpuInfo Family %d Model %d Stepping %d Vendor 0x%X Part 0x%X isIntel %d numHWThreads %d activeHWThreads %d",
                             cpuid_info.family,
                             cpuid_info.model,
                             cpuid_info.stepping,
@@ -366,7 +366,7 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
                             cpuid_info.part,
                             cpuid_info.isIntel,
                             cpuid_topology.numHWThreads,
-                            cpuid_topology.activeHWThreads)
+                            cpuid_topology.activeHWThreads);
     return 0;
 }
 
@@ -574,13 +574,13 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
         {
             hwThreadPool[id].dieId = 0;
         }
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Die %d Socket %d inCpuSet %d,
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "HWLOC Thread Pool PU %d Thread %d Core %d Die %d Socket %d inCpuSet %d",
                             hwThreadPool[id].apicId,
                             hwThreadPool[id].threadId,
                             hwThreadPool[id].coreId,
                             hwThreadPool[id].dieId,
                             hwThreadPool[id].packageId,
-                            hwThreadPool[id].inCpuSet)
+                            hwThreadPool[id].inCpuSet);
     }
 
     int socket_nums[MAX_NUM_NODES];
@@ -804,7 +804,7 @@ hwloc_init_cacheTopology(void)
 #if defined(_ARCH_PPC) || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
         cachePool[id].inclusive = 0;
 #endif
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Cache Pool ID %d Level %d Size %d Threads %d,
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "HWLOC Cache Pool ID %d Level %d Size %d Threads %d",
                                       id, cachePool[id].level,
                                       cachePool[id].size,
                                       cachePool[id].threads);

@@ -98,7 +98,7 @@ static int cpufreq_sysfs_setter(const LikwidDevice_t device, const char* value, 
         fp = fopen(bdata(filename), "w");
         if (fp == NULL) {
             err = -errno;
-            ERROR_PRINT("Failed to open file '%s' for writing: %s", bdata(filename), strerror(errno))
+            ERROR_PRINT("Failed to open file '%s' for writing: %s", bdata(filename), strerror(errno));
         }
         else
         {
@@ -106,7 +106,7 @@ static int cpufreq_sysfs_setter(const LikwidDevice_t device, const char* value, 
             const size_t ret = fwrite(value, sizeof(char), vallen, fp);
             if (ret != (sizeof(char) * vallen))
             {
-                ERROR_PRINT("Failed to open file '%s' for writing: %s", bdata(filename), strerror(errno))
+                ERROR_PRINT("Failed to open file '%s' for writing: %s", bdata(filename), strerror(errno));
             }
             fclose(fp);
         }
@@ -418,7 +418,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     int err = 0;
     if (cpufreq_intel_pstate_test())
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Registering Intel Pstate knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, "Registering Intel Pstate knobs for cpufreq");
         err = likwid_sysft_register_features(out, &cpufreq_pstate_feature_list);
         if (err < 0)
         {
@@ -427,7 +427,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     }
     else if (cpufreq_intel_cpufreq_test())
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Registering Intel Cpufreq knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, "Registering Intel Cpufreq knobs for cpufreq");
         err = likwid_sysft_register_features(out, &cpufreq_intel_cpufreq_feature_list);
         if (err < 0)
         {
@@ -436,7 +436,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     }
     else if (cpufreq_acpi_test())
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Registering ACPI cpufreq knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, "Registering ACPI cpufreq knobs for cpufreq");
         likwid_sysft_register_features(out, &cpufreq_acpi_feature_list);
         if (err < 0)
         {
@@ -445,7 +445,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     }
     else if (cpufreq_cppc_test())
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Registering CPPC cpufreq knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, "Registering CPPC cpufreq knobs for cpufreq");
         likwid_sysft_register_features(out, &cpufreq_cppc_feature_list);
         if (err < 0)
         {
@@ -454,7 +454,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     }
     else if (cpufreq_apple_cpufreq_test())
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Registering Apple cpufreq knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, "Registering Apple cpufreq knobs for cpufreq");
         likwid_sysft_register_features(out, &cpufreq_apple_cpufreq_feature_list);
         if (err < 0)
         {
@@ -464,7 +464,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
 
     if (cpufreq_epp_test())
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Registering Energy Performance Preference knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, "Registering Energy Performance Preference knobs for cpufreq");
         err = likwid_sysft_register_features(out, &cpufreq_epp_feature_list);
         if (err < 0)
         {
@@ -473,7 +473,7 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     }
     if (cpufreq_scaling_driver_test())
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Registering Scaling Driver knobs for cpufreq)
+        DEBUG_PRINT(DEBUGLEV_INFO, "Registering Scaling Driver knobs for cpufreq");
         err = likwid_sysft_register_features(out, &cpufreq_scaling_driver_feature_list);
         if (err < 0)
         {

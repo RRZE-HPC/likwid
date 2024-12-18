@@ -117,7 +117,7 @@ static int create_paths(void)
     DIR *k10temp_dir = opendir(k10temp_base);
     if (!k10temp_dir)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, %s not found. Not initializing k10temp);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s not found. Not initializing k10temp", k10temp_base);
         return -errno;
     }
 
@@ -187,7 +187,7 @@ static int create_paths(void)
         if (!hwmon_base_dir)
         {
             const int errno_save = errno;
-            DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, k10temp: Unable to read dir %s, hwmon_base);
+            DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "k10temp: Unable to read dir %s", hwmon_base);
             free_paths();
             return -errno_save;
         }
@@ -230,7 +230,7 @@ static int create_paths(void)
         if (!hwmon_dir)
         {
             const int errno_save = errno;
-            DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, k10temp: Unable to read dir %s, bdata(s->hwmon_path));
+            DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "k10temp: Unable to read dir %s", bdata(s->hwmon_path));
             free_paths();
             return -errno_save;
         }
@@ -300,7 +300,7 @@ static int create_paths(void)
                 {
                     /* If s->label is alreay set, we have encountered more then one non-CCD temperature.
                      * We only support one sensors per socket, so issue a warning but continue regardless. */
-                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Found more than one non-Tccd. current=%s new=%s, bdata(s->label), label_string);
+                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Found more than one non-Tccd. current=%s new=%s", bdata(s->label), label_string);
                     bdestroy(s->label);
                     bdestroy(s->temp_path);
                 }

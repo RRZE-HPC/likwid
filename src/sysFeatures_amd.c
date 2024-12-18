@@ -51,7 +51,7 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     int err = likwid_sysft_init_generic(amd_arch_features, out);
     if (err < 0)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init general x86 HWFeatures);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init general x86 HWFeatures");
     }
     else
     {
@@ -60,7 +60,7 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     err = likwid_sysft_init_amd_rapl(out);
     if (err < 0)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init AMD RAPL HWFeatures);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init AMD RAPL HWFeatures");
     }
     else
     {
@@ -69,7 +69,7 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     err = likwid_sysft_init_amd_hsmp(out);
     if (err < 0)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init AMD HSMP HWFeatures);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init AMD HSMP HWFeatures");
     }
     else
     {
@@ -86,7 +86,7 @@ static int amd_cpu_register_access_test()
     if (err < 0)
     {
         errno = -err;
-        ERROR_PRINT(Failed to initialize configuration);
+        ERROR_PRINT("Failed to initialize configuration");
         return err;
     }
     config = get_configuration();

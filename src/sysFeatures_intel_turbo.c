@@ -45,7 +45,7 @@ static int intel_cpu_turbo_test(void)
     CPUID(eax, ebx, ecx, edx);
     if (field32(ecx, 7, 1) == 0)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Intel SpeedStep not supported by architecture);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Intel SpeedStep not supported by architecture");
         return 0;
     }
 

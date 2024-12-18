@@ -41,14 +41,14 @@ int likwid_sysft_add_to_feature_list(LikwidSysFeatureList *list, const LikwidSys
 {
     if ((!list) || (!feature))
     {
-        ERROR_PRINT(Invalid arguments for add_to_feature_list);
+        ERROR_PRINT("Invalid arguments for add_to_feature_list");
         return -EINVAL;
     }
 
     LikwidSysFeature* flist = realloc(list->features, (list->num_features + 1) * sizeof(LikwidSysFeature));
     if (!flist)
     {
-        ERROR_PRINT(Cannot allocate space for extended feature list);
+        ERROR_PRINT("Cannot allocate space for extended feature list");
         return -ENOMEM;
     }
     list->features = flist;
@@ -86,14 +86,14 @@ int likwid_sysft_merge_feature_lists(LikwidSysFeatureList *inout, const LikwidSy
 {
     if ((!inout) || (!in))
     {
-        ERROR_PRINT(Invalid arguments for merge_feature_lists);
+        ERROR_PRINT("Invalid arguments for merge_feature_lists");
         return -EINVAL;
     }
 
     LikwidSysFeature *flist = realloc(inout->features, (inout->num_features + in->num_features) * sizeof(LikwidSysFeature));
     if (!flist)
     {
-        ERROR_PRINT(Cannot allocate space for extended feature list);
+        ERROR_PRINT("Cannot allocate space for extended feature list");
         return -ENOMEM;
     }
     inout->features = flist;
@@ -129,14 +129,14 @@ int _add_to_feature_list(_SysFeatureList *list, const _SysFeature* feature)
 {
     if ((!list) || (!feature))
     {
-        ERROR_PRINT(Invalid arguments for _add_to_feature_list);
+        ERROR_PRINT("Invalid arguments for _add_to_feature_list");
         return -EINVAL;
     }
 
     _SysFeature* flist = realloc(list->features, (list->num_features + 1) * sizeof(_SysFeature));
     if (!flist)
     {
-        ERROR_PRINT(Cannot allocate space for extended feature list);
+        ERROR_PRINT("Cannot allocate space for extended feature list");
         return -ENOMEM;
     }
     list->features = flist;
@@ -160,14 +160,14 @@ int _merge_feature_lists(_SysFeatureList *inout, const _SysFeatureList *in)
 {
     if ((!inout) || (!in))
     {
-        ERROR_PRINT(Invalid arguments for _merge_feature_lists);
+        ERROR_PRINT("Invalid arguments for _merge_feature_lists");
         return -EINVAL;
     }
 
     _SysFeature* flist = realloc(inout->features, (inout->num_features + in->num_features) * sizeof(_SysFeature));
     if (!flist)
     {
-        ERROR_PRINT(Cannot allocate space for extended feature list);
+        ERROR_PRINT("Cannot allocate space for extended feature list");
         return -ENOMEM;
     }
     inout->features = flist;
@@ -205,7 +205,7 @@ int likwid_sysft_internal_to_external_feature_list(const _SysFeatureList *inlist
 {
     if ((!inlist) || (!outlist))
     {
-        ERROR_PRINT(Invalid arguments for internal_to_external_feature_list);
+        ERROR_PRINT("Invalid arguments for internal_to_external_feature_list");
         return -EINVAL;
     }
     outlist->num_features = 0;

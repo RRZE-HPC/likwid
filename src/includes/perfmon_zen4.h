@@ -57,7 +57,7 @@ int zen4_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     {
         case 0x1:
             flags |= (1ULL << AMD_K17_INST_RETIRE_ENABLE_BIT);
-            VERBOSEPRINTREG(cpu_id, 0x00, LLU_CAST flags, SETUP_FIXC0);
+            VERBOSEPRINTREG(cpu_id, 0x00, LLU_CAST flags, "SETUP_FIXC0");
             break;
         case 0x2:
         case 0x3:
@@ -105,7 +105,7 @@ int zen4_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     }
     if (flags != currentConfig[cpu_id][index])
     {
-        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_PMC");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
@@ -158,7 +158,7 @@ int zen4_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 
     if (flags != currentConfig[cpu_id][index])
     {
-        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_CBOX);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_CBOX");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
@@ -187,7 +187,7 @@ int zen4_datafabric_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 
     if (flags != currentConfig[cpu_id][index])
     {
-        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_DF);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_DF");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
@@ -234,9 +234,9 @@ int perfmon_setupCounterThread_zen4(int thread_id, PerfmonEventSet* eventSet)
     {
         uint64_t tmp = 0x0ULL;
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_AMD17_HW_CONFIG, &tmp));
-        VERBOSEPRINTREG(cpu_id, MSR_AMD17_HW_CONFIG, LLU_CAST tmp, READ_HW_CONFIG);
+        VERBOSEPRINTREG(cpu_id, MSR_AMD17_HW_CONFIG, LLU_CAST tmp, "READ_HW_CONFIG");
         tmp |= fixed_flags;
-        VERBOSEPRINTREG(cpu_id, MSR_AMD17_HW_CONFIG, LLU_CAST tmp, WRITE_HW_CONFIG)
+        VERBOSEPRINTREG(cpu_id, MSR_AMD17_HW_CONFIG, LLU_CAST tmp, "WRITE_HW_CONFIG");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_AMD17_HW_CONFIG, tmp));
     }
     return 0;
@@ -287,12 +287,12 @@ int perfmon_startCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
                 ((type == MBOX0) && (haveSLock)) ||
                 ((type == CBOX0) && (haveL3Lock)))
             {
-                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST 0x0ULL, RESET_CTR);
+                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST 0x0ULL, "RESET_CTR");
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter, 0x0ULL));
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, reg, &flags));
-                VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, READ_CTRL);
+                VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, "READ_CTRL");
                 flags |= (1ULL << AMD_K17_ENABLE_BIT);  /* enable flag */
-                VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, START_CTRL);
+                VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, "START_CTRL");
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, flags));
             }
             else if (type == POWER)
@@ -305,13 +305,13 @@ int perfmon_startCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
                     continue;
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &flags));
                 eventSet->events[i].threadCounter[thread_id].startData = flags;
-                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST flags, START_POWER);
+                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST flags, "START_POWER");
             }
             else if (type == FIXED)
             {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &flags));
                 eventSet->events[i].threadCounter[thread_id].startData = field64(flags, 0, box_map[type].regWidth);
-                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST field64(flags, 0, box_map[type].regWidth), START_FIXED);
+                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST field64(flags, 0, box_map[type].regWidth), "START_FIXED");
             }
             eventSet->events[i].threadCounter[thread_id].counterData = eventSet->events[i].threadCounter[thread_id].startData;
         }
@@ -365,14 +365,14 @@ int perfmon_stopCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
             {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, reg, &flags));
                 flags &= ~(1ULL<<AMD_K17_ENABLE_BIT);  /* clear enable flag */
-                VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, STOP_CTRL);
+                VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, "STOP_CTRL");
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, flags));
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
-                VERBOSEPRINTREG(cpu_id, reg, LLU_CAST counter_result, READ_CTR);
+                VERBOSEPRINTREG(cpu_id, reg, LLU_CAST counter_result, "READ_CTR");
                 if (field64(counter_result, 0, box_map[type].regWidth) < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
-                    VERBOSEPRINTREG(cpu_id, reg, LLU_CAST counter_result, OVERFLOW);
+                    VERBOSEPRINTREG(cpu_id, reg, LLU_CAST counter_result, "OVERFLOW");
                 }
             }
             else if (type == POWER)
@@ -387,10 +387,10 @@ int perfmon_stopCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
-                    VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, OVERFLOW_POWER)
+                    VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "OVERFLOW_POWER");
                 }
 
-                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, STOP_POWER);
+                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "STOP_POWER");
             }
             else if (type == FIXED)
             {
@@ -399,9 +399,9 @@ int perfmon_stopCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
-                    VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, OVERFLOW_FIXED)
+                    VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "OVERFLOW_FIXED");
                 }
-                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, STOP_FIXED);
+                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "STOP_FIXED");
             }
             eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
         }
@@ -454,7 +454,7 @@ int perfmon_readCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
                 ((type == CBOX0) && (haveL3Lock)))
             {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
-                VERBOSEPRINTREG(cpu_id, counter, counter_result, READ_CTR);
+                VERBOSEPRINTREG(cpu_id, counter, counter_result, "READ_CTR");
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
@@ -470,10 +470,10 @@ int perfmon_readCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
                 if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock))
                     continue;
                 CHECK_POWER_READ_ERROR(power_read(cpu_id, counter, (uint32_t*)&counter_result));
-                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, READ_POWER)
+                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "READ_POWER");
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
-                    VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, OVERFLOW_POWER)
+                    VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "OVERFLOW_POWER");
                     eventSet->events[i].threadCounter[thread_id].overflows++;
                 }
                 *current = field64(counter_result, 0, box_map[type].regWidth);
@@ -481,10 +481,10 @@ int perfmon_readCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
             else if (type == FIXED)
             {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
-                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, READ_FIXED)
+                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "READ_FIXED");
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
-                    VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, OVERFLOW_FIXED)
+                    VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "OVERFLOW_FIXED");
                     eventSet->events[i].threadCounter[thread_id].overflows++;
                 }
                 *current = field64(counter_result, 0, box_map[type].regWidth);
@@ -530,12 +530,12 @@ int perfmon_finalizeCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet
         {
             if (counter_map[index].configRegister != 0x0)
             {
-                VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, 0x0ULL, CLEAR_CTRL);
+                VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, 0x0ULL, "CLEAR_CTRL");
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, 0x0ULL));
             }
             if (counter_map[index].counterRegister != 0x0)
             {
-                VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, 0x0ULL, CLEAR_CTR);
+                VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
             }
             eventSet->events[i].threadCounter[thread_id].init = FALSE;

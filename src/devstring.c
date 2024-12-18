@@ -223,7 +223,7 @@ static int parse_node(const bstring domain_selector, LikwidDeviceList_t dev_list
     const char *ds = bdata(domain_selector);
     if (domain_selector && strcmp(ds, "0") != 0)
     {
-        ERROR_PRINT(If specified node domain may only sppecify node '0' found: '%s', bdata(domain_selector));
+        ERROR_PRINT("If specified node domain may only sppecify node '0' found: '%s'", bdata(domain_selector));
         return -EINVAL;
     }
 
@@ -237,7 +237,7 @@ static int parse_simple(const bstring domain_selector, LikwidDeviceType type, Li
     int err = range_create(domain_selector, &range_list);
     if (err < 0)
     {
-        ERROR_PRINT(Unable to parse malformed range: %s, bdata(domain_selector));
+        ERROR_PRINT("Unable to parse malformed range: %s", bdata(domain_selector));
         return err;
     }
 
