@@ -863,7 +863,7 @@ rocmon_getCountOfRegion(int region, int gpu)
 {
     if (rocmMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Rocmon module not properly initialized");
+        ERROR_PRINT("Rocmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= rocmMarkerRegions)
@@ -886,7 +886,7 @@ rocmon_getTimeOfRegion(int region, int gpu)
 {
     if (rocmMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Rocmon module not properly initialized");
+        ERROR_PRINT("Rocmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= rocmMarkerRegions)
@@ -910,7 +910,7 @@ rocmon_getGpulistOfRegion(int region, int count, int* gpulist)
     int i;
     if (rocmMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Rocmon module not properly initialized");
+        ERROR_PRINT("Rocmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= rocmMarkerRegions)
@@ -933,7 +933,7 @@ rocmon_getGpusOfRegion(int region)
 {
     if (rocmMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Rocmon module not properly initialized");
+        ERROR_PRINT("Rocmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= rocmMarkerRegions)
@@ -948,7 +948,7 @@ rocmon_getMetricsOfRegion(int region)
 {
     if (rocmMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Rocmon module not properly initialized");
+        ERROR_PRINT("Rocmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= rocmMarkerRegions)
@@ -963,7 +963,7 @@ rocmon_getNumberOfRegions()
 {
     if (rocmMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Rocmon module not properly initialized");
+        ERROR_PRINT("Rocmon module not properly initialized");
         return -EINVAL;
     }
     return rocmMarkerRegions;
@@ -974,7 +974,7 @@ rocmon_getGroupOfRegion(int region)
 {
     if (rocmMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Rocmon module not properly initialized");
+        ERROR_PRINT("Rocmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= rocmMarkerRegions)
@@ -989,7 +989,7 @@ rocmon_getTagOfRegion(int region)
 {
     if (rocmMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Rocmon module not properly initialized");
+        ERROR_PRINT("Rocmon module not properly initialized");
         return NULL;
     }
     if (region < 0 || region >= rocmMarkerRegions)
@@ -1004,7 +1004,7 @@ rocmon_getEventsOfRegion(int region)
 {
     if (rocmMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Rocmon module not properly initialized");
+        ERROR_PRINT("Rocmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= rocmMarkerRegions)
@@ -1019,7 +1019,7 @@ rocmon_getResultOfRegionGpu(int region, int eventId, int gpuId)
 {
     if (rocmMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Rocmon module not properly initialized");
+        ERROR_PRINT("Rocmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= rocmMarkerRegions)
@@ -1049,7 +1049,7 @@ rocmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
     CounterList clist;
     if (rocmMarkerResults == NULL)
     {
-        ERROR_PLAIN_PRINT("Rocmon module not properly initialized");
+        ERROR_PRINT("Rocmon module not properly initialized");
         return NAN;
     }
     if (region < 0 || region >= rocmMarkerRegions)

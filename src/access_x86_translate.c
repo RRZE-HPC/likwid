@@ -143,7 +143,7 @@ access_x86_translate_init(const int cpu_id)
 {
     if (!perfmon_discovery)
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "Running Perfmon Discovery to populate counter lists");
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Running Perfmon Discovery to populate counter lists");
         int ret = perfmon_uncore_discovery(cpuid_info.model, &perfmon_discovery);
         if (ret != 0)
         {

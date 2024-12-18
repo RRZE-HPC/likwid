@@ -206,7 +206,7 @@ int neh_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
              (cpuid_info.model == NEHALEM_LYNNFIELD) ||
              (cpuid_info.model == NEHALEM_LYNNFIELD_M))
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_ONLY_ERROR, "Register documented in SDM but ADDR_OPCODE_MATCH event not documented for Nehalem architectures");
+            DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Register documented in SDM but ADDR_OPCODE_MATCH event not documented for Nehalem architectures");
         }
         VERBOSEPRINTREG(cpu_id, MSR_UNCORE_ADDR_OPCODE_MATCH, LLU_CAST mask_flags, "SETUP_UNCORE_MATCH");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_ADDR_OPCODE_MATCH, mask_flags));

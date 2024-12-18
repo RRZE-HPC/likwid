@@ -105,7 +105,7 @@ access_x86_pci_init(const int socket)
         /* PCI is only provided by Intel systems */
         if (!cpuid_info.isIntel)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, "PCI based Uncore performance monitoring only supported on Intel systems");
+            DEBUG_PRINT(DEBUGLEV_DETAIL, "PCI based Uncore performance monitoring only supported on Intel systems");
             return -ENODEV;
         }
         switch (cpuid_info.model)
@@ -160,20 +160,20 @@ access_x86_pci_init(const int socket)
 
         ret = 1;
 #ifdef LIKWID_USE_HWLOC
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, "Using hwloc to find pci devices");
+        DEBUG_PRINT(DEBUGLEV_DETAIL, "Using hwloc to find pci devices");
         ret = hwloc_pci_init(testDevice, socket_bus, &nr_sockets);
         if (ret)
         {
-            ERROR_PLAIN_PRINT("Using hwloc to find pci devices failed");
+            ERROR_PRINT("Using hwloc to find pci devices failed");
         }
 #endif
         if (ret)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, "Using procfs to find pci devices");
+            DEBUG_PRINT(DEBUGLEV_DETAIL, "Using procfs to find pci devices");
             ret = proc_pci_init(testDevice, socket_bus, &nr_sockets);
             if (ret)
             {
-                ERROR_PLAIN_PRINT("Using procfs to find pci devices failed");
+                ERROR_PRINT("Using procfs to find pci devices failed");
                 return -ENODEV;
             }
         }

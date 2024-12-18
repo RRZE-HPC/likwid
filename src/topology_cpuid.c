@@ -943,7 +943,7 @@ cpuid_init_cacheTopology(void)
             }
             break;
         default:
-            ERROR_PLAIN_PRINT("Processor is not supported");
+            ERROR_PRINT("Processor is not supported");
             break;
     }
 

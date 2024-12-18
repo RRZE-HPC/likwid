@@ -1121,7 +1121,7 @@ topology_setName(void)
 
             if (cpuid_info.isIntel)
             {
-                ERROR_PLAIN_PRINT("Netburst architecture is not supported");
+                ERROR_PRINT("Netburst architecture is not supported");
                 err = -EFAULT;
                 break;
             }
@@ -1530,7 +1530,7 @@ topology_init(void)
 
     if (init_configuration())
     {
-        ERROR_PLAIN_PRINT("Cannot initialize configuration module to check for topology file name");
+        ERROR_PRINT("Cannot initialize configuration module to check for topology file name");
         return EXIT_FAILURE;
     }
 

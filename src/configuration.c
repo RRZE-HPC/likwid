@@ -121,7 +121,7 @@ use_hardcoded:
     {
         if (getenv("LIKWID_NO_ACCESS") == NULL)
         {
-            ERROR_PLAIN_PRINT("Unable to get path to access daemon. Maybe your PATH environment variable does not contain the folder where you installed it or the file was moved away / not copied to that location?");
+            ERROR_PRINT("Unable to get path to access daemon. Maybe your PATH environment variable does not contain the folder where you installed it or the file was moved away / not copied to that location?");
             return -1;
         }
     }
@@ -162,7 +162,7 @@ init_configuration(void)
     {
         if (1023 == strlen(filename) && access(filename, R_OK))
         {
-            ERROR_PLAIN_PRINT("Topology file path too long for internal buffer");
+            ERROR_PRINT("Topology file path too long for internal buffer");
             return -1;
         }
         config.topologyCfgFileName = (char*)malloc((strlen(filename)+1) * sizeof(char));
@@ -187,7 +187,7 @@ init_configuration(void)
     {
         if (1023 == strlen(filename) && access(filename, R_OK))
         {
-            ERROR_PLAIN_PRINT("Config file path too long for internal buffer");
+            ERROR_PRINT("Config file path too long for internal buffer");
             if (config.topologyCfgFileName) free(config.topologyCfgFileName);
             return -1;
         }
@@ -223,7 +223,7 @@ init_configuration(void)
             {
                 if (default_configuration() < 0)
                 {
-                    ERROR_PLAIN_PRINT("Unable to get path to access daemon");
+                    ERROR_PRINT("Unable to get path to access daemon");
                     fclose(fp);
                     if (config.topologyCfgFileName) free(config.topologyCfgFileName);
                     if (config.configFileName) free(config.configFileName);

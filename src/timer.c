@@ -470,7 +470,7 @@ timer_printCycles( const TimerData* time )
 {
     if (timer_initialized != 1)
     {
-        ERROR_PLAIN_PRINT("Timer module not properly initialized");
+        ERROR_PRINT("Timer module not properly initialized");
         return 0ULL;
     }
     return _timer_printCycles(time);
@@ -483,7 +483,7 @@ timer_print( const TimerData* time )
     uint64_t cycles;
     if (timer_initialized != 1)
     {
-        ERROR_PLAIN_PRINT("Timer module not properly initialized");
+        ERROR_PRINT("Timer module not properly initialized");
         return 0ULL;
     }
     return _timer_print(time);
@@ -494,7 +494,7 @@ timer_getCpuClock( void )
 {
     if (timer_initialized != 1)
     {
-        ERROR_PLAIN_PRINT("Timer module not properly initialized");
+        ERROR_PRINT("Timer module not properly initialized");
         return 0ULL;
     }
     return cpuClock;
@@ -537,7 +537,7 @@ timer_getCycleClock( void )
 {
     if (timer_initialized != 1)
     {
-        ERROR_PLAIN_PRINT("Timer module not properly initialized");
+        ERROR_PRINT("Timer module not properly initialized");
         return 0ULL;
     }
     return cyclesClock;
@@ -548,7 +548,7 @@ timer_getBaseline( void )
 {
     if (timer_initialized != 1)
     {
-        ERROR_PLAIN_PRINT("Timer module not properly initialized");
+        ERROR_PRINT("Timer module not properly initialized");
         return 0ULL;
     }
     return baseline;
@@ -559,7 +559,7 @@ timer_start( TimerData* time )
 {
     if (timer_initialized != 1)
     {
-        ERROR_PLAIN_PRINT("Timer module not properly initialized");
+        ERROR_PRINT("Timer module not properly initialized");
         return;
     }
     _timer_start(time);
@@ -570,7 +570,7 @@ timer_stop( TimerData* time )
 {
     if (timer_initialized != 1)
     {
-        ERROR_PLAIN_PRINT("Timer module not properly initialized");
+        ERROR_PRINT("Timer module not properly initialized");
         return;
     }
     _timer_stop(time);
@@ -610,7 +610,7 @@ timer_finalize(void)
 {
     if (timer_initialized != 1)
     {
-        ERROR_PLAIN_PRINT("Timer module not properly initialized");
+        ERROR_PRINT("Timer module not properly initialized");
         return;
     }
     baseline = 0ULL;

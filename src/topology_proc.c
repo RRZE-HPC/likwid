@@ -1100,7 +1100,7 @@ proc_init_cacheTopology(void)
                 cachePool[i].inclusive = 0;
                 break;
             default:
-                ERROR_PLAIN_PRINT("Processor is not supported");
+                ERROR_PRINT("Processor is not supported");
                 break;
         }
     }

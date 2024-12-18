@@ -220,7 +220,7 @@ topology_rocm_init()
     ret = topo_link_libraries();
     if (ret != 0)
     {
-        ERROR_PLAIN_PRINT("Cannot open ROCm HIP library to fill GPU topology");
+        ERROR_PRINT("Cannot open ROCm HIP library to fill GPU topology");
         return EXIT_FAILURE;
     }
 
@@ -228,7 +228,7 @@ topology_rocm_init()
     int num_devs = topo_get_numDevices();
     if (num_devs < 0)
     {
-        ERROR_PLAIN_PRINT("Cannot get number of devices from ROCm HIP library");
+        ERROR_PRINT("Cannot get number of devices from ROCm HIP library");
         return EXIT_FAILURE;
     }
 

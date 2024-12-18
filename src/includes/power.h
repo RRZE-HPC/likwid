@@ -107,7 +107,7 @@ power_start(PowerData* data, int cpuId, PowerType type)
     }
     else
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
         return -EIO;
     }
 }
@@ -134,7 +134,7 @@ power_stop(PowerData* data, int cpuId, PowerType type)
     }
     else
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
         return -EIO;
     }
 }
@@ -171,7 +171,7 @@ power_read(int cpuId, uint64_t reg, uint32_t *data)
     }
     else
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
         return -EIO;
     }
 }
@@ -207,7 +207,7 @@ power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
     }
     else
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
         return -EIO;
     }
 }

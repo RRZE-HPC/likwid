@@ -602,7 +602,7 @@ static void freq_finalize_client()
     {
         memset(&record, 0, sizeof(FreqDataRecord));
         record.type = FREQ_EXIT;
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "DAEMON CMD CLOSE");
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "DAEMON CMD CLOSE");
         CHECK_ERROR(write(fsocket, &record, sizeof(FreqDataRecord)), "socket write failed");
         CHECK_ERROR(close(fsocket), "socket close failed");
         fsocket = -1;
@@ -632,7 +632,7 @@ static int getAMDTurbo(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT("Cannot get access to MSRs");
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -641,7 +641,7 @@ static int getAMDTurbo(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT("Cannot get access to MSRs");
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -650,7 +650,7 @@ static int getAMDTurbo(const int cpu_id)
     err = HPMread(cpu_id, MSR_DEV, 0xC0010015, &tmp);
     if (err)
     {
-        ERROR_PLAIN_PRINT("Cannot read register 0xC0010015");
+        ERROR_PRINT("Cannot read register 0xC0010015");
         return err;
     }
 
@@ -680,7 +680,7 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT("Cannot get access to MSRs");
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -689,7 +689,7 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT("Cannot get access to MSRs");
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -698,7 +698,7 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
     err = HPMread(cpu_id, MSR_DEV, 0xC0010015, &tmp);
     if (err)
     {
-        ERROR_PLAIN_PRINT("Cannot read register 0xC0010015");
+        ERROR_PRINT("Cannot read register 0xC0010015");
         return err;
     }
 
@@ -713,7 +713,7 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
     err = HPMwrite(cpu_id, MSR_DEV, 0xC0010015, tmp);
     if (err)
     {
-        ERROR_PLAIN_PRINT("Cannot write register 0xC0010015");
+        ERROR_PRINT("Cannot write register 0xC0010015");
         return err;
     }
 
@@ -741,7 +741,7 @@ static int getIntelTurbo(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT("Cannot get access to MSRs");
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -750,7 +750,7 @@ static int getIntelTurbo(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT("Cannot get access to MSRs");
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -789,7 +789,7 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT("Cannot get access to MSRs");
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -798,7 +798,7 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT("Cannot get access to MSRs");
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -858,7 +858,7 @@ static int getIntelHWP(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT("Cannot get access to MSRs");
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -867,7 +867,7 @@ static int getIntelHWP(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT("Cannot get access to MSRs");
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -904,7 +904,7 @@ static int getBaseFreq(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT("Cannot get access to MSRs");
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -913,7 +913,7 @@ static int getBaseFreq(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT("Cannot get access to MSRs");
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -949,21 +949,21 @@ _freqInit(void)
         }
         if (config.daemonMode == ACCESSMODE_DAEMON)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "Adjusting functions for daemon mode");
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adjusting functions for daemon mode");
             freq_init_f = freq_init_client;
             freq_send = freq_send_client;
             freq_finalize_f = freq_finalize_client;
         }
         else if (config.daemonMode == ACCESSMODE_DIRECT)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "Adjusting functions for direct mode");
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adjusting functions for direct mode");
             freq_init_f = freq_init_direct;
             freq_send = freq_send_direct;
             freq_finalize_f = freq_finalize_direct;
         }
         else if (config.daemonMode == ACCESSMODE_PERF)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "Frequency module not usable in perf_event mode");
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Frequency module not usable in perf_event mode");
         }
         else
         {

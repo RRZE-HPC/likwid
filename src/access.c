@@ -110,7 +110,7 @@ HPMinit(void)
         }
         if (config->daemonMode == ACCESSMODE_DAEMON)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "Adjusting functions for x86 architecture in daemon mode");
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adjusting functions for x86 architecture in daemon mode");
             access_init = &access_client_init;
             access_read = &access_client_read;
             access_write = &access_client_write;
@@ -119,7 +119,7 @@ HPMinit(void)
         }
         else if (config->daemonMode == ACCESSMODE_DIRECT)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "Adjusting functions for x86 architecture in direct mode");
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adjusting functions for x86 architecture in direct mode");
             access_init = &access_x86_init;
             access_read = &access_x86_read;
             access_write = &access_x86_write;
@@ -128,7 +128,7 @@ HPMinit(void)
         }
         else
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, "HPMinit called in perf_event mode");
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "HPMinit called in perf_event mode");
         }
 #endif
     }
