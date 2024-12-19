@@ -3,6 +3,11 @@ TYPE DOUBLE
 FLOPS 45
 BYTES 8
 DESC Double-precision FMA and ADD with a single load. Designed for architectures that can perform AVX2 FMA and AVX ADD simultaneously.
+LOADS 1
+STORES 0
+INSTR_CONST 32
+INSTR_LOOP 34
+UOPS 33
 vmovapd ymm0, [rip+SCALAR]
 vmovapd ymm1, [rip+SCALAR]
 vmovapd ymm2, [rip+SCALAR]
