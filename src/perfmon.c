@@ -2551,6 +2551,9 @@ perfmon_addEventSet(const char* eventCString)
     eventSet->regTypeMask4 = 0x0ULL;
     eventSet->regTypeMask5 = 0x0ULL;
     eventSet->regTypeMask6 = 0x0ULL;
+    eventSet->regTypeMask7 = 0x0ULL;
+    eventSet->regTypeMask8 = 0x0ULL;
+    eventSet->regTypeMask9 = 0x0ULL;
 
     int forceOverwrite = 0;
     int valid_events = 0;
@@ -2703,7 +2706,10 @@ past_checks:
         (eventSet->regTypeMask3 != 0x0ULL) ||
         (eventSet->regTypeMask4 != 0x0ULL) ||
         (eventSet->regTypeMask5 != 0x0ULL) ||
-        (eventSet->regTypeMask6 != 0x0ULL)))
+        (eventSet->regTypeMask6 != 0x0ULL) ||
+        (eventSet->regTypeMask7 != 0x0ULL) ||
+        (eventSet->regTypeMask8 != 0x0ULL) ||
+        (eventSet->regTypeMask9 != 0x0ULL)))
     {
         eventSet->state = STATE_NONE;
         groupSet->numberOfActiveGroups++;
