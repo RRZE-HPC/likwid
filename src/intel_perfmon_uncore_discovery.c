@@ -156,7 +156,7 @@ static int pci_test_bus(int domain, int bus)
     }
     else
     {
-        ERROR_PRINT(Cannot format path to PCI bus directory for domain %d and bus %d, domain, bus);
+        ERROR_PRINT("Cannot format path to PCI bus directory for domain %d and bus %d", domain, bus);
     }
     return !access(fname, R_OK);
 }
@@ -212,7 +212,7 @@ static int max_socket_id(int* max_socket)
             }
         }
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Found max socket ID %d, cur_max);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Found max socket ID %d", cur_max);
     *max_socket = cur_max;
     return 0;
 }
@@ -401,7 +401,7 @@ static void print_unit(PciDeviceIndex idx, PerfmonDiscoveryUnit* unit)
     }
     if (name != NULL)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, PCIIDX %d Access %s NumRegs %d ID %d Type %s(%d) box_ctl 0x%X ctrl_offset 0x%X ctr_offset 0x%X mmap_addr 0x%X mmap_offset 0x%X,
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "PCIIDX %d Access %s NumRegs %d ID %d Type %s(%d) box_ctl 0x%X ctrl_offset 0x%X ctr_offset 0x%X mmap_addr 0x%X mmap_offset 0x%X",
                 idx, AccessTypeNames[unit->access_type], unit->num_regs, unit->box_id, name, unit->box_type,
                 unit->box_ctl, unit->ctrl_offset, unit->ctr_offset, unit->mmap_addr, unit->mmap_offset);
     }
@@ -469,13 +469,13 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
             uncore_discovery_map = sierraforrest_uncore_discovery_map;
             break;
         default:
-            ERROR_PRINT(Uncore discovery not supported for model 0x%X, model);
+            ERROR_PRINT("Uncore discovery not supported for model 0x%X", model);
             return -1;
     }
 
     if (max_socket_id(&max_sockets) < 0)
     {
-        ERROR_PRINT(Failed to determine number of sockets);
+        ERROR_PRINT("Failed to determine number of sockets");
         return -1;
     }
 
@@ -483,14 +483,14 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
     int pcihandle = open("/dev/mem", O_RDWR);
     if (pcihandle < 0)
     {
-        ERROR_PRINT(Cannot open /dev/mem);
+        ERROR_PRINT("Cannot open /dev/mem");
         return -errno;
     }
     PerfmonDiscovery* perf = malloc(sizeof(PerfmonDiscovery));
     if (!perf)
     {
         close(pcihandle);
-        ERROR_PRINT(Cannot allocate space for device tables);
+        ERROR_PRINT("Cannot allocate space for device tables");
         return -ENOMEM;
     }
     perf->sockets = NULL;
@@ -503,7 +503,7 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
             ret = pci_read_config_dword(dev, dvsec + UNCORE_DISCOVERY_DVSEC_OFFSET, &val);
             if (ret < 0)
             {
-                ERROR_PRINT(Failed to read DVSEC offset from device %.04x:%.02x:%.02x.%.01x, dev->domain, dev->bus, dev->device, dev->func);
+                ERROR_PRINT("Failed to read DVSEC offset from device %.04x:%.02x:%.02x.%.01x", dev->domain, dev->bus, dev->device, dev->func);
                 continue;
             }
             entry_id = val & UNCORE_DISCOVERY_DVSEC_ID_MASK;
@@ -514,7 +514,7 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
                 ret = pci_read_config_dword(dev, dvsec + UNCORE_DISCOVERY_DVSEC2_OFFSET, &bir);
                 if (ret < 0)
                 {
-                    ERROR_PRINT(Failed to read DIR from device %.04x:%.02x:%.02x.%.01x, dev->domain, dev->bus, dev->device, dev->func);
+                    ERROR_PRINT("Failed to read DIR from device %.04x:%.02x:%.02x.%.01x", dev->domain, dev->bus, dev->device, dev->func);
                     continue;
                 }
                /* read BIR value (2:0) */
@@ -525,14 +525,14 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
                 ret = pci_read_config_dword(dev, bar_offset, &pci_dword);
                 if (ret < 0)
                 {
-                    ERROR_PRINT(Failed to read BAR offset from device %.04x:%.02x:%.02x.%.01x, dev->domain, dev->bus, dev->device, dev->func);
+                    ERROR_PRINT("Failed to read BAR offset from device %.04x:%.02x:%.02x.%.01x", dev->domain, dev->bus, dev->device, dev->func);
                     continue;
                 }
                 /* get page boundary address of pci_dword */
                 addr = pci_dword & ~(PAGE_SIZE - 1);
                 if ((pci_dword & PCI_BASE_ADDRESS_MEM_TYPE_MASK) == PCI_BASE_ADDRESS_MEM_TYPE_64)
                 {
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Mem type 64);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Mem type 64");
                     uint32_t pci_dword2;
                     ret = pci_read_config_dword(dev, bar_offset + sizeof(uint32_t), &pci_dword2);
                     if (ret > 0) addr |= ((uint64_t)pci_dword2) << 32;
@@ -543,7 +543,7 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
                 io_addr = mmap(NULL, UNCORE_DISCOVERY_MAP_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, addr);
                 if (io_addr == MAP_FAILED)
                 {
-                    ERROR_PRINT(Failed to mmap device %.04x:%.02x:%.02x.%.01x, dev->domain, dev->bus, dev->device, dev->func);
+                    ERROR_PRINT("Failed to mmap device %.04x:%.02x:%.02x.%.01x", dev->domain, dev->bus, dev->device, dev->func);
                     continue;
                 }
                 memset(&global, 0, sizeof(struct uncore_global_discovery));
@@ -554,12 +554,12 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
                     continue;
                 }
                 //printf("Global 1=0x%lX 2=0x%lX 3=0x%lX\n", global.table1, global.table2, global.table3);
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Device %.04x:%.02x:%.02x.%.01x usable with %d units, dev->domain, dev->bus, dev->device, dev->func, global.max_units);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Device %.04x:%.02x:%.02x.%.01x usable with %d units", dev->domain, dev->bus, dev->device, dev->func, global.max_units);
 
                 PerfmonDiscoverySocket* tmp = realloc(perf->sockets, (socket_id + 1) * sizeof(PerfmonDiscoverySocket));
                 if (!tmp)
                 {
-                    ERROR_PRINT(Cannot enlarge socket device table to %d, socket_id);
+                    ERROR_PRINT("Cannot enlarge socket device table to %d", socket_id);
                     if (perf->sockets) free(perf->sockets);
                     free(perf);
                     close(pcihandle);

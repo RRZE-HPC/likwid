@@ -34,7 +34,6 @@
 #include <stdint.h>
 
 #include <registers.h>
-#include <cpuid.h>
 #include <pci_types.h>
 #include <sysFeatures_types.h>
 #include <likwid.h>
@@ -49,6 +48,7 @@
 #include <sysFeatures_intel_uncorefreq.h>
 #include <sysFeatures_intel_spec_ctrl.h>
 #include <sysFeatures_intel_thermal.h>
+#include <sysFeatures_x86_tsc.h>
 
 static const _HWArchFeatures intel_arch_features[];
 
@@ -58,7 +58,7 @@ int likwid_sysft_init_x86_intel(_SysFeatureList* out)
     int err = likwid_sysft_init_generic(intel_arch_features, out);
     if (err < 0)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init general Intel HWFetures);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init general Intel HWFetures");
     }
     else
     {
@@ -67,7 +67,7 @@ int likwid_sysft_init_x86_intel(_SysFeatureList* out)
     err = likwid_sysft_init_intel_rapl(out);
     if (err < 0)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init Intel RAPL HWFetures);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init Intel RAPL HWFetures");
     }
     else
     {
@@ -83,6 +83,7 @@ static const _SysFeatureList* intel_arch_feature_inputs[] = {
     &likwid_sysft_intel_uncorefreq_feature_list,
     &likwid_sysft_intel_cpu_spec_ctrl_feature_list,
     &likwid_sysft_intel_cpu_thermal_feature_list,
+    &likwid_sysft_x86_cpu_freq_feature_list,
     NULL,
 };
 
@@ -92,6 +93,7 @@ static const _SysFeatureList* intel_8f_arch_feature_inputs[] = {
     &likwid_sysft_intel_cpu_ida_feature_list,
     &likwid_sysft_intel_cpu_turbo_feature_list,
     &likwid_sysft_intel_cpu_spec_ctrl_feature_list,
+    &likwid_sysft_x86_cpu_freq_feature_list,
     NULL,
 };
 
@@ -100,6 +102,7 @@ static const _SysFeatureList* intel_knl_arch_feature_inputs[] = {
     &likwid_sysft_intel_cpu_ida_feature_list,
     &likwid_sysft_intel_cpu_turbo_feature_list,
     &likwid_sysft_intel_cpu_spec_ctrl_feature_list,
+    &likwid_sysft_x86_cpu_freq_feature_list,
     NULL,
 };
 
@@ -108,6 +111,7 @@ static const _SysFeatureList* intel_core2_arch_feature_inputs[] = {
     &likwid_sysft_intel_cpu_ida_feature_list,
     &likwid_sysft_intel_cpu_turbo_feature_list,
     &likwid_sysft_intel_cpu_spec_ctrl_feature_list,
+    &likwid_sysft_x86_cpu_freq_feature_list,
     NULL,
 };
 

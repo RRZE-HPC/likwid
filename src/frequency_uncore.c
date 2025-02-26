@@ -178,12 +178,12 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
     }
     if (freq < (uint64_t)fmin)
     {
-        ERROR_PRINT(Given frequency %llu MHz lower than system limit of %.0f MHz, freq, fmin);
+        ERROR_PRINT("Given frequency %llu MHz lower than system limit of %.0f MHz", freq, fmin);
         return -EINVAL;
     }
     if (freq > (uint64_t)fmax)
     {
-        ERROR_PRINT(Given frequency %llu MHz higher than system limit of %.0f MHz, freq, fmax);
+        ERROR_PRINT("Given frequency %llu MHz higher than system limit of %.0f MHz", freq, fmax);
         return -EINVAL;
     }
 #ifdef LIKWID_USE_PERFEVENT
@@ -198,7 +198,7 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
     err = HPMaddThread(cpuId);
     if (err != 0)
     {
-        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        ERROR_PRINT("Cannot get access to MSRs");
         return 0;
     }
 
@@ -206,7 +206,7 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
     err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
     if (err)
     {
-        //ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
+        //ERROR_PRINT("Cannot read register 0x%X on CPU %d", MSR_UNCORE_FREQ, cpuId);
         return err;
     }
     tmp &= ~(0xFF00);
@@ -214,7 +214,7 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
     err = HPMwrite(cpuId, MSR_DEV, MSR_UNCORE_FREQ, tmp);
     if (err)
     {
-        ERROR_PRINT(Cannot write register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
+        ERROR_PRINT("Cannot write register 0x%X on CPU %d", MSR_UNCORE_FREQ, cpuId);
         return err;
     }
 
@@ -252,7 +252,7 @@ uint64_t freq_getUncoreFreqMin(const int socket_id)
     }
     if (cpuId < 0)
     {
-        ERROR_PRINT(Unknown socket ID %d, socket_id);
+        ERROR_PRINT("Unknown socket ID %d", socket_id);
         return 0;
     }
 #ifdef LIKWID_USE_PERFEVENT
@@ -267,7 +267,7 @@ uint64_t freq_getUncoreFreqMin(const int socket_id)
     err = HPMaddThread(cpuId);
     if (err != 0)
     {
-        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        ERROR_PRINT("Cannot get access to MSRs");
         return 0;
     }
 
@@ -275,7 +275,7 @@ uint64_t freq_getUncoreFreqMin(const int socket_id)
     err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
     if (err)
     {
-        //ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
+        //ERROR_PRINT("Cannot read register 0x%X on CPU %d", MSR_UNCORE_FREQ, cpuId);
         return 0;
     }
     tmp = ((tmp>>8) & 0xFFULL) * 100;
@@ -309,12 +309,12 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
     }
     if (freq < (uint64_t)fmin)
     {
-        ERROR_PRINT(Given frequency %llu MHz lower than system limit of %.0f MHz, freq, fmin);
+        ERROR_PRINT("Given frequency %llu MHz lower than system limit of %.0f MHz", freq, fmin);
         return -EINVAL;
     }
     if (freq > (uint64_t)fmax)
     {
-        ERROR_PRINT(Given frequency %llu MHz higher than system limit of %.0f MHz, freq, fmax);
+        ERROR_PRINT("Given frequency %llu MHz higher than system limit of %.0f MHz", freq, fmax);
         return -EINVAL;
     }
 #ifdef LIKWID_USE_PERFEVENT
@@ -329,7 +329,7 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
     err = HPMaddThread(cpuId);
     if (err != 0)
     {
-        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        ERROR_PRINT("Cannot get access to MSRs");
         return 0;
     }
 
@@ -337,7 +337,7 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
     err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
     if (err)
     {
-        //ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
+        //ERROR_PRINT("Cannot read register 0x%X on CPU %d", MSR_UNCORE_FREQ, cpuId);
         return err;
     }
     tmp &= ~(0xFFULL);
@@ -345,7 +345,7 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
     err = HPMwrite(cpuId, MSR_DEV, MSR_UNCORE_FREQ, tmp);
     if (err)
     {
-        ERROR_PRINT(Cannot write register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
+        ERROR_PRINT("Cannot write register 0x%X on CPU %d", MSR_UNCORE_FREQ, cpuId);
         return err;
     }
 
@@ -381,7 +381,7 @@ uint64_t freq_getUncoreFreqMax(const int socket_id)
     }
     if (cpuId < 0)
     {
-        ERROR_PRINT(Unknown socket ID %d, socket_id);
+        ERROR_PRINT("Unknown socket ID %d", socket_id);
         return 0;
     }
 #ifdef LIKWID_USE_PERFEVENT
@@ -396,7 +396,7 @@ uint64_t freq_getUncoreFreqMax(const int socket_id)
     err = HPMaddThread(cpuId);
     if (err != 0)
     {
-        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        ERROR_PRINT("Cannot get access to MSRs");
         return 0;
     }
 
@@ -404,7 +404,7 @@ uint64_t freq_getUncoreFreqMax(const int socket_id)
     err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
     if (err)
     {
-        //ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
+        //ERROR_PRINT("Cannot read register 0x%X on CPU %d", MSR_UNCORE_FREQ, cpuId);
         return 0;
     }
     tmp = (tmp & 0xFFULL) * 100;
@@ -440,7 +440,7 @@ uint64_t freq_getUncoreFreqCur(const int socket_id)
     }
     if (cpuId < 0)
     {
-        ERROR_PRINT(Unknown socket ID %d, socket_id);
+        ERROR_PRINT("Unknown socket ID %d", socket_id);
         return 0;
     }
 #ifdef LIKWID_USE_PERFEVENT
@@ -454,7 +454,7 @@ uint64_t freq_getUncoreFreqCur(const int socket_id)
         err = HPMaddThread(cpuId);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PRINT("Cannot get access to MSRs");
             return 0;
         }
     }
@@ -463,7 +463,7 @@ uint64_t freq_getUncoreFreqCur(const int socket_id)
     err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ_READ, &tmp);
     if (err)
     {
-        //ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ_READ, cpuId);
+        //ERROR_PRINT("Cannot read register 0x%X on CPU %d", MSR_UNCORE_FREQ_READ, cpuId);
         return 0;
     }
     tmp = (tmp & 0xFFULL) * 100;

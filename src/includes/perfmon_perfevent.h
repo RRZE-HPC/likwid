@@ -104,7 +104,7 @@ int perfevent_paranoid_value()
     if (fd == NULL)
     {
         errno = EPERM;
-        ERROR_PRINT(Linux kernel has no perf_event support. Cannot access /proc/sys/kernel/perf_event_paranoid);
+        ERROR_PRINT("Linux kernel has no perf_event support. Cannot access /proc/sys/kernel/perf_event_paranoid");
         return paranoid;
     }
     size_t read = fread(buff, sizeof(char), 100, fd);
@@ -132,7 +132,7 @@ int perfevent_apple_m1_pmc_type_select(int cpu_id, enum apple_m1_pmc_type *type)
     fd = fopen(bdata(fname), "r");
     if (fd == NULL)
     {
-        ERROR_PRINT(Failed to detect PMU type for Apple M1);
+        ERROR_PRINT("Failed to detect PMU type for Apple M1");
         bdestroy(fname);
         return errno;
     }
@@ -152,7 +152,7 @@ int perfevent_apple_m1_pmc_type_select(int cpu_id, enum apple_m1_pmc_type *type)
     }
     else
     {
-        ERROR_PRINT(Cannot read %s, bdata(fname));
+        ERROR_PRINT("Cannot read %s", bdata(fname));
     }
     bdestroy(fname);
     return -1;
@@ -166,7 +166,7 @@ int perfmon_init_perfevent(int cpu_id)
     if (getuid() != 0 && perf_event_paranoid > 2)
     {
         errno = EPERM;
-        ERROR_PRINT(Cannot use performance monitoring with perf_event_paranoid = %d, perf_event_paranoid);
+        ERROR_PRINT("Cannot use performance monitoring with perf_event_paranoid = %d", perf_event_paranoid);
         return -(cpu_id+1);
     }
 
@@ -725,7 +725,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
         return EPERM;
     }
     attr->type = 0;
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Get information for uncore counters from folder(s): %s, translate_types[type]);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Get information for uncore counters from folder(s): %s", translate_types[type]);
     perf_folder = bfromcstr(translate_types[type]);
     folders = bsplit(perf_folder, ' ');
     bdestroy(perf_folder);
@@ -748,7 +748,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     {
         if ((type == UBOX)||(type == UBOXFIX))
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Get information for uncore counters from folder /sys/bus/event_source/devices/uncore_arb);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Get information for uncore counters from folder /sys/bus/event_source/devices/uncore_arb");
             perf_type = read_perf_event_type("/sys/bus/event_source/devices/uncore_arb");
         }
     }
@@ -828,12 +828,12 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
             if (type >= CBOX0 && type <= CBOX59 && cpuid_info.isIntel && num_formats > 1
                 && (cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 || cpuid_info.model == SAPPHIRERAPIDS))
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Applying special umask handling for CBOXes of Intel ICX and SPR chips);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Applying special umask handling for CBOXes of Intel ICX and SPR chips");
                 for(int j = 0; j < event->numberOfOptions; j++)
                 {
                     if (event->options[j].type == EVENT_OPTION_MATCH0)
                     {
-                        DEBUG_PRINT(DEBUGLEV_DEVELOP, 0x%lX (0x%lX | (0x%lX << (%d - %d))), umask | (event->options[j].value << (formats[0].end - formats[0].start)), umask, event->options[j].value, formats[0].end, formats[0].start);
+                        DEBUG_PRINT(DEBUGLEV_DEVELOP, "0x%lX (0x%lX | (0x%lX << (%d - %d)))", umask | (event->options[j].value << (formats[0].end - formats[0].start)), umask, event->options[j].value, formats[0].end, formats[0].start);
                         umask |= (event->options[j].value << (formats[0].end - formats[0].start + 1));
                         break;
                     }
@@ -841,11 +841,11 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
             }
             for (int i = 0; i < num_formats && umask != 0x0; i++)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Format %s from %d-%d with value 0x%lX, perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], formats[i].start, formats[i].end, umask);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Format %s from %d-%d with value 0x%lX", perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], formats[i].start, formats[i].end, umask);
                 switch(formats[i].reg)
                 {
                     case CONFIG:
-                        DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding 0x%lX to 0x%X, create_mask(umask, formats[i].start, formats[i].end), attr->config);
+                        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding 0x%lX to 0x%X", create_mask(umask, formats[i].start, formats[i].end), attr->config);
                         attr->config |= create_mask(umask, formats[i].start, formats[i].end);
                         break;
                     case CONFIG1:
@@ -943,17 +943,17 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
         }
         if (!got_cid)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, AMD Zen4 L3: activate counting for all cores);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "AMD Zen4 L3: activate counting for all cores");
             attr->config |= (1ULL<<47);
         }
         if (!got_tid)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, AMD Zen4 L3: activate counting for all SMT threads);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "AMD Zen4 L3: activate counting for all SMT threads");
             attr->config |= (0x3ULL<<56);
         }
         if (!got_slices)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, AMD Zen4 L3: activate counting for all L3 slices);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "AMD Zen4 L3: activate counting for all L3 slices");
             attr->config |= (1ULL<<46);
         }
     }
@@ -987,10 +987,10 @@ int perfmon_setupCountersThread_perfevent(
     {
         if (allpid == -1)
         {
-            DEBUG_PRINT(DEBUGLEV_INFO, PID of application required. Use LIKWID_PERF_PID env variable or likwid-perfctr options);
+            DEBUG_PRINT(DEBUGLEV_INFO, "PID of application required. Use LIKWID_PERF_PID env variable or likwid-perfctr options");
             return -EPERM;
         }
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Using PID %d for perf_event measurements, allpid);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Using PID %d for perf_event measurements", allpid);
     }
 
     if (getenv("LIKWID_PERF_FLAGS") != NULL)
@@ -1035,7 +1035,7 @@ int perfmon_setupCountersThread_perfevent(
                 {
                     continue;
                 }
-                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_FIXED);
+                VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_FIXED");
                 break;
             case PERF:
                 ret = perf_perf_setup(&attr, index, event);
@@ -1043,7 +1043,7 @@ int perfmon_setupCountersThread_perfevent(
                 {
                     continue;
                 }
-                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PERF);
+                VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_PERF");
                 break;
             case METRICS:
                 ret = perf_metrics_setup(&attr, index, event);
@@ -1051,7 +1051,7 @@ int perfmon_setupCountersThread_perfevent(
                 {
                     continue;
                 }
-                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_METRICS);
+                VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_METRICS");
                 break;
             case PMC:
                 pmc_lock = 1;
@@ -1074,18 +1074,18 @@ int perfmon_setupCountersThread_perfevent(
                 else if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO)
                 {
                     enum apple_m1_pmc_type ptype = M1_UNKNOWN;
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Getting real perf_event type for HWThread %d, cpu_id);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Getting real perf_event type for HWThread %d", cpu_id);
                     ret = perfevent_apple_m1_pmc_type_select(cpu_id, &ptype);
                     if (ret == 0)
                     {
                         switch (ptype)
                         {
                             case M1_ICESTORM:
-                                DEBUG_PRINT(DEBUGLEV_DEVELOP, HWThread %d is an icestorm core, cpu_id);
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "HWThread %d is an icestorm core", cpu_id);
                                 type = IPMC;
                                 break;
                             case M1_FIRESTORM:
-                                DEBUG_PRINT(DEBUGLEV_DEVELOP, HWThread %d is an firestorm core, cpu_id);
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "HWThread %d is an firestorm core", cpu_id);
                                 type = FPMC;
                                 break;
                             default:
@@ -1095,7 +1095,7 @@ int perfmon_setupCountersThread_perfevent(
                     }
                     else
                     {
-                        ERROR_PRINT(Failed getting real perf_event type for HWThread %d, cpu_id);
+                        ERROR_PRINT("Failed getting real perf_event type for HWThread %d", cpu_id);
                         pmc_lock = 0;
                     }
                 }
@@ -1103,14 +1103,14 @@ int perfmon_setupCountersThread_perfevent(
                 if (pmc_lock)
                 {
                     ret = perf_pmc_setup(&attr, index, type, event);
-                    VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
+                    VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_PMC");
                 }
                 break;
             case POWER:
                 if (cpuid_info.isIntel && socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
                 {
                     has_lock = 1;
-                    VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
+                    VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_POWER");
                     ret = perf_uncore_setup(&attr, type, event);
                 }
                 else if ((cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY))
@@ -1118,19 +1118,19 @@ int perfmon_setupCountersThread_perfevent(
                     if (event->eventId == 0x01 && core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
                     {
                         has_lock = 1;
-                        VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
+                        VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_POWER");
                         ret = perf_uncore_setup(&attr, type, event);
                     }
                     else if (event->eventId == 0x02 && socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
                     {
                         has_lock = 1;
-                        VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
+                        VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_POWER");
                         ret = perf_uncore_setup(&attr, type, event);
                     }
                     else if (event->eventId == 0x03 && sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id)
                     {
                         has_lock = 1;
-                        VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
+                        VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_POWER");
                         ret = perf_uncore_setup(&attr, type, event);
                     }
                 }
@@ -1425,14 +1425,14 @@ int perfmon_setupCountersThread_perfevent(
                 }
                 if ((cpuid_info.family == ARMV8_FAMILY) && (cpuid_info.part == NVIDIA_GRACE) && cpuid_topology.numSockets > 1)
                 {
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Updating uncore type for socket %d on Nvidia Grace, affinity_thread2socket_lookup[cpu_id]);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating uncore type for socket %d on Nvidia Grace", affinity_thread2socket_lookup[cpu_id]);
                     type += affinity_thread2socket_lookup[cpu_id];
                 }
                 if (has_lock)
                 {
                     ret = perf_uncore_setup(&attr, type, event);
                     is_uncore = 1;
-                    VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_UNCORE);
+                    VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_UNCORE");
                 }
                 break;
 #endif
@@ -1449,27 +1449,27 @@ int perfmon_setupCountersThread_perfevent(
 
             if (!is_uncore)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, perf_event_open: cpu_id=%d pid=%d flags=%d, cpu_id, curpid, allflags);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "perf_event_open: cpu_id=%d pid=%d flags=%d", cpu_id, curpid, allflags);
                 cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, -1, allflags);
             }
             else if ((perf_disable_uncore == 0) && (has_lock))
             {
                 if (perf_event_paranoid > 0 && getuid() != 0)
                 {
-                    DEBUG_PRINT(DEBUGLEV_INFO, Cannot measure Uncore with perf_event_paranoid value = %d, perf_event_paranoid);
+                    DEBUG_PRINT(DEBUGLEV_INFO, "Cannot measure Uncore with perf_event_paranoid value = %d", perf_event_paranoid);
                     perf_disable_uncore = 1;
                 }
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, perf_event_open: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "perf_event_open: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX", cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
                 cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, -1, allflags);
             }
             else
             {
-                DEBUG_PRINT(DEBUGLEV_INFO, Unknown perf_event_paranoid value = %d, perf_event_paranoid);
+                DEBUG_PRINT(DEBUGLEV_INFO, "Unknown perf_event_paranoid value = %d", perf_event_paranoid);
             }
             if (cpu_event_fds[cpu_id][index] < 0)
             {
-                ERROR_PRINT(Setup of event %s on CPU %d failed: %s, event->name, cpu_id, strerror(errno));
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, open error: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
+                ERROR_PRINT("Setup of event %s on CPU %d failed: %s", event->name, cpu_id, strerror(errno));
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "open error: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX", cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
             }
             if (group_fd < 0)
             {
@@ -1482,7 +1482,7 @@ int perfmon_setupCountersThread_perfevent(
         {
             if (is_uncore && perf_disable_uncore == 0 && perf_event_paranoid > 0 && getuid() != 0)
             {
-                DEBUG_PRINT(DEBUGLEV_INFO, Cannot measure Uncore with perf_event_paranoid value = %d, perf_event_paranoid);
+                DEBUG_PRINT(DEBUGLEV_INFO, "Cannot measure Uncore with perf_event_paranoid value = %d", perf_event_paranoid);
                 perf_disable_uncore = 1;
             }
         }
@@ -1505,7 +1505,7 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
             RegisterIndex index = eventSet->events[i].index;
             if (cpu_event_fds[cpu_id][index] < 0)
                 continue;
-            VERBOSEPRINTREG(cpu_id, 0x0, 0x0, RESET_COUNTER);
+            VERBOSEPRINTREG(cpu_id, 0x0, 0x0, "RESET_COUNTER");
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_RESET, 0);
             PerfmonCounter *c = &eventSet->events[i].threadCounter[thread_id];
             c->startData = 0x0ULL;
@@ -1516,9 +1516,7 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
                         &eventSet->events[i].threadCounter[thread_id].startData,
                         sizeof(long long));
             }
-            VERBOSEPRINTREG(cpu_id, 0x0,
-                            c->startData,
-                            START_COUNTER);
+            VERBOSEPRINTREG(cpu_id, 0x0, c->startData, "START_COUNTER");
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_ENABLE, 0);
         }
     }
@@ -1541,11 +1539,11 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
             RegisterIndex index = eventSet->events[i].index;
             if (cpu_event_fds[cpu_id][index] < 0)
                 continue;
-            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
+            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, "FREEZE_COUNTER");
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
             tmp = 0x0LL;
             ret = read(cpu_event_fds[cpu_id][index], &tmp, sizeof(long long));
-            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
+            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, "READ_COUNTER");
             if (ret == sizeof(long long))
             {
 #if defined(__ARM_ARCH_8A)
@@ -1576,7 +1574,7 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
 
             }
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_RESET, 0);
-            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, RESET_COUNTER);
+            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, "RESET_COUNTER");
         }
     }
     return 0;
@@ -1598,11 +1596,11 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
             RegisterIndex index = eventSet->events[i].index;
             if (cpu_event_fds[cpu_id][index] < 0)
                 continue;
-            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
+            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, "FREEZE_COUNTER");
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
             tmp = 0x0LL;
             ret = read(cpu_event_fds[cpu_id][index], &tmp, sizeof(long long));
-            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
+            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, "READ_COUNTER");
             if (ret == sizeof(long long))
             {
 #if defined(__ARM_ARCH_8A)
@@ -1631,7 +1629,7 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
 #endif
                 eventSet->events[i].threadCounter[thread_id].counterData = tmp;
             }
-            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, UNFREEZE_COUNTER);
+            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, "UNFREEZE_COUNTER");
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_ENABLE, 0);
         }
     }

@@ -173,7 +173,7 @@ static int mmio_validDevice(uint32_t pci_bus, uint32_t deviceId)
     FILE* fd = fopen(bdata(bdevfile), "r");
     if (fd < 0)
     {
-        ERROR_PRINT(Cannot get device id: failed to open %s, bdata(bdevfile));
+        ERROR_PRINT("Cannot get device id: failed to open %s", bdata(bdevfile));
         bdestroy(bdevfile);
         return 0;
     }
@@ -181,7 +181,7 @@ static int mmio_validDevice(uint32_t pci_bus, uint32_t deviceId)
     int ret = fread(buf, sizeof(char), 20, fd);
     if (ret < 0)
     {
-        ERROR_PRINT(Cannot get device id: failed to read %s, bdata(bdevfile));
+        ERROR_PRINT("Cannot get device id: failed to read %s", bdata(bdevfile));
         fclose(fd);
         bdestroy(bdevfile);
         return 0;
@@ -190,7 +190,7 @@ static int mmio_validDevice(uint32_t pci_bus, uint32_t deviceId)
     pci_dev = strtoul(buf, NULL, 16);
     if (pci_dev != deviceId)
     {
-        ERROR_PRINT(Cannot get device id: device ids do not match 0x%X and 0x%X, pci_dev, deviceId);
+        ERROR_PRINT("Cannot get device id: device ids do not match 0x%X and 0x%X", pci_dev, deviceId);
         fclose(fd);
         bdestroy(bdevfile);
         return 0;
@@ -219,34 +219,34 @@ mmio_fillBox(MMIOConfig* config, uint32_t pci_bus, int imc_idx, MMIOBoxHandle* h
     int pcihandle = open(bdata(bdevmem), O_RDONLY);
     if (pcihandle < 0)
     {
-        ERROR_PRINT(Cannot get start address: failed to open %s, bdata(bdevmem));
+        ERROR_PRINT("Cannot get start address: failed to open %s", bdata(bdevmem));
         bdestroy(bdevmem);
         return -1;
     }
     int ret = pread(pcihandle, &tmp, sizeof(uint32_t), config->base_offset);
     if (ret < 0 || ret != sizeof(uint32_t))
     {
-        ERROR_PRINT(Cannot get start address: read failed);
+        ERROR_PRINT("Cannot get start address: read failed");
         close(pcihandle);
         bdestroy(bdevmem);
         return -1;
     }
     if (!tmp)
     {
-        ERROR_PRINT(Cannot get address: MMIO base is zero);
+        ERROR_PRINT("Cannot get address: MMIO base is zero");
         close(pcihandle);
         bdestroy(bdevmem);
         return -1;
     }
     addr = (tmp & config->base_mask) << config->base_shift;
-    //DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d BASE 0x%lX = (0x%lX & 0x%lX) << %d, imc_idx, addr, tmp, config->base_mask, config->base_shift);
+    //DEBUG_PRINT(DEBUGLEV_DEVELOP, "IMC %d BASE 0x%lX = (0x%lX & 0x%lX) << %d", imc_idx, addr, tmp, config->base_mask, config->base_shift);
     tmp = 0;
     mem_offset = config->device_offset + (imc_idx / config->channel_count) * config->device_stride;
-    //DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d offset 0x%X, imc_idx, mem_offset);
+    //DEBUG_PRINT(DEBUGLEV_DEVELOP, "IMC %d offset 0x%X", imc_idx, mem_offset);
     ret = pread(pcihandle, &tmp, sizeof(uint32_t), mem_offset);
     if (ret < 0)
     {
-        ERROR_PRINT(Cannot get start address of device: read failed);
+        ERROR_PRINT("Cannot get start address of device: read failed");
         close(pcihandle);
         bdestroy(bdevmem);
         return -1;
@@ -254,28 +254,28 @@ mmio_fillBox(MMIOConfig* config, uint32_t pci_bus, int imc_idx, MMIOBoxHandle* h
     addr |= (tmp & config->device_mask) << config->device_shift;
     addr += config->channel_offset + config->channel_stride * (imc_idx % config->channel_count);
 
-    //DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d IMC_OFF 0x%lX (0x%lX & 0x%lX) << %d, imc_idx, addr, tmp, config->device_mask, config->device_shift);
+    //DEBUG_PRINT(DEBUGLEV_DEVELOP, "IMC %d IMC_OFF 0x%lX (0x%lX & 0x%lX) << %d", imc_idx, addr, tmp, config->device_mask, config->device_shift);
     close(pcihandle);
 
     pcihandle = open("/dev/mem", O_RDWR);
     if (pcihandle < 0)
     {
-        ERROR_PRINT(Cannot get mmap address: failed to open /dev/mem);
+        ERROR_PRINT("Cannot get mmap address: failed to open /dev/mem");
         bdestroy(bdevmem);
         return -1;
     }
-    //DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d MMAP 0x%llX, imc_idx, addr);
+    //DEBUG_PRINT(DEBUGLEV_DEVELOP, "IMC %d MMAP 0x%llX", imc_idx, addr);
 
-    //DEBUG_PRINT(DEBUGLEV_DEVELOP, MMap size 0x%x addr %lld (0x%llX), ICX_IMC_MMIO_SIZE, addr & (~(4096 - 1)), addr & (~(4096 - 1)));
+    //DEBUG_PRINT(DEBUGLEV_DEVELOP, "MMap size 0x%x addr %lld (0x%llX)", ICX_IMC_MMIO_SIZE, addr & (~(4096 - 1)), addr & (~(4096 - 1)));
     void* maddr = mmap(NULL, config->channel_count*ICX_IMC_MMIO_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, addr & (~(4096 - 1)));
     if (maddr == MAP_FAILED)
     {
-        ERROR_PRINT(Cannot get start address of device: mmap failed);
+        ERROR_PRINT("Cannot get start address of device: mmap failed");
         bdestroy(bdevmem);
         close(pcihandle);
         return -1;
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d MMAP %p ADDR %lX, imc_idx, maddr, addr);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "IMC %d MMAP %p ADDR %lX", imc_idx, maddr, addr);
     handle->mmap_addr = maddr;
     handle->addr = addr;
     handle->fd = pcihandle;
@@ -306,34 +306,34 @@ mmio_fillFreerunBox(MMIOConfig* config, uint32_t pci_bus, int imc_idx, MMIOBoxHa
     int pcihandle = open(bdata(bdevmem), O_RDONLY);
     if (pcihandle < 0)
     {
-        ERROR_PRINT(Cannot get start address: failed to open %s, bdata(bdevmem));
+        ERROR_PRINT("Cannot get start address: failed to open %s", bdata(bdevmem));
         bdestroy(bdevmem);
         return -1;
     }
     int ret = pread(pcihandle, &tmp, sizeof(uint32_t), config->base_offset);
     if (ret < 0 || ret != sizeof(uint32_t))
     {
-        ERROR_PRINT(Cannot get start address: read failed);
+        ERROR_PRINT("Cannot get start address: read failed");
         close(pcihandle);
         bdestroy(bdevmem);
         return -1;
     }
     if (!tmp)
     {
-        ERROR_PRINT(Cannot get address: MMIO base is zero);
+        ERROR_PRINT("Cannot get address: MMIO base is zero");
         close(pcihandle);
         bdestroy(bdevmem);
         return -1;
     }
     addr = (tmp & config->base_mask) << config->base_shift;
-    //DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d BASE 0x%lX = (0x%lX & 0x%lX) << %d, imc_idx, addr, tmp, config->base_mask, config->base_shift);
+    //DEBUG_PRINT(DEBUGLEV_DEVELOP, "IMC %d BASE 0x%lX = (0x%lX & 0x%lX) << %d", imc_idx, addr, tmp, config->base_mask, config->base_shift);
     tmp = 0;
     mem_offset = config->device_offset + imc_idx * config->device_stride;
-    //DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d offset 0x%X, imc_idx, mem_offset);
+    //DEBUG_PRINT(DEBUGLEV_DEVELOP, "IMC %d offset 0x%X", imc_idx, mem_offset);
     ret = pread(pcihandle, &tmp, sizeof(uint32_t), mem_offset);
     if (ret < 0)
     {
-        ERROR_PRINT(Cannot get start address of device: read failed);
+        ERROR_PRINT("Cannot get start address of device: read failed");
         close(pcihandle);
         bdestroy(bdevmem);
         return -1;
@@ -341,29 +341,29 @@ mmio_fillFreerunBox(MMIOConfig* config, uint32_t pci_bus, int imc_idx, MMIOBoxHa
     addr |= (tmp & config->device_mask) << config->device_shift;
     addr += config->freerun_offset;
 
-    //DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d IMC_OFF 0x%lX (0x%lX & 0x%lX) << %d, imc_idx, addr, tmp, config->device_mask, config->device_shift);
+    //DEBUG_PRINT(DEBUGLEV_DEVELOP, "IMC %d IMC_OFF 0x%lX (0x%lX & 0x%lX) << %d", imc_idx, addr, tmp, config->device_mask, config->device_shift);
 
     close(pcihandle);
 
     pcihandle = open("/dev/mem", O_RDWR);
     if (pcihandle < 0)
     {
-        ERROR_PRINT(Cannot get mmap address: failed to open /dev/mem);
+        ERROR_PRINT("Cannot get mmap address: failed to open /dev/mem");
         bdestroy(bdevmem);
         return -1;
     }
-    //DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d MMAP 0x%llX, imc_idx, addr);
+    //DEBUG_PRINT(DEBUGLEV_DEVELOP, "IMC %d MMAP 0x%llX", imc_idx, addr);
 
-    //DEBUG_PRINT(DEBUGLEV_DEVELOP, MMap size 0x%x addr %lld (0x%llX), ICX_IMC_MMIO_SIZE, addr & (~(4096 - 1)), addr & (~(4096 - 1)));
+    //DEBUG_PRINT(DEBUGLEV_DEVELOP, "MMap size 0x%x addr %lld (0x%llX)", ICX_IMC_MMIO_SIZE, addr & (~(4096 - 1)), addr & (~(4096 - 1)));
     void* maddr = mmap(NULL, config->channel_count*ICX_IMC_MMIO_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, addr & (~(4096 - 1)));
     if (maddr == MAP_FAILED)
     {
-        ERROR_PRINT(Cannot get start address of device: mmap failed);
+        ERROR_PRINT("Cannot get start address of device: mmap failed");
         bdestroy(bdevmem);
         close(pcihandle);
         return -1;
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, IMC %d MMAP %p ADDR %lX, imc_idx, maddr, addr);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "IMC %d MMAP %p ADDR %lX", imc_idx, maddr, addr);
     handle->mmap_addr = maddr;
     handle->addr = addr;
     handle->fd = pcihandle;
@@ -405,11 +405,11 @@ access_x86_mmio_init(const int socket)
 
     if (!access_mmio_initialized[socket])
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, access_x86_mmio_init for socket %d, socket);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "access_x86_mmio_init for socket %d", socket);
         topology_init();
         if (cpuid_info.family != P6_FAMILY)
         {
-            ERROR_PRINT(MMIO only supported for Intel platforms);
+            ERROR_PRINT("MMIO only supported for Intel platforms");
             return -1;
         }
         switch(cpuid_info.model)
@@ -429,7 +429,7 @@ access_x86_mmio_init(const int socket)
             mmio_sockets = malloc(num_mmio_sockets * sizeof(MMIOSocketBoxes));
             if (!mmio_sockets)
             {
-                ERROR_PRINT(Failed to malloc space for socket);
+                ERROR_PRINT("Failed to malloc space for socket");
                 num_mmio_sockets = 0;
                 mmio_config = NULL;
                 return -1;
@@ -452,7 +452,7 @@ access_x86_mmio_init(const int socket)
             sbox->boxes = malloc(num_devs * sizeof(MMIOBoxHandle));
             if (!sbox->boxes)
             {
-                ERROR_PRINT(Failed to malloc space for socket boxes);
+                ERROR_PRINT("Failed to malloc space for socket boxes");
                 num_mmio_sockets = 0;
                 free(mmio_sockets);
                 mmio_sockets = NULL;
@@ -469,7 +469,7 @@ access_x86_mmio_init(const int socket)
             sbox->freerun = malloc(num_devs * sizeof(MMIOBoxHandle));
             if (!sbox->freerun)
             {
-                ERROR_PRINT(Failed to malloc space for freerun boxes);
+                ERROR_PRINT("Failed to malloc space for freerun boxes");
                 free(sbox->boxes);
                 sbox->boxes = 0;
                 sbox->num_boxes = 0;
@@ -654,7 +654,7 @@ access_x86_mmio_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_
         {
             d = (uint64_t)(*((uint32_t *)(box->mmap_addr + box->reg_offset + reg)));
         }
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MMIO counter 0x%X Dev %d on socket %d: 0x%lX, reg, imc_idx, socket, d);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read MMIO counter 0x%X Dev %d on socket %d: 0x%lX", reg, imc_idx, socket, d);
         *data = d;
         return 0;
     }
@@ -713,7 +713,7 @@ access_x86_mmio_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64
         MMIOBoxHandle* box = &sbox->boxes[imc_idx];
         if (box)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Write MMIO counter 0x%X Dev %d on socket %d: 0x%lX, reg, imc_idx, socket, data);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Write MMIO counter 0x%X Dev %d on socket %d: 0x%lX", reg, imc_idx, socket, data);
             if (width == 64)
             {
                 *((uint64_t *)(box->mmap_addr + box->reg_offset + reg)) = data;
@@ -758,7 +758,7 @@ access_x86_mmio_check(PciDeviceIndex dev, int socket)
         imc_idx = (dev - MMIO_IMC_DEVICE_0_FREERUN);
         box = &sbox->freerun[imc_idx];
     }
-    //DEBUG_PRINT(DEBUGLEV_DEVELOP, MMIO device check dev %d box %d socket %d, dev, imc_idx, socket);
+    //DEBUG_PRINT(DEBUGLEV_DEVELOP, "MMIO device check dev %d box %d socket %d", dev, imc_idx, socket);
 
     if (box && box->mmap_addr)
     {

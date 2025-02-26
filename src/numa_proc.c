@@ -248,7 +248,7 @@ nodeProcessorList(int node, uint32_t** list)
 
             if (endptr == (char*) tokens->entry[i]->data)
             {
-                ERROR_PLAIN_PRINT(No digits were found);
+                ERROR_PRINT("No digits were found");
                 return -EFAULT;
             }
 
@@ -264,7 +264,7 @@ nodeProcessorList(int node, uint32_t** list)
                         }
                         else
                         {
-                            ERROR_PRINT(Number Of threads %d too large for NUMA node %d, count, node);
+                            ERROR_PRINT("Number Of threads %d too large for NUMA node %d", count, node);
                             return -EFAULT;
                         }
                         count++;
@@ -319,7 +319,7 @@ nodeDistanceList(int node, int numberOfNodes, uint32_t** list)
             }
             else
             {
-                ERROR_PRINT(Number Of nodes %d too large,count);
+                ERROR_PRINT("Number Of nodes %d too large", count);
                 return -EFAULT;
             }
             count++;

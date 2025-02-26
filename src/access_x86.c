@@ -71,7 +71,7 @@ access_x86_init(int cpu_id)
                 ret = access_x86_mmio_init(affinity_thread2socket_lookup[cpu_id]);
                 if (ret < 0)
                 {
-                    ERROR_PRINT(Initialization of MMIO access failed);
+                    ERROR_PRINT("Initialization of MMIO access failed");
                 }
             }
             else if (ARCH_SPR_GNR_SRF)
@@ -197,12 +197,12 @@ access_x86_finalize(int cpu_id)
         }
         if (cpuid_info.family == P6_FAMILY && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Finalize of MMIO access);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Finalize of MMIO access");
             access_x86_mmio_finalize(affinity_thread2socket_lookup[cpu_id]);
         }
         else if (ARCH_SPR_GNR_SRF)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Finalize of Fake access);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Finalize of Fake access");
             access_x86_translate_finalize(cpu_id);
         }
     }

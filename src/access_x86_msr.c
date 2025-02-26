@@ -122,9 +122,9 @@ access_x86_msr_init(const int cpu_id)
     fd = open(msr_file_name, O_RDWR);
     if (fd < 0)
     {
-        ERROR_PRINT(Cannot access MSR device file %s: %s.,msr_file_name , strerror(errno))
-        ERROR_PLAIN_PRINT(Please check if 'msr' module is loaded and device files have correct permissions);
-        ERROR_PLAIN_PRINT(Alternatively you might want to look into (sys)daemonmode);
+        ERROR_PRINT("Cannot access MSR device file %s: %s.", msr_file_name , strerror(errno));
+        ERROR_PRINT("Please check if 'msr' module is loaded and device files have correct permissions");
+        ERROR_PRINT("Alternatively you might want to look into (sys)daemonmode");
         free(msr_file_name);
         return -EPERM;
     }
@@ -135,12 +135,12 @@ access_x86_msr_init(const int cpu_id)
     // if (rdpmc_works_pmc < 0)
     // {
     //     rdpmc_works_pmc = test_rdpmc(cpu_id, 0, 0);
-    //     DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for PMC counters returned %d, rdpmc_works_pmc);
+    //     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for PMC counters returned %d", rdpmc_works_pmc);
     // }
     // if (rdpmc_works_fixed < 0)
     // {
     //     rdpmc_works_fixed = test_rdpmc(cpu_id, (1<<30), 0);
-    //     DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED counters returned %d, rdpmc_works_fixed);
+    //     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for FIXED counters returned %d", rdpmc_works_fixed);
     // }
     access_x86_rdpmc_init(cpu_id);
 
@@ -166,11 +166,11 @@ access_x86_msr_init(const int cpu_id)
     FD[cpu_id] = open(msr_file_name, O_RDWR);
     if ( FD[cpu_id] < 0 )
     {
-        ERROR_PRINT(Cannot access MSR device file %s in direct mode, msr_file_name);
+        ERROR_PRINT("Cannot access MSR device file %s in direct mode", msr_file_name);
         free(msr_file_name);
         return -EPERM;
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Opened MSR device %s for CPU %d,msr_file_name, cpu_id);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Opened MSR device %s for CPU %d", msr_file_name, cpu_id);
     free(msr_file_name);
 
     return 0;
@@ -183,7 +183,7 @@ access_x86_msr_finalize(const int cpu_id)
     access_x86_rdpmc_finalize(cpu_id);
     if (FD && FD[cpu_id] > 0)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Closing FD for CPU %d, cpu_id);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Closing FD for CPU %d", cpu_id);
         close(FD[cpu_id]);
         FD[cpu_id] = -1;
     }
@@ -194,7 +194,7 @@ access_x86_msr_finalize(const int cpu_id)
     }
     if (c == 0 && FD)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Free FD space);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Free FD space");
         memset(FD, -1, cpuid_topology.numHWThreads * sizeof(int));
         free(FD);
         FD = NULL;
@@ -210,7 +210,7 @@ access_x86_msr_read( const int cpu_id, uint32_t reg, uint64_t *data)
     ret = access_x86_rdpmc_read(cpu_id, reg, data);
     if (ret == -EAGAIN && FD[cpu_id] > 0)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MSR counter 0x%X with RDMSR instruction on CPU %d, reg, cpu_id);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read MSR counter 0x%X with RDMSR instruction on CPU %d", reg, cpu_id);
         ret = pread(FD[cpu_id], data, sizeof(*data), reg);
         if ( ret != sizeof(*data) )
         {
@@ -219,7 +219,7 @@ access_x86_msr_read( const int cpu_id, uint32_t reg, uint64_t *data)
     }
 //     if ((rdpmc_works_pmc == 1) && (reg >= MSR_PMC0) && (reg <=MSR_PMC7))
 //     {
-//         DEBUG_PRINT(DEBUGLEV_DEVELOP, Read PMC counter with RDPMC instruction with index %d, reg - MSR_PMC0);
+//         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read PMC counter with RDPMC instruction with index %d", reg - MSR_PMC0);
 //         if (__rdpmc(cpu_id, reg - MSR_PMC0, data) )
 //         {
 //             rdpmc_works_pmc = 0;
@@ -240,7 +240,7 @@ access_x86_msr_read( const int cpu_id, uint32_t reg, uint64_t *data)
 // fallback:
 //         if (FD[cpu_id] > 0)
 //         {
-//             DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MSR counter 0x%X with RDMSR instruction on CPU %d, reg, cpu_id);
+//             DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read MSR counter 0x%X with RDMSR instruction on CPU %d", reg, cpu_id);
 //             ret = pread(FD[cpu_id], data, sizeof(*data), reg);
 //             if ( ret != sizeof(*data) )
 //             {
@@ -257,7 +257,7 @@ access_x86_msr_write( const int cpu_id, uint32_t reg, uint64_t data)
     int ret;
     if (FD[cpu_id] > 0)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Write MSR counter 0x%X with WRMSR instruction on CPU %d data 0x%lX, reg, cpu_id, data);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Write MSR counter 0x%X with WRMSR instruction on CPU %d data 0x%lX", reg, cpu_id, data);
         ret = pwrite(FD[cpu_id], &data, sizeof(data), reg);
         if (ret != sizeof(data))
         {

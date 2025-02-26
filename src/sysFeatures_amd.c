@@ -38,6 +38,7 @@
 #include <sysFeatures_amd_hsmp.h>
 #include <sysFeatures_amd_rapl.h>
 #include <sysFeatures_amd_thermal.h>
+#include <sysFeatures_x86_tsc.h>
 #include <sysFeatures_common.h>
 #include <topology.h>
 #include <registers.h>
@@ -50,7 +51,7 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     int err = likwid_sysft_init_generic(amd_arch_features, out);
     if (err < 0)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init general x86 HWFeatures);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init general x86 HWFeatures");
     }
     else
     {
@@ -59,7 +60,7 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     err = likwid_sysft_init_amd_rapl(out);
     if (err < 0)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init AMD RAPL HWFeatures);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init AMD RAPL HWFeatures");
     }
     else
     {
@@ -68,7 +69,7 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     err = likwid_sysft_init_amd_hsmp(out);
     if (err < 0)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Failed to init AMD HSMP HWFeatures);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init AMD HSMP HWFeatures");
     }
     else
     {
@@ -85,7 +86,7 @@ static int amd_cpu_register_access_test()
     if (err < 0)
     {
         errno = -err;
-        ERROR_PRINT(Failed to initialize configuration);
+        ERROR_PRINT("Failed to initialize configuration");
         return err;
     }
     config = get_configuration();
@@ -284,6 +285,7 @@ static const _SysFeatureList* amd_k17_cpu_feature_inputs[] = {
     //&amd_k19_cpu_l1dflush_feature_list,
     &amd_k17_cpu_hwconfig_feature_list,
     &likwid_sysft_amd_k10_cpu_thermal_feature_list,
+    &likwid_sysft_x86_cpu_freq_feature_list,
     NULL,
 };
 
@@ -292,6 +294,7 @@ static const _SysFeatureList* amd_k19_zen3_cpu_feature_inputs[] = {
     &amd_k19_cpu_speculation_feature_list,
     &amd_k17_cpu_hwconfig_feature_list,
     &likwid_sysft_amd_k10_cpu_thermal_feature_list,
+    &likwid_sysft_x86_cpu_freq_feature_list,
     NULL,
 };
 
@@ -301,6 +304,7 @@ static const _SysFeatureList* amd_k19_zen4_cpu_feature_inputs[] = {
     &amd_k19_cpu_l1dflush_feature_list,
     &amd_k17_cpu_hwconfig_feature_list,
     &likwid_sysft_amd_k10_cpu_thermal_feature_list,
+    &likwid_sysft_x86_cpu_freq_feature_list,
     NULL,
 };
 

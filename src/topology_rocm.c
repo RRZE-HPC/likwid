@@ -148,12 +148,12 @@ topo_gpu_init(RocmDevice *device, int deviceId)
     err = (*hipGetDevicePropertiesTopoPtr)(&props, deviceId);
     if (err == hipErrorInvalidDevice)
     {
-        ERROR_PRINT(GPU %d is not a valid device, deviceId);
+        ERROR_PRINT("GPU %d is not a valid device", deviceId);
         return -ENODEV;
     }
     if (err != hipSuccess)
     {
-        ERROR_PRINT(Failed to retreive properties for GPU %d, deviceId);
+        ERROR_PRINT("Failed to retreive properties for GPU %d", deviceId);
         return EXIT_FAILURE;
     }
 
@@ -196,7 +196,7 @@ topo_gpu_init(RocmDevice *device, int deviceId)
     device->name = malloc(256 * sizeof(char));
     if (!device->name)
     {
-        ERROR_PRINT(Cannot allocate space for name of GPU %d, deviceId);
+        ERROR_PRINT("Cannot allocate space for name of GPU %d", deviceId);
         return -ENOMEM;
     }
     strncpy(device->name, props.name, 256);
@@ -220,7 +220,7 @@ topology_rocm_init()
     ret = topo_link_libraries();
     if (ret != 0)
     {
-        ERROR_PLAIN_PRINT(Cannot open ROCm HIP library to fill GPU topology);
+        ERROR_PRINT("Cannot open ROCm HIP library to fill GPU topology");
         return EXIT_FAILURE;
     }
 
@@ -228,7 +228,7 @@ topology_rocm_init()
     int num_devs = topo_get_numDevices();
     if (num_devs < 0)
     {
-        ERROR_PLAIN_PRINT(Cannot get number of devices from ROCm HIP library);
+        ERROR_PRINT("Cannot get number of devices from ROCm HIP library");
         return EXIT_FAILURE;
     }
 

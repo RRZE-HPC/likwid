@@ -144,10 +144,10 @@ access_client_startDaemon_direct(int cpu_id, struct sockaddr_un *address)
 
     if (access(exeprog, X_OK))
     {
-        ERROR_PRINT(Failed to find the daemon '%s'\n, exeprog);
+        ERROR_PRINT("Failed to find the daemon '%s'\n", exeprog);
         return -1;
     }
-    DEBUG_PRINT(DEBUGLEV_INFO, Starting daemon %s, exeprog);
+    DEBUG_PRINT(DEBUGLEV_INFO, "Starting daemon %s", exeprog);
     pid = fork();
 
     if (pid == 0)
@@ -166,13 +166,13 @@ access_client_startDaemon_direct(int cpu_id, struct sockaddr_un *address)
         if (ret < 0)
         {
             //ERRNO_PRINT;
-            ERROR_PRINT(Failed to execute the daemon '%s'\n, exeprog);
+            ERROR_PRINT("Failed to execute the daemon '%s'\n", exeprog);
             return ret;
         }
     }
     else if (pid < 0)
     {
-        ERROR_PRINT(Failed to fork access daemon for CPU %d, cpu_id);
+        ERROR_PRINT("Failed to fork access daemon for CPU %d", cpu_id);
         return pid;
     }
 
@@ -202,13 +202,13 @@ access_client_startDaemon_bridge(int cpu_id, const char *bridge_path, struct soc
     socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
-        ERROR_PRINT(socket() failed);
+        ERROR_PRINT("socket() failed");
         return -1;
     }
 
     address_length = sizeof(struct sockaddr_un);
     filepath = strdup(bridge_address.sun_path);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Waiting for bridge socket file %s, bridge_address.sun_path);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Waiting for bridge socket file %s", bridge_address.sun_path);
     while (access(bridge_address.sun_path, F_OK) && timeout > 0)
     {
         usleep(2500);
@@ -216,7 +216,7 @@ access_client_startDaemon_bridge(int cpu_id, const char *bridge_path, struct soc
     }
     if (!access(bridge_address.sun_path, F_OK))
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Bridge socket file %s exists, bridge_address.sun_path);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Bridge socket file %s exists", bridge_address.sun_path);
     }
     timeout = 1000;
 
@@ -232,7 +232,7 @@ access_client_startDaemon_bridge(int cpu_id, const char *bridge_path, struct soc
         }
 
         timeout--;
-        DEBUG_PRINT(DEBUGLEV_INFO, Still waiting for bridge socket %s for CPU %d..., filepath, cpu_id);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Still waiting for bridge socket %s for CPU %d...", filepath, cpu_id);
     }
 
     if (timeout <= 0)
@@ -247,7 +247,7 @@ access_client_startDaemon_bridge(int cpu_id, const char *bridge_path, struct soc
         close(socket_fd);
         return -1;
     }
-    DEBUG_PRINT(DEBUGLEV_INFO, Successfully opened bridge socket %s to daemon for CPU %d, filepath, cpu_id);
+    DEBUG_PRINT(DEBUGLEV_INFO, "Successfully opened bridge socket %s to daemon for CPU %d", filepath, cpu_id);
     free(filepath);
 
     // request socket creation via the connected bridge
@@ -255,7 +255,7 @@ access_client_startDaemon_bridge(int cpu_id, const char *bridge_path, struct soc
     io_count = send(socket_fd, (char*) &io_buf, sizeof(io_buf), 0);
 
     if (io_count != sizeof(io_buf)) {
-        ERROR_PRINT(Failed to send msg to the bridge socket)
+        ERROR_PRINT("Failed to send msg to the bridge socket");
         close(socket_fd);
         return -1;
     }
@@ -263,7 +263,7 @@ access_client_startDaemon_bridge(int cpu_id, const char *bridge_path, struct soc
     io_count = recv(socket_fd, (char*) &io_buf, sizeof(io_buf), 0);
 
     if (io_count != sizeof(io_buf)) {
-        ERROR_PRINT(Failed to recv msg from the bridge socket)
+        ERROR_PRINT("Failed to recv msg from the bridge socket");
         close(socket_fd);
         return -1;
     }
@@ -288,13 +288,13 @@ access_client_daemon_connect(int cpu_id, struct sockaddr_un *address) {
     socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
-        ERROR_PRINT(socket() failed);
+        ERROR_PRINT("socket() failed");
         return -1;
     }
 
     address_length = sizeof(struct sockaddr_un);
     filepath = strdup(address->sun_path);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Waiting for socket file %s, address->sun_path);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Waiting for socket file %s", address->sun_path);
     while (access(address->sun_path, F_OK) && timeout > 0)
     {
         usleep(2500);
@@ -302,7 +302,7 @@ access_client_daemon_connect(int cpu_id, struct sockaddr_un *address) {
     }
     if (!access(address->sun_path, F_OK))
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Socket file %s exists, address->sun_path);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Socket file %s exists", address->sun_path);
     }
     timeout = 1000;
 
@@ -318,7 +318,7 @@ access_client_daemon_connect(int cpu_id, struct sockaddr_un *address) {
         }
 
         timeout--;
-        DEBUG_PRINT(DEBUGLEV_INFO, Still waiting for socket %s for CPU %d..., filepath, cpu_id);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Still waiting for socket %s for CPU %d...", filepath, cpu_id);
     }
 
     if (timeout <= 0)
@@ -332,7 +332,7 @@ access_client_daemon_connect(int cpu_id, struct sockaddr_un *address) {
         close(socket_fd);
         return -1;
     }
-    DEBUG_PRINT(DEBUGLEV_INFO, Successfully opened socket %s to daemon for CPU %d, filepath, cpu_id);
+    DEBUG_PRINT(DEBUGLEV_INFO, "Successfully opened socket %s to daemon for CPU %d", filepath, cpu_id);
     free(filepath);
     return socket_fd;
 }
@@ -401,7 +401,7 @@ access_client_init(int cpu_id)
         cpuSockets[cpu_id] = access_client_startDaemon(cpu_id);
         if (cpuSockets[cpu_id] < 0)
         {
-            //ERROR_PRINT(Start of access daemon failed for CPU %d, cpu_id);
+            //ERROR_PRINT("Start of access daemon failed for CPU %d", cpu_id);
             pthread_mutex_unlock(&cpuLocks[cpu_id]);
             return cpuSockets[cpu_id];
         }
@@ -446,7 +446,7 @@ access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t 
             cpu_set_t cpuset;
             CPU_ZERO(&cpuset);
             CPU_SET(cpu_id, &cpuset);
-            DEBUG_PRINT(DEBUGLEV_INFO, Pinning daemon %d to CPU %d, daemon_pids[cpu_id], cpu_id);
+            DEBUG_PRINT(DEBUGLEV_INFO, "Pinning daemon %d to CPU %d", daemon_pids[cpu_id], cpu_id);
             sched_setaffinity(daemon_pids[cpu_id], sizeof(cpu_set_t), &cpuset);
             daemon_pinned[cpu_id] = 1;
         }
@@ -458,7 +458,7 @@ access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t 
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
         CPU_SET(cpu_id, &cpuset);
-        DEBUG_PRINT(DEBUGLEV_INFO, Pinning master daemon %d to CPU %d, daemon_pids[cpu_id], cpu_id);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Pinning master daemon %d to CPU %d", daemon_pids[cpu_id], cpu_id);
         sched_setaffinity(daemon_pids[cpu_id], sizeof(cpu_set_t), &cpuset);
         daemon_pinned[cpu_id] = 1;
     }
@@ -487,8 +487,8 @@ access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t 
         record.type = DAEMON_READ;
 
         pthread_mutex_lock(lockptr);
-        CHECK_ERROR(write(socket, &record, sizeof(AccessDataRecord)), socket write failed);
-        CHECK_ERROR(read(socket, &record, sizeof(AccessDataRecord)), socket read failed);
+        CHECK_ERROR(write(socket, &record, sizeof(AccessDataRecord)), "socket write failed");
+        CHECK_ERROR(read(socket, &record, sizeof(AccessDataRecord)), "socket read failed");
         *data = record.data;
         pthread_mutex_unlock(lockptr);
 
@@ -496,12 +496,12 @@ access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t 
         {
             if (dev == MSR_DEV)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon reading reg 0x%X at CPU %d,
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Got error '%s' from access daemon reading reg 0x%X at CPU %d",
                             access_client_strerror(record.errorcode), reg, record.cpu);
             }
             else
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon reading reg 0x%X on socket %d,
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Got error '%s' from access daemon reading reg 0x%X on socket %d",
                             access_client_strerror(record.errorcode), reg, record.cpu);
             }
             *data = 0;
@@ -543,7 +543,7 @@ access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t
             cpu_set_t cpuset;
             CPU_ZERO(&cpuset);
             CPU_SET(cpu_id, &cpuset);
-            DEBUG_PRINT(DEBUGLEV_INFO, Pinning daemon %d to CPU %d, daemon_pids[cpu_id], cpu_id);
+            DEBUG_PRINT(DEBUGLEV_INFO, "Pinning daemon %d to CPU %d", daemon_pids[cpu_id], cpu_id);
             sched_setaffinity(daemon_pids[cpu_id], sizeof(cpu_set_t), &cpuset);
             daemon_pinned[cpu_id] = 1;
         }
@@ -555,7 +555,7 @@ access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
         CPU_SET(cpu_id, &cpuset);
-        DEBUG_PRINT(DEBUGLEV_INFO, Pinning master daemon %d to CPU %d, daemon_pids[cpu_id], cpu_id);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Pinning master daemon %d to CPU %d", daemon_pids[cpu_id], cpu_id);
         sched_setaffinity(daemon_pids[cpu_id], sizeof(cpu_set_t), &cpuset);
         daemon_pinned[cpu_id] = 1;
     }
@@ -578,20 +578,20 @@ access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t
         record.type = DAEMON_WRITE;
 
         pthread_mutex_lock(lockptr);
-        CHECK_ERROR(write(socket, &record, sizeof(AccessDataRecord)), socket write failed);
-        CHECK_ERROR(read(socket, &record, sizeof(AccessDataRecord)), socket read failed);
+        CHECK_ERROR(write(socket, &record, sizeof(AccessDataRecord)), "socket write failed");
+        CHECK_ERROR(read(socket, &record, sizeof(AccessDataRecord)), "socket read failed");
         pthread_mutex_unlock(lockptr);
 
         if (record.errorcode != ERR_NOERROR)
         {
             if (dev == MSR_DEV)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon writing reg 0x%X at CPU %d,
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Got error '%s' from access daemon writing reg 0x%X at CPU %d",
                             access_client_strerror(record.errorcode), reg, record.cpu);
             }
             else
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon writing reg 0x%X on socket %d,
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Got error '%s' from access daemon writing reg 0x%X on socket %d",
                             access_client_strerror(record.errorcode), reg, record.cpu);
             }
             return access_client_errno(record.errorcode);
@@ -613,12 +613,12 @@ access_client_finalize(int cpu_id)
         memset(&record, 0, sizeof(AccessDataRecord));
         record.type = DAEMON_EXIT;
         record.cpu = cpu_id;
-        CHECK_ERROR(write(cpuSockets[cpu_id], &record, sizeof(AccessDataRecord)),socket write failed);
+        CHECK_ERROR(write(cpuSockets[cpu_id], &record, sizeof(AccessDataRecord)), "socket write failed");
         if (cpuSockets[cpu_id] == globalSocket)
         {
             globalSocket = -1;
         }
-        CHECK_ERROR(close(cpuSockets[cpu_id]),socket close failed);
+        CHECK_ERROR(close(cpuSockets[cpu_id]), "socket close failed");
         cpuSockets[cpu_id] = -1;
         if (daemon_pids[cpu_id] != 0)
         {
@@ -664,8 +664,8 @@ access_client_check(PciDeviceIndex dev, int cpu_id)
     if ((cpuSockets[cpu_id] > 0) || ((cpuSockets_open == 1) && (globalSocket > 0)))
     {
         pthread_mutex_lock(lockptr);
-        CHECK_ERROR(write(socket, &record, sizeof(AccessDataRecord)), socket write failed);
-        CHECK_ERROR(read(socket, &record, sizeof(AccessDataRecord)), socket read failed);
+        CHECK_ERROR(write(socket, &record, sizeof(AccessDataRecord)), "socket write failed");
+        CHECK_ERROR(read(socket, &record, sizeof(AccessDataRecord)), "socket read failed");
         pthread_mutex_unlock(lockptr);
         if (record.errorcode == ERR_NOERROR )
         {
@@ -675,12 +675,12 @@ access_client_check(PciDeviceIndex dev, int cpu_id)
         {
             if (dev == MSR_DEV)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Device check for dev %d on CPU %d with accessDaemon failed,
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Device check for dev %d on CPU %d with accessDaemon failed",
                             dev, record.cpu, access_client_strerror(record.errorcode));
             }
             else
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Device check for dev %d on socket %d with accessDaemon failed,
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Device check for dev %d on socket %d with accessDaemon failed",
                             dev, record.cpu, access_client_strerror(record.errorcode));
             }
         }

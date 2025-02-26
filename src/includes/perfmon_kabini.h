@@ -80,7 +80,7 @@ int k16_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     }
     if (flags != currentConfig[cpu_id][index])
     {
-        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_PMC");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
@@ -99,7 +99,7 @@ int k16_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
     if (flags != currentConfig[cpu_id][index])
     {
-        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_UNCORE);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_UNCORE");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
@@ -144,7 +144,7 @@ int k16_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     }
     if (flags != currentConfig[cpu_id][index])
     {
-        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_CBOX);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_CBOX");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
@@ -312,7 +312,7 @@ int perfmon_readCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
                 ((type == CBOX0) && (haveTLock)))
             {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
-                VERBOSEPRINTREG(cpu_id, counter, counter_result, CLEAR_CTRL);
+                VERBOSEPRINTREG(cpu_id, counter, counter_result, "CLEAR_CTRL");
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
@@ -351,9 +351,9 @@ int perfmon_finalizeCountersThread_kabini(int thread_id, PerfmonEventSet* eventS
             ((type == UNCORE) && (haveSLock)) ||
             ((type == CBOX0) && (haveTLock)))
         {
-            VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, 0x0ULL, CLEAR_CTRL);
+            VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, 0x0ULL, "CLEAR_CTRL");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, 0x0ULL));
-            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, 0x0ULL, CLEAR_CTR);
+            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
             eventSet->events[i].threadCounter[thread_id].init = FALSE;
         }

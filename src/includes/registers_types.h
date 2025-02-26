@@ -1111,7 +1111,10 @@ static char* RegisterTypeNames[MAX_UNITS] = {
         ((type) >= 128 && (type) <= 191 ? eventset->regTypeMask3 & (1ULL<<((type)-128)) : \
         ((type) >= 192 && (type) <= 255 ? eventset->regTypeMask4 & (1ULL<<((type)-192)) : \
         ((type) >= 256 && (type) <= 319 ? eventset->regTypeMask5 & (1ULL<<((type)-256)) : \
-        ((type) >= 320 && (type) <= 383 ? eventset->regTypeMask6 & (1ULL<<((type)-320)) : 0x0ULL)))))))
+        ((type) >= 320 && (type) <= 383 ? eventset->regTypeMask6 & (1ULL<<((type)-320)) : \
+        ((type) >= 384 && (type) <= 447 ? eventset->regTypeMask7 & (1ULL<<((type)-384)) : \
+        ((type) >= 448 && (type) <= 511 ? eventset->regTypeMask8 & (1ULL<<((type)-448)) : \
+        ((type) >= 512 && (type) <= 575 ? eventset->regTypeMask9 & (1ULL<<((type)-512)) : 0x0ULL))))))))))
 
 #define SETTYPE(eventset, type) \
         if ((type) >= 0 && (type) <= 63) \
@@ -1138,9 +1141,21 @@ static char* RegisterTypeNames[MAX_UNITS] = {
         { \
             eventset->regTypeMask6 |= (1ULL<<((type)-320)); \
         } \
+        else if ((type) >= 384 && (type) <= 447) \
+        { \
+            eventset->regTypeMask7 |= (1ULL<<((type)-384)); \
+        } \
+        else if ((type) >= 448 && (type) <= 511) \
+        { \
+            eventset->regTypeMask8 |= (1ULL<<((type)-448)); \
+        } \
+        else if ((type) >= 512 && (type) <= 575) \
+        { \
+            eventset->regTypeMask9 |= (1ULL<<((type)-512)); \
+        } \
         else \
         { \
-            ERROR_PRINT(Cannot set out-of-bounds type %d, (type)); \
+            ERROR_PRINT("Cannot set out-of-bounds type %d", (type)); \
         }
 #define MEASURE_CORE(eventset) \
         (eventset->regTypeMask1 & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(METRICS)))
@@ -1148,7 +1163,7 @@ static char* RegisterTypeNames[MAX_UNITS] = {
 #define MEASURE_METRICS(eventset) ((eventset)->regTypeMask1 & (REG_TYPE_MASK(METRICS))
 
 #define MEASURE_UNCORE(eventset) \
-        (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(PERF)|REG_TYPE_MASK(POWER)|REG_TYPE_MASK(METRICS)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4 || eventset->regTypeMask5 || eventset->regTypeMask6 )
+        (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(PERF)|REG_TYPE_MASK(POWER)|REG_TYPE_MASK(METRICS)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4 || eventset->regTypeMask5 || eventset->regTypeMask6 || eventset->regTypeMask7 || eventset->regTypeMask8 || eventset->regTypeMask9)
 
 
 typedef struct {

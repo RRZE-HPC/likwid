@@ -321,7 +321,7 @@ freq_client_startDaemon()
         fprintf(stderr, "Failed to find the daemon '%s'\n", exeprog);
         return -1;
     }
-    DEBUG_PRINT(DEBUGLEV_INFO, Starting daemon %s, exeprog);
+    DEBUG_PRINT(DEBUGLEV_INFO, "Starting daemon %s", exeprog);
     pid = fork();
 
     if (pid == 0)
@@ -353,7 +353,7 @@ freq_client_startDaemon()
     socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
-        ERROR_PRINT(socket() failed);
+        ERROR_PRINT("socket() failed");
         return -1;
     }
 
@@ -361,7 +361,7 @@ freq_client_startDaemon()
     address_length = sizeof(address);
     snprintf(address.sun_path, sizeof(address.sun_path), TOSTRING(LIKWIDSOCKETBASE) "-freq-%d", pid);
     filepath = strdup(address.sun_path);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Waiting for socket file %s, address.sun_path);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Waiting for socket file %s", address.sun_path);
     while (access(address.sun_path, F_OK) && timeout > 0)
     {
         usleep(1000);
@@ -369,7 +369,7 @@ freq_client_startDaemon()
     }
     if (!access(address.sun_path, F_OK))
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Socket file %s exists, address.sun_path);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Socket file %s exists", address.sun_path);
     }
 
     res = connect(socket_fd, (struct sockaddr *) &address, address_length);
@@ -399,7 +399,7 @@ freq_client_startDaemon()
         socket_fd = -1;
         return -1;
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Successfully opened socket %s to daemon, filepath);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Successfully opened socket %s to daemon", filepath);
     free(filepath);
 
     return socket_fd;
@@ -464,39 +464,39 @@ static int freq_send_direct(FreqDataRecordType type, FreqDataRecordLocation loc,
         case FREQ_LOC_CUR:
             fd = f->cur_freq;
             only_read = 1;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_CUR FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_CUR FD %d", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_MIN:
             fd = f->min_freq;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_MIN FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_MIN FD %d", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_MAX:
             fd = f->max_freq;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_MAX FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_MAX FD %d", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_GOV:
             fd = f->set_gov;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_GOV FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_GOV FD %d", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_AVAIL_GOV:
             fd = f->avail_govs;
             only_read = 1;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_AVAIL_GOV FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_AVAIL_GOV FD %d", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_AVAIL_FREQ:
             fd = f->avail_freq;
             only_read = 1;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_AVAIL_FREQ FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_AVAIL_FREQ FD %d", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_CONF_MIN:
             fd = f->conf_min_freq;
             only_read = 1;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_CONF_MIN FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_CONF_MIN FD %d", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_CONF_MAX:
             fd = f->conf_max_freq;
             only_read = 1;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_CONF_MAX FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_CONF_MAX FD %d", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         default:
             fprintf(stderr,"Invalid location specified in record\n");
@@ -569,9 +569,9 @@ static int freq_send_client(FreqDataRecordType type, FreqDataRecordLocation loc,
         record.errorcode = FREQ_ERR_NONE;
         snprintf(record.data, LIKWID_FREQUENCY_MAX_DATA_LENGTH, "%.*s", len, data);
         record.datalen = len;
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, DAEMON CMD %s CPU %d LOC %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, loc);
-        CHECK_ERROR(write(fsocket, &record, sizeof(FreqDataRecord)),socket write failed);
-        CHECK_ERROR(read(fsocket, &record, sizeof(FreqDataRecord)), socket read failed);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "DAEMON CMD %s CPU %d LOC %d", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, loc);
+        CHECK_ERROR(write(fsocket, &record, sizeof(FreqDataRecord)), "socket write failed");
+        CHECK_ERROR(read(fsocket, &record, sizeof(FreqDataRecord)), "socket read failed");
         if (record.errorcode != FREQ_ERR_NONE)
         {
             switch(record.errorcode)
@@ -602,9 +602,9 @@ static void freq_finalize_client()
     {
         memset(&record, 0, sizeof(FreqDataRecord));
         record.type = FREQ_EXIT;
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, DAEMON CMD CLOSE);
-        CHECK_ERROR(write(fsocket, &record, sizeof(FreqDataRecord)),socket write failed);
-        CHECK_ERROR(close(fsocket),socket close failed);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "DAEMON CMD CLOSE");
+        CHECK_ERROR(write(fsocket, &record, sizeof(FreqDataRecord)), "socket write failed");
+        CHECK_ERROR(close(fsocket), "socket close failed");
         fsocket = -1;
     }
     return;
@@ -632,7 +632,7 @@ static int getAMDTurbo(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -641,7 +641,7 @@ static int getAMDTurbo(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -650,7 +650,7 @@ static int getAMDTurbo(const int cpu_id)
     err = HPMread(cpu_id, MSR_DEV, 0xC0010015, &tmp);
     if (err)
     {
-        ERROR_PLAIN_PRINT(Cannot read register 0xC0010015);
+        ERROR_PRINT("Cannot read register 0xC0010015");
         return err;
     }
 
@@ -680,7 +680,7 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -689,7 +689,7 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -698,7 +698,7 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
     err = HPMread(cpu_id, MSR_DEV, 0xC0010015, &tmp);
     if (err)
     {
-        ERROR_PLAIN_PRINT(Cannot read register 0xC0010015);
+        ERROR_PRINT("Cannot read register 0xC0010015");
         return err;
     }
 
@@ -713,7 +713,7 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
     err = HPMwrite(cpu_id, MSR_DEV, 0xC0010015, tmp);
     if (err)
     {
-        ERROR_PLAIN_PRINT(Cannot write register 0xC0010015);
+        ERROR_PRINT("Cannot write register 0xC0010015");
         return err;
     }
 
@@ -741,7 +741,7 @@ static int getIntelTurbo(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -750,7 +750,7 @@ static int getIntelTurbo(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -759,7 +759,7 @@ static int getIntelTurbo(const int cpu_id)
     err = HPMread(cpu_id, MSR_DEV, MSR_IA32_MISC_ENABLE, &tmp);
     if (err)
     {
-        ERROR_PRINT(Cannot read register 0x%x, MSR_IA32_MISC_ENABLE);
+        ERROR_PRINT("Cannot read register 0x%x", MSR_IA32_MISC_ENABLE);
         return err;
     }
 
@@ -789,7 +789,7 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -798,7 +798,7 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -807,7 +807,7 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
     err = HPMread(cpu_id, MSR_DEV, MSR_IA32_MISC_ENABLE, &tmp);
     if (err)
     {
-        ERROR_PRINT(Cannot read register 0x%x, MSR_IA32_MISC_ENABLE);
+        ERROR_PRINT("Cannot read register 0x%x", MSR_IA32_MISC_ENABLE);
         return err;
     }
     if (turbo)
@@ -821,7 +821,7 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
     err = HPMwrite(cpu_id, MSR_DEV, MSR_IA32_MISC_ENABLE, tmp);
     if (err)
     {
-        ERROR_PRINT(Cannot write register 0x%x, MSR_IA32_MISC_ENABLE);
+        ERROR_PRINT("Cannot write register 0x%x", MSR_IA32_MISC_ENABLE);
         return err;
     }
     return err == 0;
@@ -858,7 +858,7 @@ static int getIntelHWP(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -867,7 +867,7 @@ static int getIntelHWP(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -876,7 +876,7 @@ static int getIntelHWP(const int cpu_id)
     err = HPMread(cpu_id, MSR_DEV, MSR_HWP_ENABLE, &tmp);
     if (err)
     {
-        ERROR_PRINT(Cannot read register 0x%x, MSR_HWP_ENABLE);
+        ERROR_PRINT("Cannot read register 0x%x", MSR_HWP_ENABLE);
         return err;
     }
 
@@ -904,7 +904,7 @@ static int getBaseFreq(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -913,7 +913,7 @@ static int getBaseFreq(const int cpu_id)
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            ERROR_PRINT("Cannot get access to MSRs");
             return err;
         }
     }
@@ -949,21 +949,21 @@ _freqInit(void)
         }
         if (config.daemonMode == ACCESSMODE_DAEMON)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for daemon mode);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adjusting functions for daemon mode");
             freq_init_f = freq_init_client;
             freq_send = freq_send_client;
             freq_finalize_f = freq_finalize_client;
         }
         else if (config.daemonMode == ACCESSMODE_DIRECT)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for direct mode);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adjusting functions for direct mode");
             freq_init_f = freq_init_direct;
             freq_send = freq_send_direct;
             freq_finalize_f = freq_finalize_direct;
         }
         else if (config.daemonMode == ACCESSMODE_PERF)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Frequency module not usable in perf_event mode);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Frequency module not usable in perf_event mode");
         }
         else
         {

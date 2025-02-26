@@ -292,7 +292,7 @@ cpuFeatures_init(void)
         int ret = HPMaddThread(cpuid_topology.threadPool[i].apicId);
         if (ret != 0)
         {
-            ERROR_PRINT(Cannot get access to register CPU feature register on CPU %d, cpuid_topology.threadPool[i].apicId);
+            ERROR_PRINT("Cannot get access to register CPU feature register on CPU %d", cpuid_topology.threadPool[i].apicId);
             return;
         }
     }

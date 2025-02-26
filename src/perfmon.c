@@ -232,13 +232,13 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
     }
     if (type == NOTYPE)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, WARNING: Counter %s not available on the current system. Counter results defaults to 0.,bdata(reg));
+        DEBUG_PRINT(DEBUGLEV_INFO, "WARNING: Counter %s not available on the current system. Counter results defaults to 0.", bdata(reg));
         return NOTYPE;
     }
     checkName = bfromcstr(counter_map[index].key);
     if (bstrcmp(reg, checkName) != BSTR_OK)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, WARNING: Counter %s does not exist ,bdata(reg));
+        DEBUG_PRINT(DEBUGLEV_INFO, "WARNING: Counter %s does not exist", bdata(reg));
         bdestroy(checkName);
         return NOTYPE;
     }
@@ -246,7 +246,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
     err = HPMcheck(counter_map[index].device, 0);
     if (!err)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, WARNING: The device %s for counter %s does not exist, pci_device_names[counter_map[index].device], bdata(reg));
+        DEBUG_PRINT(DEBUGLEV_INFO, "WARNING: The device %s for counter %s does not exist", pci_device_names[counter_map[index].device], bdata(reg));
         return NOTYPE;
     }
     if ((type != THERMAL) && (type != VOLTAGE) && (type != POWER) && (type != WBOX0FIX))
@@ -263,12 +263,12 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
         {
             if (err == -ENODEV)
             {
-                DEBUG_PRINT(DEBUGLEV_DETAIL, Device %s not accessible on this machine,
+                DEBUG_PRINT(DEBUGLEV_DETAIL, "Device %s not accessible on this machine",
                                          pci_devices[box_map[type].device].name);
             }
             else
             {
-                DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not readable on this machine,
+                DEBUG_PRINT(DEBUGLEV_DETAIL, "Counter %s not readable on this machine",
                                              counter_map[index].key);
             }
             type = NOTYPE;
@@ -280,12 +280,12 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
             {
                 if (err == -ENODEV)
                 {
-                    DEBUG_PRINT(DEBUGLEV_DETAIL, Device %s not accessible on this machine,
+                    DEBUG_PRINT(DEBUGLEV_DETAIL, "Device %s not accessible on this machine",
                                              pci_devices[box_map[type].device].name);
                 }
                 else
                 {
-                    DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not writeable on this machine,
+                    DEBUG_PRINT(DEBUGLEV_DETAIL, "Counter %s not writeable on this machine",
                                              counter_map[index].key);
                 }
                 type = NOTYPE;
@@ -296,7 +296,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
         {
             if (force == 1 || groupSet->numberOfGroups > 1)
             {
-                DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s has bits set (0x%llx) but we are forced to overwrite them,
+                DEBUG_PRINT(DEBUGLEV_DETAIL, "Counter %s has bits set (0x%llx) but we are forced to overwrite them",
                                              counter_map[index].key, LLU_CAST tmp);
 /*                err = HPMwrite(testcpu, counter_map[index].device, reg, 0x0ULL);*/
 /*                for (int i = 0; i < groupSet->numberOfThreads; i++)*/
@@ -318,7 +318,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
         err = HPMread(testcpu, MSR_DEV, counter_map[index].counterRegister, &tmp);
         if (err != 0)
         {
-            DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not readable on this machine,
+            DEBUG_PRINT(DEBUGLEV_DETAIL, "Counter %s not readable on this machine",
                                          counter_map[index].key);
             type = NOTYPE;
         }
@@ -606,7 +606,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
         if (!(OPTIONS_TYPE_MASK(event->options[i].type) & (counter_map[index].optionMask|event->optionMask)))
 #endif
         {
-            DEBUG_PRINT(DEBUGLEV_INFO,Removing Option %s not valid for register %s,
+            DEBUG_PRINT(DEBUGLEV_INFO, "Removing Option %s not valid for register %s",
                         eventOptionTypeName[event->options[i].type],
                         counter_map[index].key);
             event->options[i].type = EVENT_OPTION_NONE;
@@ -635,7 +635,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
             }
             else
             {
-                ERROR_PLAIN_PRINT(Cannot set threshold option to default. no more space in options list);
+                ERROR_PRINT("Cannot set threshold option to default. no more space in options list");
             }
         }
         else if (event->options[i].type == EVENT_OPTION_OCCUPANCY)
@@ -670,7 +670,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
             }
             else
             {
-                ERROR_PLAIN_PRINT(Cannot set threshold option to default. no more space in options list);
+                ERROR_PRINT("Cannot set threshold option to default. no more space in options list");
             }
         }
     }
@@ -756,7 +756,7 @@ perfmon_check_counter_map(int cpu_id)
     int own_hpm = 0;
     if (perfmon_numCounters == 0 || perfmon_numArchEvents == 0)
     {
-        ERROR_PLAIN_PRINT(Counter and event maps not initialized.);
+        ERROR_PRINT("Counter and event maps not initialized.");
         return;
     }
 
@@ -765,7 +765,7 @@ perfmon_check_counter_map(int cpu_id)
 
     if (!lock_check())
     {
-        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        ERROR_PRINT("Access to performance monitoring registers locked");
         return;
     }
 #ifndef LIKWID_USE_PERFEVENT
@@ -774,13 +774,13 @@ perfmon_check_counter_map(int cpu_id)
         HPMinit();
         if (HPMaddThread(cpu_id) != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot check counters without access to performance counters)
+            ERROR_PRINT("Cannot check counters without access to performance counters");
             return;
         }
         own_hpm = 1;
     }
 #endif
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Checking %d counters, perfmon_numCounters);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Checking %d counters", perfmon_numCounters);
     int startpmcindex = -1;
     for (int i=0;i<perfmon_numCounters;i++)
     {
@@ -800,7 +800,7 @@ perfmon_check_counter_map(int cpu_id)
             counter_map[i].optionMask = 0x0ULL;
         }
 #ifndef LIKWID_USE_PERFEVENT
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Counter %s at pos %d with dev %s (%d), counter_map[i].key, i, pci_device_names[counter_map[i].device], counter_map[i].device, cpu_id);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Counter %s at pos %d with dev %s (%d)", counter_map[i].key, i, pci_device_names[counter_map[i].device], counter_map[i].device, cpu_id);
         if (HPMcheck(counter_map[i].device, cpu_id))
         {
             uint32_t reg = counter_map[i].configRegister;
@@ -826,7 +826,7 @@ perfmon_check_counter_map(int cpu_id)
         if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO) {
             type = FPMC;
         }
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Counter %s at pos %d with dev %s (%d): %s, counter_map[i].key, i, pci_device_names[counter_map[i].device], counter_map[i].device, translate_types[type]);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Counter %s at pos %d with dev %s (%d): %s", counter_map[i].key, i, pci_device_names[counter_map[i].device], counter_map[i].device, translate_types[type]);
         if (!translate_types[type])
         {
             counter_map[i].type = NOTYPE;
@@ -895,7 +895,7 @@ perfmon_check_counter_map(int cpu_id)
         bdestroy(estr);
         if (!found)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot respect limit %s. Removing event %s, eventHash[i].limit, eventHash[i].name);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Cannot respect limit %s. Removing event %s", eventHash[i].limit, eventHash[i].name);
             eventHash[i].limit = "";
         }
     }
@@ -914,10 +914,10 @@ perfmon_init_maps(void)
         return 0;
     }
 #if defined(__x86_64__) || defined(__i386__) || defined(_ARCH_PPC)
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Initialize maps for family 0x%X model 0x%X stepping 0x%X, cpuid_info.family, cpuid_info.model, cpuid_info.stepping);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Initialize maps for family 0x%X model 0x%X stepping 0x%X", cpuid_info.family, cpuid_info.model, cpuid_info.stepping);
 #endif
 #if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Initialize maps for family 0x%X vendor 0x%X part 0x%X, cpuid_info.family, cpuid_info.family, cpuid_info.model);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Initialize maps for family 0x%X vendor 0x%X part 0x%X", cpuid_info.family, cpuid_info.family, cpuid_info.model);
 #endif
     switch ( cpuid_info.family )
     {
@@ -976,7 +976,7 @@ perfmon_init_maps(void)
                     break;
 
                 case CORE_DUO:
-                    ERROR_PLAIN_PRINT(Unsupported Processor);
+                    ERROR_PRINT("Unsupported Processor");
                     err = -EINVAL;
                     break;
 
@@ -1248,7 +1248,7 @@ perfmon_init_maps(void)
                     break;
 
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported Intel Processor);
+                    ERROR_PRINT("Unsupported Intel Processor");
                     err = -EINVAL;
                     break;
             }
@@ -1267,7 +1267,7 @@ perfmon_init_maps(void)
                     break;
 
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported Processor);
+                    ERROR_PRINT("Unsupported Processor");
                     err = -EINVAL;
                     break;
             }
@@ -1333,7 +1333,7 @@ perfmon_init_maps(void)
                     translate_types = zen2_translate_types;
                     break;
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
+                    ERROR_PRINT("Unsupported AMD Zen Processor");
                     err = -EINVAL;
                     break;
             }
@@ -1372,7 +1372,7 @@ perfmon_init_maps(void)
                     translate_types = zen4c_translate_types;
                     break;
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
+                    ERROR_PRINT("Unsupported AMD Zen Processor");
                     err = -EINVAL;
                     break;
             }
@@ -1398,7 +1398,7 @@ perfmon_init_maps(void)
                     perfmon_numCounters = NUM_COUNTERS_POWER9;
                     break;
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported PPC Processor);
+                    ERROR_PRINT("Unsupported PPC Processor");
                     err = -EINVAL;
                     break;
             }
@@ -1441,7 +1441,7 @@ perfmon_init_maps(void)
                     }
                     break;
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported ARMv7 Processor);
+                    ERROR_PRINT("Unsupported ARMv7 Processor");
                     err = -EINVAL;
                     break;
             }
@@ -1506,7 +1506,7 @@ perfmon_init_maps(void)
                             translate_types = nvidiagrace_translate_types;
                             break;
                         default:
-                            ERROR_PLAIN_PRINT(Unsupported ARMv8 Processor);
+                            ERROR_PRINT("Unsupported ARMv8 Processor");
                             err = -EINVAL;
                             break;
                     }
@@ -1523,7 +1523,7 @@ perfmon_init_maps(void)
                             translate_types = cav_tx2_translate_types;
                             break;
                         default:
-                            ERROR_PLAIN_PRINT(Unsupported Cavium/Marvell Processor);
+                            ERROR_PRINT("Unsupported Cavium/Marvell Processor");
                             err = -EINVAL;
                             break;
                     }
@@ -1540,7 +1540,7 @@ perfmon_init_maps(void)
                             translate_types = cav_tx2_translate_types;
                             break;
                         default:
-                            ERROR_PLAIN_PRINT(Unsupported Cavium/Marvell Processor);
+                            ERROR_PRINT("Unsupported Cavium/Marvell Processor");
                             err = -EINVAL;
                             break;
                     }
@@ -1557,7 +1557,7 @@ perfmon_init_maps(void)
                             translate_types = a64fx_translate_types;
                             break;
                         default:
-                            ERROR_PLAIN_PRINT(Unsupported Fujitsu Processor);
+                            ERROR_PRINT("Unsupported Fujitsu Processor");
                             err = -EINVAL;
                             break;
                     }
@@ -1574,7 +1574,7 @@ perfmon_init_maps(void)
                             translate_types = tsv110_translate_types;
                             break;
                         default:
-                            ERROR_PLAIN_PRINT(Unsupported Huawei Processor);
+                            ERROR_PRINT("Unsupported Huawei Processor");
                             err = -EINVAL;
                             break;
                     }
@@ -1592,20 +1592,20 @@ perfmon_init_maps(void)
                              translate_types = applem1_translate_types;
                              break;
                          default:
-                             ERROR_PLAIN_PRINT(Unsupported Apple Processor);
+                             ERROR_PRINT("Unsupported Apple Processor");
                              err = -EINVAL;
                              break;
                     }
                     break;
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported ARMv8 Processor);
+                    ERROR_PRINT("Unsupported ARMv8 Processor");
                     err = -EINVAL;
                     break;
             }
             break;
 
         default:
-            ERROR_PLAIN_PRINT(Unsupported Processor);
+            ERROR_PRINT("Unsupported Processor");
             err = -EINVAL;
             break;
     }
@@ -1614,11 +1614,11 @@ perfmon_init_maps(void)
     {
         int cpu_id = sched_getcpu();
         HPMaddThread(cpu_id);
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding GENERIC_EVENT);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding GENERIC_EVENT");
         PerfmonEvent* tmp = malloc((perfmon_numArchEvents+10)*sizeof(PerfmonEvent));
         if (tmp)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Copying %d events from input list, perfmon_numArchEvents);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Copying %d events from input list", perfmon_numArchEvents);
             memcpy(tmp, eventHash, perfmon_numArchEvents*sizeof(PerfmonEvent));
             memset(tmp + perfmon_numArchEvents, '\0', 10*sizeof(PerfmonEvent));
             eventHash = tmp;
@@ -1647,7 +1647,7 @@ perfmon_init_maps(void)
                             bstring bkey = bfromcstr(counter_map[k].key);
                             if (bstrncmp(xlist->entry[j], bkey, blength(xlist->entry[j])) == BSTR_OK)
                             {
-                                DEBUG_PRINT(DEBUGLEV_DEVELOP, Checking counter %s (device %d (%s), HWThread %d), bdata(bkey), pci_device_names[counter_map[k].device], counter_map[k].device, cpu_id);
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Checking counter %s (device %d (%s), HWThread %d)", bdata(bkey), pci_device_names[counter_map[k].device], counter_map[k].device, cpu_id);
 #ifndef LIKWID_USE_PERFEVENT
                                 if (HPMcheck(counter_map[k].device, cpu_id))
 #else
@@ -1686,7 +1686,7 @@ perfmon_init_maps(void)
             perfmon_numArchEvents++;
             added_generic_event = 1;
         }
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding GENERIC_EVENT done);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding GENERIC_EVENT done");
     }
 
     return 0;
@@ -1758,7 +1758,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
 
                 case CORE_DUO:
-                    ERROR_PLAIN_PRINT(Unsupported Processor);
+                    ERROR_PRINT("Unsupported Processor");
                     err = -EINVAL;
                     break;
 
@@ -1956,7 +1956,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
 
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported Processor);
+                    ERROR_PRINT("Unsupported Processor");
                     err = -EINVAL;
                     break;
             }
@@ -1976,7 +1976,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
 
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported Processor);
+                    ERROR_PRINT("Unsupported Processor");
                     err = -EINVAL;
                     break;
             }
@@ -2044,7 +2044,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen2;
                     break;
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported AMD K17 Processor);
+                    ERROR_PRINT("Unsupported AMD K17 Processor");
                     err = -EINVAL;
                     break;
             }
@@ -2087,14 +2087,14 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen4c;
                     break;
                 default:
-                    ERROR_PLAIN_PRINT(Unsupported AMD K19 Processor);
+                    ERROR_PRINT("Unsupported AMD K19 Processor");
                     err = -EINVAL;
                     break;
             }
             break;
 
         default:
-            ERROR_PLAIN_PRINT(Unsupported Processor);
+            ERROR_PRINT("Unsupported Processor");
             err = -EINVAL;
             break;
     }
@@ -2132,13 +2132,13 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
 
     if (nrThreads <= 0)
     {
-        ERROR_PRINT(Number of threads must be greater than 0 but only %d given,nrThreads);
+        ERROR_PRINT("Number of threads must be greater than 0 but only %d given", nrThreads);
         return -EINVAL;
     }
 
     if (!lock_check())
     {
-        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        ERROR_PRINT("Access to performance monitoring registers locked");
         return -EINVAL;
     }
 
@@ -2149,7 +2149,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
 
     if ((cpuid_info.family == 0) && (cpuid_info.model == 0))
     {
-        ERROR_PLAIN_PRINT(Topology module not inialized. Needed to determine current CPU type);
+        ERROR_PRINT("Topology module not inialized. Needed to determine current CPU type");
         return -ENODEV;
     }
 
@@ -2165,13 +2165,13 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     groupSet = (PerfmonGroupSet*) malloc(sizeof(PerfmonGroupSet));
     if (groupSet == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate group descriptor);
+        ERROR_PRINT("Cannot allocate group descriptor");
         return -ENOMEM;
     }
     groupSet->threads = (PerfmonThread*) malloc(nrThreads * sizeof(PerfmonThread));
     if (groupSet->threads == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate set of threads);
+        ERROR_PRINT("Cannot allocate set of threads");
         free(groupSet);
         groupSet = NULL;
         return -ENOMEM;
@@ -2179,7 +2179,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     currentConfig = malloc(cpuid_topology.numHWThreads*sizeof(uint64_t*));
     if (!currentConfig)
     {
-        ERROR_PLAIN_PRINT(Cannot allocate config lists);
+        ERROR_PRINT("Cannot allocate config lists");
         free(groupSet);
         groupSet = NULL;
         return -ENOMEM;
@@ -2217,7 +2217,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     ret = HPMinit();
     if (ret)
     {
-        ERROR_PLAIN_PRINT(Cannot set access functions);
+        ERROR_PRINT("Cannot set access functions");
         free(groupSet->threads);
         free(groupSet);
         groupSet = NULL;
@@ -2235,7 +2235,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     ret = perfmon_init_maps();
     if (ret < 0)
     {
-        ERROR_PRINT(Failed to initialize event and counter lists for %s, cpuid_info.name);
+        ERROR_PRINT("Failed to initialize event and counter lists for %s", cpuid_info.name);
         free(groupSet->threads);
         free(groupSet);
         groupSet = NULL;
@@ -2253,7 +2253,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     ret = perfmon_init_funcs(&initialize_power, &initialize_thermal);
     if (ret < 0)
     {
-        ERROR_PRINT(Failed to initialize event and counter lists for %s, cpuid_info.name);
+        ERROR_PRINT("Failed to initialize event and counter lists for %s", cpuid_info.name);
         free(groupSet->threads);
         free(groupSet);
         groupSet = NULL;
@@ -2275,7 +2275,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         ret = HPMaddThread(threadsToCpu[i]);
         if (ret != 0)
         {
-            ERROR_PLAIN_PRINT(Cannot get access to performance counters);
+            ERROR_PRINT("Cannot get access to performance counters");
             free(groupSet->threads);
             free(groupSet);
             groupSet = NULL;
@@ -2410,30 +2410,30 @@ perfmon_addEventSet(const char* eventCString)
     Configuration_t config;
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     config = get_configuration();
 
     if (eventCString == NULL)
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_INFO, Event string is empty. Trying environment variable LIKWID_EVENTS);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Event string is empty. Trying environment variable LIKWID_EVENTS");
         eventCString = getenv("LIKWID_EVENTS");
         if (eventCString == NULL)
         {
-            ERROR_PLAIN_PRINT(Cannot read event string. Also event string from environment variable is empty);
+            ERROR_PRINT("Cannot read event string. Also event string from environment variable is empty");
             return -EINVAL;
         }
     }
 
     if (strchr(eventCString, '-') != NULL)
     {
-        ERROR_PLAIN_PRINT(Event string contains invalid character -);
+        ERROR_PRINT("Event string contains invalid character -");
         return -EINVAL;
     }
     if (strchr(eventCString, '.') != NULL)
     {
-        ERROR_PLAIN_PRINT(Event string contains invalid character .);
+        ERROR_PRINT("Event string contains invalid character .");
         return -EINVAL;
     }
     if (groupSet->numberOfActiveGroups == 0)
@@ -2441,7 +2441,7 @@ perfmon_addEventSet(const char* eventCString)
         groupSet->groups = (PerfmonEventSet*) malloc(sizeof(PerfmonEventSet));
         if (groupSet->groups == NULL)
         {
-            ERROR_PLAIN_PRINT(Cannot allocate initialize of event group list);
+            ERROR_PRINT("Cannot allocate initialize of event group list");
             return -ENOMEM;
         }
         groupSet->numberOfGroups = 1;
@@ -2460,15 +2460,15 @@ perfmon_addEventSet(const char* eventCString)
         groupSet->groups = (PerfmonEventSet*)realloc(groupSet->groups, groupSet->numberOfGroups*sizeof(PerfmonEventSet));
         if (groupSet->groups == NULL)
         {
-            ERROR_PLAIN_PRINT(Cannot allocate additional group);
+            ERROR_PRINT("Cannot allocate additional group");
             return -ENOMEM;
         }
         groupSet->groups[groupSet->numberOfActiveGroups].rdtscTime = 0;
         groupSet->groups[groupSet->numberOfActiveGroups].runTime = 0;
         groupSet->groups[groupSet->numberOfActiveGroups].numberOfEvents = 0;
-        DEBUG_PLAIN_PRINT(DEBUGLEV_INFO, Allocating new group structure for group.);
+        DEBUG_PRINT(DEBUGLEV_INFO, "Allocating new group structure for group.");
     }
-    DEBUG_PRINT(DEBUGLEV_INFO, Currently %d groups of %d active,
+    DEBUG_PRINT(DEBUGLEV_INFO, "Currently %d groups of %d active",
                     groupSet->numberOfActiveGroups+1,
                     groupSet->numberOfGroups+1);
     cstringcopy = malloc((strlen(eventCString)+1)*sizeof(char));
@@ -2490,17 +2490,17 @@ perfmon_addEventSet(const char* eventCString)
                                   &groupSet->groups[groupSet->numberOfActiveGroups].group);
         if (err == -EACCES)
         {
-            ERROR_PRINT(Access to performance group %s not allowed, cstringcopy);
+            ERROR_PRINT("Access to performance group %s not allowed", cstringcopy);
             return err;
         }
         else if (err == -ENODEV)
         {
-            ERROR_PRINT(Performance group %s only available with deactivated HyperThreading, eventCString);
+            ERROR_PRINT("Performance group %s only available with deactivated HyperThreading", eventCString);
             return err;
         }
         else if (err < 0)
         {
-            ERROR_PRINT(Cannot read performance group %s, cstringcopy);
+            ERROR_PRINT("Cannot read performance group %s", cstringcopy);
             return err;
         }
         isPerfGroup = 1;
@@ -2510,7 +2510,7 @@ perfmon_addEventSet(const char* eventCString)
         err = perfgroup_customGroup(cstringcopy, &groupSet->groups[groupSet->numberOfActiveGroups].group);
         if (err)
         {
-            ERROR_PRINT(Cannot transform %s to performance group, cstringcopy);
+            ERROR_PRINT("Cannot transform %s to performance group", cstringcopy);
             return err;
         }
     }
@@ -2529,7 +2529,7 @@ perfmon_addEventSet(const char* eventCString)
             strcat(evstr, perf_pid);
         }
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Eventstring %s, evstr);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Eventstring %s", evstr);
     free(cstringcopy);
     eventBString = bfromcstr(evstr);
     eventtokens = bsplit(eventBString,',');
@@ -2540,7 +2540,7 @@ perfmon_addEventSet(const char* eventCString)
     eventSet->events = (PerfmonEventSetEntry*) malloc(eventtokens->qty * sizeof(PerfmonEventSetEntry));
     if (eventSet->events == NULL)
     {
-        ERROR_PRINT(Cannot allocate event list for group %d\n, groupSet->numberOfActiveGroups);
+        ERROR_PRINT("Cannot allocate event list for group %d\n", groupSet->numberOfActiveGroups);
         return -ENOMEM;
     }
     eventSet->numberOfEvents = 0;
@@ -2551,6 +2551,9 @@ perfmon_addEventSet(const char* eventCString)
     eventSet->regTypeMask4 = 0x0ULL;
     eventSet->regTypeMask5 = 0x0ULL;
     eventSet->regTypeMask6 = 0x0ULL;
+    eventSet->regTypeMask7 = 0x0ULL;
+    eventSet->regTypeMask8 = 0x0ULL;
+    eventSet->regTypeMask9 = 0x0ULL;
 
     int forceOverwrite = 0;
     int valid_events = 0;
@@ -2565,7 +2568,7 @@ perfmon_addEventSet(const char* eventCString)
         struct bstrList* subtokens = bsplit(eventtokens->entry[i],':');
         if (subtokens->qty < 2)
         {
-            ERROR_PRINT(Cannot parse event descriptor %s, bdata(eventtokens->entry[i]));
+            ERROR_PRINT("Cannot parse event descriptor %s", bdata(eventtokens->entry[i]));
             bstrListDestroy(subtokens);
             continue;
         }
@@ -2581,7 +2584,7 @@ perfmon_addEventSet(const char* eventCString)
             event->type = checkAccess(subtokens->entry[1], event->index, event->type, forceOverwrite);
             if (event->type == NOTYPE)
             {
-                DEBUG_PRINT(DEBUGLEV_INFO, Cannot access counter register %s, bdata(subtokens->entry[1]));
+                DEBUG_PRINT(DEBUGLEV_INFO, "Cannot access counter register %s", bdata(subtokens->entry[1]));
                 event->type = NOTYPE;
                 goto past_checks;
             }
@@ -2593,7 +2596,7 @@ perfmon_addEventSet(const char* eventCString)
             }
             if (!translate_types[type])
             {
-                DEBUG_PRINT(DEBUGLEV_INFO, Cannot access counter register %s, bdata(subtokens->entry[1]));
+                DEBUG_PRINT(DEBUGLEV_INFO, "Cannot access counter register %s", bdata(subtokens->entry[1]));
                 event->type = NOTYPE;
                 goto past_checks;
             }
@@ -2613,7 +2616,7 @@ perfmon_addEventSet(const char* eventCString)
             bstrListDestroy(folders);
             if (perf_folder == NULL)
             {
-                DEBUG_PRINT(DEBUGLEV_INFO, Cannot access counter register %s, bdata(subtokens->entry[1]));
+                DEBUG_PRINT(DEBUGLEV_INFO, "Cannot access counter register %s", bdata(subtokens->entry[1]));
                 event->type = NOTYPE;
                 goto past_checks;
             }
@@ -2659,7 +2662,7 @@ past_checks:
 
             if (event->threadCounter == NULL)
             {
-                ERROR_PRINT(Cannot allocate counter for all threads in group %d,groupSet->numberOfActiveGroups);
+                ERROR_PRINT("Cannot allocate counter for all threads in group %d", groupSet->numberOfActiveGroups);
                 //bstrListDestroy(subtokens);
                 continue;
             }
@@ -2678,7 +2681,7 @@ past_checks:
             {
                 valid_events++;
                 DEBUG_PRINT(DEBUGLEV_INFO,
-                        Added event %s for counter %s to group %d,
+                        "Added event %s for counter %s to group %d",
                         groupSet->groups[groupSet->numberOfActiveGroups].group.events[eventSet->numberOfEvents],
                         groupSet->groups[groupSet->numberOfActiveGroups].group.counters[eventSet->numberOfEvents],
                         groupSet->numberOfActiveGroups);
@@ -2703,7 +2706,10 @@ past_checks:
         (eventSet->regTypeMask3 != 0x0ULL) ||
         (eventSet->regTypeMask4 != 0x0ULL) ||
         (eventSet->regTypeMask5 != 0x0ULL) ||
-        (eventSet->regTypeMask6 != 0x0ULL)))
+        (eventSet->regTypeMask6 != 0x0ULL) ||
+        (eventSet->regTypeMask7 != 0x0ULL) ||
+        (eventSet->regTypeMask8 != 0x0ULL) ||
+        (eventSet->regTypeMask9 != 0x0ULL)))
     {
         eventSet->state = STATE_NONE;
         groupSet->numberOfActiveGroups++;
@@ -2742,7 +2748,7 @@ __perfmon_setupCountersThread(int thread_id, int groupId)
     int ret = 0;
     if (groupId >= groupSet->numberOfActiveGroups)
     {
-        ERROR_PRINT(Group %d does not exist in groupSet, groupId);
+        ERROR_PRINT("Group %d does not exist in groupSet", groupId);
         return -ENOENT;
     }
 
@@ -2765,12 +2771,12 @@ perfmon_setupCounters(int groupId)
     int force_setup = (getenv("LIKWID_FORCE_SETUP") != NULL);
     if (!lock_check())
     {
-        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        ERROR_PRINT("Access to performance monitoring registers locked");
         return -ENOLCK;
     }
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (unlikely(groupSet == NULL))
@@ -2780,7 +2786,7 @@ perfmon_setupCounters(int groupId)
 
     if (groupId >= groupSet->numberOfActiveGroups)
     {
-        ERROR_PRINT(Group %d does not exist in groupSet, groupId);
+        ERROR_PRINT("Group %d does not exist in groupSet", groupId);
         return -ENOENT;
     }
 
@@ -2811,7 +2817,7 @@ __perfmon_startCounters(int groupId)
     }
     if (!lock_check())
     {
-        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        ERROR_PRINT("Access to performance monitoring registers locked");
         return -ENOLCK;
     }
     for(;i<groupSet->numberOfThreads;i++)
@@ -2833,17 +2839,17 @@ int perfmon_startCounters(void)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (unlikely(groupSet == NULL))
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (groupSet->activeGroup < 0)
     {
-        ERROR_PLAIN_PRINT(Cannot find group to start);
+        ERROR_PRINT("Cannot find group to start");
         return -EINVAL;
     }
     return __perfmon_startCounters(groupSet->activeGroup);
@@ -2853,7 +2859,7 @@ int perfmon_startGroupCounters(int groupId)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (unlikely(groupSet == NULL))
@@ -2866,7 +2872,7 @@ int perfmon_startGroupCounters(int groupId)
     }
     else
     {
-        ERROR_PLAIN_PRINT(Cannot find group to start);
+        ERROR_PRINT("Cannot find group to start");
         return -EINVAL;
     }
     return __perfmon_startCounters(groupId);
@@ -2882,7 +2888,7 @@ __perfmon_stopCounters(int groupId)
 
     if (!lock_check())
     {
-        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        ERROR_PRINT("Access to performance monitoring registers locked");
         return -ENOLCK;
     }
 
@@ -2918,7 +2924,7 @@ perfmon_stopCounters(void)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (unlikely(groupSet == NULL))
@@ -2927,7 +2933,7 @@ perfmon_stopCounters(void)
     }
     if (groupSet->activeGroup < 0)
     {
-        ERROR_PLAIN_PRINT(Cannot find group to start);
+        ERROR_PRINT("Cannot find group to start");
         return -EINVAL;
     }
     if (groupSet->groups[groupSet->activeGroup].state != STATE_START)
@@ -2942,7 +2948,7 @@ perfmon_stopGroupCounters(int groupId)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (unlikely(groupSet == NULL))
@@ -2955,7 +2961,7 @@ perfmon_stopGroupCounters(int groupId)
     }
     else
     {
-        ERROR_PLAIN_PRINT(Cannot find group to start);
+        ERROR_PRINT("Cannot find group to start");
         return -EINVAL;
     }
     if (groupSet->groups[groupId].state != STATE_START)
@@ -2973,7 +2979,7 @@ __perfmon_readCounters(int groupId, int threadId)
     double result = 0.0;
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (((groupId < 0) || (groupId >= groupSet->numberOfActiveGroups)) && (groupSet->activeGroup >= 0))
@@ -3042,7 +3048,7 @@ perfmon_readCountersCpu(int cpu_id)
     int thread_id = -1;
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     for(i=0;i<groupSet->numberOfThreads;i++)
@@ -3055,7 +3061,7 @@ perfmon_readCountersCpu(int cpu_id)
     }
     if (thread_id < 0)
     {
-        ERROR_PRINT(Failed to read counters for CPU %d, cpu_id);
+        ERROR_PRINT("Failed to read counters for CPU %d", cpu_id);
         return -thread_id;
     }
     i = __perfmon_readCounters(groupSet->activeGroup, thread_id);
@@ -3115,7 +3121,7 @@ perfmon_getResult(int groupId, int eventId, int threadId)
     }
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return NAN;
     }
     if (groupSet->numberOfActiveGroups == 0)
@@ -3164,7 +3170,7 @@ perfmon_getLastResult(int groupId, int eventId, int threadId)
     }
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return 0;
     }
     if (groupSet->numberOfActiveGroups == 0)
@@ -3203,7 +3209,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     }
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return NAN;
     }
     if (groupSet->numberOfActiveGroups == 0)
@@ -3267,7 +3273,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
                 err = update_clist(&clist,groupSet->groups[groupId].group.counters[e], perfmon_getResult(groupId, e, sock_cpu));
                 if (err < 0)
                 {
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Cannot add socket result of counter %s for thread %d", groupSet->groups[groupId].group.counters[e], threadId);
                 }
             }
         }
@@ -3276,7 +3282,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     if (e < 0)
     {
         result = 0.0;
-        //ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
+        //ERROR_PRINT("Cannot calculate formula %s", groupSet->groups[groupId].group.metricformulas[metricId]);
     }
     destroy_clist(&clist);
     return result;
@@ -3293,7 +3299,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     }
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return NAN;
     }
     if (groupSet->numberOfActiveGroups == 0)
@@ -3357,7 +3363,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
                 err = update_clist(&clist,groupSet->groups[groupId].group.counters[e], perfmon_getLastResult(groupId, e, sock_cpu));
                 if (err < 0)
                 {
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Cannot add socket result of counter %s for thread %d", groupSet->groups[groupId].group.counters[e], threadId);
                 }
             }
         }
@@ -3366,7 +3372,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     if (e < 0)
     {
         result = 0.0;
-        //ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
+        //ERROR_PRINT("Cannot calculate formula %s", groupSet->groups[groupId].group.metricformulas[metricId]);
     }
     destroy_clist(&clist);
     return result;
@@ -3380,7 +3386,7 @@ __perfmon_switchActiveGroupThread(int thread_id, int new_group)
     GroupState state;
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (thread_id < 0 || thread_id >= groupSet->numberOfThreads)
@@ -3447,7 +3453,7 @@ perfmon_getNumberOfGroups(void)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     return groupSet->numberOfActiveGroups;
@@ -3458,7 +3464,7 @@ perfmon_getIdOfActiveGroup(void)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     return groupSet->activeGroup;
@@ -3469,7 +3475,7 @@ perfmon_getNumberOfThreads(void)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     return groupSet->numberOfThreads;
@@ -3480,7 +3486,7 @@ perfmon_getNumberOfEvents(int groupId)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (groupId < 0)
@@ -3495,7 +3501,7 @@ perfmon_getTimeOfGroup(int groupId)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (groupId < 0)
@@ -3510,7 +3516,7 @@ perfmon_getLastTimeOfGroup(int groupId)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (groupId < 0)
@@ -3542,7 +3548,7 @@ perfmon_getEventName(int groupId, int eventId)
     }
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return NULL;
     }
     if (groupSet->numberOfActiveGroups == 0)
@@ -3570,7 +3576,7 @@ perfmon_getCounterName(int groupId, int eventId)
     }
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return NULL;
     }
     if (groupSet->numberOfActiveGroups == 0)
@@ -3598,7 +3604,7 @@ perfmon_getMetricName(int groupId, int metricId)
     }
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return NULL;
     }
     if (groupSet->numberOfActiveGroups == 0)
@@ -3625,7 +3631,7 @@ perfmon_getGroupName(int groupId)
     }
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return NULL;
     }
     if (groupSet->numberOfActiveGroups == 0)
@@ -3648,7 +3654,7 @@ perfmon_getGroupInfoShort(int groupId)
     }
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return NULL;
     }
     if (groupSet->numberOfActiveGroups == 0)
@@ -3671,7 +3677,7 @@ perfmon_getGroupInfoLong(int groupId)
     }
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return NULL;
     }
     if (groupSet->numberOfActiveGroups == 0)
@@ -3706,7 +3712,7 @@ perfmon_getNumberOfMetrics(int groupId)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (groupId < 0)
@@ -3742,7 +3748,7 @@ perfmon_getNumberOfRegions()
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (markerResults == NULL)
@@ -3757,7 +3763,7 @@ perfmon_getGroupOfRegion(int region)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= markerRegions)
@@ -3776,7 +3782,7 @@ perfmon_getTagOfRegion(int region)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return NULL;
     }
     if (region < 0 || region >= markerRegions)
@@ -3795,7 +3801,7 @@ perfmon_getEventsOfRegion(int region)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= markerRegions)
@@ -3828,7 +3834,7 @@ perfmon_getThreadsOfRegion(int region)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= markerRegions)
@@ -3848,7 +3854,7 @@ perfmon_getCpulistOfRegion(int region, int count, int* cpulist)
     int i;
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= markerRegions)
@@ -3875,7 +3881,7 @@ perfmon_getTimeOfRegion(int region, int thread)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= markerRegions)
@@ -3898,7 +3904,7 @@ perfmon_getCountOfRegion(int region, int thread)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= markerRegions)
@@ -3921,7 +3927,7 @@ perfmon_getResultOfRegionThread(int region, int event, int thread)
 {
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (region < 0 || region >= markerRegions)
@@ -3955,7 +3961,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     CounterList clist;
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return NAN;
     }
     if (region < 0 || region >= markerRegions)
@@ -4027,7 +4033,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
                 err = update_clist(&clist,groupSet->groups[markerResults[region].groupID].group.counters[e], perfmon_getResultOfRegionThread(region, e, sock_cpu));
                 if (err < 0)
                 {
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[markerResults[region].groupID].group.counters[e], threadId);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Cannot add socket result of counter %s for thread %d", groupSet->groups[markerResults[region].groupID].group.counters[e], threadId);
                 }
             }
         }
@@ -4035,7 +4041,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     err = calc_metric(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId], &clist, &result);
     if (err < 0)
     {
-        ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId]);
+        ERROR_PRINT("Cannot calculate formula %s", groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId]);
     }
     destroy_clist(&clist);
     return result;
@@ -4055,7 +4061,7 @@ perfmon_readMarkerFile(const char* filename)
 
     if (perfmon_initialized != 1)
     {
-        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
     if (filename == NULL)
