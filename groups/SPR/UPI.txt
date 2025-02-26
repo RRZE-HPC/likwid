@@ -1,0 +1,46 @@
+SHORT UPI data traffic
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+FIXC3 TOPDOWN_SLOTS
+UPI0C0 TXL_FLITS_ALL_DATA
+UPI0C2 RXL_FLITS_ALL_DATA
+UPI1C0 TXL_FLITS_ALL_DATA
+UPI1C2 RXL_FLITS_ALL_DATA
+UPI2C0 TXL_FLITS_ALL_DATA
+UPI2C2 RXL_FLITS_ALL_DATA
+UPI3C0 TXL_FLITS_ALL_DATA
+UPI3C2 RXL_FLITS_ALL_DATA
+
+
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Received data bandwidth [MByte/s] 1.0E-06*((UPI0C2+UPI1C2+UPI2C2+UPI3C2)*(64/9.0))/time
+Received data volume [GByte] 1.0E-09*((UPI0C2+UPI1C2+UPI2C2+UPI3C2)*(64/9.0))
+Sent data bandwidth [MByte/s] 1.0E-06*((UPI0C0+UPI1C0+UPI2C0+UPI3C0)*(64/9.0))/time
+Sent data volume [GByte] 1.0E-09*((UPI0C0+UPI1C0+UPI2C0+UPI3C0)*(64/9.0))
+Total data bandwidth [MByte/s] 1.0E-06*((UPI0C0+UPI1C0+UPI2C0+UPI3C0+UPI0C2+UPI1C2+UPI2C2+UPI3C2)*(64/9.0))/time
+Total data volume [GByte] 1.0E-09*((UPI0C0+UPI1C0+UPI2C0+UPI3C0+UPI0C2+UPI1C2+UPI2C2+UPI3C2)*(64/9.0))
+
+
+LONG
+Formulas:
+Received data bandwidth [MByte/s] = 1.0E-06*(SUM(RXL_FLITS_ALL_DATA)/9.0)*64.0/runtime
+Received data volume [GByte] = 1.0E-09*(SUM(RXL_FLITS_ALL_DATA)/9.0)*64.0
+Sent data bandwidth [MByte/s] = 1.0E-06*(SUM(TXL_FLITS_ALL_DATA)/9.0)*64.0/time
+Sent data volume [GByte] = 1.0E-09*(SUM(TXL_FLITS_ALL_DATA)/9.0)*64.0
+Total data bandwidth [MByte/s] = 1.0E-06*((SUM(RXL_FLITS_ALL_DATA)+SUM(TXL_FLITS_ALL_DATA))/9.0)*64.0/time
+Total data volume [GByte] = 1.0E-09*((SUM(RXL_FLITS_ALL_DATA)+SUM(TXL_FLITS_ALL_DATA))/9.0)*64.0
+--
+This group measures the data traffic on the UPI (socket interconnect). The group
+measures all filled data slots (9 slots per 64 Byte data transfer), that's why
+the count needs to be divided by 9. These 9 data chunks are not transferred in
+a single flit but there is one flit for the header and three flits for the data.
+The metrics show higher values as expected because the events count also
+different transfers which include data.
