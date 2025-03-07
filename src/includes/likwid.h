@@ -1693,8 +1693,8 @@ typedef struct {
  */
 typedef struct {
   int domain;      /*!< \brief RAPL domain identifier */
-  uint32_t before; /*!< \brief Counter state at start */
-  uint32_t after;  /*!< \brief Counter state at stop */
+  uint64_t before; /*!< \brief Counter state at start */
+  uint64_t after;  /*!< \brief Counter state at stop */
 } PowerData;
 
 /*! \brief Variable holding the global power information structure */
@@ -1725,7 +1725,7 @@ extern PowerInfo_t get_powerInfo(void) __attribute__((visibility("default")));
 @param [in] reg Energy register
 @param [out] data Energy data
 */
-extern int power_read(int cpuId, uint64_t reg, uint32_t *data)
+extern int power_read(int cpuId, uint64_t reg, uint64_t *data)
     __attribute__((visibility("default")));
 
 /*! \brief Start energy measurements

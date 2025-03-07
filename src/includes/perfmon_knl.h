@@ -704,7 +704,7 @@ int perfmon_startCountersThread_knl(int thread_id, PerfmonEventSet* eventSet)
                 case POWER:
                     if(haveLock)
                     {
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&tmp));
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint64_t*)&tmp));
                         eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
                     }
                     break;
@@ -909,7 +909,7 @@ int perfmon_stopCountersThread_knl(int thread_id, PerfmonEventSet* eventSet)
                 case POWER:
                     if(haveLock)
                     {
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint64_t*)&counter_result));
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
                             eventSet->events[i].threadCounter[thread_id].overflows++;
@@ -1093,7 +1093,7 @@ int perfmon_readCountersThread_knl(int thread_id, PerfmonEventSet* eventSet)
                 case POWER:
                     if(haveLock)
                     {
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint64_t*)&counter_result));
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
                             eventSet->events[i].threadCounter[thread_id].overflows++;
