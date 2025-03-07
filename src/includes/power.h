@@ -140,7 +140,7 @@ power_stop(PowerData* data, int cpuId, PowerType type)
 }
 
 int
-power_read(int cpuId, uint64_t reg, uint32_t *data)
+power_read(int cpuId, uint64_t reg, uint64_t *data)
 {
     int i;
     PowerType type = -1;
@@ -177,7 +177,7 @@ power_read(int cpuId, uint64_t reg, uint32_t *data)
 }
 
 int
-power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
+power_tread(int socket_fd, int cpuId, uint64_t reg, uint64_t *data)
 {
     int i;
     PowerType type;

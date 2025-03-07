@@ -523,7 +523,7 @@ int perfmon_readCountersThread_zen4c(int thread_id, PerfmonEventSet* eventSet)
                     continue;
                 if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock))
                     continue;
-                CHECK_POWER_READ_ERROR(power_read(cpu_id, counter, (uint32_t*)&counter_result));
+                CHECK_POWER_READ_ERROR(power_read(cpu_id, counter, (uint64_t*)&counter_result));
                 VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "READ_POWER");
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
