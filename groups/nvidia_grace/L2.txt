@@ -11,26 +11,26 @@ PMC4  L1I_CACHE_REFILL
 METRICS
 Runtime (RDTSC) [s] time
 CPI  PMC1/PMC0
-L1D<-L2 load bandwidth [MBytes/s]  1.0E-06*(PMC2)*256.0/time
-L1D<-L2 load data volume [GBytes]  1.0E-09*(PMC2)*256.0
-L1D->L2 evict bandwidth [MBytes/s]  1.0E-06*PMC3*256.0/time
-L1D->L2 evict data volume [GBytes]  1.0E-09*PMC3*256.0
-L1I<-L2 load bandwidth [MBytes/s]  1.0E-06*PMC4*256.0/time
-L1I<-L2 load data volume [GBytes]  1.0E-09*PMC4*256.0
-L1<->L2 bandwidth [MBytes/s] 1.0E-06*(PMC2+PMC3+PMC4)*256.0/time
-L1<->L2 data volume [GBytes] 1.0E-09*(PMC2+PMC3+PMC4)*256.0
+L1D<-L2 load bandwidth [MBytes/s]  1.0E-06*(PMC2)*64.0/time
+L1D<-L2 load data volume [GBytes]  1.0E-09*(PMC2)*64.0
+L1D->L2 evict bandwidth [MBytes/s]  1.0E-06*PMC3*64.0/time
+L1D->L2 evict data volume [GBytes]  1.0E-09*PMC3*64.0
+L1I<-L2 load bandwidth [MBytes/s]  1.0E-06*PMC4*64.0/time
+L1I<-L2 load data volume [GBytes]  1.0E-09*PMC4*64.0
+L1<->L2 bandwidth [MBytes/s] 1.0E-06*(PMC2+PMC3+PMC4)*64.0/time
+L1<->L2 data volume [GBytes] 1.0E-09*(PMC2+PMC3+PMC4)*64.0
 
 LONG
 Formulas:
 CPI = CPU_CYCLES/INST_RETIRED
-L1D<-L2 load bandwidth [MBytes/s] = 1.0E-06*L1D_CACHE_REFILL*256.0/time
-L1D<-L2 load data volume [GBytes] = 1.0E-09*L1D_CACHE_REFILL*256.0
-L1D->L2 evict bandwidth [MBytes/s] = 1.0E-06*L1D_CACHE_WB*256.0/time
-L1D->L2 evict data volume [GBytes] = 1.0E-09*L1D_CACHE_WB*256.0
-L1I<-L2 load bandwidth [MBytes/s] = 1.0E-06*L1I_CACHE_REFILL*256.0/time
-L1I<-L2 load data volume [GBytes] = 1.0E-09*L1I_CACHE_REFILL*256.0
-L1<->L2 bandwidth [MBytes/s] = 1.0E-06*(L1D_CACHE_REFILL+L1D_CACHE_WB+L1I_CACHE_REFILL)*256.0/time
-L1<->L2 data volume [GBytes] = 1.0E-09*(L1D_CACHE_REFILL+L1D_CACHE_WB+L1I_CACHE_REFILL)*256.0
+L1D<-L2 load bandwidth [MBytes/s] = 1.0E-06*L1D_CACHE_REFILL*64.0/time
+L1D<-L2 load data volume [GBytes] = 1.0E-09*L1D_CACHE_REFILL*64.0
+L1D->L2 evict bandwidth [MBytes/s] = 1.0E-06*L1D_CACHE_WB*64.0/time
+L1D->L2 evict data volume [GBytes] = 1.0E-09*L1D_CACHE_WB*64.0
+L1I<-L2 load bandwidth [MBytes/s] = 1.0E-06*L1I_CACHE_REFILL*64.0/time
+L1I<-L2 load data volume [GBytes] = 1.0E-09*L1I_CACHE_REFILL*64.0
+L1<->L2 bandwidth [MBytes/s] = 1.0E-06*(L1D_CACHE_REFILL+L1D_CACHE_WB+L1I_CACHE_REFILL)*64.0/time
+L1<->L2 data volume [GBytes] = 1.0E-09*(L1D_CACHE_REFILL+L1D_CACHE_WB+L1I_CACHE_REFILL)*64.0
 -
 Profiling group to measure L2 cache bandwidth. The bandwidth is computed by the
 number of cacheline loaded from the L2 to the L1 data cache and the writebacks from
