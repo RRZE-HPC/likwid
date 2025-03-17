@@ -538,7 +538,7 @@ static int dram_test_testFunc(uint64_t msrData, void * value)
         {
             intel_rapl_dram_info.energyUnit = 15.3e-6;
         }
-        else if (info->model == SAPPHIRERAPIDS)
+        else if (info->model == SAPPHIRERAPIDS || info->model == EMERALDRAPIDS)
         {
             intel_rapl_dram_info.energyUnit = 61e-6;
         }
@@ -669,7 +669,7 @@ static int psys_test_testFunc(uint64_t msrData, void * value)
         CpuInfo_t info = get_cpuInfo();
         intel_rapl_psys_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
         intel_rapl_psys_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
-        if (info->model == SAPPHIRERAPIDS)
+        if (info->model == SAPPHIRERAPIDS || info->model == EMERALDRAPIDS)
         {
             intel_rapl_psys_info.energyUnit = 1.0;
         }

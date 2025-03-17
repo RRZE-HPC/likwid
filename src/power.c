@@ -141,6 +141,7 @@ power_init(int cpuId)
                 case ICELAKEX1:
                 case ICELAKEX2:
                 case SAPPHIRERAPIDS:
+                case EMERALDRAPIDS:
                 case GRANITERAPIDS:
                 case SIERRAFORREST:
                     core_limits = 1;
