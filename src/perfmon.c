@@ -84,6 +84,7 @@
 #include <perfmon_tigerlake.h>
 #include <perfmon_icelake.h>
 #include <perfmon_sapphirerapids.h>
+#include <perfmon_emeraldrapids.h>
 #include <perfmon_neon1.h>
 #include <perfmon_a64fx.h>
 #include <perfmon_applem1.h>
@@ -1224,6 +1225,17 @@ perfmon_init_maps(void)
                     translate_types = sapphirerapids_translate_types;
                     archRegisterTypeNames = registerTypeNamesSapphireRapids;
                     break;
+                
+                case EMERALDRAPIDS:
+                    box_map = emeraldrapids_box_map;
+                    eventHash = emeraldrapids_arch_events;
+                    counter_map = emeraldrapids_counter_map;
+                    perfmon_numArchEvents = perfmon_numArchEventsEmeraldRapids;
+                    perfmon_numCounters = perfmon_numCountersEmeraldRapids;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersEmeraldRapids;
+                    translate_types = emeraldrapids_translate_types;
+                    archRegisterTypeNames = registerTypeNamesEmeraldRapids;
+                    break;
 
                 case GRANITERAPIDS:
                     box_map = graniterapids_box_map;
@@ -1931,6 +1943,17 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_readCountersThread = perfmon_readCountersThread_sapphirerapids;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_sapphirerapids;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_sapphirerapids;
+                    break;
+                
+                case EMERALDRAPIDS:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    initThreadArch = perfmon_init_emeraldrapids;
+                    perfmon_startCountersThread = perfmon_startCountersThread_emeraldrapids;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_emeraldrapids;
+                    perfmon_readCountersThread = perfmon_readCountersThread_emeraldrapids;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_emeraldrapids;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_emeraldrapids;
                     break;
 
                 case GRANITERAPIDS:

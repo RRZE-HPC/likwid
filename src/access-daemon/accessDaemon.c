@@ -64,6 +64,7 @@
 #include <perfmon_icelakeX_counters.h>
 #include <intel_perfmon_uncore_discovery.h>
 #include <perfmon_sapphirerapids_counters.h>
+#include <perfmon_emeraldrapids_counters.h>
 #include <perfmon_graniterapids_counters.h>
 #include <perfmon_sierraforrest_counters.h>
 #include <topology.h>
@@ -3710,7 +3711,7 @@ int main(void)
                     allowedPci = allowed_pci_icx;
                     isPCI64 = 1;
                 }
-                else if (model == SAPPHIRERAPIDS)
+                else if (model == SAPPHIRERAPIDS || model == EMERALDRAPIDS)
                 {
                     isPCIUncore = 1;
                     allowed = allowed_spr;

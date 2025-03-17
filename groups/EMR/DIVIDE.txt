@@ -1,0 +1,35 @@
+SHORT Divide unit information
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+FIXC3 TOPDOWN_SLOTS
+PMC0  ARITH_FPDIV_COUNT
+PMC1  ARITH_FPDIV_ACTIVE
+PMC2  ARITH_IDIV_COUNT
+PMC3  ARITH_IDIV_ACTIVE
+
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Number of FP divide ops PMC0
+Avg. FP divide unit usage duration PMC1/PMC0
+Number of INT divide ops PMC2
+Avg. INT divide unit usage duration PMC3/PMC2
+
+LONG
+Formulas:
+Number of FP divide ops = ARITH_FPDIV_COUNT
+Avg. FP divide unit usage duration = ARITH_FPDIV_ACTIVE/ARITH_FPDIV_COUNT
+Number of INT divide ops = ARITH_IDIV_COUNT
+Avg. INT divide unit usage duration = ARITH_IDIV_ACTIVE/ARITH_IDIV_COUNT
+-
+This performance group measures the average latency of divide operations.
+The Intel Sapphire Rapids architecture performs FP and INT divide operations
+on different ports (P0 and P1 respectively).
+The COUNT events are the ACTIVE event with the edge detect bit set to count only
+the activation of the unit.

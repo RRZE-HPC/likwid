@@ -50,7 +50,7 @@
 #include <access_x86_translate.h>
 #include <affinity.h>
 
-#define ARCH_SPR_GNR_SRF ((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS || cpuid_info.model == GRANITERAPIDS || cpuid_info.model == SIERRAFORREST))
+#define ARCH_SPR_GNR_SRF ((cpuid_info.family == P6_FAMILY) && (cpuid_info.model == SAPPHIRERAPIDS || cpuid_info.model == GRANITERAPIDS || cpuid_info.model == SIERRAFORREST || cpuid_info.model == EMERALDRAPIDS))
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
