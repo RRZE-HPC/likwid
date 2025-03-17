@@ -63,6 +63,7 @@ Intel
 - Intel Icelake SP
 - Intel Tigerlake (experimental)
 - Intel SapphireRapids
+- Intel EmeraldRapids
 
 AMD
 - AMD K8
