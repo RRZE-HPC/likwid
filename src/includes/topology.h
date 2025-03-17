@@ -114,6 +114,7 @@ struct topology_functions {
 #define TIGERLAKE1           0x8CU
 #define TIGERLAKE2           0x8DU
 #define SAPPHIRERAPIDS       0x8FU
+#define EMERALDRAPIDS        0xCFU
 #define ALDERLAKE1           0x97U
 #define ALDERLAKE2           0x9AU
 #define ALDERLAKE3           0xBFU
