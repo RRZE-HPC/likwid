@@ -119,6 +119,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage sapphirerapids
 - \subpage graniterapids
 - \subpage sierraforrest
+- \subpage emeraldrapids
 
 \subsubsection Architectures_AMD AMD&reg;
 - \subpage k8
