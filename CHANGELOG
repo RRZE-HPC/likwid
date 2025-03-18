@@ -1,3 +1,7 @@
+# Changelog 5.4.2
+- Added support for Intel Emerald Rapids
+
+
 # Changelog 5.4.1
 - Fixes linking errors due to missing bstrlib.h
 - Fix for likwid-bench kernel stream_mem
