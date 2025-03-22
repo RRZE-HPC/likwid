@@ -1222,6 +1222,7 @@ local function createEventString(eventlist)
 end
 
 local function splitUncoreEvents(groupdata)
+    local hwthread = {}
     local core = {}
     local socket = {}
     local numa = {}
@@ -1241,6 +1242,16 @@ local function splitUncoreEvents(groupdata)
                         table.insert(llc, event)
                     elseif e["Counter"]:match("^UPMC%d") then
                         table.insert(socket, event)
+                    elseif e["Counter"]:match("^PWR%d") then
+                        if e["Event"]:match("RAPL_CORE_ENERGY") then
+                            table.insert(core, event)
+                        elseif e["Event"]:match("RAPL_PKG_ENERGY") then
+                            table.insert(socket, event)
+                        elseif e["Event"]:match("RAPL_L3_ENERGY") then
+                            table.insert(llc, event)
+                        else
+                            print_stderr("ERROR: Cannot schedule AMD RAPL events")
+                        end
                     elseif e["Counter"]:match("^DFC%d") then
                         if cpuinfo["family"] == 0x17 then
                             table.insert(numa, event)
@@ -1258,12 +1269,14 @@ local function splitUncoreEvents(groupdata)
             end
         else
             local event = e["Event"]..":"..e["Counter"]
-            table.insert(core, event)
+            table.insert(hwthread, event)
         end
     end
     sevents = ""
     nevents = ""
     levents = ""
+    cevents = ""
+    hevents = ""
     if #socket > 0 then
         sevents = table.concat(socket,",")
     end
@@ -1273,7 +1286,13 @@ local function splitUncoreEvents(groupdata)
     if #llc > 0 then
         levents = table.concat(llc, ",")
     end
-    return table.concat(core, ","), sevents, nevents, levents
+    if #core > 0 then
+        cevents = table.concat(core, ",")
+    end
+    if #hwthread > 0 then
+        hevents = table.concat(hwthread, ",")
+    end
+    return hevents, cevents, sevents, nevents, levents
 end
 
 local function inList(value, list)
@@ -1307,12 +1326,15 @@ local function setPerfStrings(perflist, cpuexprs)
     local grouplist = {}
 
     local affinity = likwid.getAffinityInfo()
+    local cputopo = likwid.getCpuTopology()
     local socketList = {}
     local socketListFlags = {}
     local numaList = {}
     local numaListFlags = {}
     local llcList = {}
     local llcListFlags = {}
+    local coreList = {}
+    local coreListFlags = {}
     for i, d in pairs(affinity["domains"]) do
         if d["tag"]:match("S%d+") then
             local tmpList = {}
@@ -1339,6 +1361,12 @@ local function setPerfStrings(perflist, cpuexprs)
             table.insert(llcListFlags, 1)
         end
     end
+    for cntr=0,cputopo["numHWThreads"]-1 do
+        if cputopo["threadPool"][cntr]["threadId"] == 0 then
+            table.insert(coreList, {cputopo["threadPool"][cntr]["apicId"]})
+            table.insert(coreListFlags, 1)
+        end
+    end
 
     for k, perfStr in pairs(perflist) do
         local gdata = nil
@@ -1351,11 +1379,12 @@ local function setPerfStrings(perflist, cpuexprs)
                 perfexprs[k] = {}
             end
 
+            local hwthreadevents = ""
             local coreevents = ""
             local socketevents = ""
             local numaevents = ""
             local llcevents = ""
-            coreevents, socketevents, numaevents, llcevents = splitUncoreEvents(gdata)
+            hwthreadevents, coreevents, socketevents, numaevents, llcevents = splitUncoreEvents(gdata)
 
             local tmpSocketFlags = {}
             for _,e in pairs(socketListFlags) do
@@ -1368,6 +1397,10 @@ local function setPerfStrings(perflist, cpuexprs)
             local tmpCacheFlags = {}
             for _,e in pairs(llcListFlags) do
                 table.insert(tmpCacheFlags, e)
+            end
+            local tmpCoresFlags = {}
+            for _,e in pairs(coreListFlags) do
+                table.insert(tmpCoresFlags, e)
             end
 
             for i,cpuexpr in pairs(cpuexprs) do
@@ -1398,9 +1431,19 @@ local function setPerfStrings(perflist, cpuexprs)
                     end
                 end
                 clist = uniqueList(clist)
+                local coresList = {}
+                for j, cpu in pairs(cpuexpr) do
+                    for l, colist in pairs(coreList) do
+                        if inList(tonumber(cpu), colist) then
+                            table.insert(coresList, l)
+                        end
+                    end
+                end
+                coresList = uniqueList(coresList)
                 local suncore = false
                 local muncore = false
                 local cuncore = false
+                local doCores = false
                 for _, s in pairs(slist) do
                     if tmpSocketFlags[s] == 1 then
                         tmpSocketFlags[s] = 0
@@ -1419,9 +1462,18 @@ local function setPerfStrings(perflist, cpuexprs)
                         cuncore = true
                     end
                 end
+                for _, s in pairs(coresList) do
+                    if tmpCoresFlags[s] == 1 then
+                        tmpCoresFlags[s] = 0
+                        doCores = true
+                    end
+                end
                 if perfexprs[k][i] == nil then
                     local elist = {}
-                    if coreevents:len() > 0 then
+                    if hwthreadevents:len() > 0 then
+                        table.insert(elist, hwthreadevents)
+                    end
+                    if doCores and coreevents:len() > 0 then
                         table.insert(elist, coreevents)
                     end
                     if cuncore and llcevents:len() > 0 then
