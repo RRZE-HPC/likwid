@@ -4,13 +4,13 @@
 #
 #      Description:  Event list for Intel Sapphire Rapids
 #
-#      Version:   <VERSION>
-#      Released:  <DATE>
+#      Version:   5.4.1
+#      Released:  09.12.2024
 #
 #      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+#      Copyright (C) 2024 RRZE, University Erlangen-Nuremberg
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -2645,6 +2645,11 @@ UMASK_TXL_FLITS_DATA_SLOT2              0x0C
 # Added by T. Gruber
 UMASK_TXL_FLITS_ALL_DATA                0x0F
 
+# Added by V.Xirau and G.Guerrero
+UMASK_TXL_FLITS_ALL_NULL                0x27
+# Added by V.Xirau and G.Guerrero
+UMASK_TXL_FLITS_NON_DATA                0x97
+
 EVENT_RXL_FLITS                         0x03 UPI
 UMASK_RXL_FLITS_SLOT0                   0x01
 UMASK_RXL_FLITS_SLOT1                   0x02
@@ -2663,6 +2668,9 @@ UMASK_RXL_FLITS_DATA_SLOT1              0x0A
 UMASK_RXL_FLITS_DATA_SLOT2              0x0C
 # Added by T. Gruber
 UMASK_RXL_FLITS_ALL_DATA                0x0F
+
+# Added by V.Xirau and G.Guerrero
+UMASK_RXL_FLITS_NON_DATA                0x97
 
 EVENT_TXL_BASIC_HDR_MATCH               0x04 UPI
 OPTIONS_TXL_BASIC_HDR_MATCH             EVENT_OPTION_MATCH0_MASK
