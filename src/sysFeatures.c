@@ -205,7 +205,7 @@ static int get_feature_index(const char* name)
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Features name has no dot -> compare with name");
         for (int i = 0; i < _feature_list.num_features; i++)
         {
-            if (strncmp(name, _feature_list.features[i].name, strlen(_feature_list.features[i].name)) == 0)
+            if (strcmp(name, _feature_list.features[i].name) == 0)
             {
                 if (out < 0)
                 {
@@ -231,7 +231,7 @@ static int get_feature_index(const char* name)
             int featlen = strlen(_feature_list.features[i].name) + strlen(_feature_list.features[i].category) + 2;
             char combined_name[featlen];
             snprintf(combined_name, featlen, "%s.%s", _feature_list.features[i].category, _feature_list.features[i].name);
-            if (strncmp(name, combined_name, featlen) == 0)
+            if (strcmp(name, combined_name) == 0)
             {
                 return i;
             }
