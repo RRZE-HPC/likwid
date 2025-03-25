@@ -3301,7 +3301,14 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
             }
         }
     }
+    
+    double result2;
+    e = calc_metric_new(groupSet->groups[groupId].group.metrictrees[metricId], &clist, &result2);
     e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
+    if(fabs(result - result2) > 1.0E-6) {
+        fprintf(stderr, "Error: results don't match");
+        exit(EXIT_FAILURE);
+    }
     if (e < 0)
     {
         result = 0.0;
@@ -3391,7 +3398,14 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
             }
         }
     }
+    
+    double result2;
+    e = calc_metric_new(groupSet->groups[groupId].group.metrictrees[metricId], &clist, &result2);
     e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
+    if(fabs(result - result2) > 1.0E-6) {
+        fprintf(stderr, "Error: results don't match");
+        exit(EXIT_FAILURE);
+    }
     if (e < 0)
     {
         result = 0.0;
@@ -4061,7 +4075,14 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
             }
         }
     }
+    double result2;
+    err = calc_metric_new(groupSet->groups[markerResults[region].groupID].group.metrictrees[metricId], &clist, &result2);
     err = calc_metric(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId], &clist, &result);
+    if(fabs(result - result2) > 1.0E-6) {
+        fprintf(stderr, "Error: results don't match");
+        exit(EXIT_FAILURE);
+    }
+    
     if (err < 0)
     {
         ERROR_PRINT("Cannot calculate formula %s", groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId]);
