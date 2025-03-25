@@ -48,9 +48,6 @@
 #include <sysFeatures_linux_numa_balancing.h>
 #include <sysFeatures_nvml.h>
 
-static _SysFeature *local_features = NULL;
-static int num_local_features = 0;
-
 static _SysFeatureList _feature_list = {0, NULL, NULL};
 
 
@@ -138,6 +135,12 @@ static int get_device_access(LikwidDevice_t device)
 int likwid_sysft_init(void)
 {
     int err = 0;
+
+    if (_feature_list.num_features > 0 || _feature_list.features)
+    {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "likwid_sysft_init: Already initialized");
+        return 0;
+    }
 
     topology_init();
     CpuInfo_t cpuinfo = get_cpuInfo();
@@ -337,17 +340,10 @@ int likwid_sysft_modify(const LikwidSysFeature* feature, const LikwidDevice_t de
 
 void likwid_sysft_finalize(void)
 {
-    if (local_features != NULL)
-    {
-        free(local_features);
-        local_features = NULL;
-        num_local_features = 0;
-    }
     if (_feature_list.num_features > 0)
     {
         _free_feature_list(&_feature_list);
     }
-    
 }
 
 int likwid_sysft_list(LikwidSysFeatureList* list)
