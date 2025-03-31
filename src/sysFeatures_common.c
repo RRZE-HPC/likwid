@@ -376,6 +376,35 @@ static int readmsr_socket(const LikwidDevice_t device, uint64_t reg, uint64_t *m
     return -ENODEV;
 }
 
+static int writemsr_socket(const LikwidDevice_t device, uint64_t reg, uint64_t msrData)
+{
+    assert(device->type == DEVICE_TYPE_SOCKET);
+    int err = topology_init();
+    if (err < 0)
+    {
+        return err;
+    }
+    CpuTopology_t topo = get_cpuTopology();
+    for (unsigned i = 0; i < topo->numHWThreads; i++)
+    {
+        HWThread* t = &topo->threadPool[i];
+        if ((int)t->packageId == device->id.simple.id && t->inCpuSet)
+        {
+            err = HPMaddThread(t->apicId);
+            if (err < 0)
+                continue;
+            err = HPMwrite(t->apicId, MSR_DEV, reg, msrData);
+            if (err < 0)
+                continue;
+            return 0;
+        }
+    }
+
+    if (err < 0)
+        return err;
+    return -ENODEV;
+}
+
 static int readmsr_core(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
 {
     assert(device->type == DEVICE_TYPE_CORE);
@@ -405,24 +434,59 @@ static int readmsr_core(const LikwidDevice_t device, uint64_t reg, uint64_t *msr
     return -ENODEV;
 }
 
+static int writemsr_core(const LikwidDevice_t device, uint64_t reg, uint64_t msrData)
+{
+    assert(device->type == DEVICE_TYPE_CORE);
+
+    int err = topology_init();
+    if (err < 0)
+        return err;
+
+    CpuTopology_t topo = get_cpuTopology();
+    for (unsigned i = 0; i < topo->numHWThreads; i++)
+    {
+        HWThread* t = &topo->threadPool[i];
+        if ((int)t->coreId == device->id.simple.id && t->inCpuSet)
+        {
+            err = HPMaddThread(t->apicId);
+            if (err < 0)
+                continue;
+            err = HPMwrite(t->apicId, MSR_DEV, reg, msrData);
+            if (err < 0)
+                continue;
+            return 0;
+        }
+    }
+
+    if (err < 0)
+        return err;
+    return -ENODEV;
+}
+
 static int readmsr_hwthread(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
 {
     assert(device->type == DEVICE_TYPE_HWTHREAD);
     int err = HPMaddThread(device->id.simple.id);
     if (err < 0)
-    {
         return err;
-    }
     return HPMread(device->id.simple.id, MSR_DEV, reg, msrData);
+}
+
+static int writemsr_hwthread(const LikwidDevice_t device, uint64_t reg, uint64_t msrData)
+{
+    assert(device->type == DEVICE_TYPE_HWTHREAD);
+    int err = HPMaddThread(device->id.simple.id);
+    if (err < 0)
+        return err;
+    return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
 }
 
 int likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
 {
     int err = HPMinit();
     if (err < 0)
-    {
         return err;
-    }
+
     switch (device->type)
     {
     case DEVICE_TYPE_SOCKET:
@@ -443,14 +507,8 @@ int likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *ms
 
 int likwid_sysft_readmsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t *value)
 {
-    int err = HPMinit();
-    if (err < 0)
-        return err;
-    err = HPMaddThread(device->id.simple.id);
-    if (err < 0)
-        return err;
-    uint64_t msrData = 0x0;
-    err = HPMread(device->id.simple.id, MSR_DEV, reg, &msrData);
+    uint64_t msrData;
+    int err = likwid_sysft_readmsr(device, reg, &msrData);
     if (err < 0)
         return err;
     *value = field64(msrData, bitoffset, width);
@@ -473,15 +531,49 @@ int likwid_sysft_writemsr_field(const LikwidDevice_t device, uint64_t reg, int b
     int err = HPMinit();
     if (err < 0)
         return err;
-    err = HPMaddThread(device->id.simple.id);
-    if (err < 0)
-        return err;
-    uint64_t msrData = 0x0;
-    err = HPMread(device->id.simple.id, MSR_DEV, reg, &msrData);
-    if (err < 0)
-        return err;
-    field64set(&msrData, bitoffset, width, value);
-    return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
+
+    uint64_t msrData;
+    switch (device->type)
+    {
+    case DEVICE_TYPE_SOCKET:
+        /* If we write the entire register, there is no need to fetch the old value first. */
+        if (bitoffset != 0 || width != 64) {
+            err = readmsr_socket(device, reg, &msrData);
+            if (err < 0)
+                return err;
+        } else {
+            msrData = 0;
+        }
+        field64set(&msrData, bitoffset, width, value);
+        err = writemsr_socket(device, reg, msrData);
+        break;
+    case DEVICE_TYPE_CORE:
+        if (bitoffset != 0 || width != 64) {
+            err = readmsr_core(device, reg, &msrData);
+            if (err < 0)
+                return err;
+        } else {
+            msrData = 0;
+        }
+        field64set(&msrData, bitoffset, width, value);
+        err = writemsr_core(device, reg, msrData);
+        break;
+    case DEVICE_TYPE_HWTHREAD:
+        if (bitoffset != 0 || width != 64) {
+            err = readmsr_hwthread(device, reg, &msrData);
+            if (err < 0)
+                return err;
+        } else {
+            msrData = 0;
+        }
+        field64set(&msrData, bitoffset, width, value);
+        err = writemsr_hwthread(device, reg, msrData);
+        break;
+    default:
+        fprintf(stderr, "likwid_sysft_readmsr: Unimplemented device type: %d\n", device->type);
+        abort();
+    }
+    return err;
 }
 
 int likwid_sysft_writemsr_bit_from_string(const LikwidDevice_t device, uint64_t reg, int bitoffset, bool invert, const char *value)
