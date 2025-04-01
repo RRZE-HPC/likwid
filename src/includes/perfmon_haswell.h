@@ -1256,7 +1256,7 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
                     if (haveLock)
                     {
                         tmp = 0x0ULL;
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1,(uint32_t*)&tmp));
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1,(uint64_t*)&tmp));
                         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST tmp, "START_POWER");
                         eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
                     }
@@ -1487,7 +1487,7 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                 case POWER:
                     if (haveLock)
                     {
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint64_t*)&counter_result));
                         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, "STOP_POWER");
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
@@ -1730,7 +1730,7 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                 case POWER:
                     if (haveLock)
                     {
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint64_t*)&counter_result));
                         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, "READ_POWER");
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
