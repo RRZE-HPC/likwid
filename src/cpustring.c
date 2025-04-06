@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <bstrlib.h>
 #include <likwid.h>
 #include <bstrlib.h>
 
