@@ -189,7 +189,7 @@ static int intel_rapl_energy_limit_2_setter(const LikwidDevice_t device, const c
     if (err < 0)
         return err;
     const uint64_t powerUnits = MIN((uint64_t)round(watts / info->powerUnit), 0x7FFF);
-    return likwid_sysft_writemsr_field(device, reg, 15, 15, powerUnits);
+    return likwid_sysft_writemsr_field(device, reg, 32, 15, powerUnits);
 }
 
 static int intel_rapl_energy_limit_2_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
