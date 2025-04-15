@@ -85,6 +85,8 @@ typedef uint16_t u16;
 
 #define PCI_ANY_ID (-1)
 #define PCI_VENDOR_ID_INTEL 0x8086
+#define PCI_SLOT(devfn) (((devfn) >> 3) & 0x1f)
+#define PCI_DEV_TO_DEVFN(dev) ((dev != NULL) ? (((dev)->device << 3) | (dev)->func) : 0)
 
 #define uncore_discovery_invalid_unit(unit)                    \
        (!unit.table1 || \

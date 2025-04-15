@@ -410,33 +410,41 @@ static void print_unit(PciDeviceIndex idx, PerfmonDiscoveryUnit* unit)
 static int perfmon_uncore_discovery_update_dev_location(PerfmonDiscoveryUnit* unit)
 {
     struct pci_dev* dev = NULL;
-    uint32_t device = 0;
-    uint32_t devfn = 0;
+    uint32_t check_device = 0;
+    uint32_t check_devfn = 0;
+    uint16_t mydevfn = 0;
+    uint16_t myid = 0;
     switch (unit->box_type)
     {
         case SPR_DEVICE_ID_UPI:
-            device = 0x3241;
-            devfn = 0x9;
+            check_device = 0x3241;
+            check_devfn = 0x9;
             break;
         case SPR_DEVICE_ID_M3UPI:
-            device = 0x3246;
-            devfn = 0x29;
+            check_device = 0x3246;
+            check_devfn = 0x29;
             break;
         default:
             return 0;
     }
 
-    while ((dev = pci_get_device(PCI_VENDOR_ID_INTEL, device, dev)) != NULL)
+    while ((dev = pci_get_device(PCI_VENDOR_ID_INTEL, check_device, dev)) != NULL)
     {
         if (dev->numa_node < 0)
         {
             continue;
         }
-        unit->box_ctl = dev->domain  << UNCORE_DISCOVERY_PCI_DOMAIN_OFFSET |
+        mydevfn = PCI_DEV_TO_DEVFN(dev);
+        myid = PCI_SLOT(mydevfn) - PCI_SLOT(check_devfn);
+        if (myid == unit->box_id)
+        {
+            unit->box_ctl = dev->domain  << UNCORE_DISCOVERY_PCI_DOMAIN_OFFSET |
                         dev->bus << UNCORE_DISCOVERY_PCI_BUS_OFFSET |
-                        devfn << UNCORE_DISCOVERY_PCI_DEVFN_OFFSET |
+                        mydevfn << UNCORE_DISCOVERY_PCI_DEVFN_OFFSET |
                         unit->box_ctl;
+        }
     }
+    if (dev) free(dev);
     return 0;
 }
 
