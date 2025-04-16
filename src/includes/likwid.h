@@ -496,10 +496,10 @@ threads, how they are distributed over the CPU sockets/packages and how the
 caching hierarchy is assembled.
 */
 typedef struct {
-  uint32_t numHWThreads; /*!< \brief Amount of active HW threads in the system
-                            (e.g. in cpuset) */
-  uint32_t activeHWThreads; /*!< \brief Amount of HW threads in the system and
-                               length of \a threadPool */
+  uint32_t numHWThreads; /*!< \brief Amount of HW threads in the system and
+                            length of \a threadPool */
+  uint32_t activeHWThreads; /*!< \brief Amount of active HW threads in the
+                               system (e.g. in cpuset) */
   uint32_t
       numSockets;   /*!< \brief Amount of CPU sockets/packages in the system */
   uint32_t numDies; /*!< \brief Amount of CPU dies in the system */
