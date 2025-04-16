@@ -3306,7 +3306,7 @@ typedef _LikwidDeviceList* LikwidDeviceList_t;
 
 /*! \brief List of device type names
 */
-static char* LikwidDeviceTypeNames[MAX_DEVICE_TYPE] = {
+static const char* LikwidDeviceTypeNames[MAX_DEVICE_TYPE] = {
     [DEVICE_TYPE_INVALID] = "invalid",
     [DEVICE_TYPE_HWTHREAD] = "hwthread",
     [DEVICE_TYPE_CORE] = "core",
