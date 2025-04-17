@@ -132,6 +132,19 @@ OBJ := $(filter-out $(BUILD_DIR)/access_x86_translate.o,$(OBJ))
 else
 OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
+ifeq ($(COMPILER), CLANGARMv8)
+OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/loadData.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_rdpmc.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_mmio.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_clientmem.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_translate.o,$(OBJ))
+else
+OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
+endif
 ifneq ($(NVIDIA_INTERFACE), true)
 OBJ := $(filter-out $(BUILD_DIR)/nvmon.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/nvmon_nvml.o,$(OBJ))

@@ -7,7 +7,7 @@
 # Please have a look in INSTALL and the WIKI for details on
 # configuration options setup steps.
 # Supported: GCC, CLANG, ICC, MIC (ICC), GCCX86 (for 32bit systems)
-# GCCARMv8, GCCARMv7 and GCCPOWER
+# GCCARMv8, GCCARMv7, GCCPOWER and CLANGARMv8
 # Since 5.3, there is a generic GCCARM target
 COMPILER = GCC#NO SPACE
 

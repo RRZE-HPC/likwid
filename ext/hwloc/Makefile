@@ -48,6 +48,9 @@ endif
 ifeq ($(strip $(COMPILER)), ARMCLANG)
 OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
 endif
+ifeq ($(strip $(COMPILER)), CLANGARMv8)
+OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
+endif
 ifeq ($(strip $(COMPILER)), FCC)
 OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
 endif
