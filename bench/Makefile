@@ -69,6 +69,9 @@ endif
 ifeq ($(COMPILER),ARMCLANG)
 BENCH_DIR   = ./armv8
 endif
+ifeq ($(COMPILER),CLANGARMv8)
+BENCH_DIR   = ./armv8
+endif
 ifeq ($(COMPILER),FCC)
 BENCH_DIR   = ./armv8
 endif

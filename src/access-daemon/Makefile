@@ -56,6 +56,8 @@ CPPFLAGS :=  $(DEFINES) $(INCLUDES) -L../..
 
 ifeq ($(COMPILER),GCCARMv8)
 all:
+else ifeq ($(COMPILER),CLANGARMv8)
+all:
 else
 all: $(DAEMON_TARGET) $(SETFREQ_TARGET) $(APPDAEMON_TARGET)
 endif
