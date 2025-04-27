@@ -157,7 +157,7 @@ typedef struct {
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-static int access_mmio_initialized[MAX_NUM_NODES] = {0};
+static int access_mmio_initialized[MAX_NUM_NODES] = { [0 ... MAX_NUM_NODES -1] = 0};
 
 static MMIOConfig* mmio_config = NULL;
 static int num_mmio_sockets = 0;
