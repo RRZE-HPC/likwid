@@ -197,6 +197,7 @@ DECLAREFUNC_NVML(nvmlDeviceGetTemperature, (nvmlDevice_t device, nvmlTemperature
 DECLAREFUNC_NVML(nvmlDeviceGetPowerManagementLimit, (nvmlDevice_t device, unsigned int* limit));
 DECLAREFUNC_NVML(nvmlDeviceGetPowerManagementLimitConstraints, (nvmlDevice_t device, unsigned int* minLimit, unsigned int* maxLimit));
 DECLAREFUNC_NVML(nvmlDeviceGetUtilizationRates, (nvmlDevice_t device, nvmlUtilization_t* utilization));
+DECLAREFUNC_NVML(nvmlDeviceGetTotalEnergyConsumption, (nvmlDevice_t device, unsigned long long *energy));
 
 // CUPTI function declarations
 #define CUPTIWEAK __attribute__(( weak ))
@@ -220,7 +221,7 @@ _nvml_resultAddMeasurement(NvmlEventResult* result, double value)
 static int
 _nvml_wrapper_getClockInfo(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
-    unsigned int clock;
+    unsigned int clock = 0;
 
     NVML_CALL(nvmlDeviceGetClockInfo, (device, event->options.clock, &clock), return -1);
     _nvml_resultAddMeasurement(result, clock);
@@ -232,7 +233,7 @@ _nvml_wrapper_getClockInfo(nvmlDevice_t device, NvmlEvent* event, NvmlEventResul
 static int
 _nvml_wrapper_getMaxClock(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
-    unsigned int clock;
+    unsigned int clock = 0;
 
     NVML_CALL(nvmlDeviceGetClock, (device, event->options.clock, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, &clock), return -1);
     _nvml_resultAddMeasurement(result, clock);
@@ -263,7 +264,7 @@ _nvml_wrapper_getEccLocalErrors(nvmlDevice_t device, NvmlEvent* event, NvmlEvent
 static int
 _nvml_wrapper_getEccTotalErrors(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
-    unsigned long long count;
+    unsigned long long count = 0;
 
     NVML_CALL(nvmlDeviceGetTotalEccErrors, (device, event->options.ecc.type, NVML_VOLATILE_ECC, &count), return -1);
     _nvml_resultAddMeasurement(result, count);
@@ -275,7 +276,7 @@ _nvml_wrapper_getEccTotalErrors(nvmlDevice_t device, NvmlEvent* event, NvmlEvent
 static int
 _nvml_wrapper_getFanSpeed(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
-    unsigned int speed;
+    unsigned int speed = 0;
 
     NVML_CALL(nvmlDeviceGetFanSpeed_v2, (device, event->options.fan, &speed), return -1);
     _nvml_resultAddMeasurement(result, speed);
@@ -317,10 +318,23 @@ _nvml_wrapper_getPerformanceState(nvmlDevice_t device, NvmlEvent* event, NvmlEve
 static int
 _nvml_wrapper_getPowerUsage(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
-    unsigned int power;
+    unsigned int power = 0;
 
     NVML_CALL(nvmlDeviceGetPowerUsage, (device, &power), return -1);
     _nvml_resultAddMeasurement(result, power);
+
+    return 0;
+}
+
+static int
+_nvml_wrapper_getEnergyConsumption(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+{
+    unsigned long long energy = 0;
+
+    NVML_CALL(nvmlDeviceGetTotalEnergyConsumption, (device, &energy), return -1);
+    double last = ((double)energy) - result->fullValue;
+    result->fullValue = ((double)energy);
+    result->lastValue = last;
 
     return 0;
 }
@@ -329,7 +343,7 @@ _nvml_wrapper_getPowerUsage(nvmlDevice_t device, NvmlEvent* event, NvmlEventResu
 static int
 _nvml_wrapper_getTemperature(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
-    unsigned int temp;
+    unsigned int temp = 0;
 
     NVML_CALL(nvmlDeviceGetTemperature, (device, event->options.tempSensor, &temp), return -1);
     _nvml_resultAddMeasurement(result, temp);
@@ -341,7 +355,7 @@ _nvml_wrapper_getTemperature(nvmlDevice_t device, NvmlEvent* event, NvmlEventRes
 static int
 _nvml_wrapper_getPowerManagementLimit(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
-    unsigned int limit;
+    unsigned int limit = 0;
 
     NVML_CALL(nvmlDeviceGetPowerManagementLimit, (device, &limit), return -1);
     _nvml_resultAddMeasurement(result, limit);
@@ -353,8 +367,8 @@ _nvml_wrapper_getPowerManagementLimit(nvmlDevice_t device, NvmlEvent* event, Nvm
 static int
 _nvml_wrapper_getPowerManagementLimitConstraints(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
-    unsigned int maxLimit;
-    unsigned int minLimit;
+    unsigned int maxLimit = 0;
+    unsigned int minLimit = 0;
 
     NVML_CALL(nvmlDeviceGetPowerManagementLimitConstraints, (device, &minLimit, &maxLimit), return -1);
     if (event->options.powerLimit == LIMIT_MIN)
@@ -423,6 +437,7 @@ _nvml_linkLibraries()
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetPowerManagementLimit);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetPowerManagementLimitConstraints);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetUtilizationRates);
+    DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetTotalEnergyConsumption);
 
     // Load CUPTI library and link functions
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Init NVML Libaries");
@@ -622,13 +637,18 @@ _nvml_getEventsForDevice(NvmlDevice* device)
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Power usage for this GPU in milliwatts and its associated circuitry (e.g. memory)");
         event->measureFunc = &_nvml_wrapper_getPowerUsage;
         event++;
+
+        snprintf(event->name, LIKWID_NVML_NAME_LEN, "ENERGY_CONSUMPTION");
+        snprintf(event->description, LIKWID_NVML_DESC_LEN, "Energy consumption for this GPU in milliJoules");
+        event->measureFunc = &_nvml_wrapper_getEnergyConsumption;
+        event++;
     }
 
     if (device->features & FEATURE_TEMP)
     {
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "TEMP_GPU");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Current temperature readings for the device, in degrees C");
-        event->measureFunc = &_nvml_wrapper_getPowerUsage;
+        event->measureFunc = &_nvml_wrapper_getTemperature;
         event->options.tempSensor = NVML_TEMPERATURE_GPU;
         event++;
     }
