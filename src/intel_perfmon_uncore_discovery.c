@@ -49,6 +49,7 @@ static PerfmonUncoreDiscovery* uncore_discovery_map = NULL;
 
 
 /* Functions for the same handling of PCI devices and their memory in user-space as in kernel-space */
+#define MAX_FILENAME_LENGTH 1024
 
 struct pci_dev {
     uint16_t domain;
@@ -56,7 +57,16 @@ struct pci_dev {
     uint16_t device;
     uint16_t func;
     int numa_node;
+    int socket;
+    int vendor;
+    int device_id;
+    int index;
+    char path[MAX_FILENAME_LENGTH];
 };
+
+static struct pci_dev* sysfs_pci_devices = NULL;
+static int num_sysfs_pci_devices = 0;
+
 
 // glibc memcpy uses optimized versions but copies have to be bytewise
 // otherwise the data is incorrect. 
@@ -145,224 +155,96 @@ static int file_to_uint(char* path, unsigned int *data) {
     return ret;
 }
 
-// Test whether PCI domain and bus exist.
-static int pci_test_bus(int domain, int bus)
-{
-    char fname[1025];
-    int ret = snprintf(fname, 1024, "/sys/class/pci_bus/%.04x:%.02x", domain, bus);
-    if (ret > 0)
-    {
-        fname[ret] = '\0';
-    }
-    else
-    {
-        ERROR_PRINT("Cannot format path to PCI bus directory for domain %d and bus %d", domain, bus);
-    }
-    return !access(fname, R_OK);
-}
 
-// commonly only a few PCI domains are populated, so we get the max domain
-// to return from PCI device parsing early. Otherwise, we have to search
-// 65535 domains.
-static int get_max_pci_domain()
-{
-    int max_dom = 0;
-    DIR* dir = NULL;
-    struct dirent* dent = NULL;
 
-    dir = opendir("/sys/class/pci_bus");
-    if (!dir)
+static int read_sysfs_pci_devs()
+{
+    int err = 0;
+    DIR *dp = NULL;
+    struct dirent *ep = NULL;
+
+    if (sysfs_pci_devices == NULL)
     {
-        return -errno;
-    }
-    while((dent = readdir(dir)))
-    {
-        int dom = -1, bus = -1;
-        int c = sscanf(dent->d_name, "%X:%X", &dom, &bus);
-        if ((c == 2) && (dom > max_dom))
+        dp = opendir("/sys/bus/pci/devices");
+        if (!dp)
         {
-            max_dom = dom;
+            return -1;
         }
-    }
-
-    closedir(dir);
-    return max_dom+1;
-}
-
-// Get the maximal CPU socket ID to stop parsing. This does not work if
-// sockets are not numbered consecutively. 
-static int max_socket_id(int* max_socket)
-{
-    int num_procs = sysconf (_SC_NPROCESSORS_CONF);
-    int cur_procs = 0;
-    int ret = -1;
-    int cur_max = 0;
-    char path[1025];
-    for (int i = 0; i < 100000 && cur_procs < num_procs; i++)
-    {
-        ret = snprintf(path, 1024, "/sys/devices/system/cpu/cpu%d/topology/physical_package_id", i);
-        if (ret >= 0)
+        while ((ep = readdir(dp)) != NULL)
         {
-            path[ret] = '\0';
-            int id = 0;
-            ret = file_to_uint(path, &id);
-            if (ret == 0 && id > cur_max)
-            {
-                cur_max = id;
-            }
-        }
-    }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Found max socket ID %d", cur_max);
-    *max_socket = cur_max;
-    return 0;
-}
-
-
-
-
-static int _max_pci_domain_id = -1;
-// This functions should mimic the behavior of pci_get_device in the kernel
-// It searches the whole PCI space for a specific device and defined by vendor
-// and device ID. Instead of vendor and device ID, the special PCI_ANY_ID can
-// be used to get any device. In order to not start from zero each time, the
-// function takes a device as input (from) to start from there.
-struct pci_dev * pci_get_device (unsigned int vendor, unsigned int device, struct pci_dev * from)
-{
-    //struct pci_dev next = {from->domain, from->bus, from->device, from->func};
-    int domStart = (from ? from->domain : 0);
-    int busStart = (from ? from->bus : 0);
-    int devStart = (from ? from->device : 0);
-    int funcStart = (from ? from->func : 0);
-    char busbase[1025];
-    char devbase[1025];
-    char fname[1025];
-    
-    if (_max_pci_domain_id < 0)
-    {
-        int ret = get_max_pci_domain();
-        if (ret < 0)
-        {
-            return NULL;
-        }
-        _max_pci_domain_id = ret;
-    }
-
-    for (int dom = domStart; dom < _max_pci_domain_id; dom++) {
-        // if we are beyond the domain given in from, we start with bus=0 again
-        // instead of the bus given in from
-        if (from && dom > from->domain) busStart = 0;
-        for (int bus = busStart; bus < 0xff; bus++) {
             int ret = 0;
-            // Early skip if PCI bus does not exist
-            if (!pci_test_bus(dom, bus)) {
-            
+            char devbase[MAX_FILENAME_LENGTH] = { [0 ... (MAX_FILENAME_LENGTH-1)] = '\0' };
+            char filename[MAX_FILENAME_LENGTH] = { [0 ... (MAX_FILENAME_LENGTH-1)] = '\0' };
+            uint32_t vendor = 0;
+            uint32_t device_id = 0;
+            int numa_node = -1;
+            int socket = -1;
+            int dom = 0;
+            int bus = 0;
+            int devid = 0;
+            int func = 0;
+            ret = sscanf(ep->d_name, "%04x:%02x:%02x.%01x", &dom, &bus, &devid, &func);
+            if (ret != 4)
+            {
                 continue;
             }
-            // if we are beyond the bus given in from, we start with devid=0 again
-            // instead of the device given in from
-            if (from && bus > from->bus) devStart = 0;
-            for (int devid = devStart; devid < 0xff; devid++) {
-                // if we are beyond the device given in from, we start with func=0 again
-                // instead of the func given in from
-                if (from && devid > from->device) funcStart = 0;
-                for (int func = funcStart; func < 0xf; func++) {
-                    // Skip the 'from' device
-                    if (from && dom == from->domain && bus == from->bus && devid == from->device && func ==  from->func)
-                    {
-                        continue;
-                    }
-                    // Create directory path to PCI device
-                    int ret = snprintf(devbase, 1024, "/sys/bus/pci/devices/%.04x:%.02x:%.02x.%.01x", dom, bus, devid, func);
-                    if (ret > 0)
-                    {
-                        devbase[ret] = '\0';
-                    }
-                    else
-                    {
-                        printf("Cannot create PCI device path\n");
-                        continue;
-                    }
-                    // If the device path does not exist, go to next one
-                    if (access(devbase, R_OK))
-                    {
-                        continue;
-                    }
-                    if (vendor != PCI_ANY_ID)
-                    {
-                        unsigned int hVend = 0x0;
-                        int ret = snprintf(fname, 1024, "%s/vendor", devbase);
-                        if (ret > 0)
-                        {
-                            fname[ret] = '\0';
-                            ret = file_to_uint(fname, &hVend);
-                            if (ret == 0 && hVend != vendor)
-                            {
-                                continue;
-                            }
-                        }
-                        else
-                        {
-                            continue;
-                        }
-                    }
-                    if (device != PCI_ANY_ID)
-                    {
-                        unsigned int hDev = 0x0;
-                        int ret = snprintf(fname, 1024, "%s/device", devbase);
-                        if (ret > 0)
-                        {
-                            fname[ret] = '\0';
-                            ret = file_to_uint(fname, &hDev);
-                            if (ret == 0 && hDev != device)
-                            {
-                                continue;
-                            }
-                        }
-                        else
-                        {
-                            continue;
-                        }
-                    }
-                    // We directly read the NUMA node ID if present
-                    int node = -1;
-                    ret = snprintf(fname, 1024, "%s/numa_node", devbase);
-                    if (ret > 0)
-                    {
-                        fname[ret] = '\0';
-                        ret = file_to_uint(fname, &node);
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                    // Reuse space
-                    if (from)
-                    {
-                        from->domain = dom;
-                        from->bus = bus;
-                        from->device = devid;
-                        from->func = func;
-                        from->numa_node = node;
-                        return from;
-                    }
-                    else
-                    {
-                        // First find, allocate a new PCI device
-                        struct pci_dev* next = malloc(sizeof(struct pci_dev));
-                        if (next) {
-                            next->domain = dom;
-                            next->bus = bus;
-                            next->device = devid;
-                            next->func = func;
-                            next->numa_node = node;
-                            return next;
-                        }
-                    }
+            ret = snprintf(devbase, 1023, "/sys/bus/pci/devices/%s", ep->d_name);
+            devbase[ret] = '\0';
+
+            ret = snprintf(filename, 1023, "%s/vendor", devbase);
+            filename[ret] = '\0';
+            ret = file_to_uint(filename, &vendor);
+            if (vendor != PCI_VENDOR_ID_INTEL)
+            {
+                continue;
+            }
+            ret = snprintf(filename, 1023, "%s/device", devbase);
+            filename[ret] = '\0';
+            ret = file_to_uint(filename, &device_id);
+            ret = snprintf(filename, 1023, "%s/numa_node", devbase);
+            filename[ret] = '\0';
+            if (!access(filename, R_OK))
+            {
+                ret = file_to_uint(filename, &numa_node);
+            }
+
+            if (numa_node >= 0)
+            {
+                int cpuid = -1;
+                ret = snprintf(filename, 1023, "/sys/devices/system/node/node%d/cpulist", numa_node);
+                ret = file_to_uint(filename, &cpuid);
+                if (cpuid >= 0)
+                {
+                    ret = snprintf(filename, 1023, "/sys/devices/system/cpu/cpu%d/topology/physical_package_id", cpuid);
+                    ret = file_to_uint(filename, &socket);
                 }
             }
+
+            struct pci_dev* tmp = realloc(sysfs_pci_devices, (num_sysfs_pci_devices+1) * sizeof(struct pci_dev));
+            if (!tmp)
+            {
+                break;
+            }
+            sysfs_pci_devices = tmp;
+
+            struct pci_dev* p = &sysfs_pci_devices[num_sysfs_pci_devices];
+            p->domain = dom;
+            p->bus = bus;
+            p->device = devid;
+            p->func = func;
+            p->numa_node = numa_node;
+            p->socket = socket;
+            p->vendor = vendor;
+            p->device_id = device_id;
+            p->index = num_sysfs_pci_devices;
+            ret = snprintf(p->path, 1023, "%s", devbase);
+            p->path[ret] = '\0';
+            num_sysfs_pci_devices++;
         }
+
+        closedir(dp);
     }
-    return NULL;
+    return 0;
 }
 
 
@@ -414,6 +296,7 @@ static int perfmon_uncore_discovery_update_dev_location(PerfmonDiscoveryUnit* un
     uint32_t check_devfn = 0;
     uint16_t mydevfn = 0;
     uint16_t myid = 0;
+
     switch (unit->box_type)
     {
         case SPR_DEVICE_ID_UPI:
@@ -428,8 +311,9 @@ static int perfmon_uncore_discovery_update_dev_location(PerfmonDiscoveryUnit* un
             return 0;
     }
 
-    while ((dev = pci_get_device(PCI_VENDOR_ID_INTEL, check_device, dev)) != NULL)
+    for (int i = 0; i < num_sysfs_pci_devices; i++)
     {
+        struct pci_dev* dev = &sysfs_pci_devices[i];
         if (dev->numa_node < 0)
         {
             continue;
@@ -453,7 +337,7 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
     int ret = 0;
     PerfmonDiscoverySocket* socks = NULL;
     int socket_id = 0;
-    struct pci_dev* dev = NULL;
+    int num_sockets = 0;
     struct uncore_global_discovery global;
     int dvsec = 0;
     int PAGE_SIZE = sysconf (_SC_PAGESIZE);
@@ -481,17 +365,56 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
             return -1;
     }
 
-    if (max_socket_id(&max_sockets) < 0)
+    ret = read_sysfs_pci_devs();
+    if (ret < 0)
     {
-        ERROR_PRINT("Failed to determine number of sockets");
+        ERROR_PRINT("Failed to read PCI devices from sysfs");
+        return -1;
+        uncore_discovery_map = NULL;
+    }
+
+    int num_tmp = 0;
+    int* tmp = malloc(num_sysfs_pci_devices * sizeof(int));
+    if (!tmp)
+    {
+        free(sysfs_pci_devices);
+        sysfs_pci_devices = NULL;
+        num_sysfs_pci_devices = 0;
+        uncore_discovery_map = NULL;
         return -1;
     }
+    memset(tmp, -1, num_sysfs_pci_devices * sizeof(int));
+
+    // Determine number of sockets based on the returned devices
+    for (int i = 0; i < num_sysfs_pci_devices; i++)
+    {
+        struct pci_dev* dev = &sysfs_pci_devices[i];
+        int found = 0;
+        for (int j = 0; j < num_tmp; j++)
+        {
+            if (tmp[j] == dev->socket)
+            {
+                found = 1;
+                break;
+            }
+        }
+        if (!found)
+        {
+            tmp[num_tmp++] = dev->socket;
+        }
+    }
+    num_sockets = num_tmp;
+    free(tmp);
 
     /* Open memory (requires root permissions) */
     int pcihandle = open("/dev/mem", O_RDWR);
     if (pcihandle < 0)
     {
         ERROR_PRINT("Cannot open /dev/mem");
+        free(sysfs_pci_devices);
+        sysfs_pci_devices = NULL;
+        num_sysfs_pci_devices = 0;
+        uncore_discovery_map = NULL;
         return -errno;
     }
     PerfmonDiscovery* perf = malloc(sizeof(PerfmonDiscovery));
@@ -499,12 +422,29 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
     {
         close(pcihandle);
         ERROR_PRINT("Cannot allocate space for device tables");
+        free(sysfs_pci_devices);
+        sysfs_pci_devices = NULL;
+        num_sysfs_pci_devices = 0;
+        uncore_discovery_map = NULL;
         return -ENOMEM;
     }
-    perf->sockets = NULL;
+    perf->sockets = malloc(num_sockets * sizeof(PerfmonDiscoverySocket));
+    if (!perf->sockets)
+    {
+        free(perf);
+        close(pcihandle);
+        ERROR_PRINT("Cannot allocate space for socket device tables");
+        free(sysfs_pci_devices);
+        sysfs_pci_devices = NULL;
+        num_sysfs_pci_devices = 0;
+        uncore_discovery_map = NULL;
+        return -ENOMEM;
+    }
     perf->num_sockets = 0;
 
-    while (((dev = pci_get_device(PCI_VENDOR_ID_INTEL, PCI_ANY_ID, dev)) != NULL)  && (socket_id < max_sockets+1)){
+    for (int i = 0; i < num_sysfs_pci_devices; i++)
+    {
+        struct pci_dev* dev = &sysfs_pci_devices[i];
         while ((dvsec = pci_find_next_ext_capability(dev, dvsec, UNCORE_EXT_CAP_ID_DISCOVERY))) {
             /* read the DVSEC_ID (15:0) */
             val = 0;
@@ -564,20 +504,9 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
                 //printf("Global 1=0x%lX 2=0x%lX 3=0x%lX\n", global.table1, global.table2, global.table3);
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, "Device %.04x:%.02x:%.02x.%.01x usable with %d units", dev->domain, dev->bus, dev->device, dev->func, global.max_units);
 
-                PerfmonDiscoverySocket* tmp = realloc(perf->sockets, (socket_id + 1) * sizeof(PerfmonDiscoverySocket));
-                if (!tmp)
-                {
-                    ERROR_PRINT("Cannot enlarge socket device table to %d", socket_id);
-                    if (perf->sockets) free(perf->sockets);
-                    free(perf);
-                    close(pcihandle);
-                    munmap(io_addr, UNCORE_DISCOVERY_MAP_SIZE);
-                    return -ENOMEM;
-                }
-                perf->sockets = tmp;
-                PerfmonDiscoverySocket* cur = &perf->sockets[socket_id];
+                PerfmonDiscoverySocket* cur = &perf->sockets[dev->socket];
 
-                cur->socket_id = socket_id;
+                cur->socket_id = dev->socket;
                 memset(cur->units, 0, MAX_NUM_PCI_DEVICES*sizeof(PerfmonDiscoveryUnit));
                 // record stuff from global struct in cur->global
                 cur->global.global_ctl = global.global_ctl;
@@ -673,10 +602,14 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
 /*            print_unit(idx, &cur->units[idx]);*/
 /*        }*/
     }
-    if (dev) free(dev);
+
     close(pcihandle);
-    perf->num_sockets = socket_id+1;
+    perf->num_sockets = num_sockets;
+    free(sysfs_pci_devices);
+    sysfs_pci_devices = NULL;
+    num_sysfs_pci_devices = 0;
     *perfmon = perf;
+
     return 0;
 }
 
@@ -702,3 +635,4 @@ void perfmon_uncore_discovery_free(PerfmonDiscovery* perfmon)
     }
     free(perfmon);
 }
+
