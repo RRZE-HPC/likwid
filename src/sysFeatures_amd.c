@@ -322,6 +322,8 @@ static const _HWArchFeatures amd_arch_features[] = {
     {ZEN3_FAMILY, ZEN3_RYZEN3, amd_k19_zen3_cpu_feature_inputs},
     {ZEN3_FAMILY, ZEN3_EPYC_TRENTO, amd_k19_zen3_cpu_feature_inputs},
     {ZEN3_FAMILY, ZEN4_RYZEN, amd_k19_zen4_cpu_feature_inputs},
+    {ZEN3_FAMILY, ZEN4_RYZEN2, amd_k19_zen4_cpu_feature_inputs},
+    {ZEN3_FAMILY, ZEN4_RYZEN3, amd_k19_zen4_cpu_feature_inputs},
     {ZEN3_FAMILY, ZEN4_RYZEN_PRO, amd_k19_zen4_cpu_feature_inputs},
     {ZEN3_FAMILY, ZEN4_EPYC, amd_k19_zen4_cpu_feature_inputs},
     {ZEN3_FAMILY, ZEN4_EPYC_BERGAMO, amd_k19_zen4_cpu_feature_inputs},

@@ -3786,6 +3786,7 @@ int main(void)
                         break;
                     case ZEN4_RYZEN:
                     case ZEN4_RYZEN2:
+                    case ZEN4_RYZEN3:
                     case ZEN4_EPYC:
                     case ZEN4_RYZEN_PRO:
                         allowed = allowed_amd19_zen3;

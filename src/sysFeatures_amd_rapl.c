@@ -168,7 +168,11 @@ static int amd_rapl_l3_test(void)
     CpuInfo_t info = get_cpuInfo();
     if (info->family != ZEN3_FAMILY)
         return 0;
-    if (info->model != ZEN4_RYZEN && info->model != ZEN4_RYZEN_PRO && info->model != ZEN4_EPYC)
+    if (   info->model != ZEN4_RYZEN
+        && info->model != ZEN4_RYZEN_PRO
+        && info->model != ZEN4_EPYC
+        && info->model != ZEN4_RYZEN2
+        && info->model != ZEN4_RYZEN3 )
         return 0;
     return likwid_sysft_foreach_socket_testmsr_cb(MSR_AMD19_RAPL_L3_UNIT, l3_test_testFunc, NULL);
 }
