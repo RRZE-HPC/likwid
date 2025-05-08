@@ -62,26 +62,41 @@ access_x86_init(int cpu_id)
     {
         if (cpuid_info.supportUncore)
         {
-            if (!(ARCH_SPR_GNR_SRF))
+            if (cpuid_info.family == P6_FAMILY)
             {
-                ret = access_x86_pci_init(affinity_thread2socket_lookup[cpu_id]);
-            }
-            if ((cpuid_info.family == P6_FAMILY) && ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2)))
-            {
-                ret = access_x86_mmio_init(affinity_thread2socket_lookup[cpu_id]);
-                if (ret < 0)
+                if ((cpuid_info.model == ICELAKEX1) || (cpuid_info.model == ICELAKEX2))
                 {
-                    ERROR_PRINT("Initialization of MMIO access failed");
+                    ret = access_x86_mmio_init(affinity_thread2socket_lookup[cpu_id]);
+                    if (ret < 0)
+                    {
+                        ERROR_PRINT("Initialization of MMIO access failed");
+                    }
                 }
-            }
-            else if (ARCH_SPR_GNR_SRF)
-            {
-                ret = access_x86_translate_init(cpu_id);
+                if (ARCH_SPR_GNR_SRF)
+                {
+                    ret = access_x86_translate_init(cpu_id);
+                    if (ret < 0)
+                    {
+                        ERROR_PRINT("Initialization of translated-register access failed");
+                    }
+                }
+                else
+                {
+                    ret = access_x86_pci_init(affinity_thread2socket_lookup[cpu_id]);
+                    if (ret < 0)
+                    {
+                        ERROR_PRINT("Initialization of PCI access failed");
+                    }
+                }
             }
         }
         else if (cpuid_info.supportClientmem)
         {
             ret = access_x86_clientmem_init(affinity_thread2socket_lookup[cpu_id]);
+            if (ret < 0)
+            {
+                ERROR_PRINT("Initialization of MMIO clientmem access failed");
+            }
         }
     }
     return ret;
