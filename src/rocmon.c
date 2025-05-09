@@ -1627,7 +1627,7 @@ rocmon_setupCounters(int gid)
         else
         {
             // Unknown event
-            ERROR_PRINT(""Event '%s' has no prefix ('ROCP_' or 'RSMI_'")", name);
+            ERROR_PRINT("Event '%s' has no prefix ('ROCP_' or 'RSMI_')", name);
             return -EINVAL;
         }
     }
