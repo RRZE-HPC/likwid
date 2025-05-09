@@ -28,7 +28,7 @@
  *
  * =======================================================================================
  */
-#ifdef LIKWID_WITH_ROCMON
+ #ifdef LIKWID_WITH_ROCMON
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -42,6 +42,8 @@
 #include <assert.h>
 
 #include <hip/hip_runtime.h>
+#include <hip/hip_version.h>
+
 #include <dlfcn.h>
 
 #include <error.h>
@@ -58,9 +60,13 @@ static RocmTopology _rocmTopology = {0, NULL};
 #define HIPWEAK __attribute__( ( weak ) )
 #define DECLAREHIPFUNC(funcname, funcsig) hipError_t HIPWEAK funcname funcsig;  hipError_t ( *funcname##TopoPtr ) funcsig;
 
-DECLAREHIPFUNC(hipGetDeviceCount, (int *count))
-DECLAREHIPFUNC(hipGetDeviceProperties, (hipDeviceProp_t *prop, int deviceId))
+DECLAREHIPFUNC(hipGetProcAddress, (const char *symbol, void **pfn, int hipVersion, uint64_t flags, hipDriverProcAddressQueryResult *symbolStatus))
 
+typedef hipError_t (*hipGetDeviceProperties_t)(hipDeviceProp_t *prop, int deviceId);
+hipGetDeviceProperties_t hipGetDevicePropertiesFunc;
+
+typedef hipError_t (*hipGetDeviceCount_t)(int *count);
+hipGetDeviceCount_t hipGetDeviceCountFunc;
 
 static int
 topo_link_libraries(void)
@@ -76,8 +82,16 @@ topo_link_libraries(void)
     }
 
     // Link HIP functions
-    hipGetDeviceCountTopoPtr = DLSYM_AND_CHECK(topo_dl_libhip, "hipGetDeviceCount");
-    hipGetDevicePropertiesTopoPtr = DLSYM_AND_CHECK(topo_dl_libhip, "hipGetDeviceProperties");
+    hipGetProcAddressTopoPtr = DLSYM_AND_CHECK(topo_dl_libhip, "hipGetProcAddress");
+
+    hipError_t res;
+    int hipVersion = HIP_VERSION; // Use the HIP version defined in hip_version.h
+    uint64_t flags = 0; // No special flags
+    hipDriverProcAddressQueryResult symbolStatus;
+
+    
+    res = (*hipGetProcAddressTopoPtr)("hipGetDeviceProperties", (void**)&hipGetDevicePropertiesFunc, hipVersion, flags, &symbolStatus); 
+    res = (*hipGetProcAddressTopoPtr)("hipGetDeviceCount", (void**)&hipGetDeviceCountFunc, hipVersion, flags, &symbolStatus);
 
     return 0;
 }
@@ -87,7 +101,7 @@ topo_get_numDevices(void)
 {
     int count = 0;
 
-    hipError_t err = (*hipGetDeviceCountTopoPtr)(&count);
+    hipError_t err = hipGetDeviceCountFunc(&count);
     if (err == hipErrorNoDevice)
     {
         return 0;
@@ -145,7 +159,7 @@ topo_gpu_init(RocmDevice *device, int deviceId)
     device->short_name = "amd_gpu";
 
     // Get HIP device properties
-    err = (*hipGetDevicePropertiesTopoPtr)(&props, deviceId);
+    err = hipGetDevicePropertiesFunc(&props, deviceId);
     if (err == hipErrorInvalidDevice)
     {
         ERROR_PRINT("GPU %d is not a valid device", deviceId);
