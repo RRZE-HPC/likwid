@@ -329,6 +329,7 @@ access_client_daemon_connect(int cpu_id, struct sockaddr_un *address) {
         fprintf(stderr, "opened within 10 seconds. Consult the error message above\n");
         fprintf(stderr, "this to find out why. If the error is 'no such file or directoy',\n");
         fprintf(stderr, "it usually means that likwid-accessD just failed to start.\n");
+        fprintf(stderr, "likwid-accessD prints only to syslog. Check there for details\n");
         free(filepath);
         close(socket_fd);
         return -1;

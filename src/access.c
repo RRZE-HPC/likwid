@@ -81,11 +81,6 @@ HPMinit(void)
 {
     int ret = 0;
     Configuration_t config = NULL;
-    if (!lock_check())
-    {
-        ERROR_PRINT("Access to performance monitoring registers locked");
-        return -EPERM;
-    }
     ret = topology_init();
     if (ret < 0)
     {
