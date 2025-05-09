@@ -1319,6 +1319,8 @@ rocmon_finalize(void)
         ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Shutdown HSA");
         // fall through
     });
+
+    rocmon_initialized = FALSE;
 }
 
 

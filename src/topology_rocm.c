@@ -280,6 +280,7 @@ topology_rocm_finalize(void)
     {
         topo_rocm_cleanup(_rocmTopology.numDevices);
     }
+    topo_rocm_initialized = 0;
 }
 
 RocmTopology_t
