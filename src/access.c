@@ -52,6 +52,7 @@
 #include <access.h>
 #include <access_client.h>
 #include <access_x86.h>
+#include <lock.h>
 
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
@@ -80,6 +81,11 @@ HPMinit(void)
 {
     int ret = 0;
     Configuration_t config = NULL;
+    if (!lock_check())
+    {
+        ERROR_PRINT("Access to performance monitoring registers locked");
+        return -EPERM;
+    }
     ret = topology_init();
     if (ret < 0)
     {

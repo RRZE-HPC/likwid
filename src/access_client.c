@@ -52,6 +52,7 @@
 #include <access_client.h>
 #include <configuration.h>
 #include <affinity.h>
+#include <lock.h>
 
 #if defined(__x86_64__) || defined(__i386__)
 #include <access_x86_rdpmc.h>
@@ -365,6 +366,11 @@ access_client_startDaemon(int cpu_id) {
 int
 access_client_init(int cpu_id)
 {
+    if (!lock_check())
+    {
+        ERROR_PRINT("Access to performance monitoring registers locked");
+        return -EPERM;
+    }
     topology_init();
     numa_init();
     affinity_init();
