@@ -1288,7 +1288,7 @@ rocmon_finalize(void)
                     // Free events of event result lists
                     for (int j = 0; j < device->numGroupResults; j++)
                     {
-                        FREE_IF_NOT_NULL(device->groupResults[i].results);
+                        FREE_IF_NOT_NULL(device->groupResults[j].results);
                     }
                     // Free list
                     free(device->groupResults);
