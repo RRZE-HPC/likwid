@@ -216,7 +216,7 @@ uint64_t emr_power_start(int thread_id, RegisterIndex index, PerfmonEvent* event
         uint64_t counter1 = counter_map[index].counterRegister;
         uint64_t tmp = 0x0ULL;
         RegisterType type = counter_map[index].type;
-        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1,(uint32_t*)&tmp));
+        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, &tmp));
         data[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST data[thread_id].startData, "START_POWER");
     }
@@ -1229,7 +1229,7 @@ uint32_t emr_power_stop(int thread_id, RegisterIndex index, PerfmonEvent* event,
     {
         uint64_t counter_result = 0x0ULL;
         uint64_t counter1 = counter_map[index].counterRegister;
-        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, &counter_result));
         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, "STOP_POWER");
         if (counter_result < data[thread_id].counterData)
         {
@@ -1711,7 +1711,7 @@ uint32_t emr_power_read(int thread_id, RegisterIndex index, PerfmonEvent* event,
     {
         uint64_t counter_result = 0x0ULL;
         uint64_t counter1 = counter_map[index].counterRegister;
-        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, &counter_result));
         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, "READ_POWER");
         if (counter_result < data[thread_id].counterData)
         {
