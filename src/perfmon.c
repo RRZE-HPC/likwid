@@ -2157,14 +2157,16 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
 
     if (nrThreads <= 0)
     {
+        errno = EINVAL;
         ERROR_PRINT("Number of threads must be greater than 0 but only %d given", nrThreads);
-        return -EINVAL;
+        return -errno;
     }
 
     if (!lock_check())
     {
+        errno = EPERM;
         ERROR_PRINT("Access to performance monitoring registers locked");
-        return -EINVAL;
+        return -errno;
     }
 
     init_configuration();
@@ -2174,8 +2176,9 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
 
     if ((cpuid_info.family == 0) && (cpuid_info.model == 0))
     {
+        errno = ENODEV;
         ERROR_PRINT("Topology module not inialized. Needed to determine current CPU type");
-        return -ENODEV;
+        return -errno;
     }
 
     /* Check threadsToCpu array if only valid cpu_ids are listed */
@@ -2190,24 +2193,27 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     groupSet = (PerfmonGroupSet*) malloc(sizeof(PerfmonGroupSet));
     if (groupSet == NULL)
     {
+        errno = ENOMEM;
         ERROR_PRINT("Cannot allocate group descriptor");
-        return -ENOMEM;
+        return -errno;
     }
     groupSet->threads = (PerfmonThread*) malloc(nrThreads * sizeof(PerfmonThread));
     if (groupSet->threads == NULL)
     {
+        errno = ENOMEM;
         ERROR_PRINT("Cannot allocate set of threads");
         free(groupSet);
         groupSet = NULL;
-        return -ENOMEM;
+        return -errno;
     }
     currentConfig = malloc(cpuid_topology.numHWThreads*sizeof(uint64_t*));
     if (!currentConfig)
     {
+        errno = ENOMEM;
         ERROR_PRINT("Cannot allocate config lists");
         free(groupSet);
         groupSet = NULL;
-        return -ENOMEM;
+        return -errno;
     }
     groupSet->numberOfThreads = nrThreads;
     groupSet->numberOfGroups = 0;
@@ -2242,6 +2248,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     ret = HPMinit();
     if (ret)
     {
+        errno = -ret;
         ERROR_PRINT("Cannot set access functions");
         free(groupSet->threads);
         free(groupSet);
@@ -2260,6 +2267,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     ret = perfmon_init_maps();
     if (ret < 0)
     {
+        errno = -ret;
         ERROR_PRINT("Failed to initialize event and counter lists for %s", cpuid_info.name);
         free(groupSet->threads);
         free(groupSet);
@@ -2278,6 +2286,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     ret = perfmon_init_funcs(&initialize_power, &initialize_thermal);
     if (ret < 0)
     {
+        errno = -ret;
         ERROR_PRINT("Failed to initialize event and counter lists for %s", cpuid_info.name);
         free(groupSet->threads);
         free(groupSet);
@@ -2300,6 +2309,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         ret = HPMaddThread(threadsToCpu[i]);
         if (ret != 0)
         {
+            errno = -ret;
             ERROR_PRINT("Cannot get access to performance counters");
             free(groupSet->threads);
             free(groupSet);
@@ -2314,7 +2324,8 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         ret = HPMcheck(MSR_DEV, threadsToCpu[i]);
         if (ret != 1)
         {
-            fprintf(stderr, "Cannot get access to MSRs. Please check permissions to the MSRs\n");
+            errno = EPERM;
+            ERROR_PRINT("Cannot get access to MSRs. Please check permissions to the MSRs\n");
             free(groupSet->threads);
             free(groupSet);
             groupSet = NULL;
@@ -2435,6 +2446,7 @@ perfmon_addEventSet(const char* eventCString)
     Configuration_t config;
     if (perfmon_initialized != 1)
     {
+        errno = EINVAL;
         ERROR_PRINT("Perfmon module not properly initialized");
         return -EINVAL;
     }
@@ -2446,6 +2458,7 @@ perfmon_addEventSet(const char* eventCString)
         eventCString = getenv("LIKWID_EVENTS");
         if (eventCString == NULL)
         {
+            errno = EINVAL;
             ERROR_PRINT("Cannot read event string. Also event string from environment variable is empty");
             return -EINVAL;
         }
@@ -2453,11 +2466,13 @@ perfmon_addEventSet(const char* eventCString)
 
     if (strchr(eventCString, '-') != NULL)
     {
+        errno = EINVAL;
         ERROR_PRINT("Event string contains invalid character -");
         return -EINVAL;
     }
     if (strchr(eventCString, '.') != NULL)
     {
+        errno = EINVAL;
         ERROR_PRINT("Event string contains invalid character .");
         return -EINVAL;
     }
@@ -2466,6 +2481,7 @@ perfmon_addEventSet(const char* eventCString)
         groupSet->groups = (PerfmonEventSet*) malloc(sizeof(PerfmonEventSet));
         if (groupSet->groups == NULL)
         {
+            errno = ENOMEM;
             ERROR_PRINT("Cannot allocate initialize of event group list");
             return -ENOMEM;
         }
@@ -2485,6 +2501,7 @@ perfmon_addEventSet(const char* eventCString)
         groupSet->groups = (PerfmonEventSet*)realloc(groupSet->groups, groupSet->numberOfGroups*sizeof(PerfmonEventSet));
         if (groupSet->groups == NULL)
         {
+            errno = ENOMEM;
             ERROR_PRINT("Cannot allocate additional group");
             return -ENOMEM;
         }
@@ -2515,16 +2532,19 @@ perfmon_addEventSet(const char* eventCString)
                                   &groupSet->groups[groupSet->numberOfActiveGroups].group);
         if (err == -EACCES)
         {
+            errno = EACCES;
             ERROR_PRINT("Access to performance group %s not allowed", cstringcopy);
             return err;
         }
         else if (err == -ENODEV)
         {
+            errno = ENODEV;
             ERROR_PRINT("Performance group %s only available with deactivated HyperThreading", eventCString);
             return err;
         }
         else if (err < 0)
         {
+            errno = -ret;
             ERROR_PRINT("Cannot read performance group %s", cstringcopy);
             return err;
         }
@@ -2535,6 +2555,7 @@ perfmon_addEventSet(const char* eventCString)
         err = perfgroup_customGroup(cstringcopy, &groupSet->groups[groupSet->numberOfActiveGroups].group);
         if (err)
         {
+            errno = EFAULT;
             ERROR_PRINT("Cannot transform %s to performance group", cstringcopy);
             return err;
         }
@@ -2565,6 +2586,7 @@ perfmon_addEventSet(const char* eventCString)
     eventSet->events = (PerfmonEventSetEntry*) malloc(eventtokens->qty * sizeof(PerfmonEventSetEntry));
     if (eventSet->events == NULL)
     {
+        errno = ENOMEM;
         ERROR_PRINT("Cannot allocate event list for group %d\n", groupSet->numberOfActiveGroups);
         return -ENOMEM;
     }
