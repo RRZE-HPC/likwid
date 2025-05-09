@@ -2544,7 +2544,7 @@ perfmon_addEventSet(const char* eventCString)
         }
         else if (err < 0)
         {
-            errno = -ret;
+            errno = -err;
             ERROR_PRINT("Cannot read performance group %s", cstringcopy);
             return err;
         }
