@@ -263,6 +263,7 @@ getCpuSpeed(void)
     TimerData data;
     TscCounter start;
     TscCounter stop;
+    unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
     uint64_t result = 0xFFFFFFFFFFFFFFFFULL;
     struct timeval tv1;
     struct timeval tv2;
@@ -275,26 +276,40 @@ getCpuSpeed(void)
         _timer_stop(&data);
         result = MIN(result,_timer_printCycles(&data));
     }
-
     baseline = result;
-    result = 0xFFFFFFFFFFFFFFFFULL;
-    data.stop.int64 = 0;
-    data.start.int64 = 0;
 
-    for (i=0; i< 2; i++)
+    // Determine the maximal available CPUID Leaf
+    eax = 0, ebx = 0, ecx = 0, edx = 0;
+    CPUID(eax, ebx, ecx, edx);
+    if (eax >= 0x16)
     {
-        _timer_start(&data);
-        gettimeofday( &tv1, &tzp);
-        nanosleep( &delay, NULL);
-        _timer_stop(&data);
-        gettimeofday( &tv2, &tzp);
-
-        result = MIN(result,(data.stop.int64 - data.start.int64));
+        // Processor Frequency Information Leaf (0x16) is available
+        eax = 0x16, ebx = 0, ecx = 0, edx = 0;
+        CPUID(eax, ebx, ecx, edx);
+        cpuClock = (eax & 0xFFFF) * 1000000;
     }
+    else
+    {
+        // Frequency not provided by the system, measure it.
+        result = 0xFFFFFFFFFFFFFFFFULL;
+        data.stop.int64 = 0;
+        data.start.int64 = 0;
 
-    cpuClock = (result) * 1000000 /
-        (((uint64_t)tv2.tv_sec * 1000000 + tv2.tv_usec) -
-         ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
+        for (i=0; i< 2; i++)
+        {
+            _timer_start(&data);
+            gettimeofday( &tv1, &tzp);
+            nanosleep( &delay, NULL);
+            _timer_stop(&data);
+            gettimeofday( &tv2, &tzp);
+
+            result = MIN(result,(data.stop.int64 - data.start.int64));
+        }
+
+        cpuClock = (result) * 1000000 /
+            (((uint64_t)tv2.tv_sec * 1000000 + tv2.tv_usec) -
+             ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
+    }
     cyclesClock = cpuClock;
 #endif
 #ifdef _ARCH_PPC
