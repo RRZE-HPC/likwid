@@ -89,9 +89,17 @@ topo_link_libraries(void)
     uint64_t flags = 0; // No special flags
     hipDriverProcAddressQueryResult symbolStatus;
 
-    
-    res = (*hipGetProcAddressTopoPtr)("hipGetDeviceProperties", (void**)&hipGetDevicePropertiesFunc, hipVersion, flags, &symbolStatus); 
+
+    res = (*hipGetProcAddressTopoPtr)("hipGetDeviceProperties", (void**)&hipGetDevicePropertiesFunc, hipVersion, flags, &symbolStatus);
+    if (res != hipSuccess) {
+        ERROR_PRINT("Failed to obtaian hipGetDeviceProperties address");
+        return EXIT_FAILURE;
+    }
     res = (*hipGetProcAddressTopoPtr)("hipGetDeviceCount", (void**)&hipGetDeviceCountFunc, hipVersion, flags, &symbolStatus);
+    if (res != hipSuccess) {
+        ERROR_PRINT("Failed to obtaian hipGetDeviceCount address");
+        return EXIT_FAILURE;
+    }
 
     return 0;
 }
