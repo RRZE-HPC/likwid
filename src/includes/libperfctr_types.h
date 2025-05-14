@@ -31,7 +31,9 @@
 #define LIBPERFCTR_H
 
 #include <bstrlib.h>
+#include <likwid.h>
 #include <map.h>
+#include <registers_types.h>
 
 typedef enum LikwidThreadStates {
     MARKER_STATE_NEW,
