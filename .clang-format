@@ -1,0 +1,4 @@
+BasedOnStyle: WebKit
+ReflowComments: No
+AlignTrailingComments: Always
+PointerAlignment: Right

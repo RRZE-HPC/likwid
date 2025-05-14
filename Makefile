@@ -859,6 +859,10 @@ help:
 	@echo "If PREFIX and INSTALLED_PREFIX differ, you have to move anything after 'make install' to"
 	@echo "the INSTALLED_PREFIX. You can also use 'make move' which does the job for you."
 
+.PHONY: format
+format:
+	find src/ \( -iname \*.c -or -iname \*.h \) -exec clang-format -i '{}' '+'
+
 .PHONY: rpm RPM
 rpm: RPM
 RPM: packaging/rpm/likwid.spec
