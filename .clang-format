@@ -1,0 +1,15 @@
+BasedOnStyle: WebKit
+ReflowComments: No
+AlignTrailingComments: Always
+PointerAlignment: Right
+AlignOperands: Align
+ColumnLimit: 100
+BreakBeforeBinaryOperators: None
+PPIndentWidth: 1
+RemoveParentheses: ReturnStatement
+AlignArrayOfStructures: Left
+InsertTrailingCommas: Wrapped
+BinPackArguments: false
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: true
