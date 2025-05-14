@@ -38,102 +38,99 @@
 #define ERRNO_PRINT \
     fprintf(stderr, "ERROR - [%s:%d] %s\n", __FILE__, __LINE__, strerror(errno))
 
-#define ERROR \
-    do { \
-        ERRNO_PRINT; \
+#define ERROR               \
+    do {                    \
+        ERRNO_PRINT;        \
         exit(EXIT_FAILURE); \
     } while (0)
 
 #define ERROR_PRINT(fmt, ...) \
-   fprintf(stderr,  "ERROR - [%s:%s:%d] %s.\n" fmt "\n", __FILE__,  __func__,__LINE__, strerror(errno), ##__VA_ARGS__)
+    fprintf(stderr, "ERROR - [%s:%s:%d] %s.\n" fmt "\n", __FILE__, __func__, __LINE__, strerror(errno), ##__VA_ARGS__)
 
 #define CHECK_ERROR(func, msg) \
-    do { \
-        if ((func) < 0) \
-            ERROR_PRINT(msg); \
+    do {                       \
+        if ((func) < 0)        \
+            ERROR_PRINT(msg);  \
     } while (0)
 
-#define CHECK_AND_RETURN_ERROR(func, msg)  \
-    do { \
-        if ((func) < 0) { \
-            ERROR_PRINT(msg); \
-            return errno; \
-        } \
+#define CHECK_AND_RETURN_ERROR(func, msg) \
+    do {                                  \
+        if ((func) < 0) {                 \
+            ERROR_PRINT(msg);             \
+            return errno;                 \
+        }                                 \
     } while (0)
 
-#define EXIT_IF_ERROR(func, msg)  \
-    do { \
-        if ((func) < 0) {  \
-            fprintf(stderr,"ERROR - [%s:%d] %s - %s \n", __FILE__, __LINE__, msg, strerror(errno)); \
-            exit(EXIT_FAILURE); \
-        } \
+#define EXIT_IF_ERROR(func, msg)                                                                     \
+    do {                                                                                             \
+        if ((func) < 0) {                                                                            \
+            fprintf(stderr, "ERROR - [%s:%d] %s - %s \n", __FILE__, __LINE__, msg, strerror(errno)); \
+            exit(EXIT_FAILURE);                                                                      \
+        }                                                                                            \
     } while (0)
 
-#define VERBOSEPRINTREG(cpuid, reg, flags, msg) \
-    do { \
-        if (perfmon_verbosity >= DEBUGLEV_DETAIL) \
-        { \
-            printf("DEBUG - [%s:%d] %s [%d] Register 0x%llX , Flags: 0x%llX \n", \
-                    __func__, __LINE__, msg, (cpuid), LLU_CAST (reg), LLU_CAST (flags)); \
-            fflush(stdout);  \
-        } \
+#define VERBOSEPRINTREG(cpuid, reg, flags, msg)                                    \
+    do {                                                                           \
+        if (perfmon_verbosity >= DEBUGLEV_DETAIL) {                                \
+            printf("DEBUG - [%s:%d] %s [%d] Register 0x%llX , Flags: 0x%llX \n",   \
+                __func__, __LINE__, msg, (cpuid), LLU_CAST(reg), LLU_CAST(flags)); \
+            fflush(stdout);                                                        \
+        }                                                                          \
     } while (0)
 
-#define VERBOSEPRINTPCIREG(cpuid, dev, reg, flags, msg) \
-    do { \
-        if (perfmon_verbosity >= DEBUGLEV_DETAIL) \
-        { \
-            printf("DEBUG - [%s:%d] %s [%d] Device %d Register 0x%llX , Flags: 0x%llX \n",  \
-                    __func__, __LINE__, msg, (cpuid), dev, LLU_CAST (reg), LLU_CAST (flags)); \
-            fflush(stdout);  \
-        } \
+#define VERBOSEPRINTPCIREG(cpuid, dev, reg, flags, msg)                                    \
+    do {                                                                                   \
+        if (perfmon_verbosity >= DEBUGLEV_DETAIL) {                                        \
+            printf("DEBUG - [%s:%d] %s [%d] Device %d Register 0x%llX , Flags: 0x%llX \n", \
+                __func__, __LINE__, msg, (cpuid), dev, LLU_CAST(reg), LLU_CAST(flags));    \
+            fflush(stdout);                                                                \
+        }                                                                                  \
     } while (0)
 
-#define DEBUG_PRINT(lev, fmt, ...) \
-    do { \
-        if ((lev) >= 0 && (lev) <= perfmon_verbosity) { \
+#define DEBUG_PRINT(lev, fmt, ...)                                                           \
+    do {                                                                                     \
+        if ((lev) >= 0 && (lev) <= perfmon_verbosity) {                                      \
             fprintf(stdout, "DEBUG - [%s:%d] " fmt "\n", __func__, __LINE__, ##__VA_ARGS__); \
-            fflush(stdout); \
-        } \
+            fflush(stdout);                                                                  \
+        }                                                                                    \
     } while (0)
 
-#define GPUDEBUG_PRINT(lev, fmt, ...) \
-    do { \
-        if ((lev) >= 0 && (lev) <= likwid_nvmon_verbosity) { \
+#define GPUDEBUG_PRINT(lev, fmt, ...)                                                        \
+    do {                                                                                     \
+        if ((lev) >= 0 && (lev) <= likwid_nvmon_verbosity) {                                 \
             fprintf(stdout, "DEBUG - [%s:%d] " fmt "\n", __func__, __LINE__, ##__VA_ARGS__); \
-            fflush(stdout); \
-        } \
+            fflush(stdout);                                                                  \
+        }                                                                                    \
     } while (0)
 
-#define ROCMON_DEBUG_PRINT(lev, fmt, ...) \
-    do { \
-        if ((lev) >= 0 && (lev) <= likwid_rocmon_verbosity) { \
+#define ROCMON_DEBUG_PRINT(lev, fmt, ...)                                                           \
+    do {                                                                                            \
+        if ((lev) >= 0 && (lev) <= likwid_rocmon_verbosity) {                                       \
             fprintf(stdout, "ROCMON DEBUG - [%s:%d] " fmt "\n", __func__, __LINE__, ##__VA_ARGS__); \
-            fflush(stdout); \
-        } \
+            fflush(stdout);                                                                         \
+        }                                                                                           \
     } while (0)
 
-#define INFO_PRINT(fmt, ...) \
-    do { \
-        if (perfmon_verbosity >= DEBUGLEV_INFO) \
+#define INFO_PRINT(fmt, ...)                                    \
+    do {                                                        \
+        if (perfmon_verbosity >= DEBUGLEV_INFO)                 \
             fprintf(stdout, "INFO - " fmt "\n", ##__VA_ARGS__); \
     } while (0)
 
-#define GPUINFO_PRINT(fmt, ...) \
-    do { \
-        if (likwid_nvmon_verbosity >= DEBUGLEV_INFO) \
+#define GPUINFO_PRINT(fmt, ...)                                 \
+    do {                                                        \
+        if (likwid_nvmon_verbosity >= DEBUGLEV_INFO)            \
             fprintf(stdout, "INFO - " fmt "\n", ##__VA_ARGS__); \
     } while (0)
 
-#define ROCMON_INFO_PRINT(fmt, ...) \
-    do { \
-        if (likwid_rocmon_verbosity >= DEBUGLEV_INFO) \
+#define ROCMON_INFO_PRINT(fmt, ...)                                    \
+    do {                                                               \
+        if (likwid_rocmon_verbosity >= DEBUGLEV_INFO)                  \
             fprintf(stdout, "ROCMON INFO - " fmt "\n", ##__VA_ARGS__); \
     } while (0)
 
 #define TODO_PRINT(fmt, ...) \
     fprintf(stdout, "TODO - " fmt "\n", ##__VA_ARGS__)
-
 
 #define CHECK_MSR_WRITE_ERROR(func) CHECK_AND_RETURN_ERROR(func, "MSR write operation failed")
 #define CHECK_MSR_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, "MSR read operation failed")

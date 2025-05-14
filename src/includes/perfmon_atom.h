@@ -28,8 +28,7 @@
  * =======================================================================================
  */
 
-#include <perfmon_atom_events.h>
 #include <error.h>
+#include <perfmon_atom_events.h>
 
 static int perfmon_numArchEventsAtom = NUM_ARCH_EVENTS_ATOM;
-

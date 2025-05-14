@@ -31,8 +31,8 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <error.h>
 
@@ -43,30 +43,26 @@
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-int
-virtual_numa_init()
+int virtual_numa_init()
 {
     int i;
 
-    NumaNode* nodes = (NumaNode*) malloc(sizeof(NumaNode));
-    if (!nodes)
-    {
-        fprintf(stderr,"No memory to allocate %ld byte for nodes array\n", sizeof(NumaNode));
+    NumaNode *nodes = (NumaNode *)malloc(sizeof(NumaNode));
+    if (!nodes) {
+        fprintf(stderr, "No memory to allocate %ld byte for nodes array\n", sizeof(NumaNode));
         return -1;
     }
-    nodes[0].processors = (uint32_t*) malloc(cpuid_topology.numHWThreads * sizeof(uint32_t));
-    if (!nodes[0].processors)
-    {
-        fprintf(stderr,"No memory to allocate %ld byte for processors array of NUMA node %d\n",
-                cpuid_topology.numHWThreads * sizeof(uint32_t), 0);
+    nodes[0].processors = (uint32_t *)malloc(cpuid_topology.numHWThreads * sizeof(uint32_t));
+    if (!nodes[0].processors) {
+        fprintf(stderr, "No memory to allocate %ld byte for processors array of NUMA node %d\n",
+            cpuid_topology.numHWThreads * sizeof(uint32_t), 0);
         free(nodes);
         return -1;
     }
-    nodes[0].distances = (uint32_t*) malloc(sizeof(uint32_t));
-    if (!nodes[0].distances)
-    {
-        fprintf(stderr,"No memory to allocate %ld byte for distances array of NUMA node %d\n",
-                sizeof(uint32_t), 0);
+    nodes[0].distances = (uint32_t *)malloc(sizeof(uint32_t));
+    if (!nodes[0].distances) {
+        fprintf(stderr, "No memory to allocate %ld byte for distances array of NUMA node %d\n",
+            sizeof(uint32_t), 0);
         free(nodes[0].processors);
         free(nodes);
         return -1;
@@ -76,8 +72,7 @@ virtual_numa_init()
     nodes[0].numberOfProcessors = cpuid_topology.numHWThreads;
     nodes[0].totalMemory = proc_getTotalSysMem();
     nodes[0].freeMemory = proc_getFreeSysMem();
-    for (i = 0; i < cpuid_topology.numHWThreads; i++)
-    {
+    for (i = 0; i < cpuid_topology.numHWThreads; i++) {
         nodes[0].processors[i] = cpuid_topology.threadPool[i].apicId;
     }
     nodes[0].distances[0] = 10;

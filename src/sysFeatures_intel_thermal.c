@@ -1,11 +1,11 @@
 #include <sysFeatures_intel_thermal.h>
 
-#include <string.h>
 #include <stdbool.h>
+#include <string.h>
 
+#include <registers.h>
 #include <sysFeatures_common.h>
 #include <topology.h>
-#include <registers.h>
 
 static int intel_thermal_temperature_getter(const LikwidDevice_t device, bool core, char **value)
 {
@@ -14,8 +14,7 @@ static int intel_thermal_temperature_getter(const LikwidDevice_t device, bool co
 
     int err;
     _LikwidDevice socketDev;
-    if (core)
-    {
+    if (core) {
         /* If we read temperature from the core, we need to determine its socket.
          * That is because the TEMPERATURE_TARGET is per socket only. */
         err = topology_init();
@@ -24,8 +23,7 @@ static int intel_thermal_temperature_getter(const LikwidDevice_t device, bool co
 
         bool found = false;
         CpuTopology_t topo = get_cpuTopology();
-        for (unsigned i = 0; i < topo->numHWThreads; i++)
-        {
+        for (unsigned i = 0; i < topo->numHWThreads; i++) {
             const HWThread *t = &topo->threadPool[i];
             if (t->packageId != i)
                 continue;
@@ -80,8 +78,8 @@ static int intel_thermal_tester(void)
 }
 
 static _SysFeature intel_thermal_features[] = {
-    {"core_temp", "thermal", "Current CPU temperature (core)", intel_thermal_temperature_core_getter, NULL, DEVICE_TYPE_CORE, NULL, "degrees C"},
-    {"pkg_temp", "thermal", "Current CPU temperature (package)", intel_thermal_temperature_socket_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "degrees C"},
+    { "core_temp", "thermal", "Current CPU temperature (core)", intel_thermal_temperature_core_getter, NULL, DEVICE_TYPE_CORE, NULL, "degrees C" },
+    { "pkg_temp", "thermal", "Current CPU temperature (package)", intel_thermal_temperature_socket_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "degrees C" },
 };
 
 const _SysFeatureList likwid_sysft_intel_cpu_thermal_feature_list = {

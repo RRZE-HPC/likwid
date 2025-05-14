@@ -42,12 +42,10 @@ struct sysfs_info {
 
 __attribute__((destructor)) static void free_paths(void)
 {
-    for (size_t i = 0; i < info.count; i++)
-    {
+    for (size_t i = 0; i < info.count; i++) {
         struct sysfs_socket *socket = &info.sockets[i];
 
-        for (size_t j = 0; j < socket->count; j++)
-        {
+        for (size_t j = 0; j < socket->count; j++) {
             struct sysfs_ccd *ccd = &socket->ccds[j];
 
             bdestroy(ccd->temp_path);
@@ -115,15 +113,13 @@ static int create_paths(void)
     /* Enumerate PCI devices associated with k10temp driver. */
     const char *k10temp_base = "/sys/bus/pci/drivers/k10temp";
     DIR *k10temp_dir = opendir(k10temp_base);
-    if (!k10temp_dir)
-    {
+    if (!k10temp_dir) {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s not found. Not initializing k10temp", k10temp_base);
         return -errno;
     }
 
     struct dirent *pcidevice_file;
-    while (errno = 0, (pcidevice_file = readdir(k10temp_dir)))
-    {
+    while (errno = 0, (pcidevice_file = readdir(k10temp_dir))) {
         char d_name_tokenized[sizeof(pcidevice_file->d_name)];
         snprintf(d_name_tokenized, sizeof(d_name_tokenized), "%s", pcidevice_file->d_name); // <-- manual strlcpy
         /* Read all entries in the k10temp directory.
@@ -150,15 +146,13 @@ static int create_paths(void)
 
         memset(s, 0, sizeof(*s));
         s->pci_path = bformat("%s/%s", k10temp_base, pcidevice_file->d_name);
-        if (!s->pci_path)
-        {
+        if (!s->pci_path) {
             errno = ENOMEM;
             break;
         }
     }
 
-    if (errno != 0)
-    {
+    if (errno != 0) {
         const int errno_save = errno;
         closedir(k10temp_dir);
         free_paths();
@@ -176,16 +170,14 @@ static int create_paths(void)
     qsort(info.sockets, info.count, sizeof(info.sockets[0]), socket_sort);
 
     /* Populate hwmon_path for each socket. */
-    for (size_t socket_id = 0; socket_id < info.count; socket_id++)
-    {
+    for (size_t socket_id = 0; socket_id < info.count; socket_id++) {
         /* Determine hwmon path */
         struct sysfs_socket *s = &info.sockets[socket_id];
 
         char hwmon_base[PATH_MAX];
         snprintf(hwmon_base, sizeof(hwmon_base), "%s/hwmon", bdata(s->pci_path));
         DIR *hwmon_base_dir = opendir(hwmon_base);
-        if (!hwmon_base_dir)
-        {
+        if (!hwmon_base_dir) {
             const int errno_save = errno;
             DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "k10temp: Unable to read dir %s", hwmon_base);
             free_paths();
@@ -193,8 +185,7 @@ static int create_paths(void)
         }
 
         struct dirent *hwmon_candidate_dir;
-        while (errno = 0, (hwmon_candidate_dir = readdir(hwmon_base_dir)))
-        {
+        while (errno = 0, (hwmon_candidate_dir = readdir(hwmon_base_dir))) {
             /* only allow hwmon subdirectories */
             if (strncmp(hwmon_candidate_dir->d_name, "hwmon", 5) != 0)
                 continue;
@@ -205,9 +196,8 @@ static int create_paths(void)
                 hwmon_candidate_path,
                 sizeof(hwmon_candidate_path),
                 "%s/%s",
-                bdata(s->hwmon_path), 
-                hwmon_candidate_dir->d_name
-            );
+                bdata(s->hwmon_path),
+                hwmon_candidate_dir->d_name);
 
             s->hwmon_path = bformat("%s/%s", hwmon_base, hwmon_candidate_dir->d_name);
             if (!s->hwmon_path)
@@ -215,8 +205,7 @@ static int create_paths(void)
             break;
         }
 
-        if (errno != 0)
-        {
+        if (errno != 0) {
             const int errno_save = errno;
             closedir(hwmon_base_dir);
             free_paths();
@@ -227,8 +216,7 @@ static int create_paths(void)
 
         /* Crawl hwmon dir for tempX_input and tempX_label and populate arrays accordingly. */
         DIR *hwmon_dir = opendir(bdata(s->hwmon_path));
-        if (!hwmon_dir)
-        {
+        if (!hwmon_dir) {
             const int errno_save = errno;
             DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "k10temp: Unable to read dir %s", bdata(s->hwmon_path));
             free_paths();
@@ -236,8 +224,7 @@ static int create_paths(void)
         }
 
         struct dirent *temp_dirent;
-        while (errno = 0, (temp_dirent = readdir(hwmon_dir)))
-        {
+        while (errno = 0, (temp_dirent = readdir(hwmon_dir))) {
             /* check if file name is of form  'temp\d+_label'. */
             if (strncmp(temp_dirent->d_name, "temp", strlen("temp")) != 0)
                 continue;
@@ -263,8 +250,7 @@ static int create_paths(void)
             /* read e.g. temp3_label to string and store it. */
             char label_string[64];
             int err = read_sysfs_file(label_path, label_string, sizeof(label_string));
-            if (err < 0)
-            {
+            if (err < 0) {
                 errno = -err;
                 break;
             }
@@ -277,8 +263,7 @@ static int create_paths(void)
              * sensors. The CCD temperatures are stored in the 'ccds' array, while we should
              * hopefully only find a single Tctl temperature. The latter one will be stored
              * only once per socket. */
-            if (strncmp(label_string, "Tccd", strlen("Tccd")) == 0)
-            {
+            if (strncmp(label_string, "Tccd", strlen("Tccd")) == 0) {
                 void *new_ccds = realloc(s->ccds, (s->count + 1) * sizeof(s->ccds[0]));
                 if (!new_ccds)
                     break;
@@ -290,14 +275,12 @@ static int create_paths(void)
                 memset(ccd, 0, sizeof(*ccd));
                 ccd->temp_path = bfromcstr(temp_path);
                 ccd->label = bfromcstr(label_string);
-                if (!ccd->temp_path || !ccd->label)
-                {
+                if (!ccd->temp_path || !ccd->label) {
                     errno = ENOMEM;
                     break;
                 }
             } else {
-                if (s->label)
-                {
+                if (s->label) {
                     /* If s->label is alreay set, we have encountered more then one non-CCD temperature.
                      * We only support one sensors per socket, so issue a warning but continue regardless. */
                     DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Found more than one non-Tccd. current=%s new=%s", bdata(s->label), label_string);
@@ -307,16 +290,14 @@ static int create_paths(void)
 
                 s->label = bfromcstr(label_string);
                 s->temp_path = bfromcstr(temp_path);
-                if (!s->label || !s->temp_path)
-                {
+                if (!s->label || !s->temp_path) {
                     errno = ENOMEM;
                     break;
                 }
             }
         }
 
-        if (errno != 0)
-        {
+        if (errno != 0) {
             const int errno_save = errno;
             closedir(hwmon_dir);
             free_paths();
@@ -406,8 +387,8 @@ static int amd_thermal_tester(void)
 }
 
 static _SysFeature amd_thermal_features[] = {
-    {"ccd_temp", "thermal", "Current CPU CCD temperature (Tccd)", amd_thermal_temperature_ccd_getter, NULL, DEVICE_TYPE_DIE, NULL, "degrees C"},
-    {"pkg_temp", "thermal", "Current CPU socket temperature (Tctl)", amd_thermal_temperature_ctl_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "degrees C"},
+    { "ccd_temp", "thermal", "Current CPU CCD temperature (Tccd)", amd_thermal_temperature_ccd_getter, NULL, DEVICE_TYPE_DIE, NULL, "degrees C" },
+    { "pkg_temp", "thermal", "Current CPU socket temperature (Tctl)", amd_thermal_temperature_ctl_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "degrees C" },
 };
 
 const _SysFeatureList likwid_sysft_amd_k10_cpu_thermal_feature_list = {

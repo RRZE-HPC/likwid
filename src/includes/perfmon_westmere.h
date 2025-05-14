@@ -32,4 +32,3 @@
 #include <perfmon_westmere_events.h>
 
 static int perfmon_numArchEventsWestmere = NUM_ARCH_EVENTS_WESTMERE;
-

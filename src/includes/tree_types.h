@@ -40,9 +40,9 @@ describing each node is store in other places, therefore an ID is enough.
 \extends CpuTopology
 */
 struct treeNode {
-    int id; /*!< \brief ID of the node */
-    struct treeNode* llink; /*!< \brief List of children of the current node */
-    struct treeNode* rlink; /*!< \brief List of neighbors of the current node */
+    int id;                 /*!< \brief ID of the node */
+    struct treeNode *llink; /*!< \brief List of children of the current node */
+    struct treeNode *rlink; /*!< \brief List of neighbors of the current node */
 };
 
 /** \brief Shorter name for struct treeNode */

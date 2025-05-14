@@ -28,7 +28,6 @@
  * =======================================================================================
  */
 
-
 #include <perfmon_power9_counters.h>
 #include <perfmon_power9_events.h>
 

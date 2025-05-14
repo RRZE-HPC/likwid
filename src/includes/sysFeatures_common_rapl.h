@@ -33,13 +33,13 @@
 
 #include <math.h>
 
-#include <likwid.h>
 #include <bitUtil.h>
+#include <likwid.h>
 
 typedef struct {
-    double powerUnit;   // unit W
-    double energyUnit;  // unit J
-    double timeUnit;    // unit s
+    double powerUnit;  // unit W
+    double energyUnit; // unit J
+    double timeUnit;   // unit s
 } RaplDomainInfo;
 
 static inline double timeWindow_to_seconds(const RaplDomainInfo *info, uint64_t timeWindow)
@@ -64,8 +64,7 @@ static inline uint64_t seconds_to_timeWindow(const RaplDomainInfo *info, double 
 
 static inline int getset_check(const LikwidDevice_t device, const void *value, LikwidDeviceType type)
 {
-    if (!device || !value || (device->type != type))
-    {
+    if (!device || !value || (device->type != type)) {
         return -EINVAL;
     }
     return 0;
@@ -79,8 +78,7 @@ static inline int getset_unusedinfo_check(const LikwidDevice_t device, const voi
 
 static inline int getset_info_check(const LikwidDevice_t device, const void *value, const RaplDomainInfo *info, LikwidDeviceType type)
 {
-    if (!info)
-    {
+    if (!info) {
         return -EINVAL;
     }
     return getset_unusedinfo_check(device, value, info, type);

@@ -31,7 +31,6 @@
 #ifndef LIKWID_MARKER_H
 #define LIKWID_MARKER_H
 
-
 /** \addtogroup MarkerAPI Marker API module
 *  @{
 */
@@ -89,7 +88,7 @@ Shortcut for likwid_markerWriteFile() if compiled with -DLIKWID_PERFMON. Otherwi
 #define LIKWID_MARKER_WRITE_FILE(markerfile) likwid_markerWriteFile(markerfile)
 #define LIKWID_MARKER_RESET(regionTag) likwid_markerResetRegion(regionTag)
 #define LIKWID_MARKER_GET(regionTag, nevents, events, time, count) likwid_markerGetRegion(regionTag, nevents, events, time, count)
-#else  /* LIKWID_PERFMON */
+#else /* LIKWID_PERFMON */
 #define LIKWID_MARKER_INIT
 #define LIKWID_MARKER_THREADINIT
 #define LIKWID_MARKER_SWITCH
@@ -101,7 +100,6 @@ Shortcut for likwid_markerWriteFile() if compiled with -DLIKWID_PERFMON. Otherwi
 #define LIKWID_MARKER_GET(regionTag, nevents, events, time, count)
 #define LIKWID_MARKER_RESET(regionTag)
 #endif /* LIKWID_PERFMON */
-
 
 /** \addtogroup NvMarkerAPI NvMarker API module (MarkerAPI for Nvidia GPUs)
 *  @{
@@ -178,7 +176,6 @@ Shortcut for nvmon_markerWriteFile() with \a filename if compiled with -DLIKWID_
 #define NVMON_MARKER_WRITE_FILE(markerfile)
 #endif /* LIKWID_NVMON */
 
-
 /** \addtogroup RocMarkerAPI RocMarker API module (MarkerAPI for AMD GPUs)
 *  @{
 */
@@ -251,6 +248,5 @@ Shortcut for rocmon_markerWriteFile() with \a filename if compiled with -DLIKWID
 #define ROCMON_MARKER_RESET(regionTag)
 #define ROCMON_MARKER_WRITE_FILE(filename)
 #endif /* LIKWID_ROCMON */
-
 
 #endif /* LIKWID_MARKER_H */

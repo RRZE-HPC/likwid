@@ -31,7 +31,7 @@
 #ifndef TLB_INFO_H
 #define TLB_INFO_H
 
-static char* intel_tlb_info[256] = {
+static char *intel_tlb_info[256] = {
     [0] = NULL,
     [1] = "Instruction TLB: 4 KByte pages, 4-way set associative, 32 entries",
     [2] = "Instruction TLB: 4 MByte pages, fully associative, 2 entries",

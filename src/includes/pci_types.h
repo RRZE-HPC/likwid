@@ -562,28 +562,28 @@ typedef struct {
     char *name;
     char *likwid_name;
     uint32_t devid;
-    int  online;
+    int online;
 } PciDevice;
 
 typedef struct {
-    char* name;
-    char* desc;
+    char *name;
+    char *desc;
 } PciType;
 
 static PciType pci_types[MAX_NUM_PCI_TYPES] = {
-    [R3QPI] = {"R3QPI", "R3QPI is the interface between the Intel QPI Link Layer and the Ring."},
-    [R2PCIE] = {"R2PCIE", "R2PCIe represents the interface between the Ring and IIO traffic to/from PCIe."},
-    [IMC] = {"IMC", "The integrated Memory Controller provides the interface to DRAM and communicates to the rest of the uncore through the Home Agent."},
-    [HA] = {"HA", "The HA is responsible for the protocol side of memory interactions."},
-    [QPI] = {"QPI", "The Intel QPI Link Layer is responsible for packetizing requests from the caching agent on the way out to the system interface."},
-    [IRP] = {"IRP", "IRP is responsible for maintaining coherency for IIO traffic e.g. crosssocket P2P."},
-    [EDC] = {"EDC", "The Embedded DRAM controller is used for high bandwidth memory on the Xeon Phi (KNL)."},
+    [R3QPI] = { "R3QPI", "R3QPI is the interface between the Intel QPI Link Layer and the Ring." },
+    [R2PCIE] = { "R2PCIE", "R2PCIe represents the interface between the Ring and IIO traffic to/from PCIe." },
+    [IMC] = { "IMC", "The integrated Memory Controller provides the interface to DRAM and communicates to the rest of the uncore through the Home Agent." },
+    [HA] = { "HA", "The HA is responsible for the protocol side of memory interactions." },
+    [QPI] = { "QPI", "The Intel QPI Link Layer is responsible for packetizing requests from the caching agent on the way out to the system interface." },
+    [IRP] = { "IRP", "IRP is responsible for maintaining coherency for IIO traffic e.g. crosssocket P2P." },
+    [EDC] = { "EDC", "The Embedded DRAM controller is used for high bandwidth memory on the Xeon Phi (KNL)." },
 };
 
 #define _MYSTRING(x) #x
 #define MYSTRING(x) _MYSTRING((x))
 
-static char* pci_device_names[MAX_NUM_PCI_DEVICES] = {
+static char *pci_device_names[MAX_NUM_PCI_DEVICES] = {
     [MSR_DEV] = MYSTRING(MSR_DEV),
     [MMIO_IMC_DEVICE_0_CH_0] = MYSTRING(MMIO_IMC_DEVICE_0_CH_0),
     [MMIO_IMC_DEVICE_0_CH_1] = MYSTRING(MMIO_IMC_DEVICE_0_CH_1),
@@ -976,7 +976,6 @@ static char* pci_device_names[MAX_NUM_PCI_DEVICES] = {
     [PCI_R2PCIE_DEVICE37] = MYSTRING(PCI_R2PCIE_DEVICE37),
     [PCI_R2PCIE_DEVICE38] = MYSTRING(PCI_R2PCIE_DEVICE38),
     [PCI_R2PCIE_DEVICE39] = MYSTRING(PCI_R2PCIE_DEVICE39),
-
 
 };
 

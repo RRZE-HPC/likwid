@@ -32,6 +32,5 @@
 #endif
 #include <perfmon_hisilicon_counters.h>
 
-
 static int perfmon_numCountersHiSiliconTsv110 = NUM_COUNTERS_HISILICON_TSV110;
 static int perfmon_numArchEventsHiSiliconTsv110 = NUM_ARCH_EVENTS_A57;

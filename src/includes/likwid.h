@@ -55,7 +55,6 @@ extern "C" {
 #include <likwid-marker.h>
 #endif
 
-
 /*
 ################################################################################
 # Library information
@@ -69,32 +68,32 @@ extern "C" {
 
 @return Major version
 */
-extern int likwid_getMajorVersion(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getMajorVersion(void) __attribute__((visibility("default")));
 /*! \brief Get the minor version of the LIKWID library
 
 @return Minor version
 */
-extern int likwid_getMinorVersion(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getMinorVersion(void) __attribute__((visibility("default")));
 /*! \brief Get the bugfix version of the LIKWID library
 
 @return Bugfix version
 */
-extern int likwid_getBugfixVersion(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getBugfixVersion(void) __attribute__((visibility("default")));
 
 /*! \brief Check whether the LIKWID library was built with Nvidia GPU support */
-extern int likwid_getNvidiaSupport(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getNvidiaSupport(void) __attribute__((visibility("default")));
 
 /*! \brief Check whether the LIKWID library was built with AMD GPU support */
-extern int likwid_getRocmSupport(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getRocmSupport(void) __attribute__((visibility("default")));
 
 /*! \brief Get the maximal count of supported HW threads */
-extern int likwid_getMaxSupportedThreads(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getMaxSupportedThreads(void) __attribute__((visibility("default")));
 
 /*! \brief Get the maximal count of supported CPU sockets */
-extern int likwid_getMaxSupportedSockets(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getMaxSupportedSockets(void) __attribute__((visibility("default")));
 
 /*! \brief Check whether the LIKWID library was built with sysFeatures support */
-extern int likwid_getSysFeaturesSupport(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getSysFeaturesSupport(void) __attribute__((visibility("default")));
 /** @}*/
 
 /*
@@ -110,29 +109,29 @@ extern int likwid_getSysFeaturesSupport(void) __attribute__ ((visibility ("defau
 
 @return Major version
 */
-extern int likwid_getMajorVersion(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getMajorVersion(void) __attribute__((visibility("default")));
 /*! \brief Get the minor version of the LIKWID library
 
 @return Minor version
 */
-extern int likwid_getMinorVersion(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getMinorVersion(void) __attribute__((visibility("default")));
 /*! \brief Get the bugfix version of the LIKWID library
 
 @return Bugfix version
 */
-extern int likwid_getBugfixVersion(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getBugfixVersion(void) __attribute__((visibility("default")));
 
 /*! \brief Check whether the LIKWID library was built with Nvidia GPU support */
-extern int likwid_getNvidiaSupport(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getNvidiaSupport(void) __attribute__((visibility("default")));
 
 /*! \brief Check whether the LIKWID library was built with AMD GPU support */
-extern int likwid_getRocmSupport(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getRocmSupport(void) __attribute__((visibility("default")));
 
 /*! \brief Get the maximal count of supported HW threads */
-extern int likwid_getMaxSupportedThreads(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getMaxSupportedThreads(void) __attribute__((visibility("default")));
 
 /*! \brief Get the maximal count of supported CPU sockets */
-extern int likwid_getMaxSupportedSockets(void) __attribute__ ((visibility ("default") ));
+extern int likwid_getMaxSupportedSockets(void) __attribute__((visibility("default")));
 /** @}*/
 
 /*
@@ -244,7 +243,7 @@ Get the accumulated data of the current thread for the given regionTag.
 @param count [out] Call count of the code region
 */
 extern void likwid_markerGetRegion(const char *regionTag, int *nr_events,
-                                   double *events, double *time, int *count)
+    double *events, double *time, int *count)
     __attribute__((visibility("default")));
 /* utility routines */
 /*! \brief Get CPU ID of the current process/thread
@@ -292,12 +291,10 @@ MSR and PCI devices. The daemon mode forwards the operations to a daemon with
 higher priviledges.
 */
 typedef enum {
-  ACCESSMODE_PERF = -1, /*!< \brief Access performance monitoring through
+    ACCESSMODE_PERF = -1,  /*!< \brief Access performance monitoring through
                            perf_event kernel interface */
-  ACCESSMODE_DIRECT =
-      0, /*!< \brief Access performance monitoring registers directly */
-  ACCESSMODE_DAEMON =
-      1 /*!< \brief Use the access daemon to access the registers */
+    ACCESSMODE_DIRECT = 0, /*!< \brief Access performance monitoring registers directly */
+    ACCESSMODE_DAEMON = 1  /*!< \brief Use the access daemon to access the registers */
 } AccessMode;
 
 /*! \brief Set access mode
@@ -346,13 +343,13 @@ at each start, a path to a topology file can be set. The other values are mostly
 used internally.
 */
 typedef struct {
-  char *configFileName;      /*!< \brief Path to the configuration file */
-  char *topologyCfgFileName; /*!< \brief Path to the topology file */
-  char *daemonPath;          /*!< \brief Path of the access daemon */
-  char *groupPath; /*!< \brief Path of default performance group directory */
-  AccessMode daemonMode; /*!< \brief Access mode to the MSR and PCI registers */
-  int maxNumThreads;     /*!< \brief Maximum number of HW threads */
-  int maxNumNodes;       /*!< \brief Maximum number of NUMA nodes */
+    char *configFileName;      /*!< \brief Path to the configuration file */
+    char *topologyCfgFileName; /*!< \brief Path to the topology file */
+    char *daemonPath;          /*!< \brief Path of the access daemon */
+    char *groupPath;           /*!< \brief Path of default performance group directory */
+    AccessMode daemonMode;     /*!< \brief Access mode to the MSR and PCI registers */
+    int maxNumThreads;         /*!< \brief Maximum number of HW threads */
+    int maxNumNodes;           /*!< \brief Maximum number of NUMA nodes */
 } Likwid_Configuration;
 
 /** \brief Pointer for exporting the Configuration data structure */
@@ -408,33 +405,33 @@ specific information like the version of Intel's performance monitoring
 facility.
 */
 typedef struct {
-  uint32_t family;   /*!< \brief CPU family ID*/
-  uint32_t model;    /*!< \brief CPU model ID */
-  uint32_t stepping; /*!< \brief Stepping (version) of the CPU */
-  uint32_t vendor;   /*!< \brief Vendor of the CPU */
-  uint32_t part;     /*!< \brief Part number of the CPU */
-  uint64_t clock;    /*!< \brief Current clock frequency of the executing CPU*/
-  int turbo;         /*!< \brief Flag if CPU has a turbo mode */
-  char *osname;      /*!< \brief Name of the CPU reported by OS */
-  char *name;        /*!< \brief Name of the CPU as identified by LIKWID */
-  char *short_name;  /*!< \brief Short name of the CPU*/
-  char *features;    /*!< \brief String with all features supported by the CPU*/
-  int isIntel;       /*!< \brief Flag if it is an Intel CPU*/
-  char architecture[20]; /*!< \brief name of the architecture like x86_64 or
+    uint32_t family;         /*!< \brief CPU family ID*/
+    uint32_t model;          /*!< \brief CPU model ID */
+    uint32_t stepping;       /*!< \brief Stepping (version) of the CPU */
+    uint32_t vendor;         /*!< \brief Vendor of the CPU */
+    uint32_t part;           /*!< \brief Part number of the CPU */
+    uint64_t clock;          /*!< \brief Current clock frequency of the executing CPU*/
+    int turbo;               /*!< \brief Flag if CPU has a turbo mode */
+    char *osname;            /*!< \brief Name of the CPU reported by OS */
+    char *name;              /*!< \brief Name of the CPU as identified by LIKWID */
+    char *short_name;        /*!< \brief Short name of the CPU*/
+    char *features;          /*!< \brief String with all features supported by the CPU*/
+    int isIntel;             /*!< \brief Flag if it is an Intel CPU*/
+    char architecture[20];   /*!< \brief name of the architecture like x86_64 or
                             ppc64 (comparable with uname -m)*/
-  int supportUncore; /*!< \brief Flag if system has Uncore performance monitors
+    int supportUncore;       /*!< \brief Flag if system has Uncore performance monitors
                       */
-  int supportClientmem;  /*!< \brief Flag if system has mappable memory
+    int supportClientmem;    /*!< \brief Flag if system has mappable memory
                             controllers */
-  uint64_t featureFlags; /*!< \brief Mask of all features supported by the CPU*/
-  uint32_t perf_version; /*!< \brief Version of Intel's performance monitoring
+    uint64_t featureFlags;   /*!< \brief Mask of all features supported by the CPU*/
+    uint32_t perf_version;   /*!< \brief Version of Intel's performance monitoring
                             facility */
-  uint32_t perf_num_ctr; /*!< \brief Number of general purpose HWthread-local
+    uint32_t perf_num_ctr;   /*!< \brief Number of general purpose HWthread-local
                             performance monitoring counters */
-  uint32_t perf_width_ctr; /*!< \brief Bit width of fixed and general purpose
+    uint32_t perf_width_ctr; /*!< \brief Bit width of fixed and general purpose
                               counters */
-  uint32_t
-      perf_num_fixed_ctr; /*!< \brief Number of fixed purpose HWthread-local
+    uint32_t
+        perf_num_fixed_ctr; /*!< \brief Number of fixed purpose HWthread-local
                              performance monitoring counters */
 } CpuInfo;
 
@@ -445,14 +442,14 @@ CPU core ID of the HW thread and the CPU socket ID.
 \extends CpuTopology
 */
 typedef struct {
-  uint32_t threadId;  /*!< \brief ID of HW thread inside the CPU core */
-  uint32_t coreId;    /*!< \brief ID of CPU core that executes the HW thread */
-  uint32_t packageId; /*!< \brief ID of CPU socket containing the HW thread */
-  uint32_t apicId;    /*!< \brief ID of HW thread retrieved through the Advanced
+    uint32_t threadId;  /*!< \brief ID of HW thread inside the CPU core */
+    uint32_t coreId;    /*!< \brief ID of CPU core that executes the HW thread */
+    uint32_t packageId; /*!< \brief ID of CPU socket containing the HW thread */
+    uint32_t apicId;    /*!< \brief ID of HW thread retrieved through the Advanced
                          Programmable Interrupt Controller */
-  uint32_t
-      dieId; /*!< \brief ID of die. A package might contain multiple dies */
-  uint32_t inCpuSet; /*!< \brief Flag if HW thread is inside the CPUset */
+    uint32_t
+        dieId;         /*!< \brief ID of die. A package might contain multiple dies */
+    uint32_t inCpuSet; /*!< \brief Flag if HW thread is inside the CPUset */
 } HWThread;
 
 /*! \brief Enum of possible caches
@@ -461,13 +458,13 @@ CPU caches can have different tasks and hold different kind of data. This enum
 lists all shapes used in all supported CPUs \extends CacheLevel
 */
 typedef enum {
-  NOCACHE = 0,      /*!< \brief No cache used as undef value */
-  DATACACHE,        /*!< \brief Cache holding data cache lines */
-  INSTRUCTIONCACHE, /*!< \brief Cache holding instruction cache lines */
-  UNIFIEDCACHE, /*!< \brief Cache holding both instruction and data cache lines
+    NOCACHE = 0,      /*!< \brief No cache used as undef value */
+    DATACACHE,        /*!< \brief Cache holding data cache lines */
+    INSTRUCTIONCACHE, /*!< \brief Cache holding instruction cache lines */
+    UNIFIEDCACHE,     /*!< \brief Cache holding both instruction and data cache lines
                  */
-  ITLB, /*!< \brief Translation Lookaside Buffer cache for instruction pages */
-  DTLB  /*!< \brief Translation Lookaside Buffer cache for data pages */
+    ITLB,             /*!< \brief Translation Lookaside Buffer cache for instruction pages */
+    DTLB              /*!< \brief Translation Lookaside Buffer cache for data pages */
 } CacheType;
 
 /*! \brief Structure describing a cache level
@@ -477,15 +474,15 @@ level. The CacheLevel structure holds general information about the cache.
 \extends CpuTopology
 */
 typedef struct {
-  uint32_t level;         /*!< \brief Level of the cache in the hierarchy */
-  CacheType type;         /*!< \brief Type of the cache */
-  uint32_t associativity; /*!< \brief Amount of cache lines hold by each set */
-  uint32_t sets;          /*!< \brief Amount of sets */
-  uint32_t lineSize;      /*!< \brief Size in bytes of one cache line */
-  uint32_t size;          /*!< \brief Size in bytes of the cache */
-  uint32_t threads; /*!< \brief Number of HW thread connected to the cache */
-  uint32_t
-      inclusive; /*!< \brief Flag if cache is inclusive (holds also cache lines
+    uint32_t level;         /*!< \brief Level of the cache in the hierarchy */
+    CacheType type;         /*!< \brief Type of the cache */
+    uint32_t associativity; /*!< \brief Amount of cache lines hold by each set */
+    uint32_t sets;          /*!< \brief Amount of sets */
+    uint32_t lineSize;      /*!< \brief Size in bytes of one cache line */
+    uint32_t size;          /*!< \brief Size in bytes of the cache */
+    uint32_t threads;       /*!< \brief Number of HW thread connected to the cache */
+    uint32_t
+        inclusive; /*!< \brief Flag if cache is inclusive (holds also cache lines
                     available in caches nearer to the CPU) or exclusive */
 } CacheLevel;
 
@@ -496,22 +493,22 @@ threads, how they are distributed over the CPU sockets/packages and how the
 caching hierarchy is assembled.
 */
 typedef struct {
-  uint32_t numHWThreads; /*!< \brief Amount of HW threads in the system and
+    uint32_t numHWThreads;    /*!< \brief Amount of HW threads in the system and
                             length of \a threadPool */
-  uint32_t activeHWThreads; /*!< \brief Amount of active HW threads in the
+    uint32_t activeHWThreads; /*!< \brief Amount of active HW threads in the
                                system (e.g. in cpuset) */
-  uint32_t
-      numSockets;   /*!< \brief Amount of CPU sockets/packages in the system */
-  uint32_t numDies; /*!< \brief Amount of CPU dies in the system */
-  uint32_t numCoresPerSocket; /*!< \brief Amount of physical cores in one CPU
+    uint32_t
+        numSockets;                /*!< \brief Amount of CPU sockets/packages in the system */
+    uint32_t numDies;              /*!< \brief Amount of CPU dies in the system */
+    uint32_t numCoresPerSocket;    /*!< \brief Amount of physical cores in one CPU
                                  socket/package */
-  uint32_t numThreadsPerCore; /*!< \brief Amount of HW threads in one physical
+    uint32_t numThreadsPerCore;    /*!< \brief Amount of HW threads in one physical
                                  CPU core */
-  uint32_t numCacheLevels; /*!< \brief Amount of caches for each HW thread and
+    uint32_t numCacheLevels;       /*!< \brief Amount of caches for each HW thread and
                               length of \a cacheLevels */
-  HWThread *threadPool;    /*!< \brief List of all HW thread descriptions */
-  CacheLevel *cacheLevels; /*!< \brief List of all caches in the hierarchy */
-  struct treeNode *topologyTree; /*!< \brief Anchor for a tree structure
+    HWThread *threadPool;          /*!< \brief List of all HW thread descriptions */
+    CacheLevel *cacheLevels;       /*!< \brief List of all caches in the hierarchy */
+    struct treeNode *topologyTree; /*!< \brief Anchor for a tree structure
                                     describing the system topology */
 } CpuTopology;
 
@@ -573,15 +570,15 @@ library or by evaluating the /proc filesystem.
 \extends NumaTopology
 */
 typedef struct {
-  uint32_t id;          /*!< \brief ID of the NUMA node */
-  uint64_t totalMemory; /*!< \brief Amount of memory in the NUMA node */
-  uint64_t freeMemory;  /*!< \brief Amount of free memory in the NUMA node */
-  uint32_t numberOfProcessors; /*!< \brief umber of processors covered by the
+    uint32_t id;                 /*!< \brief ID of the NUMA node */
+    uint64_t totalMemory;        /*!< \brief Amount of memory in the NUMA node */
+    uint64_t freeMemory;         /*!< \brief Amount of free memory in the NUMA node */
+    uint32_t numberOfProcessors; /*!< \brief umber of processors covered by the
                                   NUMA node and length of \a processors */
-  uint32_t *processors;       /*!< \brief List of HW threads in the NUMA node */
-  uint32_t numberOfDistances; /*!< \brief Amount of distances to the other NUMA
+    uint32_t *processors;        /*!< \brief List of HW threads in the NUMA node */
+    uint32_t numberOfDistances;  /*!< \brief Amount of distances to the other NUMA
                                  nodes in the system and self  */
-  uint32_t *distances; /*!< \brief List of distances to the other NUMA nodes and
+    uint32_t *distances;         /*!< \brief List of distances to the other NUMA nodes and
                           self */
 } NumaNode;
 
@@ -589,9 +586,9 @@ typedef struct {
  * system.
  */
 typedef struct {
-  uint32_t numberOfNodes; /*!< \brief Number of NUMA nodes in the system and
+    uint32_t numberOfNodes; /*!< \brief Number of NUMA nodes in the system and
                              length of \a nodes  */
-  NumaNode *nodes;        /*!< \brief List of NUMA nodes */
+    NumaNode *nodes;        /*!< \brief List of NUMA nodes */
 } NumaTopology;
 
 /*! \brief Variable holding the global NUMA information structure */
@@ -623,7 +620,7 @@ Set the memory allocation policy to interleaved for given list of CPUs
 @param [in] numberOfProcessors Length of processor list
 */
 extern void numa_setInterleaved(const int *processorList,
-                                int numberOfProcessors)
+    int numberOfProcessors)
     __attribute__((visibility("default")));
 /*! \brief Allocate memory from a specific specific NUMA node
 @param [in,out] ptr Start pointer of memory
@@ -674,14 +671,14 @@ system. Example domains are NUMA nodes, CPU sockets/packages or LLC (Last Level
 Cache) cache domains. \extends AffinityDomains
 */
 typedef struct {
-  char* tag; /*!< \brief String with the ID for the affinity domain.
+    char *tag;                   /*!< \brief String with the ID for the affinity domain.
                   Currently possible values: N (node), SX (socket/package X), CX
                   (LLC cache domain X) and MX (memory domain X) */
-  uint32_t numberOfProcessors; /*!< \brief Number of HW threads in the domain
+    uint32_t numberOfProcessors; /*!< \brief Number of HW threads in the domain
                                   and length of \a processorList */
-  uint32_t
-      numberOfCores;  /*!< \brief Number of hardware threads in the domain */
-  int *processorList; /*!< \brief List of HW thread IDs in the domain */
+    uint32_t
+        numberOfCores;  /*!< \brief Number of hardware threads in the domain */
+    int *processorList; /*!< \brief List of HW thread IDs in the domain */
 } AffinityDomain;
 
 /*! \brief The AffinityDomains data structure holds different count variables
@@ -695,26 +692,26 @@ duplicates or derivation of values in \a CpuInfo, \a CpuTopology and \a
 NumaTopology.
 */
 typedef struct {
-  uint32_t numberOfSocketDomains; /*!< \brief Number of CPU sockets/packages in
+    uint32_t numberOfSocketDomains; /*!< \brief Number of CPU sockets/packages in
                                      the system */
-  uint32_t
-      numberOfNumaDomains; /*!< \brief Number of NUMA nodes in the system */
-  uint32_t numberOfProcessorsPerSocket; /*!< \brief Number of HW threads per
+    uint32_t
+        numberOfNumaDomains;              /*!< \brief Number of NUMA nodes in the system */
+    uint32_t numberOfProcessorsPerSocket; /*!< \brief Number of HW threads per
                                            socket/package in the system */
-  uint32_t
-      numberOfCacheDomains; /*!< \brief Number of LLC caches in the system */
-  uint32_t numberOfCoresPerCache; /*!< \brief Number of CPU cores per LLC cache
+    uint32_t
+        numberOfCacheDomains;            /*!< \brief Number of LLC caches in the system */
+    uint32_t numberOfCoresPerCache;      /*!< \brief Number of CPU cores per LLC cache
                                      in the system */
-  uint32_t numberOfProcessorsPerCache; /*!< \brief Number of hardware threads
+    uint32_t numberOfProcessorsPerCache; /*!< \brief Number of hardware threads
                                           per LLC cache in the system */
-  uint32_t numberOfCudaDomains;       /*!< \brief Number of hardware threads
+    uint32_t numberOfCudaDomains;        /*!< \brief Number of hardware threads
                                           close to a Nvidia GPU in the system */
-  uint32_t numberOfRocmDomains;       /*!< \brief Number of hardware threads
+    uint32_t numberOfRocmDomains;        /*!< \brief Number of hardware threads
                                           close to a AMD GPU in the system */
-  uint32_t numberOfAffinityDomains;    /*!< \brief Number of affinity domains in
+    uint32_t numberOfAffinityDomains;    /*!< \brief Number of affinity domains in
                                           the current system  and length of \a
                                           domains array */
-  AffinityDomain *domains; /*!< \brief List of all domains in the system */
+    AffinityDomain *domains;             /*!< \brief List of all domains in the system */
 } AffinityDomains;
 
 /** \brief Pointer for exporting the AffinityDomains data structure */
@@ -876,7 +873,7 @@ returns all found group names
 @return Amount of found performance groups
 */
 extern int perfmon_getGroups(char ***groups, char ***shortinfos,
-                             char ***longinfos)
+    char ***longinfos)
     __attribute__((visibility("default")));
 
 /*! \brief Free all group information
@@ -887,7 +884,7 @@ extern int perfmon_getGroups(char ***groups, char ***shortinfos,
 @param [in] longinfos List of long information string about group
 */
 extern void perfmon_returnGroups(int nrgroups, char **groups, char **shortinfos,
-                                 char **longinfos)
+    char **longinfos)
     __attribute__((visibility("default")));
 
 /*! \brief Initialize performance monitoring facility
@@ -1252,7 +1249,7 @@ extern double perfmon_getResultOfRegionThread(int region, int event, int thread)
 @return Metric result of a region for a thread
 */
 extern double perfmon_getMetricOfRegionThread(int region, int metricId,
-                                              int threadId)
+    int threadId)
     __attribute__((visibility("default")));
 
 /** @}*/
@@ -1275,16 +1272,16 @@ set, the fields groupname and shortinfo are set to 'Custom', longinfo is NULL
 and in general the nmetrics value is 0.
 */
 typedef struct {
-  char *groupname;    /*!< \brief Name of the group: performance group name or
+    char *groupname;       /*!< \brief Name of the group: performance group name or
                          'Custom' */
-  char *shortinfo;    /*!< \brief Short info string for the group or 'Custom' */
-  int nevents;        /*!< \brief Number of event/counter combinations */
-  char **events;      /*!< \brief List of events */
-  char **counters;    /*!< \brief List of counter registers */
-  int nmetrics;       /*!< \brief Number of metrics */
-  char **metricnames; /*!< \brief Metric names */
-  char **metricformulas; /*!< \brief Metric formulas */
-  char *longinfo; /*!< \brief Descriptive text about the group or empty */
+    char *shortinfo;       /*!< \brief Short info string for the group or 'Custom' */
+    int nevents;           /*!< \brief Number of event/counter combinations */
+    char **events;         /*!< \brief List of events */
+    char **counters;       /*!< \brief List of counter registers */
+    int nmetrics;          /*!< \brief Number of metrics */
+    char **metricnames;    /*!< \brief Metric names */
+    char **metricformulas; /*!< \brief Metric formulas */
+    char *longinfo;        /*!< \brief Descriptive text about the group or empty */
 } GroupInfo;
 
 /*! \brief Initialize values in GroupInfo struct
@@ -1444,7 +1441,7 @@ Read group from file
 @return 0 for success, -EINVAL or -ENOMEM in case of error.
 */
 int perfgroup_readGroup(const char *grouppath, const char *architecture,
-                        const char *groupname, GroupInfo *ginfo)
+    const char *groupname, GroupInfo *ginfo)
     __attribute__((visibility("default")));
 /*! \brief Create group from event string
 
@@ -1474,8 +1471,8 @@ Get all groups available in the system (base + user home)
 @return number of groups, -EINVAL or -ENOMEM in case of error.
 */
 int perfgroup_getGroups(const char *grouppath, const char *architecture,
-                        char ***groupnames, char ***groupshort,
-                        char ***grouplong)
+    char ***groupnames, char ***groupshort,
+    char ***grouplong)
     __attribute__((visibility("default")));
 /*! \brief Return list of all groups
 
@@ -1486,7 +1483,7 @@ Return list of all groups
 @param [in] grouplong List of groups' long information string
 */
 void perfgroup_returnGroups(int groups, char **groupnames, char **groupshort,
-                            char **grouplong)
+    char **grouplong)
     __attribute__((visibility("default")));
 
 /** @}*/
@@ -1505,17 +1502,17 @@ void perfgroup_returnGroups(int groups, char **groupnames, char **groupshort,
 \extends TimerData
 */
 typedef union {
-  uint64_t int64; /*!< \brief Cycle count in 64 bit */
-  struct {
-    uint32_t lo, hi;
-  } int32; /*!< \brief Cycle count stored in two 32 bit fields */
+    uint64_t int64; /*!< \brief Cycle count in 64 bit */
+    struct {
+        uint32_t lo, hi;
+    } int32; /*!< \brief Cycle count stored in two 32 bit fields */
 } TscCounter;
 
 /*! \brief Struct defining the start and stop time of a time interval
  */
 typedef struct {
-  TscCounter start; /*!< \brief Cycles at start */
-  TscCounter stop;  /*!< \brief Cycles at stop */
+    TscCounter start; /*!< \brief Cycles at start */
+    TscCounter stop;  /*!< \brief Cycles at stop */
 } TimerData;
 
 /*! \brief Initialize timer by retrieving baseline frequency and cpu clock
@@ -1640,19 +1637,19 @@ available
 \extends PowerInfo
 */
 typedef struct {
-  int numSteps;  /*!< \brief Amount of turbo mode steps/frequencies */
-  double *steps; /*!< \brief List of turbo mode steps */
+    int numSteps;  /*!< \brief Amount of turbo mode steps/frequencies */
+    double *steps; /*!< \brief List of turbo mode steps */
 } TurboBoost;
 
 /*! \brief Enum for all supported RAPL domains
 \extends PowerDomain
 */
 typedef enum {
-  PKG = 0,     /*!< \brief PKG domain, mostly one CPU socket/package */
-  PP0 = 1,     /*!< \brief PP0 domain, not clearly defined by Intel */
-  PP1 = 2,     /*!< \brief PP1 domain, not clearly defined by Intel */
-  DRAM = 3,    /*!< \brief DRAM domain, the memory modules */
-  PLATFORM = 4 /*!< \brief PLATFORM domain, the whole system (if powered through
+    PKG = 0,     /*!< \brief PKG domain, mostly one CPU socket/package */
+    PP0 = 1,     /*!< \brief PP0 domain, not clearly defined by Intel */
+    PP1 = 2,     /*!< \brief PP1 domain, not clearly defined by Intel */
+    DRAM = 3,    /*!< \brief DRAM domain, the memory modules */
+    PLATFORM = 4 /*!< \brief PLATFORM domain, the whole system (if powered through
                   the main board) */
 } PowerType;
 
@@ -1660,41 +1657,41 @@ typedef enum {
 \extends PowerInfo
 */
 typedef struct {
-  PowerType type; /*!< \brief Identifier which RAPL domain is managed by this
+    PowerType type;        /*!< \brief Identifier which RAPL domain is managed by this
                      struct */
-  uint32_t supportFlags; /*!< \brief Bitmask which features are supported by the
+    uint32_t supportFlags; /*!< \brief Bitmask which features are supported by the
                             power domain */
-  double energyUnit;     /*!< \brief Multiplier for energy measurements */
-  double tdp; /*!< \brief Thermal Design Power (maximum amount of heat generated
+    double energyUnit;     /*!< \brief Multiplier for energy measurements */
+    double tdp;            /*!< \brief Thermal Design Power (maximum amount of heat generated
                  by the CPU) */
-  double minPower;      /*!< \brief Minimal power consumption of the CPU */
-  double maxPower;      /*!< \brief Maximal power consumption of the CPU */
-  double maxTimeWindow; /*!< \brief Minimal power measurement interval */
+    double minPower;       /*!< \brief Minimal power consumption of the CPU */
+    double maxPower;       /*!< \brief Maximal power consumption of the CPU */
+    double maxTimeWindow;  /*!< \brief Minimal power measurement interval */
 } PowerDomain;
 
 /*! \brief Information structure of CPU's power measurement facility
  */
 typedef struct {
-    double baseFrequency; /*!< \brief Base frequency of the CPU */
-    double minFrequency; /*!< \brief Minimal frequency of the CPU */
-    TurboBoost turbo; /*!< \brief Turbo boost information */
-    int hasRAPL; /*!< \brief RAPL support flag */
-    double powerUnit; /*!< \brief Multiplier for power measurements */
-    double timeUnit; /*!< \brief Multiplier for time information */
-    double uncoreMinFreq; /*!< \brief Minimal uncore frequency */
-    double uncoreMaxFreq; /*!< \brief Maximal uncore frequency */
-    uint8_t perfBias; /*!< \brief Performance energy bias */
-    int statusRegWidth; /*!< \brief Register width of the status register */
-    int numDomains; /*!< \brief Number of RAPL domains */
+    double baseFrequency;                   /*!< \brief Base frequency of the CPU */
+    double minFrequency;                    /*!< \brief Minimal frequency of the CPU */
+    TurboBoost turbo;                       /*!< \brief Turbo boost information */
+    int hasRAPL;                            /*!< \brief RAPL support flag */
+    double powerUnit;                       /*!< \brief Multiplier for power measurements */
+    double timeUnit;                        /*!< \brief Multiplier for time information */
+    double uncoreMinFreq;                   /*!< \brief Minimal uncore frequency */
+    double uncoreMaxFreq;                   /*!< \brief Maximal uncore frequency */
+    uint8_t perfBias;                       /*!< \brief Performance energy bias */
+    int statusRegWidth;                     /*!< \brief Register width of the status register */
+    int numDomains;                         /*!< \brief Number of RAPL domains */
     PowerDomain domains[NUM_POWER_DOMAINS]; /*!< \brief List of power domains */
 } PowerInfo;
 
 /*! \brief Power measurement data for start/stop measurements
  */
 typedef struct {
-  int domain;      /*!< \brief RAPL domain identifier */
-  uint64_t before; /*!< \brief Counter state at start */
-  uint64_t after;  /*!< \brief Counter state at stop */
+    int domain;      /*!< \brief RAPL domain identifier */
+    uint64_t before; /*!< \brief Counter state at start */
+    uint64_t after;  /*!< \brief Counter state at stop */
 } PowerData;
 
 /*! \brief Variable holding the global power information structure */
@@ -1787,7 +1784,7 @@ NOT IMPLEMENTED
 @return error code
 */
 int power_limitSet(int cpuId, PowerType domain, double power, double time,
-                   int doClamping) __attribute__((visibility("default")));
+    int doClamping) __attribute__((visibility("default")));
 
 /*! \brief Get the state of a energy limit, activated or deactivated
 NOT IMPLEMENTED
@@ -1857,7 +1854,7 @@ processorList
 @param [in] numberOfProcessors Number of CPUs in list
 */
 extern void memsweep_threadGroup(const int *processorList,
-                                 int numberOfProcessors)
+    int numberOfProcessors)
     __attribute__((visibility("default")));
 /** @}*/
 
@@ -1872,29 +1869,29 @@ extern void memsweep_threadGroup(const int *processorList,
 /*! \brief Enumeration of all CPU related features.
  */
 typedef enum {
-  FEAT_HW_PREFETCHER = 0,    /*!< \brief Hardware prefetcher */
-  FEAT_CL_PREFETCHER,        /*!< \brief Adjacent cache line prefetcher */
-  FEAT_DCU_PREFETCHER,       /*!< \brief DCU L1 data cache prefetcher */
-  FEAT_IP_PREFETCHER,        /*!< \brief IP L1 data cache prefetcher */
-  FEAT_FAST_STRINGS,         /*!< \brief Fast-strings feature */
-  FEAT_THERMAL_CONTROL,      /*!< \brief Automatic Thermal Control Circuit */
-  FEAT_PERF_MON,             /*!< \brief Hardware performance monitoring */
-  FEAT_FERR_MULTIPLEX,       /*!< \brief FERR# Multiplexing, must be 1 for XAPIC
+    FEAT_HW_PREFETCHER = 0,    /*!< \brief Hardware prefetcher */
+    FEAT_CL_PREFETCHER,        /*!< \brief Adjacent cache line prefetcher */
+    FEAT_DCU_PREFETCHER,       /*!< \brief DCU L1 data cache prefetcher */
+    FEAT_IP_PREFETCHER,        /*!< \brief IP L1 data cache prefetcher */
+    FEAT_FAST_STRINGS,         /*!< \brief Fast-strings feature */
+    FEAT_THERMAL_CONTROL,      /*!< \brief Automatic Thermal Control Circuit */
+    FEAT_PERF_MON,             /*!< \brief Hardware performance monitoring */
+    FEAT_FERR_MULTIPLEX,       /*!< \brief FERR# Multiplexing, must be 1 for XAPIC
                                 interrupt model */
-  FEAT_BRANCH_TRACE_STORAGE, /*!< \brief Branch Trace Storage */
-  FEAT_XTPR_MESSAGE, /*!< \brief xTPR Message to set processor priority */
-  FEAT_PEBS,         /*!< \brief Precise Event Based Sampling (PEBS) */
-  FEAT_SPEEDSTEP,    /*!< \brief Enhanced Intel SpeedStep Technology to reduce
+    FEAT_BRANCH_TRACE_STORAGE, /*!< \brief Branch Trace Storage */
+    FEAT_XTPR_MESSAGE,         /*!< \brief xTPR Message to set processor priority */
+    FEAT_PEBS,                 /*!< \brief Precise Event Based Sampling (PEBS) */
+    FEAT_SPEEDSTEP,            /*!< \brief Enhanced Intel SpeedStep Technology to reduce
                         energy consumption*/
-  FEAT_MONITOR, /*!< \brief MONITOR/MWAIT feature to monitor write-back stores*/
-  FEAT_SPEEDSTEP_LOCK, /*!< \brief Enhanced Intel SpeedStep Technology Select
+    FEAT_MONITOR,              /*!< \brief MONITOR/MWAIT feature to monitor write-back stores*/
+    FEAT_SPEEDSTEP_LOCK,       /*!< \brief Enhanced Intel SpeedStep Technology Select
                           Lock */
-  FEAT_CPUID_MAX_VAL,  /*!< \brief Limit CPUID Maxval */
-  FEAT_XD_BIT,         /*!< \brief Execute Disable Bit */
-  FEAT_DYN_ACCEL,      /*!< \brief Intel Dynamic Acceleration */
-  FEAT_TURBO_MODE,     /*!< \brief Intel Turbo Mode */
-  FEAT_TM2,            /*!< \brief Thermal Monitoring 2 */
-  CPUFEATURES_MAX
+    FEAT_CPUID_MAX_VAL,        /*!< \brief Limit CPUID Maxval */
+    FEAT_XD_BIT,               /*!< \brief Execute Disable Bit */
+    FEAT_DYN_ACCEL,            /*!< \brief Intel Dynamic Acceleration */
+    FEAT_TURBO_MODE,           /*!< \brief Intel Turbo Mode */
+    FEAT_TM2,                  /*!< \brief Thermal Monitoring 2 */
+    CPUFEATURES_MAX
 } CpuFeature;
 
 /*! \brief Initialize the internal feature variables for all CPUs
@@ -2162,51 +2159,51 @@ information. Most information comes from cuDeviceGetProperties() and
 cuDeviceGetAttribute().
 */
 typedef struct {
-  int devid;        /*!< \brief Device ID  */
-  int numaNode;     /*!< \brief Closest NUMA domain to the device */
-  char *name;       /*!< \brief Name of the device */
-  char *short_name; /*!< \brief Short name of the device */
-  uint64_t mem;     /*!< \brief Total memory of device */
-  int ccapMajor;    /*!< \brief Major number of device's compute capability */
-  int ccapMinor;    /*!< \brief Minor number of device's compute capability */
-  int maxThreadsPerBlock; /*!< \brief Maximam number of thread per block */
-  int maxThreadsDim[3];   /*!< \brief Maximum sizes of each dimension of a block
+    int devid;                 /*!< \brief Device ID  */
+    int numaNode;              /*!< \brief Closest NUMA domain to the device */
+    char *name;                /*!< \brief Name of the device */
+    char *short_name;          /*!< \brief Short name of the device */
+    uint64_t mem;              /*!< \brief Total memory of device */
+    int ccapMajor;             /*!< \brief Major number of device's compute capability */
+    int ccapMinor;             /*!< \brief Minor number of device's compute capability */
+    int maxThreadsPerBlock;    /*!< \brief Maximam number of thread per block */
+    int maxThreadsDim[3];      /*!< \brief Maximum sizes of each dimension of a block
                            */
-  int maxGridSize[3]; /*!< \brief Maximum sizes of each dimension of a grid */
-  int sharedMemPerBlock; /*!< \brief Total amount of shared memory available per
+    int maxGridSize[3];        /*!< \brief Maximum sizes of each dimension of a grid */
+    int sharedMemPerBlock;     /*!< \brief Total amount of shared memory available per
                             block */
-  int totalConstantMemory; /*!< \brief Total amount of constant memory available
+    int totalConstantMemory;   /*!< \brief Total amount of constant memory available
                               on the device */
-  int simdWidth; /*!< \brief SIMD width of arithmetic units = warp size */
-  int memPitch;  /*!< \brief Maximum pitch allowed by the memory copy functions
+    int simdWidth;             /*!< \brief SIMD width of arithmetic units = warp size */
+    int memPitch;              /*!< \brief Maximum pitch allowed by the memory copy functions
                     that involve memory regions allocated through
                     cuMemAllocPitch() */
-  int regsPerBlock; /*!< \brief Total number of registers available per block */
-  int clockRatekHz; /*!< \brief Clock frequency in kilohertz */
-  int textureAlign; /*!< \brief Alignment requirement */
-  int surfaceAlign; /*!< \brief Alignment requirement for surfaces */
-  int l2Size; /*!< \brief L2 cache in bytes. 0 if the device doesn't have L2
+    int regsPerBlock;          /*!< \brief Total number of registers available per block */
+    int clockRatekHz;          /*!< \brief Clock frequency in kilohertz */
+    int textureAlign;          /*!< \brief Alignment requirement */
+    int surfaceAlign;          /*!< \brief Alignment requirement for surfaces */
+    int l2Size;                /*!< \brief L2 cache in bytes. 0 if the device doesn't have L2
                  cache */
-  int memClockRatekHz; /*!< \brief Peak memory clock frequency in kilohertz */
-  int pciBus;          /*!< \brief PCI bus identifier of the device */
-  int pciDev; /*!< \brief PCI device (also known as slot) identifier of the
+    int memClockRatekHz;       /*!< \brief Peak memory clock frequency in kilohertz */
+    int pciBus;                /*!< \brief PCI bus identifier of the device */
+    int pciDev;                /*!< \brief PCI device (also known as slot) identifier of the
                  device */
-  int pciDom; /*!< \brief PCI domain identifier of the device */
-  int pciFunc; /*!< \brief PCI function identifier of the device */
-  int maxBlockRegs;  /*!< \brief Maximum number of 32-bit registers available to
+    int pciDom;                /*!< \brief PCI domain identifier of the device */
+    int pciFunc;               /*!< \brief PCI function identifier of the device */
+    int maxBlockRegs;          /*!< \brief Maximum number of 32-bit registers available to
                         a thread block */
-  int numMultiProcs; /*!< \brief Number of multiprocessors on the device */
-  int maxThreadPerMultiProc; /*!< \brief Maximum resident threads per
+    int numMultiProcs;         /*!< \brief Number of multiprocessors on the device */
+    int maxThreadPerMultiProc; /*!< \brief Maximum resident threads per
                                 multiprocessor */
-  int memBusWidth;           /*!< \brief Global memory bus width in bits */
-  int unifiedAddrSpace; /*!< \brief 1 if the device shares a unified address
+    int memBusWidth;           /*!< \brief Global memory bus width in bits */
+    int unifiedAddrSpace;      /*!< \brief 1 if the device shares a unified address
                            space with the host, or 0 if not */
-  int ecc; /*!< \brief 1 if error correction is enabled on the device, 0 if
+    int ecc;                   /*!< \brief 1 if error correction is enabled on the device, 0 if
               error correction is disabled or not supported by the device */
-  int asyncEngines; /*!< \brief Number of asynchronous engines */
-  int mapHostMem; /*!< \brief 1 if the device can map host memory into the CUDA
+    int asyncEngines;          /*!< \brief Number of asynchronous engines */
+    int mapHostMem;            /*!< \brief 1 if the device can map host memory into the CUDA
                      address space */
-  int integrated; /*!< \brief 1 if the device is an integrated (motherboard) GPU
+    int integrated;            /*!< \brief 1 if the device is an integrated (motherboard) GPU
                      and 0 if it is a discrete (card) component */
 } CudaDevice;
 
@@ -2214,8 +2211,8 @@ typedef struct {
 
 */
 typedef struct {
-  int numDevices;     /*!< \brief Number of detected devices */
-  CudaDevice *devices; /*!< \brief List with GPU-specific topology information */
+    int numDevices;      /*!< \brief Number of detected devices */
+    CudaDevice *devices; /*!< \brief List with GPU-specific topology information */
 } CudaTopology;
 
 /*! \brief Variable holding the global gpu information structure */
@@ -2245,7 +2242,6 @@ extern CudaTopology_t get_cudaTopology(void)
     __attribute__((visibility("default")));
 
 /** @}*/
-
 
 /*
 ################################################################################
@@ -2331,16 +2327,15 @@ events in the second dimension of events.
 @param count [out] Call counts of the code region per GPU
 */
 extern void nvmon_markerGetRegion(const char *regionTag, int *nr_gpus,
-                                      int *nr_events, double **events,
-                                      double *time, int *count)
+    int *nr_events, double **events,
+    double *time, int *count)
     __attribute__((visibility("default")));
 /*! \brief Write the output file of the NvMarker API
 @param [in] markerfile Filename for NvMarker API results
 @return 0 or negative error number
 */
-extern int nvmon_markerWriteFile(const char* markerfile)
+extern int nvmon_markerWriteFile(const char *markerfile)
     __attribute__((visibility("default")));
-
 
 /*! \brief Read the output file of the NvMarker API
 @param [in] filename Filename with NvMarker API results
@@ -2438,9 +2433,9 @@ double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
 It holds the name, the description and the limitation string for one event.
 */
 typedef struct {
-  char *name;  /*!< \brief Name of the event */
-  char *desc;  /*!< \brief Description of the event */
-  char *limit; /*!< \brief Limitation string of the event, commonly 'GPU' */
+    char *name;  /*!< \brief Name of the event */
+    char *desc;  /*!< \brief Description of the event */
+    char *limit; /*!< \brief Limitation string of the event, commonly 'GPU' */
 } NvmonEventListEntry;
 
 /*! \brief Output list from nvmon_getEventsOfGpu with all supported events
@@ -2448,8 +2443,8 @@ typedef struct {
 Output list from nvmon_getEventsOfGpu with all supported events
 */
 typedef struct {
-  int numEvents;               /*!< \brief Number of events */
-  NvmonEventListEntry *events; /*!< \brief List of events */
+    int numEvents;               /*!< \brief Number of events */
+    NvmonEventListEntry *events; /*!< \brief List of events */
 } NvmonEventList;
 /** \brief Pointer for exporting the NvmonEventList data structure */
 typedef NvmonEventList *NvmonEventList_t;
@@ -2694,7 +2689,7 @@ returns all found group names
 @return Amount of found performance groups
 */
 int nvmon_getGroups(int gpuId, char ***groups, char ***shortinfos,
-                    char ***longinfos) __attribute__((visibility("default")));
+    char ***longinfos) __attribute__((visibility("default")));
 /*! \brief Free all group information (Nvmon)
 
 @param [in] nrgroups Number of groups
@@ -2703,7 +2698,7 @@ int nvmon_getGroups(int gpuId, char ***groups, char ***shortinfos,
 @param [in] longinfos List of long information string about group
 */
 int nvmon_returnGroups(int nrgroups, char **groups, char **shortinfos,
-                       char **longinfos) __attribute__((visibility("default")));
+    char **longinfos) __attribute__((visibility("default")));
 
 /** @}*/
 
@@ -2726,49 +2721,49 @@ information. Most information comes from hipGetDeviceProperties() and
 hipDeviceGetAttribute().
 */
 typedef struct {
-  int devid;        /*!< \brief Device ID  */
-  int numaNode;     /*!< \brief Closest NUMA domain to the device */
-  char *name;       /*!< \brief Name of the device */
-  char *short_name; /*!< \brief Short name of the device */
-  size_t mem;       /*!< \brief Size of global memory region (in bytes) */
-  int ccapMajor;    /*!< \brief Major number of device's compute capability */
-  int ccapMinor;    /*!< \brief Minor number of device's compute capability */
-  int maxThreadsPerBlock; /*!< \brief Maximam number of thread per block */
-  int maxThreadsDim[3];   /*!< \brief Maximum sizes of each dimension of a block
+    int devid;                  /*!< \brief Device ID  */
+    int numaNode;               /*!< \brief Closest NUMA domain to the device */
+    char *name;                 /*!< \brief Name of the device */
+    char *short_name;           /*!< \brief Short name of the device */
+    size_t mem;                 /*!< \brief Size of global memory region (in bytes) */
+    int ccapMajor;              /*!< \brief Major number of device's compute capability */
+    int ccapMinor;              /*!< \brief Minor number of device's compute capability */
+    int maxThreadsPerBlock;     /*!< \brief Maximam number of thread per block */
+    int maxThreadsDim[3];       /*!< \brief Maximum sizes of each dimension of a block
                            */
-  int maxGridSize[3]; /*!< \brief Maximum sizes of each dimension of a grid */
-  int sharedMemPerBlock; /*!< \brief Total amount of shared memory available per
+    int maxGridSize[3];         /*!< \brief Maximum sizes of each dimension of a grid */
+    int sharedMemPerBlock;      /*!< \brief Total amount of shared memory available per
                             block */
-  size_t totalConstantMemory; /*!< \brief Total amount of constant memory
+    size_t totalConstantMemory; /*!< \brief Total amount of constant memory
                                  available on the device */
-  int simdWidth;    /*!< \brief SIMD width of arithmetic units = warp size */
-  size_t memPitch;  /*!< \brief Maximum pitch allowed by the memory copy
+    int simdWidth;              /*!< \brief SIMD width of arithmetic units = warp size */
+    size_t memPitch;            /*!< \brief Maximum pitch allowed by the memory copy
                        functions that involve memory regions allocated through
                        cuMemAllocPitch() */
-  int regsPerBlock; /*!< \brief Total number of registers available per block */
-  int clockRatekHz; /*!< \brief Clock frequency in kilohertz */
-  size_t textureAlign; /*!< \brief Alignment requirement */
-  // int surfaceAlign; /*!< \brief Alignment requirement for surfaces */
-  int l2Size; /*!< \brief L2 cache in bytes. 0 if the device doesn't have L2
+    int regsPerBlock;           /*!< \brief Total number of registers available per block */
+    int clockRatekHz;           /*!< \brief Clock frequency in kilohertz */
+    size_t textureAlign;        /*!< \brief Alignment requirement */
+    // int surfaceAlign; /*!< \brief Alignment requirement for surfaces */
+    int l2Size;          /*!< \brief L2 cache in bytes. 0 if the device doesn't have L2
                  cache */
-  int memClockRatekHz; /*!< \brief Peak memory clock frequency in kilohertz */
-  int pciBus;          /*!< \brief PCI bus identifier of the device */
-  int pciDev; /*!< \brief PCI device (also known as slot) identifier of the
+    int memClockRatekHz; /*!< \brief Peak memory clock frequency in kilohertz */
+    int pciBus;          /*!< \brief PCI bus identifier of the device */
+    int pciDev;          /*!< \brief PCI device (also known as slot) identifier of the
                  device */
-  int pciDom; /*!< \brief PCI domain identifier of the device */
-  // int maxBlockRegs; /*!< \brief Maximum number of 32-bit registers available
-  // to a thread block */
-  int numMultiProcs; /*!< \brief Number of multiprocessors on the device */
-  int maxThreadPerMultiProc; /*!< \brief Maximum resident threads per
+    int pciDom;          /*!< \brief PCI domain identifier of the device */
+    // int maxBlockRegs; /*!< \brief Maximum number of 32-bit registers available
+    // to a thread block */
+    int numMultiProcs;         /*!< \brief Number of multiprocessors on the device */
+    int maxThreadPerMultiProc; /*!< \brief Maximum resident threads per
                                 multiprocessor */
-  int memBusWidth;           /*!< \brief Global memory bus width in bits */
-  // int unifiedAddrSpace; /*!< \brief 1 if the device shares a unified address
-  // space with the host, or 0 if not */
-  int ecc; /*!< \brief 1 if error correction is enabled on the device, 0 if
+    int memBusWidth;           /*!< \brief Global memory bus width in bits */
+    // int unifiedAddrSpace; /*!< \brief 1 if the device shares a unified address
+    // space with the host, or 0 if not */
+    int ecc; /*!< \brief 1 if error correction is enabled on the device, 0 if
               error correction is disabled or not supported by the device */
-  // int asyncEngines; /*!< \brief Number of asynchronous engines */
-  int mapHostMem; /*!< \brief 1 if the device can map host memory */
-  int integrated; /*!< \brief 1 if the device is an integrated (motherboard) GPU
+    // int asyncEngines; /*!< \brief Number of asynchronous engines */
+    int mapHostMem; /*!< \brief 1 if the device can map host memory */
+    int integrated; /*!< \brief 1 if the device is an integrated (motherboard) GPU
                      and 0 if it is a discrete (card) component */
 } RocmDevice;
 
@@ -2776,9 +2771,9 @@ typedef struct {
 
 */
 typedef struct {
-  int numDevices; /*!< \brief Number of detected devices */
-  RocmDevice
-      *devices; /*!< \brief List with GPU-specific topology information */
+    int numDevices; /*!< \brief Number of detected devices */
+    RocmDevice
+        *devices; /*!< \brief List with GPU-specific topology information */
 } RocmTopology;
 
 /** \brief Pointer for exporting the GpuTopology data structure */
@@ -2802,7 +2797,6 @@ RocmTopology_t get_rocmTopology(void)
 
 /** @}*/
 
-
 /*
 ################################################################################
 # Rocmon related functions (AMD GPU monitoring)
@@ -2818,9 +2812,9 @@ RocmTopology_t get_rocmTopology(void)
 It holds the name, the description and the limitation string for one event.
 */
 typedef struct {
-  char *name;        /*!< \brief Name of the event */
-  int instances;     /*!< \brief Description of the event */
-  char *description; /*!< \brief Limitation string of the event, commonly 'GPU' */
+    char *name;        /*!< \brief Name of the event */
+    int instances;     /*!< \brief Description of the event */
+    char *description; /*!< \brief Limitation string of the event, commonly 'GPU' */
 } Event_rocm_t;
 
 /*! \brief Output list from rocmon_getEventsOfGpu with all supported events
@@ -2828,8 +2822,8 @@ typedef struct {
 Output list from rocmon_getEventsOfGpu with all supported events
 */
 typedef struct {
-  Event_rocm_t *events; /*!< \brief List of events */
-  int numEvents; /*!< \brief Number of events */
+    Event_rocm_t *events; /*!< \brief List of events */
+    int numEvents;        /*!< \brief Number of events */
 } EventList_rocm;
 /*! \brief Pointer to Rocmon event list */
 typedef EventList_rocm *EventList_rocm_t;
@@ -3067,7 +3061,7 @@ int rocmon_getGroups(char ***groups, char ***shortinfos, char ***longinfos)
 @param [in] longinfos List of long information string about group
 */
 int rocmon_returnGroups(int nrgroups, char **groups, char **shortinfos,
-                        char **longinfos)
+    char **longinfos)
     __attribute__((visibility("default")));
 
 /** @}*/
@@ -3148,7 +3142,6 @@ CPU.
 */
 extern void rocmon_markerNextGroup(void)
     __attribute__((visibility("default")));
-
 
 /*! \brief Read the output file of the RocmonMarker API
 @param [in] filename Filename with RocmonMarker API results
@@ -3250,14 +3243,14 @@ double rocmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
    \brief List of valid LIKWID device types
 */
 typedef enum {
-    DEVICE_TYPE_INVALID, /*!< \brief invalid device */
+    DEVICE_TYPE_INVALID,  /*!< \brief invalid device */
     DEVICE_TYPE_HWTHREAD, /*!< \brief hardware thread device */
-    DEVICE_TYPE_CORE, /*!< \brief CPU core device */
-    DEVICE_TYPE_LLC, /*!< \brief last level cache device */
-    DEVICE_TYPE_NUMA, /*!< \brief NUMA node device */
-    DEVICE_TYPE_DIE, /*!< \brief CPU die device */
-    DEVICE_TYPE_SOCKET, /*!< \brief CPU socket device */
-    DEVICE_TYPE_NODE, /*!< \brief whole node device */
+    DEVICE_TYPE_CORE,     /*!< \brief CPU core device */
+    DEVICE_TYPE_LLC,      /*!< \brief last level cache device */
+    DEVICE_TYPE_NUMA,     /*!< \brief NUMA node device */
+    DEVICE_TYPE_DIE,      /*!< \brief CPU die device */
+    DEVICE_TYPE_SOCKET,   /*!< \brief CPU socket device */
+    DEVICE_TYPE_NODE,     /*!< \brief whole node device */
 #ifdef LIKWID_WITH_NVMON
     DEVICE_TYPE_NVIDIA_GPU, /*!< \brief Nvidia GPU device */
 #endif
@@ -3281,32 +3274,32 @@ typedef struct {
     LikwidDeviceType type; /*!< \brief Likwid device type */
     union {
         struct {
-            int id;  /*!< \brief Integer ID */
-        } simple; /*!< \brief Simple ID of device consisting only of a single integer */
+            int id; /*!< \brief Integer ID */
+        } simple;   /*!< \brief Simple ID of device consisting only of a single integer */
         struct {
             uint16_t pci_domain; /*!< \brief PCI domain*/
-            uint8_t pci_bus; /*!< \brief PCI bus*/
-            uint8_t pci_dev; /*!< \brief PCI device*/
-            uint8_t pci_func; /*!< \brief PCI function*/
-        } pci; /*!< \brief PCI ID for external devices like GPUs */
-    } id; /*!< \brief ID of device */
-    int internal_id; /*!< \brief Internal ID for the device */
+            uint8_t pci_bus;     /*!< \brief PCI bus*/
+            uint8_t pci_dev;     /*!< \brief PCI device*/
+            uint8_t pci_func;    /*!< \brief PCI function*/
+        } pci;                   /*!< \brief PCI ID for external devices like GPUs */
+    } id;                        /*!< \brief ID of device */
+    int internal_id;             /*!< \brief Internal ID for the device */
 } _LikwidDevice;
 /*! \brief Pointer to a Likwid device */
-typedef _LikwidDevice* LikwidDevice_t;
+typedef _LikwidDevice *LikwidDevice_t;
 
 /*! \brief Structure holding a list of Likwid devices
 */
 typedef struct {
-    int num_devices; /*!< \brief Number of devices */
+    int num_devices;         /*!< \brief Number of devices */
     LikwidDevice_t *devices; /*!< \brief List of devices */
 } _LikwidDeviceList;
 /*! \brief Pointer to a Likwid device list */
-typedef _LikwidDeviceList* LikwidDeviceList_t;
+typedef _LikwidDeviceList *LikwidDeviceList_t;
 
 /*! \brief List of device type names
 */
-static const char* LikwidDeviceTypeNames[MAX_DEVICE_TYPE] = {
+static const char *LikwidDeviceTypeNames[MAX_DEVICE_TYPE] = {
     [DEVICE_TYPE_INVALID] = "invalid",
     [DEVICE_TYPE_HWTHREAD] = "hwthread",
     [DEVICE_TYPE_CORE] = "core",
@@ -3346,7 +3339,7 @@ int likwid_devstr_to_devlist(const char *str, LikwidDeviceList_t *dev_list)
 @param [out] device Likwid device struct
 @return error code (<0 on failure)
 */
-int likwid_device_create(LikwidDeviceType type, int id, LikwidDevice_t* device) __attribute__ ((visibility ("default") ));
+int likwid_device_create(LikwidDeviceType type, int id, LikwidDevice_t *device) __attribute__((visibility("default")));
 /*! \brief Create a new device but use a string ID
 
 This function allows the specification of devices that are not addressable with
@@ -3357,25 +3350,25 @@ a simple integer ID like GPUs, where the PCI address is the only unique identifi
 @param [out] device Likwid device struct
 @return error code (<0 on failure)
 */
-int likwid_device_create_from_string(LikwidDeviceType type, const char *id, LikwidDevice_t* device) __attribute__ ((visibility ("default") ));
+int likwid_device_create_from_string(LikwidDeviceType type, const char *id, LikwidDevice_t *device) __attribute__((visibility("default")));
 /*! \brief Destroy LIKWID device
 
 @param [in] device Likwid device struct
 */
-void likwid_device_destroy(LikwidDevice_t device) __attribute__ ((visibility ("default") ));
+void likwid_device_destroy(LikwidDevice_t device) __attribute__((visibility("default")));
 /*! \brief Get the string describing a device type
 
 @param [in] type Likwid device type
 @return string describing the device type like 'hwthread', 'socket', ...
 */
-const char *likwid_device_type_name(LikwidDeviceType type) __attribute__ ((visibility ("default") ));
+const char *likwid_device_type_name(LikwidDeviceType type) __attribute__((visibility("default")));
 /*! \brief Get PCI address string for device
 
 @param [in] buf string buffer
 @param [in] size size of string buffer
 @param [in] device Likwid device 
 */
-void likwid_device_fmt_pci(char *buf, size_t size, LikwidDevice_t device) __attribute__ ((visibility ("default") ));
+void likwid_device_fmt_pci(char *buf, size_t size, LikwidDevice_t device) __attribute__((visibility("default")));
 /*! \brief Get available device strings.
 
 Get a list of available devices. The strings in the list returned do not contain
@@ -3388,7 +3381,7 @@ In order to get a list of all devices, use 'likwid_device_get_all' instead.
 @params [out] number of list entries.
 @return error code (<0 on failure)
 */
-int likwid_device_get_available(LikwidDeviceType type, char ***id_list, size_t *id_list_count) __attribute__((visibility ("default") ));
+int likwid_device_get_available(LikwidDeviceType type, char ***id_list, size_t *id_list_count) __attribute__((visibility("default")));
 /*! \brief Get all device strings.
 
 Get a list of all devices. The strings in the list returned do not contain
@@ -3402,7 +3395,7 @@ instead.
 @params [out] number of list entries.
 @return error code (<0 on failure)
 */
-int likwid_device_get_all(LikwidDeviceType type, char ***id_list, size_t *id_list_count) __attribute__((visibility ("default") ));
+int likwid_device_get_all(LikwidDeviceType type, char ***id_list, size_t *id_list_count) __attribute__((visibility("default")));
 
 /** @}*/
 
@@ -3419,39 +3412,38 @@ int likwid_device_get_all(LikwidDeviceType type, char ***id_list, size_t *id_lis
  * be read and some only be written/set.
  */
 typedef struct {
-    char* name; /*!< \brief Name of feature */
-    char* category; /*!< \brief Category of feature */
-    char* description; /*!< \brief Description of feature */
-    LikwidDeviceType type; /*!< \brief Usable for these Likwid device type */
-    unsigned int readonly; /*!< \brief Feature is read-only */
+    char *name;             /*!< \brief Name of feature */
+    char *category;         /*!< \brief Category of feature */
+    char *description;      /*!< \brief Description of feature */
+    LikwidDeviceType type;  /*!< \brief Usable for these Likwid device type */
+    unsigned int readonly;  /*!< \brief Feature is read-only */
     unsigned int writeonly; /*!< \brief Feature is write-only */
 } LikwidSysFeature;
 
 /*! \brief Structure holding a list of system feature specifications
 */
 typedef struct {
-    int num_features; /*!< \brief Number of features */
-    LikwidSysFeature* features; /*!< \brief List of features */
+    int num_features;           /*!< \brief Number of features */
+    LikwidSysFeature *features; /*!< \brief List of features */
 } LikwidSysFeatureList;
-
 
 /*! \brief Initialize the sysfeatures module
 
 @return error code (<0 on failure)
 */
-int likwid_sysft_init(void) __attribute__ ((visibility ("default") ));
+int likwid_sysft_init(void) __attribute__((visibility("default")));
 
 /*! \brief Get the list of all features provided for the current system
 
 @param [out] list List of features
 @return error code (<0 on failure)
 */
-int likwid_sysft_list(LikwidSysFeatureList *list) __attribute__ ((visibility ("default") ));
+int likwid_sysft_list(LikwidSysFeatureList *list) __attribute__((visibility("default")));
 /*! \brief Return the list of features
 
 @param [in] list List of features
 */
-void likwid_sysft_list_return(LikwidSysFeatureList *list) __attribute__ ((visibility ("default") ));
+void likwid_sysft_list_return(LikwidSysFeatureList *list) __attribute__((visibility("default")));
 
 /*! \brief Get the value for a specific feature for a specific device
 
@@ -3460,7 +3452,7 @@ void likwid_sysft_list_return(LikwidSysFeatureList *list) __attribute__ ((visibi
 @param [out] value Returned value as string
 @return error code (<0 on failure)
 */
-int likwid_sysft_get(const LikwidSysFeature *feature, const LikwidDevice_t device, char **value) __attribute__ ((visibility ("default") ));
+int likwid_sysft_get(const LikwidSysFeature *feature, const LikwidDevice_t device, char **value) __attribute__((visibility("default")));
 /*! \brief Get the value for a specific feature for a specific device by using the feature name
 
 @param [in] name Get the value for this feature (category.name or just name if unique)
@@ -3468,7 +3460,7 @@ int likwid_sysft_get(const LikwidSysFeature *feature, const LikwidDevice_t devic
 @param [out] value Returned value as string
 @return error code (<0 on failure)
 */
-int likwid_sysft_getByName(const char *name, const LikwidDevice_t device, char** value) __attribute__ ((visibility ("default") ));
+int likwid_sysft_getByName(const char *name, const LikwidDevice_t device, char **value) __attribute__((visibility("default")));
 /*! \brief Modify the value for a specific feature for a specific device
 
 @param [in] feature Modify the value for this feature
@@ -3476,7 +3468,7 @@ int likwid_sysft_getByName(const char *name, const LikwidDevice_t device, char**
 @param [in] value New value for the feature
 @return error code (<0 on failure)
 */
-int likwid_sysft_modify(const LikwidSysFeature* feature, const LikwidDevice_t device, const char* value) __attribute__ ((visibility ("default") ));
+int likwid_sysft_modify(const LikwidSysFeature *feature, const LikwidDevice_t device, const char *value) __attribute__((visibility("default")));
 /*! \brief Modify the value for a specific feature for a specific device by using the feature name
 
 @param [in] name Modify the value for this feature (category.name or just name if unique)
@@ -3484,12 +3476,12 @@ int likwid_sysft_modify(const LikwidSysFeature* feature, const LikwidDevice_t de
 @param [out] value New value for the feature
 @return error code (<0 on failure)
 */
-int likwid_sysft_modifyByName(const char* name, const LikwidDevice_t device, const char* value) __attribute__ ((visibility ("default") ));
+int likwid_sysft_modifyByName(const char *name, const LikwidDevice_t device, const char *value) __attribute__((visibility("default")));
 
 /*! \brief Finalize the sysfeatures module
 
 */
-void likwid_sysft_finalize(void) __attribute__ ((visibility ("default") ));
+void likwid_sysft_finalize(void) __attribute__((visibility("default")));
 /** @}*/
 #endif /* LIKWID_WITH_SYSFEATURES */
 

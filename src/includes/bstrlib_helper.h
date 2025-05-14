@@ -37,18 +37,17 @@
 extern "C" {
 #endif
 
+int bstrListAdd(struct bstrList *sl, bstring str);
+int bstrListAddChar(struct bstrList *sl, char *str);
 
-int bstrListAdd(struct bstrList * sl, bstring str);
-int bstrListAddChar(struct bstrList * sl, char* str);
+int bstrListDel(struct bstrList *sl, int idx);
 
-int bstrListDel(struct bstrList * sl, int idx);
+bstring bstrListGet(struct bstrList *sl, int idx);
 
-bstring bstrListGet(struct bstrList * sl, int idx);
+void bstrListPrint(struct bstrList *sl);
+int bstrListToCharList(struct bstrList *sl, char ***list);
 
-void bstrListPrint(struct bstrList * sl);
-int bstrListToCharList(struct bstrList* sl, char*** list);
-
-int btrimbrackets (bstring b);
+int btrimbrackets(bstring b);
 int bisnumber(bstring b);
 
 bstring read_file(char *filename);

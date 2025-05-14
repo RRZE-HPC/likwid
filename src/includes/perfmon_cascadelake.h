@@ -31,5 +31,4 @@
 
 #include <perfmon_cascadelakeX_events.h>
 
-
 static int perfmon_numArchEventsCascadelakeX = NUM_ARCH_EVENTS_CASCADELAKEX;

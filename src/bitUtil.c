@@ -33,8 +33,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include <types.h>
 #include <bitUtil.h>
+#include <types.h>
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 uint64_t
@@ -49,8 +49,7 @@ field32(uint32_t bitfield, int start, int length)
     return (bitfield >> start) & (~0U >> (32 - length));
 }
 
-void
-field64set(uint64_t* bitfield, int start, int length, uint64_t value)
+void field64set(uint64_t *bitfield, int start, int length, uint64_t value)
 {
     assert(start >= 0 && start < 64);
     assert(length >= 0 && length <= 64);
@@ -58,8 +57,7 @@ field64set(uint64_t* bitfield, int start, int length, uint64_t value)
     *bitfield = (*bitfield & ~mask) | ((value << start) & mask);
 }
 
-void
-field32set(uint32_t* bitfield, int start, int length, uint32_t value)
+void field32set(uint32_t *bitfield, int start, int length, uint32_t value)
 {
     assert(start >= 0 && start < 32);
     assert(length >= 0 && length <= 32);
@@ -73,14 +71,10 @@ extractBitField(uint32_t inField, uint32_t width, uint32_t offset)
     uint32_t bitMask;
     uint32_t outField;
 
-    if ((offset+width) == 32)
-    {
-        bitMask = (0xFFFFFFFF<<offset);
-    }
-    else
-    {
-        bitMask = (0xFFFFFFFF<<offset) ^ (0xFFFFFFFF<<(offset+width));
-
+    if ((offset + width) == 32) {
+        bitMask = (0xFFFFFFFF << offset);
+    } else {
+        bitMask = (0xFFFFFFFF << offset) ^ (0xFFFFFFFF << (offset + width));
     }
 
     outField = (inField & bitMask) >> offset;
@@ -90,19 +84,17 @@ extractBitField(uint32_t inField, uint32_t width, uint32_t offset)
 uint32_t
 getBitFieldWidth(uint32_t number)
 {
-    uint32_t fieldWidth=0;
+    uint32_t fieldWidth = 0;
 
     number--;
-    if (number == 0)
-    {
+    if (number == 0) {
         return 0;
     }
 #ifdef __x86_64
-    __asm__ volatile ( "bsr %%eax, %%ecx\n\t"
-            : "=c" (fieldWidth)
-            : "a"(number));
+    __asm__ volatile("bsr %%eax, %%ecx\n\t"
+        : "=c"(fieldWidth)
+        : "a"(number));
 #endif
 
-    return fieldWidth+1;  /* bsr returns the position, we want the width */
+    return fieldWidth + 1; /* bsr returns the position, we want the width */
 }
-

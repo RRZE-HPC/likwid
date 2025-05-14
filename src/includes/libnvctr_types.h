@@ -41,7 +41,7 @@ typedef enum LikwidGpuStates {
 } LikwidGpuStates;
 
 typedef struct LikwidGpuResults {
-    bstring  label;
+    bstring label;
     double time;
     TimerData startTime;
     int groupID;
@@ -54,14 +54,14 @@ typedef struct LikwidGpuResults {
 } LikwidGpuResults;
 
 typedef struct {
-    bstring  tag;
+    bstring tag;
     int groupID;
     int gpuCount;
     int eventCount;
-    double*  time;
-    uint32_t*  count;
-    int* gpulist;
-    double** counters;
+    double *time;
+    uint32_t *count;
+    int *gpulist;
+    double **counters;
 } LikwidNvResults;
 
 #endif /* LIBNVCTR_H */

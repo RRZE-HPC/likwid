@@ -30,15 +30,15 @@
 #ifndef ACCESS_H
 #define ACCESS_H
 
-#include <stdint.h>
 #include <pci_types.h>
+#include <stdint.h>
 
 void HPMmode(int mode);
 int HPMinit(void);
 int HPMinitialized(void);
 int HPMaddThread(int cpu_id);
 void HPMfinalize();
-int HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data);
+int HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t *data);
 int HPMwrite(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data);
 int HPMcheck(PciDeviceIndex dev, int cpu_id);
 

@@ -28,25 +28,23 @@
  * =======================================================================================
  */
 
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdint.h>
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <fcntl.h>
-#include <string.h>
 #include <dirent.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include <likwid.h>
 #include <intel_perfmon_uncore_discovery.h>
-#include <perfmon_sapphirerapids_counters.h>
+#include <likwid.h>
 #include <perfmon_graniterapids_counters.h>
+#include <perfmon_sapphirerapids_counters.h>
 #include <perfmon_sierraforrest_counters.h>
 
-static PerfmonUncoreDiscovery* uncore_discovery_map = NULL;
-
+static PerfmonUncoreDiscovery *uncore_discovery_map = NULL;
 
 /* Functions for the same handling of PCI devices and their memory in user-space as in kernel-space */
 #define MAX_FILENAME_LENGTH 1024
@@ -64,18 +62,16 @@ struct pci_dev {
     char path[MAX_FILENAME_LENGTH];
 };
 
-static struct pci_dev* sysfs_pci_devices = NULL;
+static struct pci_dev *sysfs_pci_devices = NULL;
 static int num_sysfs_pci_devices = 0;
 
-
 // glibc memcpy uses optimized versions but copies have to be bytewise
-// otherwise the data is incorrect. 
-void mymemcpy(void* dest, void* src, int size)
+// otherwise the data is incorrect.
+void mymemcpy(void *dest, void *src, int size)
 {
-    uint8_t volatile* udest = (uint8_t*)dest;
-    uint8_t volatile* usrc = (uint8_t*)src;
-    for (int i = 0; i < size/sizeof(uint8_t); i++)
-    {
+    uint8_t volatile *udest = (uint8_t *)dest;
+    uint8_t volatile *usrc = (uint8_t *)src;
+    for (int i = 0; i < size / sizeof(uint8_t); i++) {
         *(udest + i) = *(usrc + i);
     }
 }
@@ -88,11 +84,9 @@ static int pci_read_config_dword(const struct pci_dev *dev, int where, u32 *val)
     ret = snprintf(path, 1024, "/sys/bus/pci/devices/%.04x:%.02x:%.02x.%.01x/config", dev->domain, dev->bus, dev->device, dev->func);
     if (ret > 0) {
         path[ret] = '\0';
-        if (!access(path, R_OK))
-        {
+        if (!access(path, R_OK)) {
             int fp = open(path, O_RDONLY);
-            if (fp > 0)
-            {
+            if (fp > 0) {
                 ret = pread(fp, val, sizeof(u32), where);
                 close(fp);
             }
@@ -101,17 +95,17 @@ static int pci_read_config_dword(const struct pci_dev *dev, int where, u32 *val)
     return ret;
 }
 
-static int pci_find_next_ext_capability(struct pci_dev *dev, int start, int cap) {
+static int pci_find_next_ext_capability(struct pci_dev *dev, int start, int cap)
+{
     int ret = 0;
     int offset = PCI_EXT_CAP_BASE_OFFSET + start;
     u32 cap_data = 0x0;
-    do
-    {
+    do {
         ret = pci_read_config_dword(dev, offset, &cap_data);
-        if (ret > 0)
-        {
+        if (ret > 0) {
             u16 cap_id = (cap_data & PCI_EXT_CAP_ID_MASK);
-            if (cap_id == cap) break;
+            if (cap_id == cap)
+                break;
             ret = pci_read_config_dword(dev, offset + PCI_EXT_CAP_NEXT_OFFSET, &cap_data);
             offset = (ret > 0 ? (cap_data >> PCI_EXT_CAP_NEXT_SHIFT & PCI_EXT_CAP_NEXT_MASK) : 0);
         } else {
@@ -121,29 +115,24 @@ static int pci_find_next_ext_capability(struct pci_dev *dev, int start, int cap)
     return offset;
 }
 
-
 /* Helper function to read files from sysfs */
-static int file_to_uint(char* path, unsigned int *data) {
+static int file_to_uint(char *path, unsigned int *data)
+{
     int ret = -1;
     char content[1025];
     int fp = open(path, O_RDONLY);
-    if (fp >= 0)
-    {
+    if (fp >= 0) {
         ret = read(fp, content, 1024 * sizeof(char));
         if (ret >= 0) {
             content[ret] = '\0';
             u64 new = 0x0;
             ret = sscanf(content, "0x%x", &new);
-            if (ret == 1)
-            {
+            if (ret == 1) {
                 *data = new;
                 ret = 0;
-            }
-            else
-            {
+            } else {
                 ret = sscanf(content, "%d", &new);
-                if (ret == 1)
-                {
+                if (ret == 1) {
                     *data = new;
                     ret = 0;
                 }
@@ -151,11 +140,9 @@ static int file_to_uint(char* path, unsigned int *data) {
         }
         close(fp);
     }
-    
+
     return ret;
 }
-
-
 
 static int read_sysfs_pci_devs()
 {
@@ -163,18 +150,15 @@ static int read_sysfs_pci_devs()
     DIR *dp = NULL;
     struct dirent *ep = NULL;
 
-    if (sysfs_pci_devices == NULL)
-    {
+    if (sysfs_pci_devices == NULL) {
         dp = opendir("/sys/bus/pci/devices");
-        if (!dp)
-        {
+        if (!dp) {
             return -1;
         }
-        while ((ep = readdir(dp)) != NULL)
-        {
+        while ((ep = readdir(dp)) != NULL) {
             int ret = 0;
-            char devbase[MAX_FILENAME_LENGTH] = { [0 ... (MAX_FILENAME_LENGTH-1)] = '\0' };
-            char filename[MAX_FILENAME_LENGTH] = { [0 ... (MAX_FILENAME_LENGTH-1)] = '\0' };
+            char devbase[MAX_FILENAME_LENGTH] = { [0 ...(MAX_FILENAME_LENGTH - 1)] = '\0' };
+            char filename[MAX_FILENAME_LENGTH] = { [0 ...(MAX_FILENAME_LENGTH - 1)] = '\0' };
             uint32_t vendor = 0;
             uint32_t device_id = 0;
             int numa_node = -1;
@@ -184,8 +168,7 @@ static int read_sysfs_pci_devs()
             int devid = 0;
             int func = 0;
             ret = sscanf(ep->d_name, "%04x:%02x:%02x.%01x", &dom, &bus, &devid, &func);
-            if (ret != 4)
-            {
+            if (ret != 4) {
                 continue;
             }
             ret = snprintf(devbase, 1023, "/sys/bus/pci/devices/%s", ep->d_name);
@@ -194,8 +177,7 @@ static int read_sysfs_pci_devs()
             ret = snprintf(filename, 1023, "%s/vendor", devbase);
             filename[ret] = '\0';
             ret = file_to_uint(filename, &vendor);
-            if (vendor != PCI_VENDOR_ID_INTEL)
-            {
+            if (vendor != PCI_VENDOR_ID_INTEL) {
                 continue;
             }
             ret = snprintf(filename, 1023, "%s/device", devbase);
@@ -203,31 +185,27 @@ static int read_sysfs_pci_devs()
             ret = file_to_uint(filename, &device_id);
             ret = snprintf(filename, 1023, "%s/numa_node", devbase);
             filename[ret] = '\0';
-            if (!access(filename, R_OK))
-            {
+            if (!access(filename, R_OK)) {
                 ret = file_to_uint(filename, &numa_node);
             }
 
-            if (numa_node >= 0)
-            {
+            if (numa_node >= 0) {
                 int cpuid = -1;
                 ret = snprintf(filename, 1023, "/sys/devices/system/node/node%d/cpulist", numa_node);
                 ret = file_to_uint(filename, &cpuid);
-                if (cpuid >= 0)
-                {
+                if (cpuid >= 0) {
                     ret = snprintf(filename, 1023, "/sys/devices/system/cpu/cpu%d/topology/physical_package_id", cpuid);
                     ret = file_to_uint(filename, &socket);
                 }
             }
 
-            struct pci_dev* tmp = realloc(sysfs_pci_devices, (num_sysfs_pci_devices+1) * sizeof(struct pci_dev));
-            if (!tmp)
-            {
+            struct pci_dev *tmp = realloc(sysfs_pci_devices, (num_sysfs_pci_devices + 1) * sizeof(struct pci_dev));
+            if (!tmp) {
                 break;
             }
             sysfs_pci_devices = tmp;
 
-            struct pci_dev* p = &sysfs_pci_devices[num_sysfs_pci_devices];
+            struct pci_dev *p = &sysfs_pci_devices[num_sysfs_pci_devices];
             p->domain = dom;
             p->bus = bus;
             p->device = devid;
@@ -247,16 +225,12 @@ static int read_sysfs_pci_devs()
     return 0;
 }
 
-
 PciDeviceIndex get_likwid_device(int type, int id)
 {
     int i = 0;
-    while (uncore_discovery_map[i].discovery_type >= 0)
-    {
-        if (uncore_discovery_map[i].discovery_type == type)
-        {
-            if (id >= 0 && id < uncore_discovery_map[i].max_devices)
-            {
+    while (uncore_discovery_map[i].discovery_type >= 0) {
+        if (uncore_discovery_map[i].discovery_type == type) {
+            if (id >= 0 && id < uncore_discovery_map[i].max_devices) {
                 return uncore_discovery_map[i].base_device + id;
             }
         }
@@ -265,83 +239,74 @@ PciDeviceIndex get_likwid_device(int type, int id)
     return MAX_NUM_PCI_DEVICES;
 }
 
-
-static void print_unit(PciDeviceIndex idx, PerfmonDiscoveryUnit* unit)
+static void print_unit(PciDeviceIndex idx, PerfmonDiscoveryUnit *unit)
 {
-    char* name = NULL;
+    char *name = NULL;
     int i = 0;
-    if (!uncore_discovery_map) return;
+    if (!uncore_discovery_map)
+        return;
 
-    while (uncore_discovery_map[i].discovery_type >= 0)
-    {
-        if (unit->box_type == uncore_discovery_map[i].discovery_type)
-        {
+    while (uncore_discovery_map[i].discovery_type >= 0) {
+        if (unit->box_type == uncore_discovery_map[i].discovery_type) {
             name = uncore_discovery_map[i].name;
             break;
         }
         i++;
     }
-    if (name != NULL)
-    {
+    if (name != NULL) {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "PCIIDX %d Access %s NumRegs %d ID %d Type %s(%d) box_ctl 0x%X ctrl_offset 0x%X ctr_offset 0x%X mmap_addr 0x%X mmap_offset 0x%X",
-                idx, AccessTypeNames[unit->access_type], unit->num_regs, unit->box_id, name, unit->box_type,
-                unit->box_ctl, unit->ctrl_offset, unit->ctr_offset, unit->mmap_addr, unit->mmap_offset);
+            idx, AccessTypeNames[unit->access_type], unit->num_regs, unit->box_id, name, unit->box_type,
+            unit->box_ctl, unit->ctrl_offset, unit->ctr_offset, unit->mmap_addr, unit->mmap_offset);
     }
 }
 
-static int perfmon_uncore_discovery_update_dev_location(PerfmonDiscoveryUnit* unit)
+static int perfmon_uncore_discovery_update_dev_location(PerfmonDiscoveryUnit *unit)
 {
-    struct pci_dev* dev = NULL;
+    struct pci_dev *dev = NULL;
     uint32_t check_device = 0;
     uint32_t check_devfn = 0;
     uint16_t mydevfn = 0;
     uint16_t myid = 0;
 
-    switch (unit->box_type)
-    {
-        case SPR_DEVICE_ID_UPI:
-            check_device = 0x3241;
-            check_devfn = 0x9;
-            break;
-        case SPR_DEVICE_ID_M3UPI:
-            check_device = 0x3246;
-            check_devfn = 0x29;
-            break;
-        default:
-            return 0;
+    switch (unit->box_type) {
+    case SPR_DEVICE_ID_UPI:
+        check_device = 0x3241;
+        check_devfn = 0x9;
+        break;
+    case SPR_DEVICE_ID_M3UPI:
+        check_device = 0x3246;
+        check_devfn = 0x29;
+        break;
+    default:
+        return 0;
     }
 
-    for (int i = 0; i < num_sysfs_pci_devices; i++)
-    {
-        struct pci_dev* dev = &sysfs_pci_devices[i];
-        if (dev->numa_node < 0)
-        {
+    for (int i = 0; i < num_sysfs_pci_devices; i++) {
+        struct pci_dev *dev = &sysfs_pci_devices[i];
+        if (dev->numa_node < 0) {
             continue;
         }
         mydevfn = PCI_DEV_TO_DEVFN(dev);
         myid = PCI_SLOT(mydevfn) - PCI_SLOT(check_devfn);
-        if (myid == unit->box_id)
-        {
-            unit->box_ctl = dev->domain  << UNCORE_DISCOVERY_PCI_DOMAIN_OFFSET |
-                        dev->bus << UNCORE_DISCOVERY_PCI_BUS_OFFSET |
-                        mydevfn << UNCORE_DISCOVERY_PCI_DEVFN_OFFSET |
-                        unit->box_ctl;
+        if (myid == unit->box_id) {
+            unit->box_ctl = dev->domain << UNCORE_DISCOVERY_PCI_DOMAIN_OFFSET | dev->bus << UNCORE_DISCOVERY_PCI_BUS_OFFSET | mydevfn << UNCORE_DISCOVERY_PCI_DEVFN_OFFSET | unit->box_ctl;
         }
     }
-    if (dev) free(dev);
+    if (dev)
+        free(dev);
     return 0;
 }
 
-int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
+int perfmon_uncore_discovery(int model, PerfmonDiscovery **perfmon)
 {
     int ret = 0;
-    PerfmonDiscoverySocket* socks = NULL;
+    PerfmonDiscoverySocket *socks = NULL;
     int socket_id = 0;
     int num_sockets = 0;
     struct uncore_global_discovery global;
     int dvsec = 0;
-    int PAGE_SIZE = sysconf (_SC_PAGESIZE);
-    void * io_addr = NULL;
+    int PAGE_SIZE = sysconf(_SC_PAGESIZE);
+    void *io_addr = NULL;
     int max_sockets = 0;
     u32 val = 0;
     u32 entry_id = 0;
@@ -349,34 +314,31 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
     u32 bar_offset = 0, pci_dword = 0;
     u64 addr = 0;
 
-    switch (model)
-    {
-        case SAPPHIRERAPIDS:
-            uncore_discovery_map = sapphirerapids_uncore_discovery_map;
-            break;
-        case GRANITERAPIDS:
-            uncore_discovery_map = graniterapids_uncore_discovery_map;
-            break;
-        case SIERRAFORREST:
-            uncore_discovery_map = sierraforrest_uncore_discovery_map;
-            break;
-        default:
-            ERROR_PRINT("Uncore discovery not supported for model 0x%X", model);
-            return -1;
+    switch (model) {
+    case SAPPHIRERAPIDS:
+        uncore_discovery_map = sapphirerapids_uncore_discovery_map;
+        break;
+    case GRANITERAPIDS:
+        uncore_discovery_map = graniterapids_uncore_discovery_map;
+        break;
+    case SIERRAFORREST:
+        uncore_discovery_map = sierraforrest_uncore_discovery_map;
+        break;
+    default:
+        ERROR_PRINT("Uncore discovery not supported for model 0x%X", model);
+        return -1;
     }
 
     ret = read_sysfs_pci_devs();
-    if (ret < 0)
-    {
+    if (ret < 0) {
         ERROR_PRINT("Failed to read PCI devices from sysfs");
         return -1;
         uncore_discovery_map = NULL;
     }
 
     int num_tmp = 0;
-    int* tmp = malloc(num_sysfs_pci_devices * sizeof(int));
-    if (!tmp)
-    {
+    int *tmp = malloc(num_sysfs_pci_devices * sizeof(int));
+    if (!tmp) {
         free(sysfs_pci_devices);
         sysfs_pci_devices = NULL;
         num_sysfs_pci_devices = 0;
@@ -386,20 +348,16 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
     memset(tmp, -1, num_sysfs_pci_devices * sizeof(int));
 
     // Determine number of sockets based on the returned devices
-    for (int i = 0; i < num_sysfs_pci_devices; i++)
-    {
-        struct pci_dev* dev = &sysfs_pci_devices[i];
+    for (int i = 0; i < num_sysfs_pci_devices; i++) {
+        struct pci_dev *dev = &sysfs_pci_devices[i];
         int found = 0;
-        for (int j = 0; j < num_tmp; j++)
-        {
-            if (tmp[j] == dev->socket)
-            {
+        for (int j = 0; j < num_tmp; j++) {
+            if (tmp[j] == dev->socket) {
                 found = 1;
                 break;
             }
         }
-        if (!found)
-        {
+        if (!found) {
             tmp[num_tmp++] = dev->socket;
         }
     }
@@ -408,8 +366,7 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
 
     /* Open memory (requires root permissions) */
     int pcihandle = open("/dev/mem", O_RDWR);
-    if (pcihandle < 0)
-    {
+    if (pcihandle < 0) {
         ERROR_PRINT("Cannot open /dev/mem");
         free(sysfs_pci_devices);
         sysfs_pci_devices = NULL;
@@ -417,9 +374,8 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
         uncore_discovery_map = NULL;
         return -errno;
     }
-    PerfmonDiscovery* perf = malloc(sizeof(PerfmonDiscovery));
-    if (!perf)
-    {
+    PerfmonDiscovery *perf = malloc(sizeof(PerfmonDiscovery));
+    if (!perf) {
         close(pcihandle);
         ERROR_PRINT("Cannot allocate space for device tables");
         free(sysfs_pci_devices);
@@ -429,8 +385,7 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
         return -ENOMEM;
     }
     perf->sockets = malloc(num_sockets * sizeof(PerfmonDiscoverySocket));
-    if (!perf->sockets)
-    {
+    if (!perf->sockets) {
         free(perf);
         close(pcihandle);
         ERROR_PRINT("Cannot allocate space for socket device tables");
@@ -442,94 +397,83 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
     }
     perf->num_sockets = 0;
 
-    for (int i = 0; i < num_sysfs_pci_devices; i++)
-    {
-        struct pci_dev* dev = &sysfs_pci_devices[i];
+    for (int i = 0; i < num_sysfs_pci_devices; i++) {
+        struct pci_dev *dev = &sysfs_pci_devices[i];
         while ((dvsec = pci_find_next_ext_capability(dev, dvsec, UNCORE_EXT_CAP_ID_DISCOVERY))) {
             /* read the DVSEC_ID (15:0) */
             val = 0;
             ret = pci_read_config_dword(dev, dvsec + UNCORE_DISCOVERY_DVSEC_OFFSET, &val);
-            if (ret < 0)
-            {
+            if (ret < 0) {
                 ERROR_PRINT("Failed to read DVSEC offset from device %.04x:%.02x:%.02x.%.01x", dev->domain, dev->bus, dev->device, dev->func);
                 continue;
             }
             entry_id = val & UNCORE_DISCOVERY_DVSEC_ID_MASK;
-            if (entry_id == UNCORE_DISCOVERY_DVSEC_ID_PMON)
-            {
+            if (entry_id == UNCORE_DISCOVERY_DVSEC_ID_PMON) {
                 //printf("Socket %d Dev %.04x:%.02x:%.02x.%.01x Node %d\n", socket_id, dev->domain, dev->bus, dev->device, dev->func, dev->numa_node);
                 bir = 0;
                 ret = pci_read_config_dword(dev, dvsec + UNCORE_DISCOVERY_DVSEC2_OFFSET, &bir);
-                if (ret < 0)
-                {
+                if (ret < 0) {
                     ERROR_PRINT("Failed to read DIR from device %.04x:%.02x:%.02x.%.01x", dev->domain, dev->bus, dev->device, dev->func);
                     continue;
                 }
-               /* read BIR value (2:0) */
+                /* read BIR value (2:0) */
                 bir = bir & UNCORE_DISCOVERY_DVSEC2_BIR_MASK;
                 /* calculate the BAR offset of global discovery table */
                 bar_offset = 0x10 + (bir * 4);
                 /* read the BAR address of global discovery table */
                 ret = pci_read_config_dword(dev, bar_offset, &pci_dword);
-                if (ret < 0)
-                {
+                if (ret < 0) {
                     ERROR_PRINT("Failed to read BAR offset from device %.04x:%.02x:%.02x.%.01x", dev->domain, dev->bus, dev->device, dev->func);
                     continue;
                 }
                 /* get page boundary address of pci_dword */
                 addr = pci_dword & ~(PAGE_SIZE - 1);
-                if ((pci_dword & PCI_BASE_ADDRESS_MEM_TYPE_MASK) == PCI_BASE_ADDRESS_MEM_TYPE_64)
-                {
+                if ((pci_dword & PCI_BASE_ADDRESS_MEM_TYPE_MASK) == PCI_BASE_ADDRESS_MEM_TYPE_64) {
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Mem type 64");
                     uint32_t pci_dword2;
                     ret = pci_read_config_dword(dev, bar_offset + sizeof(uint32_t), &pci_dword2);
-                    if (ret > 0) addr |= ((uint64_t)pci_dword2) << 32;
+                    if (ret > 0)
+                        addr |= ((uint64_t)pci_dword2) << 32;
                 }
                 /* Map whole discovery table */
                 /* User-space version of ioremap */
                 //printf("MMap address 0x%lX\n", addr);
-                io_addr = mmap(NULL, UNCORE_DISCOVERY_MAP_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, addr);
-                if (io_addr == MAP_FAILED)
-                {
+                io_addr = mmap(NULL, UNCORE_DISCOVERY_MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, pcihandle, addr);
+                if (io_addr == MAP_FAILED) {
                     ERROR_PRINT("Failed to mmap device %.04x:%.02x:%.02x.%.01x", dev->domain, dev->bus, dev->device, dev->func);
                     continue;
                 }
                 memset(&global, 0, sizeof(struct uncore_global_discovery));
                 mymemcpy(&global, io_addr, sizeof(struct uncore_global_discovery));
-                if (uncore_discovery_invalid_unit(global))
-                {
+                if (uncore_discovery_invalid_unit(global)) {
                     munmap(io_addr, UNCORE_DISCOVERY_MAP_SIZE);
                     continue;
                 }
                 //printf("Global 1=0x%lX 2=0x%lX 3=0x%lX\n", global.table1, global.table2, global.table3);
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, "Device %.04x:%.02x:%.02x.%.01x usable with %d units", dev->domain, dev->bus, dev->device, dev->func, global.max_units);
 
-                PerfmonDiscoverySocket* cur = &perf->sockets[dev->socket];
+                PerfmonDiscoverySocket *cur = &perf->sockets[dev->socket];
 
                 cur->socket_id = dev->socket;
-                memset(cur->units, 0, MAX_NUM_PCI_DEVICES*sizeof(PerfmonDiscoveryUnit));
+                memset(cur->units, 0, MAX_NUM_PCI_DEVICES * sizeof(PerfmonDiscoveryUnit));
                 // record stuff from global struct in cur->global
                 cur->global.global_ctl = global.global_ctl;
                 cur->global.access_type = global.access_type;
                 cur->global.status_offset = global.status_offset;
                 cur->global.num_status = global.num_status;
-                for (int i = 0; i < global.max_units; i++)
-                {
+                for (int i = 0; i < global.max_units; i++) {
                     struct uncore_unit_discovery unit;
-                    if ((i + 1) * (global.stride * 8) > UNCORE_DISCOVERY_MAP_SIZE)
-                    {
+                    if ((i + 1) * (global.stride * 8) > UNCORE_DISCOVERY_MAP_SIZE) {
                         //ERROR_PRINT(Access to 0x%X outside of mapped memory, (i + 1) * (global.stride * 8));
                         continue;
                     }
                     mymemcpy(&unit, io_addr + (i + 1) * (global.stride * 8), sizeof(struct uncore_unit_discovery));
-                    if ((uncore_discovery_invalid_unit(unit)) || (unit.num_regs == 0))
-                    {
+                    if ((uncore_discovery_invalid_unit(unit)) || (unit.num_regs == 0)) {
                         continue;
                     }
                     // record stuff from unit struct in cur->units[likwid-device-id]
                     PciDeviceIndex idx = get_likwid_device(unit.box_type, unit.box_id);
-                    if (idx >= 0 && idx < MAX_NUM_PCI_DEVICES)
-                    {
+                    if (idx >= 0 && idx < MAX_NUM_PCI_DEVICES) {
                         cur->units[idx].box_type = unit.box_type;
                         cur->units[idx].box_id = unit.box_id;
                         cur->units[idx].num_regs = unit.num_regs;
@@ -542,31 +486,26 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
                         cur->units[idx].filter_offset = 0x0;
                         cur->units[idx].fixed_ctrl_offset = 0x0;
                         cur->units[idx].fixed_ctr_offset = 0x0;
-                        switch (model)
-                        {
-                            case SAPPHIRERAPIDS:
-                            case GRANITERAPIDS:
-                                if (unit.box_type == SPR_DEVICE_ID_CHA)
-                                {
-                                    cur->units[idx].filter_offset = 0xE;
-                                }
-                                else if (unit.box_type == SPR_DEVICE_ID_iMC || (unit.box_type == SPR_DEVICE_ID_HBM && model == SAPPHIRERAPIDS))
-                                {
-                                    cur->units[idx].fixed_ctrl_offset = 0x54;
-                                    cur->units[idx].fixed_ctr_offset = 0x38;
-                                }
-                                break;
-                            default:
-                                break;
+                        switch (model) {
+                        case SAPPHIRERAPIDS:
+                        case GRANITERAPIDS:
+                            if (unit.box_type == SPR_DEVICE_ID_CHA) {
+                                cur->units[idx].filter_offset = 0xE;
+                            } else if (unit.box_type == SPR_DEVICE_ID_iMC || (unit.box_type == SPR_DEVICE_ID_HBM && model == SAPPHIRERAPIDS)) {
+                                cur->units[idx].fixed_ctrl_offset = 0x54;
+                                cur->units[idx].fixed_ctr_offset = 0x38;
+                            }
+                            break;
+                        default:
+                            break;
                         }
 
-                        switch (model)
-                        {
-                            case SAPPHIRERAPIDS:
-                                perfmon_uncore_discovery_update_dev_location(&cur->units[idx]);
-                                break;
-                            default:
-                                break;
+                        switch (model) {
+                        case SAPPHIRERAPIDS:
+                            perfmon_uncore_discovery_update_dev_location(&cur->units[idx]);
+                            break;
+                        default:
+                            break;
                         }
 
                         cur->units[idx].mmap_addr = cur->units[idx].box_ctl & ~(PAGE_SIZE - 1);
@@ -582,25 +521,25 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
                 socket_id++;
             }
         }
-/*        printf("Add M2IOSF devices \n");*/
-/*        for (int i = 0; i < 8; i++)*/
-/*        {*/
-/*            PciDeviceIndex idx = MSR_M2IOSF_DEVICE_0 + i;*/
-/*            printf("Device %d -> %d\n", i, idx);*/
-/*            cur->units[idx].box_ctl = 0x3800 + (0x2 * i);*/
-/*            printf("Device %d -> %d (0x%X)\n", i, idx, cur->units[idx].box_ctl);*/
-/*            cur->units[idx].box_type = DEVICE_ID_IIO;*/
-/*            cur->units[idx].box_id = i;*/
-/*            cur->units[idx].num_regs = 8;*/
-/*            cur->units[idx].ctr_offset = 0x0;*/
-/*            cur->units[idx].ctrl_offset = 0x0;*/
-/*            cur->units[idx].access_type = ACCESS_TYPE_MSR;*/
-/*            cur->units[idx].bit_width = 48;*/
-/*            cur->units[idx].filter_offset = 0x0;*/
-/*            cur->units[idx].fixed_ctrl_offset = 0x0;*/
-/*            cur->units[idx].fixed_ctr_offset = 0x0;*/
-/*            print_unit(idx, &cur->units[idx]);*/
-/*        }*/
+        /*        printf("Add M2IOSF devices \n");*/
+        /*        for (int i = 0; i < 8; i++)*/
+        /*        {*/
+        /*            PciDeviceIndex idx = MSR_M2IOSF_DEVICE_0 + i;*/
+        /*            printf("Device %d -> %d\n", i, idx);*/
+        /*            cur->units[idx].box_ctl = 0x3800 + (0x2 * i);*/
+        /*            printf("Device %d -> %d (0x%X)\n", i, idx, cur->units[idx].box_ctl);*/
+        /*            cur->units[idx].box_type = DEVICE_ID_IIO;*/
+        /*            cur->units[idx].box_id = i;*/
+        /*            cur->units[idx].num_regs = 8;*/
+        /*            cur->units[idx].ctr_offset = 0x0;*/
+        /*            cur->units[idx].ctrl_offset = 0x0;*/
+        /*            cur->units[idx].access_type = ACCESS_TYPE_MSR;*/
+        /*            cur->units[idx].bit_width = 48;*/
+        /*            cur->units[idx].filter_offset = 0x0;*/
+        /*            cur->units[idx].fixed_ctrl_offset = 0x0;*/
+        /*            cur->units[idx].fixed_ctr_offset = 0x0;*/
+        /*            print_unit(idx, &cur->units[idx]);*/
+        /*        }*/
     }
 
     close(pcihandle);
@@ -613,18 +552,13 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
     return 0;
 }
 
-
-void perfmon_uncore_discovery_free(PerfmonDiscovery* perfmon)
+void perfmon_uncore_discovery_free(PerfmonDiscovery *perfmon)
 {
-    if (perfmon->sockets)
-    {
-        for (int i = 0; i < perfmon->num_sockets; i++)
-        {
-            for (int j = 0; j < MAX_NUM_PCI_DEVICES; j++)
-            {
-                if (perfmon->sockets[i].units[j].io_addr)
-                {
-                    munmap((void*)perfmon->sockets[i].units[j].io_addr, perfmon->sockets[i].units[j].mmap_size);
+    if (perfmon->sockets) {
+        for (int i = 0; i < perfmon->num_sockets; i++) {
+            for (int j = 0; j < MAX_NUM_PCI_DEVICES; j++) {
+                if (perfmon->sockets[i].units[j].io_addr) {
+                    munmap((void *)perfmon->sockets[i].units[j].io_addr, perfmon->sockets[i].units[j].mmap_size);
                     perfmon->sockets[i].units[j].io_addr = NULL;
                 }
             }
@@ -635,4 +569,3 @@ void perfmon_uncore_discovery_free(PerfmonDiscovery* perfmon)
     }
     free(perfmon);
 }
-

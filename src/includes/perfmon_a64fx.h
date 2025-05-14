@@ -28,8 +28,8 @@
  * =======================================================================================
  */
 
-#include <perfmon_a64fx_events.h>
 #include <perfmon_a64fx_counters.h>
+#include <perfmon_a64fx_events.h>
 
 static int perfmon_numCountersA64FX = NUM_COUNTERS_A64FX;
 static int perfmon_numArchEventsA64FX = NUM_ARCH_EVENTS_A64FX;
