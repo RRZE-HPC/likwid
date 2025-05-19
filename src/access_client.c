@@ -124,7 +124,7 @@ access_client_catch_signal()
 }
 
 static int
-access_client_startDaemon_direct(int cpu_id, struct sockaddr_un *address)
+access_client_startDaemon_direct(uint32_t cpu_id, struct sockaddr_un *address)
 {
     /* Check the function of the daemon here */
     char *newargv[] = { NULL };
@@ -186,7 +186,7 @@ access_client_startDaemon_direct(int cpu_id, struct sockaddr_un *address)
 }
 
 static int
-access_client_startDaemon_bridge(int cpu_id, const char *bridge_path, struct sockaddr_un *daemon_address) {
+access_client_startDaemon_bridge(uint32_t cpu_id, const char *bridge_path, struct sockaddr_un *daemon_address) {
     struct sockaddr_un bridge_address;
     int socket_fd = -1;
     int address_length;
@@ -279,7 +279,7 @@ access_client_startDaemon_bridge(int cpu_id, const char *bridge_path, struct soc
 }
 
 static int
-access_client_daemon_connect(int cpu_id, struct sockaddr_un *address) {
+access_client_daemon_connect(uint32_t cpu_id, struct sockaddr_un *address) {
     int res = 0;
     char* filepath;
     size_t address_length;
@@ -340,7 +340,7 @@ access_client_daemon_connect(int cpu_id, struct sockaddr_un *address) {
 }
 
 static int
-access_client_startDaemon(int cpu_id) {
+access_client_startDaemon(uint32_t cpu_id) {
     const char *bridge_path;
     struct sockaddr_un address;
     int daemon_ret_code;
@@ -365,7 +365,7 @@ access_client_startDaemon(int cpu_id) {
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int
-access_client_init(int cpu_id)
+access_client_init(uint32_t cpu_id)
 {
     if (!lock_check())
     {
@@ -427,7 +427,7 @@ access_client_init(int cpu_id)
 }
 
 int
-access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *data)
+access_client_read(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t *data)
 {
     int ret;
     int socket = globalSocket;
@@ -524,7 +524,7 @@ access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t 
 }
 
 int
-access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t data)
+access_client_write(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t data)
 {
     int socket = globalSocket;
     int ret;
@@ -612,7 +612,7 @@ access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t
 }
 
 void
-access_client_finalize(int cpu_id)
+access_client_finalize(uint32_t cpu_id)
 {
     AccessDataRecord record;
     if (cpuSockets && cpuSockets[cpu_id] > 0)
@@ -648,7 +648,7 @@ access_client_finalize(int cpu_id)
 }
 
 int
-access_client_check(PciDeviceIndex dev, int cpu_id)
+access_client_check(PciDeviceIndex dev, uint32_t cpu_id)
 {
     int socket = globalSocket;
     pthread_mutex_t* lockptr = &globalLock;
