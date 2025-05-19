@@ -30,8 +30,8 @@
 #ifndef PERFMON_A15_H
 #define PERFMON_A15_H
 
-#include <perfmon_a15_events.h>
 #include <perfmon_a15_counters.h>
+#include <perfmon_a15_events.h>
 
 //#include <error.h>
 //#include <affinity.h>
@@ -39,7 +39,7 @@
 //#include <topology.h>
 //#include <access.h>
 
-static int perfmon_numCountersA15 = NUM_COUNTERS_A15;
+static int perfmon_numCountersA15   = NUM_COUNTERS_A15;
 static int perfmon_numArchEventsA15 = NUM_ARCH_EVENTS_A15;
 
 //int perfmon_init_a15(int cpu_id)
@@ -83,12 +83,10 @@ static int perfmon_numArchEventsA15 = NUM_ARCH_EVENTS_A15;
 //    return 0;
 //}
 
-
 //int perfmon_startCountersThread_a15(int thread_id, PerfmonEventSet* eventSet)
 //{
 //    uint32_t flags = 0x0U;
 //    int cpu_id = groupSet->threads[thread_id].processorId;
-
 
 //    for (int i=0;i < eventSet->numberOfEvents;i++)
 //    {
@@ -216,7 +214,6 @@ static int perfmon_numArchEventsA15 = NUM_ARCH_EVENTS_A15;
 
 //    return 0;
 //}
-
 
 //int perfmon_finalizeCountersThread_a15(int thread_id, PerfmonEventSet* eventSet)
 //{

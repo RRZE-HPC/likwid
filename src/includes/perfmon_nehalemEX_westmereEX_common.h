@@ -35,18 +35,7 @@
 
 #include <registers.h>
 
-enum nex_wex_mbox_reg_ids {
-    ADDR_MATCH = 0,
-    ADDR_MASK,
-    ZDP,
-    DSP,
-    ISS,
-    PGT,
-    MAP,
-    PLD,
-    THR,
-    NUM_MBOX_IDS
-};
+enum nex_wex_mbox_reg_ids { ADDR_MATCH = 0, ADDR_MASK, ZDP, DSP, ISS, PGT, MAP, PLD, THR, NUM_MBOX_IDS };
 
 static uint64_t nex_wex_mbox_regs[2][NUM_MBOX_IDS] = {
     [0] = {
@@ -73,12 +62,7 @@ static uint64_t nex_wex_mbox_regs[2][NUM_MBOX_IDS] = {
     },
 };
 
-enum nex_wex_rbox_reg_type {
-    IPERF0 = 0,
-    IPERF1,
-    QLX,
-    NUM_RBOX_REG_TYPES
-};
+enum nex_wex_rbox_reg_type { IPERF0 = 0, IPERF1, QLX, NUM_RBOX_REG_TYPES };
 
 static uint64_t nex_wex_rbox_regs[2][NUM_RBOX_REG_TYPES][4] = {
     [0] = {

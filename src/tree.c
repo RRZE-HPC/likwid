@@ -30,25 +30,23 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <error.h>
 #include <tree.h>
 
 /* #####   FUNCTION DEFINITIONS  -  INTERNAL FUNCTIONS   ################## */
 
-void _tree_destroy(TreeNode* nodePtr)
+void _tree_destroy(TreeNode *nodePtr)
 {
     if (nodePtr == NULL)
         return;
-    if (nodePtr->rlink)
-    {
+    if (nodePtr->rlink) {
         _tree_destroy(nodePtr->rlink);
         free(nodePtr->rlink);
     }
-    if (nodePtr->llink)
-    {
+    if (nodePtr->llink) {
         _tree_destroy(nodePtr->llink);
         free(nodePtr->llink);
     }
@@ -57,138 +55,113 @@ void _tree_destroy(TreeNode* nodePtr)
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void
-tree_init(TreeNode** root, int id)
+void tree_init(TreeNode **root, int id)
 {
-    *root = (TreeNode*) malloc(sizeof(TreeNode));
-    if (!(*root))
-    {
+    *root = (TreeNode *)malloc(sizeof(TreeNode));
+    if (!(*root)) {
         *root = NULL;
         return;
     }
-    (*root)->id = id;
+    (*root)->id    = id;
     (*root)->llink = NULL;
     (*root)->rlink = NULL;
 }
 
-void
-tree_print(TreeNode* nodePtr)
+void tree_print(TreeNode *nodePtr)
 {
-  int level = 0;
+    int level = 0;
 
-  if (nodePtr != NULL)
-  {
+    if (nodePtr != NULL) {
 
-    TreeNode* digger = NULL;
-    TreeNode* walker = NULL;
+        TreeNode *digger = NULL;
+        TreeNode *walker = NULL;
 
-    digger = nodePtr->llink;
+        digger           = nodePtr->llink;
 
-    while (digger != NULL)
-    {
-      printf("\n Level %d:\n", level++);
-      printf("%d ", digger->id);
-      walker = digger->rlink;
+        while (digger != NULL) {
+            printf("\n Level %d:\n", level++);
+            printf("%d ", digger->id);
+            walker = digger->rlink;
 
-      while (walker != NULL)
-      {
-        printf("%d ", walker->id);
-        walker = walker->rlink;
-      }
+            while (walker != NULL) {
+                printf("%d ", walker->id);
+                walker = walker->rlink;
+            }
 
-      digger = digger->llink;
+            digger = digger->llink;
+        }
+
+        printf("\n ");
     }
-
-    printf("\n ");
-  }
 }
 
-void
-tree_destroy(TreeNode* nodePtr)
+void tree_destroy(TreeNode *nodePtr)
 {
 
-    if (nodePtr != NULL)
-    {
+    if (nodePtr != NULL) {
         _tree_destroy(nodePtr);
         free(nodePtr);
     }
 }
 
-void
-tree_insertNode(TreeNode* nodePtr, int id)
+void tree_insertNode(TreeNode *nodePtr, int id)
 {
-    TreeNode* currentNode = NULL;
-    TreeNode* tmpNode = NULL;
-    TreeNode* newNode = NULL;
+    TreeNode *currentNode = NULL;
+    TreeNode *tmpNode     = NULL;
+    TreeNode *newNode     = NULL;
 
-    if (nodePtr == NULL)
-    {
+    if (nodePtr == NULL) {
         ERROR_PRINT("Node invalid");
     }
 
-    newNode = (TreeNode*) malloc(sizeof(TreeNode));
-    if (!newNode)
-    {
+    newNode = (TreeNode *)malloc(sizeof(TreeNode));
+    if (!newNode) {
         return;
     }
-    newNode->id = id;
+    newNode->id    = id;
     newNode->llink = NULL;
     newNode->rlink = NULL;
 
-    if (nodePtr->llink == NULL)
-    {
+    if (nodePtr->llink == NULL) {
         nodePtr->llink = newNode;
-    }
-    else
-    {
+    } else {
         currentNode = nodePtr->llink;
 
-        while (currentNode->rlink != NULL)
-        {
-            if (id < currentNode->rlink->id)
-            {
-                tmpNode = currentNode->rlink;
-                currentNode->rlink = newNode;
+        while (currentNode->rlink != NULL) {
+            if (id < currentNode->rlink->id) {
+                tmpNode                   = currentNode->rlink;
+                currentNode->rlink        = newNode;
                 currentNode->rlink->rlink = tmpNode;
                 return;
             }
             currentNode = currentNode->rlink;
         }
 
-        if (id > currentNode->id)
-        {
+        if (id > currentNode->id) {
             currentNode->rlink = newNode;
-        }
-        else
-        {
-            tmpNode = currentNode;
-            nodePtr->llink = newNode;
+        } else {
+            tmpNode               = currentNode;
+            nodePtr->llink        = newNode;
             nodePtr->llink->rlink = tmpNode;
         }
     }
 }
 
-int
-tree_nodeExists(TreeNode* nodePtr, int id)
+int tree_nodeExists(TreeNode *nodePtr, int id)
 {
-    TreeNode* walker;
+    TreeNode *walker;
 
-    if (nodePtr == NULL)
-    {
+    if (nodePtr == NULL) {
         ERROR_PRINT("Node invalid");
         return 0;
     }
 
     walker = nodePtr->llink;
 
-    while (walker != NULL)
-    {
-        if (walker->id == id)
-        {
+    while (walker != NULL) {
+        if (walker->id == id) {
             return 1;
-        }
-        else
-        {
+        } else {
             walker = walker->rlink;
         }
     }
@@ -196,26 +169,22 @@ tree_nodeExists(TreeNode* nodePtr, int id)
     return 0;
 }
 
-int
-tree_countChildren(TreeNode* nodePtr)
+int tree_countChildren(TreeNode *nodePtr)
 {
-    TreeNode* walker;
-    int count=0;
+    TreeNode *walker;
+    int count = 0;
 
-    if (nodePtr == NULL)
-    {
+    if (nodePtr == NULL) {
         ERROR_PRINT("Node invalid");
         return 0;
     }
-    if (nodePtr->llink == NULL)
-    {
+    if (nodePtr->llink == NULL) {
         return 0;
     }
 
     walker = nodePtr->llink;
 
-    while (walker != NULL)
-    {
+    while (walker != NULL) {
         count++;
         walker = walker->rlink;
     }
@@ -223,31 +192,24 @@ tree_countChildren(TreeNode* nodePtr)
     return count;
 }
 
-TreeNode*
-tree_getNode(TreeNode* nodePtr, int id)
+TreeNode *tree_getNode(TreeNode *nodePtr, int id)
 {
-    TreeNode* walker;
+    TreeNode *walker;
 
-    if (nodePtr == NULL)
-    {
+    if (nodePtr == NULL) {
         ERROR_PRINT("Node invalid");
         return NULL;
     }
-    if (nodePtr->llink == NULL)
-    {
+    if (nodePtr->llink == NULL) {
         return NULL;
     }
 
     walker = nodePtr->llink;
 
-    while (walker != NULL)
-    {
-        if (walker->id == id)
-        {
+    while (walker != NULL) {
+        if (walker->id == id) {
             return walker;
-        }
-        else
-        {
+        } else {
             walker = walker->rlink;
         }
     }
@@ -255,35 +217,28 @@ tree_getNode(TreeNode* nodePtr, int id)
     return NULL;
 }
 
-TreeNode*
-tree_getChildNode(TreeNode* nodePtr)
+TreeNode *tree_getChildNode(TreeNode *nodePtr)
 {
-    if (nodePtr == NULL)
-    {
+    if (nodePtr == NULL) {
         ERROR_PRINT("Node invalid");
         return NULL;
     }
-    if (nodePtr->llink == NULL)
-    {
+    if (nodePtr->llink == NULL) {
         return NULL;
     }
 
     return nodePtr->llink;
 }
 
-TreeNode*
-tree_getNextNode(TreeNode* nodePtr)
+TreeNode *tree_getNextNode(TreeNode *nodePtr)
 {
-    if (nodePtr == NULL)
-    {
+    if (nodePtr == NULL) {
         ERROR_PRINT("Node invalid");
     }
 
-    if (nodePtr->rlink == NULL)
-    {
+    if (nodePtr->rlink == NULL) {
         return NULL;
     }
 
     return nodePtr->rlink;
 }
-

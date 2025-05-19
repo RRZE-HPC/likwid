@@ -30,8 +30,8 @@
 #ifndef PERFMON_GRAVITON3_H
 #define PERFMON_GRAVITON3_H
 
-#include <perfmon_graviton3_events.h>
 #include <perfmon_graviton3_counters.h>
+#include <perfmon_graviton3_events.h>
 
 static int perfmon_numCountersGraviton3   = NUM_COUNTERS_GRAVITON3;
 static int perfmon_numArchEventsGraviton3 = NUM_ARCH_EVENTS_GRAVITON3;

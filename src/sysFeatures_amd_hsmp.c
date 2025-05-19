@@ -31,18 +31,18 @@
 
 #include <assert.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <sched.h>
 #include <stdint.h>
-#include <sys/ioctl.h>
 #include <stdio.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 #include <amd_hsmp.h>
 #include <cpuid.h>
 #include <sysFeatures_common.h>
 #include <sysFeatures_common_rapl.h>
-#include <types.h>
 #include <topology.h>
+#include <types.h>
 
 /* Useful links:
  * https://www.kernel.org/doc/html//latest/arch/x86/amd_hsmp.html
@@ -62,7 +62,8 @@ int likwid_sysft_init_amd_hsmp(_SysFeatureList *out)
     return err;
 }
 
-static int hsmp_raw(uint32_t socket, uint32_t msg_id, const uint32_t *args, uint16_t argCount, uint32_t *result, uint16_t resultCount)
+static int hsmp_raw(uint32_t socket, uint32_t msg_id, const uint32_t *args, uint16_t argCount,
+    uint32_t *result, uint16_t resultCount)
 {
     /* Requires RW permissions! */
     const int fd = open("/dev/hsmp", O_RDWR);
@@ -74,18 +75,17 @@ static int hsmp_raw(uint32_t socket, uint32_t msg_id, const uint32_t *args, uint
 
     /* HSMP_TEST should increment the argument by one. */
     struct hsmp_message msg = {
-        .msg_id = msg_id,
-        .num_args = argCount,
+        .msg_id      = msg_id,
+        .num_args    = argCount,
         .response_sz = resultCount,
-        .sock_ind = socket,
+        .sock_ind    = socket,
     };
 
     for (uint32_t i = 0; i < argCount; i++)
         msg.args[i] = args[i];
 
     int err = ioctl(fd, HSMP_IOCTL_CMD, &msg);
-    if (err < 0)
-    {
+    if (err < 0) {
         close(fd);
         return -errno;
     }
@@ -126,7 +126,8 @@ static int hsmp_arg0_res1_as_double(LikwidDevice_t dev, uint32_t msg_id, double 
     return likwid_sysft_double_to_string(result * scale, value);
 }
 
-static int hsmp_arg1_res0_from_double(LikwidDevice_t dev, uint32_t msg_id, double scale, const char *value)
+static int hsmp_arg1_res0_from_double(
+    LikwidDevice_t dev, uint32_t msg_id, double scale, const char *value)
 {
     double arg;
     int err = likwid_sysft_string_to_double(value, &arg);
@@ -165,7 +166,10 @@ static int amd_hsmp_test_ver2(void) { return amd_hsmp_test_ver(2); }
 static int amd_hsmp_test_ver3(void) { return amd_hsmp_test_ver(3); }
 //static int amd_hsmp_test_ver4(void) { return amd_hsmp_test_ver(4); } // there is only one command in ver4, and it is reserved or undocumented
 static int amd_hsmp_test_ver5(void) { return amd_hsmp_test_ver(5); }
-static int amd_hsmp_test_fail(void) { return 0; } // HSMP commandss > 2Fh are not yet documented and do not seem to work by tody (Bergamo + Genoa)
+static int amd_hsmp_test_fail(void)
+{
+    return 0;
+} // HSMP commandss > 2Fh are not yet documented and do not seem to work by tody (Bergamo + Genoa)
 
 static int amd_hsmp_smu_fw_getter(LikwidDevice_t dev, char **value)
 {
@@ -212,7 +216,8 @@ static int get_real_apic_id(const HWThread *hwt)
     /* Make sure we are running on the right core. */
     cpu_set_t new_mask;
     CPU_ZERO(&new_mask);
-    CPU_SET(hwt->apicId, &new_mask);   // <-- we assume this "apicId" to be a Linux processor number to be scheduled onto.
+    CPU_SET(hwt->apicId,
+        &new_mask); // <-- we assume this "apicId" to be a Linux processor number to be scheduled onto.
     err = sched_setaffinity(0, sizeof(new_mask), &new_mask);
     if (err != 0)
         return -errno;
@@ -250,8 +255,7 @@ static HWThread *get_hwt_by_core(LikwidDevice_t dev)
 {
     assert(dev->type == DEVICE_TYPE_CORE);
     CpuTopology_t topo = get_cpuTopology();
-    for (uint32_t hwt = 0; hwt < topo->numHWThreads; hwt++)
-    {
+    for (uint32_t hwt = 0; hwt < topo->numHWThreads; hwt++) {
         HWThread *t = &topo->threadPool[hwt];
         if (t->coreId == (uint32_t)dev->id.simple.id)
             return t;
@@ -310,7 +314,8 @@ static int amd_hsmp_sock_proc_hot_getter(LikwidDevice_t dev, char **value)
 static int amd_hsmp_sock_fclk_mclk_getter(LikwidDevice_t dev, bool fclk, char **value)
 {
     uint32_t results[2];
-    int err = hsmp_raw(dev->id.simple.id, HSMP_GET_FCLK_MCLK, NULL, 0, results, ARRAY_COUNT(results));
+    int err =
+        hsmp_raw(dev->id.simple.id, HSMP_GET_FCLK_MCLK, NULL, 0, results, ARRAY_COUNT(results));
     if (err < 0)
         return -err;
 
@@ -405,14 +410,15 @@ static int amd_hsmp_temp_getter(LikwidDevice_t dev, char **value)
 static uint32_t make_dimm_addr(uint32_t channel, bool dimm_0_1, bool sensor_0_1)
 {
     uint32_t dimm_addr = 0;
-    field32set(&dimm_addr, 7, 1, 1);   // mode = 1
+    field32set(&dimm_addr, 7, 1, 1); // mode = 1
     field32set(&dimm_addr, 6, 1, sensor_0_1 ? 1 : 0);
     field32set(&dimm_addr, 4, 1, dimm_0_1 ? 1 : 0);
     field32set(&dimm_addr, 0, 4, channel);
     return dimm_addr;
 }
 
-static int amd_hsmp_dimm_temp_getter(LikwidDevice_t dev, uint32_t channel, bool dimm_0_1, bool sensor_0_1, bool rate, bool test, char **value)
+static int amd_hsmp_dimm_temp_getter(LikwidDevice_t dev, uint32_t channel, bool dimm_0_1,
+    bool sensor_0_1, bool rate, bool test, char **value)
 {
     /* For reference, see AMD PPR 19h Model 11h B2 Vol 3 aka 55901_B2_pub_3.pdf Table 141  */
     assert(channel < 16); // HSMP protocol currently does not support more than 4 bit DDRPHY IDs
@@ -426,9 +432,9 @@ static int amd_hsmp_dimm_temp_getter(LikwidDevice_t dev, uint32_t channel, bool 
 
     /* See same document as above, Table 154 function Id 16h */
     const double refresh_pre_scale = field32(range_raw, 3, 1) ? 2.0 : 1.0;
-    if (field32(range_raw, 0, 3) != 0x1 && field32(range_raw, 0, 3) != 0x5)
-    {
-        ERROR_PRINT("AMD HSMP: received invalid or unknown temperature range: %x", field32(range_raw, 0, 3));
+    if (field32(range_raw, 0, 3) != 0x1 && field32(range_raw, 0, 3) != 0x5) {
+        ERROR_PRINT("AMD HSMP: received invalid or unknown temperature range: %x",
+            field32(range_raw, 0, 3));
         return -EBADE;
     }
     const double temp_pre_scale = (field32(range_raw, 0, 3) == 0x1) ? 1.0 : 2.0;
@@ -441,20 +447,18 @@ static int amd_hsmp_dimm_temp_getter(LikwidDevice_t dev, uint32_t channel, bool 
     if (test)
         return 0;
 
-    if (rate)
-    {
+    if (rate) {
         const double last_update = refresh_pre_scale * field32(temp_raw, 8, 9) / 1000.0;
         return likwid_sysft_double_to_string(last_update, value);
-    }
-    else
-    {
+    } else {
         /* Do not use field32(temp_raw, 21, 11) in order to get sign extension from the >> for free. */
         const double temp = temp_pre_scale * (temp_raw >> 21) * 0.25;
         return likwid_sysft_double_to_string(temp, value);
     }
 }
 
-static int amd_hsmp_dimm_power_getter(LikwidDevice_t dev, uint32_t channel, bool dimm_0_1, bool sensor_0_1, bool test, char **value)
+static int amd_hsmp_dimm_power_getter(
+    LikwidDevice_t dev, uint32_t channel, bool dimm_0_1, bool sensor_0_1, bool test, char **value)
 {
     /* See notes from hsmp_amd_dimm_temp_getter */
     assert(channel < 16);
@@ -473,9 +477,8 @@ static int amd_hsmp_dimm_tester(uint32_t channel, bool dimm_0_1, bool sensor_0_1
     if (!amd_hsmp_test_ver5())
         return 0;
     CpuTopology_t topo = get_cpuTopology();
-    bool dimm_found = false;
-    for (uint32_t i = 0; i < topo->numSockets; i++)
-    {
+    bool dimm_found    = false;
+    for (uint32_t i = 0; i < topo->numSockets; i++) {
         LikwidDevice_t dev;
         int err = likwid_device_create(DEVICE_TYPE_SOCKET, (int)i, &dev);
         if (err < 0)
@@ -485,8 +488,7 @@ static int amd_hsmp_dimm_tester(uint32_t channel, bool dimm_0_1, bool sensor_0_1
         else
             err = amd_hsmp_dimm_power_getter(dev, channel, dimm_0_1, sensor_0_1, true, NULL);
         likwid_device_destroy(dev);
-        if (err == 0)
-        {
+        if (err == 0) {
             dimm_found = true;
             break;
         }
@@ -494,31 +496,34 @@ static int amd_hsmp_dimm_tester(uint32_t channel, bool dimm_0_1, bool sensor_0_1
     return dimm_found;
 }
 
-#define MAKE_DIMM_FUNC(channel, dimm, sensor)                               \
-    static int amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_getter(LikwidDevice_t dev, char **value) \
-    {                                                                       \
-        return amd_hsmp_dimm_temp_getter(dev, channel, dimm, sensor, false, false, value); \
-    }                                                                       \
-    static int amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_rate_getter(LikwidDevice_t dev, char **value) \
-    {                                                                       \
-        return amd_hsmp_dimm_temp_getter(dev, channel, dimm, sensor, true, false, value);   \
-    }                                                                       \
-    static int amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_tester(void) \
-    {                                                                       \
-        return amd_hsmp_dimm_tester(channel, dimm, sensor, true);           \
-    }                                                                       \
-    static int amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_power_getter(LikwidDevice_t dev, char **value) \
-    {                                                                       \
-        return amd_hsmp_dimm_power_getter(dev, channel, dimm, sensor, false, value); \
-    }                                                                       \
-    static int amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_power_tester(void) \
-    {                                                                       \
-        return amd_hsmp_dimm_tester(channel, dimm, sensor, false);          \
+#define MAKE_DIMM_FUNC(channel, dimm, sensor)                                                      \
+    static int amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_getter(                         \
+        LikwidDevice_t dev, char **value)                                                          \
+    {                                                                                              \
+        return amd_hsmp_dimm_temp_getter(dev, channel, dimm, sensor, false, false, value);         \
+    }                                                                                              \
+    static int amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_rate_getter(                    \
+        LikwidDevice_t dev, char **value)                                                          \
+    {                                                                                              \
+        return amd_hsmp_dimm_temp_getter(dev, channel, dimm, sensor, true, false, value);          \
+    }                                                                                              \
+    static int amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_tester(void)                    \
+    {                                                                                              \
+        return amd_hsmp_dimm_tester(channel, dimm, sensor, true);                                  \
+    }                                                                                              \
+    static int amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_power_getter(                        \
+        LikwidDevice_t dev, char **value)                                                          \
+    {                                                                                              \
+        return amd_hsmp_dimm_power_getter(dev, channel, dimm, sensor, false, value);               \
+    }                                                                                              \
+    static int amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_power_tester(void)                   \
+    {                                                                                              \
+        return amd_hsmp_dimm_tester(channel, dimm, sensor, false);                                 \
     }
-#define MAKE_DIMM_FUNC_SET(channel) \
-    MAKE_DIMM_FUNC(channel, 0, 0)   \
-    MAKE_DIMM_FUNC(channel, 0, 1)   \
-    MAKE_DIMM_FUNC(channel, 1, 0)   \
+#define MAKE_DIMM_FUNC_SET(channel)                                                                \
+    MAKE_DIMM_FUNC(channel, 0, 0)                                                                  \
+    MAKE_DIMM_FUNC(channel, 0, 1)                                                                  \
+    MAKE_DIMM_FUNC(channel, 1, 0)                                                                  \
     MAKE_DIMM_FUNC(channel, 1, 1)
 MAKE_DIMM_FUNC_SET(0x0);
 MAKE_DIMM_FUNC_SET(0x1);
@@ -537,39 +542,38 @@ MAKE_DIMM_FUNC_SET(0xD);
 MAKE_DIMM_FUNC_SET(0xE);
 MAKE_DIMM_FUNC_SET(0xF);
 
-#define MAKE_DIMM_FEATURE(channel, dimm, sensor)                    \
-    {                                                               \
-        "dimm" #channel "_" #dimm "_" #sensor "_temp", "hsmp", "DIMM temperature (channel " #channel ", module " #dimm ", sensor " #sensor ")",\
-        amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_getter, \
-        NULL,                                                       \
-        DEVICE_TYPE_SOCKET,                                         \
-        amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_tester, \
-        "degrees C"                                                 \
-    },                                                              \
-    {                                                               \
-        "dimm" #channel "_" #dimm "_" #sensor "_temp_upd", "hsmp", "DIMM temp last update (channel " #channel ", module " #dimm ", sensor " #sensor ")",\
-        amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_rate_getter, \
-        NULL,                                                       \
-        DEVICE_TYPE_SOCKET,                                         \
-        amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_tester, \
-        "s"                                                         \
-    },                                                              \
-    {                                                               \
-        "dimm" #channel "_" #dimm "_" #sensor "_power", "hsmp", "DIMM power usage (channel " #channel ", module " #dimm ", sensor " #sensor ")",\
-        amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_power_getter,\
-        NULL,                                                       \
-        DEVICE_TYPE_SOCKET,                                         \
-        amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_power_tester,\
-        "W"                                                         \
-    },
-#define MAKE_DIMM_FEATURES(channel)     \
-    MAKE_DIMM_FEATURE(channel, 0, 0)    \
-    MAKE_DIMM_FEATURE(channel, 0, 1)    \
-    MAKE_DIMM_FEATURE(channel, 1, 0)    \
+#define MAKE_DIMM_FEATURE(channel, dimm, sensor)                                                   \
+    { "dimm" #channel "_" #dimm "_" #sensor "_temp",                                               \
+        "hsmp",                                                                                    \
+        "DIMM temperature (channel " #channel ", module " #dimm ", sensor " #sensor ")",           \
+        amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_getter,                                \
+        NULL,                                                                                      \
+        DEVICE_TYPE_SOCKET,                                                                        \
+        amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_tester,                                \
+        "degrees C" },                                                                             \
+        { "dimm" #channel "_" #dimm "_" #sensor "_temp_upd",                                       \
+            "hsmp",                                                                                \
+            "DIMM temp last update (channel " #channel ", module " #dimm ", sensor " #sensor ")",  \
+            amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_rate_getter,                       \
+            NULL,                                                                                  \
+            DEVICE_TYPE_SOCKET,                                                                    \
+            amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_tester,                            \
+            "s" },                                                                                 \
+        { "dimm" #channel "_" #dimm "_" #sensor "_power",                                          \
+            "hsmp",                                                                                \
+            "DIMM power usage (channel " #channel ", module " #dimm ", sensor " #sensor ")",       \
+            amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_power_getter,                           \
+            NULL,                                                                                  \
+            DEVICE_TYPE_SOCKET,                                                                    \
+            amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_power_tester,                           \
+            "W" },
+#define MAKE_DIMM_FEATURES(channel)                                                                \
+    MAKE_DIMM_FEATURE(channel, 0, 0)                                                               \
+    MAKE_DIMM_FEATURE(channel, 0, 1)                                                               \
+    MAKE_DIMM_FEATURE(channel, 1, 0)                                                               \
     MAKE_DIMM_FEATURE(channel, 1, 1)
 
-struct flag_freq_reason_mapping
-{
+struct flag_freq_reason_mapping {
     uint32_t flag;
     const char *reason;
 };
@@ -585,24 +589,23 @@ static int amd_hsmp_sock_freq_limit_getter(LikwidDevice_t dev, bool show_reason,
         return likwid_sysft_uint64_to_string(field32(freq, 16, 16), value);
 
     static const struct flag_freq_reason_mapping map[] = {
-        { 0x01, "cHTC-Active" },    // ???
-        { 0x02, "PROCHOT" },        // ???
-        { 0x04, "TDC" },            // Thermal Designed Current Limit
-        { 0x08, "PPT" },            // Package Power Tracking Limit
-        { 0x10, "OPN-Max" },        // ???
+        { 0x01, "cHTC-Active"       }, // ???
+        { 0x02, "PROCHOT"           }, // ???
+        { 0x04, "TDC"               }, // Thermal Designed Current Limit
+        { 0x08, "PPT"               }, // Package Power Tracking Limit
+        { 0x10, "OPN-Max"           }, // ???
         { 0x20, "Reliability-Limit" }, // (Fused Max or Reliability Monitor Fmax@Vmax)
-        { 0x40, "APML-Agent" },     // ???
-        { 0x80, "HSMP-Agent" },     // ???
+        { 0x40, "APML-Agent"        }, // ???
+        { 0x80, "HSMP-Agent"        }, // ???
     };
 
     bstring reasons = bfromcstr("");
     if (!reasons)
         return -ENOMEM;
 
-    bool first = true;
+    bool first      = true;
     uint32_t reason = field32(freq, 0, 16);
-    for (size_t i = 0; i < ARRAY_COUNT(map); i++)
-    {
+    for (size_t i = 0; i < ARRAY_COUNT(map); i++) {
         if (!(reason & map[i].flag))
             continue;
         reason &= ~map[i].flag;
@@ -675,8 +678,8 @@ static int amd_hsmp_sock_fmin_getter(LikwidDevice_t dev, char **value)
 }
 
 typedef enum {
-    BW_aggr = 0x1,
-    BW_read = 0x2,
+    BW_aggr  = 0x1,
+    BW_read  = 0x2,
     BW_write = 0x4,
 } XGMIBw;
 
@@ -705,14 +708,14 @@ static int amd_hsmp_sock_xgmi_bw_getter(LikwidDevice_t dev, XGMILinkId id, XGMIB
     return likwid_sysft_uint64_to_string(bw_result, value);
 }
 
-#define MAKE_XGMI_FUNC(id, bw) \
-    static int amd_hsmp_sock_xgmi_bw_##id##_##bw##_getter(LikwidDevice_t dev, char **value)\
-    {                                                                       \
-        return amd_hsmp_sock_xgmi_bw_getter(dev, XGMI_##id, BW_##bw, value);\
+#define MAKE_XGMI_FUNC(id, bw)                                                                     \
+    static int amd_hsmp_sock_xgmi_bw_##id##_##bw##_getter(LikwidDevice_t dev, char **value)        \
+    {                                                                                              \
+        return amd_hsmp_sock_xgmi_bw_getter(dev, XGMI_##id, BW_##bw, value);                       \
     }
-#define MAKE_XGMI_FUNCS(bw)     \
-    MAKE_XGMI_FUNC(bw, aggr)    \
-    MAKE_XGMI_FUNC(bw, read)    \
+#define MAKE_XGMI_FUNCS(bw)                                                                        \
+    MAKE_XGMI_FUNC(bw, aggr)                                                                       \
+    MAKE_XGMI_FUNC(bw, read)                                                                       \
     MAKE_XGMI_FUNC(bw, write)
 MAKE_XGMI_FUNCS(p0);
 MAKE_XGMI_FUNCS(p1);
@@ -723,31 +726,31 @@ MAKE_XGMI_FUNCS(g1);
 MAKE_XGMI_FUNCS(g2);
 MAKE_XGMI_FUNCS(g3);
 
-#define MAKE_XGMI_FEATURE(id)                       \
-    {                                               \
-        "pkg_xgmi_bw_" #id "_aggr", "hsmp", "Aggregated xGMI " #id " bandwidth",\
-        amd_hsmp_sock_xgmi_bw_##id##_aggr_getter,   \
-        NULL,                                       \
-        DEVICE_TYPE_SOCKET,                         \
-        amd_hsmp_test_ver5,                         \
-        "GB/s"                                      \
-    },                                              \
-    {                                               \
-        "pkg_xgmi_bw_" #id "_read", "hsmp", "xGMI " #id " read bandwidth",\
-        amd_hsmp_sock_xgmi_bw_##id##_read_getter,   \
-        NULL,                                       \
-        DEVICE_TYPE_SOCKET,                         \
-        amd_hsmp_test_ver5,                         \
-        "GB/s"                                      \
-    },                                              \
-    {                                               \
-        "pkg_xgmi_bw_" #id "_write", "hsmp", "xGMI " #id " write bandwidth",\
-        amd_hsmp_sock_xgmi_bw_##id##_write_getter,  \
-        NULL,                                       \
-        DEVICE_TYPE_SOCKET,                         \
-        amd_hsmp_test_ver5,                         \
-        "GB/s"                                      \
-    },
+#define MAKE_XGMI_FEATURE(id)                                                                      \
+    { "pkg_xgmi_bw_" #id "_aggr",                                                                  \
+        "hsmp",                                                                                    \
+        "Aggregated xGMI " #id " bandwidth",                                                       \
+        amd_hsmp_sock_xgmi_bw_##id##_aggr_getter,                                                  \
+        NULL,                                                                                      \
+        DEVICE_TYPE_SOCKET,                                                                        \
+        amd_hsmp_test_ver5,                                                                        \
+        "GB/s" },                                                                                  \
+        { "pkg_xgmi_bw_" #id "_read",                                                              \
+            "hsmp",                                                                                \
+            "xGMI " #id " read bandwidth",                                                         \
+            amd_hsmp_sock_xgmi_bw_##id##_read_getter,                                              \
+            NULL,                                                                                  \
+            DEVICE_TYPE_SOCKET,                                                                    \
+            amd_hsmp_test_ver5,                                                                    \
+            "GB/s" },                                                                              \
+        { "pkg_xgmi_bw_" #id "_write",                                                             \
+            "hsmp",                                                                                \
+            "xGMI " #id " write bandwidth",                                                        \
+            amd_hsmp_sock_xgmi_bw_##id##_write_getter,                                             \
+            NULL,                                                                                  \
+            DEVICE_TYPE_SOCKET,                                                                    \
+            amd_hsmp_test_ver5,                                                                    \
+            "GB/s" },
 
 static int amd_hsmp_gmi3_width_setter(LikwidDevice_t dev, const char *value)
 {
@@ -759,8 +762,7 @@ static int amd_hsmp_pci_gen_limit_setter(LikwidDevice_t dev, const char *value)
     return hsmp_arg1_res0_from_u32(dev, HSMP_SET_PCI_RATE, value);
 }
 
-struct power_mode_mapping
-{
+struct power_mode_mapping {
     uint32_t val;
     const char *name;
 };
@@ -768,8 +770,8 @@ struct power_mode_mapping
 static const struct power_mode_mapping power_mode_map[] = {
     { 0, "high-perf" },
     { 1, "efficency" },
-    { 2, "io-perf" },
-    { 3, "balanced" },
+    { 2, "io-perf"   },
+    { 3, "balanced"  },
 };
 
 static int amd_hsmp_power_mode_getter(LikwidDevice_t dev, char **value)
@@ -779,8 +781,7 @@ static int amd_hsmp_power_mode_getter(LikwidDevice_t dev, char **value)
     int err = hsmp_raw(dev->id.simple.id, HSMP_SET_POWER_MODE, &arg0, 1, &result, 1);
     if (err < 0)
         return err;
-    for (size_t i = 0; i < ARRAY_COUNT(power_mode_map); i++)
-    {
+    for (size_t i = 0; i < ARRAY_COUNT(power_mode_map); i++) {
         if (field32(result, 0, 3) == power_mode_map[i].val)
             return likwid_sysft_copystr(power_mode_map[i].name, value);
     }
@@ -793,12 +794,10 @@ static int amd_hsmp_power_mode_setter(LikwidDevice_t dev, const char *value)
 {
     bool found = false;
     size_t mapped_val;
-    for (size_t i = 0; i < ARRAY_COUNT(power_mode_map); i++)
-    {
-        if (power_mode_map[i].name == value)
-        {
+    for (size_t i = 0; i < ARRAY_COUNT(power_mode_map); i++) {
+        if (power_mode_map[i].name == value) {
             mapped_val = i;
-            found = true;
+            found      = true;
         }
     }
     if (!found)
@@ -821,7 +820,8 @@ static int amd_hsmp_metric_table_ver_getter(LikwidDevice_t dev, char **value)
 static int amd_hsmp_metric_table_addr_getter(LikwidDevice_t dev, char **value)
 {
     uint32_t addr[2];
-    int err = hsmp_raw(dev->id.simple.id, HSMP_GET_METRIC_TABLE_DRAM_ADDR, NULL, 0, addr, ARRAY_COUNT(addr));
+    int err = hsmp_raw(
+        dev->id.simple.id, HSMP_GET_METRIC_TABLE_DRAM_ADDR, NULL, 0, addr, ARRAY_COUNT(addr));
     if (err < 0)
         return err;
     return likwid_sysft_uint64_to_string(addr[0] | ((uint64_t)addr[1] << 32), value);
@@ -875,7 +875,7 @@ static int amd_hsmp_rapl_init(LikwidDevice_t dev)
     if (err < 0)
         return err;
     rapl_domain_info.energyUnit = 1.0 / (1 << field32(units, 8, 5));
-    rapl_domain_info.timeUnit = 1.0 / (1 << field32(units, 16, 4));
+    rapl_domain_info.timeUnit   = 1.0 / (1 << field32(units, 16, 4));
     return 0;
 }
 
@@ -914,74 +914,193 @@ static int amd_hsmp_sock_energy_getter(LikwidDevice_t dev, char **value)
 }
 
 static _SysFeature amd_hsmp_features[] = {
-    {"smu_fw_ver", "hsmp", "SMU Firmware Version", amd_hsmp_smu_fw_getter, NULL, DEVICE_TYPE_SOCKET, NULL},
-    {"proto_ver", "hsmp", "HSMP Protocol Version", amd_hsmp_proto_ver_getter, NULL, DEVICE_TYPE_SOCKET, NULL},
-    {"pkg_power", "hsmp", "Current socket power consumption", amd_hsmp_sock_power_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1, "W"},
-    {"pkg_power_limit_cur", "hsmp", "Current socket power limit", amd_hsmp_sock_power_limit_cur_getter, amd_hsmp_sock_power_limit_cur_setter, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1, "W"},
-    {"pkg_power_limit_max", "hsmp", "Maximum socket power limit", amd_hsmp_sock_power_limit_max_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1, "W"},
-    {"core_boost_limit_cur", "hsmp", "Current core boost limit", amd_hsmp_core_boost_limit_getter, amd_hsmp_core_boost_limit_setter, DEVICE_TYPE_CORE, amd_hsmp_test_ver1, "MHz"},
-    {"pkg_boost_limit_cur", "hsmp", "Current socket boost limit", NULL, amd_hsmp_sock_boost_limit_setter, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1, "MHz"},
-    {"pkg_prochot", "hsmp", "Processor hot (throttling?)", amd_hsmp_sock_proc_hot_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1},
-    {"pkg_xgmi_link_width", "hsmp", "xGMI Link width range ([15:8] = min, [7:0] = max, 0 = x4, 1 = x8, 2 = x16", NULL, amd_hsmp_xgmi_link_width_setter, DEVICE_TYPE_NODE, amd_hsmp_test_ver1},
-    {"pkg_df_pstate", "hsmp", "Disable AMD Precision Boost (override P-State: 0 = high performance .. 2 = low performance)", NULL, amd_hsmp_df_pstate_setter, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1},
-    {"pkg_df_pstate_auto", "hsmp", "Enable AMD Precision Boost (auto manage P-State)", NULL, amd_hsmp_auto_df_pstate_setter, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1},
-    {"pkg_fclk", "hsmp", "Current Infinity Fabric clock speed", amd_hsmp_sock_fclk_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1, "MHz"},
-    {"pkg_mclk", "hsmp", "Current Memory Controller clock speed", amd_hsmp_sock_mclk_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1, "MHz"},
-    {"pkg_cclk_thrtl_limit", "hsmp", "Core Clock throttle limit", amd_hsmp_sock_cclk_thrtl_limit_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1, "MHz"},
-    {"pkg_c0", "hsmp", "Average C0 residency", amd_hsmp_sock_c0_percent_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1},
-    {"pkg_lclk_dpm_level_min_max", "hsmp", "Set LCLK DPM Level ([23:16] = NBIO ID (0..3), [15:8] = max DPM, [7:0] = min DPM, 0 = lowest DPM freq, 1..3 = highest DPM freq)", NULL, amd_hsmp_sock_lclk_dpm_setter, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver2},
-    {"pkg_dram_bw_max", "hsmp", "Maximum possible DRAM bandwidth", amd_hsmp_dram_bw_max_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver3, "GB/s"},
-    {"pkg_dram_bw_avg", "hsmp", "Average DRAM bandwidth", amd_hsmp_dram_bw_avg_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5, "GB/s"},
-    {"pkg_dram_bw_perc", "hsmp", "DRAM bandwidth utilization", amd_hsmp_dram_bw_perc_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5, "%"},
-    {"pkg_temp", "hsmp", "Current socket temperature", amd_hsmp_temp_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5, "degrees C"},
+    { "smu_fw_ver",
+     "hsmp", "SMU Firmware Version",
+     amd_hsmp_smu_fw_getter, NULL,
+     DEVICE_TYPE_SOCKET, NULL },
+    { "proto_ver",
+     "hsmp", "HSMP Protocol Version",
+     amd_hsmp_proto_ver_getter, NULL,
+     DEVICE_TYPE_SOCKET, NULL },
+    { "pkg_power",
+     "hsmp", "Current socket power consumption",
+     amd_hsmp_sock_power_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1,
+     "W" },
+    { "pkg_power_limit_cur",
+     "hsmp", "Current socket power limit",
+     amd_hsmp_sock_power_limit_cur_getter, amd_hsmp_sock_power_limit_cur_setter,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1,
+     "W" },
+    { "pkg_power_limit_max",
+     "hsmp", "Maximum socket power limit",
+     amd_hsmp_sock_power_limit_max_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1,
+     "W" },
+    { "core_boost_limit_cur",
+     "hsmp", "Current core boost limit",
+     amd_hsmp_core_boost_limit_getter, amd_hsmp_core_boost_limit_setter,
+     DEVICE_TYPE_CORE, amd_hsmp_test_ver1,
+     "MHz" },
+    { "pkg_boost_limit_cur",
+     "hsmp", "Current socket boost limit",
+     NULL, amd_hsmp_sock_boost_limit_setter,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1,
+     "MHz" },
+    { "pkg_prochot",
+     "hsmp", "Processor hot (throttling?)",
+     amd_hsmp_sock_proc_hot_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1 },
+    { "pkg_xgmi_link_width",
+     "hsmp", "xGMI Link width range ([15:8] = min, [7:0] = max, 0 = x4, 1 = x8, 2 = x16",
+     NULL, amd_hsmp_xgmi_link_width_setter,
+     DEVICE_TYPE_NODE, amd_hsmp_test_ver1 },
+    { "pkg_df_pstate",
+     "hsmp", "Disable AMD Precision Boost (override P-State: 0 = high performance .. 2 = low "
+        "performance)", NULL,
+     amd_hsmp_df_pstate_setter, DEVICE_TYPE_SOCKET,
+     amd_hsmp_test_ver1 },
+    { "pkg_df_pstate_auto",
+     "hsmp", "Enable AMD Precision Boost (auto manage P-State)",
+     NULL, amd_hsmp_auto_df_pstate_setter,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1 },
+    { "pkg_fclk",
+     "hsmp", "Current Infinity Fabric clock speed",
+     amd_hsmp_sock_fclk_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1,
+     "MHz" },
+    { "pkg_mclk",
+     "hsmp", "Current Memory Controller clock speed",
+     amd_hsmp_sock_mclk_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1,
+     "MHz" },
+    { "pkg_cclk_thrtl_limit",
+     "hsmp", "Core Clock throttle limit",
+     amd_hsmp_sock_cclk_thrtl_limit_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1,
+     "MHz" },
+    { "pkg_c0",
+     "hsmp", "Average C0 residency",
+     amd_hsmp_sock_c0_percent_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver1 },
+    { "pkg_lclk_dpm_level_min_max",
+     "hsmp", "Set LCLK DPM Level ([23:16] = NBIO ID (0..3), [15:8] = max DPM, [7:0] = min DPM, 0 = "
+        "lowest DPM freq, 1..3 = "
+        "highest DPM freq)", NULL,
+     amd_hsmp_sock_lclk_dpm_setter, DEVICE_TYPE_SOCKET,
+     amd_hsmp_test_ver2 },
+    { "pkg_dram_bw_max",
+     "hsmp", "Maximum possible DRAM bandwidth",
+     amd_hsmp_dram_bw_max_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver3,
+     "GB/s" },
+    { "pkg_dram_bw_avg",
+     "hsmp", "Average DRAM bandwidth",
+     amd_hsmp_dram_bw_avg_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5,
+     "GB/s" },
+    { "pkg_dram_bw_perc",
+     "hsmp", "DRAM bandwidth utilization",
+     amd_hsmp_dram_bw_perc_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5,
+     "%" },
+    { "pkg_temp",
+     "hsmp", "Current socket temperature",
+     amd_hsmp_temp_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5,
+     "degrees C" },
     /* Sorry, this below is insanely duplicated code, but there is currently no way
      * to avoid it without dynamically allocating the entire feature properties. */
-    MAKE_DIMM_FEATURES(0x0)
-    MAKE_DIMM_FEATURES(0x1)
-    MAKE_DIMM_FEATURES(0x2)
-    MAKE_DIMM_FEATURES(0x3)
-    MAKE_DIMM_FEATURES(0x4)
-    MAKE_DIMM_FEATURES(0x5)
-    MAKE_DIMM_FEATURES(0x6)
-    MAKE_DIMM_FEATURES(0x7)
-    MAKE_DIMM_FEATURES(0x8)
-    MAKE_DIMM_FEATURES(0x9)
-    MAKE_DIMM_FEATURES(0xA)
-    MAKE_DIMM_FEATURES(0xB)
-    MAKE_DIMM_FEATURES(0xC)
-    MAKE_DIMM_FEATURES(0xD)
-    MAKE_DIMM_FEATURES(0xE)
-    MAKE_DIMM_FEATURES(0xF)
-    {"pkg_freq_limit", "hsmp", "Current socket frequency limit", amd_hsmp_sock_freq_limit_freq_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5, "MHz"},
-    {"pkg_freq_limit_reason", "hsmp", "Current socket frequency limit reason", amd_hsmp_sock_freq_limit_reason_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5},
-    {"core_cclk_limit", "hsmp", "Current Core clock limit", amd_hsmp_core_cclk_limit_getter, NULL, DEVICE_TYPE_CORE, amd_hsmp_test_ver5, "MHz"},
-    {"pkg_rails_svi", "hsmp", "SVI based telemetry for all rails (?)", amd_hsmp_sock_rails_svi_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5, "W"},
-    {"pkg_fmax", "hsmp", "Socket fmax", amd_hsmp_sock_fmax_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5, "Mhz"},
-    {"pkg_fmin", "hsmp", "Socket fmin", amd_hsmp_sock_fmin_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5, "Mhz"},
+    MAKE_DIMM_FEATURES(0x0) MAKE_DIMM_FEATURES(0x1) MAKE_DIMM_FEATURES(0x2) MAKE_DIMM_FEATURES(0x3)
+        MAKE_DIMM_FEATURES(0x4) MAKE_DIMM_FEATURES(0x5) MAKE_DIMM_FEATURES(0x6) MAKE_DIMM_FEATURES(
+            0x7) MAKE_DIMM_FEATURES(0x8) MAKE_DIMM_FEATURES(0x9) MAKE_DIMM_FEATURES(0xA)
+            MAKE_DIMM_FEATURES(0xB) MAKE_DIMM_FEATURES(0xC) MAKE_DIMM_FEATURES(0xD)
+                MAKE_DIMM_FEATURES(0xE) MAKE_DIMM_FEATURES(0xF) { "pkg_freq_limit",
+     "hsmp", "Current socket frequency limit",
+     amd_hsmp_sock_freq_limit_freq_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5,
+     "MHz" },
+    { "pkg_freq_limit_reason",
+     "hsmp", "Current socket frequency limit reason",
+     amd_hsmp_sock_freq_limit_reason_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5 },
+    { "core_cclk_limit",
+     "hsmp", "Current Core clock limit",
+     amd_hsmp_core_cclk_limit_getter, NULL,
+     DEVICE_TYPE_CORE, amd_hsmp_test_ver5,
+     "MHz" },
+    { "pkg_rails_svi",
+     "hsmp", "SVI based telemetry for all rails (?)",
+     amd_hsmp_sock_rails_svi_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5,
+     "W" },
+    { "pkg_fmax",
+     "hsmp", "Socket fmax",
+     amd_hsmp_sock_fmax_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5,
+     "Mhz" },
+    { "pkg_fmin",
+     "hsmp", "Socket fmin",
+     amd_hsmp_sock_fmin_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5,
+     "Mhz" },
     /* Same case here as above ... */
-    MAKE_XGMI_FEATURE(p0)
-    MAKE_XGMI_FEATURE(p1)
-    MAKE_XGMI_FEATURE(p2)
-    MAKE_XGMI_FEATURE(p3)
-    MAKE_XGMI_FEATURE(g0)
-    MAKE_XGMI_FEATURE(g1)
-    MAKE_XGMI_FEATURE(g2)
-    MAKE_XGMI_FEATURE(g3)
-    {"pkg_gmi3_link_width", "hsmp", "Set minimum and maximum GMI3 link width (bitfield integer: min[15:8], max[7:0], 0 = quarter, 1 = half, 2 = full)", NULL, amd_hsmp_gmi3_width_setter, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5},
-    {"pkg_pcie_gen_limit", "hsmp", "Set maximum PCIe gen (0 = auto, 1 = gen4, 2 = gen5)", NULL, amd_hsmp_pci_gen_limit_setter, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5},
-    {"pkg_power_mode", "hsmp", "Current power mode", amd_hsmp_power_mode_getter, amd_hsmp_power_mode_setter, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5},
-    {"pkg_pstate_min_max", "hsmp", "Set minimum and maximum Pstate ([15:8] = min, [7:0] = max, valid values: 0 = high performance .. 2 = low performance)", NULL, amd_hsmp_pstate_min_max_setter, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5},
-    {"pkg_metric_table_ver", "hsmp", "Metric Table Version (?)", amd_hsmp_metric_table_ver_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5},
-    {"pkg_metric_table_addr", "hsmp", "Metric Table DRAM address (?)", amd_hsmp_metric_table_addr_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5},
-    {"pkg_xgmi_pstate_min_max", "hsmp", "Set minimum and maximum xGMI Pstate ([15:8] = min, [7:0] = max)", NULL, amd_hsmp_xgmi_pstate_min_max_setter, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5},
-    {"pkg_rail_iso_freq_pol", "hsmp", "CPU Rail Iso Freq Policy (?)", amd_hsmp_cpu_rail_iso_freq_policy_getter, amd_hsmp_cpu_rail_iso_freq_policy_setter, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5},
-    {"pkg_dfc_enable", "hsmp", "DFC Enable (?)", amd_hsmp_dfc_enable_getter, amd_hsmp_dfc_enable_setter, DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5},
-    {"pkg_energy", "hsmp", "Socket energy consumed", amd_hsmp_sock_energy_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_fail, "J"},
-    {"core_energy", "hsmp", "Core energy consumed", amd_hsmp_core_energy_getter, NULL, DEVICE_TYPE_CORE, amd_hsmp_test_fail, "J"},
+    MAKE_XGMI_FEATURE(p0) MAKE_XGMI_FEATURE(p1) MAKE_XGMI_FEATURE(p2) MAKE_XGMI_FEATURE(p3)
+        MAKE_XGMI_FEATURE(g0) MAKE_XGMI_FEATURE(g1) MAKE_XGMI_FEATURE(g2)
+            MAKE_XGMI_FEATURE(g3) { "pkg_gmi3_link_width",
+     "hsmp", "Set minimum and maximum GMI3 link width (bitfield integer: min[15:8], max[7:0], 0 "
+                "= quarter, 1 = half, 2 "
+                "= full)", NULL,
+     amd_hsmp_gmi3_width_setter, DEVICE_TYPE_SOCKET,
+     amd_hsmp_test_ver5 },
+    { "pkg_pcie_gen_limit",
+     "hsmp", "Set maximum PCIe gen (0 = auto, 1 = gen4, 2 = gen5)",
+     NULL, amd_hsmp_pci_gen_limit_setter,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5 },
+    { "pkg_power_mode",
+     "hsmp", "Current power mode",
+     amd_hsmp_power_mode_getter, amd_hsmp_power_mode_setter,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5 },
+    { "pkg_pstate_min_max",
+     "hsmp", "Set minimum and maximum Pstate ([15:8] = min, [7:0] = max, valid values: 0 = high "
+        "performance .. 2 = low "
+        "performance)", NULL,
+     amd_hsmp_pstate_min_max_setter, DEVICE_TYPE_SOCKET,
+     amd_hsmp_test_ver5 },
+    { "pkg_metric_table_ver",
+     "hsmp", "Metric Table Version (?)",
+     amd_hsmp_metric_table_ver_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5 },
+    { "pkg_metric_table_addr",
+     "hsmp", "Metric Table DRAM address (?)",
+     amd_hsmp_metric_table_addr_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5 },
+    { "pkg_xgmi_pstate_min_max",
+     "hsmp", "Set minimum and maximum xGMI Pstate ([15:8] = min, [7:0] = max)",
+     NULL, amd_hsmp_xgmi_pstate_min_max_setter,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5 },
+    { "pkg_rail_iso_freq_pol",
+     "hsmp", "CPU Rail Iso Freq Policy (?)",
+     amd_hsmp_cpu_rail_iso_freq_policy_getter, amd_hsmp_cpu_rail_iso_freq_policy_setter,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5 },
+    { "pkg_dfc_enable",
+     "hsmp", "DFC Enable (?)",
+     amd_hsmp_dfc_enable_getter, amd_hsmp_dfc_enable_setter,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_ver5 },
+    { "pkg_energy",
+     "hsmp", "Socket energy consumed",
+     amd_hsmp_sock_energy_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_hsmp_test_fail,
+     "J" },
+    { "core_energy",
+     "hsmp", "Core energy consumed",
+     amd_hsmp_core_energy_getter, NULL,
+     DEVICE_TYPE_CORE, amd_hsmp_test_fail,
+     "J" },
 };
 
 static const _SysFeatureList amd_hsmp_featuer_list = {
     .num_features = ARRAY_COUNT(amd_hsmp_features),
-    .features = amd_hsmp_features,
-    .tester = amd_hsmp_tester,
+    .features     = amd_hsmp_features,
+    .tester       = amd_hsmp_tester,
 };

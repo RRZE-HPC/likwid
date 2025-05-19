@@ -30,10 +30,10 @@
 #ifndef PERFMON_APPLEM1_H
 #define PERFMON_APPLEM1_H
 
-#include <perfmon_applem1_events.h>
 #include <perfmon_applem1_counters.h>
+#include <perfmon_applem1_events.h>
 
-static int perfmon_numCountersAppleM1 = NUM_COUNTERS_APPLEM1;
+static int perfmon_numCountersAppleM1   = NUM_COUNTERS_APPLEM1;
 static int perfmon_numArchEventsAppleM1 = NUM_ARCH_EVENTS_APPLEM1;
 
 #endif //PERFMON_APPLEM1_H

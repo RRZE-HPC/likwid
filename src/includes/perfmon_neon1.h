@@ -30,18 +30,17 @@
 #ifndef PERFMON_NEON1_H
 #define PERFMON_NEON1_H
 
-#include <perfmon_neon1_events.h>
 #include <perfmon_neon1_counters.h>
+#include <perfmon_neon1_events.h>
 
-#include <error.h>
+#include <access.h>
 #include <affinity.h>
+#include <error.h>
 #include <limits.h>
 #include <topology.h>
-#include <access.h>
 
-static int perfmon_numCountersNeoN1 = NUM_COUNTERS_NEON1;
+static int perfmon_numCountersNeoN1   = NUM_COUNTERS_NEON1;
 static int perfmon_numArchEventsNeoN1 = NUM_ARCH_EVENTS_NEON1;
-
 
 //int perfmon_init_a57(int cpu_id)
 //{
@@ -84,12 +83,10 @@ static int perfmon_numArchEventsNeoN1 = NUM_ARCH_EVENTS_NEON1;
 //    return 0;
 //}
 
-
 //int perfmon_startCountersThread_a57(int thread_id, PerfmonEventSet* eventSet)
 //{
 //    uint32_t flags = 0x0U;
 //    int cpu_id = groupSet->threads[thread_id].processorId;
-
 
 //    for (int i=0;i < eventSet->numberOfEvents;i++)
 //    {
@@ -217,7 +214,6 @@ static int perfmon_numArchEventsNeoN1 = NUM_ARCH_EVENTS_NEON1;
 
 //    return 0;
 //}
-
 
 //int perfmon_finalizeCountersThread_a57(int thread_id, PerfmonEventSet* eventSet)
 //{

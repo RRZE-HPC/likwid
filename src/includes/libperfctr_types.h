@@ -41,8 +41,8 @@ typedef enum LikwidThreadStates {
     MARKER_STATE_STOP
 } LikwidThreadStates;
 
-typedef struct LikwidThreadResults{
-    bstring  label;
+typedef struct LikwidThreadResults {
+    bstring label;
     uint32_t index;
     double time;
     TimerData startTime;
@@ -59,7 +59,7 @@ typedef struct {
     int thread_id;
     int cpu_id;
     uint64_t last;
-    LikwidThreadResults* last_res;
+    LikwidThreadResults *last_res;
     Map_t regions;
     uint64_t _padding[4];
 } GroupThreadsMap;
@@ -75,14 +75,14 @@ typedef struct {
 } MarkerGroups;
 
 typedef struct {
-    bstring  tag;
+    bstring tag;
     int groupID;
     int threadCount;
     int eventCount;
-    double*  time;
-    uint32_t*  count;
-    int* cpulist;
-    double** counters;
+    double *time;
+    uint32_t *count;
+    int *cpulist;
+    double **counters;
 } LikwidResults;
 
 #endif /*LIBPERFCTR_H*/

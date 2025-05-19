@@ -28,25 +28,16 @@
  * =======================================================================================
  */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <likwid.h>
 
-int likwid_getMajorVersion(void)
-{
-    return (int) VERSION ;
-}
+int likwid_getMajorVersion(void) { return (int)VERSION; }
 
-int likwid_getMinorVersion(void)
-{
-    return (int) RELEASE ;
-}
+int likwid_getMinorVersion(void) { return (int)RELEASE; }
 
-int likwid_getBugfixVersion(void)
-{
-    return (int) MINORVERSION ;
-}
+int likwid_getBugfixVersion(void) { return (int)MINORVERSION; }
 
 int likwid_getNvidiaSupport(void)
 {
@@ -66,15 +57,9 @@ int likwid_getRocmSupport(void)
 #endif
 }
 
-int likwid_getMaxSupportedThreads(void)
-{
-    return (int) MAX_NUM_THREADS;
-}
+int likwid_getMaxSupportedThreads(void) { return (int)MAX_NUM_THREADS; }
 
-int likwid_getMaxSupportedSockets(void)
-{
-    return (int) MAX_NUM_NODES;
-}
+int likwid_getMaxSupportedSockets(void) { return (int)MAX_NUM_NODES; }
 
 int likwid_getSysFeaturesSupport(void)
 {

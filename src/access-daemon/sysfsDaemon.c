@@ -32,30 +32,29 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <fcntl.h>
-#include <syslog.h>
-#include <signal.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/fsuid.h>
-#include <getopt.h>
 #include <dirent.h>
-#include <sys/mman.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <getopt.h>
 #include <glob.h>
 #include <libgen.h>
+#include <signal.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/fsuid.h>
+#include <sys/mman.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <syslog.h>
+#include <unistd.h>
 
-#include <lock.h>
-#include <likwid.h>
 #include <access_sysfs_client.h>
+#include <likwid.h>
+#include <lock.h>
 //#include <error.h>
 //#include <sysfs_client.h>
 
@@ -64,21 +63,26 @@
 #define SA struct sockaddr
 #define str(x) #x
 
-#define CHECK_FILE_ERROR(func, msg)  \
-    if ((func) == 0) { syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); }
-
-#define LOG_AND_EXIT_IF_ERROR(func, msg)  \
-    if ((func) < 0) {  \
-        syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); \
-        exit(EXIT_FAILURE); \
+#define CHECK_FILE_ERROR(func, msg)                                                                \
+    if ((func) == 0) {                                                                             \
+        syslog(                                                                                    \
+            LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); \
     }
 
-#define CHECK_ERROR(func, msg)  \
-    if ((func) < 0) { \
-        fprintf(stderr, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno));  \
+#define LOG_AND_EXIT_IF_ERROR(func, msg)                                                           \
+    if ((func) < 0) {                                                                              \
+        syslog(                                                                                    \
+            LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); \
+        exit(EXIT_FAILURE);                                                                        \
     }
 
-#define PCI_ROOT_PATH    "/proc/bus/pci/"
+#define CHECK_ERROR(func, msg)                                                                     \
+    if ((func) < 0) {                                                                              \
+        fprintf(                                                                                   \
+            stderr, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno));  \
+    }
+
+#define PCI_ROOT_PATH "/proc/bus/pci/"
 #define CPUFREQ_DIR_FORMAT "/sys/devices/system/cpu/cpu%d/cpufreq"
 #define PROCFS_SYS_KERNEL_DIR "/proc/sys/kernel"
 
@@ -100,240 +104,214 @@ typedef enum {
 } SysfsDAccessPermissions;
 
 typedef struct {
-    char* file;
+    char *file;
     SysfsDAccessType type;
     SysfsDAccessPermissions perm;
     LikwidDeviceType dev_type;
 } SysfsDAccessFileDefinition;
 
 typedef struct {
-    char* dir;
+    char *dir;
     LikwidDeviceType dev_type;
     SysfsDAccessType type;
-    SysfsDAccessFileDefinition* files;
+    SysfsDAccessFileDefinition *files;
     int num_files;
-    char* fnmatch;
+    char *fnmatch;
 } SysfsDAccessDirDefinition;
 
-
 static SysfsDAccessFileDefinition valid_procfs_files[] = {
-    {"numa_balancing", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW},
-    {NULL},
+    { "numa_balancing", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW },
+    { NULL },
 };
 
-static SysfsDAccessFileDefinition valid_cpufreq_files[] ={
-    {"scaling_cur_freq", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW},
-    {"scaling_max_freq", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW},
-    {"scaling_min_freq", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW},
-    {"scaling_available_frequencies", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RDONLY},
-    {"scaling_available_governors", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RDONLY},
-    {"scaling_driver", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RDONLY},
-    {"scaling_setspeed", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW},
-    {"scaling_governor", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW},
-    {"energy_performance_preference", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW},
-    {"energy_performance_available_preferences", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RDONLY},
-    {NULL},
+static SysfsDAccessFileDefinition valid_cpufreq_files[] = {
+    { "scaling_cur_freq", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW },
+    { "scaling_max_freq", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW },
+    { "scaling_min_freq", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW },
+    { "scaling_available_frequencies", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RDONLY },
+    { "scaling_available_governors", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RDONLY },
+    { "scaling_driver", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RDONLY },
+    { "scaling_setspeed", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW },
+    { "scaling_governor", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW },
+    { "energy_performance_preference", SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RW },
+    { "energy_performance_available_preferences",
+     SYSFSD_ACCESS_TYPE_ABS, SYSFSD_ACCESS_PERM_RDONLY },
+    { NULL },
 };
 
 static SysfsDAccessDirDefinition default_access_dirs[] = {
-    {"/proc/sys/kernel", DEVICE_TYPE_NODE, SYSFSD_ACCESS_TYPE_ABS, valid_procfs_files, 1},
-    {"/sys/devices/system/cpu/cpu*/cpufreq", DEVICE_TYPE_HWTHREAD, SYSFSD_ACCESS_TYPE_GLOB, valid_cpufreq_files, 10},
-    {NULL},
+    { "/proc/sys/kernel", DEVICE_TYPE_NODE, SYSFSD_ACCESS_TYPE_ABS, valid_procfs_files, 1 },
+    { "/sys/devices/system/cpu/cpu*/cpufreq",
+     DEVICE_TYPE_HWTHREAD, SYSFSD_ACCESS_TYPE_GLOB,
+     valid_cpufreq_files, 10 },
+    { NULL },
 };
-
-
-
-
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int sockfd = -1;
 static int connfd = -1; /* temporary in to make it compile */
-static char* filepath;
-static const char* ident = "sysfsD";
+static char *filepath;
+static const char *ident = "sysfsD";
 
 /*static OpenFiles *open_files = NULL;*/
 /*static int num_open_files = 0;*/
-static SysfsDAccessDirDefinition** access_dirs = NULL;
-static int num_access_dirs = 0;
-
+static SysfsDAccessDirDefinition **access_dirs = NULL;
+static int num_access_dirs                     = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static int resolve_dir_glob(SysfsDAccessDirDefinition* format, int* num_out, char*** out)
+static int resolve_dir_glob(SysfsDAccessDirDefinition *format, int *num_out, char ***out)
 {
-    int err = 0;
+    int err     = 0;
     int listlen = 0;
-    char** list = NULL;
+    char **list = NULL;
 
-    if ((!format) || (format->dev_type == DEVICE_TYPE_INVALID) || (!num_out) || (!out))
-    {
+    if ((!format) || (format->dev_type == DEVICE_TYPE_INVALID) || (!num_out) || (!out)) {
         return -EINVAL;
     }
 
     glob_t globbuf;
     globbuf.gl_pathc = 0;
-    globbuf.gl_offs = 0;
+    globbuf.gl_offs  = 0;
 
-    err = glob(format->dir, GLOB_ONLYDIR, NULL, &globbuf);
-    switch (err)
-    {
-        case GLOB_NOSPACE:
-            return -ENOMEM;
-            break;
-        case GLOB_ABORTED:
-            return -EBADFD;
-            break;
-        case GLOB_NOMATCH:
-            *num_out = 0;
-            *out = NULL;
-            return 0;
-            break;
-        default:
-            break;
+    err              = glob(format->dir, GLOB_ONLYDIR, NULL, &globbuf);
+    switch (err) {
+    case GLOB_NOSPACE:
+        return -ENOMEM;
+        break;
+    case GLOB_ABORTED:
+        return -EBADFD;
+        break;
+    case GLOB_NOMATCH:
+        *num_out = 0;
+        *out     = NULL;
+        return 0;
+        break;
+    default:
+        break;
     }
-    
-    list = malloc(globbuf.gl_pathc * sizeof(char*));
-    if (!list)
-    {
+
+    list = malloc(globbuf.gl_pathc * sizeof(char *));
+    if (!list) {
         globfree(&globbuf);
         return -ENOMEM;
     }
     listlen = 0;
 
-    for (int i = 0; i < globbuf.gl_pathc; i++)
-    {
-        list[i] = malloc((strlen(globbuf.gl_pathv[i])+2)* sizeof(char));
-        if (!list[i])
-        {
-            for (int j = 0; j < i; j++)
-            {
+    for (int i = 0; i < globbuf.gl_pathc; i++) {
+        list[i] = malloc((strlen(globbuf.gl_pathv[i]) + 2) * sizeof(char));
+        if (!list[i]) {
+            for (int j = 0; j < i; j++) {
                 free(list[j]);
             }
             free(list);
             globfree(&globbuf);
             return -ENOMEM;
         }
-        err = snprintf(list[i], strlen(globbuf.gl_pathv[i])+1, "%s", globbuf.gl_pathv[i]);
-        if (err > 0)
-        {
+        err = snprintf(list[i], strlen(globbuf.gl_pathv[i]) + 1, "%s", globbuf.gl_pathv[i]);
+        if (err > 0) {
             list[i][err] = '\0';
         }
         listlen++;
     }
     globfree(&globbuf);
     *num_out = listlen;
-    *out = list;
+    *out     = list;
     return 0;
-
 }
 
-static int init_access_dirs_from_file(char* configFile)
-{
-    return -ENOSYS;
-}
+static int init_access_dirs_from_file(char *configFile) { return -ENOSYS; }
 
-
-static int _init_access_dirs_from_defaults_new(char* dir, SysfsDAccessDirDefinition* def, SysfsDAccessDirDefinition* out)
+static int _init_access_dirs_from_defaults_new(
+    char *dir, SysfsDAccessDirDefinition *def, SysfsDAccessDirDefinition *out)
 {
 
-    if ((!dir) || (!def) || (!out))
-    {
+    if ((!dir) || (!def) || (!out)) {
         return -EINVAL;
     }
 
-    out->dir = malloc((strlen(dir)+2) * sizeof(char));
-    if (!out->dir)
-    {
+    out->dir = malloc((strlen(dir) + 2) * sizeof(char));
+    if (!out->dir) {
         return -ENOMEM;
     }
-    int ret = snprintf(out->dir, strlen(dir)+1, "%s", dir);
-    if (ret < 0)
-    {
+    int ret = snprintf(out->dir, strlen(dir) + 1, "%s", dir);
+    if (ret < 0) {
         return ret;
     }
     out->dir[ret] = '\0';
-    out->type = SYSFSD_ACCESS_TYPE_ABS;
+    out->type     = SYSFSD_ACCESS_TYPE_ABS;
     out->dev_type = def->dev_type;
 
     return 0;
 }
 
-static int _init_access_dirs_from_defaults_register(SysfsDAccessDirDefinition* def, int *index)
+static int _init_access_dirs_from_defaults_register(SysfsDAccessDirDefinition *def, int *index)
 {
-    if ((!def) || (!index) || (!def->dir))
-    {
+    if ((!def) || (!index) || (!def->dir)) {
         return -EINVAL;
     }
-    
-    SysfsDAccessDirDefinition** tmp = realloc(access_dirs, (num_access_dirs+1)* sizeof(SysfsDAccessDirDefinition*));
-    if (!tmp)
-    {
+
+    SysfsDAccessDirDefinition **tmp =
+        realloc(access_dirs, (num_access_dirs + 1) * sizeof(SysfsDAccessDirDefinition *));
+    if (!tmp) {
         return -ENOMEM;
     }
-    access_dirs = tmp;
-    int idx = num_access_dirs;
+    access_dirs                    = tmp;
+    int idx                        = num_access_dirs;
     access_dirs[num_access_dirs++] = def;
-    *index = idx;
+    *index                         = idx;
     return 0;
 }
 
-static int _init_access_dirs_from_defaults_files(SysfsDAccessDirDefinition* def, SysfsDAccessDirDefinition* out)
+static int _init_access_dirs_from_defaults_files(
+    SysfsDAccessDirDefinition *def, SysfsDAccessDirDefinition *out)
 {
-    int i = 0;
+    int i         = 0;
     int num_files = 0;
-    int outidx = 0;
+    int outidx    = 0;
 
-    while (def->files[i].file != NULL)
-    {
+    while (def->files[i].file != NULL) {
         num_files++;
         i++;
     }
 
     out->files = malloc((num_files + 1) * sizeof(SysfsDAccessFileDefinition));
-    if (!out->files)
-    {
+    if (!out->files) {
         return -ENOMEM;
     }
 
-    for (i = 0; i < num_files; i++)
-    {
+    for (i = 0; i < num_files; i++) {
         char fname[1025];
         int ret = snprintf(fname, 1024, "%s/%s", out->dir, def->files[i].file);
-        if (ret < 0)
-        {
-            for (int j = 0; j < i-1; j++)
-            {
+        if (ret < 0) {
+            for (int j = 0; j < i - 1; j++) {
                 free(out->files[j].file);
             }
             free(out->files);
             return -ENOMEM;
         }
-        if (!access(fname, F_OK))
-        {
+        if (!access(fname, F_OK)) {
             out->files[i].file = malloc((strlen(def->files[i].file) + 2) * sizeof(char));
-            if (!out->files[i].file)
-            {
-                for (int j = 0; j < i-1; j++)
-                {
+            if (!out->files[i].file) {
+                for (int j = 0; j < i - 1; j++) {
                     free(out->files[j].file);
                 }
                 free(out->files);
                 return -ENOMEM;
             }
-            ret = snprintf(out->files[i].file, strlen(def->files[i].file) + 1, "%s", def->files[i].file);
-            if (ret < 0)
-            {
+            ret = snprintf(
+                out->files[i].file, strlen(def->files[i].file) + 1, "%s", def->files[i].file);
+            if (ret < 0) {
                 free(out->files[i].file);
-                for (int j = 0; j < i-1; j++)
-                {
+                for (int j = 0; j < i - 1; j++) {
                     free(out->files[j].file);
                 }
                 free(out->files);
                 return -ENOMEM;
             }
             out->files[i].file[ret] = '\0';
-            out->files[i+1].file = NULL;
+            out->files[i + 1].file  = NULL;
         }
     }
     out->num_files = num_files;
@@ -343,114 +321,97 @@ static int _init_access_dirs_from_defaults_files(SysfsDAccessDirDefinition* def,
 static int init_access_dirs_from_defaults()
 {
     int i = 0, j = 0, idx = 0;
-    int err = 0;
+    int err      = 0;
     int num_dirs = 0;
-    char** dirs = NULL;
-    i = 0;
-    while (default_access_dirs[i].dir != NULL)
-    {
-        SysfsDAccessDirDefinition* def;
-        switch (default_access_dirs[i].type)
-        {
-            case SYSFSD_ACCESS_TYPE_ABS:
+    char **dirs  = NULL;
+    i            = 0;
+    while (default_access_dirs[i].dir != NULL) {
+        SysfsDAccessDirDefinition *def;
+        switch (default_access_dirs[i].type) {
+        case SYSFSD_ACCESS_TYPE_ABS:
+            def = malloc(sizeof(SysfsDAccessDirDefinition));
+            if (!def) {
+                return -ENOMEM;
+            }
+            err = _init_access_dirs_from_defaults_new(
+                default_access_dirs[i].dir, &default_access_dirs[i], def);
+            if (err < 0) {
+                free(def);
+                return err;
+            }
+            err = _init_access_dirs_from_defaults_files(&default_access_dirs[i], def);
+            if (err < 0) {
+                free(def);
+                return err;
+            }
+            err = _init_access_dirs_from_defaults_register(def, &idx);
+            if (err < 0) {
+                j = 0;
+                while (def->files[j].file != NULL) {
+                    free(def->files[j].file);
+                    j++;
+                }
+                free(def);
+                return err;
+            }
+            break;
+        case SYSFSD_ACCESS_TYPE_GLOB:
+            err = resolve_dir_glob(&default_access_dirs[i], &num_dirs, &dirs);
+            if (err < 0) {
+                return err;
+            }
+            for (j = 0; j < num_dirs; j++) {
                 def = malloc(sizeof(SysfsDAccessDirDefinition));
-                if (!def)
-                {
+                if (!def) {
                     return -ENOMEM;
                 }
-                err = _init_access_dirs_from_defaults_new(default_access_dirs[i].dir, &default_access_dirs[i], def);
-                if (err < 0)
-                {
+                err = _init_access_dirs_from_defaults_new(dirs[j], &default_access_dirs[i], def);
+                if (err < 0) {
                     free(def);
                     return err;
                 }
                 err = _init_access_dirs_from_defaults_files(&default_access_dirs[i], def);
-                if (err < 0)
-                {
+                if (err < 0) {
                     free(def);
                     return err;
                 }
                 err = _init_access_dirs_from_defaults_register(def, &idx);
-                if (err < 0)
-                {
+                if (err < 0) {
                     j = 0;
-                    while (def->files[j].file != NULL)
-                    {
+                    while (def->files[j].file != NULL) {
                         free(def->files[j].file);
                         j++;
                     }
                     free(def);
                     return err;
                 }
-                break;
-            case SYSFSD_ACCESS_TYPE_GLOB:
-                err = resolve_dir_glob(&default_access_dirs[i], &num_dirs, &dirs);
-                if (err < 0)
-                {
-                    return err;
+            }
+            if (dirs) {
+                for (j = 0; j < num_dirs; j++) {
+                    free(dirs[j]);
                 }
-                for (j = 0; j < num_dirs; j++)
-                {
-                    def = malloc(sizeof(SysfsDAccessDirDefinition));
-                    if (!def)
-                    {
-                        return -ENOMEM;
-                    }
-                    err = _init_access_dirs_from_defaults_new(dirs[j], &default_access_dirs[i], def);
-                    if (err < 0)
-                    {
-                        free(def);
-                        return err;
-                    }
-                    err = _init_access_dirs_from_defaults_files(&default_access_dirs[i], def);
-                    if (err < 0)
-                    {
-                        free(def);
-                        return err;
-                    }
-                    err = _init_access_dirs_from_defaults_register(def, &idx);
-                    if (err < 0)
-                    {
-                        j = 0;
-                        while (def->files[j].file != NULL)
-                        {
-                            free(def->files[j].file);
-                            j++;
-                        }
-                        free(def);
-                        return err;
-                    }
-                }
-                if (dirs)
-                {
-                    for (j = 0; j < num_dirs; j++)
-                    {
-                        free(dirs[j]);
-                    }
-                    free(dirs);
-                    dirs = NULL;
-                    num_dirs = 0;
-                }
+                free(dirs);
+                dirs     = NULL;
+                num_dirs = 0;
+            }
         }
         i++;
     }
     return 0;
 }
 
-static int init_access_dirs(char* configFile)
+static int init_access_dirs(char *configFile)
 {
-    return (configFile == NULL ? init_access_dirs_from_defaults() : init_access_dirs_from_file(configFile));
+    return configFile == NULL ? init_access_dirs_from_defaults()
+                              : init_access_dirs_from_file(configFile);
 }
 
 static void cleanup_access_dirs()
 {
-    if (access_dirs)
-    {
-        for (int i = 0; i < num_access_dirs; i++)
-        {
-            SysfsDAccessDirDefinition* dir = access_dirs[i];
-            for (int j = 0; j < dir->num_files; j++)
-            {
+    if (access_dirs) {
+        for (int i = 0; i < num_access_dirs; i++) {
+            SysfsDAccessDirDefinition *dir = access_dirs[i];
+            for (int j = 0; j < dir->num_files; j++) {
                 free(dir->files[j].file);
             }
             free(dir->files);
@@ -458,23 +419,20 @@ static void cleanup_access_dirs()
             free(dir);
         }
         free(access_dirs);
-        access_dirs = NULL;
+        access_dirs     = NULL;
         num_access_dirs = 0;
     }
 }
 
-
-static int check_file_access(char* filename)
+static int check_file_access(char *filename)
 {
-    for (int i = 0; i < num_access_dirs; i++)
-    {
-        SysfsDAccessDirDefinition* dir = access_dirs[i];
-        if (strncmp(filename, dir->dir, strlen(dir->dir)) == 0)
-        {
-            for (int j = 0; j < dir->num_files; j++)
-            {
-                if (strncmp(&filename[strlen(dir->dir)+1], dir->files[j].file, strlen(dir->files[j].file)) == 0)
-                {
+    for (int i = 0; i < num_access_dirs; i++) {
+        SysfsDAccessDirDefinition *dir = access_dirs[i];
+        if (strncmp(filename, dir->dir, strlen(dir->dir)) == 0) {
+            for (int j = 0; j < dir->num_files; j++) {
+                if (strncmp(&filename[strlen(dir->dir) + 1],
+                        dir->files[j].file,
+                        strlen(dir->files[j].file)) == 0) {
                     return 1;
                 }
             }
@@ -483,25 +441,20 @@ static int check_file_access(char* filename)
     return 0;
 }
 
-static int read_sysfs_file(char* filename, int max_len, char* data)
+static int read_sysfs_file(char *filename, int max_len, char *data)
 {
     int err = check_file_access(filename);
-    if (!err)
-    {
+    if (!err) {
         return -ENOENT;
     }
-    FILE* fp = fopen(filename, "r");
-    if (fp)
-    {
+    FILE *fp = fopen(filename, "r");
+    if (fp) {
         int ret = fread(data, sizeof(char), max_len, fp);
-        if (ret >= 0)
-        {
+        if (ret >= 0) {
             data[ret] = '\0';
         }
-        for (int k = ret-1; k >= 0; k--)
-        {
-            if (data[k] == '\n')
-            {
+        for (int k = ret - 1; k >= 0; k--) {
+            if (data[k] == '\n') {
                 data[k] = '\0';
                 break;
             }
@@ -511,23 +464,19 @@ static int read_sysfs_file(char* filename, int max_len, char* data)
     return -0;
 }
 
-static int write_sysfs_file(char* filename, int max_len, char* data)
+static int write_sysfs_file(char *filename, int max_len, char *data)
 {
     int err = check_file_access(filename);
-    if (!err)
-    {
+    if (!err) {
         return -ENOENT;
     }
-    FILE* fp = fopen(filename, "w");
-    if (fp)
-    {
+    FILE *fp = fopen(filename, "w");
+    if (fp) {
         fwrite(data, sizeof(char), max_len, fp);
         fclose(fp);
     }
     return -0;
 }
-
-
 
 /*int main(int argc, char* argv[])*/
 /*{*/
@@ -549,19 +498,16 @@ static int write_sysfs_file(char* filename, int max_len, char* data)
 /*    return 0;*/
 /*}*/
 
-static void
-kill_client(void)
+static void kill_client(void)
 {
-    if (connfd != -1)
-    {
+    if (connfd != -1) {
         CHECK_ERROR(close(connfd), socket close failed);
     }
 
     connfd = -1;
 }
 
-static void
-stop_daemon(void)
+static void stop_daemon(void)
 {
     kill_client();
 
@@ -571,46 +517,39 @@ stop_daemon(void)
     exit(EXIT_SUCCESS);
 }
 
-
-
-static void
-Signal_Handler(int sig)
+static void Signal_Handler(int sig)
 {
-    if (sig == SIGPIPE)
-    {
+    if (sig == SIGPIPE) {
         syslog(LOG_NOTICE, "SIGPIPE? client crashed?!");
         stop_daemon();
     }
 
     /* For SIGALRM we just return - we're just here to create a EINTR */
-    if (sig == SIGTERM)
-    {
+    if (sig == SIGTERM) {
         stop_daemon();
     }
 }
 
-static void
-daemonize(int* parentPid)
+static void daemonize(int *parentPid)
 {
     pid_t pid, sid;
 
     *parentPid = getpid();
 
     /* already a daemon */
-    if ( getppid() == 1 ) return;
+    if (getppid() == 1)
+        return;
 
     /* Fork off the parent process */
     pid = fork();
 
-    if (pid < 0)
-    {
+    if (pid < 0) {
         syslog(LOG_ERR, "fork failed: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     /* If we got a good PID, then we can exit the parent process. */
-    if (pid > 0)
-    {
+    if (pid > 0) {
         exit(EXIT_SUCCESS);
     }
 
@@ -619,25 +558,23 @@ daemonize(int* parentPid)
     /* Create a new SID for the child process */
     sid = setsid();
 
-    if (sid < 0)
-    {
+    if (sid < 0) {
         syslog(LOG_ERR, "setsid failed: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     /* Change the current working directory.  This prevents the current
        directory from being locked; hence not being able to remove it. */
-    if ((chdir("/")) < 0)
-    {
+    if ((chdir("/")) < 0) {
         syslog(LOG_ERR, "chdir failed:  %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     /* Redirect standard files to /dev/null */
     {
-        CHECK_FILE_ERROR(freopen( "/dev/null", "r", stdin), freopen stdin failed);
-        CHECK_FILE_ERROR(freopen( "/dev/null", "w", stdout), freopen stdout failed);
-        CHECK_FILE_ERROR(freopen( "/dev/null", "w", stderr), freopen stderr failed);
+        CHECK_FILE_ERROR(freopen("/dev/null", "r", stdin), freopen stdin failed);
+        CHECK_FILE_ERROR(freopen("/dev/null", "w", stdout), freopen stdout failed);
+        CHECK_FILE_ERROR(freopen("/dev/null", "w", stderr), freopen stderr failed);
     }
 }
 
@@ -646,21 +583,19 @@ int main(void)
     int ret;
     pid_t pid;
     SysfsDataRecord dRecord;
-    struct sockaddr_un  addr1;
+    struct sockaddr_un addr1;
     socklen_t socklen;
     mode_t oldumask;
 
     openlog(ident, 0, LOG_USER);
 
-    if (!lock_check())
-    {
-        syslog(LOG_ERR,"Access to performance counters is locked.\n");
+    if (!lock_check()) {
+        syslog(LOG_ERR, "Access to performance counters is locked.\n");
         stop_daemon();
     }
 
     int err = init_access_dirs(NULL);
-    if (err < 0)
-    {
+    if (err < 0) {
         stop_daemon();
     }
 
@@ -669,9 +604,8 @@ int main(void)
     syslog(LOG_INFO, "SysfsDaemon runs with UID %d, eUID %d\n", getuid(), geteuid());
 #endif
 
-
     /* setup filename for socket */
-    filepath = (char*) calloc(sizeof(addr1.sun_path), 1);
+    filepath = (char *)calloc(sizeof(addr1.sun_path), 1);
     snprintf(filepath, sizeof(addr1.sun_path), TOSTRING(LIKWIDSOCKETBASE) "-sysfs-%d", pid);
 
     /* get a socket */
@@ -680,7 +614,9 @@ int main(void)
     /* initialize socket data structure */
     bzero(&addr1, sizeof(addr1));
     addr1.sun_family = AF_LOCAL;
-    strncpy(addr1.sun_path, filepath, (sizeof(addr1.sun_path) - 1)); /* null terminated by the bzero() above! */
+    strncpy(addr1.sun_path,
+        filepath,
+        (sizeof(addr1.sun_path) - 1)); /* null terminated by the bzero() above! */
 
     /* Change the file mode mask so only the calling user has access
      * and switch the user/gid with which the following socket creation runs. */
@@ -688,9 +624,9 @@ int main(void)
     CHECK_ERROR(setfsuid(getuid()), setfsuid failed);
 
     /* bind and listen on socket */
-    LOG_AND_EXIT_IF_ERROR(bind(sockfd, (SA*) &addr1, sizeof(addr1)), bind failed);
+    LOG_AND_EXIT_IF_ERROR(bind(sockfd, (SA *)&addr1, sizeof(addr1)), bind failed);
     LOG_AND_EXIT_IF_ERROR(listen(sockfd, 1), listen failed);
-    LOG_AND_EXIT_IF_ERROR(chmod(filepath, S_IRUSR|S_IWUSR), chmod failed);
+    LOG_AND_EXIT_IF_ERROR(chmod(filepath, S_IRUSR | S_IWUSR), chmod failed);
 
     socklen = sizeof(addr1);
 
@@ -707,14 +643,10 @@ int main(void)
     /* setup an alarm to stop the daemon if there is no connect.*/
     alarm(15U);
 
-    if ((connfd = accept(sockfd, (SA*) &addr1, &socklen)) < 0)
-    {
-        if (errno == EINTR)
-        {
+    if ((connfd = accept(sockfd, (SA *)&addr1, &socklen)) < 0) {
+        if (errno == EINTR) {
             syslog(LOG_ERR, "exiting due to timeout - no client connected after 15 seconds.");
-        }
-        else
-        {
+        } else {
             syslog(LOG_ERR, "accept() failed:  %s", strerror(errno));
         }
         CHECK_ERROR(unlink(filepath), unlink of socket failed);
@@ -725,46 +657,38 @@ int main(void)
     CHECK_ERROR(unlink(filepath), unlink of socket failed);
 
     /* Restore the old umask and fs ids. */
-    (void) umask(oldumask);
+    (void)umask(oldumask);
     CHECK_ERROR(setfsuid(geteuid()), setfsuid failed);
-
 
 LOOP:
     //syslog(LOG_ERR, "Starting loop %d\n", avail_cpus);
-    while (1)
-    {
-        ret = read(connfd, (void*) &dRecord, sizeof(SysfsDataRecord));
+    while (1) {
+        ret = read(connfd, (void *)&dRecord, sizeof(SysfsDataRecord));
 
-        if (ret < 0)
-        {
+        if (ret < 0) {
             syslog(LOG_ERR, "ERROR - Read returns %d", ret);
             stop_daemon();
-        }
-        else if ((ret == 0) && (dRecord.type != SYSFS_EXIT))
-        {
-            syslog(LOG_ERR, "ERROR - [%s:%d] zero read, remote socket closed before reading", __FILE__, __LINE__);
+        } else if ((ret == 0) && (dRecord.type != SYSFS_EXIT)) {
+            syslog(LOG_ERR,
+                "ERROR - [%s:%d] zero read, remote socket closed before reading",
+                __FILE__,
+                __LINE__);
             stop_daemon();
         }
 
-        if (dRecord.type == SYSFS_READ)
-        {
-            read_sysfs_file(dRecord.filename, dRecord.datalen, (char*)&dRecord.data);
-        }
-        else if (dRecord.type == SYSFS_WRITE)
-        {
+        if (dRecord.type == SYSFS_READ) {
+            read_sysfs_file(dRecord.filename, dRecord.datalen, (char *)&dRecord.data);
+        } else if (dRecord.type == SYSFS_WRITE) {
             write_sysfs_file(dRecord.filename, dRecord.datalen, dRecord.data);
-        }
-        else if (dRecord.type == SYSFS_EXIT)
-        {
+        } else if (dRecord.type == SYSFS_EXIT) {
             stop_daemon();
-        }
-        else
-        {
+        } else {
             syslog(LOG_ERR, "unknown daemon command type %d", dRecord.type);
             dRecord.errorcode = SYSFS_ERR_UNKNOWN;
         }
 
-        LOG_AND_EXIT_IF_ERROR(write(connfd, (void*) &dRecord, sizeof(SysfsDataRecord)), write failed);
+        LOG_AND_EXIT_IF_ERROR(
+            write(connfd, (void *)&dRecord, sizeof(SysfsDataRecord)), write failed);
     }
 
     /* never reached */

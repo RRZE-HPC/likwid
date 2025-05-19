@@ -30,14 +30,14 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include <types.h>
+#include <lock.h>
 #include <thermal.h>
 #include <topology.h>
-#include <lock.h>
+#include <types.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -45,44 +45,35 @@ ThermalInfo thermal_info;
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void
-thermal_init(int cpuId)
+void thermal_init(int cpuId)
 {
-    uint64_t flags=0ULL;
-    if (!lock_check())
-    {
-        fprintf(stderr,"Access to thermal backend is locked.\n");
+    uint64_t flags = 0ULL;
+    if (!lock_check()) {
+        fprintf(stderr, "Access to thermal backend is locked.\n");
         return;
     }
     HPMinit();
     if (HPMaddThread(cpuId) < 0)
         fprintf(stderr, "Cannot initialize access to registers on CPU %d\n", cpuId);
 
-    if ( cpuid_hasFeature(TM2) )
-    {
-        if (HPMread(cpuId, MSR_DEV, IA32_THERM_STATUS, &flags))
-        {
+    if (cpuid_hasFeature(TM2)) {
+        if (HPMread(cpuId, MSR_DEV, IA32_THERM_STATUS, &flags)) {
             return;
         }
 
-        if ( flags & 0x1 )
-        {
+        if (flags & 0x1) {
             thermal_info.highT = 1;
-        }
-        else
-        {
+        } else {
             thermal_info.highT = 0;
         }
 
-        thermal_info.resolution =  extractBitField(flags,4,27);
+        thermal_info.resolution = extractBitField(flags, 4, 27);
 
-        flags = 0ULL;
-        if (HPMread(cpuId, MSR_DEV, MSR_TEMPERATURE_TARGET, &flags))
-        {
+        flags                   = 0ULL;
+        if (HPMread(cpuId, MSR_DEV, MSR_TEMPERATURE_TARGET, &flags)) {
             return;
         }
-        thermal_info.activationT =  extractBitField(flags,8,16);
-        thermal_info.offset = extractBitField(flags,6,24);
+        thermal_info.activationT = extractBitField(flags, 8, 16);
+        thermal_info.offset      = extractBitField(flags, 6, 24);
     }
 }
-

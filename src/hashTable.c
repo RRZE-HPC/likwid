@@ -31,17 +31,17 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
-#include <stdlib.h>
+#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 
-#include <ghash.h>
 #include <bstrlib.h>
-#include <types.h>
+#include <ghash.h>
 #include <hashTable.h>
 #include <likwid.h>
+#include <types.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -49,176 +49,155 @@ typedef struct {
     pthread_t tid;
     uint32_t coreId;
     uint32_t hashIndex;
-    GHashTable* hashTable;
+    GHashTable *hashTable;
 } ThreadList;
 
-static ThreadList* threadList[MAX_NUM_THREADS];
+static ThreadList *threadList[MAX_NUM_THREADS];
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void
-hashTable_init()
+void hashTable_init()
 {
-    for (int i=0; i<MAX_NUM_THREADS; i++)
-    {
+    for (int i = 0; i < MAX_NUM_THREADS; i++) {
         threadList[i] = NULL;
     }
 }
 
-void
-hashTable_initThread(int coreID)
+void hashTable_initThread(int coreID)
 {
-    ThreadList* resPtr = threadList[coreID];
+    ThreadList *resPtr = threadList[coreID];
     /* check if thread was already initialized */
-    if (resPtr == NULL)
-    {
-        resPtr = (ThreadList*) malloc(sizeof(ThreadList));
+    if (resPtr == NULL) {
+        resPtr = (ThreadList *)malloc(sizeof(ThreadList));
         /* initialize structure */
-        resPtr->tid =  pthread_self();
-        resPtr->coreId  = coreID;
-        resPtr->hashIndex = 0;
-        resPtr->hashTable = g_hash_table_new(g_str_hash, g_str_equal);
+        resPtr->tid        = pthread_self();
+        resPtr->coreId     = coreID;
+        resPtr->hashIndex  = 0;
+        resPtr->hashTable  = g_hash_table_new(g_str_hash, g_str_equal);
         threadList[coreID] = resPtr;
     }
 }
 
-int
-hashTable_test(bstring label)
+int hashTable_test(bstring label)
 {
-    int coreID = likwid_getProcessorId();
-    LikwidThreadResults* resEntry = NULL;
-    ThreadList* resPtr = threadList[coreID];
-    resEntry = g_hash_table_lookup(resPtr->hashTable, (gpointer) bdata(label));
+    int coreID                    = likwid_getProcessorId();
+    LikwidThreadResults *resEntry = NULL;
+    ThreadList *resPtr            = threadList[coreID];
+    resEntry                      = g_hash_table_lookup(resPtr->hashTable, (gpointer)bdata(label));
     if (resEntry != NULL)
         return 1;
     return 0;
 }
 
-
-int
-hashTable_get(bstring label, LikwidThreadResults** resEntry)
+int hashTable_get(bstring label, LikwidThreadResults **resEntry)
 {
-    int coreID = likwid_getProcessorId();
-    ThreadList* resPtr = threadList[coreID];
+    int coreID         = likwid_getProcessorId();
+    ThreadList *resPtr = threadList[coreID];
 
     /* check if thread was already initialized */
-    if (resPtr == NULL)
-    {
-        resPtr = (ThreadList*) malloc(sizeof(ThreadList));
+    if (resPtr == NULL) {
+        resPtr = (ThreadList *)malloc(sizeof(ThreadList));
         /* initialize structure */
-        resPtr->tid =  pthread_self();
-        resPtr->coreId  = coreID;
-        resPtr->hashIndex = 0;
-        resPtr->hashTable = g_hash_table_new(g_str_hash, g_str_equal);
+        resPtr->tid        = pthread_self();
+        resPtr->coreId     = coreID;
+        resPtr->hashIndex  = 0;
+        resPtr->hashTable  = g_hash_table_new(g_str_hash, g_str_equal);
         threadList[coreID] = resPtr;
     }
 
-    (*resEntry) = g_hash_table_lookup(resPtr->hashTable, (gpointer) bdata(label));
+    (*resEntry) = g_hash_table_lookup(resPtr->hashTable, (gpointer)bdata(label));
 
     /* if region is not known create new region and add to hashtable */
-    if ( (*resEntry) == NULL )
-    {
-        (*resEntry) = (LikwidThreadResults*) malloc(sizeof(LikwidThreadResults));
-        (*resEntry)->label = bstrcpy (label);
-        (*resEntry)->time = 0.0;
+    if ((*resEntry) == NULL) {
+        (*resEntry)        = (LikwidThreadResults *)malloc(sizeof(LikwidThreadResults));
+        (*resEntry)->label = bstrcpy(label);
+        (*resEntry)->time  = 0.0;
         (*resEntry)->count = 0;
         (*resEntry)->index = resPtr->hashIndex++;
         (*resEntry)->state = MARKER_STATE_NEW;
-        for (int i=0; i< NUM_PMC; i++)
-        {
-            (*resEntry)->PMcounters[i] = 0.0;
+        for (int i = 0; i < NUM_PMC; i++) {
+            (*resEntry)->PMcounters[i]      = 0.0;
             (*resEntry)->StartPMcounters[i] = 0.0;
         }
 
         g_hash_table_insert(
-                resPtr->hashTable,
-                (gpointer) g_strdup(bdata(label)),
-                (gpointer) (*resEntry));
+            resPtr->hashTable, (gpointer)g_strdup(bdata(label)), (gpointer)(*resEntry));
     }
 
     return coreID;
 }
 
-void
-hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
+void hashTable_finalize(int *numThreads, int *numRegions, LikwidResults **results)
 {
-    int threadId = 0;
+    int threadId             = 0;
     uint32_t numberOfThreads = 0;
     uint32_t numberOfRegions = 0;
-    GHashTable* regionLookup;
+    GHashTable *regionLookup;
 
     regionLookup = g_hash_table_new(g_str_hash, g_str_equal);
     /* determine number of active threads */
-    for (int i=0; i<MAX_NUM_THREADS; i++)
-    {
-        if (threadList[i] != NULL)
-        {
+    for (int i = 0; i < MAX_NUM_THREADS; i++) {
+        if (threadList[i] != NULL) {
             numberOfThreads++;
             uint32_t threadNumberOfRegions = g_hash_table_size(threadList[i]->hashTable);
             /*  Determine maximum number of regions */
-            if (numberOfRegions < threadNumberOfRegions)
-            {
+            if (numberOfRegions < threadNumberOfRegions) {
                 numberOfRegions = threadNumberOfRegions;
             }
         }
     }
 
     /* allocate data structures */
-    (*results) = (LikwidResults*) malloc(numberOfRegions * sizeof(LikwidResults));
-    if (!(*results))
-    {
-        fprintf(stderr, "Failed to allocate %lu bytes for the results\n",
-                numberOfRegions * sizeof(LikwidResults));
-    }
-    else
-    {
-        for ( uint32_t i=0; i < numberOfRegions; i++ )
-        {
-            (*results)[i].time = (double*) malloc(numberOfThreads * sizeof(double));
-            if (!(*results)[i].time)
-            {
-                fprintf(stderr, "Failed to allocate %lu bytes for the time storage\n",
-                        numberOfThreads * sizeof(double));
+    (*results) = (LikwidResults *)malloc(numberOfRegions * sizeof(LikwidResults));
+    if (!(*results)) {
+        fprintf(stderr,
+            "Failed to allocate %lu bytes for the results\n",
+            numberOfRegions * sizeof(LikwidResults));
+    } else {
+        for (uint32_t i = 0; i < numberOfRegions; i++) {
+            (*results)[i].time = (double *)malloc(numberOfThreads * sizeof(double));
+            if (!(*results)[i].time) {
+                fprintf(stderr,
+                    "Failed to allocate %lu bytes for the time storage\n",
+                    numberOfThreads * sizeof(double));
                 break;
             }
-            (*results)[i].count = (uint32_t*) malloc(numberOfThreads * sizeof(uint32_t));
-            if (!(*results)[i].count)
-            {
-                fprintf(stderr, "Failed to allocate %lu bytes for the count storage\n",
-                        numberOfThreads * sizeof(uint32_t));
+            (*results)[i].count = (uint32_t *)malloc(numberOfThreads * sizeof(uint32_t));
+            if (!(*results)[i].count) {
+                fprintf(stderr,
+                    "Failed to allocate %lu bytes for the count storage\n",
+                    numberOfThreads * sizeof(uint32_t));
                 break;
             }
-            (*results)[i].cpulist = (int*) malloc(numberOfThreads * sizeof(int));
-            if (!(*results)[i].count)
-            {
-                fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n",
-                        numberOfThreads * sizeof(int));
+            (*results)[i].cpulist = (int *)malloc(numberOfThreads * sizeof(int));
+            if (!(*results)[i].count) {
+                fprintf(stderr,
+                    "Failed to allocate %lu bytes for the cpulist storage\n",
+                    numberOfThreads * sizeof(int));
                 break;
             }
-            (*results)[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
-            if (!(*results)[i].counters)
-            {
-                fprintf(stderr, "Failed to allocate %lu bytes for the counter result storage\n",
-                        numberOfThreads * sizeof(double*));
+            (*results)[i].counters = (double **)malloc(numberOfThreads * sizeof(double *));
+            if (!(*results)[i].counters) {
+                fprintf(stderr,
+                    "Failed to allocate %lu bytes for the counter result storage\n",
+                    numberOfThreads * sizeof(double *));
                 break;
             }
 
-            for ( uint32_t j=0; j < numberOfThreads; j++ )
-            {
-                (*results)[i].time[j] = 0.0;
-                (*results)[i].count[j] = 0;
-                (*results)[i].cpulist[j] = -1;
-                (*results)[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
-                if (!(*results)[i].counters)
-                {
-                    fprintf(stderr, "Failed to allocate %lu bytes for the counter result storage for thread %d\n",
-                            NUM_PMC * sizeof(double), j);
+            for (uint32_t j = 0; j < numberOfThreads; j++) {
+                (*results)[i].time[j]     = 0.0;
+                (*results)[i].count[j]    = 0;
+                (*results)[i].cpulist[j]  = -1;
+                (*results)[i].counters[j] = (double *)malloc(NUM_PMC * sizeof(double));
+                if (!(*results)[i].counters) {
+                    fprintf(stderr,
+                        "Failed to allocate %lu bytes for the counter result storage for thread "
+                        "%d\n",
+                        NUM_PMC * sizeof(double),
+                        j);
                     break;
-                }
-                else
-                {
-                    for ( uint32_t k=0; k < NUM_PMC; k++ )
-                    {
+                } else {
+                    for (uint32_t k = 0; k < NUM_PMC; k++) {
                         (*results)[i].counters[j][k] = 0.0;
                     }
                 }
@@ -228,45 +207,41 @@ hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
 
     uint32_t regionIds[numberOfRegions];
 
-    for (int core=0; core<MAX_NUM_THREADS; core++)
-    {
-        ThreadList* resPtr = threadList[core];
+    for (int core = 0; core < MAX_NUM_THREADS; core++) {
+        ThreadList *resPtr = threadList[core];
 
-        if (resPtr != NULL)
-        {
-            LikwidThreadResults* threadResult  = NULL;
+        if (resPtr != NULL) {
+            LikwidThreadResults *threadResult = NULL;
             GHashTableIter iter;
             gpointer key, value;
-            g_hash_table_iter_init (&iter, resPtr->hashTable);
+            g_hash_table_iter_init(&iter, resPtr->hashTable);
 
             /* iterate over all regions in thread */
-            while (g_hash_table_iter_next (&iter, &key, &value))
-            {
-                threadResult = (LikwidThreadResults*) value;
-                uint32_t* regionId = (uint32_t*) g_hash_table_lookup(regionLookup, key);
+            while (g_hash_table_iter_next(&iter, &key, &value)) {
+                threadResult       = (LikwidThreadResults *)value;
+                uint32_t *regionId = (uint32_t *)g_hash_table_lookup(regionLookup, key);
 
                 /* is region not yet registered, this is the case for the first
                  * processed CPU core that has a hash table.
                  */
-                if ( regionId == NULL )
-                {
-                    (*results)[threadResult->index].tag = bstrcpy (threadResult->label);
+                if (regionId == NULL) {
+                    (*results)[threadResult->index].tag     = bstrcpy(threadResult->label);
                     (*results)[threadResult->index].groupID = threadResult->groupID;
-                    regionIds[threadResult->index] = threadResult->index;
-                    regionId = regionIds + threadResult->index;
+                    regionIds[threadResult->index]          = threadResult->index;
+                    regionId                                = regionIds + threadResult->index;
                     /* The region id is added to a temporary hash table with the
                      * region label as key to get it back for all following
                      * threads.
                      */
-                    g_hash_table_insert(regionLookup, g_strdup(key), (regionIds+threadResult->index));
+                    g_hash_table_insert(
+                        regionLookup, g_strdup(key), (regionIds + threadResult->index));
                 }
 
-                (*results)[*regionId].count[threadId] = threadResult->count;
-                (*results)[*regionId].time[threadId] = threadResult->time;
+                (*results)[*regionId].count[threadId]   = threadResult->count;
+                (*results)[*regionId].time[threadId]    = threadResult->time;
                 (*results)[*regionId].cpulist[threadId] = threadResult->cpuID;
 
-                for ( int j=0; j < NUM_PMC; j++ )
-                {
+                for (int j = 0; j < NUM_PMC; j++) {
                     (*results)[*regionId].counters[threadId][j] = threadResult->PMcounters[j];
                 }
             }
@@ -275,22 +250,19 @@ hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
         }
     }
     g_hash_table_destroy(regionLookup);
-    regionLookup = NULL;
+    regionLookup  = NULL;
     (*numThreads) = numberOfThreads;
     (*numRegions) = numberOfRegions;
 }
 
-void __attribute__((destructor (102))) hashTable_finalizeDestruct(void)
+void __attribute__((destructor(102))) hashTable_finalizeDestruct(void)
 {
-    for (int core=0; core<MAX_NUM_THREADS; core++)
-    {
-        ThreadList* resPtr = threadList[core];
-        if (resPtr != NULL)
-        {
+    for (int core = 0; core < MAX_NUM_THREADS; core++) {
+        ThreadList *resPtr = threadList[core];
+        if (resPtr != NULL) {
             g_hash_table_destroy(resPtr->hashTable);
             free(resPtr);
             threadList[core] = NULL;
         }
     }
 }
-

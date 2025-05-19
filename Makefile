@@ -861,8 +861,8 @@ help:
 
 .PHONY: format
 format:
-	find src/ \( -iname \*.c -or \( -iname \*.h -and -not -iname *perfmon_\*.h \) \) -exec clang-format -i '{}' '+'
-	find src/ -iname *perfmon_\*.h -exec clang-format --style='{BasedOnStyle: InheritParentConfig, ColumnLimit: 180}' -i '{}' '+'
+	find src/ \( -iname \*.c -or \( -iname \*.h -and -not -iname \*perfmon_\*counters.h \) \) -exec clang-format -i '{}' '+'
+	find src/ -iname \*perfmon_\*counters.h -exec clang-format --style='{BasedOnStyle: InheritParentConfig, ColumnLimit: 180}' -i '{}' '+'
 
 .PHONY: rpm RPM
 rpm: RPM
