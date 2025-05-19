@@ -30,12 +30,13 @@
 #ifndef ACCESS_X86_H
 #define ACCESS_X86_H
 
+#include <stdint.h>
 #include <types.h>
 
-int access_x86_init(int cpu_id);
-int access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *data);
-int access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t data);
-void access_x86_finalize(int cpu_id);
-int access_x86_check(PciDeviceIndex dev, int cpu_id);
+int access_x86_init(uint32_t cpu_id);
+int access_x86_read(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t *data);
+int access_x86_write(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t data);
+void access_x86_finalize(uint32_t cpu_id);
+int access_x86_check(PciDeviceIndex dev, uint32_t cpu_id);
 
 #endif /* ACCESS_X86_H */

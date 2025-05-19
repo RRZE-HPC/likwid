@@ -321,7 +321,7 @@ the MSR/PCI files or the access daemon.
 @param [in] cpu_id CPU that should be enabled for measurements
 @return error code (0 for success, -ENODEV if access cannot be initialized
 */
-extern int HPMaddThread(int cpu_id) __attribute__((visibility("default")));
+extern int HPMaddThread(uint32_t cpu_id) __attribute__((visibility("default")));
 /*! \brief Close connections
 
 Close the connections to the MSR/PCI files or the access daemon

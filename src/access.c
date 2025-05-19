@@ -59,11 +59,11 @@
 
 static int registeredCpus = 0;
 static int *registeredCpuList = NULL;
-static int (*access_read)(PciDeviceIndex dev, const int cpu, uint32_t reg, uint64_t *data) = NULL;
-static int (*access_write)(PciDeviceIndex dev, const int cpu, uint32_t reg, uint64_t data) = NULL;
-static int (*access_init) (int cpu_id) = NULL;
-static void (*access_finalize) (int cpu_id) = NULL;
-static int (*access_check) (PciDeviceIndex dev, int cpu_id) = NULL;
+static int (*access_read)(PciDeviceIndex dev, uint32_t cpu, uint32_t reg, uint64_t *data) = NULL;
+static int (*access_write)(PciDeviceIndex dev, uint32_t cpu, uint32_t reg, uint64_t data) = NULL;
+static int (*access_init) (uint32_t cpu_id) = NULL;
+static void (*access_finalize) (uint32_t cpu_id) = NULL;
+static int (*access_check) (PciDeviceIndex dev, uint32_t cpu_id) = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -144,7 +144,7 @@ HPMinitialized(void)
 }
 
 int
-HPMaddThread(int cpu_id)
+HPMaddThread(uint32_t cpu_id)
 {
     int ret;
     if (registeredCpuList == NULL)
@@ -183,7 +183,7 @@ HPMfinalize(void)
     topology_init();
     if (registeredCpuList)
     {
-        for (int i = 0; i < cpuid_topology.numHWThreads && registeredCpus > 0; i++)
+        for (uint32_t i = 0; i < cpuid_topology.numHWThreads && registeredCpus > 0; i++)
         {
             if (registeredCpuList[i] == 1)
             {
@@ -211,7 +211,7 @@ HPMfinalize(void)
 }
 
 int
-HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
+HPMread(uint32_t cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
 {
     uint64_t tmp = 0x0ULL;
     *data = 0x0ULL;
@@ -220,7 +220,7 @@ HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
     {
         return -EFAULT;
     }
-    if ((cpu_id < 0) || (cpu_id >= cpuid_topology.numHWThreads))
+    if ((cpu_id >= cpuid_topology.numHWThreads))
     {
         return -ERANGE;
     }
@@ -234,14 +234,14 @@ HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
 }
 
 int
-HPMwrite(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data)
+HPMwrite(uint32_t cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data)
 {
     int err = 0;
     if (dev >= MAX_NUM_PCI_DEVICES)
     {
         return -EFAULT;
     }
-    if ((cpu_id < 0) || (cpu_id >= cpuid_topology.numHWThreads))
+    if ((cpu_id >= cpuid_topology.numHWThreads))
     {
         ERROR_PRINT("MSR WRITE C %d OUT OF RANGE", cpu_id);
         return -ERANGE;
@@ -255,7 +255,7 @@ HPMwrite(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data)
 }
 
 int
-HPMcheck(PciDeviceIndex dev, int cpu_id)
+HPMcheck(PciDeviceIndex dev, uint32_t cpu_id)
 {
     if ((registeredCpuList[cpu_id] == 0) || (!access_check))
     {
