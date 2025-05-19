@@ -37,14 +37,15 @@ static int perfmon_numCountersEmeraldRapids     = NUM_COUNTERS_EMERALDRAPIDS;
 static int perfmon_numCoreCountersEmeraldRapids = NUM_COUNTERS_CORE_EMERALDRAPIDS;
 static int perfmon_numArchEventsEmeraldRapids   = NUM_ARCH_EVENTS_EMERALDRAPIDS;
 
-#define EMR_CHECK_CORE_OVERFLOW(offset)                                                                                                                                            \
-    if (counter_result < data[thread_id].counterData) {                                                                                                                            \
-        uint64_t ovf_values = 0x0ULL;                                                                                                                                              \
-        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values));                                                                                       \
-        if (ovf_values & (1ULL << (offset))) {                                                                                                                                     \
-            data[thread_id].overflows++;                                                                                                                                           \
-        }                                                                                                                                                                          \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << (offset))));                                                                            \
+#define EMR_CHECK_CORE_OVERFLOW(offset)                                                            \
+    if (counter_result < data[thread_id].counterData) {                                            \
+        uint64_t ovf_values = 0x0ULL;                                                              \
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values));       \
+        if (ovf_values & (1ULL << (offset))) {                                                     \
+            data[thread_id].overflows++;                                                           \
+        }                                                                                          \
+        CHECK_MSR_WRITE_ERROR(                                                                     \
+            HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << (offset))));              \
     }
 
 int perfmon_init_emeraldrapids(int cpu_id)
@@ -69,7 +70,8 @@ int perfmon_init_emeraldrapids(int cpu_id)
     return 0;
 }
 
-uint64_t emr_fixed_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint64_t emr_fixed_setup(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int j;
     uint32_t flags = (1ULL << (1 + (index * 4)));
@@ -87,7 +89,8 @@ uint64_t emr_fixed_setup(int thread_id, RegisterIndex index, PerfmonEvent *event
     return flags;
 }
 
-uint64_t emr_fixed_start(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint64_t emr_fixed_start(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id         = groupSet->threads[thread_id].processorId;
     uint64_t counter1  = counter_map[index].counterRegister;
@@ -99,7 +102,8 @@ uint64_t emr_fixed_start(int thread_id, RegisterIndex index, PerfmonEvent *event
     return 1ULL << (index + 32); /* enable fixed counter */
 }
 
-uint64_t emr_pmc_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint64_t emr_pmc_setup(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int j;
     uint64_t flags         = 0x0ULL;
@@ -112,7 +116,8 @@ uint64_t emr_pmc_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, 
     flags |= (event->umask << 8) + event->eventId;
 
     /* set custom cfg and cmask */
-    if ((event->cfgBits != 0) && (event->eventId != 0xB7) && (event->eventId != 0xBB) && (event->eventId != 0xCD)) {
+    if ((event->cfgBits != 0) && (event->eventId != 0xB7) && (event->eventId != 0xBB) &&
+        (event->eventId != 0xCD)) {
         flags |= ((event->cmask << 8) + event->cfgBits) << 16;
     }
 
@@ -176,7 +181,8 @@ uint64_t emr_pmc_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, 
     return 0;
 }
 
-uint64_t emr_pmc_start(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint64_t emr_pmc_start(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id         = groupSet->threads[thread_id].processorId;
     uint64_t counter1  = counter_map[index].counterRegister;
@@ -188,7 +194,8 @@ uint64_t emr_pmc_start(int thread_id, RegisterIndex index, PerfmonEvent *event, 
     return 1ULL << (index - cpuid_info.perf_num_fixed_ctr); /* enable counter */
 }
 
-uint64_t emr_power_start(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint64_t emr_power_start(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id                  = groupSet->threads[thread_id].processorId;
     data[thread_id].startData   = 0x0ULL;
@@ -204,7 +211,11 @@ uint64_t emr_power_start(int thread_id, RegisterIndex index, PerfmonEvent *event
     return 0;
 }
 
-uint64_t emr_metrics_start(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return 1ULL << 48; }
+uint64_t emr_metrics_start(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return 1ULL << 48;
+}
 
 int emr_setup_uncore(int thread_id, RegisterIndex index, PerfmonEvent *event)
 {
@@ -236,7 +247,8 @@ int emr_setup_uncore(int thread_id, RegisterIndex index, PerfmonEvent *event)
                     uint64_t reg = box_map[counter_map[index].type].filterRegister1;
                     uint64_t val = event->options[j].value & 0x3FF;
                     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, val));
-                    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, "SETUP_CBOX_FILTER");
+                    VERBOSEPRINTREG(
+                        cpu_id, counter_map[index].configRegister, flags, "SETUP_CBOX_FILTER");
                     flags |= (1ULL << 16);
                 }
             case EVENT_OPTION_MATCH0:
@@ -321,7 +333,8 @@ int emr_setup_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent *eve
     return 0;
 }
 
-int emr_start_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+int emr_start_uncore_fixed(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id         = groupSet->threads[thread_id].processorId;
     uint64_t counter1  = counter_map[index].counterRegister;
@@ -331,7 +344,8 @@ int emr_start_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent *eve
     return HPMwrite(cpu_id, dev, counter1, 0x0ULL);
 }
 
-int emr_stop_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+int emr_stop_uncore_fixed(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id         = groupSet->threads[thread_id].processorId;
     uint64_t counter1  = counter_map[index].counterRegister;
@@ -346,7 +360,8 @@ int emr_stop_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent *even
     return 0;
 }
 
-int emr_read_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+int emr_read_uncore_fixed(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id         = groupSet->threads[thread_id].processorId;
     uint64_t counter1  = counter_map[index].counterRegister;
@@ -376,7 +391,8 @@ int emr_setup_uncore_freerun(int thread_id, RegisterIndex index, PerfmonEvent *e
     return 0;
 }
 
-int emr_start_uncore_freerun(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+int emr_start_uncore_freerun(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     uint64_t flags            = 0x0ULL;
     int cpu_id                = groupSet->threads[thread_id].processorId;
@@ -391,7 +407,8 @@ int emr_start_uncore_freerun(int thread_id, RegisterIndex index, PerfmonEvent *e
     return err;
 }
 
-int emr_stop_uncore_freerun(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+int emr_stop_uncore_freerun(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id         = groupSet->threads[thread_id].processorId;
     uint64_t counter1  = counter_map[index].counterRegister;
@@ -419,10 +436,12 @@ int perfmon_setupCounterThread_emeraldrapids(int thread_id, PerfmonEventSet *eve
     if (MEASURE_CORE(eventSet)) {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, "FREEZE_PMC_AND_FIXED");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0xC00000070000000F));
+        CHECK_MSR_WRITE_ERROR(
+            HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0xC00000070000000F));
     }
     if (haveLock && MEASURE_UNCORE(eventSet)) {
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST(1ULL << 0), "FREEZE_UNCORE");
+        VERBOSEPRINTPCIREG(
+            cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST(1ULL << 0), "FREEZE_UNCORE");
         HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, (1ULL << 0));
     }
     for (int i = 0; i < eventSet->numberOfEvents; i++) {
@@ -1113,25 +1132,35 @@ int perfmon_startCountersThread_emeraldrapids(int thread_id, PerfmonEventSet *ev
             VERBOSEPRINTREG(cpu_id, MSR_PERF_METRICS, 0x0ULL, "CLEAR_METRICS");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_METRICS, 0x0ULL));
         }
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST(1ULL << 63) | (1ULL << 62) | flags, "CLEAR_PMC_AND_FIXED_OVERFLOW");
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << 63) | (1ULL << 62) | flags));
+        VERBOSEPRINTREG(cpu_id,
+            MSR_PERF_GLOBAL_OVF_CTRL,
+            LLU_CAST(1ULL << 63) | (1ULL << 62) | flags,
+            "CLEAR_PMC_AND_FIXED_OVERFLOW");
+        CHECK_MSR_WRITE_ERROR(HPMwrite(
+            cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << 63) | (1ULL << 62) | flags));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, "UNFREEZE_PMC_AND_FIXED");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
     }
     if (haveLock && MEASURE_UNCORE(eventSet)) {
         for (int i = MSR_DEV + 1; i < MAX_NUM_PCI_DEVICES; i++) {
             if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV) {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST 0x0ULL, "UNFREEZE_UNIT");
+                VERBOSEPRINTPCIREG(cpu_id,
+                    box_map[i].device,
+                    box_map[i].ctrlRegister,
+                    LLU_CAST 0x0ULL,
+                    "UNFREEZE_UNIT");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
             }
         }
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, "UNFREEZE_UNCORE");
+        VERBOSEPRINTPCIREG(
+            cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, "UNFREEZE_UNCORE");
         HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, 0x0ULL);
     }
     return 0;
 }
 
-uint32_t emr_fixed_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint32_t emr_fixed_stop(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     uint64_t counter_result = 0x0ULL;
     uint64_t counter1       = counter_map[index].counterRegister;
@@ -1155,7 +1184,8 @@ uint32_t emr_pmc_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, P
     return 0;
 }
 
-uint32_t emr_power_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint32_t emr_power_stop(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id = groupSet->threads[thread_id].processorId;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id) {
@@ -1172,7 +1202,8 @@ uint32_t emr_power_stop(int thread_id, RegisterIndex index, PerfmonEvent *event,
     return 0;
 }
 
-uint32_t emr_thermal_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint32_t emr_thermal_stop(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id              = groupSet->threads[thread_id].processorId;
     uint64_t counter_result = 0x0ULL;
@@ -1183,7 +1214,8 @@ uint32_t emr_thermal_stop(int thread_id, RegisterIndex index, PerfmonEvent *even
     return 0;
 }
 
-uint32_t emr_voltage_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint32_t emr_voltage_stop(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id              = groupSet->threads[thread_id].processorId;
     uint64_t counter_result = 0x0ULL;
@@ -1194,7 +1226,8 @@ uint32_t emr_voltage_stop(int thread_id, RegisterIndex index, PerfmonEvent *even
     return 0;
 }
 
-uint32_t emr_metrics_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint32_t emr_metrics_stop(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id              = groupSet->threads[thread_id].processorId;
     uint64_t counter_result = 0x0ULL;
@@ -1209,7 +1242,8 @@ uint32_t emr_metrics_stop(int thread_id, RegisterIndex index, PerfmonEvent *even
     return 0;
 }
 
-uint32_t emr_mboxfix_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint32_t emr_mboxfix_stop(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     uint64_t counter_result = 0x0ULL;
     int cpu_id              = groupSet->threads[thread_id].processorId;
@@ -1240,11 +1274,16 @@ int perfmon_stopCountersThread_emeraldrapids(int thread_id, PerfmonEventSet *eve
     if (haveLock && MEASURE_UNCORE(eventSet)) {
         for (int i = MSR_DEV + 1; i < MAX_NUM_PCI_DEVICES; i++) {
             if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV) {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST(1ULL << 0), "FREEZE_UNIT");
+                VERBOSEPRINTPCIREG(cpu_id,
+                    box_map[i].device,
+                    box_map[i].ctrlRegister,
+                    LLU_CAST(1ULL << 0),
+                    "FREEZE_UNIT");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, (1ULL << 0));
             }
         }
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST(1ULL << 0), "FREEZE_UNCORE");
+        VERBOSEPRINTPCIREG(
+            cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST(1ULL << 0), "FREEZE_UNCORE");
         HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, (1ULL << 0));
     }
 
@@ -1598,7 +1637,8 @@ int perfmon_stopCountersThread_emeraldrapids(int thread_id, PerfmonEventSet *eve
     return 0;
 }
 
-uint32_t emr_fixed_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint32_t emr_fixed_read(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     uint64_t counter_result = 0x0ULL;
     uint64_t counter1       = counter_map[index].counterRegister;
@@ -1622,7 +1662,8 @@ uint32_t emr_pmc_read(int thread_id, RegisterIndex index, PerfmonEvent *event, P
     return 0;
 }
 
-uint32_t emr_power_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint32_t emr_power_read(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id = groupSet->threads[thread_id].processorId;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id) {
@@ -1639,7 +1680,8 @@ uint32_t emr_power_read(int thread_id, RegisterIndex index, PerfmonEvent *event,
     return 0;
 }
 
-uint32_t emr_thermal_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint32_t emr_thermal_read(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id              = groupSet->threads[thread_id].processorId;
     uint64_t counter_result = 0x0ULL;
@@ -1650,7 +1692,8 @@ uint32_t emr_thermal_read(int thread_id, RegisterIndex index, PerfmonEvent *even
     return 0;
 }
 
-uint32_t emr_voltage_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint32_t emr_voltage_read(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id              = groupSet->threads[thread_id].processorId;
     uint64_t counter_result = 0x0ULL;
@@ -1661,7 +1704,8 @@ uint32_t emr_voltage_read(int thread_id, RegisterIndex index, PerfmonEvent *even
     return 0;
 }
 
-uint32_t emr_metrics_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint32_t emr_metrics_read(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     int cpu_id              = groupSet->threads[thread_id].processorId;
     uint64_t counter_result = 0x0ULL;
@@ -1676,7 +1720,8 @@ uint32_t emr_metrics_read(int thread_id, RegisterIndex index, PerfmonEvent *even
     return 0;
 }
 
-uint32_t emr_mboxfix_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+uint32_t emr_mboxfix_read(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
 {
     uint64_t counter_result = 0x0ULL;
     int cpu_id              = groupSet->threads[thread_id].processorId;
@@ -1710,11 +1755,16 @@ int perfmon_readCountersThread_emeraldrapids(int thread_id, PerfmonEventSet *eve
     if (haveLock && MEASURE_UNCORE(eventSet)) {
         for (int i = MSR_DEV + 1; i < MAX_NUM_PCI_DEVICES; i++) {
             if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV) {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST(1ULL << 0), "FREEZE_UNIT");
+                VERBOSEPRINTPCIREG(cpu_id,
+                    box_map[i].device,
+                    box_map[i].ctrlRegister,
+                    LLU_CAST(1ULL << 0),
+                    "FREEZE_UNIT");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, (1ULL << 0));
             }
         }
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST(1ULL << 0), "FREEZE_UNCORE");
+        VERBOSEPRINTPCIREG(
+            cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST(1ULL << 0), "FREEZE_UNCORE");
         HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, (1ULL << 0));
     }
     for (int i = 0; i < eventSet->numberOfEvents; i++) {
@@ -2067,11 +2117,16 @@ int perfmon_readCountersThread_emeraldrapids(int thread_id, PerfmonEventSet *eve
     if (haveLock && MEASURE_UNCORE(eventSet)) {
         for (int i = MSR_DEV + 1; i < MAX_NUM_PCI_DEVICES; i++) {
             if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV) {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST 0x0ULL, "UNFREEZE_UNIT");
+                VERBOSEPRINTPCIREG(cpu_id,
+                    box_map[i].device,
+                    box_map[i].ctrlRegister,
+                    LLU_CAST 0x0ULL,
+                    "UNFREEZE_UNIT");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
             }
         }
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, "UNFREEZE_UNCORE");
+        VERBOSEPRINTPCIREG(
+            cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, "UNFREEZE_UNCORE");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, 0x0ULL));
     }
     if (MEASURE_CORE(eventSet)) {
@@ -2114,23 +2169,28 @@ int perfmon_finalizeCountersThread_emeraldrapids(int thread_id, PerfmonEventSet 
         default:
             break;
         }
-        if ((reg) && (((type == PMC) || (type == FIXED)) || (type == METRICS) || ((type >= UNCORE && type < NUM_UNITS) && (haveLock)))) {
+        if ((reg) && (((type == PMC) || (type == FIXED)) || (type == METRICS) ||
+                         ((type >= UNCORE && type < NUM_UNITS) && (haveLock)))) {
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, "CLEAR_CTL");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
             if ((type >= SBOX0) && (type <= SBOX3)) {
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
             }
-            VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
+            VERBOSEPRINTPCIREG(
+                cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
             if (box_map[type].filterRegister1 != 0x0) {
-                VERBOSEPRINTPCIREG(cpu_id, dev, box_map[type].filterRegister1, 0x0ULL, "CLEAR_FILTER");
+                VERBOSEPRINTPCIREG(
+                    cpu_id, dev, box_map[type].filterRegister1, 0x0ULL, "CLEAR_FILTER");
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, box_map[type].filterRegister1, 0x0ULL));
             }
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
     if (MEASURE_CORE(eventSet)) {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, "CLEAR_GLOBAL_OVF");
+        VERBOSEPRINTREG(
+            cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, "CLEAR_GLOBAL_OVF");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, "CLEAR_GLOBAL_CTRL");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));

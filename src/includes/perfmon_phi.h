@@ -117,7 +117,8 @@ int perfmon_startCountersThread_phi(int thread_id, PerfmonEventSet *eventSet)
             RegisterIndex index                                      = eventSet->events[i].index;
             eventSet->events[i].threadCounter[thread_id].startData   = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
             flags |= (1ULL << (index)); /* enable counter */
         }
     }
@@ -144,16 +145,20 @@ int perfmon_stopCountersThread_phi(int thread_id, PerfmonEventSet *eventSet)
             }
             counter_result      = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
-            CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, phi_counter_map[index].counterRegister, &counter_result));
+            CHECK_MSR_READ_ERROR(
+                HPMread(cpu_id, MSR_DEV, phi_counter_map[index].counterRegister, &counter_result));
             if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {
                 uint64_t ovf_values = 0x0ULL;
-                CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_STATUS, &ovf_values));
+                CHECK_MSR_READ_ERROR(
+                    HPMread(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_STATUS, &ovf_values));
                 if (ovf_values & (1ULL << index)) {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_OVF_CTRL, (1ULL << index)));
+                    CHECK_MSR_WRITE_ERROR(
+                        HPMwrite(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_OVF_CTRL, (1ULL << index)));
                 }
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                field64(counter_result, 0, box_map[type].regWidth);
         }
     }
     return 0;
@@ -177,20 +182,25 @@ int perfmon_readCountersThread_phi(int thread_id, PerfmonEventSet *eventSet)
             }
             counter_result      = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
-            CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter_map[i].counterRegister, &counter_result));
+            CHECK_MSR_READ_ERROR(
+                HPMread(cpu_id, MSR_DEV, counter_map[i].counterRegister, &counter_result));
             if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {
                 uint64_t ovf_values = 0x0ULL;
-                CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_STATUS, &ovf_values));
+                CHECK_MSR_READ_ERROR(
+                    HPMread(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_STATUS, &ovf_values));
                 if (ovf_values & (1ULL << index)) {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_OVF_CTRL, (1ULL << index)));
+                    CHECK_MSR_WRITE_ERROR(
+                        HPMwrite(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_OVF_CTRL, (1ULL << index)));
                 }
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                field64(counter_result, 0, box_map[type].regWidth);
         }
     }
 
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC_SPFLT_CONTROL, core_flags | (1ULL << 63)));
+    CHECK_MSR_WRITE_ERROR(
+        HPMwrite(cpu_id, MSR_DEV, MSR_MIC_SPFLT_CONTROL, core_flags | (1ULL << 63)));
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_CTRL, core_flags));
     return 0;
 }

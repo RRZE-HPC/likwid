@@ -146,8 +146,8 @@ int perfmon_startCountersThread_core2(int thread_id, PerfmonEventSet *eventSet)
             if (!TESTTYPE(eventSet, type)) {
                 continue;
             }
-            RegisterIndex index                                      = eventSet->events[i].index;
-            uint64_t counter                                         = counter_map[index].counterRegister;
+            RegisterIndex index = eventSet->events[i].index;
+            uint64_t counter    = counter_map[index].counterRegister;
             eventSet->events[i].threadCounter[thread_id].startData   = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter, 0x0ULL));
@@ -163,19 +163,21 @@ int perfmon_startCountersThread_core2(int thread_id, PerfmonEventSet *eventSet)
     if (MEASURE_CORE(eventSet)) {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, "UNFREEZE_PMC_AND_FIXED");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << 63) | (1ULL << 62) | flags));
+        CHECK_MSR_WRITE_ERROR(HPMwrite(
+            cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << 63) | (1ULL << 62) | flags));
     }
     return 0;
 }
 
-#define CORE2_CHECK_OVERFLOW(offset)                                                                                                                                               \
-    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {                                                                                               \
-        uint64_t ovf_values = 0x0ULL;                                                                                                                                              \
-        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values));                                                                                       \
-        if (ovf_values & (1ULL << (offset))) {                                                                                                                                     \
-            eventSet->events[i].threadCounter[thread_id].overflows++;                                                                                                              \
-        }                                                                                                                                                                          \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << (offset))));                                                                            \
+#define CORE2_CHECK_OVERFLOW(offset)                                                               \
+    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {               \
+        uint64_t ovf_values = 0x0ULL;                                                              \
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values));       \
+        if (ovf_values & (1ULL << (offset))) {                                                     \
+            eventSet->events[i].threadCounter[thread_id].overflows++;                              \
+        }                                                                                          \
+        CHECK_MSR_WRITE_ERROR(                                                                     \
+            HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << (offset))));              \
     }
 
 int perfmon_stopCountersThread_core2(int thread_id, PerfmonEventSet *eventSet)
@@ -213,7 +215,8 @@ int perfmon_stopCountersThread_core2(int thread_id, PerfmonEventSet *eventSet)
             default:
                 break;
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                field64(counter_result, 0, box_map[type].regWidth);
         }
     }
 
@@ -256,7 +259,8 @@ int perfmon_readCountersThread_core2(int thread_id, PerfmonEventSet *eventSet)
             default:
                 break;
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                field64(counter_result, 0, box_map[type].regWidth);
         }
     }
 
@@ -289,12 +293,15 @@ int perfmon_finalizeCountersThread_core2(int thread_id, PerfmonEventSet *eventSe
         if ((reg) && ((type == PMC) || (type == FIXED))) {
             VERBOSEPRINTREG(cpu_id, reg, LLU_CAST 0x0ULL, "CLEAR_CTRL");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, 0x0ULL));
-            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST 0x0ULL, "CLEAR_CTR");
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
+            VERBOSEPRINTREG(
+                cpu_id, counter_map[index].counterRegister, LLU_CAST 0x0ULL, "CLEAR_CTR");
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
         }
     }
     if (MEASURE_CORE(eventSet)) {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, "CLEAR_GLOBAL_OVF");
+        VERBOSEPRINTREG(
+            cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, "CLEAR_GLOBAL_OVF");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, "CLEAR_GLOBAL_CTRL");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));

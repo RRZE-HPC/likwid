@@ -55,29 +55,29 @@ by LIKWID.
 \extends PerfmonEventOption
 */
 typedef enum {
-    EVENT_OPTION_NONE = 0,         /*!< \brief No option, used as False value */
-    EVENT_OPTION_OPCODE,           /*!< \brief Match opcode */
-    EVENT_OPTION_MATCH0,           /*!< \brief Match0 register */
-    EVENT_OPTION_MATCH1,           /*!< \brief Match1 register */
-    EVENT_OPTION_MATCH2,           /*!< \brief Match2 register */
-    EVENT_OPTION_MATCH3,           /*!< \brief Match3 register */
-    EVENT_OPTION_MASK0,            /*!< \brief Mask0 register */
-    EVENT_OPTION_MASK1,            /*!< \brief Mask1 register */
-    EVENT_OPTION_MASK2,            /*!< \brief Mask2 register */
-    EVENT_OPTION_MASK3,            /*!< \brief Mask3 register */
-    EVENT_OPTION_NID,              /*!< \brief Set NUMA node IDs */
-    EVENT_OPTION_TID,              /*!< \brief Set Thread IDs */
-    EVENT_OPTION_CID,              /*!< \brief Set Core IDs */
-    EVENT_OPTION_SLICE,            /*!< \brief Set Slice IDs, often when the L3 is assembled with different sections */
-    EVENT_OPTION_STATE,            /*!< \brief Match for state */
-    EVENT_OPTION_EDGE,             /*!< \brief Increment counter at each edge */
-    EVENT_OPTION_THRESHOLD,        /*!< \brief Increment only if exceeding threshold */
-    EVENT_OPTION_INVERT,           /*!< \brief Invert behavior of EVENT_OPTION_THRESHOLD, hence increment only below threshold */
-    EVENT_OPTION_COUNT_KERNEL,     /*!< \brief Also count events when in kernel space */
-    EVENT_OPTION_ANYTHREAD,        /*!< \brief Increment counter at events of all HW threads in the core */
-    EVENT_OPTION_OCCUPANCY,        /*!< \brief Count occupancy not occurrences */
+    EVENT_OPTION_NONE = 0, /*!< \brief No option, used as False value */
+    EVENT_OPTION_OPCODE,   /*!< \brief Match opcode */
+    EVENT_OPTION_MATCH0,   /*!< \brief Match0 register */
+    EVENT_OPTION_MATCH1,   /*!< \brief Match1 register */
+    EVENT_OPTION_MATCH2,   /*!< \brief Match2 register */
+    EVENT_OPTION_MATCH3,   /*!< \brief Match3 register */
+    EVENT_OPTION_MASK0,    /*!< \brief Mask0 register */
+    EVENT_OPTION_MASK1,    /*!< \brief Mask1 register */
+    EVENT_OPTION_MASK2,    /*!< \brief Mask2 register */
+    EVENT_OPTION_MASK3,    /*!< \brief Mask3 register */
+    EVENT_OPTION_NID,      /*!< \brief Set NUMA node IDs */
+    EVENT_OPTION_TID,      /*!< \brief Set Thread IDs */
+    EVENT_OPTION_CID,      /*!< \brief Set Core IDs */
+    EVENT_OPTION_SLICE, /*!< \brief Set Slice IDs, often when the L3 is assembled with different sections */
+    EVENT_OPTION_STATE,     /*!< \brief Match for state */
+    EVENT_OPTION_EDGE,      /*!< \brief Increment counter at each edge */
+    EVENT_OPTION_THRESHOLD, /*!< \brief Increment only if exceeding threshold */
+    EVENT_OPTION_INVERT, /*!< \brief Invert behavior of EVENT_OPTION_THRESHOLD, hence increment only below threshold */
+    EVENT_OPTION_COUNT_KERNEL, /*!< \brief Also count events when in kernel space */
+    EVENT_OPTION_ANYTHREAD, /*!< \brief Increment counter at events of all HW threads in the core */
+    EVENT_OPTION_OCCUPANCY, /*!< \brief Count occupancy not occurrences */
     EVENT_OPTION_OCCUPANCY_FILTER, /*!< \brief Filter for occupancy counting */
-    EVENT_OPTION_OCCUPANCY_EDGE,   /*!< \brief Increment occupancy counter at detection of an edge */
+    EVENT_OPTION_OCCUPANCY_EDGE, /*!< \brief Increment occupancy counter at detection of an edge */
     EVENT_OPTION_OCCUPANCY_INVERT, /*!< \brief Invert filter for occupancy counting */
     EVENT_OPTION_IN_TRANS,         /*!< \brief Count events during transactions */
     EVENT_OPTION_IN_TRANS_ABORT,   /*!< \brief Count events that aborted during transactions */
@@ -115,7 +115,9 @@ extern char *eventOptionTypeName[NUM_EVENT_OPTIONS];
 /** \brief Bitmask with no event/counter option set */
 #define EVENT_OPTION_NONE_MASK 0x0ULL
 /** \brief Define for easily creating an bitmask of all configured event/counter options */
-#define OPTIONS_TYPE_MASK(type) (((type == EVENT_OPTION_NONE) || (type >= NUM_EVENT_OPTIONS)) ? EVENT_OPTION_NONE_MASK : (1ULL << type))
+#define OPTIONS_TYPE_MASK(type)                                                                    \
+    (((type == EVENT_OPTION_NONE) || (type >= NUM_EVENT_OPTIONS)) ? EVENT_OPTION_NONE_MASK         \
+                                                                  : (1ULL << type))
 
 /** @cond */
 #define EVENT_OPTION_OPCODE_MASK (1ULL << EVENT_OPTION_OPCODE)
@@ -177,14 +179,14 @@ the event options are hold here.
 \extends PerfmonEventSetEntry
 */
 typedef struct {
-    const char *name;                              /*!< \brief Name of the event */
-    char *limit;                                   /*!< \brief Valid counters for the event */
-    uint64_t eventId;                              /*!< \brief ID of the event */
-    uint64_t umask;                                /*!< \brief Most events need to specify a mask to limit counting */
-    uint64_t cfgBits;                              /*!< \brief Misc configuration bits */
-    uint64_t cmask;                                /*!< \brief Misc mask bits */
-    uint64_t numberOfOptions;                      /*!< \brief Number of options for the event */
-    uint64_t optionMask;                           /*!< \brief Bitmask for fast check of set options */
+    const char *name;         /*!< \brief Name of the event */
+    char *limit;              /*!< \brief Valid counters for the event */
+    uint64_t eventId;         /*!< \brief ID of the event */
+    uint64_t umask;           /*!< \brief Most events need to specify a mask to limit counting */
+    uint64_t cfgBits;         /*!< \brief Misc configuration bits */
+    uint64_t cmask;           /*!< \brief Misc mask bits */
+    uint64_t numberOfOptions; /*!< \brief Number of options for the event */
+    uint64_t optionMask;      /*!< \brief Bitmask for fast check of set options */
     PerfmonEventOption options[NUM_EVENT_OPTIONS]; /*!< \brief List of options */
 } PerfmonEvent;
 
@@ -195,8 +197,8 @@ data, if it is configured and the amount of happened overflows.
 \extends PerfmonEventSetEntry
 */
 typedef struct {
-    int init;             /*!< \brief Flag if corresponding control register is set up properly */
-    int id;               /*!< \brief Offset in higher level control register, e.g. position of enable bit */
+    int init; /*!< \brief Flag if corresponding control register is set up properly */
+    int id;   /*!< \brief Offset in higher level control register, e.g. position of enable bit */
     int overflows;        /*!< \brief Amount of overflows */
     uint64_t startData;   /*!< \brief Start data from the counter */
     uint64_t counterData; /*!< \brief Intermediate data from the counters */
@@ -216,10 +218,11 @@ An eventSet consists of an event and a counter and the read counter values.
 \extends PerfmonEventSet
 */
 typedef struct {
-    PerfmonEvent event;            /*!< \brief Event configuration */
-    RegisterIndex index;           /*!< \brief Index of the counter register in the counter map */
-    RegisterType type;             /*!< \brief Type of the counter register and event */
-    PerfmonCounter *threadCounter; /*!< \brief List of counter data for each thread, list length is \a numberOfThreads in PerfmonGroupSet */
+    PerfmonEvent event;  /*!< \brief Event configuration */
+    RegisterIndex index; /*!< \brief Index of the counter register in the counter map */
+    RegisterType type;   /*!< \brief Type of the counter register and event */
+    PerfmonCounter *
+        threadCounter; /*!< \brief List of counter data for each thread, list length is \a numberOfThreads in PerfmonGroupSet */
 } PerfmonEventSetEntry;
 
 /*! \brief Structure specifying an performance monitoring event group
@@ -232,18 +235,27 @@ typedef struct {
     PerfmonEventSetEntry *events; /*!< \brief List of eventSets */
     TimerData timer;              /*!< \brief Time information how long the counters were running */
     double rdtscTime;             /*!< \brief Evaluation of the Time information in seconds */
-    double runTime;               /*!< \brief Sum of all time information in seconds that the group was running */
-    uint64_t regTypeMask1;        /*!< \brief Bitmask1 for easy checks which types are included in the eventSet */
-    uint64_t regTypeMask2;        /*!< \brief Bitmask2 for easy checks which types are included in the eventSet */
-    uint64_t regTypeMask3;        /*!< \brief Bitmask3 for easy checks which types are included in the eventSet */
-    uint64_t regTypeMask4;        /*!< \brief Bitmask4 for easy checks which types are included in the eventSet */
-    uint64_t regTypeMask5;        /*!< \brief Bitmask5 for easy checks which types are included in the eventSet */
-    uint64_t regTypeMask6;        /*!< \brief Bitmask6 for easy checks which types are included in the eventSet */
-    uint64_t regTypeMask7;        /*!< \brief Bitmask6 for easy checks which types are included in the eventSet */
-    uint64_t regTypeMask8;        /*!< \brief Bitmask6 for easy checks which types are included in the eventSet */
-    uint64_t regTypeMask9;        /*!< \brief Bitmask6 for easy checks which types are included in the eventSet */
-    GroupState state;             /*!< \brief Current state of the event group (configured, started, none) */
-    GroupInfo group;              /*!< \brief Structure holding the performance group information */
+    double runTime; /*!< \brief Sum of all time information in seconds that the group was running */
+    uint64_t
+        regTypeMask1; /*!< \brief Bitmask1 for easy checks which types are included in the eventSet */
+    uint64_t
+        regTypeMask2; /*!< \brief Bitmask2 for easy checks which types are included in the eventSet */
+    uint64_t
+        regTypeMask3; /*!< \brief Bitmask3 for easy checks which types are included in the eventSet */
+    uint64_t
+        regTypeMask4; /*!< \brief Bitmask4 for easy checks which types are included in the eventSet */
+    uint64_t
+        regTypeMask5; /*!< \brief Bitmask5 for easy checks which types are included in the eventSet */
+    uint64_t
+        regTypeMask6; /*!< \brief Bitmask6 for easy checks which types are included in the eventSet */
+    uint64_t
+        regTypeMask7; /*!< \brief Bitmask6 for easy checks which types are included in the eventSet */
+    uint64_t
+        regTypeMask8; /*!< \brief Bitmask6 for easy checks which types are included in the eventSet */
+    uint64_t
+        regTypeMask9; /*!< \brief Bitmask6 for easy checks which types are included in the eventSet */
+    GroupState state; /*!< \brief Current state of the event group (configured, started, none) */
+    GroupInfo group;  /*!< \brief Structure holding the performance group information */
 } PerfmonEventSet;
 
 /*! \brief Structure specifying all performance monitoring event groups
@@ -253,12 +265,12 @@ configured to measure. Only one eventSet can be measured at a time but the group
 can be switched to perform some kind of multiplexing.
 */
 typedef struct {
-    int numberOfGroups;       /*!< \brief List length of \a groups*/
+    int numberOfGroups; /*!< \brief List length of \a groups*/
     int numberOfActiveGroups; /*!< \brief Amount of added eventSets. Only those eventSets can be accessed in \a groups. */
-    int activeGroup;          /*!< \brief Currently active eventSet */
-    PerfmonEventSet *groups;  /*!< \brief List of eventSets */
-    int numberOfThreads;      /*!< \brief Amount of threads in \a threads */
-    PerfmonThread *threads;   /*!< \brief List of threads */
+    int activeGroup;         /*!< \brief Currently active eventSet */
+    PerfmonEventSet *groups; /*!< \brief List of eventSets */
+    int numberOfThreads;     /*!< \brief Amount of threads in \a threads */
+    PerfmonThread *threads;  /*!< \brief List of threads */
 } PerfmonGroupSet;
 
 /** \brief List of counter with name, config register, counter registers and

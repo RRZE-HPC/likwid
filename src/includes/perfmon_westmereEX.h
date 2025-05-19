@@ -147,12 +147,20 @@ int wex_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         for (j = 0; j < event->numberOfOptions; j++) {
             switch (event->options[j].type) {
             case EVENT_OPTION_MATCH0:
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[type].filterRegister1, event->options[j].value));
-                VERBOSEPRINTREG(cpu_id, box_map[type].filterRegister1, event->options[j].value, "SETUP_BBOX_MATCH");
+                CHECK_MSR_WRITE_ERROR(HPMwrite(
+                    cpu_id, MSR_DEV, box_map[type].filterRegister1, event->options[j].value));
+                VERBOSEPRINTREG(cpu_id,
+                    box_map[type].filterRegister1,
+                    event->options[j].value,
+                    "SETUP_BBOX_MATCH");
                 break;
             case EVENT_OPTION_MASK0:
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[type].filterRegister2, event->options[j].value));
-                VERBOSEPRINTREG(cpu_id, box_map[type].filterRegister2, event->options[j].value, "SETUP_BBOX_MASK");
+                CHECK_MSR_WRITE_ERROR(HPMwrite(
+                    cpu_id, MSR_DEV, box_map[type].filterRegister2, event->options[j].value));
+                VERBOSEPRINTREG(cpu_id,
+                    box_map[type].filterRegister2,
+                    event->options[j].value,
+                    "SETUP_BBOX_MASK");
                 break;
             default:
                 break;
@@ -267,15 +275,23 @@ int wex_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
             case EVENT_OPTION_MATCH0:
                 if (event->eventId == 0x0) {
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[type].filterRegister1, event->options[j].value));
-                    VERBOSEPRINTREG(cpu_id, box_map[type].filterRegister1, event->options[j].value, "SETUP_SBOX_MATCH");
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(
+                        cpu_id, MSR_DEV, box_map[type].filterRegister1, event->options[j].value));
+                    VERBOSEPRINTREG(cpu_id,
+                        box_map[type].filterRegister1,
+                        event->options[j].value,
+                        "SETUP_SBOX_MATCH");
                     write_mm_cfg = 1;
                 }
                 break;
             case EVENT_OPTION_MASK0:
                 if (event->eventId == 0x0) {
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[type].filterRegister2, event->options[j].value));
-                    VERBOSEPRINTREG(cpu_id, box_map[type].filterRegister1, event->options[j].value, "SETUP_SBOX_MASK");
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(
+                        cpu_id, MSR_DEV, box_map[type].filterRegister2, event->options[j].value));
+                    VERBOSEPRINTREG(cpu_id,
+                        box_map[type].filterRegister1,
+                        event->options[j].value,
+                        "SETUP_SBOX_MASK");
                     write_mm_cfg = 1;
                 }
                 break;
@@ -341,7 +357,8 @@ int wex_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id) {
         return 0;
     }
-    if (((counter_map[index].configRegister & 0xFF0) == 0xCA0) || ((counter_map[index].configRegister & 0xFF0) == 0xCB0))
+    if (((counter_map[index].configRegister & 0xFF0) == 0xCA0) ||
+        ((counter_map[index].configRegister & 0xFF0) == 0xCB0))
         number = 0;
     else
         number = 1;
@@ -351,13 +368,21 @@ int wex_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             switch (event->options[j].type) {
             case EVENT_OPTION_MATCH0:
                 subflags2 = (event->options[j].value & 0x3FFFFFFFFULL);
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][ADDR_MATCH], subflags2));
-                VERBOSEPRINTREG(cpu_id, nex_wex_mbox_regs[number][ADDR_MATCH], subflags2, "SETUP_MBOX_ADDR_MATCH");
+                CHECK_MSR_WRITE_ERROR(
+                    HPMwrite(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][ADDR_MATCH], subflags2));
+                VERBOSEPRINTREG(cpu_id,
+                    nex_wex_mbox_regs[number][ADDR_MATCH],
+                    subflags2,
+                    "SETUP_MBOX_ADDR_MATCH");
                 break;
             case EVENT_OPTION_MASK0:
                 subflags2 = ((event->options[j].value & 0x1FFFFFFC0ULL) >> 6);
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][ADDR_MASK], subflags2));
-                VERBOSEPRINTREG(cpu_id, nex_wex_mbox_regs[number][ADDR_MASK], subflags2, "SETUP_MBOX_ADDR_MASK");
+                CHECK_MSR_WRITE_ERROR(
+                    HPMwrite(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][ADDR_MASK], subflags2));
+                VERBOSEPRINTREG(cpu_id,
+                    nex_wex_mbox_regs[number][ADDR_MASK],
+                    subflags2,
+                    "SETUP_MBOX_ADDR_MASK");
                 break;
             default:
                 break;
@@ -374,27 +399,35 @@ int wex_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         flags |= (event->eventId & 0x7ULL) << 19;
         switch (event->eventId) {
         case 0x00:
-            CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][DSP], &subflags1));
+            CHECK_MSR_READ_ERROR(
+                HPMread(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][DSP], &subflags1));
             subflags1 |= (event->umask & 0xFULL) << 7;
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][DSP], subflags1));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][DSP], subflags1));
             VERBOSEPRINTREG(cpu_id, nex_wex_mbox_regs[number][DSP], subflags1, "SETUP_MBOX_DSP");
             break;
         case 0x01:
-            CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][ISS], &subflags1));
+            CHECK_MSR_READ_ERROR(
+                HPMread(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][ISS], &subflags1));
             subflags1 |= (event->umask & 0x7ULL) << 4;
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][ISS], subflags1));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][ISS], subflags1));
             VERBOSEPRINTREG(cpu_id, nex_wex_mbox_regs[number][ISS], subflags1, "SETUP_MBOX_ISS");
             break;
         case 0x05:
-            CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][PGT], &subflags1));
+            CHECK_MSR_READ_ERROR(
+                HPMread(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][PGT], &subflags1));
             subflags1 |= (event->umask & 0x1ULL) << 6;
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][PGT], subflags1));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][PGT], subflags1));
             VERBOSEPRINTREG(cpu_id, nex_wex_mbox_regs[number][PGT], subflags1, "SETUP_MBOX_PGT");
             break;
         case 0x06:
-            CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][MAP], &subflags1));
+            CHECK_MSR_READ_ERROR(
+                HPMread(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][MAP], &subflags1));
             subflags1 |= (event->umask & 0x7ULL) << 6;
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][MAP], subflags1));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_mbox_regs[number][MAP], subflags1));
             VERBOSEPRINTREG(cpu_id, nex_wex_mbox_regs[number][MAP], subflags1, "SETUP_MBOX_MAP");
             break;
         }
@@ -574,28 +607,36 @@ int wex_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         subflags |= (event->cfgBits << event->cmask);
         switch (event->umask) {
         case 0x00:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF0][0], subflags));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF0][0], subflags));
             break;
         case 0x01:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF1][0], subflags));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF1][0], subflags));
             break;
         case 0x06:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF0][1], subflags));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF0][1], subflags));
             break;
         case 0x07:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF1][1], subflags));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF1][1], subflags));
             break;
         case 0x0C:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF0][2], subflags));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF0][2], subflags));
             break;
         case 0x0D:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF1][2], subflags));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF1][2], subflags));
             break;
         case 0x12:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF0][3], subflags));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF0][3], subflags));
             break;
         case 0x13:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF1][3], subflags));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][IPERF1][3], subflags));
             break;
         }
         break;
@@ -607,28 +648,36 @@ int wex_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         }
         switch (event->umask) {
         case 0x02:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][0], subflags));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][0], subflags));
             break;
         case 0x03:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][0], (subflags << 8)));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][0], (subflags << 8)));
             break;
         case 0x08:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][1], subflags));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][1], subflags));
             break;
         case 0x09:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][1], (subflags << 8)));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][1], (subflags << 8)));
             break;
         case 0x0E:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][2], subflags));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][2], subflags));
             break;
         case 0x0F:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][2], (subflags << 8)));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][2], (subflags << 8)));
             break;
         case 0x14:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][3], subflags));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][3], subflags));
             break;
         case 0x15:
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][3], (subflags << 8)));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, nex_wex_rbox_regs[number][QLX][3], (subflags << 8)));
             break;
         }
         break;
@@ -659,7 +708,8 @@ int wex_uncore_freeze(int cpu_id, PerfmonEventSet *eventSet, int flags)
             uint64_t clear_flags = 0x0ULL;
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_CTRL, &clear_flags));
             clear_flags |= 29;
-            VERBOSEPRINTREG(cpu_id, MSR_U_PMON_GLOBAL_CTRL, LLU_CAST freeze_flags, "CLEAR_UNCORE_CTR");
+            VERBOSEPRINTREG(
+                cpu_id, MSR_U_PMON_GLOBAL_CTRL, LLU_CAST freeze_flags, "CLEAR_UNCORE_CTR");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_CTRL, freeze_flags));
         } else if (flags & FREEZE_FLAG_CLEAR_CTL) {
             int ret = 0;
@@ -689,7 +739,8 @@ int wex_uncore_unfreeze(int cpu_id, PerfmonEventSet *eventSet, int flags)
             uint64_t clear_flags = 0x0ULL;
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_CTRL, &clear_flags));
             clear_flags |= 29;
-            VERBOSEPRINTREG(cpu_id, MSR_U_PMON_GLOBAL_CTRL, LLU_CAST clear_flags, "CLEAR_UNCORE_CTR");
+            VERBOSEPRINTREG(
+                cpu_id, MSR_U_PMON_GLOBAL_CTRL, LLU_CAST clear_flags, "CLEAR_UNCORE_CTR");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_CTRL, clear_flags));
         } else if (flags & FREEZE_FLAG_CLEAR_CTL) {
             for (int i = 0; i < eventSet->numberOfEvents; i++) {
@@ -710,9 +761,9 @@ int wex_uncore_unfreeze(int cpu_id, PerfmonEventSet *eventSet, int flags)
     return 0;
 }
 
-#define WEX_RESET_OVF_BOX(id)                                                                                                                                                      \
-    if (haveLock && TESTTYPE(eventSet, id)) {                                                                                                                                      \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ovflRegister, 0xFFFFFFFF));                                                                                    \
+#define WEX_RESET_OVF_BOX(id)                                                                      \
+    if (haveLock && TESTTYPE(eventSet, id)) {                                                      \
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ovflRegister, 0xFFFFFFFF));    \
     }
 
 int perfmon_setupCounterThread_westmereEX(int thread_id, PerfmonEventSet *eventSet)
@@ -868,10 +919,14 @@ int perfmon_setupCounterThread_westmereEX(int thread_id, PerfmonEventSet *eventS
     if (haveLock && MEASURE_UNCORE(eventSet)) {
         for (int i = 0; i < NUM_UNITS; i++) {
             if ((uflags[i] != 0x0ULL) && (i != WBOX0FIX)) {
-                VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, box_map[i].ctrlRegister, uflags[i], "CLEAR_CTL");
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[i].ctrlRegister, uflags[i]));
-                VERBOSEPRINTPCIREG(cpu_id, MSR_DEV, box_map[i].ovflRegister, uflags[i], "CLEAR_OVF_CTL");
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[i].ovflRegister, uflags[i]));
+                VERBOSEPRINTPCIREG(
+                    cpu_id, MSR_DEV, box_map[i].ctrlRegister, uflags[i], "CLEAR_CTL");
+                CHECK_MSR_WRITE_ERROR(
+                    HPMwrite(cpu_id, MSR_DEV, box_map[i].ctrlRegister, uflags[i]));
+                VERBOSEPRINTPCIREG(
+                    cpu_id, MSR_DEV, box_map[i].ovflRegister, uflags[i], "CLEAR_OVF_CTL");
+                CHECK_MSR_WRITE_ERROR(
+                    HPMwrite(cpu_id, MSR_DEV, box_map[i].ovflRegister, uflags[i]));
             }
         }
     }
@@ -916,8 +971,8 @@ int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet *event
             if (!TESTTYPE(eventSet, type)) {
                 continue;
             }
-            RegisterIndex index                                      = eventSet->events[i].index;
-            uint64_t counter1                                        = counter_map[index].counterRegister;
+            RegisterIndex index = eventSet->events[i].index;
+            uint64_t counter1   = counter_map[index].counterRegister;
             eventSet->events[i].threadCounter[thread_id].startData   = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
             switch (type) {
@@ -941,60 +996,67 @@ int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet *event
     if (MEASURE_CORE(eventSet)) {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST core_ctrl_flags, "GLOBAL_CTRL");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, core_ctrl_flags));
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << 63) | (1ULL << 62) | core_ctrl_flags));
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id,
+            MSR_DEV,
+            MSR_PERF_GLOBAL_OVF_CTRL,
+            (1ULL << 63) | (1ULL << 62) | core_ctrl_flags));
     }
     return 0;
 }
 
-#define WEX_CHECK_OVERFLOW(id, offset)                                                                                                                                             \
-    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {                                                                                               \
-        uint64_t tmp = 0x0ULL;                                                                                                                                                     \
-        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, box_map[id].statusRegister, &tmp));                                                                                          \
-        if (tmp & (1ULL << (offset))) {                                                                                                                                            \
-            eventSet->events[i].threadCounter[thread_id].overflows++;                                                                                                              \
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ovflRegister, (1ULL << (offset))));                                                                        \
-        }                                                                                                                                                                          \
+#define WEX_CHECK_OVERFLOW(id, offset)                                                             \
+    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {               \
+        uint64_t tmp = 0x0ULL;                                                                     \
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, box_map[id].statusRegister, &tmp));          \
+        if (tmp & (1ULL << (offset))) {                                                            \
+            eventSet->events[i].threadCounter[thread_id].overflows++;                              \
+            CHECK_MSR_WRITE_ERROR(                                                                 \
+                HPMwrite(cpu_id, MSR_DEV, box_map[id].ovflRegister, (1ULL << (offset))));          \
+        }                                                                                          \
     }
 
-#define WEX_CLEAR_OVERFLOW(id, offset) CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ctrlRegister, (1 << (offset))));
+#define WEX_CLEAR_OVERFLOW(id, offset)                                                             \
+    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ctrlRegister, (1 << (offset))));
 
-#define WEX_CHECK_UNCORE_OVERFLOW(id, offset)                                                                                                                                      \
-    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {                                                                                               \
-        uint64_t tmp    = 0x0ULL;                                                                                                                                                  \
-        int check_local = 0;                                                                                                                                                       \
-        if ((id == SBOX0) || (id == SBOX1) || (id == WBOX) || (id == UBOX)) {                                                                                                      \
-            CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_STATUS, &tmp));                                                                                        \
-            int gl_offset = -1;                                                                                                                                                    \
-            switch (id) {                                                                                                                                                          \
-            case UBOX:                                                                                                                                                             \
-                gl_offset = 0;                                                                                                                                                     \
-                break;                                                                                                                                                             \
-            case WBOX:                                                                                                                                                             \
-                gl_offset = 1;                                                                                                                                                     \
-                break;                                                                                                                                                             \
-            case SBOX1:                                                                                                                                                            \
-                gl_offset = 2;                                                                                                                                                     \
-                break;                                                                                                                                                             \
-            case SBOX0:                                                                                                                                                            \
-                gl_offset = 3;                                                                                                                                                     \
-                break;                                                                                                                                                             \
-            default:                                                                                                                                                               \
-                break;                                                                                                                                                             \
-            }                                                                                                                                                                      \
-            if ((gl_offset != -1) && (tmp & (1ULL << (gl_offset)))) {                                                                                                              \
-                check_local = 1;                                                                                                                                                   \
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_OVF_CTRL, (1ULL << (gl_offset))));                                                               \
-            }                                                                                                                                                                      \
-        } else {                                                                                                                                                                   \
-            check_local = 1;                                                                                                                                                       \
-        }                                                                                                                                                                          \
-        if (check_local) {                                                                                                                                                         \
-            CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, box_map[id].statusRegister, &tmp));                                                                                      \
-            if (tmp & (1ULL << (offset))) {                                                                                                                                        \
-                eventSet->events[i].threadCounter[thread_id].overflows++;                                                                                                          \
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ovflRegister, (1ULL << (offset))));                                                                    \
-            }                                                                                                                                                                      \
-        }                                                                                                                                                                          \
+#define WEX_CHECK_UNCORE_OVERFLOW(id, offset)                                                      \
+    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {               \
+        uint64_t tmp    = 0x0ULL;                                                                  \
+        int check_local = 0;                                                                       \
+        if ((id == SBOX0) || (id == SBOX1) || (id == WBOX) || (id == UBOX)) {                      \
+            CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_STATUS, &tmp));        \
+            int gl_offset = -1;                                                                    \
+            switch (id) {                                                                          \
+            case UBOX:                                                                             \
+                gl_offset = 0;                                                                     \
+                break;                                                                             \
+            case WBOX:                                                                             \
+                gl_offset = 1;                                                                     \
+                break;                                                                             \
+            case SBOX1:                                                                            \
+                gl_offset = 2;                                                                     \
+                break;                                                                             \
+            case SBOX0:                                                                            \
+                gl_offset = 3;                                                                     \
+                break;                                                                             \
+            default:                                                                               \
+                break;                                                                             \
+            }                                                                                      \
+            if ((gl_offset != -1) && (tmp & (1ULL << (gl_offset)))) {                              \
+                check_local = 1;                                                                   \
+                CHECK_MSR_WRITE_ERROR(                                                             \
+                    HPMwrite(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_OVF_CTRL, (1ULL << (gl_offset)))); \
+            }                                                                                      \
+        } else {                                                                                   \
+            check_local = 1;                                                                       \
+        }                                                                                          \
+        if (check_local) {                                                                         \
+            CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, box_map[id].statusRegister, &tmp));      \
+            if (tmp & (1ULL << (offset))) {                                                        \
+                eventSet->events[i].threadCounter[thread_id].overflows++;                          \
+                CHECK_MSR_WRITE_ERROR(                                                             \
+                    HPMwrite(cpu_id, MSR_DEV, box_map[id].ovflRegister, (1ULL << (offset))));      \
+            }                                                                                      \
+        }                                                                                          \
     }
 
 int perfmon_stopCountersThread_westmereEX(int thread_id, PerfmonEventSet *eventSet)
@@ -1042,7 +1104,8 @@ int perfmon_stopCountersThread_westmereEX(int thread_id, PerfmonEventSet *eventS
                 }
                 break;
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                field64(counter_result, 0, box_map[type].regWidth);
         }
     }
 
@@ -1092,13 +1155,15 @@ int perfmon_readCountersThread_westmereEX(int thread_id, PerfmonEventSet *eventS
                 WEX_CHECK_OVERFLOW(PMC, index - cpuid_info.perf_num_fixed_ctr);
                 VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, "READ_PMC");
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                field64(counter_result, 0, box_map[type].regWidth);
         }
     }
 
     wex_uncore_unfreeze(cpu_id, eventSet, FREEZE_FLAG_ONLYFREEZE);
     if ((MEASURE_CORE(eventSet)) && (core_ctrl_flags != 0x0ULL)) {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST core_ctrl_flags, "RESTORE_PMC_FLAGS");
+        VERBOSEPRINTREG(
+            cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST core_ctrl_flags, "RESTORE_PMC_FLAGS");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, core_ctrl_flags));
     }
     return 0;
@@ -1146,11 +1211,15 @@ int perfmon_finalizeCountersThread_westmereEX(int thread_id, PerfmonEventSet *ev
         if ((reg) && (((dev == MSR_DEV) && (type < UNCORE)) || ((haveLock) && (type > UNCORE)))) {
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, "CLEAR_CTL");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
-            VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
+            VERBOSEPRINTPCIREG(
+                cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
             if (counter_map[index].counterRegister2 != 0x0) {
-                VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL, "CLEAR_CTR");
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));
+                VERBOSEPRINTPCIREG(
+                    cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL, "CLEAR_CTR");
+                CHECK_MSR_WRITE_ERROR(
+                    HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));
             }
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
@@ -1158,7 +1227,8 @@ int perfmon_finalizeCountersThread_westmereEX(int thread_id, PerfmonEventSet *ev
     if (MEASURE_CORE(eventSet)) {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, "CLEAR_PMC_AND_FIXED_CTL");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core, "CLEAR_PMC_AND_FIXED_OVERFLOW");
+        VERBOSEPRINTREG(
+            cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core, "CLEAR_PMC_AND_FIXED_OVERFLOW");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core));
     }
     if (haveLock && MEASURE_UNCORE(eventSet)) {
@@ -1168,14 +1238,26 @@ int perfmon_finalizeCountersThread_westmereEX(int thread_id, PerfmonEventSet *ev
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_OVF_CTRL, 0x0ULL));
         for (int i = UNCORE; i < NUM_UNITS; i++) {
             if (TESTTYPE(eventSet, i) && box_map[i].ctrlRegister != 0x0) {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, "CLEAR_UNCORE_BOX_CTRL");
+                VERBOSEPRINTPCIREG(cpu_id,
+                    box_map[i].device,
+                    box_map[i].ctrlRegister,
+                    0x0ULL,
+                    "CLEAR_UNCORE_BOX_CTRL");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
                 if (box_map[i].filterRegister1) {
-                    VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].filterRegister1, 0x0ULL, "CLEAR_FILTER");
+                    VERBOSEPRINTPCIREG(cpu_id,
+                        box_map[i].device,
+                        box_map[i].filterRegister1,
+                        0x0ULL,
+                        "CLEAR_FILTER");
                     HPMwrite(cpu_id, box_map[i].device, box_map[i].filterRegister1, 0x0ULL);
                 }
                 if (box_map[i].filterRegister2) {
-                    VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].filterRegister2, 0x0ULL, "CLEAR_FILTER");
+                    VERBOSEPRINTPCIREG(cpu_id,
+                        box_map[i].device,
+                        box_map[i].filterRegister2,
+                        0x0ULL,
+                        "CLEAR_FILTER");
                     HPMwrite(cpu_id, box_map[i].device, box_map[i].filterRegister2, 0x0ULL);
                 }
             }

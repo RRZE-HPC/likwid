@@ -62,77 +62,201 @@ int perfmon_init_sierraforrest(int cpu_id)
     return 0;
 }
 
-uint64_t srf_fixed_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_fixed_setup(thread_id, index, event, data); }
+uint64_t srf_fixed_setup(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_fixed_setup(thread_id, index, event, data);
+}
 
-uint64_t srf_fixed_start(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_fixed_start(thread_id, index, event, data); }
+uint64_t srf_fixed_start(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_fixed_start(thread_id, index, event, data);
+}
 
-uint64_t srf_pmc_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_pmc_setup(thread_id, index, event, data); }
+uint64_t srf_pmc_setup(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_pmc_setup(thread_id, index, event, data);
+}
 
-uint64_t srf_uncore_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_setup_uncore(thread_id, index, event); }
+uint64_t srf_uncore_setup(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_setup_uncore(thread_id, index, event);
+}
 
-uint64_t srf_uncore_fixed_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_setup_uncore_fixed(thread_id, index, event); }
+uint64_t srf_uncore_fixed_setup(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_setup_uncore_fixed(thread_id, index, event);
+}
 
-uint64_t srf_pmc_start(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_pmc_start(thread_id, index, event, data); }
+uint64_t srf_pmc_start(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_pmc_start(thread_id, index, event, data);
+}
 
-uint64_t srf_power_start(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_power_start(thread_id, index, event, data); }
+uint64_t srf_power_start(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_power_start(thread_id, index, event, data);
+}
 
-uint64_t srf_metrics_start(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_metrics_start(thread_id, index, event, data); }
+uint64_t srf_metrics_start(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_metrics_start(thread_id, index, event, data);
+}
 
-uint64_t srf_uncore_start(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_start_uncore(thread_id, index, event, data); }
+uint64_t srf_uncore_start(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_start_uncore(thread_id, index, event, data);
+}
 
-uint64_t srf_uncore_fixed_start(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_start_uncore_fixed(thread_id, index, event, data); }
+uint64_t srf_uncore_fixed_start(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_start_uncore_fixed(thread_id, index, event, data);
+}
 
-uint64_t srf_fixed_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_fixed_stop(thread_id, index, event, data); }
+uint64_t srf_fixed_stop(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_fixed_stop(thread_id, index, event, data);
+}
 
-uint64_t srf_pmc_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_pmc_stop(thread_id, index, event, data); }
+uint64_t srf_pmc_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_pmc_stop(thread_id, index, event, data);
+}
 
-uint64_t srf_power_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_power_stop(thread_id, index, event, data); }
+uint64_t srf_power_stop(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_power_stop(thread_id, index, event, data);
+}
 
-uint64_t srf_thermal_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_thermal_stop(thread_id, index, event, data); }
+uint64_t srf_thermal_stop(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_thermal_stop(thread_id, index, event, data);
+}
 
-uint64_t srf_voltage_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_voltage_stop(thread_id, index, event, data); }
+uint64_t srf_voltage_stop(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_voltage_stop(thread_id, index, event, data);
+}
 
-uint64_t srf_metrics_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_metrics_stop(thread_id, index, event, data); }
+uint64_t srf_metrics_stop(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_metrics_stop(thread_id, index, event, data);
+}
 
-uint64_t srf_uncore_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_stop_uncore(thread_id, index, event, data); }
+uint64_t srf_uncore_stop(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_stop_uncore(thread_id, index, event, data);
+}
 
-uint64_t srf_uncore_fixed_stop(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_stop_uncore_fixed(thread_id, index, event, data); }
+uint64_t srf_uncore_fixed_stop(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_stop_uncore_fixed(thread_id, index, event, data);
+}
 
-uint64_t srf_fixed_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_fixed_read(thread_id, index, event, data); }
+uint64_t srf_fixed_read(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_fixed_read(thread_id, index, event, data);
+}
 
-uint64_t srf_pmc_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_pmc_read(thread_id, index, event, data); }
+uint64_t srf_pmc_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_pmc_read(thread_id, index, event, data);
+}
 
-uint64_t srf_power_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_power_read(thread_id, index, event, data); }
+uint64_t srf_power_read(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_power_read(thread_id, index, event, data);
+}
 
-uint64_t srf_thermal_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_thermal_read(thread_id, index, event, data); }
+uint64_t srf_thermal_read(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_thermal_read(thread_id, index, event, data);
+}
 
-uint64_t srf_voltage_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_voltage_read(thread_id, index, event, data); }
+uint64_t srf_voltage_read(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_voltage_read(thread_id, index, event, data);
+}
 
-uint64_t srf_metrics_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_metrics_read(thread_id, index, event, data); }
+uint64_t srf_metrics_read(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_metrics_read(thread_id, index, event, data);
+}
 
-uint64_t srf_uncore_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_read_uncore(thread_id, index, event, data); }
+uint64_t srf_uncore_read(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_read_uncore(thread_id, index, event, data);
+}
 
-uint64_t srf_uncore_fixed_read(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data) { return spr_read_uncore_fixed(thread_id, index, event, data); }
+uint64_t srf_uncore_fixed_read(
+    int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter *data)
+{
+    return spr_read_uncore_fixed(thread_id, index, event, data);
+}
 
 static PerfmonFuncs SrfUnitFuncs[NUM_UNITS] = {
-    [PMC]             = { srf_pmc_setup,    srf_pmc_start,     srf_pmc_stop,     srf_pmc_read,     0                   },
-    [FIXED]           = { srf_fixed_setup,  srf_fixed_start,   srf_fixed_stop,   srf_fixed_read,   0                   },
-    [POWER]           = { NULL,             srf_power_start,   srf_power_stop,   srf_power_read,   PERFMON_LOCK_SOCKET },
-    [THERMAL]         = { NULL,             NULL,              srf_thermal_stop, srf_thermal_read, 0                   },
-    [VOLTAGE]         = { NULL,             NULL,              srf_voltage_stop, srf_voltage_read, 0                   },
-    [METRICS]         = { NULL,             srf_metrics_start, srf_metrics_stop, srf_metrics_read, 0                   },
-    [MBOX0... MBOX15] = { srf_uncore_setup, srf_uncore_start,  srf_uncore_stop,  srf_uncore_read,  PERFMON_LOCK_SOCKET },
+    [PMC]     = { srf_pmc_setup,    srf_pmc_start,     srf_pmc_stop,     srf_pmc_read,     0                   },
+    [FIXED]   = { srf_fixed_setup,  srf_fixed_start,   srf_fixed_stop,   srf_fixed_read,   0                   },
+    [POWER]   = { NULL,             srf_power_start,   srf_power_stop,   srf_power_read,   PERFMON_LOCK_SOCKET },
+    [THERMAL] = { NULL,             NULL,              srf_thermal_stop, srf_thermal_read, 0                   },
+    [VOLTAGE] = { NULL,             NULL,              srf_voltage_stop, srf_voltage_read, 0                   },
+    [METRICS] = { NULL,             srf_metrics_start, srf_metrics_stop, srf_metrics_read, 0                   },
+    [MBOX0... MBOX15] = { srf_uncore_setup,
+                 srf_uncore_start,                     srf_uncore_stop,
+                 srf_uncore_read,                                                          PERFMON_LOCK_SOCKET },
     //[MBOX0FIX ... MBOX15FIX] = {srf_uncore_fixed_setup, srf_uncore_fixed_start, srf_uncore_fixed_stop, srf_uncore_fixed_read, PERFMON_LOCK_SOCKET},
-    [UBOX]             = { srf_uncore_setup, srf_uncore_start,  srf_uncore_stop,  srf_uncore_read,  PERFMON_LOCK_SOCKET },
-    [MDF0... MDF49]    = { srf_uncore_setup, srf_uncore_start,  srf_uncore_stop,  srf_uncore_read,  PERFMON_LOCK_SOCKET },
-    [QBOX0... QBOX3]   = { srf_uncore_setup, srf_uncore_start,  srf_uncore_stop,  srf_uncore_read,  PERFMON_LOCK_SOCKET },
-    [WBOX0... WBOX3]   = { srf_uncore_setup, srf_uncore_start,  srf_uncore_stop,  srf_uncore_read,  PERFMON_LOCK_SOCKET },
-    [CBOX0... CBOX127] = { srf_uncore_setup, srf_uncore_start,  srf_uncore_stop,  srf_uncore_read,  PERFMON_LOCK_SOCKET },
-    [BBOX0... BBOX31]  = { srf_uncore_setup, srf_uncore_start,  srf_uncore_stop,  srf_uncore_read,  PERFMON_LOCK_SOCKET },
-    [PBOX0... PBOX31]  = { srf_uncore_setup, srf_uncore_start,  srf_uncore_stop,  srf_uncore_read,  PERFMON_LOCK_SOCKET },
-    [RBOX0... RBOX3]   = { srf_uncore_setup, srf_uncore_start,  srf_uncore_stop,  srf_uncore_read,  PERFMON_LOCK_SOCKET },
-    [IRP0... IRP15]    = { srf_uncore_setup, srf_uncore_start,  srf_uncore_stop,  srf_uncore_read,  PERFMON_LOCK_SOCKET },
-    [IBOX0... IBOX15]  = { srf_uncore_setup, srf_uncore_start,  srf_uncore_stop,  srf_uncore_read,  PERFMON_LOCK_SOCKET },
+    [UBOX]             = { srf_uncore_setup,
+                 srf_uncore_start,                     srf_uncore_stop,
+                 srf_uncore_read,                                                          PERFMON_LOCK_SOCKET },
+    [MDF0... MDF49]    = { srf_uncore_setup,
+                 srf_uncore_start,                     srf_uncore_stop,
+                 srf_uncore_read,                                                          PERFMON_LOCK_SOCKET },
+    [QBOX0... QBOX3]   = { srf_uncore_setup,
+                 srf_uncore_start,                     srf_uncore_stop,
+                 srf_uncore_read,                                                          PERFMON_LOCK_SOCKET },
+    [WBOX0... WBOX3]   = { srf_uncore_setup,
+                 srf_uncore_start,                     srf_uncore_stop,
+                 srf_uncore_read,                                                          PERFMON_LOCK_SOCKET },
+    [CBOX0... CBOX127] = { srf_uncore_setup,
+                 srf_uncore_start,                     srf_uncore_stop,
+                 srf_uncore_read,                                                          PERFMON_LOCK_SOCKET },
+    [BBOX0... BBOX31]  = { srf_uncore_setup,
+                 srf_uncore_start,                     srf_uncore_stop,
+                 srf_uncore_read,                                                          PERFMON_LOCK_SOCKET },
+    [PBOX0... PBOX31]  = { srf_uncore_setup,
+                 srf_uncore_start,                     srf_uncore_stop,
+                 srf_uncore_read,                                                          PERFMON_LOCK_SOCKET },
+    [RBOX0... RBOX3]   = { srf_uncore_setup,
+                 srf_uncore_start,                     srf_uncore_stop,
+                 srf_uncore_read,                                                          PERFMON_LOCK_SOCKET },
+    [IRP0... IRP15]    = { srf_uncore_setup,
+                 srf_uncore_start,                     srf_uncore_stop,
+                 srf_uncore_read,                                                          PERFMON_LOCK_SOCKET },
+    [IBOX0... IBOX15]  = { srf_uncore_setup,
+                 srf_uncore_start,                     srf_uncore_stop,
+                 srf_uncore_read,                                                          PERFMON_LOCK_SOCKET },
 };
 
 int perfmon_setupCounterThread_sierraforrest(int thread_id, PerfmonEventSet *eventSet)
@@ -149,10 +273,12 @@ int perfmon_setupCounterThread_sierraforrest(int thread_id, PerfmonEventSet *eve
     if (MEASURE_CORE(eventSet)) {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, "FREEZE_PMC_AND_FIXED");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0xC00000070000000F));
+        CHECK_MSR_WRITE_ERROR(
+            HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0xC00000070000000F));
     }
     if (haveLock && MEASURE_UNCORE(eventSet)) {
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST(1ULL << 0), "FREEZE_UNCORE");
+        VERBOSEPRINTPCIREG(
+            cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST(1ULL << 0), "FREEZE_UNCORE");
         HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, (1ULL << 0));
     }
     for (int i = 0; i < eventSet->numberOfEvents; i++) {
@@ -244,11 +370,16 @@ int perfmon_startCountersThread_sierraforrest(int thread_id, PerfmonEventSet *ev
     if (haveLock && MEASURE_UNCORE(eventSet)) {
         for (int i = MSR_DEV + 1; i < MAX_NUM_PCI_DEVICES; i++) {
             if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV) {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST 0x0ULL, "UNFREEZE_UNIT");
+                VERBOSEPRINTPCIREG(cpu_id,
+                    box_map[i].device,
+                    box_map[i].ctrlRegister,
+                    LLU_CAST 0x0ULL,
+                    "UNFREEZE_UNIT");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
             }
         }
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, "UNFREEZE_UNCORE");
+        VERBOSEPRINTPCIREG(
+            cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, "UNFREEZE_UNCORE");
         HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, 0x0ULL);
     }
     if (MEASURE_CORE(eventSet)) {
@@ -256,8 +387,12 @@ int perfmon_startCountersThread_sierraforrest(int thread_id, PerfmonEventSet *ev
             VERBOSEPRINTREG(cpu_id, MSR_PERF_METRICS, 0x0ULL, "CLEAR_METRICS");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_METRICS, 0x0ULL));
         }
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST(1ULL << 63) | (1ULL << 62) | flags, "CLEAR_PMC_AND_FIXED_OVERFLOW");
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << 63) | (1ULL << 62) | flags));
+        VERBOSEPRINTREG(cpu_id,
+            MSR_PERF_GLOBAL_OVF_CTRL,
+            LLU_CAST(1ULL << 63) | (1ULL << 62) | flags,
+            "CLEAR_PMC_AND_FIXED_OVERFLOW");
+        CHECK_MSR_WRITE_ERROR(HPMwrite(
+            cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << 63) | (1ULL << 62) | flags));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, "UNFREEZE_PMC_AND_FIXED");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
     }
@@ -283,11 +418,16 @@ int perfmon_stopCountersThread_sierraforrest(int thread_id, PerfmonEventSet *eve
     if (haveLock && MEASURE_UNCORE(eventSet)) {
         for (int i = MSR_DEV + 1; i < MAX_NUM_PCI_DEVICES; i++) {
             if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV) {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST(1ULL << 0), "FREEZE_UNIT");
+                VERBOSEPRINTPCIREG(cpu_id,
+                    box_map[i].device,
+                    box_map[i].ctrlRegister,
+                    LLU_CAST(1ULL << 0),
+                    "FREEZE_UNIT");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, (1ULL << 0));
             }
         }
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST(1ULL << 0), "FREEZE_UNCORE");
+        VERBOSEPRINTPCIREG(
+            cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST(1ULL << 0), "FREEZE_UNCORE");
         HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, (1ULL << 0));
     }
 
@@ -350,11 +490,16 @@ int perfmon_readCountersThread_sierraforrest(int thread_id, PerfmonEventSet *eve
     if (haveLock && MEASURE_UNCORE(eventSet)) {
         for (int i = MSR_DEV + 1; i < MAX_NUM_PCI_DEVICES; i++) {
             if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV) {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST(1ULL << 0), "FREEZE_UNIT");
+                VERBOSEPRINTPCIREG(cpu_id,
+                    box_map[i].device,
+                    box_map[i].ctrlRegister,
+                    LLU_CAST(1ULL << 0),
+                    "FREEZE_UNIT");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, (1ULL << 0));
             }
         }
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST(1ULL << 0), "FREEZE_UNCORE");
+        VERBOSEPRINTPCIREG(
+            cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST(1ULL << 0), "FREEZE_UNCORE");
         HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, (1ULL << 0));
     }
     for (int i = 0; i < eventSet->numberOfEvents; i++) {
@@ -394,11 +539,16 @@ int perfmon_readCountersThread_sierraforrest(int thread_id, PerfmonEventSet *eve
     if (haveLock && MEASURE_UNCORE(eventSet)) {
         for (int i = MSR_DEV + 1; i < MAX_NUM_PCI_DEVICES; i++) {
             if (TESTTYPE(eventSet, i) && box_map[i].device != MSR_DEV) {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, LLU_CAST 0x0ULL, "UNFREEZE_UNIT");
+                VERBOSEPRINTPCIREG(cpu_id,
+                    box_map[i].device,
+                    box_map[i].ctrlRegister,
+                    LLU_CAST 0x0ULL,
+                    "UNFREEZE_UNIT");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
             }
         }
-        VERBOSEPRINTPCIREG(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, "UNFREEZE_UNCORE");
+        VERBOSEPRINTPCIREG(
+            cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, LLU_CAST 0x0ULL, "UNFREEZE_UNCORE");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_UBOX_DEVICE, FAKE_UNC_GLOBAL_CTRL, 0x0ULL));
     }
     if (MEASURE_CORE(eventSet)) {
@@ -441,23 +591,28 @@ int perfmon_finalizeCountersThread_sierraforrest(int thread_id, PerfmonEventSet 
         default:
             break;
         }
-        if ((reg) && (((type == PMC) || (type == FIXED)) || (type == METRICS) || ((type >= UNCORE && type < NUM_UNITS) && (haveLock)))) {
+        if ((reg) && (((type == PMC) || (type == FIXED)) || (type == METRICS) ||
+                         ((type >= UNCORE && type < NUM_UNITS) && (haveLock)))) {
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, "CLEAR_CTL");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
             if ((type >= SBOX0) && (type <= SBOX3)) {
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
             }
-            VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
+            VERBOSEPRINTPCIREG(
+                cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
             if (box_map[type].filterRegister1 != 0x0) {
-                VERBOSEPRINTPCIREG(cpu_id, dev, box_map[type].filterRegister1, 0x0ULL, "CLEAR_FILTER");
+                VERBOSEPRINTPCIREG(
+                    cpu_id, dev, box_map[type].filterRegister1, 0x0ULL, "CLEAR_FILTER");
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, box_map[type].filterRegister1, 0x0ULL));
             }
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
     if (MEASURE_CORE(eventSet)) {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, "CLEAR_GLOBAL_OVF");
+        VERBOSEPRINTREG(
+            cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, "CLEAR_GLOBAL_OVF");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, "CLEAR_GLOBAL_CTRL");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));

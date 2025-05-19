@@ -49,7 +49,8 @@ int ilg_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
 
     flags |= (1ULL << 16);
-    flags |= ((uint64_t)(event->eventId >> 8) << 32) + (event->umask << 8) + (event->eventId & ~(0xF00U));
+    flags |= ((uint64_t)(event->eventId >> 8) << 32) + (event->umask << 8) +
+             (event->eventId & ~(0xF00U));
 
     if (event->numberOfOptions > 0) {
         for (int j = 0; j < event->numberOfOptions; j++) {
@@ -89,7 +90,8 @@ int ilg_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         return 0;
     }
 
-    flags |= ((uint64_t)(event->eventId >> 8) << 32) + (event->umask << 8) + (event->eventId & ~(0xF00U));
+    flags |= ((uint64_t)(event->eventId >> 8) << 32) + (event->umask << 8) +
+             (event->eventId & ~(0xF00U));
     if (flags != currentConfig[cpu_id][index]) {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_UNCORE");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
@@ -140,9 +142,9 @@ int perfmon_startCountersThread_interlagos(int thread_id, PerfmonEventSet *event
             if (!TESTTYPE(eventSet, type)) {
                 continue;
             }
-            RegisterIndex index                                      = eventSet->events[i].index;
-            uint32_t counter                                         = counter_map[index].counterRegister;
-            uint32_t reg                                             = counter_map[index].configRegister;
+            RegisterIndex index = eventSet->events[i].index;
+            uint32_t counter    = counter_map[index].counterRegister;
+            uint32_t reg        = counter_map[index].configRegister;
             eventSet->events[i].threadCounter[thread_id].startData   = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
             if (type == PMC || ((type == UNCORE) && (haveLock))) {
@@ -195,7 +197,8 @@ int perfmon_stopCountersThread_interlagos(int thread_id, PerfmonEventSet *eventS
             default:
                 break;
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = field64(tmp, 0, box_map[type].regWidth);
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                field64(tmp, 0, box_map[type].regWidth);
         }
     }
     return 0;
@@ -227,7 +230,8 @@ int perfmon_readCountersThread_interlagos(int thread_id, PerfmonEventSet *eventS
             default:
                 break;
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = field64(tmp, 0, box_map[type].regWidth);
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                field64(tmp, 0, box_map[type].regWidth);
         }
     }
     return 0;
@@ -251,8 +255,10 @@ int perfmon_finalizeCountersThread_interlagos(int thread_id, PerfmonEventSet *ev
         if ((reg) && (((type == PMC) || (type == FIXED)) || ((type >= UNCORE) && (haveLock)))) {
             VERBOSEPRINTREG(cpu_id, reg, LLU_CAST 0x0ULL, "CLEAR_CTRL");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, 0x0ULL));
-            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST 0x0ULL, "CLEAR_CTR");
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
+            VERBOSEPRINTREG(
+                cpu_id, counter_map[index].counterRegister, LLU_CAST 0x0ULL, "CLEAR_CTR");
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }

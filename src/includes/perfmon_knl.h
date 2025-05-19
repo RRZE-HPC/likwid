@@ -542,7 +542,11 @@ int perfmon_setupCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
     }
     for (int i = UNCORE; i < NUM_UNITS; i++) {
         if (haveLock && TESTTYPE(eventSet, i) && box_map[i].ctrlRegister != 0x0) {
-            VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, "CLEAR_UNCORE_BOX_CTRL");
+            VERBOSEPRINTPCIREG(cpu_id,
+                box_map[i].device,
+                box_map[i].ctrlRegister,
+                0x0ULL,
+                "CLEAR_UNCORE_BOX_CTRL");
             HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
         }
     }
@@ -553,38 +557,49 @@ int perfmon_setupCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
     return 0;
 }
 
-#define KNL_FREEZE_UNCORE                                                                                                                                                          \
-    if (haveLock && MEASURE_UNCORE(eventSet)) {                                                                                                                                    \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST(1ULL << 63), "FREEZE_UNCORE");                                                                              \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL << 63)));                                                                              \
+#define KNL_FREEZE_UNCORE                                                                          \
+    if (haveLock && MEASURE_UNCORE(eventSet)) {                                                    \
+        VERBOSEPRINTREG(                                                                           \
+            cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST(1ULL << 63), "FREEZE_UNCORE");          \
+        CHECK_MSR_WRITE_ERROR(                                                                     \
+            HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL << 63)));                \
     }
 
-#define KNL_UNFREEZE_UNCORE                                                                                                                                                        \
-    if (haveLock && MEASURE_UNCORE(eventSet)) {                                                                                                                                    \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST(1ULL << 61), "UNFREEZE_UNCORE");                                                                            \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL << 61)));                                                                              \
+#define KNL_UNFREEZE_UNCORE                                                                        \
+    if (haveLock && MEASURE_UNCORE(eventSet)) {                                                    \
+        VERBOSEPRINTREG(                                                                           \
+            cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST(1ULL << 61), "UNFREEZE_UNCORE");        \
+        CHECK_MSR_WRITE_ERROR(                                                                     \
+            HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL << 61)));                \
     }
 
-#define KNL_UNFREEZE_UNCORE_AND_RESET_CTR                                                                                                                                          \
-    if (haveLock && MEASURE_UNCORE(eventSet)) {                                                                                                                                    \
-        for (int i = 0; i < eventSet->numberOfEvents; i++) {                                                                                                                       \
-            RegisterIndex index = eventSet->events[i].index;                                                                                                                       \
-            RegisterType type   = counter_map[index].type;                                                                                                                         \
-            if (type < UNCORE) {                                                                                                                                                   \
-                continue;                                                                                                                                                          \
-            }                                                                                                                                                                      \
-            PciDeviceIndex dev = counter_map[index].device;                                                                                                                        \
-            if (HPMcheck(dev, cpu_id) && TESTTYPE(eventSet, type)) {                                                                                                               \
-                VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR_MANUAL");                                                                   \
-                CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));                                                                          \
-                if (counter_map[index].counterRegister2 != 0x0) {                                                                                                                  \
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL, "CLEAR_CTR_MANUAL");                                                              \
-                    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));                                                                     \
-                }                                                                                                                                                                  \
-            }                                                                                                                                                                      \
-        }                                                                                                                                                                          \
-        VERBOSEPRINTREG(cpu_id, MSR_MIC2_U_GLOBAL_CTRL, LLU_CAST(1ULL << 61), "UNFREEZE_UNCORE");                                                                                  \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC2_U_GLOBAL_CTRL, (1ULL << 61)));                                                                                    \
+#define KNL_UNFREEZE_UNCORE_AND_RESET_CTR                                                          \
+    if (haveLock && MEASURE_UNCORE(eventSet)) {                                                    \
+        for (int i = 0; i < eventSet->numberOfEvents; i++) {                                       \
+            RegisterIndex index = eventSet->events[i].index;                                       \
+            RegisterType type   = counter_map[index].type;                                         \
+            if (type < UNCORE) {                                                                   \
+                continue;                                                                          \
+            }                                                                                      \
+            PciDeviceIndex dev = counter_map[index].device;                                        \
+            if (HPMcheck(dev, cpu_id) && TESTTYPE(eventSet, type)) {                               \
+                VERBOSEPRINTPCIREG(                                                                \
+                    cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR_MANUAL");  \
+                CHECK_PCI_WRITE_ERROR(                                                             \
+                    HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));            \
+                if (counter_map[index].counterRegister2 != 0x0) {                                  \
+                    VERBOSEPRINTPCIREG(cpu_id,                                                     \
+                        dev,                                                                       \
+                        counter_map[index].counterRegister2,                                       \
+                        0x0ULL,                                                                    \
+                        "CLEAR_CTR_MANUAL");                                                       \
+                    CHECK_PCI_WRITE_ERROR(                                                         \
+                        HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));       \
+                }                                                                                  \
+            }                                                                                      \
+        }                                                                                          \
+        VERBOSEPRINTREG(cpu_id, MSR_MIC2_U_GLOBAL_CTRL, LLU_CAST(1ULL << 61), "UNFREEZE_UNCORE");  \
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC2_U_GLOBAL_CTRL, (1ULL << 61)));    \
     }
 
 int perfmon_startCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
@@ -604,11 +619,11 @@ int perfmon_startCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
             if (!TESTTYPE(eventSet, type)) {
                 continue;
             }
-            tmp                                                      = 0x0ULL;
-            RegisterIndex index                                      = eventSet->events[i].index;
-            PciDeviceIndex dev                                       = counter_map[index].device;
-            uint64_t counter1                                        = counter_map[index].counterRegister;
-            uint64_t counter2                                        = counter_map[index].counterRegister2;
+            tmp                 = 0x0ULL;
+            RegisterIndex index = eventSet->events[i].index;
+            PciDeviceIndex dev  = counter_map[index].device;
+            uint64_t counter1   = counter_map[index].counterRegister;
+            uint64_t counter2   = counter_map[index].counterRegister2;
             eventSet->events[i].threadCounter[thread_id].startData   = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
             switch (type) {
@@ -625,7 +640,8 @@ int perfmon_startCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
             case POWER:
                 if (haveLock) {
                     CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint64_t *)&tmp));
-                    eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                    eventSet->events[i].threadCounter[thread_id].startData =
+                        field64(tmp, 0, box_map[type].regWidth);
                 }
                 break;
             case MBOX0FIX:
@@ -661,7 +677,8 @@ int perfmon_startCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
             default:
                 break;
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = eventSet->events[i].threadCounter[thread_id].startData;
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                eventSet->events[i].threadCounter[thread_id].startData;
         }
     }
 
@@ -676,7 +693,8 @@ int perfmon_startCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
     return 0;
 }
 
-int knl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, uint64_t *cur_result, int *overflows, int flags, int global_offset, int box_offset)
+int knl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, uint64_t *cur_result,
+    int *overflows, int flags, int global_offset, int box_offset)
 {
     uint64_t result    = 0x0ULL;
     uint64_t tmp       = 0x0ULL;
@@ -712,10 +730,15 @@ int knl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, uint64
         int test_local = 0;
         if (global_offset != -1) {
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values));
-            VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_STATUS, LLU_CAST ovf_values, "READ_GLOBAL_OVFL");
+            VERBOSEPRINTREG(
+                cpu_id, MSR_PERF_GLOBAL_STATUS, LLU_CAST ovf_values, "READ_GLOBAL_OVFL");
             if (ovf_values & (1 << global_offset)) {
-                VERBOSEPRINTREG(cpu_id, MSR_MIC2_U_GLOBAL_STATUS, LLU_CAST(1 << global_offset), "CLEAR_GLOBAL_OVFL");
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC2_U_GLOBAL_STATUS, (1 << global_offset)));
+                VERBOSEPRINTREG(cpu_id,
+                    MSR_MIC2_U_GLOBAL_STATUS,
+                    LLU_CAST(1 << global_offset),
+                    "CLEAR_GLOBAL_OVFL");
+                CHECK_MSR_WRITE_ERROR(
+                    HPMwrite(cpu_id, MSR_DEV, MSR_MIC2_U_GLOBAL_STATUS, (1 << global_offset)));
                 test_local = 1;
             }
         } else {
@@ -725,11 +748,17 @@ int knl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, uint64
         if (test_local && box_map[type].statusRegister != 0x0) {
             ovf_values = 0x0ULL;
             CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, box_map[type].statusRegister, &ovf_values));
-            VERBOSEPRINTPCIREG(cpu_id, dev, box_map[type].statusRegister, LLU_CAST ovf_values, "READ_BOX_OVFL");
+            VERBOSEPRINTPCIREG(
+                cpu_id, dev, box_map[type].statusRegister, LLU_CAST ovf_values, "READ_BOX_OVFL");
             if (ovf_values & (1 << box_offset)) {
                 (*overflows)++;
-                VERBOSEPRINTPCIREG(cpu_id, dev, box_map[type].statusRegister, LLU_CAST(1 << box_offset), "RESET_BOX_OVFL");
-                CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, box_map[type].statusRegister, (1 << box_offset)));
+                VERBOSEPRINTPCIREG(cpu_id,
+                    dev,
+                    box_map[type].statusRegister,
+                    LLU_CAST(1 << box_offset),
+                    "RESET_BOX_OVFL");
+                CHECK_PCI_WRITE_ERROR(
+                    HPMwrite(cpu_id, dev, box_map[type].statusRegister, (1 << box_offset)));
             }
         } else if ((ovf_values & (1 << global_offset)) && test_local) {
             (*overflows)++;
@@ -739,14 +768,15 @@ int knl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, uint64
     return 0;
 }
 
-#define KNL_CHECK_CORE_OVERFLOW(offset)                                                                                                                                            \
-    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {                                                                                               \
-        uint64_t ovf_values = 0x0ULL;                                                                                                                                              \
-        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values));                                                                                       \
-        if (ovf_values & (1ULL << (offset))) {                                                                                                                                     \
-            eventSet->events[i].threadCounter[thread_id].overflows++;                                                                                                              \
-        }                                                                                                                                                                          \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << (offset))));                                                                            \
+#define KNL_CHECK_CORE_OVERFLOW(offset)                                                            \
+    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {               \
+        uint64_t ovf_values = 0x0ULL;                                                              \
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values));       \
+        if (ovf_values & (1ULL << (offset))) {                                                     \
+            eventSet->events[i].threadCounter[thread_id].overflows++;                              \
+        }                                                                                          \
+        CHECK_MSR_WRITE_ERROR(                                                                     \
+            HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << (offset))));              \
     }
 
 int perfmon_stopCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
@@ -795,7 +825,8 @@ int perfmon_stopCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
 
             case POWER:
                 if (haveLock) {
-                    CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint64_t *)&counter_result));
+                    CHECK_POWER_READ_ERROR(
+                        power_read(cpu_id, counter1, (uint64_t *)&counter_result));
                     if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {
                         eventSet->events[i].threadCounter[thread_id].overflows++;
                     }
@@ -872,7 +903,14 @@ int perfmon_stopCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
             case WBOX:
             case UBOX:
             case PBOX:
-                knl_uncore_read(cpu_id, index, event, &counter_result, overflows, FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
+                knl_uncore_read(cpu_id,
+                    index,
+                    event,
+                    &counter_result,
+                    overflows,
+                    FREEZE_FLAG_CLEAR_CTR,
+                    ovf_offset,
+                    getCounterTypeOffset(index));
                 break;
 
             case MBOX0FIX:
@@ -902,7 +940,8 @@ int perfmon_stopCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
                 if (haveLock) {
                     uint64_t tmp = 0x0ULL;
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, "READ_FIXED_BOX_1");
+                    VERBOSEPRINTPCIREG(
+                        cpu_id, dev, counter1, LLU_CAST counter_result, "READ_FIXED_BOX_1");
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter2, &tmp));
                     VERBOSEPRINTPCIREG(cpu_id, dev, counter2, LLU_CAST tmp, "READ_FIXED_BOX_1");
                     counter_result = (counter_result << 32) | tmp;
@@ -916,7 +955,8 @@ int perfmon_stopCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
             default:
                 break;
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                field64(counter_result, 0, box_map[type].regWidth);
         }
     }
     return 0;
@@ -968,7 +1008,8 @@ int perfmon_readCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
 
             case POWER:
                 if (haveLock) {
-                    CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint64_t *)&counter_result));
+                    CHECK_POWER_READ_ERROR(
+                        power_read(cpu_id, counter1, (uint64_t *)&counter_result));
                     if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {
                         eventSet->events[i].threadCounter[thread_id].overflows++;
                     }
@@ -1045,7 +1086,14 @@ int perfmon_readCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
             case WBOX:
             case UBOX:
             case PBOX:
-                knl_uncore_read(cpu_id, index, event, &counter_result, overflows, FREEZE_FLAG_ONLYFREEZE, ovf_offset, getCounterTypeOffset(index));
+                knl_uncore_read(cpu_id,
+                    index,
+                    event,
+                    &counter_result,
+                    overflows,
+                    FREEZE_FLAG_ONLYFREEZE,
+                    ovf_offset,
+                    getCounterTypeOffset(index));
                 break;
 
             case MBOX0FIX:
@@ -1083,7 +1131,8 @@ int perfmon_readCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
             default:
                 break;
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                field64(counter_result, 0, box_map[type].regWidth);
         }
     }
     KNL_UNFREEZE_UNCORE;
@@ -1145,9 +1194,12 @@ int perfmon_finalizeCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
 
     if (haveLock && MEASURE_UNCORE(eventSet)) {
         uint64_t ovf_values_uncore = 0x0ULL;
-        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_MIC2_U_GLOBAL_STATUS, &ovf_values_uncore));
-        VERBOSEPRINTREG(cpu_id, MSR_MIC2_U_GLOBAL_STATUS, LLU_CAST ovf_values_uncore, "CLEAR_UNCORE_OVF");
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC2_U_GLOBAL_STATUS, ovf_values_uncore));
+        CHECK_MSR_READ_ERROR(
+            HPMread(cpu_id, MSR_DEV, MSR_MIC2_U_GLOBAL_STATUS, &ovf_values_uncore));
+        VERBOSEPRINTREG(
+            cpu_id, MSR_MIC2_U_GLOBAL_STATUS, LLU_CAST ovf_values_uncore, "CLEAR_UNCORE_OVF");
+        CHECK_MSR_WRITE_ERROR(
+            HPMwrite(cpu_id, MSR_DEV, MSR_MIC2_U_GLOBAL_STATUS, ovf_values_uncore));
         VERBOSEPRINTREG(cpu_id, MSR_MIC2_U_GLOBAL_CTRL, LLU_CAST(1ULL << 59), "CLEAR_UNCORE_CTRL");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC2_U_GLOBAL_CTRL, (1ULL << 59)));
     }
@@ -1155,7 +1207,8 @@ int perfmon_finalizeCountersThread_knl(int thread_id, PerfmonEventSet *eventSet)
     if (MEASURE_CORE(eventSet)) {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, "CLEAR_GLOBAL_CTRL");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, "CLEAR_GLOBAL_OVF");
+        VERBOSEPRINTREG(
+            cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, "CLEAR_GLOBAL_OVF");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core));
     }
     return 0;

@@ -87,7 +87,8 @@ typedef uint16_t u16;
 #define PCI_SLOT(devfn) (((devfn) >> 3) & 0x1f)
 #define PCI_DEV_TO_DEVFN(dev) ((dev != NULL) ? (((dev)->device << 3) | (dev)->func) : 0)
 
-#define uncore_discovery_invalid_unit(unit) (!unit.table1 || unit.table1 == -1ULL || unit.table3 == -1ULL)
+#define uncore_discovery_invalid_unit(unit)                                                        \
+    (!unit.table1 || unit.table1 == -1ULL || unit.table3 == -1ULL)
 
 struct uncore_global_discovery {
     union {
@@ -144,7 +145,12 @@ struct uncore_unit_discovery {
     };
 };
 
-typedef enum { ACCESS_TYPE_MSR = 0, ACCESS_TYPE_MMIO = 1, ACCESS_TYPE_PCI = 2, ACCESS_TYPE_MAX } AccessTypes;
+typedef enum {
+    ACCESS_TYPE_MSR  = 0,
+    ACCESS_TYPE_MMIO = 1,
+    ACCESS_TYPE_PCI  = 2,
+    ACCESS_TYPE_MAX
+} AccessTypes;
 
 static char *AccessTypeNames[ACCESS_TYPE_MAX] = {
     [ACCESS_TYPE_MSR]  = "MSR",

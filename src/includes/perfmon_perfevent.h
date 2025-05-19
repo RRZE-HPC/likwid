@@ -86,7 +86,8 @@ static char *perfEventOptionNames[] = {
 #endif
 };
 
-static long perf_event_open(struct perf_event_attr *hw_event, pid_t pid, int cpu, int group_fd, unsigned long flags)
+static long perf_event_open(
+    struct perf_event_attr *hw_event, pid_t pid, int cpu, int group_fd, unsigned long flags)
 {
     int ret;
 
@@ -102,7 +103,8 @@ int perfevent_paranoid_value()
     fd = fopen("/proc/sys/kernel/perf_event_paranoid", "r");
     if (fd == NULL) {
         errno = EPERM;
-        ERROR_PRINT("Linux kernel has no perf_event support. Cannot access /proc/sys/kernel/perf_event_paranoid");
+        ERROR_PRINT("Linux kernel has no perf_event support. Cannot access "
+                    "/proc/sys/kernel/perf_event_paranoid");
         return paranoid;
     }
     size_t read = fread(buff, sizeof(char), 100, fd);
@@ -154,7 +156,8 @@ int perfmon_init_perfevent(int cpu_id)
     perf_event_paranoid = perfevent_paranoid_value();
     if (getuid() != 0 && perf_event_paranoid > 2) {
         errno = EPERM;
-        ERROR_PRINT("Cannot use performance monitoring with perf_event_paranoid = %d", perf_event_paranoid);
+        ERROR_PRINT(
+            "Cannot use performance monitoring with perf_event_paranoid = %d", perf_event_paranoid);
         return -(cpu_id + 1);
     }
 
@@ -178,8 +181,10 @@ int perfmon_init_perfevent(int cpu_id)
         active_cpus += 1;
     }
     perf_event_num_cpus = cpuid_topology.numHWThreads;
-    if (cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN_PRO ||
-                                                cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_RYZEN3)) {
+    if (cpuid_info.family == ZEN3_FAMILY &&
+        (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 ||
+            cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_EPYC ||
+            cpuid_info.model == ZEN4_RYZEN3)) {
         perfEventOptionNames[EVENT_OPTION_TID]   = "threadmask";
         perfEventOptionNames[EVENT_OPTION_CID]   = "coreid";
         perfEventOptionNames[EVENT_OPTION_SLICE] = "sliceid";
@@ -194,7 +199,8 @@ struct perf_event_config_format {
     int end;
 };
 
-int parse_event_config(char *base, char *option, int *num_formats, struct perf_event_config_format **formats)
+int parse_event_config(
+    char *base, char *option, int *num_formats, struct perf_event_config_format **formats)
 {
     int err                       = 0;
     struct tagbstring config_reg  = bsStatic("config:");
@@ -209,22 +215,28 @@ int parse_event_config(char *base, char *option, int *num_formats, struct perf_e
         bstring path = bformat("%s/format/%s", base, option);
         FILE *fp     = fopen(bdata(path), "r");
         if (fp) {
-            bstring src                            = bread((bNread)fread, fp);
-            struct bstrList *formatList            = bsplit(src, ',');
-            struct perf_event_config_format *flist = malloc(formatList->qty * sizeof(struct perf_event_config_format));
+            bstring src                 = bread((bNread)fread, fp);
+            struct bstrList *formatList = bsplit(src, ',');
+            struct perf_event_config_format *flist =
+                malloc(formatList->qty * sizeof(struct perf_event_config_format));
             if (flist) {
                 int nf = 0;
                 for (int i = 0; i < formatList->qty; i++) {
                     flist[nf].reg   = INVALID;
                     flist[nf].start = -1;
                     flist[nf].end   = -1;
-                    if (bstrncmp(formatList->entry[i], &config_reg, blength(&config_reg)) == BSTR_OK) {
+                    if (bstrncmp(formatList->entry[i], &config_reg, blength(&config_reg)) ==
+                        BSTR_OK) {
                         flist[nf].reg = CONFIG;
                         bdelete(formatList->entry[i], 0, blength(&config_reg));
-                    } else if (bstrncmp(formatList->entry[i], &config1_reg, blength(&config1_reg)) == BSTR_OK) {
+                    } else if (bstrncmp(formatList->entry[i],
+                                   &config1_reg,
+                                   blength(&config1_reg)) == BSTR_OK) {
                         flist[nf].reg = CONFIG1;
                         bdelete(formatList->entry[i], 0, blength(&config1_reg));
-                    } else if (bstrncmp(formatList->entry[i], &config2_reg, blength(&config2_reg)) == BSTR_OK) {
+                    } else if (bstrncmp(formatList->entry[i],
+                                   &config2_reg,
+                                   blength(&config2_reg)) == BSTR_OK) {
                         flist[nf].reg = CONFIG2;
                         bdelete(formatList->entry[i], 0, blength(&config2_reg));
                     } else {
@@ -288,7 +300,8 @@ int read_perf_event_type(char *folder)
     return type;
 }
 
-int apply_event_config(struct perf_event_attr *attr, uint64_t optval, int num_formats, struct perf_event_config_format *formats)
+int apply_event_config(struct perf_event_attr *attr, uint64_t optval, int num_formats,
+    struct perf_event_config_format *formats)
 {
     if (!attr || num_formats <= 0 || !formats) {
         return -EINVAL;
@@ -310,11 +323,12 @@ int apply_event_config(struct perf_event_attr *attr, uint64_t optval, int num_fo
     return 0;
 }
 
-int parse_and_apply_event_config(char *base, char *optname, uint64_t optval, struct perf_event_attr *attr)
+int parse_and_apply_event_config(
+    char *base, char *optname, uint64_t optval, struct perf_event_attr *attr)
 {
     int num_formats                          = 0;
     struct perf_event_config_format *formats = NULL;
-    int ret                                  = parse_event_config(base, optname, &num_formats, &formats);
+    int ret = parse_event_config(base, optname, &num_formats, &formats);
     if (ret == 0) {
         ret = apply_event_config(attr, optval, num_formats, formats);
         free(formats);
@@ -332,14 +346,17 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
     attr->disabled                           = 1;
     attr->inherit                            = 1;
     attr->pinned                             = 1;
-    if (translate_types[FIXED] != NULL && strcmp(translate_types[PMC], translate_types[FIXED]) == 0) {
+    if (translate_types[FIXED] != NULL &&
+        strcmp(translate_types[PMC], translate_types[FIXED]) == 0) {
         attr->exclude_kernel = 1;
         attr->exclude_hv     = 1;
         if (strncmp(event->name, "INSTR_RETIRED_ANY", 18) == 0) {
             attr->config = PERF_COUNT_HW_INSTRUCTIONS;
             err          = 0;
         }
-        if (strncmp(event->name, "CPU_CLK_UNHALTED_CORE", 22) == 0 || strncmp(event->name, "ACTUAL_CPU_CLOCK", 17) == 0 || strncmp(event->name, "APERF", 5) == 0) {
+        if (strncmp(event->name, "CPU_CLK_UNHALTED_CORE", 22) == 0 ||
+            strncmp(event->name, "ACTUAL_CPU_CLOCK", 17) == 0 ||
+            strncmp(event->name, "APERF", 5) == 0) {
             attr->config = PERF_COUNT_HW_CPU_CYCLES;
             err          = 0;
         }
@@ -373,7 +390,10 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
         int perf_type = read_perf_event_type(translate_types[FIXED]);
         if (perf_type >= 0) {
             attr->type = perf_type;
-            ret        = parse_event_config(translate_types[FIXED], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
+            ret        = parse_event_config(translate_types[FIXED],
+                perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG],
+                &num_formats,
+                &formats);
             if (ret == 0) {
                 uint64_t eventConfig = event->eventId;
                 for (int i = 0; i < num_formats && eventConfig != 0x0; i++) {
@@ -424,7 +444,8 @@ int perf_metrics_setup(struct perf_event_attr *attr, RegisterIndex index, Perfmo
     return 0;
 }
 
-int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterType type, PerfmonEvent *event)
+int perf_pmc_setup(
+    struct perf_event_attr *attr, RegisterIndex index, RegisterType type, PerfmonEvent *event)
 {
     int ret                                  = 0;
     uint64_t offcore_flags                   = 0x0ULL;
@@ -450,10 +471,16 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
             num_formats      = 1;
         }
     } else {
-        ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
+        ret = parse_event_config(translate_types[type],
+            perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG],
+            &num_formats,
+            &formats);
     }
 #else
-    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);
+    ret = parse_event_config(translate_types[type],
+        perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG],
+        &num_formats,
+        &formats);
 #endif
     if (ret == 0) {
         uint64_t eventConfig = event->eventId;
@@ -486,7 +513,10 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
         num_formats      = 1;
     }
 #else
-    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], &num_formats, &formats);
+    ret = parse_event_config(translate_types[type],
+        perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK],
+        &num_formats,
+        &formats);
 #endif
     if (ret == 0) {
         uint64_t umask = event->umask;
@@ -523,7 +553,10 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
                 ret         = 0;
                 num_formats = 0;
                 formats     = NULL;
-                ret         = parse_event_config(translate_types[type], perfEventOptionNames[event->options[j].type], &num_formats, &formats);
+                ret         = parse_event_config(translate_types[type],
+                    perfEventOptionNames[event->options[j].type],
+                    &num_formats,
+                    &formats);
                 if (ret == 0) {
                     uint64_t optval = event->options[j].value;
                     for (int i = 0; i < num_formats && optval != 0x0; i++) {
@@ -565,7 +598,10 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
         ret         = 0;
         num_formats = 0;
         formats     = NULL;
-        ret         = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_MATCH0], &num_formats, &formats);
+        ret         = parse_event_config(translate_types[type],
+            perfEventOptionNames[EVENT_OPTION_MATCH0],
+            &num_formats,
+            &formats);
 
         if (ret == 0) {
             uint64_t optval = offcore_flags;
@@ -590,7 +626,8 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
     ret         = 0;
     num_formats = 0;
     formats     = NULL;
-    ret         = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_PMC], &num_formats, &formats);
+    ret         = parse_event_config(
+        translate_types[type], perfEventOptionNames[EVENT_OPTION_PMC], &num_formats, &formats);
     if (ret == 0) {
         uint64_t optval = getCounterTypeOffset(index) + 1;
         for (int i = 0; i < num_formats && offcore_flags != 0x0; i++) {
@@ -628,7 +665,9 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
         return EPERM;
     }
     attr->type = 0;
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Get information for uncore counters from folder(s): %s", translate_types[type]);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP,
+        "Get information for uncore counters from folder(s): %s",
+        translate_types[type]);
     perf_folder = bfromcstr(translate_types[type]);
     folders     = bsplit(perf_folder, ' ');
     bdestroy(perf_folder);
@@ -646,7 +685,9 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     perf_type = read_perf_event_type(bdata(perf_folder));
     if (perf_type < 0) {
         if ((type == UBOX) || (type == UBOXFIX)) {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Get information for uncore counters from folder /sys/bus/event_source/devices/uncore_arb");
+            DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                "Get information for uncore counters from folder "
+                "/sys/bus/event_source/devices/uncore_arb");
             perf_type = read_perf_event_type("/sys/bus/event_source/devices/uncore_arb");
         }
     }
@@ -661,7 +702,8 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
 #else
     eventConfig = event->eventId;
 #endif
-    ret = parse_and_apply_event_config(bdata(perf_folder), perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], eventConfig, attr);
+    ret = parse_and_apply_event_config(
+        bdata(perf_folder), perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], eventConfig, attr);
 /*    num_formats = 0;*/
 /*    formats = NULL;*/
 /*    ret = parse_event_config(translate_types[type], perfEventOptionNames[EVENT_OPTION_GENERIC_CONFIG], &num_formats, &formats);*/
@@ -690,7 +732,10 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     if (ret == 0 && reg == INVALID) {
         num_formats = 0;
         formats     = NULL;
-        ret         = parse_event_config(bdata(perf_folder), perfEventOptionNames[EVENT_OPTION_UNCORE_CONFIG], &num_formats, &formats);
+        ret         = parse_event_config(bdata(perf_folder),
+            perfEventOptionNames[EVENT_OPTION_UNCORE_CONFIG],
+            &num_formats,
+            &formats);
         if (ret == 0) {
             for (int i = 0; i < num_formats && umask != 0x0; i++) {
                 switch (formats[i].reg) {
@@ -713,31 +758,46 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     if (event->umask != 0x0) {
         num_formats = 0;
         formats     = NULL;
-        ret         = parse_event_config(bdata(perf_folder), perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], &num_formats, &formats);
+        ret         = parse_event_config(bdata(perf_folder),
+            perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK],
+            &num_formats,
+            &formats);
         if (ret == 0) {
             uint64_t umask = event->umask;
             if (type >= CBOX0 && type <= CBOX59 && cpuid_info.isIntel && num_formats > 1 &&
-                (cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 || cpuid_info.model == SAPPHIRERAPIDS)) {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Applying special umask handling for CBOXes of Intel ICX and SPR chips");
+                (cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 ||
+                    cpuid_info.model == SAPPHIRERAPIDS)) {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                    "Applying special umask handling for CBOXes of Intel ICX and SPR chips");
                 for (int j = 0; j < event->numberOfOptions; j++) {
                     if (event->options[j].type == EVENT_OPTION_MATCH0) {
                         DEBUG_PRINT(DEBUGLEV_DEVELOP,
                             "0x%lX (0x%lX | (0x%lX << (%d - %d)))",
-                            umask | (event->options[j].value << (formats[0].end - formats[0].start)),
+                            umask |
+                                (event->options[j].value << (formats[0].end - formats[0].start)),
                             umask,
                             event->options[j].value,
                             formats[0].end,
                             formats[0].start);
-                        umask |= (event->options[j].value << (formats[0].end - formats[0].start + 1));
+                        umask |=
+                            (event->options[j].value << (formats[0].end - formats[0].start + 1));
                         break;
                     }
                 }
             }
             for (int i = 0; i < num_formats && umask != 0x0; i++) {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Format %s from %d-%d with value 0x%lX", perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], formats[i].start, formats[i].end, umask);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                    "Format %s from %d-%d with value 0x%lX",
+                    perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK],
+                    formats[i].start,
+                    formats[i].end,
+                    umask);
                 switch (formats[i].reg) {
                 case CONFIG:
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding 0x%lX to 0x%X", create_mask(umask, formats[i].start, formats[i].end), attr->config);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                        "Adding 0x%lX to 0x%X",
+                        create_mask(umask, formats[i].start, formats[i].end),
+                        attr->config);
                     attr->config |= create_mask(umask, formats[i].start, formats[i].end);
                     break;
                 case CONFIG1:
@@ -773,7 +833,10 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
             case EVENT_OPTION_SLICE:
                 num_formats = 0;
                 formats     = NULL;
-                ret         = parse_event_config(bdata(perf_folder), perfEventOptionNames[event->options[j].type], &num_formats, &formats);
+                ret         = parse_event_config(bdata(perf_folder),
+                    perfEventOptionNames[event->options[j].type],
+                    &num_formats,
+                    &formats);
                 if (ret == 0) {
                     uint64_t optval = event->options[j].value;
                     for (int i = 0; i < num_formats && optval != 0x0; i++) {
@@ -808,7 +871,8 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     }
 
     if (type != POWER && cpuid_info.family == ZEN3_FAMILY &&
-        (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_EPYC ||
+        (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 ||
+            cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_EPYC ||
             cpuid_info.model == ZEN4_RYZEN3)) {
         int got_cid    = 0;
         int got_slices = 0;
@@ -862,7 +926,9 @@ int perfmon_setupCountersThread_perfevent(int thread_id, PerfmonEventSet *eventS
     }
     if (perf_event_paranoid > 0 && getuid() != 0) {
         if (allpid == -1) {
-            DEBUG_PRINT(DEBUGLEV_INFO, "PID of application required. Use LIKWID_PERF_PID env variable or likwid-perfctr options");
+            DEBUG_PRINT(DEBUGLEV_INFO,
+                "PID of application required. Use LIKWID_PERF_PID env variable or likwid-perfctr "
+                "options");
             return -EPERM;
         }
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Using PID %d for perf_event measurements", allpid);
@@ -921,8 +987,10 @@ int perfmon_setupCountersThread_perfevent(int thread_id, PerfmonEventSet *eventS
             pmc_lock = 1;
 #if defined(__ARM_ARCH_8A)
             if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX) {
-                if (event->eventId == 0x308 || event->eventId == 0x309 || (event->eventId >= 0x314 && event->eventId <= 0x316) ||
-                    (event->eventId >= 0x318 && event->eventId <= 0x31E) || event->eventId == 0x330 || event->eventId == 0x350 || event->eventId == 0x370 ||
+                if (event->eventId == 0x308 || event->eventId == 0x309 ||
+                    (event->eventId >= 0x314 && event->eventId <= 0x316) ||
+                    (event->eventId >= 0x318 && event->eventId <= 0x31E) ||
+                    event->eventId == 0x330 || event->eventId == 0x350 || event->eventId == 0x370 ||
                     event->eventId == 0x396 || event->eventId == 0x3E0 || event->eventId == 0x3E8) {
                     if (numa_lock[affinity_thread2numa_lookup[cpu_id]] != cpu_id) {
                         pmc_lock = 0;
@@ -930,7 +998,8 @@ int perfmon_setupCountersThread_perfevent(int thread_id, PerfmonEventSet *eventS
                 }
             } else if (cpuid_info.vendor == APPLE_M1 && cpuid_info.model == APPLE_M1_STUDIO) {
                 enum apple_m1_pmc_type ptype = M1_UNKNOWN;
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Getting real perf_event type for HWThread %d", cpu_id);
+                DEBUG_PRINT(
+                    DEBUGLEV_DEVELOP, "Getting real perf_event type for HWThread %d", cpu_id);
                 ret = perfevent_apple_m1_pmc_type_select(cpu_id, &ptype);
                 if (ret == 0) {
                     switch (ptype) {
@@ -958,20 +1027,24 @@ int perfmon_setupCountersThread_perfevent(int thread_id, PerfmonEventSet *eventS
             }
             break;
         case POWER:
-            if (cpuid_info.isIntel && socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id) {
+            if (cpuid_info.isIntel &&
+                socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id) {
                 has_lock = 1;
                 VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_POWER");
                 ret = perf_uncore_setup(&attr, type, event);
             } else if (cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY) {
-                if (event->eventId == 0x01 && core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id) {
+                if (event->eventId == 0x01 &&
+                    core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id) {
                     has_lock = 1;
                     VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_POWER");
                     ret = perf_uncore_setup(&attr, type, event);
-                } else if (event->eventId == 0x02 && socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id) {
+                } else if (event->eventId == 0x02 &&
+                           socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id) {
                     has_lock = 1;
                     VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_POWER");
                     ret = perf_uncore_setup(&attr, type, event);
-                } else if (event->eventId == 0x03 && sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id) {
+                } else if (event->eventId == 0x03 &&
+                           sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id) {
                     has_lock = 1;
                     VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_POWER");
                     ret = perf_uncore_setup(&attr, type, event);
@@ -1239,11 +1312,14 @@ int perfmon_setupCountersThread_perfevent(int thread_id, PerfmonEventSet *eventS
                 if (die_lock[affinity_thread2die_lookup[cpu_id]] == cpu_id) {
                     has_lock = 1;
                 }
-            } else if ((cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY) && type == CBOX0) {
+            } else if ((cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY) &&
+                       type == CBOX0) {
                 if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id) {
                     has_lock = 1;
                 }
-            } else if (cpuid_info.family == P6_FAMILY && cpuid_info.model == SKYLAKEX && cpuid_info.stepping >= 5 && cpuid_topology.numDies > cpuid_topology.numSockets) {
+            } else if (cpuid_info.family == P6_FAMILY && cpuid_info.model == SKYLAKEX &&
+                       cpuid_info.stepping >= 5 &&
+                       cpuid_topology.numDies > cpuid_topology.numSockets) {
                 if (die_lock[affinity_thread2die_lookup[cpu_id]] == cpu_id) {
                     has_lock = 1;
                 }
@@ -1252,8 +1328,11 @@ int perfmon_setupCountersThread_perfevent(int thread_id, PerfmonEventSet *eventS
                     has_lock = 1;
                 }
             }
-            if ((cpuid_info.family == ARMV8_FAMILY) && (cpuid_info.part == NVIDIA_GRACE) && cpuid_topology.numSockets > 1) {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating uncore type for socket %d on Nvidia Grace", affinity_thread2socket_lookup[cpu_id]);
+            if ((cpuid_info.family == ARMV8_FAMILY) && (cpuid_info.part == NVIDIA_GRACE) &&
+                cpuid_topology.numSockets > 1) {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                    "Updating uncore type for socket %d on Nvidia Grace",
+                    affinity_thread2socket_lookup[cpu_id]);
                 type += affinity_thread2socket_lookup[cpu_id];
             }
             if (has_lock) {
@@ -1273,15 +1352,22 @@ int perfmon_setupCountersThread_perfevent(int thread_id, PerfmonEventSet *eventS
             }
 
             if (!is_uncore) {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "perf_event_open: cpu_id=%d pid=%d flags=%d", cpu_id, curpid, allflags);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                    "perf_event_open: cpu_id=%d pid=%d flags=%d",
+                    cpu_id,
+                    curpid,
+                    allflags);
                 cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, -1, allflags);
             } else if ((perf_disable_uncore == 0) && (has_lock)) {
                 if (perf_event_paranoid > 0 && getuid() != 0) {
-                    DEBUG_PRINT(DEBUGLEV_INFO, "Cannot measure Uncore with perf_event_paranoid value = %d", perf_event_paranoid);
+                    DEBUG_PRINT(DEBUGLEV_INFO,
+                        "Cannot measure Uncore with perf_event_paranoid value = %d",
+                        perf_event_paranoid);
                     perf_disable_uncore = 1;
                 }
                 DEBUG_PRINT(DEBUGLEV_DEVELOP,
-                    "perf_event_open: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d "
+                    "perf_event_open: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d "
+                    "inherit=%d "
                     "exclusive=%d config1=0x%llX config2=0x%llX",
                     cpu_id,
                     curpid,
@@ -1295,12 +1381,15 @@ int perfmon_setupCountersThread_perfevent(int thread_id, PerfmonEventSet *eventS
                     attr.config2);
                 cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, -1, allflags);
             } else {
-                DEBUG_PRINT(DEBUGLEV_INFO, "Unknown perf_event_paranoid value = %d", perf_event_paranoid);
+                DEBUG_PRINT(
+                    DEBUGLEV_INFO, "Unknown perf_event_paranoid value = %d", perf_event_paranoid);
             }
             if (cpu_event_fds[cpu_id][index] < 0) {
-                ERROR_PRINT("Setup of event %s on CPU %d failed: %s", event->name, cpu_id, strerror(errno));
+                ERROR_PRINT(
+                    "Setup of event %s on CPU %d failed: %s", event->name, cpu_id, strerror(errno));
                 DEBUG_PRINT(DEBUGLEV_DEVELOP,
-                    "open error: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d "
+                    "open error: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d "
+                    "inherit=%d exclusive=%d "
                     "config1=0x%llX config2=0x%llX",
                     cpu_id,
                     curpid,
@@ -1320,7 +1409,9 @@ int perfmon_setupCountersThread_perfevent(int thread_id, PerfmonEventSet *eventS
             eventSet->events[i].threadCounter[thread_id].init = TRUE;
         } else if (ret == EPERM) {
             if (is_uncore && perf_disable_uncore == 0 && perf_event_paranoid > 0 && getuid() != 0) {
-                DEBUG_PRINT(DEBUGLEV_INFO, "Cannot measure Uncore with perf_event_paranoid value = %d", perf_event_paranoid);
+                DEBUG_PRINT(DEBUGLEV_INFO,
+                    "Cannot measure Uncore with perf_event_paranoid value = %d",
+                    perf_event_paranoid);
                 perf_disable_uncore = 1;
             }
         }
@@ -1346,7 +1437,9 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet *eventS
             c->startData      = 0x0ULL;
             c->counterData    = 0x0ULL;
             if (eventSet->events[i].type == POWER) {
-                ret = read(cpu_event_fds[cpu_id][index], &eventSet->events[i].threadCounter[thread_id].startData, sizeof(long long));
+                ret = read(cpu_event_fds[cpu_id][index],
+                    &eventSet->events[i].threadCounter[thread_id].startData,
+                    sizeof(long long));
             }
             VERBOSEPRINTREG(cpu_id, 0x0, c->startData, "START_COUNTER");
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_ENABLE, 0);
@@ -1468,7 +1561,8 @@ int perfmon_finalizeCountersThread_perfevent(int thread_id, PerfmonEventSet *eve
                     ioctl(cpu_event_fds[cpu_id][j], PERF_EVENT_IOC_RESET, 0);
                     close(cpu_event_fds[cpu_id][j]);
                     cpu_event_fds[cpu_id][j] = -1;
-                    if (j < eventSet->numberOfEvents && eventSet->events[j].threadCounter[thread_id].init == TRUE) {
+                    if (j < eventSet->numberOfEvents &&
+                        eventSet->events[j].threadCounter[thread_id].init == TRUE) {
                         eventSet->events[j].threadCounter[thread_id].init = FALSE;
                     }
                 }

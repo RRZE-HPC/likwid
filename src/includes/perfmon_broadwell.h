@@ -79,7 +79,9 @@ int perfmon_init_broadwell(int cpu_id)
     if ((cpuid_info.model == BROADWELL_E) || (cpuid_info.model == BROADWELL_D)) {
         broadwell_cbox_setup = bdwep_cbox_setup;
         bdw_did_cbox_check   = 1;
-    } else if ((cpuid_info.model == BROADWELL || cpuid_info.model == BROADWELL_E3) && socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id && bdw_did_cbox_check == 0) {
+    } else if ((cpuid_info.model == BROADWELL || cpuid_info.model == BROADWELL_E3) &&
+               socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id &&
+               bdw_did_cbox_check == 0) {
         ret = HPMwrite(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, 0x0ULL);
         ret += HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data);
         ret += HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
@@ -129,9 +131,12 @@ int bdw_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (getCounterTypeOffset(index) >= 4) {
         if (print_ht_warn_once) {
-            fprintf(stderr, "WARNING: PMC4-7 on Intel Broadwell systems requires KERNEL option to work\n");
-            fprintf(stderr, "         properly. The KERNEL option is added automatically for PMC4-7.\n");
-            fprintf(stderr, "         Be aware that the events also count during kernel execution and may\n");
+            fprintf(stderr,
+                "WARNING: PMC4-7 on Intel Broadwell systems requires KERNEL option to work\n");
+            fprintf(stderr,
+                "         properly. The KERNEL option is added automatically for PMC4-7.\n");
+            fprintf(stderr,
+                "         Be aware that the events also count during kernel execution and may\n");
             fprintf(stderr, "         be higher than expected.\n");
             print_ht_warn_once = 0;
         }
@@ -386,8 +391,10 @@ int bdw_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
             case EVENT_OPTION_OCCUPANCY_FILTER:
                 clean_filter = 0;
-                VERBOSEPRINTREG(cpu_id, filter, (event->options[j].value & 0xFFFFFFFFULL), "SETUP_WBOX_FILTER");
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter, (event->options[j].value & 0xFFFFFFFFULL)));
+                VERBOSEPRINTREG(
+                    cpu_id, filter, (event->options[j].value & 0xFFFFFFFFULL), "SETUP_WBOX_FILTER");
+                CHECK_MSR_WRITE_ERROR(
+                    HPMwrite(cpu_id, MSR_DEV, filter, (event->options[j].value & 0xFFFFFFFFULL)));
                 break;
             case EVENT_OPTION_OCCUPANCY_EDGE:
                 flags |= (1ULL << 31);
@@ -402,7 +409,8 @@ int bdw_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
 
     if (clean_filter) {
-        VERBOSEPRINTREG(cpu_id, filter, (event->options[j].value & 0xFFFFFFFFULL), "CLEAN_WBOX_FILTER");
+        VERBOSEPRINTREG(
+            cpu_id, filter, (event->options[j].value & 0xFFFFFFFFULL), "CLEAN_WBOX_FILTER");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter, 0x0ULL));
     }
     if (flags != currentConfig[cpu_id][index]) {
@@ -444,16 +452,23 @@ int bdw_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 flags |= (event->options[j].value & 0xFFULL) << 24;
                 break;
             case EVENT_OPTION_OPCODE:
-                VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_HA_PMON_OPCODEMATCH, (event->options[j].value & 0x3FULL), "SETUP_BBOX_OPCODE");
-                CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, PCI_UNC_HA_PMON_OPCODEMATCH, (event->options[j].value & 0x3FULL)));
+                VERBOSEPRINTPCIREG(cpu_id,
+                    dev,
+                    PCI_UNC_HA_PMON_OPCODEMATCH,
+                    (event->options[j].value & 0x3FULL),
+                    "SETUP_BBOX_OPCODE");
+                CHECK_PCI_WRITE_ERROR(HPMwrite(
+                    cpu_id, dev, PCI_UNC_HA_PMON_OPCODEMATCH, (event->options[j].value & 0x3FULL)));
                 opcode_flag = 1;
                 break;
             case EVENT_OPTION_MATCH0:
                 filter = (event->options[j].value & 0xFFFFFFC0ULL);
-                VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH0, filter, "SETUP_ADDR0_FILTER");
+                VERBOSEPRINTPCIREG(
+                    cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH0, filter, "SETUP_ADDR0_FILTER");
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH0, filter));
                 filter = ((event->options[j].value >> 32) & 0x3FFFULL);
-                VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1, filter, "SETUP_ADDR1_FILTER");
+                VERBOSEPRINTPCIREG(
+                    cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1, filter, "SETUP_ADDR1_FILTER");
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1, filter));
                 match_flag = 1;
                 break;
@@ -717,7 +732,8 @@ int bdw_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     if ((flags | (1ULL << 22)) != currentConfig[cpu_id][index]) {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, "SETUP_SBOX");
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, counter_map[index].device, counter_map[index].configRegister, flags));
+        CHECK_MSR_WRITE_ERROR(
+            HPMwrite(cpu_id, counter_map[index].device, counter_map[index].configRegister, flags));
         flags |= (1ULL << 22);
         /* Due to an issue found with the Intel® Xeon® Processor E5 and E7 v4 Product Families
          * hardware, it will be necessary to write each control register twice in a row in order for
@@ -725,7 +741,8 @@ int bdw_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
          * with the enable bit set to 0 followed by a write of the same control register value but
          * with the enable bit set to 1.*/
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, "SETUP_SBOX_TWICE");
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, counter_map[index].device, counter_map[index].configRegister, flags));
+        CHECK_MSR_WRITE_ERROR(
+            HPMwrite(cpu_id, counter_map[index].device, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
     return 0;
@@ -767,80 +784,104 @@ int bdw_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
                 if (HPMcheck(filterdev, cpu_id)) {
                     filterreg = PCI_UNC_V3_QPI_PMON_RX_MATCH_0;
                     filterval = event->options[j].value & 0x8003FFF8ULL;
-                    VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_RX_MATCH0");
+                    VERBOSEPRINTPCIREG(
+                        cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_RX_MATCH0");
                     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
                 } else {
-                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Filtering for counter %s cannot be applied. PCI device not available", counter_map[index].key);
+                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
+                        "Filtering for counter %s cannot be applied. PCI device not available",
+                        counter_map[index].key);
                 }
                 break;
             case EVENT_OPTION_MATCH1:
                 if (HPMcheck(filterdev, cpu_id)) {
                     filterreg = PCI_UNC_V3_QPI_PMON_RX_MATCH_1;
                     filterval = event->options[j].value & 0x000F000FULL;
-                    VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_RX_MATCH1");
+                    VERBOSEPRINTPCIREG(
+                        cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_RX_MATCH1");
                     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
                 } else {
-                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Filtering for counter %s cannot be applied. PCI device not available", counter_map[index].key);
+                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
+                        "Filtering for counter %s cannot be applied. PCI device not available",
+                        counter_map[index].key);
                 }
                 break;
             case EVENT_OPTION_MATCH2:
                 if (HPMcheck(filterdev, cpu_id)) {
                     filterreg = PCI_UNC_V3_QPI_PMON_TX_MATCH_0;
                     filterval = event->options[j].value & 0x8003FFF8ULL;
-                    VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_TX_MATCH0");
+                    VERBOSEPRINTPCIREG(
+                        cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_TX_MATCH0");
                     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
                 } else {
-                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Filtering for counter %s cannot be applied. PCI device not available", counter_map[index].key);
+                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
+                        "Filtering for counter %s cannot be applied. PCI device not available",
+                        counter_map[index].key);
                 }
                 break;
             case EVENT_OPTION_MATCH3:
                 if (HPMcheck(filterdev, cpu_id)) {
                     filterreg = PCI_UNC_V3_QPI_PMON_TX_MATCH_1;
                     filterval = event->options[j].value & 0x000F000FULL;
-                    VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_TX_MATCH1");
+                    VERBOSEPRINTPCIREG(
+                        cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_TX_MATCH1");
                     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
                 } else {
-                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Filtering for counter %s cannot be applied. PCI device not available", counter_map[index].key);
+                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
+                        "Filtering for counter %s cannot be applied. PCI device not available",
+                        counter_map[index].key);
                 }
                 break;
             case EVENT_OPTION_MASK0:
                 if (HPMcheck(filterdev, cpu_id)) {
                     filterreg = PCI_UNC_V3_QPI_PMON_RX_MASK_0;
                     filterval = event->options[j].value & 0x8003FFF8ULL;
-                    VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_RX_MASK0");
+                    VERBOSEPRINTPCIREG(
+                        cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_RX_MASK0");
                     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
                 } else {
-                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Filtering for counter %s cannot be applied. PCI device not available", counter_map[index].key);
+                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
+                        "Filtering for counter %s cannot be applied. PCI device not available",
+                        counter_map[index].key);
                 }
                 break;
             case EVENT_OPTION_MASK1:
                 if (HPMcheck(filterdev, cpu_id)) {
                     filterreg = PCI_UNC_V3_QPI_PMON_RX_MASK_1;
                     filterval = event->options[j].value & 0x000F000FULL;
-                    VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_RX_MASK1");
+                    VERBOSEPRINTPCIREG(
+                        cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_RX_MASK1");
                     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
                 } else {
-                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Filtering for counter %s cannot be applied. PCI device not available", counter_map[index].key);
+                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
+                        "Filtering for counter %s cannot be applied. PCI device not available",
+                        counter_map[index].key);
                 }
                 break;
             case EVENT_OPTION_MASK2:
                 if (HPMcheck(filterdev, cpu_id)) {
                     filterreg = PCI_UNC_V3_QPI_PMON_TX_MASK_0;
                     filterval = event->options[j].value & 0x8003FFF8ULL;
-                    VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_TX_MASK0");
+                    VERBOSEPRINTPCIREG(
+                        cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_TX_MASK0");
                     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
                 } else {
-                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Filtering for counter %s cannot be applied. PCI device not available", counter_map[index].key);
+                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
+                        "Filtering for counter %s cannot be applied. PCI device not available",
+                        counter_map[index].key);
                 }
                 break;
             case EVENT_OPTION_MASK3:
                 if (HPMcheck(filterdev, cpu_id)) {
                     filterreg = PCI_UNC_V3_QPI_PMON_TX_MASK_0;
                     filterval = event->options[j].value & 0x000F000FULL;
-                    VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_TX_MASK1");
+                    VERBOSEPRINTPCIREG(
+                        cpu_id, filterdev, filterreg, filterval, "SETUP_QBOX_TX_MASK1");
                     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
                 } else {
-                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Filtering for counter %s cannot be applied. PCI device not available", counter_map[index].key);
+                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
+                        "Filtering for counter %s cannot be applied. PCI device not available",
+                        counter_map[index].key);
                 }
                 break;
             default:
@@ -856,51 +897,66 @@ int bdw_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
     return 0;
 }
 
-#define BDW_FREEZE_UNCORE                                                                                                                                                          \
-    if (haveLock && MEASURE_UNCORE(eventSet) && (cpuid_info.model == BROADWELL_E || cpuid_info.model == BROADWELL_D)) {                                                            \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST(1ULL << 31), "FREEZE_UNCORE");                                                                              \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL << 31)));                                                                              \
-    } else if (haveLock && MEASURE_UNCORE(eventSet) && (cpuid_info.model == BROADWELL || cpuid_info.model == BROADWELL_E3)) {                                                      \
-        uint64_t data = 0x0ULL;                                                                                                                                                    \
-        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data));                                                                                        \
-        if (!(data & (1ULL << 29))) {                                                                                                                                              \
-            data &= ~(1ULL << 29);                                                                                                                                                 \
-            VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, data, "FREEZE_UNCORE");                                                                                           \
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, data));                                                                                   \
-        }                                                                                                                                                                          \
+#define BDW_FREEZE_UNCORE                                                                          \
+    if (haveLock && MEASURE_UNCORE(eventSet) &&                                                    \
+        (cpuid_info.model == BROADWELL_E || cpuid_info.model == BROADWELL_D)) {                    \
+        VERBOSEPRINTREG(                                                                           \
+            cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST(1ULL << 31), "FREEZE_UNCORE");          \
+        CHECK_MSR_WRITE_ERROR(                                                                     \
+            HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL << 31)));                \
+    } else if (haveLock && MEASURE_UNCORE(eventSet) &&                                             \
+               (cpuid_info.model == BROADWELL || cpuid_info.model == BROADWELL_E3)) {              \
+        uint64_t data = 0x0ULL;                                                                    \
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data));        \
+        if (!(data & (1ULL << 29))) {                                                              \
+            data &= ~(1ULL << 29);                                                                 \
+            VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, data, "FREEZE_UNCORE");           \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, data));   \
+        }                                                                                          \
     }
 
-#define BDW_UNFREEZE_UNCORE                                                                                                                                                        \
-    if (haveLock && MEASURE_UNCORE(eventSet) && (cpuid_info.model == BROADWELL_E || cpuid_info.model == BROADWELL_D)) {                                                            \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST(1ULL << 29), "UNFREEZE_UNCORE");                                                                            \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL << 29)));                                                                              \
-    } else if (haveLock && MEASURE_UNCORE(eventSet) && (cpuid_info.model == BROADWELL || cpuid_info.model == BROADWELL_E3)) {                                                      \
-        uint64_t data = 0x0ULL;                                                                                                                                                    \
-        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data));                                                                                        \
-        data |= (1ULL << 29);                                                                                                                                                      \
-        VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, data, "FREEZE_UNCORE");                                                                                               \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, data));                                                                                       \
+#define BDW_UNFREEZE_UNCORE                                                                        \
+    if (haveLock && MEASURE_UNCORE(eventSet) &&                                                    \
+        (cpuid_info.model == BROADWELL_E || cpuid_info.model == BROADWELL_D)) {                    \
+        VERBOSEPRINTREG(                                                                           \
+            cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST(1ULL << 29), "UNFREEZE_UNCORE");        \
+        CHECK_MSR_WRITE_ERROR(                                                                     \
+            HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL << 29)));                \
+    } else if (haveLock && MEASURE_UNCORE(eventSet) &&                                             \
+               (cpuid_info.model == BROADWELL || cpuid_info.model == BROADWELL_E3)) {              \
+        uint64_t data = 0x0ULL;                                                                    \
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data));        \
+        data |= (1ULL << 29);                                                                      \
+        VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, data, "FREEZE_UNCORE");               \
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, data));       \
     }
 
-#define BDW_UNFREEZE_UNCORE_AND_RESET_CTR                                                                                                                                          \
-    if (haveLock && MEASURE_UNCORE(eventSet)) {                                                                                                                                    \
-        for (int i = 0; i < eventSet->numberOfEvents; i++) {                                                                                                                       \
-            RegisterIndex index = eventSet->events[i].index;                                                                                                                       \
-            RegisterType type   = eventSet->events[i].type;                                                                                                                        \
-            if ((type < UNCORE) || (type == WBOX0FIX) || (type == NOTYPE)) {                                                                                                       \
-                continue;                                                                                                                                                          \
-            }                                                                                                                                                                      \
-            PciDeviceIndex dev = counter_map[index].device;                                                                                                                        \
-            if (HPMcheck(dev, cpu_id)) {                                                                                                                                           \
-                VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR_MANUAL");                                                                   \
-                CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));                                                                          \
-                if (counter_map[index].counterRegister2 != 0x0) {                                                                                                                  \
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL, "CLEAR_CTR_MANUAL");                                                              \
-                    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));                                                                     \
-                }                                                                                                                                                                  \
-            }                                                                                                                                                                      \
-        }                                                                                                                                                                          \
-        BDW_UNFREEZE_UNCORE;                                                                                                                                                       \
+#define BDW_UNFREEZE_UNCORE_AND_RESET_CTR                                                          \
+    if (haveLock && MEASURE_UNCORE(eventSet)) {                                                    \
+        for (int i = 0; i < eventSet->numberOfEvents; i++) {                                       \
+            RegisterIndex index = eventSet->events[i].index;                                       \
+            RegisterType type   = eventSet->events[i].type;                                        \
+            if ((type < UNCORE) || (type == WBOX0FIX) || (type == NOTYPE)) {                       \
+                continue;                                                                          \
+            }                                                                                      \
+            PciDeviceIndex dev = counter_map[index].device;                                        \
+            if (HPMcheck(dev, cpu_id)) {                                                           \
+                VERBOSEPRINTPCIREG(                                                                \
+                    cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR_MANUAL");  \
+                CHECK_PCI_WRITE_ERROR(                                                             \
+                    HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));            \
+                if (counter_map[index].counterRegister2 != 0x0) {                                  \
+                    VERBOSEPRINTPCIREG(cpu_id,                                                     \
+                        dev,                                                                       \
+                        counter_map[index].counterRegister2,                                       \
+                        0x0ULL,                                                                    \
+                        "CLEAR_CTR_MANUAL");                                                       \
+                    CHECK_PCI_WRITE_ERROR(                                                         \
+                        HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));       \
+                }                                                                                  \
+            }                                                                                      \
+        }                                                                                          \
+        BDW_UNFREEZE_UNCORE;                                                                       \
     }
 
 int perfmon_setupCounterThread_broadwell(int thread_id, PerfmonEventSet *eventSet)
@@ -918,7 +974,8 @@ int perfmon_setupCounterThread_broadwell(int thread_id, PerfmonEventSet *eventSe
     if (MEASURE_CORE(eventSet)) {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, "FREEZE_PMC_AND_FIXED");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0xC00000070000000F));
+        CHECK_MSR_WRITE_ERROR(
+            HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0xC00000070000000F));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
     }
 
@@ -1051,7 +1108,11 @@ int perfmon_setupCounterThread_broadwell(int thread_id, PerfmonEventSet *eventSe
 
     for (int i = UNCORE; i < NUM_UNITS; i++) {
         if (haveLock && TESTTYPE(eventSet, i) && box_map[i].ctrlRegister != 0x0) {
-            VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, "CLEAR_UNCORE_BOX_CTRL");
+            VERBOSEPRINTPCIREG(cpu_id,
+                box_map[i].device,
+                box_map[i].ctrlRegister,
+                0x0ULL,
+                "CLEAR_UNCORE_BOX_CTRL");
             HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
         }
     }
@@ -1079,9 +1140,9 @@ int perfmon_startCountersThread_broadwell(int thread_id, PerfmonEventSet *eventS
             if (!TESTTYPE(eventSet, type)) {
                 continue;
             }
-            RegisterIndex index                                      = eventSet->events[i].index;
-            uint64_t counter1                                        = counter_map[index].counterRegister;
-            PciDeviceIndex dev                                       = counter_map[index].device;
+            RegisterIndex index = eventSet->events[i].index;
+            uint64_t counter1   = counter_map[index].counterRegister;
+            PciDeviceIndex dev  = counter_map[index].device;
             eventSet->events[i].threadCounter[thread_id].startData   = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
             switch (type) {
@@ -1100,7 +1161,8 @@ int perfmon_startCountersThread_broadwell(int thread_id, PerfmonEventSet *eventS
                     tmp = 0x0ULL;
                     CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint64_t *)&tmp));
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST tmp, "START_POWER");
-                    eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                    eventSet->events[i].threadCounter[thread_id].startData =
+                        field64(tmp, 0, box_map[type].regWidth);
                 }
                 break;
             case MBOX0:
@@ -1110,7 +1172,8 @@ int perfmon_startCountersThread_broadwell(int thread_id, PerfmonEventSet *eventS
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     } else {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
-                        eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                        eventSet->events[i].threadCounter[thread_id].startData =
+                            field64(tmp, 0, box_map[type].regWidth);
                         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST tmp, "READ_MBOX");
                     }
                 }
@@ -1134,7 +1197,8 @@ int perfmon_startCountersThread_broadwell(int thread_id, PerfmonEventSet *eventS
                     tmp = 0x0ULL;
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
                     VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST tmp, "START_WBOXFIX");
-                    eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                    eventSet->events[i].threadCounter[thread_id].startData =
+                        field64(tmp, 0, box_map[type].regWidth);
                 }
                 break;
             case QBOX0FIX:
@@ -1143,7 +1207,8 @@ int perfmon_startCountersThread_broadwell(int thread_id, PerfmonEventSet *eventS
                     if (eventSet->events[i].event.eventId != 0x00) {
                         CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST tmp, "START_QBOXFIX");
-                        eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                        eventSet->events[i].threadCounter[thread_id].startData =
+                            field64(tmp, 0, box_map[type].regWidth);
                     }
                 }
                 break;
@@ -1151,15 +1216,20 @@ int perfmon_startCountersThread_broadwell(int thread_id, PerfmonEventSet *eventS
             default:
                 break;
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = eventSet->events[i].threadCounter[thread_id].startData;
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                eventSet->events[i].threadCounter[thread_id].startData;
         }
     }
 
     BDW_UNFREEZE_UNCORE;
 
     if (MEASURE_CORE(eventSet)) {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST(1ULL << 63) | (1ULL << 62) | flags, "CLEAR_PMC_AND_FIXED_OVERFLOW");
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << 63) | (1ULL << 62) | flags));
+        VERBOSEPRINTREG(cpu_id,
+            MSR_PERF_GLOBAL_OVF_CTRL,
+            LLU_CAST(1ULL << 63) | (1ULL << 62) | flags,
+            "CLEAR_PMC_AND_FIXED_OVERFLOW");
+        CHECK_MSR_WRITE_ERROR(HPMwrite(
+            cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << 63) | (1ULL << 62) | flags));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, "UNFREEZE_PMC_AND_FIXED");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
     }
@@ -1167,7 +1237,8 @@ int perfmon_startCountersThread_broadwell(int thread_id, PerfmonEventSet *eventS
     return 0;
 }
 
-int bdw_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, uint64_t *cur_result, int *overflows, int flags, int global_offset, int box_offset)
+int bdw_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, uint64_t *cur_result,
+    int *overflows, int flags, int global_offset, int box_offset)
 {
     uint64_t result    = 0x0ULL;
     uint64_t tmp       = 0x0ULL;
@@ -1208,8 +1279,10 @@ int bdw_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, uint64
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, global_status_reg, &ovf_values));
             VERBOSEPRINTREG(cpu_id, global_status_reg, LLU_CAST ovf_values, "READ_GLOBAL_OVFL");
             if (ovf_values & (1ULL << global_offset)) {
-                VERBOSEPRINTREG(cpu_id, global_status_reg, LLU_CAST(1 << global_offset), "CLEAR_GLOBAL_OVFL");
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, global_status_reg, (1 << global_offset)));
+                VERBOSEPRINTREG(
+                    cpu_id, global_status_reg, LLU_CAST(1 << global_offset), "CLEAR_GLOBAL_OVFL");
+                CHECK_MSR_WRITE_ERROR(
+                    HPMwrite(cpu_id, MSR_DEV, global_status_reg, (1 << global_offset)));
                 test_local = 1;
             }
         } else {
@@ -1219,11 +1292,17 @@ int bdw_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, uint64
         if (test_local) {
             ovf_values = 0x0ULL;
             CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, box_map[type].statusRegister, &ovf_values));
-            VERBOSEPRINTPCIREG(cpu_id, dev, box_map[type].statusRegister, LLU_CAST ovf_values, "READ_BOX_OVFL");
+            VERBOSEPRINTPCIREG(
+                cpu_id, dev, box_map[type].statusRegister, LLU_CAST ovf_values, "READ_BOX_OVFL");
             if (ovf_values & (1ULL << box_offset)) {
                 (*overflows)++;
-                VERBOSEPRINTPCIREG(cpu_id, dev, box_map[type].statusRegister, LLU_CAST(1 << box_offset), "RESET_BOX_OVFL");
-                CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, box_map[type].statusRegister, (1 << box_offset)));
+                VERBOSEPRINTPCIREG(cpu_id,
+                    dev,
+                    box_map[type].statusRegister,
+                    LLU_CAST(1 << box_offset),
+                    "RESET_BOX_OVFL");
+                CHECK_PCI_WRITE_ERROR(
+                    HPMwrite(cpu_id, dev, box_map[type].statusRegister, (1 << box_offset)));
             }
         }
     }
@@ -1231,25 +1310,30 @@ int bdw_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, uint64
     return 0;
 }
 
-#define BDW_CHECK_CORE_OVERFLOW(offset)                                                                                                                                            \
-    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {                                                                                               \
-        uint64_t ovf_values = 0x0ULL;                                                                                                                                              \
-        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values));                                                                                       \
-        if (ovf_values & (1ULL << (offset))) {                                                                                                                                     \
-            eventSet->events[i].threadCounter[thread_id].overflows++;                                                                                                              \
-        }                                                                                                                                                                          \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << (offset))));                                                                            \
+#define BDW_CHECK_CORE_OVERFLOW(offset)                                                            \
+    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {               \
+        uint64_t ovf_values = 0x0ULL;                                                              \
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values));       \
+        if (ovf_values & (1ULL << (offset))) {                                                     \
+            eventSet->events[i].threadCounter[thread_id].overflows++;                              \
+        }                                                                                          \
+        CHECK_MSR_WRITE_ERROR(                                                                     \
+            HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL << (offset))));              \
     }
 
-#define BDW_CHECK_LOCAL_OVERFLOW                                                                                                                                                   \
-    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {                                                                                               \
-        uint64_t ovf_values = 0x0ULL;                                                                                                                                              \
-        uint64_t offset     = getCounterTypeOffset(eventSet->events[i].index);                                                                                                     \
-        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, &ovf_values));                                                             \
-        if (ovf_values & (1ULL << (offset))) {                                                                                                                                     \
-            eventSet->events[i].threadCounter[thread_id].overflows++;                                                                                                              \
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, (1ULL << (offset))));                                                \
-        }                                                                                                                                                                          \
+#define BDW_CHECK_LOCAL_OVERFLOW                                                                   \
+    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {               \
+        uint64_t ovf_values = 0x0ULL;                                                              \
+        uint64_t offset     = getCounterTypeOffset(eventSet->events[i].index);                     \
+        CHECK_MSR_READ_ERROR(HPMread(                                                              \
+            cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, &ovf_values));      \
+        if (ovf_values & (1ULL << (offset))) {                                                     \
+            eventSet->events[i].threadCounter[thread_id].overflows++;                              \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id,                                                 \
+                MSR_DEV,                                                                           \
+                box_map[eventSet->events[i].type].statusRegister,                                  \
+                (1ULL << (offset))));                                                              \
+        }                                                                                          \
     }
 
 int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet *eventSet)
@@ -1297,10 +1381,12 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet *eventSe
 
             case POWER:
                 if (haveLock) {
-                    CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint64_t *)&counter_result));
+                    CHECK_POWER_READ_ERROR(
+                        power_read(cpu_id, counter1, (uint64_t *)&counter_result));
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, "STOP_POWER");
                     if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, "OVERFLOW_POWER");
+                        VERBOSEPRINTREG(
+                            cpu_id, counter1, LLU_CAST counter_result, "OVERFLOW_POWER");
                         eventSet->events[i].threadCounter[thread_id].overflows++;
                     }
                 }
@@ -1316,19 +1402,36 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet *eventSe
 
             case BBOX0:
             case BBOX1:
-                bdw_uncore_read(cpu_id, index, event, &counter_result, overflows, FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
+                bdw_uncore_read(cpu_id,
+                    index,
+                    event,
+                    &counter_result,
+                    overflows,
+                    FREEZE_FLAG_CLEAR_CTR,
+                    ovf_offset,
+                    getCounterTypeOffset(index));
                 break;
 
             case MBOX0:
             case MBOX0TMP:
                 if (haveLock) {
                     if (!cpuid_info.supportClientmem) {
-                        bdw_uncore_read(cpu_id, index, event, current, overflows, FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index) + 1);
+                        bdw_uncore_read(cpu_id,
+                            index,
+                            event,
+                            current,
+                            overflows,
+                            FREEZE_FLAG_CLEAR_CTR,
+                            ovf_offset,
+                            getCounterTypeOffset(index) + 1);
                         counter_result = *current;
                     } else {
-                        CHECK_MSR_READ_ERROR(HPMread(cpu_id, PCI_IMC_DEVICE_0_CH_0, counter1, &counter_result));
-                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {
-                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, "OVERFLOW_CLIENTMEM");
+                        CHECK_MSR_READ_ERROR(
+                            HPMread(cpu_id, PCI_IMC_DEVICE_0_CH_0, counter1, &counter_result));
+                        if (counter_result <
+                            eventSet->events[i].threadCounter[thread_id].counterData) {
+                            VERBOSEPRINTREG(
+                                cpu_id, counter1, LLU_CAST counter_result, "OVERFLOW_CLIENTMEM");
                             eventSet->events[i].threadCounter[thread_id].overflows++;
                         }
                     }
@@ -1342,7 +1445,14 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet *eventSe
             case MBOX5:
             case MBOX6:
             case MBOX7:
-                bdw_uncore_read(cpu_id, index, event, &counter_result, overflows, FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index) + 1);
+                bdw_uncore_read(cpu_id,
+                    index,
+                    event,
+                    &counter_result,
+                    overflows,
+                    FREEZE_FLAG_CLEAR_CTR,
+                    ovf_offset,
+                    getCounterTypeOffset(index) + 1);
                 break;
 
             case MBOX0FIX:
@@ -1353,11 +1463,25 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet *eventSe
             case MBOX5FIX:
             case MBOX6FIX:
             case MBOX7FIX:
-                bdw_uncore_read(cpu_id, index, event, &counter_result, overflows, FREEZE_FLAG_CLEAR_CTR, ovf_offset, 0);
+                bdw_uncore_read(cpu_id,
+                    index,
+                    event,
+                    &counter_result,
+                    overflows,
+                    FREEZE_FLAG_CLEAR_CTR,
+                    ovf_offset,
+                    0);
                 break;
 
             case IBOX1:
-                bdw_uncore_read(cpu_id, index, event, &counter_result, overflows, FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index) + 2);
+                bdw_uncore_read(cpu_id,
+                    index,
+                    event,
+                    &counter_result,
+                    overflows,
+                    FREEZE_FLAG_CLEAR_CTR,
+                    ovf_offset,
+                    getCounterTypeOffset(index) + 2);
                 break;
 
             case PBOX:
@@ -1398,13 +1522,21 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet *eventSe
             case QBOX0:
             case QBOX1:
             case QBOX2:
-                bdw_uncore_read(cpu_id, index, event, &counter_result, overflows, FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
+                bdw_uncore_read(cpu_id,
+                    index,
+                    event,
+                    &counter_result,
+                    overflows,
+                    FREEZE_FLAG_CLEAR_CTR,
+                    ovf_offset,
+                    getCounterTypeOffset(index));
                 break;
 
             case WBOX0FIX:
                 if (haveLock) {
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, "STOP_WBOXFIX");
+                    VERBOSEPRINTPCIREG(
+                        cpu_id, dev, counter1, LLU_CAST counter_result, "STOP_WBOXFIX");
                 }
                 break;
 
@@ -1439,7 +1571,8 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet *eventSe
                             break;
                         }
 
-                    } else if ((eventSet->events[i].event.eventId == 0x01) || (eventSet->events[i].event.eventId == 0x02)) {
+                    } else if ((eventSet->events[i].event.eventId == 0x01) ||
+                               (eventSet->events[i].event.eventId == 0x02)) {
                         counter_result = field64(counter_result, 0, box_map[type].regWidth);
                     }
                 }
@@ -1505,10 +1638,12 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet *eventSe
 
             case POWER:
                 if (haveLock) {
-                    CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint64_t *)&counter_result));
+                    CHECK_POWER_READ_ERROR(
+                        power_read(cpu_id, counter1, (uint64_t *)&counter_result));
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, "READ_POWER");
                     if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, "OVERFLOW_POWER");
+                        VERBOSEPRINTREG(
+                            cpu_id, counter1, LLU_CAST counter_result, "OVERFLOW_POWER");
                         eventSet->events[i].threadCounter[thread_id].overflows++;
                     }
                     *current = field64(counter_result, 0, box_map[type].regWidth);
@@ -1528,11 +1663,19 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet *eventSe
             case MBOX0:
             case MBOX0TMP:
                 if (!cpuid_info.supportClientmem) {
-                    bdw_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index) + 1);
+                    bdw_uncore_read(cpu_id,
+                        index,
+                        event,
+                        current,
+                        overflows,
+                        0,
+                        ovf_offset,
+                        getCounterTypeOffset(index) + 1);
                 } else if (haveLock) {
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
                     if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, "OVERFLOW_CLIENTMEM");
+                        VERBOSEPRINTREG(
+                            cpu_id, counter1, LLU_CAST counter_result, "OVERFLOW_CLIENTMEM");
                         eventSet->events[i].threadCounter[thread_id].overflows++;
                     }
                     *current = counter_result;
@@ -1547,7 +1690,14 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet *eventSe
             case MBOX5:
             case MBOX6:
             case MBOX7:
-                bdw_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index) + 1);
+                bdw_uncore_read(cpu_id,
+                    index,
+                    event,
+                    current,
+                    overflows,
+                    0,
+                    ovf_offset,
+                    getCounterTypeOffset(index) + 1);
                 break;
 
             case MBOX0FIX:
@@ -1562,7 +1712,14 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet *eventSe
                 break;
 
             case IBOX1:
-                bdw_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index) + 2);
+                bdw_uncore_read(cpu_id,
+                    index,
+                    event,
+                    current,
+                    overflows,
+                    0,
+                    ovf_offset,
+                    getCounterTypeOffset(index) + 2);
                 break;
 
             case BBOX0:
@@ -1597,13 +1754,21 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet *eventSe
             case QBOX0:
             case QBOX1:
             case QBOX2:
-                bdw_uncore_read(cpu_id, index, event, current, overflows, 0, ovf_offset, getCounterTypeOffset(index));
+                bdw_uncore_read(cpu_id,
+                    index,
+                    event,
+                    current,
+                    overflows,
+                    0,
+                    ovf_offset,
+                    getCounterTypeOffset(index));
                 break;
 
             case WBOX0FIX:
                 if (haveLock) {
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, "READ_WBOXFIX");
+                    VERBOSEPRINTPCIREG(
+                        cpu_id, dev, counter1, LLU_CAST counter_result, "READ_WBOXFIX");
                 }
                 break;
 
@@ -1637,7 +1802,8 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet *eventSe
                             break;
                         }
 
-                    } else if ((eventSet->events[i].event.eventId == 0x01) || (eventSet->events[i].event.eventId == 0x02)) {
+                    } else if ((eventSet->events[i].event.eventId == 0x01) ||
+                               (eventSet->events[i].event.eventId == 0x02)) {
                         HPMread(cpu_id, dev, counter1, &counter_result);
                         counter_result = field64(counter_result, 0, box_map[type].regWidth);
                     }
@@ -1698,7 +1864,8 @@ int perfmon_finalizeCountersThread_broadwell(int thread_id, PerfmonEventSet *eve
         default:
             break;
         }
-        if ((reg) && (((type == PMC) || (type == FIXED)) || ((type >= UNCORE && type < NUM_UNITS) && (haveLock)))) {
+        if ((reg) && (((type == PMC) || (type == FIXED)) ||
+                         ((type >= UNCORE && type < NUM_UNITS) && (haveLock)))) {
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, reg, &ovf_values_uncore));
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, ovf_values_uncore, "SHOW_CTL");
             ovf_values_uncore = 0x0ULL;
@@ -1706,37 +1873,59 @@ int perfmon_finalizeCountersThread_broadwell(int thread_id, PerfmonEventSet *eve
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
             if (type >= SBOX0 && type <= SBOX3)
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
-            VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
+            VERBOSEPRINTPCIREG(
+                cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
             if (type >= SBOX0 && type <= SBOX3)
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
+                CHECK_MSR_WRITE_ERROR(
+                    HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
             if (counter_map[index].counterRegister2 != 0x0) {
-                VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL, "CLEAR_CTR");
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));
+                VERBOSEPRINTPCIREG(
+                    cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL, "CLEAR_CTR");
+                CHECK_MSR_WRITE_ERROR(
+                    HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));
                 if (type >= SBOX0 && type <= SBOX3)
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));
+                    CHECK_MSR_WRITE_ERROR(
+                        HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));
             }
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
 
     if (haveLock && MEASURE_UNCORE(eventSet)) {
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, LLU_CAST ovf_values_uncore, "CLEAR_UNCORE_OVF");
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, ovf_values_uncore));
+        VERBOSEPRINTREG(cpu_id,
+            MSR_UNC_V3_U_PMON_GLOBAL_STATUS,
+            LLU_CAST ovf_values_uncore,
+            "CLEAR_UNCORE_OVF");
+        CHECK_MSR_WRITE_ERROR(
+            HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, ovf_values_uncore));
         VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, "CLEAR_UNCORE_CTRL");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, 0x0ULL));
         for (int i = UNCORE; i < NUM_UNITS; i++) {
             if (TESTTYPE(eventSet, i) && box_map[i].ctrlRegister != 0x0) {
-                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, "CLEAR_UNCORE_BOX_CTRL");
+                VERBOSEPRINTPCIREG(cpu_id,
+                    box_map[i].device,
+                    box_map[i].ctrlRegister,
+                    0x0ULL,
+                    "CLEAR_UNCORE_BOX_CTRL");
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
                 if (i >= SBOX0 && i <= SBOX3)
                     HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
                 if (box_map[i].filterRegister1 != 0x0) {
-                    VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].filterRegister1, 0x0ULL, "CLEAR_FILTER");
+                    VERBOSEPRINTPCIREG(cpu_id,
+                        box_map[i].device,
+                        box_map[i].filterRegister1,
+                        0x0ULL,
+                        "CLEAR_FILTER");
                     HPMwrite(cpu_id, box_map[i].device, box_map[i].filterRegister1, 0x0ULL);
                 }
                 if (box_map[i].filterRegister2 != 0x0) {
-                    VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].filterRegister2, 0x0ULL, "CLEAR_FILTER");
+                    VERBOSEPRINTPCIREG(cpu_id,
+                        box_map[i].device,
+                        box_map[i].filterRegister2,
+                        0x0ULL,
+                        "CLEAR_FILTER");
                     HPMwrite(cpu_id, box_map[i].device, box_map[i].filterRegister2, 0x0ULL);
                 }
             }
@@ -1744,7 +1933,8 @@ int perfmon_finalizeCountersThread_broadwell(int thread_id, PerfmonEventSet *eve
     }
 
     if (MEASURE_CORE(eventSet)) {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, "CLEAR_GLOBAL_OVF");
+        VERBOSEPRINTREG(
+            cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, "CLEAR_GLOBAL_OVF");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, "CLEAR_GLOBAL_CTRL");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));

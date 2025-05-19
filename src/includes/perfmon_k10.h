@@ -49,7 +49,8 @@ int k10_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
 
     flags |= (1ULL << 16);
-    flags |= ((uint64_t)(event->eventId >> 8) << 32) + (event->umask << 8) + (event->eventId & ~(0xF00U));
+    flags |= ((uint64_t)(event->eventId >> 8) << 32) + (event->umask << 8) +
+             (event->eventId & ~(0xF00U));
 
     if (event->numberOfOptions > 0) {
         for (int j = 0; j < event->numberOfOptions; j++) {
@@ -111,9 +112,9 @@ int perfmon_startCountersThread_k10(int thread_id, PerfmonEventSet *eventSet)
             if (!TESTTYPE(eventSet, type)) {
                 continue;
             }
-            RegisterIndex index                                      = eventSet->events[i].index;
-            uint32_t reg                                             = counter_map[index].configRegister;
-            uint32_t counter                                         = counter_map[index].counterRegister;
+            RegisterIndex index = eventSet->events[i].index;
+            uint32_t reg        = counter_map[index].configRegister;
+            uint32_t counter    = counter_map[index].counterRegister;
             eventSet->events[i].threadCounter[thread_id].startData   = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
             VERBOSEPRINTREG(cpu_id, counter, 0x0ULL, "CLEAR_PMC");
@@ -154,7 +155,8 @@ int perfmon_stopCountersThread_k10(int thread_id, PerfmonEventSet *eventSet)
             if (tmp < eventSet->events[i].threadCounter[thread_id].counterData) {
                 eventSet->events[i].threadCounter[thread_id].overflows++;
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = field64(tmp, 0, box_map[type].regWidth);
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                field64(tmp, 0, box_map[type].regWidth);
         }
     }
     return 0;
@@ -179,7 +181,8 @@ int perfmon_readCountersThread_k10(int thread_id, PerfmonEventSet *eventSet)
             if (tmp < eventSet->events[i].threadCounter[thread_id].counterData) {
                 eventSet->events[i].threadCounter[thread_id].overflows++;
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = field64(tmp, 0, box_map[type].regWidth);
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                field64(tmp, 0, box_map[type].regWidth);
         }
     }
     return 0;
@@ -200,7 +203,8 @@ int perfmon_finalizeCountersThread_k10(int thread_id, PerfmonEventSet *eventSet)
             VERBOSEPRINTREG(cpu_id, reg, 0x0ULL, "CLEAR_CTRL");
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, 0x0ULL));
             VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
+            CHECK_MSR_WRITE_ERROR(
+                HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
