@@ -30,6 +30,8 @@
 #ifndef PERFMON_ICELAKE_H
 #define PERFMON_ICELAKE_H
 
+#include <perfmon_skylake.h>
+
 #include <perfmon_icelake_counters.h>
 #include <perfmon_icelake_events.h>
 #include <perfmon_icelakeX_counters.h>

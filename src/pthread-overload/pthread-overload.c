@@ -34,7 +34,6 @@
 #include <stdint.h>
 #include <dlfcn.h>
 #include <sched.h>
-#include <bits/pthreadtypes.h>
 #include <sys/types.h>
 #include <errno.h>
 #include <dirent.h>

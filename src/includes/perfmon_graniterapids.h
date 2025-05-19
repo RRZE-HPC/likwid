@@ -30,6 +30,8 @@
 #ifndef PERFMON_GRANITERAPIDS_H
 #define PERFMON_GRANITERAPIDS_H
 
+#include <perfmon_sapphirerapids.h>
+
 #include <perfmon_graniterapids_counters.h>
 #include <perfmon_graniterapids_events.h>
 
