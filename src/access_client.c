@@ -108,20 +108,24 @@ access_client_errno(AccessErrorType det)
     }
 }
 
-static void access_client_signal_catcher(int sig) {
-    close_access_client();
-}
-
-static int
-access_client_catch_signal()
-{
-    struct sigaction sia;
-    sia.sa_handler = access_client_signal_catcher;
-    sigemptyset(&sia.sa_mask);
-    sia.sa_flags = SA_ONSTACK;
-    sigaction(SIGCHLD, &sia, NULL);
-    return 0;
-}
+// TODO do we still need these functions?
+// When I commented this out, they were not used anywhere.
+//
+//static void access_client_signal_catcher(int sig) {
+//    (void)sig;
+//    close_access_client();
+//}
+//
+//static int
+//access_client_catch_signal()
+//{
+//    struct sigaction sia;
+//    sia.sa_handler = access_client_signal_catcher;
+//    sigemptyset(&sia.sa_mask);
+//    sia.sa_flags = SA_ONSTACK;
+//    sigaction(SIGCHLD, &sia, NULL);
+//    return 0;
+//}
 
 static int
 access_client_startDaemon_direct(uint32_t cpu_id, struct sockaddr_un *address)
@@ -390,7 +394,7 @@ access_client_init(uint32_t cpu_id)
     if (!cpuLocks)
     {
         cpuLocks = malloc(cpuid_topology.numHWThreads * sizeof(pthread_mutex_t));
-        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++)
         {
             pthread_mutex_init(&cpuLocks[i], NULL);
         }
@@ -429,7 +433,6 @@ access_client_init(uint32_t cpu_id)
 int
 access_client_read(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t *data)
 {
-    int ret;
     int socket = globalSocket;
     pthread_mutex_t* lockptr = &globalLock;
     AccessDataRecord record;
@@ -527,7 +530,6 @@ int
 access_client_write(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t data)
 {
     int socket = globalSocket;
-    int ret;
     AccessDataRecord record;
     memset(&record, 0, sizeof(AccessDataRecord));
     record.cpu = cpu_id;
@@ -699,7 +701,7 @@ void __attribute__((destructor (104))) close_access_client(void)
 {
     if (cpuSockets)
     {
-        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++)
         {
             if (cpuSockets[i] > 0)
             {
@@ -714,7 +716,7 @@ void __attribute__((destructor (104))) close_access_client(void)
     }
     if (daemon_pids)
     {
-        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++)
         {
             if (daemon_pids[i] != 0)
             {
@@ -732,7 +734,7 @@ void __attribute__((destructor (104))) close_access_client(void)
     }
     if (cpuLocks)
     {
-        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++)
         {
             pthread_mutex_destroy(&cpuLocks[i]);
         }
