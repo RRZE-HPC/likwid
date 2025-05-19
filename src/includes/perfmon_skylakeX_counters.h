@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_SKYLAKEX_COUNTERS_H
+#define PERFMON_SKYLAKEX_COUNTERS_H
 
 #define NUM_COUNTERS_SKYLAKEX 337
 #define NUM_COUNTERS_CORE_SKYLAKEX 13
@@ -565,3 +567,5 @@ static char* skylakeX_translate_types[NUM_UNITS] = {
     [UBOX] = "/sys/bus/event_source/devices/uncore_ubox",
     [UBOXFIX] = "/sys/bus/event_source/devices/uncore_ubox",
 };
+
+#endif //PERFMON_SKYLAKEX_COUNTERS_H

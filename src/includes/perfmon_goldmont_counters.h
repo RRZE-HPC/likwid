@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_GOLDMONT_COUNTERS_H
+#define PERFMON_GOLDMONT_COUNTERS_H
 
 #define NUM_COUNTERS_GOLDMONT 12
 #define NUM_COUNTERS_CORE_GOLDMONT 8
@@ -63,3 +65,5 @@ static BoxMap goldmont_box_map[NUM_UNITS] = {
     [FIXED] =  {MSR_PERF_GLOBAL_CTRL, MSR_V4_PERF_GLOBAL_STATUS, MSR_V4_PERF_GLOBAL_STATUS_RESET, 0, 0, 0, 48},
     [POWER] = {0, 0, 0, 0, 0, 0, 32},
 };
+
+#endif //PERFMON_GOLDMONT_COUNTERS_H

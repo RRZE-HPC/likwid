@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_IVYBRIDGEEP_COUNTERS_H
+#define PERFMON_IVYBRIDGEEP_COUNTERS_H
 
 #define NUM_COUNTERS_CORE_IVYBRIDGEEP 13
 #define NUM_COUNTERS_UNCORE_IVYBRIDGEEP 81
@@ -364,3 +366,5 @@ static char* ivybridgeEP_translate_types[NUM_UNITS] = {
     [UBOXFIX] = "/sys/bus/event_source/devices/uncore_ubox",
     [IBOX0] = "/sys/bus/event_source/devices/uncore_irp",
 };
+
+#endif //PERFMON_IVYBRIDGEEP_COUNTERS_H

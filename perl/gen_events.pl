@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use File::Basename;
 
 my $arch;
 my $key;
@@ -135,9 +136,14 @@ my $ucArch = uc($arch);
 my $delim;
 $delim = "";
 
+my $INCLUDE_GUARD = basename($OUT_filename);
+$INCLUDE_GUARD =~ s/[^a-zA-Z0-9_]/_/g;
+$INCLUDE_GUARD = uc $INCLUDE_GUARD;
 
 open OUTFILE,">$OUT_filename";
 print OUTFILE "/* DONT TOUCH: GENERATED FILE! */\n\n";
+print OUTFILE "#ifndef $INCLUDE_GUARD\n";
+print OUTFILE "#define $INCLUDE_GUARD\n\n";
 print OUTFILE "#define NUM_ARCH_EVENTS_$ucArch $num_events\n\n";
 print OUTFILE "static PerfmonEvent  ".$arch."_arch_events[NUM_ARCH_EVENTS_$ucArch] = {\n";
 
@@ -148,6 +154,7 @@ END
     $delim = ',';
 }
 
-print  OUTFILE "};\n";
+print OUTFILE "};\n\n";
+print OUTFILE "#endif // $INCLUDE_GUARD\n";
 close OUTFILE;
 

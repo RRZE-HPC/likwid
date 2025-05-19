@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_INTERLAGOS_H
+#define PERFMON_INTERLAGOS_H
 
 #include <perfmon_interlagos_events.h>
 #include <perfmon_interlagos_counters.h>
@@ -290,3 +292,5 @@ int perfmon_finalizeCountersThread_interlagos(int thread_id, PerfmonEventSet* ev
     }
     return 0;
 }
+
+#endif //PERFMON_INTERLAGOS_H

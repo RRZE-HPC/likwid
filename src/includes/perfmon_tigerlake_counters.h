@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_TIGERLAKE_COUNTERS_H
+#define PERFMON_TIGERLAKE_COUNTERS_H
 
 #define NUM_COUNTERS_TIGERLAKE 23
 #define NUM_COUNTERS_CORE_TIGERLAKE 18
@@ -82,3 +84,5 @@ static PciDevice tigerlake_pci_devices[MAX_NUM_PCI_DEVICES] = {
  [MSR_DEV] = {NODEVTYPE, "", "MSR", ""},
  [PCI_IMC_DEVICE_0_CH_0] = {IMC, "00.0", "MMAP_IMC_DEVICE", "MBOX0", 0x0},
 };
+
+#endif //PERFMON_TIGERLAKE_COUNTERS_H

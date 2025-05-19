@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_GRANITERAPIDS_COUNTERS_H
+#define PERFMON_GRANITERAPIDS_COUNTERS_H
 
 #include <intel_perfmon_uncore_discovery.h>
 
@@ -2149,3 +2151,5 @@ static PerfmonUncoreDiscovery graniterapids_uncore_discovery_map[] = {
     {"PBOX", GNR_DEVICE_ID_B2CXL, 12, PCI_R2PCIE_DEVICE0},
     {"INVALID", -1, 0, MSR_DEV}
 };
+
+#endif //PERFMON_GRANITERAPIDS_COUNTERS_H

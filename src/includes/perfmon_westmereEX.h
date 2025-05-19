@@ -28,13 +28,14 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_WESTMEREEX_H
+#define PERFMON_WESTMEREEX_H
 
 #include <perfmon_westmereEX_events.h>
 #include <perfmon_westmereEX_counters.h>
 #include <perfmon_nehalemEX_westmereEX_common.h>
 #include <error.h>
 #include <affinity.h>
-
 
 static int perfmon_numCountersWestmereEX = NUM_COUNTERS_WESTMEREEX;
 static int perfmon_numArchEventsWestmereEX = NUM_ARCH_EVENTS_WESTMEREEX;
@@ -1361,3 +1362,5 @@ int perfmon_finalizeCountersThread_westmereEX(int thread_id, PerfmonEventSet* ev
     }
     return 0;
 }
+
+#endif //PERFMON_WESTMEREEX_H

@@ -27,11 +27,11 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_GRANITERAPIDS_H
+#define PERFMON_GRANITERAPIDS_H
 
 #include <perfmon_graniterapids_counters.h>
 #include <perfmon_graniterapids_events.h>
-
 
 static int perfmon_numCountersGraniteRapids = NUM_COUNTERS_GRANITERAPIDS;
 static int perfmon_numCoreCountersGraniteRapids = NUM_COUNTERS_CORE_GRANITERAPIDS;
@@ -628,3 +628,5 @@ int perfmon_finalizeCountersThread_graniterapids(int thread_id, PerfmonEventSet*
     }
     return 0;
 }
+
+#endif //PERFMON_GRANITERAPIDS_H

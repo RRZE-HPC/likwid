@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_SANDYBRIDGE_H
+#define PERFMON_SANDYBRIDGE_H
 
 #include <perfmon_sandybridge_events.h>
 #include <perfmon_sandybridge_counters.h>
@@ -2006,3 +2008,5 @@ int perfmon_finalizeCountersThread_sandybridge(int thread_id, PerfmonEventSet* e
     }
     return 0;
 }
+
+#endif //PERFMON_SANDYBRIDGE_H

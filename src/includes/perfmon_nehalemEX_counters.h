@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_NEHALEMEX_COUNTERS_H
+#define PERFMON_NEHALEMEX_COUNTERS_H
 
 #define NUM_COUNTERS_CORE_NEHALEMEX 7
 #define NUM_COUNTERS_UNCORE_NEHALEMEX 105
@@ -183,3 +185,5 @@ static BoxMap nehalemEX_box_map[NUM_UNITS] = {
     [WBOX0FIX] = {MSR_W_PMON_BOX_CTRL, MSR_W_PMON_BOX_STATUS, MSR_W_PMON_BOX_OVF_CTRL, 0, 0, 0, 48},
     [UBOX] = {MSR_U_PMON_GLOBAL_CTRL, MSR_U_PMON_GLOBAL_STATUS, MSR_U_PMON_GLOBAL_OVF_CTRL, 0, 0, 0, 48},
 };
+
+#endif //PERFMON_NEHALEMEX_COUNTERS_H

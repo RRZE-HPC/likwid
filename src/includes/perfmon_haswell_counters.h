@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_HASWELL_COUNTERS_H
+#define PERFMON_HASWELL_COUNTERS_H
 
 #define NUM_COUNTERS_HASWELL 33
 #define NUM_COUNTERS_CORE_HASWELL 12
@@ -102,3 +104,5 @@ static PciDevice haswell_pci_devices[MAX_NUM_PCI_DEVICES] = {
  [MSR_DEV] = {NODEVTYPE, "", "MSR", ""},
  [PCI_IMC_DEVICE_0_CH_0] = {IMC, "00.0", "MMAP_IMC_DEVICE", "MBOX0", 0x0},
 };
+
+#endif //PERFMON_HASWELL_COUNTERS_H

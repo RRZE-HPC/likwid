@@ -28,8 +28,11 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_WESTMERE_H
+#define PERFMON_WESTMERE_H
 
 #include <perfmon_westmere_events.h>
 
 static int perfmon_numArchEventsWestmere = NUM_ARCH_EVENTS_WESTMERE;
 
+#endif //PERFMON_WESTMERE_H

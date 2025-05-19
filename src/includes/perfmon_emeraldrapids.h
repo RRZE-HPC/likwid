@@ -27,11 +27,11 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_EMERALDRAPIDS_H
+#define PERFMON_EMERALDRAPIDS_H
 
 #include <perfmon_emeraldrapids_counters.h>
 #include <perfmon_emeraldrapids_events.h>
-
 
 static int perfmon_numCountersEmeraldRapids = NUM_COUNTERS_EMERALDRAPIDS;
 static int perfmon_numCoreCountersEmeraldRapids = NUM_COUNTERS_CORE_EMERALDRAPIDS;
@@ -2247,3 +2247,5 @@ int perfmon_finalizeCountersThread_emeraldrapids(int thread_id, PerfmonEventSet*
     }
     return 0;
 }
+
+#endif //PERFMON_EMERALDRAPIDS_H

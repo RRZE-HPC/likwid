@@ -28,7 +28,8 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_IVYBRIDGE_H
+#define PERFMON_IVYBRIDGE_H
 
 #include <perfmon_ivybridge_events.h>
 #include <perfmon_ivybridge_counters.h>
@@ -1696,3 +1697,5 @@ int perfmon_finalizeCountersThread_ivybridge(int thread_id, PerfmonEventSet* eve
     }
     return 0;
 }
+
+#endif //PERFMON_IVYBRIDGE_H

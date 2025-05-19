@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_ZEN2_H
+#define PERFMON_ZEN2_H
 
 #include <perfmon_zen2_events.h>
 #include <perfmon_zen2_counters.h>
@@ -532,3 +534,5 @@ int perfmon_finalizeCountersThread_zen2(int thread_id, PerfmonEventSet* eventSet
     }
     return 0;
 }
+
+#endif //PERFMON_ZEN2_H

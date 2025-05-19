@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_POWER8_COUNTERS_H
+#define PERFMON_POWER8_COUNTERS_H
 
 #define NUM_COUNTERS_POWER8 7
 
@@ -47,3 +49,5 @@ static BoxMap power8_box_map[NUM_UNITS] = {
 static char* power8_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/cpu",
 };
+
+#endif //PERFMON_POWER8_COUNTERS_H

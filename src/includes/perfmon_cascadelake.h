@@ -28,8 +28,11 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_CASCADELAKE_H
+#define PERFMON_CASCADELAKE_H
 
 #include <perfmon_cascadelakeX_events.h>
 
-
 static int perfmon_numArchEventsCascadelakeX = NUM_ARCH_EVENTS_CASCADELAKEX;
+
+#endif //PERFMON_CASCADELAKE_H

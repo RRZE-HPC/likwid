@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_BROADWELL_H
+#define PERFMON_BROADWELL_H
 
 #include <perfmon_broadwell_events.h>
 #include <perfmon_broadwell_counters.h>
@@ -2016,3 +2018,5 @@ int perfmon_finalizeCountersThread_broadwell(int thread_id, PerfmonEventSet* eve
     }
     return 0;
 }
+
+#endif //PERFMON_BROADWELL_H

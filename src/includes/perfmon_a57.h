@@ -28,6 +28,9 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_A57_H
+#define PERFMON_A57_H
+
 #include <perfmon_a57_events.h>
 #include <perfmon_a57_counters.h>
 #include <perfmon_cavtx2_events.h>
@@ -251,3 +254,5 @@ static int perfmon_numArchEventsCavTx2 = NUM_ARCH_EVENTS_CAVTX2;
 //    }
 //    return 0;
 //}
+
+#endif //PERFMON_A57_H

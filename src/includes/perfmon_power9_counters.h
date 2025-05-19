@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_POWER9_COUNTERS_H
+#define PERFMON_POWER9_COUNTERS_H
 
 #define NUM_COUNTERS_POWER9 48
 
@@ -116,3 +118,5 @@ static char* power9_translate_types[NUM_UNITS] = {
     [BBOX0] = "/sys/bus/event_source/devices/nest_mcs01_imc",
     [BBOX1] = "/sys/bus/event_source/devices/nest_mcs23_imc",
 };
+
+#endif //PERFMON_POWER9_COUNTERS_H

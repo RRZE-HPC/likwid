@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_ICELAKE_COUNTERS_H
+#define PERFMON_ICELAKE_COUNTERS_H
 
 #define NUM_COUNTERS_ICELAKE 47
 #define NUM_COUNTERS_CORE_ICELAKE 18
@@ -122,3 +124,5 @@ static PciDevice icelake_pci_devices[MAX_NUM_PCI_DEVICES] = {
  [MSR_DEV] = {NODEVTYPE, "", "MSR", ""},
  [PCI_IMC_DEVICE_0_CH_0] = {IMC, "00.0", "MMAP_IMC_DEVICE", "MBOX0", 0x0},
 };
+
+#endif //PERFMON_ICELAKE_COUNTERS_H

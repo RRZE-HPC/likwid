@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_SILVERMONT_H
+#define PERFMON_SILVERMONT_H
  
 #include <perfmon_silvermont_events.h>
 #include <perfmon_silvermont_counters.h>
@@ -520,3 +522,5 @@ int perfmon_finalizeCountersThread_silvermont(int thread_id, PerfmonEventSet* ev
     }
     return 0;
 }
+
+#endif //PERFMON_SILVERMONT_H

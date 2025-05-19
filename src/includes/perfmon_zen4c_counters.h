@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_ZEN4C_COUNTERS_H
+#define PERFMON_ZEN4C_COUNTERS_H
 
 #define NUM_COUNTERS_ZEN4C 33
 #define NUM_COUNTERS_CORE_ZEN4C 9
@@ -107,3 +109,4 @@ static char* zen4c_translate_types[NUM_UNITS] = {
     [MBOX0] = "/sys/bus/event_source/devices/amd_df",
 };
 
+#endif //PERFMON_ZEN4C_COUNTERS_H

@@ -28,13 +28,14 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_NEHALEMEX_H
+#define PERFMON_NEHALEMEX_H
 
 #include <perfmon_nehalemEX_events.h>
 #include <perfmon_nehalemEX_counters.h>
 #include <perfmon_nehalemEX_westmereEX_common.h>
 #include <error.h>
 #include <affinity.h>
-
 
 static int perfmon_numArchEventsNehalemEX = NUM_ARCH_EVENTS_NEHALEMEX;
 static int perfmon_numCountersNehalemEX = NUM_COUNTERS_NEHALEMEX;
@@ -1298,3 +1299,5 @@ int perfmon_finalizeCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eve
     }
     return 0;
 }
+
+#endif //PERFMON_NEHALEMEX_H

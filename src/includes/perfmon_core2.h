@@ -28,11 +28,12 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_CORE2_H
+#define PERFMON_CORE2_H
 
 #include <perfmon_core2_events.h>
 #include <perfmon_core2_counters.h>
 #include <error.h>
-
 
 static int perfmon_numCountersCore2 = NUM_COUNTERS_CORE2;
 static int perfmon_numArchEventsCore2 = NUM_ARCH_EVENTS_CORE2;
@@ -340,3 +341,5 @@ int perfmon_finalizeCountersThread_core2(int thread_id, PerfmonEventSet* eventSe
     }
     return 0;
 }
+
+#endif //PERFMON_CORE2_H

@@ -27,7 +27,8 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_BROADWELLD_COUNTERS_H
+#define PERFMON_BROADWELLD_COUNTERS_H
 
 #define NUM_COUNTERS_BROADWELLD 146
 #define NUM_COUNTERS_CORE_BROADWELLD 13
@@ -258,3 +259,5 @@ static PciDevice broadwelld_pci_devices[MAX_NUM_PCI_DEVICES] = {
  [PCI_IRP_DEVICE] = {IRP, "05.6", "PCI_IRP_DEVICE", "IBOX0", 0x6F39},
  [PCI_R2PCIE_DEVICE] = {R2PCIE, "10.1", "PCI_R2PCIE_DEVICE", "PBOX0", 0x6F34},
 };
+
+#endif //PERFMON_BROADWELLD_COUNTERS_H

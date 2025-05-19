@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_IVYBRIDGE_COUNTERS_H
+#define PERFMON_IVYBRIDGE_COUNTERS_H
 
 #define NUM_COUNTERS_CORE_IVYBRIDGE 13
 #define NUM_COUNTERS_UNCORE_IVYBRIDGE 20
@@ -98,3 +100,5 @@ static BoxMap ivybridge_box_map[NUM_UNITS] = {
 };
 
 
+
+#endif //PERFMON_IVYBRIDGE_COUNTERS_H

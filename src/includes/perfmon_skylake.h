@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_SKYLAKE_H
+#define PERFMON_SKYLAKE_H
 
 #include <perfmon_skylake_events.h>
 #include <perfmon_skylake_counters.h>
@@ -1891,3 +1893,5 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
     }
     return 0;
 }
+
+#endif //PERFMON_SKYLAKE_H

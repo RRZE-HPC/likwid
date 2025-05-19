@@ -16,11 +16,16 @@ local option_match="([A-Z0-9_]+)[|]*"
 local header = [[
 /* DONT TOUCH: GENERATED FILE! */
 
+#ifndef %s
+#define %s
 
 #define NUM_ARCH_EVENTS_%s %d
 
-
 static PerfmonEvent  %s_arch_events[NUM_ARCH_EVENTS_%s] = {
+]]
+
+local footer = [[
+#endif // %s
 ]]
 -----------------------
 
@@ -154,14 +159,27 @@ if valid_event(event) then
     table.insert(output, event)
 end
 
+-- Generate include guard name based on file name
+slash_pos = 1
+while true do
+    _, slash_pos_new = string.find(outputfile, "/", slash_pos, true)
+    if slash_pos_new == nil then
+        break
+    end
+    slash_pos = slash_pos_new + 1
+end
+include_guard_name = outputfile:sub(slash_pos)
+include_guard_name = include_guard_name:upper():gsub("%A", "_")
+
 f = io.open(outputfile, "w")
 if f then
-    f:write(string.format(header, arch:upper(), #output, arch, arch:upper()))
+    f:write(string.format(header, include_guard_name, include_guard_name, arch:upper(), #output, arch, arch:upper()))
     for _, e in pairs(output) do
         s = format_event(e)
         f:write("  "..s.."\n")
     end
     f:write("};\n")
+    f:write(footer:format(include_guard_name))
 else
     print(string.format("ERROR: The output path %s not writable", outputfile))
     os.exit(1)

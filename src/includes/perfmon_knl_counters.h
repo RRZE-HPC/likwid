@@ -27,6 +27,9 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_KNL_COUNTERS_H
+#define PERFMON_KNL_COUNTERS_H
+
 #include <registers.h>
 
 #define NUM_COUNTERS_CORE_KNL 6
@@ -545,3 +548,5 @@ static char* knl_translate_types[NUM_UNITS] = {
     [MBOX3FIX] = "/sys/bus/event_source/devices/uncore_imc_uclk_0",
     [MBOX7FIX] = "/sys/bus/event_source/devices/uncore_imc_uclk_1",
 };
+
+#endif //PERFMON_KNL_COUNTERS_H

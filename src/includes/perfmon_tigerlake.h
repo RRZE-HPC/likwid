@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_TIGERLAKE_H
+#define PERFMON_TIGERLAKE_H
 
 #include <perfmon_tigerlake_events.h>
 #include <perfmon_tigerlake_counters.h>
@@ -553,3 +555,5 @@ int perfmon_finalizeCountersThread_tigerlake(int thread_id, PerfmonEventSet* eve
     }
     return 0;
 }
+
+#endif //PERFMON_TIGERLAKE_H

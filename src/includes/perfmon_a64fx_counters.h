@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_A64FX_COUNTERS_H
+#define PERFMON_A64FX_COUNTERS_H
 
 #define NUM_COUNTERS_A64FX 8
 
@@ -48,3 +50,5 @@ static BoxMap a64fx_box_map[NUM_UNITS] = {
 static char* a64fx_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/armv8_pmuv3_0",
 };
+
+#endif //PERFMON_A64FX_COUNTERS_H

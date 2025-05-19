@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_CORE2_COUNTERS_H
+#define PERFMON_CORE2_COUNTERS_H
 
 #define NUM_COUNTERS_CORE2 5
 #define NUM_COUNTERS_CORE_CORE2 5
@@ -50,3 +52,5 @@ static BoxMap core2_box_map[NUM_UNITS] = {
     [PMC] = {MSR_PERF_GLOBAL_CTRL, MSR_PERF_GLOBAL_STATUS, MSR_PERF_GLOBAL_OVF_CTRL, -1, 0, 0, 40},
     [FIXED] = {MSR_PERF_GLOBAL_CTRL, MSR_PERF_GLOBAL_STATUS, MSR_PERF_GLOBAL_OVF_CTRL, -1, 0, 0, 48},
 };
+
+#endif //PERFMON_CORE2_COUNTERS_H

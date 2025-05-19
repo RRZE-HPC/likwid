@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_HASWELLEP_COUNTERS_H
+#define PERFMON_HASWELLEP_COUNTERS_H
 
 #define NUM_COUNTERS_HASWELL_EP 192
 #define NUM_COUNTERS_CORE_HASWELL_EP 13
@@ -384,3 +386,5 @@ static char* haswellEP_translate_types[NUM_UNITS] = {
     [UBOXFIX] = "/sys/bus/event_source/devices/uncore_ubox",
     [IBOX0] = "/sys/bus/event_source/devices/uncore_irp",
 };
+
+#endif //PERFMON_HASWELLEP_COUNTERS_H

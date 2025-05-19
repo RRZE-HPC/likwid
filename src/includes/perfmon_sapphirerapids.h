@@ -27,11 +27,11 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_SAPPHIRERAPIDS_H
+#define PERFMON_SAPPHIRERAPIDS_H
 
 #include <perfmon_sapphirerapids_counters.h>
 #include <perfmon_sapphirerapids_events.h>
-
 
 static int perfmon_numCountersSapphireRapids = NUM_COUNTERS_SAPPHIRERAPIDS;
 static int perfmon_numCoreCountersSapphireRapids = NUM_COUNTERS_CORE_SAPPHIRERAPIDS;
@@ -2247,3 +2247,5 @@ int perfmon_finalizeCountersThread_sapphirerapids(int thread_id, PerfmonEventSet
     }
     return 0;
 }
+
+#endif //PERFMON_SAPPHIRERAPIDS_H

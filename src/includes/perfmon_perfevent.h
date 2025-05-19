@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_PERFEVENT_H
+#define PERFMON_PERFEVENT_H
 
 #include <error.h>
 #include <affinity.h>
@@ -1682,3 +1684,5 @@ void __attribute__((destructor (101))) close_perfmon_perfevent(void)
         cpu_event_fds = NULL;
     }
 }
+
+#endif //PERFMON_PERFEVENT_H

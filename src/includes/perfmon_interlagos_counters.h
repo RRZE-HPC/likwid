@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_INTERLAGOS_COUNTERS_H
+#define PERFMON_INTERLAGOS_COUNTERS_H
 
 #define NUM_COUNTERS_INTERLAGOS 10
 #define NUM_COUNTERS_CORE_INTERLAGOS 6
@@ -53,3 +55,5 @@ static BoxMap interlagos_box_map[NUM_UNITS] = {
     [PMC] = {0, 0, 0, 0, 0, 0, 48},
     [UNCORE] = {0, 0, 0, 0, 0, 0, 48},
 };
+
+#endif //PERFMON_INTERLAGOS_COUNTERS_H

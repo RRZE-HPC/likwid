@@ -28,7 +28,8 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_SANDYBRIDGE_COUNTERS_H
+#define PERFMON_SANDYBRIDGE_COUNTERS_H
 
 #define NUM_COUNTERS_CORE_SANDYBRIDGE 13
 #define NUM_COUNTERS_UNCORE_SANDYBRIDGE 18
@@ -95,5 +96,4 @@ static BoxMap sandybridge_box_map[NUM_UNITS] = {
     [UBOXFIX] = {MSR_UNC_PERF_GLOBAL_CTRL, MSR_UNC_PERF_GLOBAL_STATUS, MSR_UNC_PERF_GLOBAL_OVF_CTRL, 0, 0, MSR_DEV, 44},
 };
 
-
-
+#endif //PERFMON_SANDYBRIDGE_COUNTERS_H

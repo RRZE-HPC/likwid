@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_PHI_H
+#define PERFMON_PHI_H
 
 #include <perfmon_phi_events.h>
 #include <perfmon_phi_counters.h>
@@ -237,3 +239,5 @@ int perfmon_finalizeCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_OVF_CTRL, ovf_values_core));
     return 0;
 }
+
+#endif //PERFMON_PHI_H

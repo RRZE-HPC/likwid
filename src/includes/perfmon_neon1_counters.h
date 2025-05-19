@@ -27,7 +27,8 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_NEON1_COUNTERS_H
+#define PERFMON_NEON1_COUNTERS_H
 
 #define NUM_COUNTERS_NEON1 6
 
@@ -52,3 +53,4 @@ static char* a76_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/armv8_cortex_a76",
 };
 
+#endif //PERFMON_NEON1_COUNTERS_H

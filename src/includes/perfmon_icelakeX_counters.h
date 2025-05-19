@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_ICELAKEX_COUNTERS_H
+#define PERFMON_ICELAKEX_COUNTERS_H
 
 #define NUM_COUNTERS_ICELAKEX 408
 #define NUM_COUNTERS_CORE_ICELAKEX 18
@@ -733,3 +735,5 @@ static char* registerTypeNamesIcelakeX[MAX_UNITS] = {
     [IBOX4FIX] = "IIO Bandwidth In Interface 4 Free-Running Counter",
     [IBOX5FIX] = "IIO Bandwidth In Interface 5 Free-Running Counter",
 };
+
+#endif //PERFMON_ICELAKEX_COUNTERS_H

@@ -28,12 +28,13 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_NEHALEM_H
+#define PERFMON_NEHALEM_H
 
 #include <perfmon_nehalem_events.h>
 #include <perfmon_nehalem_counters.h>
 #include <error.h>
 #include <affinity.h>
-
 
 static int perfmon_numCountersNehalem = NUM_COUNTERS_NEHALEM;
 static int perfmon_numArchEventsNehalem = NUM_ARCH_EVENTS_NEHALEM;
@@ -643,3 +644,4 @@ int perfmon_finalizeCountersThread_nehalem(int thread_id, PerfmonEventSet* event
     return 0;
 }
 
+#endif //PERFMON_NEHALEM_H

@@ -27,7 +27,8 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_HISILICON_COUNTERS_H
+#define PERFMON_HISILICON_COUNTERS_H
 
 #define NUM_COUNTERS_HISILICON_TSV110 6
 
@@ -48,3 +49,4 @@ static char* tsv110_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/armv8_pmuv3_0",
 };
 
+#endif //PERFMON_HISILICON_COUNTERS_H

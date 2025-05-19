@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_CAVTX2_COUNTERS_H
+#define PERFMON_CAVTX2_COUNTERS_H
 
 #define NUM_COUNTERS_CAV_TX2 38
 
@@ -91,3 +93,5 @@ static char* cav_tx2_translate_types[NUM_UNITS] = {
     [SBOX0] = "/sys/bus/event_source/devices/uncore_ccpi2_0",
     [SBOX1] = "/sys/bus/event_source/devices/uncore_ccpi2_1",
 };
+
+#endif //PERFMON_CAVTX2_COUNTERS_H

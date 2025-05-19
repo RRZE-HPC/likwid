@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_ICELAKE_H
+#define PERFMON_ICELAKE_H
 
 #include <perfmon_icelake_counters.h>
 #include <perfmon_icelake_events.h>
@@ -2135,3 +2137,5 @@ int perfmon_finalizeCountersThread_icelake(int thread_id, PerfmonEventSet* event
     }
     return 0;
 }
+
+#endif //PERFMON_ICELAKE_H

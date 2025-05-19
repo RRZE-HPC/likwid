@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_PM_COUNTERS_H
+#define PERFMON_PM_COUNTERS_H
 
 #define NUM_COUNTERS_PM 2
 #define NUM_COUNTERS_CORE_PM 2
@@ -42,3 +44,5 @@ static RegisterMap pm_counter_map[NUM_COUNTERS_PM] = {
 static BoxMap pm_box_map[NUM_UNITS] = {
     [PMC] = {0, 0, 0, 0, 0, 0, 48, 0, 0},
 };
+
+#endif //PERFMON_PM_COUNTERS_H

@@ -28,12 +28,13 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_PM_H
+#define PERFMON_PM_H
 
 #include <perfmon_pm_events.h>
 #include <perfmon_pm_counters.h>
 #include <error.h>
 #include <affinity.h>
-
 
 static int perfmon_numCounters_pm = NUM_COUNTERS_PM;
 static int perfmon_numArchEvents_pm = NUM_ARCH_EVENTS_PM;
@@ -233,3 +234,4 @@ int perfmon_finalizeCountersThread_pm(int thread_id, PerfmonEventSet* eventSet)
     return 0;
 }
 
+#endif //PERFMON_PM_H

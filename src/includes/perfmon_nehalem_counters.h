@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_NEHALEM_COUNTERS_H
+#define PERFMON_NEHALEM_COUNTERS_H
 
 #define NUM_COUNTERS_CORE_NEHALEM 7
 #define NUM_COUNTERS_UNCORE_NEHALEM 16
@@ -71,3 +73,4 @@ static char* nehalem_translate_types[NUM_UNITS] = {
     [UNCORE] = "/sys/bus/event_source/devices/uncore",
 };
 
+#endif //PERFMON_NEHALEM_COUNTERS_H

@@ -27,7 +27,8 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_BROADWELLEP_COUNTERS_H
+#define PERFMON_BROADWELLEP_COUNTERS_H
 
 #define NUM_COUNTERS_BROADWELLEP 221
 #define NUM_COUNTERS_CORE_BROADWELLEP 13
@@ -423,3 +424,5 @@ static char* broadwellEP_translate_types[NUM_UNITS] = {
     [UBOXFIX] = "/sys/bus/event_source/devices/uncore_ubox",
     [IBOX0] = "/sys/bus/event_source/devices/uncore_irp",
 };
+
+#endif //PERFMON_BROADWELLEP_COUNTERS_H

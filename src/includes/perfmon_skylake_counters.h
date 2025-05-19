@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_SKYLAKE_COUNTERS_H
+#define PERFMON_SKYLAKE_COUNTERS_H
 
 #define NUM_COUNTERS_SKYLAKE 37
 #define NUM_COUNTERS_CORE_SKYLAKE 16
@@ -122,3 +124,5 @@ static char* skylake_translate_types[NUM_UNITS] = {
     [UBOXFIX] = "/sys/bus/event_source/devices/uncore_arb",
     [POWER] = "/sys/bus/event_source/devices/power",
 };
+
+#endif //PERFMON_SKYLAKE_COUNTERS_H

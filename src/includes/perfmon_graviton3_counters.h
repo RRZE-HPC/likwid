@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_GRAVITON3_COUNTERS_H
+#define PERFMON_GRAVITON3_COUNTERS_H
 
 #define NUM_COUNTERS_GRAVITON3 6
 
@@ -46,3 +48,5 @@ static BoxMap graviton3_box_map[NUM_UNITS] = {
 static char* graviton3_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/armv8_pmuv3_0",
 };
+
+#endif //PERFMON_GRAVITON3_COUNTERS_H

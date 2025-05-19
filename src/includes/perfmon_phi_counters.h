@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_PHI_COUNTERS_H
+#define PERFMON_PHI_COUNTERS_H
 
 #define NUM_COUNTERS_PHI 2
 #define NUM_COUNTERS_CORE_PHI 2
@@ -43,3 +45,5 @@ static RegisterMap phi_counter_map[NUM_COUNTERS_PHI] = {
 static BoxMap phi_box_map[NUM_UNITS] = {
     [PMC] = {MSR_MIC_PERF_GLOBAL_CTRL, MSR_MIC_PERF_GLOBAL_STATUS, MSR_MIC_PERF_GLOBAL_OVF_CTRL, 0, 0, 0, 40}
 };
+
+#endif //PERFMON_PHI_COUNTERS_H

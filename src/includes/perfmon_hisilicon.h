@@ -27,11 +27,15 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_HISILICON_H
+#define PERFMON_HISILICON_H
+
 #ifndef NUM_ARCH_EVENTS_A57
 #include <perfmon_a57_events.h>
 #endif
 #include <perfmon_hisilicon_counters.h>
 
-
 static int perfmon_numCountersHiSiliconTsv110 = NUM_COUNTERS_HISILICON_TSV110;
 static int perfmon_numArchEventsHiSiliconTsv110 = NUM_ARCH_EVENTS_A57;
+
+#endif //PERFMON_HISILICON_H

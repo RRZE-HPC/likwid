@@ -27,6 +27,9 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_SILVERMONT_COUNTERS_H
+#define PERFMON_SILVERMONT_COUNTERS_H
+
 #include <registers.h>
 
 #define NUM_COUNTERS_CORE_SILVERMONT 6
@@ -57,3 +60,5 @@ static BoxMap silvermont_box_map[NUM_UNITS] = {
     [THERMAL] = {0, 0, 0, 0, 0, MSR_DEV, 8},
     [POWER] = {0, 0, 0, 0, 0, MSR_DEV, 32}
 };
+
+#endif //PERFMON_SILVERMONT_COUNTERS_H

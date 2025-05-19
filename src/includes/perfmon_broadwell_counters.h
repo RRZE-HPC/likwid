@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_BROADWELL_COUNTERS_H
+#define PERFMON_BROADWELL_COUNTERS_H
 
 #define NUM_COUNTERS_BROADWELL 33
 #define NUM_COUNTERS_CORE_BROADWELL 12
@@ -95,3 +97,5 @@ static BoxMap broadwell_box_map[NUM_UNITS] = {
     [UBOX] = {MSR_UNC_PERF_GLOBAL_CTRL, MSR_UNC_PERF_GLOBAL_STATUS, MSR_UNC_PERF_GLOBAL_OVF_CTRL, 1, 0, MSR_DEV, 44},
     [UBOXFIX] = {MSR_UNC_PERF_GLOBAL_CTRL, MSR_UNC_PERF_GLOBAL_STATUS, MSR_UNC_PERF_GLOBAL_OVF_CTRL, 0, 0, MSR_DEV, 44},
 };
+
+#endif //PERFMON_BROADWELL_COUNTERS_H

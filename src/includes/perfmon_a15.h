@@ -27,7 +27,8 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_A15_H
+#define PERFMON_A15_H
 
 #include <perfmon_a15_events.h>
 #include <perfmon_a15_counters.h>
@@ -247,3 +248,5 @@ static int perfmon_numArchEventsA15 = NUM_ARCH_EVENTS_A15;
 //    }
 //    return 0;
 //}
+
+#endif //PERFMON_A15_H

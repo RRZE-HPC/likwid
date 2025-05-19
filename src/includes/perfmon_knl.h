@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_KNL_H
+#define PERFMON_KNL_H
 
 #include <perfmon_knl_events.h>
 #include <perfmon_knl_counters.h>
@@ -1302,3 +1304,5 @@ int perfmon_finalizeCountersThread_knl(int thread_id, PerfmonEventSet* eventSet)
     }
     return 0;
 }
+
+#endif //PERFMON_KNL_H

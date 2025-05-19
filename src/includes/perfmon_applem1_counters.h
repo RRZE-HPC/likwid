@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_APPLEM1_COUNTERS_H
+#define PERFMON_APPLEM1_COUNTERS_H
 
 #define NUM_COUNTERS_APPLEM1 10
 
@@ -51,3 +53,5 @@ static char* applem1_translate_types[NUM_UNITS] = {
     [IPMC] = "/sys/bus/event_source/devices/apple_icestorm_pmu",
     [FPMC] = "/sys/bus/event_source/devices/apple_firestorm_pmu",
 };
+
+#endif //PERFMON_APPLEM1_COUNTERS_H

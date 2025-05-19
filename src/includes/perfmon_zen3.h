@@ -27,13 +27,13 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_ZEN3_H
+#define PERFMON_ZEN3_H
 
 #include <perfmon_zen3_events.h>
 #include <perfmon_zen3_counters.h>
 #include <error.h>
 #include <affinity.h>
-
-
 
 static int perfmon_numCountersZen3 = NUM_COUNTERS_ZEN3;
 static int perfmon_numArchEventsZen3 = NUM_ARCH_EVENTS_ZEN3;
@@ -543,3 +543,5 @@ int perfmon_finalizeCountersThread_zen3(int thread_id, PerfmonEventSet* eventSet
     }
     return 0;
 }
+
+#endif //PERFMON_ZEN3_H

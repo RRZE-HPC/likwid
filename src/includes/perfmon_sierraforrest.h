@@ -27,11 +27,11 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_SIERRAFORREST_H
+#define PERFMON_SIERRAFORREST_H
 
 #include <perfmon_sierraforrest_counters.h>
 #include <perfmon_sierraforrest_events.h>
-
 
 static int perfmon_numCountersSierraForrest = NUM_COUNTERS_SIERRAFORREST;
 static int perfmon_numCoreCountersSierraForrest = NUM_COUNTERS_CORE_SIERRAFORREST;
@@ -608,3 +608,5 @@ int perfmon_finalizeCountersThread_sierraforrest(int thread_id, PerfmonEventSet*
     }
     return 0;
 }
+
+#endif //PERFMON_SIERRAFORREST_H

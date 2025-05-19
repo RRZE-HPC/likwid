@@ -294,5 +294,4 @@ typedef struct {
     PciDeviceIndex base_device; /*!< \brief LIKWID unit device base */
 } PerfmonUncoreDiscovery;
 
-
 #endif /*PERFMON_TYPES_H*/

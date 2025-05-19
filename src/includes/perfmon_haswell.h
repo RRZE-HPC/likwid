@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_HASWELL_H
+#define PERFMON_HASWELL_H
 
 #include <perfmon_haswellEP_events.h>
 #include <perfmon_haswell_events.h>
@@ -39,7 +41,6 @@
 #include <topology.h>
 #include <access.h>
 #include <voltage.h>
-
 
 static int perfmon_numCountersHaswellEP = NUM_COUNTERS_HASWELL_EP;
 static int perfmon_numCoreCountersHaswellEP = NUM_COUNTERS_CORE_HASWELL_EP;
@@ -2034,3 +2035,5 @@ int perfmon_finalizeCountersThread_haswell(int thread_id, PerfmonEventSet* event
     }
     return 0;
 }
+
+#endif //PERFMON_HASWELL_H

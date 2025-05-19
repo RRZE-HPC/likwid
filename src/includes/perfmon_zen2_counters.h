@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_ZEN2_COUNTERS_H
+#define PERFMON_ZEN2_COUNTERS_H
 
 #define NUM_COUNTERS_ZEN2 21
 #define NUM_COUNTERS_CORE_ZEN2 9
@@ -87,3 +89,5 @@ static char* zen2_translate_types[NUM_UNITS] = {
     [CBOX0] = "/sys/bus/event_source/devices/amd_l3",
     [MBOX0] = "/sys/bus/event_source/devices/amd_df",
 };
+
+#endif //PERFMON_ZEN2_COUNTERS_H

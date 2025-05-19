@@ -27,6 +27,9 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_NEON1_H
+#define PERFMON_NEON1_H
+
 #include <perfmon_neon1_events.h>
 #include <perfmon_neon1_counters.h>
 
@@ -246,3 +249,5 @@ static int perfmon_numArchEventsNeoN1 = NUM_ARCH_EVENTS_NEON1;
 //    }
 //    return 0;
 //}
+
+#endif //PERFMON_NEON1_H

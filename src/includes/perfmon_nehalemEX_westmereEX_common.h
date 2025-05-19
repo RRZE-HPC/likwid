@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_NEHALEMEX_WESTMEREEX_COMMON_H
+#define PERFMON_NEHALEMEX_WESTMEREEX_COMMON_H
 
 #ifndef PERFMON_NEX_WEX_COMMON
 #define PERFMON_NEX_WEX_COMMON
@@ -122,3 +124,5 @@ static uint64_t nex_wex_rbox_regs[2][NUM_RBOX_REG_TYPES][4] = {
 };
 
 #endif
+
+#endif //PERFMON_NEHALEMEX_WESTMEREEX_COMMON_H

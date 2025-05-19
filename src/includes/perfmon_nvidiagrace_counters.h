@@ -27,7 +27,8 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_NVIDIAGRACE_COUNTERS_H
+#define PERFMON_NVIDIAGRACE_COUNTERS_H
 
 #define NUM_COUNTERS_NVIDIAGRACE 41
 
@@ -103,3 +104,4 @@ static char* nvidiagrace_translate_types[NUM_UNITS] = {
     [MBOX1] = "/sys/bus/event_source/devices/nvidia_scf_pmu_1",
 };
 
+#endif //PERFMON_NVIDIAGRACE_COUNTERS_H

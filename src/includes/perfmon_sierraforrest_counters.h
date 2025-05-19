@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_SIERRAFORREST_COUNTERS_H
+#define PERFMON_SIERRAFORREST_COUNTERS_H
 
 #include <intel_perfmon_uncore_discovery.h>
 
@@ -2122,3 +2124,5 @@ static PerfmonUncoreDiscovery sierraforrest_uncore_discovery_map[] = {
     {"PBOX", SRF_DEVICE_ID_B2CXL, 12, PCI_R2PCIE_DEVICE0},
     {"INVALID", -1, 0, MSR_DEV}
 };
+
+#endif //PERFMON_SIERRAFORREST_COUNTERS_H

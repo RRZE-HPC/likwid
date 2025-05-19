@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_SANDYBRIDGEEP_COUNTERS_H
+#define PERFMON_SANDYBRIDGEEP_COUNTERS_H
 
 #define NUM_COUNTERS_SANDYBRIDGEEP 102
 #define NUM_COUNTERS_UNCORE_SANDYBRIDGEEP 53
@@ -251,3 +253,5 @@ static char* sandybridgeEP_translate_types[NUM_UNITS] = {
     [UBOX] = "/sys/bus/event_source/devices/uncore_ubox",
     [UBOXFIX] = "/sys/bus/event_source/devices/uncore_ubox",
 };
+
+#endif //PERFMON_SANDYBRIDGEEP_COUNTERS_H

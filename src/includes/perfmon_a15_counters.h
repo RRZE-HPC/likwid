@@ -27,7 +27,8 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_A15_COUNTERS_H
+#define PERFMON_A15_COUNTERS_H
 
 #define NUM_COUNTERS_A15 6
 
@@ -47,3 +48,5 @@ static BoxMap a15_box_map[NUM_UNITS] = {
 static char* a15_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/cpu",
 };
+
+#endif //PERFMON_A15_COUNTERS_H

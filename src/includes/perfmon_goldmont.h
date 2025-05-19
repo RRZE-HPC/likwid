@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_GOLDMONT_H
+#define PERFMON_GOLDMONT_H
 
 #include <perfmon_goldmont_events.h>
 #include <perfmon_goldmont_counters.h>
@@ -530,3 +532,5 @@ int perfmon_finalizeCountersThread_goldmont(int thread_id, PerfmonEventSet* even
     }
     return 0;
 }
+
+#endif //PERFMON_GOLDMONT_H

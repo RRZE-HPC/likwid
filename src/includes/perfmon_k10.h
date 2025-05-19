@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_K10_H
+#define PERFMON_K10_H
 
 #include <perfmon_k10_events.h>
 #include <perfmon_k10_counters.h>
@@ -227,3 +229,5 @@ int perfmon_finalizeCountersThread_k10(int thread_id, PerfmonEventSet* eventSet)
     }
     return 0;
 }
+
+#endif //PERFMON_K10_H

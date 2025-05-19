@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_KABINI_COUNTERS_H
+#define PERFMON_KABINI_COUNTERS_H
 
 #define NUM_COUNTERS_KABINI 12
 #define NUM_COUNTERS_CORE_KABINI 8
@@ -59,3 +61,4 @@ static BoxMap kabini_box_map[NUM_UNITS] = {
     [CBOX0] = {0, 0, 0, 0, 0, 0, 48},
 };
 
+#endif //PERFMON_KABINI_COUNTERS_H

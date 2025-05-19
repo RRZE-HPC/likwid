@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_ZEN4_COUNTERS_H
+#define PERFMON_ZEN4_COUNTERS_H
 
 #define NUM_COUNTERS_ZEN4 33
 #define NUM_COUNTERS_CORE_ZEN4 9
@@ -120,3 +122,5 @@ static PerfEventUnit zen4_perf_event_units[NUM_UNITS] = {
                          }},
                          
 };
+
+#endif //PERFMON_ZEN4_COUNTERS_H

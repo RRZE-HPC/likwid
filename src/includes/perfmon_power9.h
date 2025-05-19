@@ -27,7 +27,8 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_POWER9_H
+#define PERFMON_POWER9_H
 
 #include <perfmon_power9_counters.h>
 #include <perfmon_power9_events.h>
@@ -35,3 +36,5 @@
 static int perfmon_numCountersPower9 = NUM_COUNTERS_POWER9;
 static int perfmon_numCoreCountersPower9 = NUM_COUNTERS_POWER9;
 static int perfmon_numArchEventsPower9 = NUM_ARCH_EVENTS_POWER9;
+
+#endif //PERFMON_POWER9_H

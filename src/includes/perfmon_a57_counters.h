@@ -27,7 +27,8 @@
  *
  * =======================================================================================
  */
-
+#ifndef PERFMON_A57_COUNTERS_H
+#define PERFMON_A57_COUNTERS_H
 
 #define NUM_COUNTERS_A57 6
 
@@ -55,3 +56,5 @@ static char* a72_translate_types[NUM_UNITS] = {
 static char* a53_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/cpu",
 };
+
+#endif //PERFMON_A57_COUNTERS_H

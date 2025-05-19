@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_EMERALDRAPIDS_COUNTERS_H
+#define PERFMON_EMERALDRAPIDS_COUNTERS_H
 
 #include <intel_perfmon_uncore_discovery.h>
 
@@ -1666,3 +1668,4 @@ static PerfmonUncoreDiscovery emeraldrapids_uncore_discovery_map[] = {
     {"INVALID", -1, 0, MSR_DEV}
 };
 
+#endif //PERFMON_EMERALDRAPIDS_COUNTERS_H

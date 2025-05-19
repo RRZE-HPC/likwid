@@ -28,6 +28,8 @@
  *
  * =======================================================================================
  */
+#ifndef PERFMON_KABINI_H
+#define PERFMON_KABINI_H
 
 #include <perfmon_kabini_events.h>
 #include <perfmon_kabini_counters.h>
@@ -360,3 +362,5 @@ int perfmon_finalizeCountersThread_kabini(int thread_id, PerfmonEventSet* eventS
     }
     return 0;
 }
+
+#endif //PERFMON_KABINI_H
