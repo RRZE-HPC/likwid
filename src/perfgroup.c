@@ -51,9 +51,16 @@
 #include <bstrlib.h>
 #include <bstrlib_helper.h>
 
-
-
 static int totalgroups = 0;
+
+const char *groupFileSectionNames[MAX_GROUP_FILE_SECTIONS] = {
+    "NONE",
+    "SHORT",
+    "EVENTSET",
+    "METRICS",
+    "LONG",
+    "LUA"
+};
 
 /* #####   FUNCTION DEFINITIONS  -  INTERNAL FUNCTIONS   ################## */
 
