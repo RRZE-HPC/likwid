@@ -157,7 +157,7 @@ typedef enum {
     ACCESS_TYPE_MAX
 } AccessTypes;
 
-static char* AccessTypeNames[ACCESS_TYPE_MAX] = {
+static const char* AccessTypeNames[ACCESS_TYPE_MAX] = {
     [ACCESS_TYPE_MSR] = "MSR",
     [ACCESS_TYPE_PCI] = "PCI",
     [ACCESS_TYPE_MMIO] = "MMIO",
