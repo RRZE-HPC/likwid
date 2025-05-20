@@ -109,7 +109,7 @@ bstring bstrListGet(struct bstrList * sl, int idx)
 
 int bstrListToCharList(struct bstrList* sl, char*** list)
 {
-    int i, j, err = 0;
+    int i, j;
     if (!sl || !list) return BSTR_ERR;
     char** l = malloc(sizeof(char*) * sl->qty);
     if (l)
