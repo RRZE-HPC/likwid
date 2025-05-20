@@ -168,7 +168,6 @@ static void close_cpu(struct cpufreq_files* cpufiles)
 static int open_cpu_file(char* filename, int* fd)
 {
     int f = -1;
-    int access_flag = R_OK|W_OK;
     int open_flag = O_RDWR;
 
     f = open(filename, open_flag);
@@ -195,7 +194,6 @@ static int open_cpu(int cpu, struct cpufreq_files* files)
     int ret = 0;
     char fname[1025];
 
-    FILE* fp = NULL;
     if (cpu >= 0)
     {
         memset(files, -1, sizeof(struct cpufreq_files));
@@ -314,7 +312,6 @@ freq_client_startDaemon()
     pid_t pid;
     int timeout = 1000;
     int socket_fd = -1;
-    int print_once = 0;
 
     if (access(exeprog, X_OK))
     {
@@ -621,6 +618,7 @@ static int getAMDTurbo(const int cpu_id)
         return 0;
     }
 #ifdef LIKWID_USE_PERFEVENT
+    (void)cpu_id;
     fprintf(stderr,"Cannot manipulate CPU turbo with ACCESSMODE=perf_event.\n");
     return -1;
 #else
@@ -669,6 +667,8 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
         return -EPERM;
     }
 #ifdef LIKWID_USE_PERFEVENT
+    (void)cpu_id;
+    (void)turbo;
     fprintf(stderr,"Cannot manipulate CPU turbo with ACCESSMODE=perf_event.\n");
     return -1;
 #else
@@ -731,6 +731,7 @@ static int getIntelTurbo(const int cpu_id)
         return 0;
     }
 #ifdef LIKWID_USE_PERFEVENT
+    (void)cpu_id;
     fprintf(stderr,"Cannot manipulate CPU turbo with ACCESSMODE=perf_event.\n");
     return -1;
 #else
@@ -778,6 +779,8 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
         return -EPERM;
     }
 #ifdef LIKWID_USE_PERFEVENT
+    (void)cpu_id;
+    (void)turbo;
     fprintf(stderr,"Cannot manipulate CPU turbo with ACCESSMODE=perf_event.\n");
     return -1;
 #else
@@ -838,12 +841,12 @@ static int getIntelHWP(const int cpu_id)
         return 0;
     }
 #ifdef LIKWID_USE_PERFEVENT
+    (void)cpu_id;
     fprintf(stderr,"Cannot read HWP state with ACCESSMODE=perf_event.\n");
     return -1;
 #else
 #if defined(__i386__) || defined(__x86_64)
-    unsigned int eax, ebx, ecx, edx;
-    eax = 0x06;
+    uint32_t eax = 6, ebx, ecx = 0, edx;
     CPUID(eax, ebx, ecx, edx);
     if (!(eax & (1<<7)))
     {
@@ -894,6 +897,7 @@ static int getBaseFreq(const int cpu_id)
         return 0;
     }
 #ifdef LIKWID_USE_PERFEVENT
+    (void)cpu_id;
     fprintf(stderr,"Cannot read base frequency with ACCESSMODE=perf_event.\n");
     return -1;
 #else

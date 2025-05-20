@@ -40,8 +40,7 @@ extern char* daemon_path;
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 static int isAMD()
 {
-    unsigned int eax,ebx,ecx,edx;
-    eax = 0x0;
+    unsigned int eax = 0,ebx,ecx = 0,edx;
     CPUID(eax,ebx,ecx,edx);
     if (ecx == 0x444d4163)
         return 1;
