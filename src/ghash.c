@@ -334,7 +334,6 @@ g_hash_table_remove(GHashTable *hash_table, gpointer key)
     if (key)
     {
         int* key_ptr = (int*)key;
-        int keyint = *key_ptr;
         int idx = g_hash_table_lookup_node(hash_table, key_ptr, (guint*)&hashret);
         g_hash_table_remove_node(hash_table, idx);
     }
@@ -345,10 +344,6 @@ static void
 g_hash_table_remove_all_nodes (GHashTable *hash_table,
                                gboolean    notify)
 {
-  int i;
-  gpointer key;
-  gpointer value;
-
   if (!notify ||
       (hash_table->key_destroy_func == NULL &&
        hash_table->value_destroy_func == NULL))
@@ -360,7 +355,7 @@ g_hash_table_remove_all_nodes (GHashTable *hash_table,
       return;
     }
 
-  for (i = 0; i < hash_table->size; i++)
+  for (int i = 0; i < hash_table->size; i++)
     {
       if (HASH_IS_REAL (hash_table->hashes[i]))
       {
