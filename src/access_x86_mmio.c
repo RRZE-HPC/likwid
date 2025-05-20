@@ -170,28 +170,27 @@ static int mmio_validDevice(uint32_t pci_bus, uint32_t deviceId)
     uint32_t pci_dev = 0;
     char buf[20];
     bstring bdevfile = bformat("/sys/bus/pci/devices/0000:%.2x:00.1/device", pci_bus);
-    FILE* fd = fopen(bdata(bdevfile), "r");
-    if (fd < 0)
+    FILE* fptr = fopen(bdata(bdevfile), "r");
+    if (!fptr)
     {
         ERROR_PRINT("Cannot get device id: failed to open %s", bdata(bdevfile));
         bdestroy(bdevfile);
         return 0;
     }
     
-    int ret = fread(buf, sizeof(char), 20, fd);
+    int ret = fread(buf, sizeof(char), 20, fptr);
     if (ret < 0)
     {
         ERROR_PRINT("Cannot get device id: failed to read %s", bdata(bdevfile));
-        fclose(fd);
+        fclose(fptr);
         bdestroy(bdevfile);
         return 0;
     }
-    fclose(fd);
+    fclose(fptr);
     pci_dev = strtoul(buf, NULL, 16);
     if (pci_dev != deviceId)
     {
         ERROR_PRINT("Cannot get device id: device ids do not match 0x%X and 0x%X", pci_dev, deviceId);
-        fclose(fd);
         bdestroy(bdevfile);
         return 0;
     }
@@ -202,9 +201,6 @@ static int mmio_validDevice(uint32_t pci_bus, uint32_t deviceId)
 static int
 mmio_fillBox(MMIOConfig* config, uint32_t pci_bus, int imc_idx, MMIOBoxHandle* handle)
 {
-    //uint32_t pci_bus = get_pci_bus_of_socket(pkg_id);
-    uint32_t pci_dev = 0;
-    
     uint32_t tmp = 0;
     off_t addr = 0;
     off_t mem_offset = 0;
@@ -215,7 +211,10 @@ mmio_fillBox(MMIOConfig* config, uint32_t pci_bus, int imc_idx, MMIOBoxHandle* h
     }
     
     bstring bdevmem = bformat("/sys/bus/pci/devices/0000:%.2x:00.1/config", pci_bus);
+    if (!bdata(bdevmem))
+        return -ENOMEM;
 
+#pragma GCC diagnostic ignored "-Wnonnull"
     int pcihandle = open(bdata(bdevmem), O_RDONLY);
     if (pcihandle < 0)
     {
@@ -289,9 +288,6 @@ mmio_fillBox(MMIOConfig* config, uint32_t pci_bus, int imc_idx, MMIOBoxHandle* h
 static int
 mmio_fillFreerunBox(MMIOConfig* config, uint32_t pci_bus, int imc_idx, MMIOBoxHandle* handle)
 {
-    //uint32_t pci_bus = get_pci_bus_of_socket(pkg_id);
-    uint32_t pci_dev = 0;
-    
     uint32_t tmp = 0;
     off_t addr = 0;
     off_t mem_offset = 0;
@@ -302,7 +298,10 @@ mmio_fillFreerunBox(MMIOConfig* config, uint32_t pci_bus, int imc_idx, MMIOBoxHa
     }
     
     bstring bdevmem = bformat("/sys/bus/pci/devices/0000:%.2x:00.1/config", pci_bus);
+    if (!bdata(bdevmem))
+        return -ENOMEM;
 
+#pragma GCC diagnostic ignored "-Wnonnull"
     int pcihandle = open(bdata(bdevmem), O_RDONLY);
     if (pcihandle < 0)
     {
@@ -397,7 +396,6 @@ int
 access_x86_mmio_init(const int socket)
 {
     int i = 0;
-    uint64_t startAddr = 0;
     if (access_mmio_initialized[socket])
     {
         return 0;
