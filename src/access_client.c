@@ -75,7 +75,7 @@ static pthread_mutex_t *cpuLocks = NULL;
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 void __attribute__((destructor (104))) close_access_client(void);
 
-static char*
+static const char*
 access_client_strerror(AccessErrorType det)
 {
     switch (det)
@@ -133,7 +133,7 @@ access_client_startDaemon_direct(uint32_t cpu_id, struct sockaddr_un *address)
     /* Check the function of the daemon here */
     char *newargv[] = { NULL };
     char *newenv[] = { NULL };
-    char *safeexeprog = TOSTRING(ACCESSDAEMON);
+    const char *safeexeprog = TOSTRING(ACCESSDAEMON);
     char exeprog[1024];
     int  ret;
     pid_t pid;
