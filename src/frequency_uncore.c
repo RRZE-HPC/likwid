@@ -48,9 +48,9 @@ static int _freq_getUncoreMinMax(const int socket_id, int *cpuId, double* min, d
     *cpuId = -1;
     *min = 0;
     *max = 0;
-    for (int i=0; i<cpuid_topology.numHWThreads; i++)
+    for (unsigned i=0; i<cpuid_topology.numHWThreads; i++)
     {
-        if (cpuid_topology.threadPool[i].packageId == socket_id)
+        if (cpuid_topology.threadPool[i].packageId == (unsigned)socket_id)
         {
             cpu = cpuid_topology.threadPool[i].apicId;
             break;
@@ -103,6 +103,7 @@ static int _freq_getUncoreMinMax(const int socket_id, int *cpuId, double* min, d
     if (blength(bavail_list->entry[0]) > 0)
     {
         char* tptr = NULL;
+#pragma GCC diagnostic ignored "-Wnonnull"
         dmin = strtod(bdata(bavail_list->entry[0]), &tptr);
         if (bdata(bavail_list->entry[0]) != tptr)
         {
@@ -242,9 +243,9 @@ uint64_t freq_getUncoreFreqMin(const int socket_id)
     {
         return 0;
     }
-    for (int i=0; i<cpuid_topology.numHWThreads; i++)
+    for (unsigned i=0; i<cpuid_topology.numHWThreads; i++)
     {
-        if (cpuid_topology.threadPool[i].packageId == socket_id)
+        if (cpuid_topology.threadPool[i].packageId == (unsigned)socket_id)
         {
             cpuId = cpuid_topology.threadPool[i].apicId;
             break;
@@ -371,9 +372,9 @@ uint64_t freq_getUncoreFreqMax(const int socket_id)
     {
         return 0;
     }
-    for (int i=0; i<cpuid_topology.numHWThreads; i++)
+    for (unsigned i=0; i<cpuid_topology.numHWThreads; i++)
     {
-        if (cpuid_topology.threadPool[i].packageId == socket_id)
+        if (cpuid_topology.threadPool[i].packageId == (unsigned)socket_id)
         {
             cpuId = cpuid_topology.threadPool[i].apicId;
             break;
@@ -430,9 +431,9 @@ uint64_t freq_getUncoreFreqCur(const int socket_id)
     {
         return 0;
     }
-    for (int i=0; i<cpuid_topology.numHWThreads; i++)
+    for (unsigned i=0; i<cpuid_topology.numHWThreads; i++)
     {
-        if (cpuid_topology.threadPool[i].packageId == socket_id)
+        if (cpuid_topology.threadPool[i].packageId == (unsigned)socket_id)
         {
             cpuId = cpuid_topology.threadPool[i].apicId;
             break;
