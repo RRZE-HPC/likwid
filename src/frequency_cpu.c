@@ -168,7 +168,6 @@ static void close_cpu(struct cpufreq_files* cpufiles)
 static int open_cpu_file(char* filename, int* fd)
 {
     int f = -1;
-    int access_flag = R_OK|W_OK;
     int open_flag = O_RDWR;
 
     f = open(filename, open_flag);
@@ -195,7 +194,6 @@ static int open_cpu(int cpu, struct cpufreq_files* files)
     int ret = 0;
     char fname[1025];
 
-    FILE* fp = NULL;
     if (cpu >= 0)
     {
         memset(files, -1, sizeof(struct cpufreq_files));
@@ -314,7 +312,6 @@ freq_client_startDaemon()
     pid_t pid;
     int timeout = 1000;
     int socket_fd = -1;
-    int print_once = 0;
 
     if (access(exeprog, X_OK))
     {
@@ -842,8 +839,7 @@ static int getIntelHWP(const int cpu_id)
     return -1;
 #else
 #if defined(__i386__) || defined(__x86_64)
-    unsigned int eax, ebx, ecx, edx;
-    eax = 0x06;
+    uint32_t eax = 6, ebx, ecx = 0, edx;
     CPUID(eax, ebx, ecx, edx);
     if (!(eax & (1<<7)))
     {
