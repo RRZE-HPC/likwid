@@ -89,6 +89,9 @@ __rdpmc(int cpu_id, int counter, uint64_t* value)
 void
 segfault_sigaction_rdpmc(int signal, siginfo_t *si, void *arg)
 {
+    (void)signal;
+    (void)si;
+    (void)arg;
     quick_exit(1);
 }
 
@@ -145,9 +148,9 @@ test_rdpmc(int cpu_id, uint64_t value, int flag)
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int
-access_x86_rdpmc_init(const int cpu_id)
+access_x86_rdpmc_init(uint32_t cpu_id)
 {
-    unsigned eax,ebx,ecx,edx;
+    unsigned eax,ebx,ecx = 0,edx;
     if (cpuid_info.isIntel)
     {
         eax = 0xA;
@@ -229,8 +232,10 @@ access_x86_rdpmc_init(const int cpu_id)
 }
 
 void
-access_x86_rdpmc_finalize(const int cpu_id)
+access_x86_rdpmc_finalize(uint32_t cpu_id)
 {
+    (void)cpu_id;
+
     pthread_mutex_lock(&rdpmc_setup_lock);
     rdpmc_works_pmc = -1;
     rdpmc_works_fixed_inst = -1;
@@ -243,7 +248,7 @@ access_x86_rdpmc_finalize(const int cpu_id)
 }
 
 int
-access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
+access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
 {
     int ret = -EAGAIN;
 
@@ -391,13 +396,19 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
 }
 
 int
-access_x86_rdpmc_write( const int cpu_id, uint32_t reg, uint64_t data)
+access_x86_rdpmc_write(uint32_t cpu_id, uint32_t reg, uint64_t data)
 {
+    (void)cpu_id;
+    (void)reg;
+    (void)data;
+
     return -EPERM;
 }
 
-int access_x86_rdpmc_check(PciDeviceIndex dev, int cpu_id)
+int access_x86_rdpmc_check(PciDeviceIndex dev, uint32_t cpu_id)
 {
+    (void)cpu_id;
+
     int core_works = rdpmc_works_pmc;
     if (cpuid_info.isIntel)
     {
