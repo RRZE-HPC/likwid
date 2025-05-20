@@ -252,6 +252,11 @@ typedef struct {
     PerfmonDiscoverySocket* sockets;
 } PerfmonDiscovery;
 
+#define ACCESS_TYPE_ERROR(access_type) \
+    do { \
+        ERROR_PRINT("%s has invalid value: %d", (#access_type), (access_type)); \
+        exit(EXIT_FAILURE); \
+    } while (0)
 
 int perfmon_uncore_discovery(int model, PerfmonDiscovery **perfmon);
 void perfmon_uncore_discovery_free(PerfmonDiscovery* perfmon);
