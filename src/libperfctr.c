@@ -63,13 +63,11 @@ static int numberOfGroups = 0;
 static int* groups;
 static int threads2Cpu[MAX_NUM_THREADS];
 static pthread_t threads2Pthread[MAX_NUM_THREADS];
-static int realThreads2Cpu[MAX_NUM_THREADS] = { [ 0 ... (MAX_NUM_THREADS-1)] = -1};
 static int num_cpus = 0;
 static int registered_cpus = 0;
 static pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 static int use_locks = 0;
 static pthread_mutex_t threadLocks[MAX_NUM_THREADS] = { [ 0 ... (MAX_NUM_THREADS-1)] = PTHREAD_MUTEX_INITIALIZER};
-static int maxRegionNameLength = 100;
 
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
@@ -164,10 +162,8 @@ likwid_markerInit(void)
     char* eventStr = getenv("LIKWID_EVENTS");
     char* cThreadStr = getenv("LIKWID_THREADS");
     char* filepath = getenv("LIKWID_FILEPATH");
-    char* perfpid = getenv("LIKWID_PERF_EXECPID");
     char* debugStr = getenv("LIKWID_DEBUG");
     char* pinStr = getenv("LIKWID_PIN");
-    char execpid[20];
     /* Dirty hack to avoid nonnull warnings */
     int (*ownatoi)(const char*);
     ownatoi = &atoi;
@@ -370,7 +366,6 @@ likwid_markerThreadInit(void)
 void
 likwid_markerNextGroup(void)
 {
-    int i;
     int next_group;
 
     if (!likwid_init)
@@ -382,7 +377,7 @@ likwid_markerNextGroup(void)
     if (next_group != groupSet->activeGroup)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Switch from group %d to group %d", groupSet->activeGroup, next_group);
-        i = perfmon_switchActiveGroup(next_group);
+        perfmon_switchActiveGroup(next_group);
     }
     return;
 }
@@ -561,103 +556,103 @@ likwid_markerWriteFile(const char* markerfile)
     }
 
     file = fopen(markerfile,"w");
-    if (file != NULL)
+    if (!file)
     {
-        int newNumberOfRegions = 0;
-        int newRegionID = 0;
-        validRegions = (int*)malloc(numberOfRegions*sizeof(int));
-        if (!validRegions)
-        {
-            return -EFAULT;
-        }
-        for (int i=0; i<numberOfRegions; i++)
-        {
-            validRegions[i] = 0;
-        }
-        for (int i=0; i<numberOfRegions; i++)
-        {
-            for (int j=0; j<numberOfThreads; j++)
-            {
-                validRegions[i] += perfmon_getCountOfRegion(i, j);
-            }
-            if (validRegions[i] > 0)
-                newNumberOfRegions++;
-            else
-                fprintf(stderr, "WARN: Skipping region %s for evaluation.\n", perfmon_getTagOfRegion(i));
-        }
-        if (newNumberOfRegions < numberOfRegions)
-        {
-            fprintf(stderr, "WARN: Regions are skipped because:\n");
-            fprintf(stderr, "      - The region was only registered\n");
-            fprintf(stderr, "      - The region was started but never stopped\n");
-            fprintf(stderr, "      - The region was never started but stopped\n");
-        }
-        DEBUG_PRINT(DEBUGLEV_DEVELOP,
-                "Creating Marker file %s with %d regions %d groups and %d threads",
-                markerfile, newNumberOfRegions, numberOfGroups, numberOfThreads);
-        bstring thread_regs_grps = bformat("%d %d %d", numberOfThreads, newNumberOfRegions, numberOfGroups);
-        fprintf(file,"%s\n", bdata(thread_regs_grps));
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(thread_regs_grps));
-        bdestroy(thread_regs_grps);
+        fprintf(stderr, "Unable open marker file for writing: %s\n", markerfile);
+        perror("fopen");
+        return -errno;
+    }
 
-        for (int i=0; i<numberOfRegions; i++)
+    int newNumberOfRegions = 0;
+    int newRegionID = 0;
+    validRegions = (int*)malloc(numberOfRegions*sizeof(int));
+    if (!validRegions)
+    {
+        return -EFAULT;
+    }
+    for (int i=0; i<numberOfRegions; i++)
+    {
+        validRegions[i] = 0;
+    }
+    for (int i=0; i<numberOfRegions; i++)
+    {
+        for (int j=0; j<numberOfThreads; j++)
         {
-            if (validRegions[i] == 0)
-                continue;
-            bstring tmp = bformat("%d:%s", newRegionID, perfmon_getTagOfRegion(i));
-            fprintf(file,"%s\n", bdata(tmp));
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(tmp));
-            bdestroy(tmp);
-            newRegionID++;
+            validRegions[i] += perfmon_getCountOfRegion(i, j);
         }
-        int *cpulist = (int*) malloc(numberOfThreads * sizeof(int));
-        if (cpulist == NULL)
-        {
-            fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n",
-                        numberOfThreads * sizeof(int));
-            free(validRegions);
-            return -EFAULT;
-        }
-        newRegionID = 0;
-        for (int i=0; i<numberOfRegions; i++)
-        {
-            if (validRegions[i] == 0)
-                continue;
-            int groupID = perfmon_getGroupOfRegion(i);
-            int nevents = groupSet->groups[groupID].numberOfEvents;
-            int cpulist_size = perfmon_getCpulistOfRegion(i, numberOfThreads, cpulist);
-            for (int j=0; j<numberOfThreads; j++)
-            {
-                int count = perfmon_getCountOfRegion(i, j);
-                double time = perfmon_getTimeOfRegion(i, j);
-                bstring l = bformat("%d %d %d %u %e %d ", newRegionID,
-                                                          groupID,
-                                                          cpulist[j],
-                                                          count,
-                                                          time,
-                                                          nevents);
+        if (validRegions[i] > 0)
+            newNumberOfRegions++;
+        else
+            fprintf(stderr, "WARN: Skipping region %s for evaluation.\n", perfmon_getTagOfRegion(i));
+    }
+    if (newNumberOfRegions < numberOfRegions)
+    {
+        fprintf(stderr, "WARN: Regions are skipped because:\n");
+        fprintf(stderr, "      - The region was only registered\n");
+        fprintf(stderr, "      - The region was started but never stopped\n");
+        fprintf(stderr, "      - The region was never started but stopped\n");
+    }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP,
+            "Creating Marker file %s with %d regions %d groups and %d threads",
+            markerfile, newNumberOfRegions, numberOfGroups, numberOfThreads);
+    bstring thread_regs_grps = bformat("%d %d %d", numberOfThreads, newNumberOfRegions, numberOfGroups);
+    fprintf(file,"%s\n", bdata(thread_regs_grps));
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(thread_regs_grps));
+    bdestroy(thread_regs_grps);
 
-                for (int k=0; k < MIN(nevents, NUM_PMC); k++)
-                {
-                    bstring tmp = bformat("%e ", perfmon_getResultOfRegionThread(i, k, j));
-                    bconcat(l, tmp);
-                    bdestroy(tmp);
-                }
-                fprintf(file,"%s\n", bdata(l));
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(l));
-                bdestroy(l);
-            }
-            newRegionID++;
-        }
-        fclose(file);
+    for (int i=0; i<numberOfRegions; i++)
+    {
+        if (validRegions[i] == 0)
+            continue;
+        bstring tmp = bformat("%d:%s", newRegionID, perfmon_getTagOfRegion(i));
+        fprintf(file,"%s\n", bdata(tmp));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(tmp));
+        bdestroy(tmp);
+        newRegionID++;
+    }
+    int *cpulist = (int*) malloc(numberOfThreads * sizeof(int));
+    if (cpulist == NULL)
+    {
+        fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n",
+                    numberOfThreads * sizeof(int));
         free(validRegions);
-        free(cpulist);
+        return -EFAULT;
     }
-    else
+    newRegionID = 0;
+    for (int i=0; i<numberOfRegions; i++)
     {
-        fprintf(stderr, "Cannot open file %s\n", markerfile);
-        fprintf(stderr, "%s", strerror(errno));
+        if (validRegions[i] == 0)
+            continue;
+        int groupID = perfmon_getGroupOfRegion(i);
+        int nevents = groupSet->groups[groupID].numberOfEvents;
+        perfmon_getCpulistOfRegion(i, numberOfThreads, cpulist);
+        for (int j=0; j<numberOfThreads; j++)
+        {
+            int count = perfmon_getCountOfRegion(i, j);
+            double time = perfmon_getTimeOfRegion(i, j);
+            bstring l = bformat("%d %d %d %u %e %d ", newRegionID,
+                                                      groupID,
+                                                      cpulist[j],
+                                                      count,
+                                                      time,
+                                                      nevents);
+
+            for (int k=0; k < MIN(nevents, NUM_PMC); k++)
+            {
+                bstring tmp = bformat("%e ", perfmon_getResultOfRegionThread(i, k, j));
+                bconcat(l, tmp);
+                bdestroy(tmp);
+            }
+            fprintf(file,"%s\n", bdata(l));
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(l));
+            bdestroy(l);
+        }
+        newRegionID++;
     }
+    fclose(file);
+    free(validRegions);
+    free(cpulist);
+    return 0;
 }
 
 int
@@ -667,7 +662,6 @@ likwid_markerRegisterRegion(const char* regionTag)
     {
         return -EFAULT;
     }
-    TimerData timer;
     int ret = 0;
     uint64_t tmp = 0x0ULL;
     LikwidThreadResults* results = NULL;
@@ -847,19 +841,15 @@ likwid_markerGetRegion(
         return;
     }
     int length = 0;
-    int cpu_id;
-    int myCPU = likwid_getProcessorId();
-    int thread_id;
     LikwidThreadResults* results = NULL;
     bstring tag = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
 
-    cpu_id = hashTable_get(tag, &results);
+    hashTable_get(tag, &results);
     if (!results)
     {
         fprintf(stderr, "ERROR: Failed to get thread data for tag %s\n", regionTag);
         return;
     }
-    thread_id = getThreadID(myCPU);
     if (count != NULL)
     {
         *count = results->count;
@@ -890,7 +880,6 @@ likwid_markerResetRegion(const char* regionTag)
     {
         return -EFAULT;
     }
-    int cpu_id;
     int myCPU = likwid_getProcessorId();
     if (getThreadID(myCPU) < 0)
     {
@@ -898,7 +887,7 @@ likwid_markerResetRegion(const char* regionTag)
     }
     bstring tag = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
 
-    cpu_id = hashTable_get(tag, &results);
+    hashTable_get(tag, &results);
     if (!results)
     {
         fprintf(stderr, "ERROR: Failed to get thread data for tag %s\n", regionTag);
@@ -922,7 +911,6 @@ likwid_markerResetRegion(const char* regionTag)
 int
 likwid_getProcessorId(void)
 {
-    int i;
     cpu_set_t  cpu_set;
     CPU_ZERO(&cpu_set);
     sched_getaffinity(gettid(),sizeof(cpu_set_t), &cpu_set);
