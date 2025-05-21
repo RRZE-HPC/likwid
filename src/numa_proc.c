@@ -71,40 +71,42 @@ proc_findProcessor(uint32_t nodeId, uint32_t coreId)
     return 0;
 }
 
-static int
-setConfiguredNodes(void)
-{
-    DIR *dir = NULL;
-    struct dirent *de = NULL;
-    int maxIdConfiguredNode = 0;
-
-    dir = opendir("/sys/devices/system/node");
-
-    if (!dir)
-    {
-        maxIdConfiguredNode = 0;
-    }
-    else
-    {
-        while ((de = readdir(dir)) != NULL)
-        {
-            int nd;
-            if (strncmp(de->d_name, "node", 4))
-            {
-                continue;
-            }
-
-            nd = str2int(de->d_name+4);
-
-            if (maxIdConfiguredNode < nd)
-            {
-                maxIdConfiguredNode = nd;
-            }
-        }
-        closedir(dir);
-    }
-    return maxIdConfiguredNode;
-}
+// TODO do we still need this function?
+// At the time of commenting this out, this function was unused
+//static int
+//setConfiguredNodes(void)
+//{
+//    DIR *dir = NULL;
+//    struct dirent *de = NULL;
+//    int maxIdConfiguredNode = 0;
+//
+//    dir = opendir("/sys/devices/system/node");
+//
+//    if (!dir)
+//    {
+//        maxIdConfiguredNode = 0;
+//    }
+//    else
+//    {
+//        while ((de = readdir(dir)) != NULL)
+//        {
+//            int nd;
+//            if (strncmp(de->d_name, "node", 4))
+//            {
+//                continue;
+//            }
+//
+//            nd = str2int(de->d_name+4);
+//
+//            if (maxIdConfiguredNode < nd)
+//            {
+//                maxIdConfiguredNode = nd;
+//            }
+//        }
+//        closedir(dir);
+//    }
+//    return maxIdConfiguredNode;
+//}
 
 static int
 get_numaNodes(int* array, int maxlen)
@@ -342,7 +344,6 @@ int proc_numa_init(void)
 {
     int err = 0;
     uint32_t i;
-    uint64_t nrCPUs = 0;
     if (numaInitialized > 0 || numa_info.numberOfNodes > 0)
         return 0;
 
