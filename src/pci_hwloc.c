@@ -54,7 +54,6 @@ hwloc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     int cntr = 0;
     uint16_t testVendor = 0x8086;
     hwloc_obj_t obj;
-    int flags;
     int i;
 
     if (!hwloc_topology)
@@ -101,13 +100,13 @@ hwloc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
 
 int sysfs_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
 {
+    (void)testDevice;
+
     struct dirent *pDirent, *pDirentInner;
     DIR *pDir, *pDirInner;
     pDir = opendir ("/sys/devices");
     FILE* fp = NULL;
     char iPath[200], iiPath[200], buff[100];
-    char testDev[50];
-    size_t ret = 0;
     int nrSocks = 0;
     if (pDir == NULL)
     {
@@ -144,7 +143,7 @@ int sysfs_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
                     {
                         continue;
                     }
-                    ret = fread(buff, sizeof(char), 99, fp);
+                    fread(buff, sizeof(char), 99, fp);
                     dev_id = strtoul(buff, NULL, 16);
                     if (dev_id == SKYLAKE_SERVER_SOCKETID_MBOX_DID)
                     {
@@ -156,7 +155,7 @@ int sysfs_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
                         {
                             continue;
                         }
-                        ret = fread(buff, sizeof(char), 99, fp);
+                        fread(buff, sizeof(char), 99, fp);
                         numa_node = atoi(buff);
                         socket_bus[numa_node] = (char*)malloc(4);
                         sprintf(socket_bus[numa_node], "%02x/", bus);
