@@ -156,7 +156,6 @@ int init_smap(Map_t* map)
 
 int add_smap(Map_t map, char* key, void* val)
 {
-    MapValue *mval = NULL;
 #ifndef WITH_BSTRING
     gpointer gval = g_hash_table_lookup(map->ghash, key);
 #else
