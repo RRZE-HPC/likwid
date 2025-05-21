@@ -97,8 +97,6 @@ static int getBusFromSocketByDevid(const uint32_t socket, uint16_t testDevice)
 {
     int ret = 0;
     int cur_socket = (int)socket;
-    int out_bus_id = -1;
-    uint32_t out_devfn = 0x0;
     int bufflen = 1024;
     char buff[1024];
     FILE* fp = NULL;
