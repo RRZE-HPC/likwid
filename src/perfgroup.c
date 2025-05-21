@@ -51,7 +51,7 @@
 #include <bstrlib.h>
 #include <bstrlib_helper.h>
 
-static int totalgroups = 0;
+static size_t totalgroups = 0;
 
 const char *groupFileSectionNames[MAX_GROUP_FILE_SECTIONS] = {
     "NONE",
@@ -95,13 +95,12 @@ isdir(char* dirname)
 void
 perfgroup_returnGroups(int groups, char** groupnames, char** groupshort, char** grouplong)
 {
-    int i;
-    int freegroups = (totalgroups < groups ? groups : totalgroups);
-    for (i = 0; i <freegroups; i++)
+    size_t freegroups = (totalgroups < (size_t)groups ? (size_t)groups : totalgroups);
+    for (size_t i = 0; i <freegroups; i++)
     {
         free(groupnames[i]);
         groupnames[i] = NULL;
-        if (i < groups)
+        if (i < (size_t)groups)
         {
             if (groupshort[i] != NULL)
             {
@@ -141,7 +140,8 @@ perfgroup_getGroups(
         char*** groupshort,
         char*** grouplong)
 {
-    int i = 0, j = 0, s = 0;
+    int i = 0;
+    size_t s = 0;
     int fsize = 0, hsize = 0;
     DIR *dp = NULL;
     FILE* fp = NULL;
@@ -277,7 +277,7 @@ perfgroup_getGroups(
         return -ENOMEM;
     }
     memset(*grouplong, 0, totalgroups * sizeof(char**));
-    for (j=0; j < totalgroups; j++)
+    for (size_t j=0; j < totalgroups; j++)
     {
         (*groupnames)[j] = malloc((s+1) * sizeof(char));
         if ((*groupnames)[j] == NULL)
@@ -338,7 +338,7 @@ perfgroup_getGroups(
                             continue;
                         }
                         s = 1;
-                        for (j=s;j<linelist->qty; j++)
+                        for (size_t j=s;j<(size_t)linelist->qty; j++)
                         {
                             btrimws(linelist->entry[j]);
                             if (blength(linelist->entry[j]) == 0)
@@ -348,7 +348,7 @@ perfgroup_getGroups(
                         }
                         btrimws(linelist->entry[s]);
                         sinfo = bformat("%s", bdata(linelist->entry[s]));
-                        for (j=s+1;j<linelist->qty; j++)
+                        for (size_t j=s+1;j<(size_t)linelist->qty; j++)
                         {
                             btrimws(linelist->entry[j]);
                             bstring tmp = bformat(" %s", bdata(linelist->entry[j]));
@@ -397,13 +397,7 @@ perfgroup_getGroups(
                 }
                 if (read_long)
                 {
-
-                    (*grouplong)[i] = malloc((blength(long_info) + 1) * sizeof(char) );
-                    if ((*grouplong)[i] != NULL)
-                    {
-                        j = sprintf((*grouplong)[i], "%s", bdata(long_info));
-                        (*grouplong)[i][j] = '\0';
-                    }
+                    (*grouplong)[i] = bstr2cstr(long_info, ' ');
                 }
                 fclose(fp);
                 if (skip_group)
@@ -485,7 +479,7 @@ skip_cur_def_group:
                                 continue;
                             }
                             s = 1;
-                            for (j=s;j<linelist->qty; j++)
+                            for (size_t j=s;j<(size_t)linelist->qty; j++)
                             {
                                 btrimws(linelist->entry[j]);
                                 if (blength(linelist->entry[j]) == 0)
@@ -495,7 +489,7 @@ skip_cur_def_group:
                             }
                             btrimws(linelist->entry[s]);
                             sinfo = bformat("%s", bdata(linelist->entry[s]));
-                            for (j=s+1;j<linelist->qty; j++)
+                            for (size_t j=s+1;j<(size_t)linelist->qty; j++)
                             {
                                 btrimws(linelist->entry[j]);
                                 bstring tmp = bformat(" %s", bdata(linelist->entry[j]));
@@ -543,12 +537,7 @@ skip_cur_def_group:
                     }
                     if (read_long)
                     {
-                        (*grouplong)[i] = malloc((blength(long_info) + 1) * sizeof(char) );
-                        if ((*grouplong)[i] != NULL)
-                        {
-                            j = sprintf((*grouplong)[i], "%s", bdata(long_info));
-                            (*grouplong)[i][j] = '\0';
-                        }
+                        (*grouplong)[i] = bstr2cstr(long_info, ' ');
                     }
                     fclose(fp);
                     if (skip_group)
@@ -617,7 +606,7 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
     ginfo->metricnames = NULL;
     ginfo->longinfo = NULL;
     bstring eventBstr;
-    struct bstrList * eventList;
+    struct bstrList * eventList = NULL;
 #if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bstring fix0 = bformat("FIXC0");
     bstring fix1 = bformat("FIXC1");
@@ -715,7 +704,6 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
     }
     for (i = 0; i< eventList->qty; i++)
     {
-        int s;
         struct bstrList * elist;
         elist = bsplit(eventList->entry[i], ':');
         ginfo->events[i] = malloc((blength(elist->entry[0]) + 1) * sizeof(char));
@@ -847,7 +835,7 @@ perfgroup_readGroup(
         GroupInfo* ginfo)
 {
     FILE* fp;
-    int i, s, e, err = 0;
+    int s, err = 0;
     char buf[1024];
     GroupFileSections sec = GROUP_NONE;
     bstring REQUIRE = bformat("REQUIRE_NOHT");
@@ -859,7 +847,8 @@ perfgroup_readGroup(
     bstring fullpath = bformat("%s/%s/%s.txt", grouppath,architecture, groupname);
     bstring homepath = bformat("%s/.likwid/groups/%s/%s.txt", Home,architecture, groupname);
 
-    if (access(bdata(fullpath), R_OK))
+#pragma GCC diagnostic ignored "-Wnonnull"
+    if (bdata(fullpath) && access(bdata(fullpath), R_OK))
     {
         DEBUG_PRINT(DEBUGLEV_INFO, "Cannot read group file %s. Trying %s", bdata(fullpath), bdata(homepath));
         if (access(bdata(homepath), R_OK))
@@ -887,15 +876,12 @@ perfgroup_readGroup(
     ginfo->metricformulas = NULL;
     ginfo->metricnames = NULL;
     ginfo->longinfo = NULL;
-    ginfo->groupname = (char*)malloc((strlen(groupname)+10)*sizeof(char));
+    ginfo->groupname = strdup(groupname);
     if (ginfo->groupname == NULL)
     {
         err = -ENOMEM;
         goto cleanup;
     }
-    //strncpy(ginfo->groupname, groupname, strlen(groupname));
-    i = sprintf(ginfo->groupname, "%s", groupname);
-    ginfo->groupname[i] = '\0';
 
     fp = fopen(bdata(fullpath), "r");
     if (fp == NULL)
@@ -913,6 +899,7 @@ perfgroup_readGroup(
         if (strncmp(groupFileSectionNames[GROUP_SHORT], buf, strlen(groupFileSectionNames[GROUP_SHORT])) == 0)
         {
             sec = GROUP_SHORT;
+            size_t i;
             for (i=strlen(groupFileSectionNames[GROUP_SHORT]); i < strlen(buf); i++)
             {
                 if (buf[i] == ' ')
@@ -956,7 +943,6 @@ perfgroup_readGroup(
             continue;
         if (sec == GROUP_EVENTSET)
         {
-            i = 0;
             bstring bbuf = bfromcstr(buf);
             btrimws(bbuf);
             if (blength(bbuf) == 0)
@@ -966,11 +952,11 @@ perfgroup_readGroup(
                 continue;
             }
             linelist = bsplit(bbuf, ' ');
-            for (i=0; i<linelist->qty; i++)
+            for (int i=0; i<linelist->qty; i++)
                 btrimws(linelist->entry[i]);
             bdestroy(bbuf);
             bbuf = bstrcpy(linelist->entry[0]);
-            for (i=1; i<linelist->qty; i++)
+            for (int i=1; i<linelist->qty; i++)
             {
                 if (blength(linelist->entry[i]) > 0)
                 {
@@ -1036,7 +1022,7 @@ perfgroup_readGroup(
             bstrListDestroy(linelist);
             linelist = bsplit(bbuf, ' ');
             bdestroy(bbuf);
-            for (i=0; i<linelist->qty; i++)
+            for (int i=0; i<linelist->qty; i++)
                 btrimws(linelist->entry[i]);
             ginfo->counters[ginfo->nevents] = malloc((blength(linelist->entry[0])+1) * sizeof(char));
             if (ginfo->counters[ginfo->nevents] == NULL)
@@ -1058,7 +1044,6 @@ perfgroup_readGroup(
         }
         else if (sec == GROUP_METRICS)
         {
-            i = 0;
             bstring bbuf = bfromcstr(buf);
             btrimws(bbuf);
             if (blength(bbuf) == 0)
@@ -1068,11 +1053,11 @@ perfgroup_readGroup(
                 continue;
             }
             linelist = bsplit(bbuf, ' ');
-            for (i=0; i<linelist->qty; i++)
+            for (int i=0; i<linelist->qty; i++)
                 btrimws(linelist->entry[i]);
             bdestroy(bbuf);
             bbuf = bstrcpy(linelist->entry[0]);
-            for (i=1; i<linelist->qty; i++)
+            for (int i=1; i<linelist->qty; i++)
             {
                 if (blength(linelist->entry[i]) > 0)
                 {
@@ -1129,7 +1114,7 @@ perfgroup_readGroup(
             bdestroy(bbuf);
             sprintf(ginfo->metricformulas[ginfo->nmetrics], "%s", bdata(linelist->entry[linelist->qty - 1]));
             bbuf = bstrcpy(linelist->entry[0]);
-            for (i=1; i<linelist->qty - 1; i++)
+            for (int i=1; i<linelist->qty - 1; i++)
             {
                 if (blength(linelist->entry[i]) > 0)
                 {
@@ -1181,7 +1166,7 @@ cleanup:
         free(ginfo->longinfo);
     if (ginfo->nevents > 0)
     {
-        for(i=0;i<ginfo->nevents; i++)
+        for(int i=0;i<ginfo->nevents; i++)
         {
             if (ginfo->counters[i])
                 free(ginfo->counters[i]);
@@ -1191,7 +1176,7 @@ cleanup:
     }
     if (ginfo->nmetrics > 0)
     {
-        for(i=0;i<ginfo->nmetrics; i++)
+        for(int i=0;i<ginfo->nmetrics; i++)
         {
             if (ginfo->metricformulas[i])
                 free(ginfo->metricformulas[i]);
@@ -1654,7 +1639,6 @@ update_clist(CounterList* clist, char* counter, double result)
 void
 destroy_clist(CounterList* clist)
 {
-    int i;
     if (clist != NULL)
     {
         bstrListDestroy(clist->cnames);
