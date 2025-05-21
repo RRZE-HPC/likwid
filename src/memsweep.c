@@ -83,9 +83,7 @@ initMemory(size_t size, char* ptr, int domainId)
 static int
 findProcessor(uint32_t nodeId, uint32_t coreId)
 {
-    int i;
-
-    for (i=0; i<numa_info.nodes[nodeId].numberOfProcessors; i++)
+    for (size_t i=0; i<numa_info.nodes[nodeId].numberOfProcessors; i++)
     {
         if (numa_info.nodes[nodeId].processors[i] == coreId)
         {
