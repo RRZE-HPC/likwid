@@ -49,7 +49,9 @@ static uint64_t baseline = 0ULL;
 static uint64_t cpuClock = 0ULL;
 static uint64_t cyclesClock = 0ULL;
 static uint64_t sleepbase = 0ULL;
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
 static uint8_t fixedFreq = 0;
+#endif
 static int timer_initialized = 0;
 
 void (*TSTART)(TscCounter*) = NULL;
@@ -155,7 +157,7 @@ TIMER(TscCounter* cpu_c)
 }
 #endif
 
-
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
 static int os_timer(TscCounter* time)
 {
     int ret;
@@ -178,7 +180,7 @@ static void os_timer_stop(TscCounter* time)
 {
     os_timer(time);
 }
-
+#endif
 
 static void
 _timer_start( TimerData* time )
@@ -261,8 +263,6 @@ getCpuSpeed(void)
 #if defined(__x86_64) || defined(__i386__)
     int i;
     TimerData data;
-    TscCounter start;
-    TscCounter stop;
     unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
     uint64_t result = 0xFFFFFFFFFFFFFFFFULL;
     struct timeval tv1;
@@ -452,7 +452,6 @@ _timer_init( void )
 void
 init_sleep()
 {
-    int status;
     TimerData timer;
     _timer_init();
     struct timespec req = {0,1};
@@ -460,7 +459,7 @@ init_sleep()
     for (int i=0; i<10; ++i)
     {
         _timer_start(&timer);
-        status = clock_nanosleep(CLOCK_REALTIME,0,&req, &rem);
+        clock_nanosleep(CLOCK_REALTIME,0,&req, &rem);
         _timer_stop(&timer);
         if (_timer_print(&timer)*1E6 > sleepbase)
         {
@@ -495,7 +494,6 @@ timer_printCycles( const TimerData* time )
 double
 timer_print( const TimerData* time )
 {
-    uint64_t cycles;
     if (timer_initialized != 1)
     {
         ERROR_PRINT("Timer module not properly initialized");
@@ -518,7 +516,6 @@ timer_getCpuClock( void )
 uint64_t
 timer_getCpuClockCurrent( int cpu_id )
 {
-    int err;
     uint64_t clock = 0x0ULL;
     FILE *fpipe;
     char cmd[256];
