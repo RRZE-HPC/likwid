@@ -57,10 +57,9 @@ int perfmon_init_tigerlake(int cpu_id)
 
 uint32_t tgl_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    (void)cpu_id;
     uint32_t flags = (1ULL<<(1+(index*4)));
-    cpu_id++;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -76,7 +75,6 @@ uint32_t tgl_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int tgl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
     uint64_t latency_flags = 0x0ULL;
@@ -92,7 +90,7 @@ int tgl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -154,14 +152,8 @@ int perfmon_setupCounterThread_tigerlake(
         int thread_id,
         PerfmonEventSet* eventSet)
 {
-    int haveLock = 0;
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
-
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
-        haveLock = 1;
-    }
 
     if (MEASURE_CORE(eventSet))
     {
@@ -484,7 +476,6 @@ int perfmon_readCountersThread_tigerlake(int thread_id, PerfmonEventSet* eventSe
 int perfmon_finalizeCountersThread_tigerlake(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    int haveTileLock = 0;
     int clearPBS = 0;
     uint64_t ovf_values_core = (1ULL<<63)|(1ULL<<62);
     uint64_t ovf_values_uncore = 0x0ULL;
@@ -493,10 +484,6 @@ int perfmon_finalizeCountersThread_tigerlake(int thread_id, PerfmonEventSet* eve
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
-    }
-    if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
-    {
-        haveTileLock = 1;
     }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {

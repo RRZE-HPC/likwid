@@ -181,7 +181,7 @@ int perfmon_init_perfevent(int cpu_id)
     if (cpu_event_fds == NULL)
     {
         cpu_event_fds = malloc(cpuid_topology.numHWThreads * sizeof(int*));
-        for (int i=0; i < cpuid_topology.numHWThreads; i++)
+        for (size_t i=0; i < cpuid_topology.numHWThreads; i++)
             cpu_event_fds[i] = NULL;
     }
     if (cpu_event_fds[cpu_id] == NULL)
@@ -354,6 +354,7 @@ int apply_event_config(struct perf_event_attr *attr, uint64_t optval, int num_fo
             case CONFIG2:
                 attr->config2 |= create_mask(optval, formats[i].start, formats[i].end);
                 break;
+            default: ;
         }
         optval = (optval >> ((formats[i].end - formats[i].start)+1));
     }
@@ -376,6 +377,8 @@ int parse_and_apply_event_config(char* base, char* optname, uint64_t optval, str
 
 int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
 {
+    (void)index;
+
     int err = -1;
     int ret = 0;
     int num_formats = 0;
@@ -455,6 +458,7 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
                         case CONFIG2:
                             attr->config2 |= create_mask(eventConfig, formats[i].start, formats[i].end);
                             break;
+                        default: ;
                     }
                     eventConfig = (eventConfig >> ((formats[i].end - formats[i].start)+1));
                 }
@@ -473,6 +477,7 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
 
 int perf_perf_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
 {
+    (void)index;
     attr->type = PERF_TYPE_HARDWARE;
     attr->exclude_kernel = 1;
     attr->exclude_hv = 1;
@@ -484,6 +489,7 @@ int perf_perf_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEv
 
 int perf_metrics_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
 {
+    (void)index;
     attr->type = 4;
     attr->exclude_kernel = 1;
     attr->exclude_hv = 1;
@@ -496,6 +502,8 @@ int perf_metrics_setup(struct perf_event_attr *attr, RegisterIndex index, Perfmo
 
 int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterType type, PerfmonEvent *event)
 {
+    (void)index;
+
     int ret = 0;
     uint64_t offcore_flags = 0x0ULL;
     int num_formats = 0;
@@ -546,6 +554,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
                 case CONFIG2:
                     attr->config2 |= create_mask(eventConfig, formats[i].start, formats[i].end);
                     break;
+                default: ;
             }
             eventConfig = (eventConfig >> ((formats[i].end - formats[i].start)+1));
         }
@@ -583,6 +592,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
                 case CONFIG2:
                     attr->config2 |= create_mask(umask, formats[i].start, formats[i].end);
                     break;
+                default: ;
             }
             umask = (umask >> ((formats[i].end - formats[i].start)+1));
         }
@@ -591,7 +601,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
 
     if (event->numberOfOptions > 0)
     {
-        for(int j = 0; j < event->numberOfOptions; j++)
+        for(size_t j = 0; j < event->numberOfOptions; j++)
         {
 
             switch (event->options[j].type)
@@ -625,6 +635,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
                                 case CONFIG2:
                                     attr->config2 |= create_mask(optval, formats[i].start, formats[i].end);
                                     break;
+                                default: ;
                             }
                             optval = (optval >> ((formats[i].end - formats[i].start)+1));
                         }
@@ -675,6 +686,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
                     case CONFIG2:
                         attr->config2 |= create_mask(optval, formats[i].start, formats[i].end);
                         break;
+                    default: ;
                 }
                 optval = (optval >> ((formats[i].end - formats[i].start)+1));
             }
@@ -734,6 +746,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     perf_folder = NULL;
     for (int i = 0; i < folders->qty; i++)
     {
+#pragma GCC diagnostic ignored "-Wnonnull"
         if (!access(bdata(folders->entry[i]), R_OK|X_OK))
         {
             perf_folder = bstrcpy(folders->entry[i]);
@@ -831,7 +844,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                 && (cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 || cpuid_info.model == SAPPHIRERAPIDS))
             {
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, "Applying special umask handling for CBOXes of Intel ICX and SPR chips");
-                for(int j = 0; j < event->numberOfOptions; j++)
+                for(size_t j = 0; j < event->numberOfOptions; j++)
                 {
                     if (event->options[j].type == EVENT_OPTION_MATCH0)
                     {
@@ -856,6 +869,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                     case CONFIG2:
                         attr->config2 |= create_mask(umask, formats[i].start, formats[i].end);
                         break;
+                    default: ;
                 }
                 umask = (umask >> ((formats[i].end - formats[i].start)+1));
             }
@@ -866,7 +880,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
 
     if (event->numberOfOptions > 0)
     {
-        for(int j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -903,6 +917,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                                 case CONFIG2:
                                     attr->config2 |= create_mask(optval, formats[i].start, formats[i].end);
                                     break;
+                                default: ;
                             }
                             optval = (optval >> ((formats[i].end - formats[i].start)+1));
                         }
@@ -928,7 +943,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
         int got_cid = 0;
         int got_slices = 0;
         int got_tid = 0;
-        for(int j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -941,6 +956,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                 case EVENT_OPTION_SLICE:
                     got_slices = 1;
                     break;
+                default: ;
             }
         }
         if (!got_cid)
@@ -1494,7 +1510,6 @@ int perfmon_setupCountersThread_perfevent(
 
 int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSet)
 {
-    int ret = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
     if (!perf_event_initialized)
     {
@@ -1514,7 +1529,7 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
             c->counterData = 0x0ULL;
             if (eventSet->events[i].type == POWER)
             {
-                ret = read(cpu_event_fds[cpu_id][index],
+                read(cpu_event_fds[cpu_id][index],
                         &eventSet->events[i].threadCounter[thread_id].startData,
                         sizeof(long long));
             }

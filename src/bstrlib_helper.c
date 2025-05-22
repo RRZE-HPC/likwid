@@ -30,8 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-#include <bstrlib.h>
+#include <bstrlib_helper.h>
 #include <errno.h>
 
 
@@ -177,6 +176,14 @@ int bisnumber(bstring b)
         count++;
     }
     return count == blength(b);
+}
+
+uint64_t bstr2u64(bstring b, int base)
+{
+    const char *cstr = bdata(b);
+    if (b == NULL || cstr == NULL)
+        return 0;
+    return strtoull(cstr, NULL, base);
 }
 
 bstring read_file(char *filename)

@@ -48,11 +48,11 @@ int perfmon_init_knl(int cpu_id)
 
 uint32_t knl_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
+    (void)cpu_id;
     uint32_t flags = (1ULL<<(1+(index*4)));
-    cpu_id++;
     if (event->numberOfOptions > 0)
     {
-        for(int i=0;i<event->numberOfOptions;i++)
+        for(uint64_t i=0;i<event->numberOfOptions;i++)
         {
             switch(event->options[i].type)
             {
@@ -95,7 +95,7 @@ int knl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(int i=0;i<event->numberOfOptions;i++)
+        for(uint64_t i=0;i<event->numberOfOptions;i++)
         {
             switch(event->options[i].type)
             {
@@ -170,12 +170,11 @@ int knl_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
 
-
     flags |= (1ULL<<16)|(1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(int i=0;i<event->numberOfOptions;i++)
+        for(uint64_t i=0;i<event->numberOfOptions;i++)
         {
             switch(event->options[i].type)
             {
@@ -207,7 +206,6 @@ int knl_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int knl_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -219,7 +217,7 @@ int knl_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -261,7 +259,6 @@ int knl_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int knl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t filter_flags0 = 0x0ULL;
     uint64_t filter_flags1 = 0x0ULL;
@@ -292,7 +289,7 @@ int knl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -384,7 +381,6 @@ int knl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int knl_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -401,7 +397,7 @@ int knl_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {

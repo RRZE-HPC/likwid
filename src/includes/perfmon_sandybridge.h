@@ -52,9 +52,9 @@ int (*sandy_cbox_setup)(int, RegisterIndex, PerfmonEvent*);
 
 int snb_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    cpu_id++;
-    index++;
-    event++;
+    (void)cpu_id;
+    (void)index;
+    (void)event;
     return 0; 
 }
 
@@ -91,10 +91,9 @@ int perfmon_init_sandybridge(int cpu_id)
 
 uint32_t snb_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    (void)cpu_id;
     uint32_t flags = (1ULL<<(1+(index*4)));
-    cpu_id++;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -113,7 +112,6 @@ uint32_t snb_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int snb_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint32_t flags = 0x0U;
     uint64_t offcore_flags = 0x0ULL;
 
@@ -132,7 +130,7 @@ int snb_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     if (event->numberOfOptions > 0)
     {
-        for(j=0;j<event->numberOfOptions;j++)
+        for(uint64_t j=0;j<event->numberOfOptions;j++)
         {
             switch (event->options[j].type)
             {
@@ -191,7 +189,6 @@ int snb_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int snb_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint32_t flags = 0x0U;
     PciDeviceIndex dev = counter_map[index].device;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -205,7 +202,7 @@ int snb_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     flags = (1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -234,12 +231,11 @@ int snb_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 uint32_t snb_cbox_filter(PerfmonEvent *event)
 {
-    int j;
     uint32_t ret = 0x0;
     uint64_t mask = 0x0ULL;
     int set_state = 0;
 
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -320,7 +316,6 @@ uint32_t snb_cbox_filter(PerfmonEvent *event)
 
 int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint32_t flags = 0x0U;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -330,7 +325,7 @@ int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     flags |= (1ULL<<22)|(1ULL<<20);
     flags |= (event->umask<<8) + event->eventId;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -358,7 +353,6 @@ int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int snbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint32_t flags = 0x0U;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -380,7 +374,7 @@ int snbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         }
     }
 
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -422,7 +416,7 @@ int snb_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     flags |= (1ULL<<17);
     flags |= (event->umask<<8) + event->eventId;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -450,7 +444,6 @@ int snb_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int snb_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint32_t flags = 0x0U;
     uint64_t match = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
@@ -465,7 +458,7 @@ int snb_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     flags = (1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -508,7 +501,6 @@ int snb_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int snb_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint32_t flags = 0x0U;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -518,7 +510,7 @@ int snb_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     flags = (1ULL<<22);
     flags |= event->eventId & 0xFF;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -558,7 +550,6 @@ int snb_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int snb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDeviceIndex filterdev)
 {
-    int j;
     uint32_t flags = 0x0U;
     PciDeviceIndex dev = counter_map[index].device;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -573,7 +564,7 @@ int snb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
     flags = (1ULL<<22);
     flags |= event->cfgBits;
     flags |= (event->umask<<8) + event->eventId;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -655,7 +646,6 @@ int snb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
 
 int snb_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint32_t flags = 0x0U;
     PciDeviceIndex dev = counter_map[index].device;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -669,7 +659,7 @@ int snb_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     flags = (1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -697,7 +687,6 @@ int snb_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int snb_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint32_t flags = 0x0U;
     PciDeviceIndex dev = counter_map[index].device;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -711,7 +700,7 @@ int snb_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     flags = (1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -1737,7 +1726,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, "STOP_UBOX");
                         SNB_CHECK_OVERFLOW;
                     }
-
+                    // fall through
                 case CBOX0:
                     SNB_READ_BOX(CBOX0, counter1);
                     SNB_CHECK_OVERFLOW;

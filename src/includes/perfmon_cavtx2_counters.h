@@ -71,7 +71,7 @@ static RegisterMap cav_tx2_counter_map[NUM_COUNTERS_CAV_TX2] = {
     {"SBOX1C4", PMC34, SBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
     {"SBOX1C5", PMC35, SBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
     {"SBOX1C6", PMC36, SBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"SBOX1C7", PMC37, SBOX1},
+    {"SBOX1C7", PMC37, SBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
 };
 
 static BoxMap cav_tx2_box_map[NUM_UNITS] = {

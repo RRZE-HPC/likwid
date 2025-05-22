@@ -78,11 +78,11 @@ int perfmon_init_sapphirerapids(int cpu_id)
 
 uint64_t spr_fixed_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter* data)
 {
-    int j;
+    (void)thread_id;
+    (void)event;
+    (void)data;
     uint32_t flags = (1ULL<<(1+(index*4)));
-    int cpu_id = groupSet->threads[thread_id].processorId;
-    cpu_id++; // to avoid warnings
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -98,6 +98,7 @@ uint64_t spr_fixed_setup(int thread_id, RegisterIndex index, PerfmonEvent *event
 
 uint64_t spr_fixed_start(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
     PciDeviceIndex dev = counter_map[index].device;
@@ -110,7 +111,7 @@ uint64_t spr_fixed_start(int thread_id, RegisterIndex index, PerfmonEvent *event
 
 uint64_t spr_pmc_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter* data)
 {
-    int j;
+    (void)data;
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
     uint64_t latency_flags = 0x0ULL;
@@ -131,7 +132,7 @@ uint64_t spr_pmc_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, 
 
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -195,6 +196,7 @@ uint64_t spr_pmc_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, 
 
 uint64_t spr_pmc_start(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
     PciDeviceIndex dev = counter_map[index].device;
@@ -208,6 +210,7 @@ uint64_t spr_pmc_start(int thread_id, RegisterIndex index, PerfmonEvent* event, 
 
 uint64_t spr_power_start(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     data[thread_id].startData = 0x0ULL;
     data[thread_id].counterData = 0x0ULL;
@@ -225,12 +228,15 @@ uint64_t spr_power_start(int thread_id, RegisterIndex index, PerfmonEvent* event
 
 uint64_t spr_metrics_start(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)thread_id;
+    (void)index;
+    (void)event;
+    (void)data;
     return (1ULL << 48);
 }
 
 int spr_setup_uncore(int thread_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
     PciDeviceIndex dev = counter_map[index].device;
@@ -248,7 +254,7 @@ int spr_setup_uncore(int thread_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -259,7 +265,7 @@ int spr_setup_uncore(int thread_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (1ULL<<23);
                     break;
                 case EVENT_OPTION_TID:
-                    if (counter_map[index].type >= CBOX0 && counter_map[index].index <= CBOX55)
+                    if (counter_map[index].type >= CBOX0 && counter_map[index].type <= CBOX55)
                     {
                         uint64_t reg = box_map[counter_map[index].type].filterRegister1;
                         uint64_t val = event->options[j].value & 0x3FF;
@@ -267,6 +273,7 @@ int spr_setup_uncore(int thread_id, RegisterIndex index, PerfmonEvent *event)
                         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, "SETUP_CBOX_FILTER");
                         flags |= (1ULL << 16);
                     }
+                    // fall through
                 case EVENT_OPTION_MATCH0:
                     flags |= (event->options[j].value & 0xFFFFFF) << 32;
                     break;
@@ -293,6 +300,7 @@ int spr_setup_uncore(int thread_id, RegisterIndex index, PerfmonEvent *event)
 
 int spr_start_uncore(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
     PciDeviceIndex dev = counter_map[index].device;
@@ -304,6 +312,7 @@ int spr_start_uncore(int thread_id, RegisterIndex index, PerfmonEvent* event, Pe
 
 int spr_stop_uncore(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     uint64_t counter_result = 0x0;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
@@ -317,6 +326,7 @@ int spr_stop_uncore(int thread_id, RegisterIndex index, PerfmonEvent* event, Per
 
 int spr_read_uncore(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     uint64_t counter_result = 0x0;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
@@ -329,6 +339,7 @@ int spr_read_uncore(int thread_id, RegisterIndex index, PerfmonEvent* event, Per
 
 int spr_setup_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent *event)
 {
+    (void)event;
     int j;
     uint64_t flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
@@ -357,6 +368,7 @@ int spr_setup_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent *eve
 
 int spr_start_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
     PciDeviceIndex dev = counter_map[index].device;
@@ -367,6 +379,7 @@ int spr_start_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent* eve
 
 int spr_stop_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
     PciDeviceIndex dev = counter_map[index].device;
@@ -383,6 +396,7 @@ int spr_stop_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent* even
 
 int spr_read_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
     PciDeviceIndex dev = counter_map[index].device;
@@ -399,6 +413,7 @@ int spr_read_uncore_fixed(int thread_id, RegisterIndex index, PerfmonEvent* even
 
 int spr_setup_uncore_freerun(int thread_id, RegisterIndex index, PerfmonEvent *event)
 {
+    (void)event;
     uint64_t flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
     PciDeviceIndex dev = counter_map[index].device;
@@ -416,6 +431,7 @@ int spr_setup_uncore_freerun(int thread_id, RegisterIndex index, PerfmonEvent *e
 
 int spr_start_uncore_freerun(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     uint64_t flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
@@ -432,6 +448,7 @@ int spr_start_uncore_freerun(int thread_id, RegisterIndex index, PerfmonEvent* e
 
 int spr_stop_uncore_freerun(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
     PciDeviceIndex dev = counter_map[index].device;
@@ -802,6 +819,7 @@ int perfmon_setupCounterThread_sapphirerapids(
                     }
                 }
                 break;
+            default: ;
         }
     }
     if ((fixed_flags > 0x0ULL))
@@ -818,7 +836,6 @@ int perfmon_startCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* e
     int haveLock = 0;
     uint64_t flags = 0x0ULL;
     uint64_t uflags = 0x0ULL;
-    uint64_t tmp = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
@@ -835,7 +852,6 @@ int perfmon_startCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* e
             {
                 continue;
             }
-            tmp = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
             PerfmonEvent *event = &(eventSet->events[i].event);
             PerfmonCounter* data = eventSet->events[i].threadCounter;
@@ -1200,6 +1216,7 @@ int perfmon_startCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* e
 
 uint32_t spr_fixed_stop(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     uint64_t counter_result = 0x0ULL;
     uint64_t counter1 = counter_map[index].counterRegister;
     int cpu_id = groupSet->threads[thread_id].processorId;
@@ -1212,6 +1229,7 @@ uint32_t spr_fixed_stop(int thread_id, RegisterIndex index, PerfmonEvent* event,
 
 uint32_t spr_pmc_stop(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
@@ -1224,6 +1242,7 @@ uint32_t spr_pmc_stop(int thread_id, RegisterIndex index, PerfmonEvent* event, P
 
 uint32_t spr_power_stop(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
@@ -1243,6 +1262,7 @@ uint32_t spr_power_stop(int thread_id, RegisterIndex index, PerfmonEvent* event,
 
 uint32_t spr_thermal_stop(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter_result = 0x0ULL;
     uint64_t counter1 = counter_map[index].counterRegister;
@@ -1254,6 +1274,7 @@ uint32_t spr_thermal_stop(int thread_id, RegisterIndex index, PerfmonEvent* even
 
 uint32_t spr_voltage_stop(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter_result = 0x0ULL;
     uint64_t counter1 = counter_map[index].counterRegister;
@@ -1265,6 +1286,7 @@ uint32_t spr_voltage_stop(int thread_id, RegisterIndex index, PerfmonEvent* even
 
 uint32_t spr_metrics_stop(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter_result = 0x0ULL;
     uint64_t counter1 = counter_map[index].counterRegister;
@@ -1280,6 +1302,7 @@ uint32_t spr_metrics_stop(int thread_id, RegisterIndex index, PerfmonEvent* even
 
 uint32_t spr_mboxfix_stop(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
@@ -1295,8 +1318,6 @@ int perfmon_stopCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
 {
     int haveLock = 0;
     int coffset = 0;
-    uint64_t counter_result = 0x0ULL;
-    uint64_t tmp = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
@@ -1332,8 +1353,6 @@ int perfmon_stopCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
             {
                 continue;
             }
-            tmp = 0x0ULL;
-            counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
             PerfmonEvent *event = &(eventSet->events[i].event);
             PciDeviceIndex dev = counter_map[index].device;
@@ -1673,6 +1692,7 @@ int perfmon_stopCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
                         spr_stop_uncore(thread_id, index, event, data);
                     }
                     break;
+                default: ;
             }
         }
     }
@@ -1682,6 +1702,7 @@ int perfmon_stopCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
 
 uint32_t spr_fixed_read(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     uint64_t counter_result = 0x0ULL;
     uint64_t counter1 = counter_map[index].counterRegister;
     int cpu_id = groupSet->threads[thread_id].processorId;
@@ -1694,6 +1715,7 @@ uint32_t spr_fixed_read(int thread_id, RegisterIndex index, PerfmonEvent* event,
 
 uint32_t spr_pmc_read(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
@@ -1706,6 +1728,7 @@ uint32_t spr_pmc_read(int thread_id, RegisterIndex index, PerfmonEvent* event, P
 
 uint32_t spr_power_read(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
@@ -1725,6 +1748,7 @@ uint32_t spr_power_read(int thread_id, RegisterIndex index, PerfmonEvent* event,
 
 uint32_t spr_thermal_read(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter_result = 0x0ULL;
     uint64_t counter1 = counter_map[index].counterRegister;
@@ -1736,6 +1760,7 @@ uint32_t spr_thermal_read(int thread_id, RegisterIndex index, PerfmonEvent* even
 
 uint32_t spr_voltage_read(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter_result = 0x0ULL;
     uint64_t counter1 = counter_map[index].counterRegister;
@@ -1747,6 +1772,7 @@ uint32_t spr_voltage_read(int thread_id, RegisterIndex index, PerfmonEvent* even
 
 uint32_t spr_metrics_read(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter_result = 0x0ULL;
     uint64_t counter1 = counter_map[index].counterRegister;
@@ -1762,6 +1788,7 @@ uint32_t spr_metrics_read(int thread_id, RegisterIndex index, PerfmonEvent* even
 
 uint32_t spr_mboxfix_read(int thread_id, RegisterIndex index, PerfmonEvent* event, PerfmonCounter* data)
 {
+    (void)event;
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t counter1 = counter_map[index].counterRegister;
@@ -1778,8 +1805,6 @@ int perfmon_readCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
     int haveLock = 0;
     int coffset = 0;
     uint64_t flags = 0x0ULL;
-    uint64_t counter_result = 0x0ULL;
-    uint64_t tmp = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
@@ -1816,8 +1841,6 @@ int perfmon_readCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
             {
                 continue;
             }
-            tmp = 0x0ULL;
-            counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
             PerfmonEvent *event = &(eventSet->events[i].event);
             PciDeviceIndex dev = counter_map[index].device;
@@ -2157,6 +2180,7 @@ int perfmon_readCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
                         spr_read_uncore(thread_id, index, event, data);
                     }
                     break;
+                default: ;
             }
         }
     }
@@ -2185,7 +2209,6 @@ int perfmon_readCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* ev
 int perfmon_finalizeCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    int haveTileLock = 0;
     int clearPBS = 0;
     uint64_t ovf_values_core = (1ULL<<63)|(1ULL<<62);
     uint64_t ovf_values_uncore = 0x0ULL;
@@ -2194,10 +2217,6 @@ int perfmon_finalizeCountersThread_sapphirerapids(int thread_id, PerfmonEventSet
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
-    }
-    if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
-    {
-        haveTileLock = 1;
     }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {

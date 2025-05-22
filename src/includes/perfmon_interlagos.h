@@ -54,7 +54,7 @@ int ilg_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 
     if (event->numberOfOptions > 0)
     {
-        for(int j=0;j<event->numberOfOptions;j++)
+        for(uint64_t j=0;j<event->numberOfOptions;j++)
         {
             switch (event->options[j].type)
             {

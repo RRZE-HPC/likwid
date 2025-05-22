@@ -56,9 +56,9 @@ int (*haswell_cbox_setup)(int, RegisterIndex, PerfmonEvent *);
 
 int has_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    cpu_id++;
-    index++;
-    event++;
+    (void)cpu_id;
+    (void)index;
+    (void)event;
     return 0;
 }
 
@@ -95,10 +95,9 @@ int perfmon_init_haswell(int cpu_id)
 
 uint32_t hasep_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    (void)cpu_id;
     uint32_t flags = (1ULL<<(1+(index*4)));
-    cpu_id++;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -118,7 +117,6 @@ uint32_t hasep_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int hasep_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
     uint64_t latency_flags = 0x0ULL;
@@ -137,7 +135,7 @@ int hasep_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -203,7 +201,6 @@ int hasep_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int has_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
@@ -213,7 +210,7 @@ int has_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -242,7 +239,6 @@ int has_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int hasep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t filter_flags;
     uint32_t filter0 = box_map[counter_map[index].type].filterRegister1;
@@ -263,7 +259,7 @@ int hasep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             filter_flags = 0x0ULL;
             switch (event->options[j].type)
@@ -328,7 +324,6 @@ int hasep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int hasep_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -340,7 +335,7 @@ int hasep_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -369,7 +364,6 @@ int hasep_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int hasep_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     int clean_filter_reg = 1;
     uint64_t filter = box_map[counter_map[index].type].filterRegister1;
@@ -391,7 +385,7 @@ int hasep_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -440,7 +434,6 @@ int hasep_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int hasep_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t filter = 0x0ULL;
     int opcode_flag = 0;
@@ -460,7 +453,7 @@ int hasep_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -524,7 +517,6 @@ int hasep_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int hasep_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -539,7 +531,7 @@ int hasep_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -576,7 +568,6 @@ int hasep_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int hasep_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -593,7 +584,7 @@ int hasep_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -626,7 +617,6 @@ int hasep_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int hasep_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -643,7 +633,7 @@ int hasep_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -677,7 +667,6 @@ int hasep_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int hasep_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -694,7 +683,7 @@ int hasep_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -727,7 +716,6 @@ int hasep_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int hasep_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -744,7 +732,7 @@ int hasep_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -777,7 +765,6 @@ int hasep_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDeviceIndex filterdev)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t filterreg;
     uint64_t filterval = 0x0ULL;
@@ -800,7 +787,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
     }
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {

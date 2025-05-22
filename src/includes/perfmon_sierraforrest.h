@@ -79,11 +79,13 @@ uint64_t srf_pmc_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, 
 
 uint64_t srf_uncore_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter* data)
 {
+    (void)data;
     return spr_setup_uncore(thread_id, index, event);
 }
 
 uint64_t srf_uncore_fixed_setup(int thread_id, RegisterIndex index, PerfmonEvent *event, PerfmonCounter* data)
 {
+    (void)data;
     return spr_setup_uncore_fixed(thread_id, index, event);
 }
 
@@ -263,6 +265,7 @@ int perfmon_setupCounterThread_sierraforrest(
                 case PERFMON_LOCK_SOCKET:
                     haveLock = (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id);
                     break;
+                default: ;
             }
             if (haveLock)
             {
@@ -287,7 +290,6 @@ int perfmon_startCountersThread_sierraforrest(int thread_id, PerfmonEventSet* ev
     int haveLock = 0;
     uint64_t flags = 0x0ULL;
     uint64_t uflags = 0x0ULL;
-    uint64_t tmp = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
@@ -304,7 +306,6 @@ int perfmon_startCountersThread_sierraforrest(int thread_id, PerfmonEventSet* ev
             {
                 continue;
             }
-            tmp = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
             PerfmonEvent *event = &(eventSet->events[i].event);
             PerfmonCounter* data = eventSet->events[i].threadCounter;
@@ -326,6 +327,7 @@ int perfmon_startCountersThread_sierraforrest(int thread_id, PerfmonEventSet* ev
                     case PERFMON_LOCK_SOCKET:
                         haveLock = (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id);
                         break;
+                    default: ;
                 }
                 if (haveLock)
                 {
@@ -372,8 +374,6 @@ int perfmon_stopCountersThread_sierraforrest(int thread_id, PerfmonEventSet* eve
 {
     int haveLock = 0;
     int coffset = 0;
-    uint64_t counter_result = 0x0ULL;
-    uint64_t tmp = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
@@ -409,8 +409,6 @@ int perfmon_stopCountersThread_sierraforrest(int thread_id, PerfmonEventSet* eve
             {
                 continue;
             }
-            tmp = 0x0ULL;
-            counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
             PerfmonEvent *event = &(eventSet->events[i].event);
             PciDeviceIndex dev = counter_map[index].device;
@@ -432,6 +430,7 @@ int perfmon_stopCountersThread_sierraforrest(int thread_id, PerfmonEventSet* eve
                     case PERFMON_LOCK_SOCKET:
                         haveLock = (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id);
                         break;
+                    default: ;
                 }
                 if (haveLock)
                 {
@@ -450,8 +449,6 @@ int perfmon_readCountersThread_sierraforrest(int thread_id, PerfmonEventSet* eve
     int haveLock = 0;
     int coffset = 0;
     uint64_t flags = 0x0ULL;
-    uint64_t counter_result = 0x0ULL;
-    uint64_t tmp = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
@@ -488,8 +485,6 @@ int perfmon_readCountersThread_sierraforrest(int thread_id, PerfmonEventSet* eve
             {
                 continue;
             }
-            tmp = 0x0ULL;
-            counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
             PerfmonEvent *event = &(eventSet->events[i].event);
             PciDeviceIndex dev = counter_map[index].device;
@@ -511,6 +506,7 @@ int perfmon_readCountersThread_sierraforrest(int thread_id, PerfmonEventSet* eve
                     case PERFMON_LOCK_SOCKET:
                         haveLock = (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id);
                         break;
+                    default: ;
                 }
                 if (haveLock)
                 {
@@ -546,7 +542,6 @@ int perfmon_readCountersThread_sierraforrest(int thread_id, PerfmonEventSet* eve
 int perfmon_finalizeCountersThread_sierraforrest(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    int haveTileLock = 0;
     int clearPBS = 0;
     uint64_t ovf_values_core = (1ULL<<63)|(1ULL<<62);
     uint64_t ovf_values_uncore = 0x0ULL;
@@ -555,10 +550,6 @@ int perfmon_finalizeCountersThread_sierraforrest(int thread_id, PerfmonEventSet*
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
-    }
-    if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
-    {
-        haveTileLock = 1;
     }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {

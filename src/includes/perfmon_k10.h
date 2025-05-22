@@ -40,7 +40,7 @@ static int perfmon_numArchEventsK10 = NUM_ARCH_EVENTS_K10;
 
 int perfmon_init_k10(int cpu_id)
 {
-    cpu_id++;
+    (void)cpu_id;
     return 0;
 }
 
@@ -53,7 +53,7 @@ int k10_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 
     if (event->numberOfOptions > 0)
     {
-        for(int j=0;j<event->numberOfOptions;j++)
+        for(uint64_t j=0;j<event->numberOfOptions;j++)
         {
             switch (event->options[j].type)
             {

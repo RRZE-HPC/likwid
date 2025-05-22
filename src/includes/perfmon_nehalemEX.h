@@ -55,10 +55,9 @@ int perfmon_init_nehalemEX(int cpu_id)
 
 uint32_t nex_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j = 0;
+    (void)cpu_id;
     uint32_t flags = (1ULL<<(1+(index*4)));
-    cpu_id++;
-    for(j = 0; j < event->numberOfOptions; j++)
+    for(uint64_t j = 0; j < event->numberOfOptions; j++)
     {
         switch (event->options[j].type)
         {
@@ -76,7 +75,6 @@ uint32_t nex_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j = 0;
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
     uint64_t reg = counter_map[index].configRegister;
@@ -94,7 +92,7 @@ int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for (j = 0; j < event->numberOfOptions; j++)
+        for (uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -163,7 +161,7 @@ int nex_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0 && (event->cfgBits == 0x02 || event->cfgBits == 0x04))
     {
-        for (int j=0; j < event->numberOfOptions; j++)
+        for (uint64_t j=0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -492,7 +490,6 @@ int nex_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int nex_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j = 0;
     uint64_t flags = 0x1ULL; /* set enable bit */
     uint64_t reg = counter_map[index].configRegister;
     RegisterType type = counter_map[index].type;
@@ -505,7 +502,7 @@ int nex_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->eventId<<1);
     if (event->numberOfOptions > 0)
     {
-        for (j = 0; j < event->numberOfOptions; j++)
+        for (uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -533,7 +530,6 @@ int nex_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int nex_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j = 0;
     uint64_t flags = 0x0ULL;
     uint64_t reg = counter_map[index].configRegister;
 
@@ -546,7 +542,7 @@ int nex_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |=(event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for (j = 0; j < event->numberOfOptions; j++)
+        for (uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -577,7 +573,6 @@ int nex_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
     uint64_t reg = counter_map[index].configRegister;
-    int j = 0;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
@@ -587,7 +582,7 @@ int nex_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for (j = 0; j < event->numberOfOptions; j++)
+        for (uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -616,7 +611,6 @@ int nex_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int nex_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j = 0;
     int match_mask = 0;
     uint64_t flags = 0x0ULL;
     uint64_t reg = counter_map[index].configRegister;
@@ -633,7 +627,7 @@ int nex_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         if (event->eventId == 0x0)
         {
-            for (j = 0; j < event->numberOfOptions; j++)
+            for (uint64_t j = 0; j < event->numberOfOptions; j++)
             {
                 if ((event->options[j].type == EVENT_OPTION_MATCH0) ||
                     (event->options[j].type == EVENT_OPTION_MASK0))
@@ -656,7 +650,7 @@ int nex_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 }
             }
         }
-        for (j = 0; j < event->numberOfOptions; j++)
+        for (uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -873,7 +867,7 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
                 {
                     flags |= (1ULL<<22); /* set enable bit */
                     flags |= event->eventId;
-                    for (int j=0;j<event->numberOfOptions;j++)
+                    for (uint64_t j=0;j<event->numberOfOptions;j++)
                     {
                         if (event->options[j].type == EVENT_OPTION_EDGE)
                         {
