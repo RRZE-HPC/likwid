@@ -54,9 +54,9 @@ int (*icelake_cbox_setup)(int, RegisterIndex, PerfmonEvent *) = NULL;
 
 int icl_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    cpu_id++;
-    index++;
-    event++;
+    (void)cpu_id;
+    (void)index;
+    (void)event;
     return 0;
 }
 
@@ -116,10 +116,9 @@ int perfmon_init_icelake(int cpu_id)
 
 uint32_t icl_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    (void)cpu_id;
     uint32_t flags = (1ULL<<(1+(index*4)));
-    cpu_id++;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -135,7 +134,6 @@ uint32_t icl_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int icl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
     uint64_t latency_flags = 0x0ULL;
@@ -155,7 +153,7 @@ int icl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -219,7 +217,6 @@ int icl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int icx_setup_mbox(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -236,7 +233,7 @@ int icx_setup_mbox(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -265,7 +262,7 @@ int icx_setup_mbox(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int icx_setup_mboxfix(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    (void)event;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -289,7 +286,6 @@ int icx_setup_mboxfix(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     
 int icx_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -301,7 +297,7 @@ int icx_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -348,7 +344,6 @@ int icx_uboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int icl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
@@ -358,7 +353,7 @@ int icl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -387,7 +382,6 @@ int icl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int icx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t filter_flags0 = 0x0ULL;
     uint32_t filter0 = box_map[counter_map[index].type].filterRegister1;
@@ -425,7 +419,7 @@ int icx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -476,7 +470,6 @@ int icx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int icx_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -488,7 +481,7 @@ int icx_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -520,7 +513,6 @@ int icx_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int icx_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -533,7 +525,7 @@ int icx_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -563,7 +555,6 @@ int icx_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int icx_upi_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -580,7 +571,7 @@ int icx_upi_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -617,7 +608,6 @@ int icx_upi_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int icx_irp_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -629,7 +619,7 @@ int icx_irp_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -658,7 +648,6 @@ int icx_irp_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int icx_tc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -670,7 +659,7 @@ int icx_tc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -2082,7 +2071,6 @@ int perfmon_readCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
 int perfmon_finalizeCountersThread_icelake(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    int haveTileLock = 0;
     int clearPBS = 0;
     uint64_t ovf_values_core = (1ULL<<63)|(1ULL<<62);
     uint64_t ovf_values_uncore = 0x0ULL;
@@ -2091,10 +2079,6 @@ int perfmon_finalizeCountersThread_icelake(int thread_id, PerfmonEventSet* event
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
-    }
-    if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
-    {
-        haveTileLock = 1;
     }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {

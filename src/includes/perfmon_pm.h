@@ -42,7 +42,7 @@ static int perfmon_numArchEvents_pm = NUM_ARCH_EVENTS_PM;
 
 int perfmon_init_pm(int cpu_id)
 {
-    cpu_id++;
+    (void)cpu_id;
     return 0;
 }
 
@@ -55,7 +55,7 @@ int pm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(int j=0;j<event->numberOfOptions;j++)
+        for(uint64_t j=0;j<event->numberOfOptions;j++)
         {
             switch (event->options[j].type)
             {

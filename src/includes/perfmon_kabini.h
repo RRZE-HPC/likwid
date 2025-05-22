@@ -56,7 +56,7 @@ int k16_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 
     if (event->numberOfOptions > 0)
     {
-        for(int j=0;j<event->numberOfOptions;j++)
+        for(uint64_t j=0;j<event->numberOfOptions;j++)
         {
             switch (event->options[j].type)
             {
@@ -120,7 +120,7 @@ int k16_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
     if (event->numberOfOptions > 0)
     {
-        for(int j=0;j<event->numberOfOptions;j++)
+        for(uint64_t j=0;j<event->numberOfOptions;j++)
         {
             switch (event->options[j].type)
             {

@@ -48,11 +48,11 @@ int perfmon_init_silvermont(int cpu_id)
 
 uint32_t svm_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
+    (void)cpu_id;
     uint32_t flags = (1ULL<<(1+(index*4)));
-    cpu_id++;
     if (event->numberOfOptions > 0)
     {
-        for(int i=0;i<event->numberOfOptions;i++)
+        for(uint64_t i=0;i<event->numberOfOptions;i++)
         {
             switch(event->options[i].type)
             {
@@ -75,7 +75,6 @@ int svm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
 
-
     flags |= (1ULL<<16)|(1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
     /* For event id 0xB7 the cmask must be written in an extra register */
@@ -91,7 +90,7 @@ int svm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(int i=0;i<event->numberOfOptions;i++)
+        for(uint64_t i=0;i<event->numberOfOptions;i++)
         {
             switch(event->options[i].type)
             {
