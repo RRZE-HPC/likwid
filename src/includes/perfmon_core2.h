@@ -47,10 +47,9 @@ int perfmon_init_core2(int cpu_id)
 
 uint32_t core2_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    (void)cpu_id;
     uint32_t flags = (1ULL<<(1+(index*4)));
-    cpu_id++;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -66,7 +65,6 @@ uint32_t core2_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int core2_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
 
     flags = (1ULL<<22)|(1ULL<<16)|(1ULL<<19);
@@ -77,7 +75,7 @@ int core2_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     if (event->numberOfOptions > 0)
     {
-        for(j=0;j<event->numberOfOptions;j++)
+        for(uint64_t j=0;j<event->numberOfOptions;j++)
         {
             switch (event->options[j].type)
             {

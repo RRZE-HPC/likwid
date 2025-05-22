@@ -53,10 +53,9 @@ int perfmon_init_westmereEX(int cpu_id)
 
 uint32_t wex_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    (void)cpu_id;
     uint32_t flags = (1ULL<<(1+(index*4)));
-    cpu_id++;
-    for(j = 0; j < event->numberOfOptions; j++)
+    for(uint64_t j = 0; j < event->numberOfOptions; j++)
     {
         switch (event->options[j].type)
         {
@@ -74,7 +73,6 @@ uint32_t wex_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int wex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
 
@@ -92,7 +90,7 @@ int wex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -148,7 +146,6 @@ int wex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int wex_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     RegisterType type = counter_map[index].type;
 
@@ -161,7 +158,7 @@ int wex_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |=  (event->eventId<<1);
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -189,7 +186,6 @@ int wex_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int wex_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t reg = counter_map[index].configRegister;
 
@@ -202,7 +198,7 @@ int wex_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -233,7 +229,6 @@ int wex_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
     uint64_t reg = counter_map[index].configRegister;
-    int j;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
@@ -243,7 +238,7 @@ int wex_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for (j = 0; j < event->numberOfOptions; j++)
+        for (uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -273,7 +268,6 @@ int wex_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int wex_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     int write_mm_cfg = 0;
     RegisterType type = counter_map[index].type;
@@ -287,7 +281,7 @@ int wex_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -345,7 +339,6 @@ int wex_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int wex_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -357,7 +350,7 @@ int wex_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->eventId & 0xFF);
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -400,7 +393,7 @@ int wex_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0 && (event->cfgBits == 0x02 || event->cfgBits == 0x04))
     {
-        for (int j=0; j < event->numberOfOptions; j++)
+        for (uint64_t j=0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -966,7 +959,7 @@ int perfmon_setupCounterThread_westmereEX(int thread_id, PerfmonEventSet* eventS
             case UBOX:
                 wex_ubox_setup(cpu_id, index, event);
                 ubox_flags = 0x1ULL;
-
+                // fall through
             case SBOX0:
             case SBOX1:
                 wex_sbox_setup(cpu_id, index, event);

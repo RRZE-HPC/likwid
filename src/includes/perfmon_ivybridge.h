@@ -54,9 +54,9 @@ int (*ivy_cbox_setup)(int, RegisterIndex, PerfmonEvent*);
 
 int ivb_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    cpu_id++;
-    index++;
-    event++;
+    (void)cpu_id;
+    (void)index;
+    (void)event;
     return 0;
 }
 
@@ -92,10 +92,10 @@ int perfmon_init_ivybridge(int cpu_id)
 
 uint32_t ivb_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
+    (void)cpu_id;
     uint32_t flags = 0x0UL;
     flags |= (1ULL<<(1+(index*4)));
-    cpu_id++;
-    for(int j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -132,7 +132,7 @@ int ivb_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(int j=0;j<event->numberOfOptions;j++)
+        for(uint64_t j=0;j<event->numberOfOptions;j++)
         {
             switch (event->options[j].type)
             {
@@ -207,7 +207,7 @@ int ivb_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for (int j=0;j < event->numberOfOptions; j++)
+        for (uint64_t j=0;j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -259,7 +259,7 @@ int ivb_pci_box_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for (int j=0;j < event->numberOfOptions; j++)
+        for (uint64_t j=0;j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -331,7 +331,7 @@ int ivb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
     }
     if (event->numberOfOptions > 0)
     {
-        for (int j=0;j < event->numberOfOptions; j++)
+        for (uint64_t j=0;j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -419,7 +419,7 @@ int ivb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for (int j=0;j < event->numberOfOptions; j++)
+        for (uint64_t j=0;j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -462,7 +462,7 @@ int ivbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         uint64_t filter0 = 0x0ULL;
         uint64_t filter1 = 0x0ULL;
         int state_set = 0;
-        for (int j=0;j < event->numberOfOptions; j++)
+        for (uint64_t j=0;j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -540,7 +540,7 @@ int ivb_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for (int j=0;j < event->numberOfOptions; j++)
+        for (uint64_t j=0;j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -604,7 +604,7 @@ int ivb_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     if (event->numberOfOptions > 0)
     {
         RegisterType type = counter_map[index].type;
-        for (int j=0;j < event->numberOfOptions; j++)
+        for (uint64_t j=0;j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -660,7 +660,7 @@ int ivb_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for (int j=0;j < event->numberOfOptions; j++)
+        for (uint64_t j=0;j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
