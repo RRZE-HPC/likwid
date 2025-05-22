@@ -57,6 +57,7 @@ thermal_read(int cpuId, uint32_t *data)
 int
 thermal_tread(int socket_fd, int cpuId, uint32_t *data)
 {
+    (void)socket_fd;
     uint64_t result = 0;
     uint32_t readout = 0;
     if (HPMread(cpuId, MSR_DEV, IA32_THERM_STATUS, &result))
