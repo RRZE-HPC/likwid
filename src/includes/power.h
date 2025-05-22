@@ -179,8 +179,10 @@ power_read(int cpuId, uint64_t reg, uint64_t *data)
 int
 power_tread(int socket_fd, int cpuId, uint64_t reg, uint64_t *data)
 {
+    (void)socket_fd;
+
     int i;
-    PowerType type;
+    PowerType type = 0;
     if (power_info.hasRAPL)
     {
         for (i = 0; i < NUM_POWER_DOMAINS; i++)
@@ -216,7 +218,6 @@ double
 power_getEnergyUnit(int domain)
 {
 #ifdef LIKWID_USE_PERFEVENT
-    int ret = 0;
     FILE* fd = NULL;
     char out[512];
     if (power_info.domains[domain].energyUnit == 0)
@@ -226,9 +227,12 @@ power_getEnergyUnit(int domain)
             fd = fopen(perf_power_names[domain], "r");
             if (fd != NULL)
             {
-                ret = fread(out, sizeof(char), 512, fd);
+                float energyUnit = 0.0f;
+                if (fgets(out, sizeof(out), fd)) {
+                    energyUnit = atof(out);
+                }
                 fclose(fd);
-                power_info.domains[domain].energyUnit = atof(out);
+                power_info.domains[domain].energyUnit = energyUnit;
             }
         }
     }
