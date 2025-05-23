@@ -78,7 +78,7 @@ extern void* getIterSingle(void* arg);
     printf("-t/--test <TEST>\t type of test \n"); \
     printf("-w/--workgroup\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>]\n"); \
     printf("-W/--Workgroup\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]]\n"); \
-    printf("\t\t\t\t <size> in kB, MB or GB (mandatory)\n"); \
+    printf("\t\t\t\t <size> in B, kB, MB, GB, kiB, MiB or GiB (mandatory)\n"); \
     printf("For dynamically loaded benchmarks\n"); \
     printf("-f/--tempdir <PATH>\t Specify a folder for the temporary files. default: /tmp\n"); \
     printf("-o/--asmout <FILE>\t Save generated assembly to file\n"); \
@@ -355,6 +355,7 @@ int main(int argc, char** argv)
                     }
                 }
                 bdestroy(testcase);
+                testcase = bfromcstr("none");
                 if (!builtin)
                 {
                     dynbench_close(test, NULL);
@@ -410,6 +411,7 @@ int main(int argc, char** argv)
                     return EXIT_FAILURE;
                 }
                 bdestroy(testcase);
+                testcase = bfromcstr("none");
                 break;
             case 'o':
             case 'f':
