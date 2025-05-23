@@ -216,12 +216,11 @@ likwid_hwloc_record_objs_of_type_below_obj(
         int* index,
         uint32_t **list)
 {
-    int i;
     int count = 0;
     hwloc_obj_t walker;
     if (!obj) return 0;
     if (!obj->arity) return 0;
-    for (i=0;i<obj->arity;i++)
+    for (uint32_t i=0;i<obj->arity;i++)
     {
         walker = obj->children[i];
         if (walker->type == type)
@@ -242,7 +241,7 @@ likwid_hwloc_record_objs_of_type_below_obj(
 int
 hwloc_init_cpuInfo(cpu_set_t cpuSet)
 {
-    int i;
+    (void)cpuSet;
     uint32_t count = 0;
     hwloc_obj_t obj;
     if (perfmon_verbosity <= 1)
@@ -381,27 +380,9 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     int maxNumDies = 0;
     int maxNumCoresPerSocket = 0;
     hwloc_obj_t obj = NULL;
-    int poolsize = 0;
-    int nr_sockets = 1;
-    int id = 0;
-    int consecutive_cores = -1;
     int from_file = (getenv("HWLOC_FSROOT") != NULL);
     hwloc_obj_type_t socket_type = HWLOC_OBJ_SOCKET;
     hwloc_obj_type_t die_type = HWLOC_OBJ_DIE;
-    if (!from_file)
-    {
-        for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
-        {
-            if (CPU_ISSET(i, &cpuSet))
-            {
-                poolsize = i+1;
-            }
-        }
-    }
-    else
-    {
-        poolsize = cpuid_topology.numHWThreads;
-    }
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
     for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
     {
@@ -450,9 +431,9 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
         {
             continue;
         }
-        id = obj->os_index;
 
-        if (id < 0 || id >= cpuid_topology.numHWThreads)
+        uint32_t id = obj->os_index;
+        if (id >= cpuid_topology.numHWThreads)
             continue;
 
         if (CPU_ISSET(id, &cpuSet))
@@ -583,8 +564,8 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
                             hwThreadPool[id].inCpuSet);
     }
 
-    int socket_nums[MAX_NUM_NODES];
-    int num_sockets = 0;
+    uint32_t socket_nums[MAX_NUM_NODES];
+    uint32_t num_sockets = 0;
     int has_zero_id = 0;
     for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
     {
@@ -611,7 +592,6 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     {
         for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
         {
-            HWThread* t = &hwThreadPool[i];
             for (uint32_t j=0; j < num_sockets; j++)
             {
                 if (hwThreadPool[i].packageId == socket_nums[j])
