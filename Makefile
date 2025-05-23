@@ -625,6 +625,9 @@ install: install_daemon install_freq install_appdaemon install_container_helper
 	@sed -e "s#<VERSION>#$(VERSION)#g" -e "s#<DATE>#$(DATE)#g" -e "s#<GITCOMMIT>#$(GITCOMMIT)#g" -e "s#<MINOR>#$(MINOR)#g" < $(DOC_DIR)/likwid-bench.1 > $(MANPREFIX)/man1/likwid-bench.1
 	@sed -e "s#<VERSION>#$(VERSION)#g" -e "s#<DATE>#$(DATE)#g" -e "s#<GITCOMMIT>#$(GITCOMMIT)#g" -e "s#<MINOR>#$(MINOR)#g" < $(DOC_DIR)/likwid-setFrequencies.1 > $(MANPREFIX)/man1/likwid-setFrequencies.1
 	@sed -e "s#.TH LUA#.TH LIKWID-LUA#g" -e "s#lua - Lua interpreter#likwid-lua - Lua interpreter included in LIKWID#g" -e "s#.B lua#.B likwid-lua#g" -e "s#.BR luac (1)##g" $(DOC_DIR)/likwid-lua.1 > $(MANPREFIX)/man1/likwid-lua.1
+	@if [ "$(BUILD_SYSFEATURES)" = "true" ]; then \
+		sed -e "s#<VERSION>#$(VERSION)#g" -e "s#<DATE>#$(DATE)#g" -e "s#<GITCOMMIT>#$(GITCOMMIT)#g" -e "s#<MINOR>#$(MINOR)#g" < $(DOC_DIR)/likwid-sysfeatures.1 > $(MANPREFIX)/man1/likwid-sysfeatures.1; \
+	fi
 	@chmod 644 $(MANPREFIX)/man1/likwid-*
 	@echo "===> INSTALL headers to $(PREFIX)/include"
 	@mkdir -p $(PREFIX)/include
