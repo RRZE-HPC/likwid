@@ -53,7 +53,6 @@
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int largest_function = 0;
-static uint32_t eax, ebx, ecx, edx;
 
 /* Dirty hack to avoid nonull warnings */
 char* (*ownstrcpy)(char *__restrict __dest, const char *__restrict __src);
@@ -63,15 +62,13 @@ char* (*ownstrcpy)(char *__restrict __dest, const char *__restrict __src);
 static int
 intelCpuidFunc_4(CacheLevel** cachePool)
 {
-    int i;
-    int level=0;
-    int maxNumLevels=0;
+    uint32_t level=0;
+    uint32_t maxNumLevels=0;
     uint32_t valid=1;
     CacheLevel* pool;
     while (valid)
     {
-        eax = 0x04;
-        ecx = level;
+        uint32_t eax = 4, ebx, ecx = level, edx;
         CPUID(eax, ebx, ecx, edx);
         valid = extractBitField(eax,5,0);
         if (!valid)
@@ -85,10 +82,9 @@ intelCpuidFunc_4(CacheLevel** cachePool)
     *cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
     pool = *cachePool;
 
-    for (i=0; i < maxNumLevels; i++)
+    for (size_t i=0; i < maxNumLevels; i++)
     {
-        eax = 0x04;
-        ecx = i;
+        uint32_t eax = 4, ebx, ecx = i, edx;
         CPUID(eax, ebx, ecx, edx);
 
         pool[i].level = extractBitField(eax,3,5);
@@ -130,9 +126,7 @@ intelCpuidFunc_4(CacheLevel** cachePool)
         /* :WORKAROUND:08/13/2009 08:34:15 AM:jt: For L3 caches the value is sometimes
          * too large in here. Ask Intel what is wrong here!
          * Limit threads per Socket then to the maximum possible value.*/
-        if(pool[i].threads > (int)
-                (cpuid_topology.numCoresPerSocket*
-                 cpuid_topology.numThreadsPerCore))
+        if(pool[i].threads > cpuid_topology.numCoresPerSocket * cpuid_topology.numThreadsPerCore)
         {
             pool[i].threads = cpuid_topology.numCoresPerSocket*
                 cpuid_topology.numThreadsPerCore;
@@ -208,21 +202,18 @@ amdGetAssociativity(uint32_t flag)
 void
 cpuid_printTlbTopology()
 {
-    int i;
-    uint32_t loop = 1;
-
     if (cpuid_info.isIntel)
     {
-        eax = 0x02;
+        uint32_t eax = 2, ebx, ecx = 0, edx;
         CPUID(eax, ebx, ecx, edx);
-        loop = extractBitField(eax,8,0);
-        for(i=1;i<loop;i++)
+        uint32_t loop = extractBitField(eax,8,0);
+        for(size_t i=1;i<loop;i++)
         {
             eax = 0x02;
             CPUID(eax, ebx, ecx, edx);
         }
 
-        for(i=8;i<32;i+=8)
+        for(size_t i=8;i<32;i+=8)
         {
             if (extractBitField(eax,8,i) != 0x0)
             {
@@ -230,7 +221,7 @@ cpuid_printTlbTopology()
                     printf("%s\n",intel_tlb_info[extractBitField(eax,8,i)]);
             }
         }
-        for(i=0;i<32;i+=8)
+        for(size_t i=0;i<32;i+=8)
         {
             if (extractBitField(eax,8,i) != 0x0)
             {
@@ -238,7 +229,7 @@ cpuid_printTlbTopology()
                     printf("%s\n",intel_tlb_info[extractBitField(ebx,8,i)]);
             }
         }
-        for(i=0;i<32;i+=8)
+        for(size_t i=0;i<32;i+=8)
         {
             if (extractBitField(eax,8,i) != 0x0)
             {
@@ -246,7 +237,7 @@ cpuid_printTlbTopology()
                     printf("%s\n",intel_tlb_info[extractBitField(ecx,8,i)]);
             }
         }
-        for(i=0;i<32;i+=8)
+        for(size_t i=0;i<32;i+=8)
         {
             if (extractBitField(eax,8,i) != 0x0)
             {
@@ -257,7 +248,7 @@ cpuid_printTlbTopology()
     }
     else
     {
-        eax = 0x80000005;
+        uint32_t eax = 0x80000005, ebx, ecx = 0, edx;
         CPUID(eax, ebx, ecx, edx);
         printf("L1DTlb2and4MAssoc: 0x%x\n",extractBitField(eax,8,24));
         printf("L1DTlb2and4MSize: %d entries for 2MB pages\n",(uint32_t)extractBitField(eax,8,16));
@@ -329,10 +320,9 @@ cpuid_set_osname(void)
 int
 cpuid_init_cpuInfo(cpu_set_t cpuSet)
 {
-    int cpus_in_set = 0;
     cpuid_info.isIntel = 1;
 
-    eax = 0x00;
+    uint32_t eax = 0, ebx, ecx = 0, edx;
     CPUID(eax, ebx, ecx, edx);
 
     largest_function = eax;
@@ -348,8 +338,8 @@ cpuid_init_cpuInfo(cpu_set_t cpuSet)
     cpuid_info.stepping =  (eax&0xFU);
     cpuid_set_osname();
     cpuid_topology.numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
-    cpus_in_set = cpu_count(&cpuSet);
-    if (cpus_in_set < cpuid_topology.numHWThreads)
+    int cpus_in_set = cpu_count(&cpuSet);
+    if (cpus_in_set >= 0 && (uint32_t)cpus_in_set < cpuid_topology.numHWThreads)
     {
         cpuid_topology.numHWThreads = cpus_in_set;
     }
@@ -366,7 +356,7 @@ cpuid_init_cpuInfo(cpu_set_t cpuSet)
 int
 cpuid_init_cpuFeatures(void)
 {
-    eax = 0x01;
+    uint32_t eax = 1, ebx, ecx = 0, edx;
     CPUID(eax, ebx, ecx, edx);
 
     cpuid_info.featureFlags = 0;
@@ -548,8 +538,7 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
     /* check if 0x0B cpuid leaf is supported */
     if (largest_function >= 0x0B)
     {
-        eax = 0x0B;
-        ecx = 0;
+        uint32_t eax = 0x0B, ebx, ecx = 0, edx;
         CPUID(eax, ebx, ecx, edx);
 
         if (ebx)
@@ -566,8 +555,7 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
             CPU_ZERO(&set);
             CPU_SET(i,&set);
             sched_setaffinity(0, sizeof(cpu_set_t), &set);
-            eax = 0x0B;
-            ecx = 0;
+            uint32_t eax = 0x0B, ebx, ecx = 0, edx;
             CPUID(eax, ebx, ecx, edx);
             apicId = edx;
             id = i;
@@ -618,9 +606,9 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
     }
     else
     {
+        uint32_t eax = 0, ebx, ecx = 0, edx;
         switch ( cpuid_info.family )
         {
-
             case MIC_FAMILY:
 
             case P6_FAMILY:
@@ -787,6 +775,7 @@ cpuid_init_cacheTopology(void)
     CacheLevel* cachePool = NULL;
     CacheType type = DATACACHE;
 
+    uint32_t eax = 0, ebx, ecx = 0, edx;
 
     switch ( cpuid_info.family )
     {
@@ -955,7 +944,8 @@ cpuid_init_cacheTopology(void)
 
 int cpuid_get_hwthread_data(int cpu_id, HWThread* hwt)
 {
-    eax = 0x01;
+    (void)cpu_id;
+    uint32_t eax = 1, ebx, ecx = 0, edx;
     CPUID(eax, ebx, ecx, edx);
     hwt->apicId = extractBitField(ebx,8,24);
     return 0;
