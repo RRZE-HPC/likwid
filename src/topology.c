@@ -50,160 +50,161 @@
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int topology_initialized = 0;
-static char* pentium_m_b_str = "Intel Pentium M Banias processor";
-static char* pentium_m_d_str = "Intel Pentium M Dothan processor";
-static char* core_duo_str = "Intel Core Duo processor";
-static char* core_2a_str = "Intel Core 2 65nm processor";
-static char* core_2b_str = "Intel Core 2 45nm processor";
-static char* atom_45_str = "Intel Atom 45nm processor";
-static char* atom_32_str = "Intel Atom 32nm processor";
-static char* atom_22_str = "Intel Atom 22nm processor";
-static char* atom_silvermont_str = "Intel Atom (Silvermont) processor";
-static char* atom_airmont_str = "Intel Atom (Airmont) processor";
-static char* atom_goldmont_str = "Intel Atom (Goldmont) processor";
-static char* atom_goldmontplus_str = "Intel Atom (Goldmont Plus) processor";
-static char* atom_tremont_str = "Intel Atom (Tremont) processor";
-static char* nehalem_bloom_str = "Intel Core Bloomfield processor";
-static char* nehalem_lynn_str = "Intel Core Lynnfield processor";
-static char* nehalem_west_str = "Intel Core Westmere processor";
-static char* sandybridge_str = "Intel Core SandyBridge processor";
-static char* ivybridge_str = "Intel Core IvyBridge processor";
-static char* ivybridge_ep_str = "Intel Xeon IvyBridge EN/EP/EX processor";
-static char* sandybridge_ep_str = "Intel Xeon SandyBridge EN/EP processor";
-static char* haswell_str = "Intel Core Haswell processor";
-static char* haswell_ep_str = "Intel Xeon Haswell EN/EP/EX processor";
-static char* broadwell_str = "Intel Core Broadwell processor";
-static char* broadwell_d_str = "Intel Xeon D Broadwell processor";
-static char* broadwell_e3_str = "Intel Xeon E3 Broadwell processor";
-static char* broadwell_ep_str = "Intel Xeon Broadwell EN/EP/EX processor";
-static char* skylake_str = "Intel Skylake processor";
-static char* skylakeX_str = "Intel Skylake SP processor";
-static char* cascadelakeX_str = "Intel Cascadelake SP processor";
-static char* kabylake_str = "Intel Kabylake processor";
-static char* cannonlake_str = "Intel Cannonlake processor";
-static char* coffeelake_str = "Intel Coffeelake processor";
-static char* cometlake_str = "Intel Cometlake processor";
-static char* nehalem_ex_str = "Intel Nehalem EX processor";
-static char* westmere_ex_str = "Intel Westmere EX processor";
-static char* xeon_mp_string = "Intel Xeon MP processor";
-static char* xeon_phi_string = "Intel Xeon Phi (Knights Corner) Coprocessor";
-static char* xeon_phi2_string = "Intel Xeon Phi (Knights Landing) (Co)Processor";
-static char* xeon_phi3_string = "Intel Xeon Phi (Knights Mill) (Co)Processor";
-static char* icelake_str = "Intel Icelake processor";
-static char* tigerlake_str = "Intel Tigerlake processor";
-static char* icelakesp_str = "Intel Icelake SP processor";
-static char* rocketlake_str = "Intel Rocketlake processor";
-static char* sapphire_rapids_str = "Intel SapphireRapids processor";
-static char* emerald_rapids_str = "Intel EmeraldRapids processor";
-static char* granite_rapids_str = "Intel GraniteRapids processor";
-static char* sierra_forrest_str = "Intel SierraForrest processor";
-//static char* snowridgex_str = "Intel SnowridgeX processor";
+static const char* pentium_m_b_str = "Intel Pentium M Banias processor";
+static const char* pentium_m_d_str = "Intel Pentium M Dothan processor";
+static const char* core_duo_str = "Intel Core Duo processor";
+static const char* core_2a_str = "Intel Core 2 65nm processor";
+static const char* core_2b_str = "Intel Core 2 45nm processor";
+static const char* atom_45_str = "Intel Atom 45nm processor";
+static const char* atom_32_str = "Intel Atom 32nm processor";
+static const char* atom_22_str = "Intel Atom 22nm processor";
+static const char* atom_silvermont_str = "Intel Atom (Silvermont) processor";
+static const char* atom_airmont_str = "Intel Atom (Airmont) processor";
+static const char* atom_goldmont_str = "Intel Atom (Goldmont) processor";
+static const char* atom_goldmontplus_str = "Intel Atom (Goldmont Plus) processor";
+static const char* atom_tremont_str = "Intel Atom (Tremont) processor";
+static const char* nehalem_bloom_str = "Intel Core Bloomfield processor";
+static const char* nehalem_lynn_str = "Intel Core Lynnfield processor";
+static const char* nehalem_west_str = "Intel Core Westmere processor";
+static const char* sandybridge_str = "Intel Core SandyBridge processor";
+static const char* ivybridge_str = "Intel Core IvyBridge processor";
+static const char* ivybridge_ep_str = "Intel Xeon IvyBridge EN/EP/EX processor";
+static const char* sandybridge_ep_str = "Intel Xeon SandyBridge EN/EP processor";
+static const char* haswell_str = "Intel Core Haswell processor";
+static const char* haswell_ep_str = "Intel Xeon Haswell EN/EP/EX processor";
+static const char* broadwell_str = "Intel Core Broadwell processor";
+static const char* broadwell_d_str = "Intel Xeon D Broadwell processor";
+static const char* broadwell_e3_str = "Intel Xeon E3 Broadwell processor";
+static const char* broadwell_ep_str = "Intel Xeon Broadwell EN/EP/EX processor";
+static const char* skylake_str = "Intel Skylake processor";
+static const char* skylakeX_str = "Intel Skylake SP processor";
+static const char* cascadelakeX_str = "Intel Cascadelake SP processor";
+static const char* kabylake_str = "Intel Kabylake processor";
+static const char* cannonlake_str = "Intel Cannonlake processor";
+static const char* coffeelake_str = "Intel Coffeelake processor";
+static const char* cometlake_str = "Intel Cometlake processor";
+static const char* nehalem_ex_str = "Intel Nehalem EX processor";
+static const char* westmere_ex_str = "Intel Westmere EX processor";
+static const char* xeon_mp_string = "Intel Xeon MP processor";
+static const char* xeon_phi_string = "Intel Xeon Phi (Knights Corner) Coprocessor";
+static const char* xeon_phi2_string = "Intel Xeon Phi (Knights Landing) (Co)Processor";
+static const char* xeon_phi3_string = "Intel Xeon Phi (Knights Mill) (Co)Processor";
+static const char* icelake_str = "Intel Icelake processor";
+static const char* tigerlake_str = "Intel Tigerlake processor";
+static const char* icelakesp_str = "Intel Icelake SP processor";
+static const char* rocketlake_str = "Intel Rocketlake processor";
+static const char* sapphire_rapids_str = "Intel SapphireRapids processor";
+static const char* emerald_rapids_str = "Intel EmeraldRapids processor";
+static const char* granite_rapids_str = "Intel GraniteRapids processor";
+static const char* sierra_forrest_str = "Intel SierraForrest processor";
+//static const char* snowridgex_str = "Intel SnowridgeX processor";
 
-static char* barcelona_str = "AMD K10 (Barcelona) processor";
-static char* shanghai_str = "AMD K10 (Shanghai) processor";
-static char* istanbul_str = "AMD K10 (Istanbul) processor";
-static char* magnycours_str = "AMD K10 (Magny Cours) processor";
-static char* thuban_str = "AMD K10 (Thuban) processor";
-static char* interlagos_str = "AMD Interlagos processor";
-static char* kabini_str = "AMD Family 16 model - Kabini processor";
-static char* opteron_sc_str = "AMD Opteron single core 130nm processor";
-static char* opteron_dc_e_str = "AMD Opteron Dual Core Rev E 90nm processor";
-static char* opteron_dc_f_str = "AMD Opteron Dual Core Rev F 90nm processor";
-static char* athlon64_str = "AMD Athlon64 X2 (AM2) Rev F 90nm processor";
-static char* athlon64_f_str = "AMD Athlon64 (AM2) Rev F 90nm processor";
-static char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
-static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
-static char* amd_k8_str = "AMD K8 architecture";
-static char* amd_zen_str = "AMD K17 (Zen) architecture";
-static char* amd_zenplus_str = "AMD K17 (Zen+) architecture";
-static char* amd_zen2_str = "AMD K17 (Zen2) architecture";
-static char* amd_zen3_str = "AMD K19 (Zen3) architecture";
-static char* amd_zen4_str = "AMD K19 (Zen4) architecture";
-static char* amd_zen4c_str = "AMD K19 (Zen4c) architecture";
-static char* armv7l_str = "ARM 7l architecture";
-static char* armv8_str = "ARM 8 architecture";
-static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
-static char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
-static char* arm_cortex_a57 = "ARM Cortex A57";
-static char* arm_cortex_a53 = "ARM Cortex A53";
-static char* arm_cortex_a72 = "ARM Cortex A72";
-static char* arm_cortex_a73 = "ARM Cortex A73";
-static char* arm_cortex_a76 = "ARM Cortex A76";
-static char* arm_neoverse_n1 = "ARM Neoverse N1";
-static char* arm_neoverse_v1 = "ARM Neoverse V1";
-static char* arm_huawei_tsv110 = "Huawei TSV110 (ARMv8)";
-static char* arm_nvidia_grace = "Nvidia Grace";
-static char* fujitsu_a64fx = "Fujitsu A64FX";
-static char* apple_m1_studio = "Apple M1";
-static char* power7_str = "POWER7 architecture";
-static char* power8_str = "POWER8 architecture";
-static char* power9_str = "POWER9 architecture";
+static const char* barcelona_str = "AMD K10 (Barcelona) processor";
+static const char* shanghai_str = "AMD K10 (Shanghai) processor";
+static const char* istanbul_str = "AMD K10 (Istanbul) processor";
+static const char* magnycours_str = "AMD K10 (Magny Cours) processor";
+static const char* thuban_str = "AMD K10 (Thuban) processor";
+static const char* interlagos_str = "AMD Interlagos processor";
+static const char* kabini_str = "AMD Family 16 model - Kabini processor";
+static const char* opteron_sc_str = "AMD Opteron single core 130nm processor";
+static const char* opteron_dc_e_str = "AMD Opteron Dual Core Rev E 90nm processor";
+static const char* opteron_dc_f_str = "AMD Opteron Dual Core Rev F 90nm processor";
+static const char* athlon64_str = "AMD Athlon64 X2 (AM2) Rev F 90nm processor";
+static const char* athlon64_f_str = "AMD Athlon64 (AM2) Rev F 90nm processor";
+static const char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
+static const char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
+static const char* amd_k8_str = "AMD K8 architecture";
+static const char* amd_zen_str = "AMD K17 (Zen) architecture";
+static const char* amd_zenplus_str = "AMD K17 (Zen+) architecture";
+static const char* amd_zen2_str = "AMD K17 (Zen2) architecture";
+static const char* amd_zen3_str = "AMD K19 (Zen3) architecture";
+static const char* amd_zen4_str = "AMD K19 (Zen4) architecture";
+static const char* amd_zen4c_str = "AMD K19 (Zen4c) architecture";
+static const char* armv7l_str = "ARM 7l architecture";
+//static const char* armv8_str = "ARM 8 architecture";
+static const char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
+static const char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
+static const char* arm_cortex_a57 = "ARM Cortex A57";
+static const char* arm_cortex_a53 = "ARM Cortex A53";
+static const char* arm_cortex_a72 = "ARM Cortex A72";
+static const char* arm_cortex_a73 = "ARM Cortex A73";
+static const char* arm_cortex_a76 = "ARM Cortex A76";
+static const char* arm_neoverse_n1 = "ARM Neoverse N1";
+static const char* arm_neoverse_v1 = "ARM Neoverse V1";
+static const char* arm_huawei_tsv110 = "Huawei TSV110 (ARMv8)";
+static const char* arm_nvidia_grace = "Nvidia Grace";
+static const char* fujitsu_a64fx = "Fujitsu A64FX";
+static const char* apple_m1_studio = "Apple M1";
+static const char* power7_str = "POWER7 architecture";
+static const char* power8_str = "POWER8 architecture";
+static const char* power9_str = "POWER9 architecture";
 
-static char* unknown_intel_str = "Unknown Intel Processor";
-static char* unknown_amd_str = "Unknown AMD Processor";
-static char* unknown_power_str = "Unknown POWER Processor";
+//static const char* unknown_intel_str = "Unknown Intel Processor";
+static const char* unknown_amd_str = "Unknown AMD Processor";
+static const char* unknown_power_str = "Unknown POWER Processor";
 
-static char* short_core2 = "core2";
-static char* short_atom = "atom";
-static char* short_pm = "pentiumm";
-static char* short_silvermont = "silvermont";
-static char* short_goldmont = "goldmont";
-static char* short_goldmontplus = "goldmontplus";
-static char* short_nehalem = "nehalem";
-static char* short_nehalemEX = "nehalemEX";
-static char* short_westmere = "westmere";
-static char* short_westmereEX = "westmereEX";
-static char* short_haswell = "haswell";
-static char* short_haswell_ep = "haswellEP";
-static char* short_broadwell = "broadwell";
-static char* short_broadwell_d = "broadwellD";
-static char* short_broadwell_ep = "broadwellEP";
-static char* short_ivybridge = "ivybridge";
-static char* short_ivybridge_ep = "ivybridgeEP";
-static char* short_sandybridge = "sandybridge";
-static char* short_sandybridge_ep = "sandybridgeEP";
-static char* short_skylake = "skylake";
-static char* short_skylakeX = "skylakeX";
-static char* short_kabylake = "skylake";
-static char* short_cascadelakeX = "CLX";
-static char* short_cannonlake = "cannonlake";
-static char* short_tigerlake = "TGL";
-static char* short_sapphire_rapids = "SPR";
-static char* short_emerald_rapids = "EMR";
-static char* short_phi = "phi";
-static char* short_phi2 = "knl";
-static char* short_icelake = "ICL";
-static char* short_rocketlake = "RKL";
-static char* short_icelakesp = "ICX";
-static char* short_granite_rapids = "GNR";
-static char* short_sierra_forrest = "SRF";
-//static char* short_snowridgex = "SNR";
+static const char* short_core2 = "core2";
+static const char* short_atom = "atom";
+static const char* short_pm = "pentiumm";
+static const char* short_silvermont = "silvermont";
+static const char* short_goldmont = "goldmont";
+static const char* short_goldmontplus = "goldmontplus";
+static const char* short_nehalem = "nehalem";
+static const char* short_nehalemEX = "nehalemEX";
+static const char* short_westmere = "westmere";
+static const char* short_westmereEX = "westmereEX";
+static const char* short_haswell = "haswell";
+static const char* short_haswell_ep = "haswellEP";
+static const char* short_broadwell = "broadwell";
+static const char* short_broadwell_d = "broadwellD";
+static const char* short_broadwell_ep = "broadwellEP";
+static const char* short_ivybridge = "ivybridge";
+static const char* short_ivybridge_ep = "ivybridgeEP";
+static const char* short_sandybridge = "sandybridge";
+static const char* short_sandybridge_ep = "sandybridgeEP";
+static const char* short_skylake = "skylake";
+static const char* short_skylakeX = "skylakeX";
+static const char* short_kabylake = "skylake";
+static const char* short_cascadelakeX = "CLX";
+static const char* short_cannonlake = "cannonlake";
+static const char* short_coffeelake = "coffeelake";
+static const char* short_tigerlake = "TGL";
+static const char* short_sapphire_rapids = "SPR";
+static const char* short_emerald_rapids = "EMR";
+static const char* short_phi = "phi";
+static const char* short_phi2 = "knl";
+static const char* short_icelake = "ICL";
+static const char* short_rocketlake = "RKL";
+static const char* short_icelakesp = "ICX";
+static const char* short_granite_rapids = "GNR";
+static const char* short_sierra_forrest = "SRF";
+//static const char* short_snowridgex = "SNR";
 
-static char* short_k8 = "k8";
-static char* short_k10 = "k10";
-static char* short_k15 = "interlagos";
-static char* short_k16 = "kabini";
-static char* short_zen = "zen";
-static char* short_zen2 = "zen2";
-static char* short_zen3 = "zen3";
-static char* short_zen4 = "zen4";
-static char* short_zen4c = "zen4c";
+static const char* short_k8 = "k8";
+static const char* short_k10 = "k10";
+static const char* short_k15 = "interlagos";
+static const char* short_k16 = "kabini";
+static const char* short_zen = "zen";
+static const char* short_zen2 = "zen2";
+static const char* short_zen3 = "zen3";
+static const char* short_zen4 = "zen4";
+static const char* short_zen4c = "zen4c";
 
-static char* short_arm7 = "arm7";
-static char* short_arm8 = "arm8";
-static char* short_arm8_cav_tx2 = "arm8_tx2";
-static char* short_arm8_cav_tx = "arm8_tx";
-static char* short_arm8_neo_n1 = "arm8_n1";
-static char* short_arm8_neo_v1 = "arm8_v1";
-static char* short_a64fx = "arm64fx";
-static char* short_apple_m1 = "apple_m1";
-static char* short_nvidia_grace = "nvidia_grace";
+static const char* short_arm7 = "arm7";
+static const char* short_arm8 = "arm8";
+static const char* short_arm8_cav_tx2 = "arm8_tx2";
+static const char* short_arm8_cav_tx = "arm8_tx";
+static const char* short_arm8_neo_n1 = "arm8_n1";
+static const char* short_arm8_neo_v1 = "arm8_v1";
+static const char* short_a64fx = "arm64fx";
+static const char* short_apple_m1 = "apple_m1";
+static const char* short_nvidia_grace = "nvidia_grace";
 
-static char* short_power7 = "power7";
-static char* short_power8 = "power8";
-static char* short_power9 = "power9";
+static const char* short_power7 = "power7";
+static const char* short_power8 = "power8";
+static const char* short_power9 = "power9";
 
-static char* short_unknown = "unknown";
+static const char* short_unknown = "unknown";
 
 /* #####  EXPORTED VARIABLES  ########################################## */
 
@@ -215,19 +216,18 @@ CpuTopology cpuid_topology;
 static void
 initTopologyFile(FILE* file)
 {
-    size_t items;
     HWThread* hwThreadPool;
     CacheLevel* cacheLevels;
     TreeNode* currentNode;
 
-    items = fread((void*) &cpuid_topology, sizeof(CpuTopology), 1, file);
+    fread((void*) &cpuid_topology, sizeof(CpuTopology), 1, file);
 
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
-    items = fread((void*) hwThreadPool, sizeof(HWThread), cpuid_topology.numHWThreads, file);
+    fread((void*) hwThreadPool, sizeof(HWThread), cpuid_topology.numHWThreads, file);
     cpuid_topology.threadPool = hwThreadPool;
 
     cacheLevels = (CacheLevel*) malloc(cpuid_topology.numCacheLevels * sizeof(CacheLevel));
-    items = fread((void*) cacheLevels, sizeof(CacheLevel), cpuid_topology.numCacheLevels, file);
+    fread((void*) cacheLevels, sizeof(CacheLevel), cpuid_topology.numCacheLevels, file);
     cpuid_topology.cacheLevels = cacheLevels;
     cpuid_topology.topologyTree = NULL;
 
@@ -260,445 +260,395 @@ initTopologyFile(FILE* file)
 static int
 readTopologyFile(const char* filename, cpu_set_t cpuSet)
 {
-    FILE* fp = NULL;
-    char structure[256];
-    char field[256];
-    char value[256];
+    int err = 0;
+    char structure[512];
+    char field[512];
+    char value[512];
     char line[512];
+    int *numProcessorsPerNumaNode = NULL;
+
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        ERROR_PRINT("Failed to open topology file %s", filename);
+        err = -errno;
+        goto error;
+    }
+
     int numHWThreads = -1;
     int numCacheLevels = -1;
-    int numberOfNodes = -1;
-    int* tmpNumberOfProcessors = NULL;
-    int counter = 0;
-    int i = 0;
-    uint32_t tmp = 0, tmp1 = 0;
-    uint64_t tmp64 = 0;
+    int numNumaNodes = -1;
 
-    fp = fopen(filename, "r");
-    if (!fp)
-    {
-        ERROR_PRINT("Failed to open topology file %s", filename);
-        return -errno;
-    }
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        if (sscanf(line,"%s %s", structure, field) != 2)
+            continue;
 
-    while (fgets(line, 512, fp) != NULL) {
-        sscanf(line,"%s %s", structure, field);
-        if ((strncmp(structure, "cpuid_topology", 14) == 0) && (strncmp(field, "numHWThreads", 12) == 0))
-        {
-            sscanf(line,"%s %s = %d", structure, field, &numHWThreads);
+        if ((strcmp(structure, "cpuid_topology") == 0) && (strcmp(field, "numHWThreads") == 0)) {
+            if (sscanf(line,"%s %s = %d", structure, field, &numHWThreads) != 3)
+                continue;
+        } else if ((strcmp(structure, "cpuid_topology") == 0) && (strcmp(field, "numCacheLevels") == 0)) {
+            if (sscanf(line,"%s %s = %d", structure, field, &numCacheLevels) != 3)
+                continue;
+        } else if ((strcmp(structure, "numa_info") == 0) && (strcmp(field, "numberOfNodes") == 0)) {
+            if (sscanf(line,"%s %s = %d", structure, field, &numNumaNodes) != 3)
+                continue;
         }
-        else if ((strncmp(structure, "cpuid_topology", 14) == 0) && (strncmp(field, "numCacheLevels", 15) == 0))
-        {
-            sscanf(line,"%s %s = %d", structure, field, &numCacheLevels);
-        }
-        else if ((strncmp(structure, "numa_info", 9) == 0) && (strncmp(field, "numberOfNodes", 13) == 0))
-        {
-            sscanf(line,"%s %s = %d", structure, field, &numberOfNodes);
-        }
-        if ((numHWThreads >= 0) && (numCacheLevels >= 0) && (numberOfNodes >= 0))
-        {
-            break;
-        }
-    }
-    if (numHWThreads < 0 || numCacheLevels < 0 || numberOfNodes < 0)
-    {
-        ERROR_PRINT("Cannot read topology information from file %s", filename);
-        fclose(fp);
-        return -EINVAL;
-    }
-
-    tmpNumberOfProcessors = (int*) malloc(numberOfNodes *sizeof(int));
-    if (!tmpNumberOfProcessors)
-    {
-        fclose(fp);
-        return -ENOMEM;
-    }
-
-    fseek(fp, 0, SEEK_SET);
-    counter = 0;
-    while (fgets(line, 512, fp) != NULL) {
-        sscanf(line,"%s %s %d %s = %d", structure, field, &tmp, value, &tmp1);
-        if ((strncmp(structure, "numa_info", 9) == 0) && (strncmp(value, "numberOfProcessors", 19) == 0))
-        {
-            tmpNumberOfProcessors[tmp-1] = tmp1;
-            counter++;
-        }
-        if (counter == numberOfNodes)
-        {
+        if (numHWThreads >= 0 && numCacheLevels >= 0 && numNumaNodes >= 0) {
             break;
         }
     }
 
-    cpuid_topology.threadPool = (HWThread*)malloc(numHWThreads * sizeof(HWThread));
-    if (!cpuid_topology.threadPool)
-    {
-        free(tmpNumberOfProcessors);
-        fclose(fp);
-        memset(&cpuid_topology, 0, sizeof(CpuTopology));
-        memset(&cpuid_info, 0, sizeof(CpuInfo));
-        return -ENOMEM;
+    if (numHWThreads < 0 || numCacheLevels < 0 || numNumaNodes < 0) {
+        ERROR_PRINT("Topology file error: %s\n  numHWThreads=%s numCacheLevels=%s numberOfNodes=%s",
+                filename,
+                (numHWThreads < 0) ? "missing" : "ok",
+                (numCacheLevels < 0) ? "missing" : "ok",
+                (numNumaNodes < 0) ? "missing" : "ok");
+        err = -EINVAL;
+        goto error;
     }
-    cpuid_topology.cacheLevels = (CacheLevel*)malloc(numCacheLevels * sizeof(CacheLevel));
-    if (!cpuid_topology.cacheLevels)
-    {
-        free(tmpNumberOfProcessors);
-        free(cpuid_topology.threadPool);
-        cpuid_topology.threadPool = NULL;
-        fclose(fp);
-        memset(&cpuid_topology, 0, sizeof(CpuTopology));
-        memset(&cpuid_info, 0, sizeof(CpuInfo));
-        return -ENOMEM;
+
+    cpuid_topology.numHWThreads = numHWThreads;
+    cpuid_topology.numCacheLevels = numCacheLevels;
+    numa_info.numberOfNodes = numNumaNodes;
+
+    if (fseek(fp, 0, SEEK_SET) < 0) {
+        err = -errno;
+        goto error;
     }
+
+    numProcessorsPerNumaNode = calloc(numa_info.numberOfNodes, sizeof(*numProcessorsPerNumaNode));
+    int curNumaNode = 0;
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        int numaNode = -1; // starting from 1, not from 0
+        int numberOfProcessors = -1;
+        if (sscanf(line,"%s %s %d %s = %d", structure, field, &numaNode, value, &numberOfProcessors) != 5)
+            continue;
+        if (strcmp(structure, "numa_info") != 0 || strcmp(value, "numberOfProcessors") != 0)
+            continue;
+
+        numaNode -= 1;
+
+        if (numaNode < 0 || numaNode >= numNumaNodes) {
+            ERROR_PRINT("Topology file contains numa_info out of range: %s", filename);
+            err = -EINVAL;
+            goto error;
+        }
+
+        numProcessorsPerNumaNode[numaNode] = numberOfProcessors;
+        curNumaNode++;
+
+        if (curNumaNode == numNumaNodes)
+            break;
+    }
+
+    if (curNumaNode != numNumaNodes) {
+        ERROR_PRINT("Topology file only contains %d of claimed %d numa_info lines: %s",
+                curNumaNode, numNumaNodes, filename);
+        err = -EINVAL;
+        goto error;
+    }
+
+    cpuid_topology.threadPool = calloc(numHWThreads, sizeof(*cpuid_topology.threadPool));
+    if (!cpuid_topology.threadPool) {
+        err = -errno;
+        goto error;
+    }
+
+    cpuid_topology.cacheLevels = calloc(numCacheLevels, sizeof(*cpuid_topology.cacheLevels));
+    if (!cpuid_topology.cacheLevels) {
+        err = -errno;
+        goto error;
+    }
+
     cpuid_topology.numHWThreads = numHWThreads;
     cpuid_topology.numCacheLevels = numCacheLevels;
 
-    numa_info.nodes = (NumaNode*) malloc(numberOfNodes * sizeof(NumaNode));
-    if (!numa_info.nodes)
-    {
-        free(tmpNumberOfProcessors);
-        free(cpuid_topology.cacheLevels);
-        free(cpuid_topology.threadPool);
-        fclose(fp);
-        memset(&cpuid_topology, 0, sizeof(CpuTopology));
-        //memset(&cpuid_info, 0, sizeof(CpuInfo));
-        return -ENOMEM;
+    numa_info.nodes = calloc(numNumaNodes, sizeof(*numa_info.nodes));
+    if (!numa_info.nodes) {
+        err = -errno;
+        goto error;
     }
-    numa_info.numberOfNodes = numberOfNodes;
 
-    for(i=0;i<numberOfNodes;i++)
-    {
-        numa_info.nodes[i].processors = (uint32_t*) malloc (tmpNumberOfProcessors[i] * sizeof(int));
-        if (!numa_info.nodes[i].processors)
-        {
-            for (int j = 0; j < i; j++)
-            {
-                if (numa_info.nodes[j].processors) free(numa_info.nodes[j].processors);
-                if (numa_info.nodes[j].distances) free(numa_info.nodes[j].distances);
-            }
-            free(tmpNumberOfProcessors);
-            free(cpuid_topology.cacheLevels);
-            free(cpuid_topology.threadPool);
-            free(numa_info.nodes);
-            fclose(fp);
-            memset(&cpuid_topology, 0, sizeof(CpuTopology));
-            memset(&numa_info, 0, sizeof(NumaTopology));
-            //memset(&cpuid_info, 0, sizeof(CpuInfo));
-            return -ENOMEM;
+    for (size_t i = 0; i< numa_info.numberOfNodes; i++) {
+        numa_info.nodes[i].processors = calloc(numProcessorsPerNumaNode[i], sizeof(*numa_info.nodes[i].processors));
+        if (!numa_info.nodes[i].processors) {
+            err = -errno;
+            goto error;
         }
-        numa_info.nodes[i].distances = (uint32_t*) malloc (numberOfNodes * sizeof(int));
-        if (!numa_info.nodes[i].distances)
-        {
-            free(numa_info.nodes[i].processors);
-            for (int j = 0; j < i; j++)
-            {
-                if (numa_info.nodes[j].processors) free(numa_info.nodes[j].processors);
-                if (numa_info.nodes[j].distances) free(numa_info.nodes[j].distances);
-            }
-            free(tmpNumberOfProcessors);
-            free(cpuid_topology.cacheLevels);
-            free(cpuid_topology.threadPool);
-            free(numa_info.nodes);
-            fclose(fp);
-            memset(&cpuid_topology, 0, sizeof(CpuTopology));
-            memset(&numa_info, 0, sizeof(NumaTopology));
-            //memset(&cpuid_info, 0, sizeof(CpuInfo));
-            return -ENOMEM;
+        numa_info.nodes[i].distances = calloc(numNumaNodes, sizeof(*numa_info.nodes[i].distances));
+        if (!numa_info.nodes[i].distances) {
+            err = -errno;
+            goto error;
         }
     }
-    free(tmpNumberOfProcessors);
 
-    fseek(fp, 0, SEEK_SET);
+    if (fseek(fp, 0, SEEK_SET) < 0) {
+        err = -errno;
+        goto error;
+    }
 
-    while (fgets(line, 512, fp) != NULL) {
-        sscanf(line,"%s %s", structure, field);
-        if (strncmp(structure, "cpuid_topology", 14) == 0)
-        {
-            if (strncmp(field, "numSockets", 11) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+    while (fgets(line, sizeof(line), fp)) {
+        if (sscanf(line, "%s %s", structure, field) != 2)
+            continue;
+
+        if (strcmp(structure, "cpuid_topology") == 0) {
+            unsigned tmp;
+            if (strcmp(field, "numSockets") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_topology.numSockets = tmp;
-            }
-            else if (strncmp(field, "numCoresPerSocket", 18) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "numCoresPerSocket") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_topology.numCoresPerSocket = tmp;
-            }
-            else if (strncmp(field, "numThreadsPerCore", 18) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "numThreadsPerCore") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_topology.numThreadsPerCore = tmp;
-            }
-            else if (strncmp(field, "numDies", 7) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "numDies") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_topology.numDies = tmp;
-            }
-            else if (strncmp(field, "threadPool", 11) == 0)
-            {
-                int thread = 0;
+            } else if (strcmp(field, "threadPool") == 0) {
+                unsigned hwthread;
+                if (sscanf(line, "%s %s %u %s = %u", structure, field, &hwthread, value, &tmp) != 5)
+                    continue;
 
-                sscanf(line, "%s %s %d %s = %d", structure, field, &thread, value, &tmp);
-
-                if (strncmp(value, "threadId", 8) == 0)
-                {
-                    cpuid_topology.threadPool[thread].threadId = tmp;
-                }
-                else if (strncmp(value, "coreId", 6) == 0)
-                {
-                    cpuid_topology.threadPool[thread].coreId = tmp;
-                }
-                else if (strncmp(value, "packageId", 10) == 0)
-                {
-                    cpuid_topology.threadPool[thread].packageId = tmp;
-                }
-                else if (strncmp(value, "dieId", 5) == 0)
-                {
-                    cpuid_topology.threadPool[thread].dieId = tmp;
-                }
-                else if (strncmp(value, "apicId", 6) == 0)
-                {
-                    cpuid_topology.threadPool[thread].apicId = tmp;
-                    if (CPU_ISSET(tmp, &cpuSet))
-                    {
-                        cpuid_topology.threadPool[thread].inCpuSet = 1;
-                    }
-                    else
-                    {
-                        cpuid_topology.threadPool[thread].inCpuSet = 0;
+                if (strcmp(value, "threadId") == 0) {
+                    cpuid_topology.threadPool[hwthread].threadId = tmp;
+                } else if (strcmp(value, "coreId") == 0) {
+                    cpuid_topology.threadPool[hwthread].coreId = tmp;
+                } else if (strcmp(value, "packageId") == 0) {
+                    cpuid_topology.threadPool[hwthread].packageId = tmp;
+                } else if (strcmp(value, "dieId") == 0) {
+                    cpuid_topology.threadPool[hwthread].dieId = tmp;
+                } else if (strcmp(value, "apicId") == 0) {
+                    cpuid_topology.threadPool[hwthread].apicId = tmp;
+                    if (CPU_ISSET(tmp, &cpuSet)) {
+                        cpuid_topology.threadPool[hwthread].inCpuSet = 1;
+                    } else {
+                        cpuid_topology.threadPool[hwthread].inCpuSet = 0;
                     }
                 }
-
-            }
-            else if (strncmp(field, "cacheLevels", 12) == 0)
-            {
-                int level = 0;
+            } else if (strcmp(field, "cacheLevels") == 0) {
+                int cacheLevel = 0, dummy;
                 char type[128];
-                sscanf(line, "%s %s %d %s", structure, field, &level, value);
+                if (sscanf(line, "%s %s %d %s", structure, field, &cacheLevel, value) != 4)
+                    continue;
 
-                cpuid_topology.cacheLevels[level-1].level = level-1;
-                if (strncmp(value, "type", 4) == 0)
-                {
-                    sscanf(line, "%s %s %d %s = %s", structure, field, &level, value, type);
-                    if (strncmp(type, "UNIFIEDCACHE", 13) == 0)
-                    {
-                        cpuid_topology.cacheLevels[level-1].type = UNIFIEDCACHE;
-                    }
-                    else if (strncmp(type, "DATACACHE", 9) == 0)
-                    {
-                        cpuid_topology.cacheLevels[level-1].type = DATACACHE;
-                    }
-                    else if (strncmp(type, "INSTRUCTIONCACHE", 17) == 0)
-                    {
-                        cpuid_topology.cacheLevels[level-1].type = INSTRUCTIONCACHE;
-                    }
-                    else if (strncmp(type, "ITLB", 4) == 0)
-                    {
-                        cpuid_topology.cacheLevels[level-1].type = ITLB;
-                    }
-                    else if (strncmp(type, "DTLB", 4) == 0)
-                    {
-                        cpuid_topology.cacheLevels[level-1].type = DTLB;
-                    }
-                    else if (strncmp(type, "NOCACHE", 7) == 0)
-                    {
-                        cpuid_topology.cacheLevels[level-1].type = NOCACHE;
-                    }
-                }
-                else
-                {
-                    sscanf(line, "%s %s %d %s = %d", structure, field, &level, value, &tmp);
-                    if (strncmp(value, "associativity", 14) == 0)
-                    {
-                        cpuid_topology.cacheLevels[level-1].associativity = tmp;
-                    }
-                    else if (strncmp(value, "sets", 4) == 0)
-                    {
-                        cpuid_topology.cacheLevels[level-1].sets = tmp;
-                    }
-                    else if (strncmp(value, "lineSize", 8) == 0)
-                    {
-                        cpuid_topology.cacheLevels[level-1].lineSize = tmp;
-                    }
-                    else if (strncmp(value, "size", 4) == 0)
-                    {
-                        cpuid_topology.cacheLevels[level-1].size = tmp;
-                    }
-                    else if (strncmp(value, "threads", 9) == 0)
-                    {
-                        cpuid_topology.cacheLevels[level-1].threads = tmp;
-                    }
-                    else if (strncmp(value, "inclusive", 10) == 0)
-                    {
-                        cpuid_topology.cacheLevels[level-1].inclusive = tmp;
-                    }
+                if (cacheLevel <= 0 || cacheLevel > numCacheLevels) {
+                    ERROR_PRINT("Topology file contains cacheLevels line with level out of range: %d", cacheLevel);
+                    err = -EINVAL;
+                    goto error;
                 }
 
+                cacheLevel -= 1;
+
+                cpuid_topology.cacheLevels[cacheLevel].level = cacheLevel;
+                if (strcmp(value, "type") == 0) {
+                    if (sscanf(line, "%s %s %d %s = %s", structure, field, &dummy, value, type) != 5)
+                        continue;
+
+                    if (strcmp(type, "UNIFIEDCACHE") == 0)
+                        cpuid_topology.cacheLevels[cacheLevel].type = UNIFIEDCACHE;
+                    else if (strcmp(type, "DATACACHE") == 0)
+                        cpuid_topology.cacheLevels[cacheLevel].type = DATACACHE;
+                    else if (strcmp(type, "INSTRUCTIONCACHE") == 0)
+                        cpuid_topology.cacheLevels[cacheLevel].type = INSTRUCTIONCACHE;
+                    else if (strcmp(type, "ITLB") == 0)
+                        cpuid_topology.cacheLevels[cacheLevel].type = ITLB;
+                    else if (strcmp(type, "DTLB") == 0)
+                        cpuid_topology.cacheLevels[cacheLevel].type = DTLB;
+                    else if (strcmp(type, "NOCACHE") == 0)
+                        cpuid_topology.cacheLevels[cacheLevel].type = NOCACHE;
+                } else {
+                    if (sscanf(line, "%s %s %d %s = %u", structure, field, &dummy, value, &tmp) != 5)
+                        continue;
+
+                    if (strcmp(value, "associativity") == 0)
+                        cpuid_topology.cacheLevels[cacheLevel].associativity = tmp;
+                    else if (strcmp(value, "sets") == 0)
+                        cpuid_topology.cacheLevels[cacheLevel].sets = tmp;
+                    else if (strcmp(value, "lineSize") == 0)
+                        cpuid_topology.cacheLevels[cacheLevel].lineSize = tmp;
+                    else if (strcmp(value, "size") == 0)
+                        cpuid_topology.cacheLevels[cacheLevel].size = tmp;
+                    else if (strcmp(value, "threads") == 0)
+                        cpuid_topology.cacheLevels[cacheLevel].threads = tmp;
+                    else if (strcmp(value, "inclusive") == 0)
+                        cpuid_topology.cacheLevels[cacheLevel].inclusive = tmp;
+                }
             }
-        }
-        else if (strncmp(structure, "cpuid_info", 11) == 0)
-        {
-            if (strncmp(field, "family", 6) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+        } else if (strcmp(structure, "cpuid_info") == 0) {
+            unsigned tmp;
+            if (strcmp(field, "family") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.family = tmp;
-
-            }
-            else if (strncmp(field, "model", 5) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "model") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.model = tmp;
-            }
-            else if (strncmp(field, "osname", 6) == 0)
-            {
-                strncpy(value,&(line[strlen(structure)+strlen(field)+4]), 256);
-                int len = 257;
-                cpuid_info.osname = (char*) malloc(len * sizeof(char));
-                if (!cpuid_info.osname)
-                {
-                    for (int i = 0; i < numberOfNodes; i++)
-                    {
-                        NumaNode* n = &numa_info.nodes[i];
-                        if (n->distances) free(n->distances);
-                        if (n->processors) free(n->processors);
-                    }
-                    free(cpuid_topology.cacheLevels);
-                    free(cpuid_topology.threadPool);
-                    free(numa_info.nodes);
-                    fclose(fp);
-                    memset(&cpuid_info, 0, sizeof(CpuInfo));
-                    memset(&cpuid_topology, 0, sizeof(CpuTopology));
-                    memset(&numa_info, 0, sizeof(NumaTopology));
+            } else if (strcmp(field, "osname") == 0) {
+                // line example:
+                // cpuid_info osname = Intel(R) Code(TM) ...
+                const size_t val_index = strlen(structure) + strlen(field) + 4;
+                if (strlen(line) < val_index)
+                    continue;
+
+                snprintf(value, sizeof(value), "%s", &line[val_index]);
+
+                cpuid_info.osname = strdup(value);
+                if (!cpuid_info.osname) {
+                    err = -errno;
+                    goto error;
                 }
-                strncpy(cpuid_info.osname, value, len);
-                cpuid_info.osname[strlen(value)-1] = '\0';
-            }
-            else if (strncmp(field, "stepping", 9) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "stepping") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.stepping = tmp;
-            }
-            else if (strncmp(field, "vendor", 6) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "vendor") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.vendor = tmp;
-            }
-            else if (strncmp(field, "part", 4) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "part") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.part = tmp;
-            }
-            else if (strncmp(field, "clock", 5) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "clock") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.clock = tmp;
-            }
-            else if (strncmp(field, "turbo", 5) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "turbo") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.turbo = tmp;
-            }
-            else if (strncmp(field, "isIntel", 7) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "isIntel") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.isIntel = tmp;
-            }
-            else if (strncmp(field, "featureFlags", 13) == 0)
-            {
-                sscanf(line, "%s %s = %ld", structure, field, &tmp64);
-                cpuid_info.featureFlags = tmp64;
-            }
-            else if (strncmp(field, "perf_version", 13) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "featureFlags") == 0) {
+                uint64_t flags;
+                if (sscanf(line, "%s %s = %ld", structure, field, &flags) != 3)
+                    continue;
+                cpuid_info.featureFlags = flags;
+            } else if (strcmp(field, "perf_version") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.perf_version = tmp;
-
-            }
-            else if (strncmp(field, "perf_num_ctr", 13) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "perf_num_ctr") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.perf_num_ctr = tmp;
-            }
-            else if (strncmp(field, "perf_width_ctr", 15) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "perf_width_ctr") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.perf_width_ctr = tmp;
-            }
-            else if (strncmp(field, "perf_num_fixed_ctr", 19) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "perf_num_fixed_ctr") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.perf_num_fixed_ctr = tmp;
-            }
-            else if (strncmp(field, "supportClientmem", 17) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "supportClientmem") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.supportClientmem = tmp;
-            }
-            else if (strncmp(field, "supportUncore", 14) == 0)
-            {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+            } else if (strcmp(field, "supportUncore") == 0) {
+                if (sscanf(line, "%s %s = %u", structure, field, &tmp) != 3)
+                    continue;
                 cpuid_info.supportUncore = tmp;
-            }
-            else if (strncmp(field, "features", 9) == 0)
-            {
-                strcpy(value,&(line[strlen(structure)+strlen(field)+4]));
-                int len = 257;
-                cpuid_info.features = (char*) malloc(len * sizeof(char));
-                strncpy(cpuid_info.features, value, len);
-                cpuid_info.features[strlen(value)-1] = '\0';
-            }
-            else if (strncmp(field, "architecture", 12) == 0)
-            {
-                strcpy(cpuid_info.architecture,&(line[strlen(structure)+strlen(field)+4]));
-            }
-        }
-        else if (strncmp(structure, "numa_info", 9) == 0)
-        {
-            if (strncmp(field, "nodes", 5) == 0)
-            {
-                int id = 0;
-                sscanf(line, "%s %s %d %s", structure, field, &id, value);
+            } else if (strcmp(field, "features") == 0) {
+                // line example
+                // cpuid_info features = TP ACPI MMX ...
+                const size_t val_index = strlen(structure) + strlen(field) + 4;
+                if (strlen(line) < val_index)
+                    continue;
 
-                if (strncmp(value,"numberOfProcessors", 19) == 0)
-                {
-                    sscanf(line, "%s %s %d %s = %d", structure, field, &id, value, &tmp);
-                    numa_info.nodes[id-1].numberOfProcessors = tmp;
+                cpuid_info.features = strdup(&line[val_index]);
+                if (!cpuid_info.features) {
+                    err = -errno;
+                    goto error;
                 }
-                else if (strncmp(value, "freeMemory", 11) == 0)
-                {
-                    sscanf(line, "%s %s %d %s = %d", structure, field, &id, value, &tmp);
-                    numa_info.nodes[id-1].freeMemory = tmp;
-                }
-                else if (strncmp(value, "id", 2) == 0)
-                {
-                    sscanf(line, "%s %s %d %s = %d", structure, field, &id, value, &tmp);
-                    numa_info.nodes[id-1].id = tmp;
-                }
-                else if (strncmp(value, "totalMemory", 12) == 0)
-                {
-                    sscanf(line, "%s %s %d %s = %d", structure, field, &id, value, &tmp);
-                    numa_info.nodes[id-1].totalMemory = tmp;
-                }
-                else if (strncmp(value, "numberOfDistances", 18) == 0)
-                {
-                    sscanf(line, "%s %s %d %s = %d", structure, field, &id, value, &tmp);
-                    numa_info.nodes[id-1].numberOfDistances = tmp;
-                }
-                if (strncmp(value, "processors", 11) == 0)
-                {
-                    sscanf(line, "%s %s %d %s %d = %d", structure, field, &id, value, &tmp, &tmp1);
-                    numa_info.nodes[id-1].processors[tmp-1] = tmp1;
-                }
-                else if (strncmp(value,"distances", 10) == 0)
-                {
-                    sscanf(line, "%s %s %d %s %d = %d", structure, field, &id, value, &tmp, &tmp1);
-                    numa_info.nodes[id-1].distances[tmp] = tmp1;
+            } else if (strcmp(field, "architecture") == 0) {
+                // line example
+                // cpuid_info architecture = x86_64
+                const size_t val_index = strlen(structure) + strlen(field) + 4;
+                if (strlen(line) < val_index)
+                    continue;
+                snprintf(cpuid_info.architecture, sizeof(cpuid_info.architecture), "%s", &line[val_index]);
+            }
+        } else if (strcmp(structure, "numa_info") == 0) {
+            if (strcmp(field, "nodes") == 0) {
+                unsigned tmp, tmp1;
+                int id = 0, dummy;
+                if (sscanf(line, "%s %s %d %s", structure, field, &id, value) != 4)
+                    continue;
+
+                id -= 1;
+
+                if (id < 0 || id >= numNumaNodes)
+                    continue;
+
+                if (strcmp(value,"numberOfProcessors") == 0) {
+                    if (sscanf(line, "%s %s %d %s = %u", structure, field, &dummy, value, &tmp) != 5)
+                        continue;
+                    numa_info.nodes[id].numberOfProcessors = tmp;
+                } else if (strcmp(value, "freeMemory") == 0) {
+                    if (sscanf(line, "%s %s %d %s = %u", structure, field, &dummy, value, &tmp) != 5)
+                        continue;
+                    numa_info.nodes[id].freeMemory = tmp;
+                } else if (strcmp(value, "id") == 0) {
+                    if (sscanf(line, "%s %s %d %s = %u", structure, field, &dummy, value, &tmp) != 5)
+                        continue;
+                    numa_info.nodes[id].id = tmp;
+                } else if (strcmp(value, "totalMemory") == 0) {
+                    if (sscanf(line, "%s %s %d %s = %u", structure, field, &dummy, value, &tmp) != 5)
+                        continue;
+                    numa_info.nodes[id].totalMemory = tmp;
+                } else if (strcmp(value, "numberOfDistances") == 0) {
+                    if (sscanf(line, "%s %s %d %s = %u", structure, field, &dummy, value, &tmp) != 5)
+                        continue;
+                    numa_info.nodes[id].numberOfDistances = tmp;
+                } else if (strcmp(value, "processors") == 0) {
+                    if (sscanf(line, "%s %s %d %s %u = %u", structure, field, &dummy, value, &tmp, &tmp1) != 5)
+                        continue;
+                    numa_info.nodes[id].processors[tmp-1] = tmp1;
+                } else if (strcmp(value,"distances") == 0) {
+                    if (sscanf(line, "%s %s %d %s %u = %u", structure, field, &dummy, value, &tmp, &tmp1) != 5)
+                        continue;
+                    numa_info.nodes[id].distances[tmp] = tmp1;
                 }
             }
         }
     }
-    fclose(fp);
+
+    free(numProcessorsPerNumaNode);
 
     return 0;
+
+error:
+    if (fp)
+        fclose(fp);
+
+    free(numProcessorsPerNumaNode);
+
+    free(cpuid_topology.cacheLevels);
+    free(cpuid_topology.threadPool);
+    memset(&cpuid_topology, 0, sizeof(cpuid_topology));
+
+    free(cpuid_info.features);
+    free(cpuid_info.osname);
+    memset(&cpuid_info, 0, sizeof(cpuid_info));
+
+    if (numa_info.nodes) {
+        for (size_t i = 0; i < numa_info.numberOfNodes; i++) {
+            free(numa_info.nodes[i].processors);
+            free(numa_info.nodes[i].distances);
+        }
+    }
+
+    free(numa_info.nodes);
+    memset(&numa_info, 0, sizeof(numa_info));
+    return err;
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -768,12 +718,14 @@ likwid_cpu_online(int cpu_id)
                     struct bstrList* second = bsplit(first->entry[i], '-');
                     if (second->qty == 1)
                     {
+#pragma GCC diagnostic ignored "-Wnonnull"
                         int core = atoi(bdata(second->entry[0]));
                         if (core == cpu_id)
                             state = 1;
                     }
                     else if (second->qty == 2)
                     {
+#pragma GCC diagnostic ignored "-Wnonnull"
                         int s = atoi(bdata(second->entry[0]));
                         int e = atoi(bdata(second->entry[1]));
                         if (cpu_id >= s && cpu_id <= e)
@@ -808,6 +760,7 @@ int likwid_sysfs_list_len(char* sysfsfile)
             }
             else
             {
+                #pragma GCC diagnostic ignored "-Wnonnull"
                 int s = atoi(bdata(second->entry[0]));
                 int e = atoi(bdata(second->entry[1]));
                 len += e - s + 1;
@@ -939,7 +892,7 @@ topology_setName(void)
                     break;
 
                 case SKYLAKEX:
-                    if (cpuid_info.stepping >= 0 && cpuid_info.stepping < 5)
+                    if (cpuid_info.stepping < 5)
                     {
                         cpuid_info.name = skylakeX_str;
                         cpuid_info.short_name = short_skylakeX;
@@ -955,13 +908,13 @@ topology_setName(void)
                 case KABYLAKE1:
                     cpuid_info.supportClientmem = 1;
                     cpuid_info.name = kabylake_str;
-                    cpuid_info.short_name = short_skylake;
+                    cpuid_info.short_name = short_kabylake;
                     break;
 
                 case KABYLAKE2:
                     cpuid_info.supportClientmem = 1;
                     cpuid_info.name = coffeelake_str;
-                    cpuid_info.short_name = short_skylake;
+                    cpuid_info.short_name = short_coffeelake;
                     break;
 
                 case CANNONLAKE:
@@ -1435,6 +1388,7 @@ topology_setName(void)
                     err = -EFAULT;
                     break;
             }
+            break;
         default:
             err = -EFAULT;
             break;
@@ -1609,8 +1563,8 @@ standard_init:
             memset(&cpuid_topology, 0, sizeof(CpuTopology));
             return ret;
         }
-        int activeCount = 0;
-        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        uint32_t  activeCount = 0;
+        for (size_t i = 0; i < cpuid_topology.numHWThreads; i++)
         {
             if (cpuid_topology.threadPool[i].inCpuSet)
                 activeCount++;
@@ -1677,6 +1631,7 @@ standard_init:
                                 default:
                                     break;
                             }
+                            break;
                         case FUJITSU_ARM:
                             switch(cpuid_info.part) {
                                 case FUJITSU_A64FX:
@@ -1752,7 +1707,7 @@ standard_init:
         if (ret < 0)
             goto standard_init;
         cpuid_topology.activeHWThreads = 0;
-        for (int i=0;i<cpuid_topology.numHWThreads;i++)
+        for (size_t i=0;i<cpuid_topology.numHWThreads;i++)
         {
             if (CPU_ISSET(cpuid_topology.threadPool[i].apicId, &cpuSet))
             {
@@ -1773,7 +1728,6 @@ standard_init:
 void
 topology_finalize(void)
 {
-    struct topology_functions funcs = topology_funcs;
     if (!topology_initialized)
     {
         return;
