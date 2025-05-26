@@ -126,8 +126,6 @@ bstr_to_doubleSize(const_bstring str, DataType type)
 bstring
 parse_workgroup(Workgroup* group, const_bstring str, DataType type)
 {
-    CpuTopology_t topo;
-    AffinityDomains_t doms;
     struct bstrList* tokens;
     bstring cpustr;
     int numThreads = 0;
@@ -137,12 +135,12 @@ parse_workgroup(Workgroup* group, const_bstring str, DataType type)
     if (tokens->qty == 2)
     {
         int domidx = -1;
-        topo = get_cpuTopology();
-        doms = get_affinityDomains();
+        AffinityDomains_t doms = get_affinityDomains();
 
-        for (int i = 0; i < doms->numberOfAffinityDomains; i++)
+        for (int i = 0; i < (int)doms->numberOfAffinityDomains; i++)
         {
-            if (strncmp(doms->domains[i].tag, bdata(tokens->entry[0]), strlen(doms->domains[i].tag)) == 0)
+#pragma GCC diagnostic ignored "-Wnonnull"
+            if (strcmp(doms->domains[i].tag, bdata(tokens->entry[0])) == 0)
             {
                 domidx = i;
                 break;
