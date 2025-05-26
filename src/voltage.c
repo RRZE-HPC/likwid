@@ -53,6 +53,8 @@ voltage_read(int cpuId, uint64_t *data)
 int
 voltage_tread(int socket_fd, int cpuId, uint64_t *data)
 {
+    (void)socket_fd;
+
     uint64_t result = 0;
     if (HPMread(cpuId, MSR_DEV, MSR_PERF_STATUS, &result))
     {
