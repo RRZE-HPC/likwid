@@ -62,11 +62,11 @@ else
 all: $(DAEMON_TARGET) $(SETFREQ_TARGET) $(APPDAEMON_TARGET)
 endif
 
-$(DAEMON_TARGET): accessDaemon.c ../intel_perfmon_uncore_discovery.c
-	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ accessDaemon.c ../intel_perfmon_uncore_discovery.c
+$(DAEMON_TARGET): accessDaemon.c ../intel_perfmon_uncore_discovery.c ../lock.c ../pci_types.c
+	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ $^
 
-$(SETFREQ_TARGET): setFreqDaemon.c
-	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ setFreqDaemon.c
+$(SETFREQ_TARGET): setFreqDaemon.c ../lock.c
+	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ $^
 
 $(APPDAEMON_TARGET): $(GOTCHA_TARGET) appDaemon.c ../bstrlib.c ../bstrlib_helper.c
 	$(Q)$(CC) -pthread -shared -fvisibility=hidden -fPIC $(CPPFLAGS) -Wl,-soname,$(notdir $(APPDAEMON_TARGET)).$(VERSION).$(RELEASE),--no-undefined -fstack-protector -I. -I$(GOTCHA_FOLDER)/include  -L$(GOTCHA_FOLDER) appDaemon.c ../bstrlib.c ../bstrlib_helper.c -o $@  -llikwid -llikwid-gotcha -ldl
