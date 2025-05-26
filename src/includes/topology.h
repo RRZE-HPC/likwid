@@ -223,7 +223,7 @@ struct topology_functions {
 
 extern int cpu_count(cpu_set_t* set);
 extern int likwid_cpu_online(int cpu_id);
-extern int likwid_sysfs_list_len(char* sysfsfile);
+extern size_t likwid_sysfs_list_len(char* sysfsfile);
 
 static inline int cpuid_hasFeature(FeatureBit bit)
 {
