@@ -82,7 +82,7 @@ int header(struct bstrList* code, char* funcname)
     return 0;
 }
 
-int footer(struct bstrList* code, char* funcname)
+static void footer(struct bstrList* code, char* funcname)
 {
     bstring line;
     if (funcname)
@@ -115,6 +115,8 @@ int footer(struct bstrList* code, char* funcname)
 
 int loopheader(struct bstrList* code, char* loopname, int step)
 {
+    (void)step;
+
     bstring line;
     if (loopname)
     {
