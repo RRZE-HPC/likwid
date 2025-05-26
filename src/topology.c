@@ -742,16 +742,15 @@ likwid_cpu_online(int cpu_id)
     return state;
 }
 
-int likwid_sysfs_list_len(char* sysfsfile)
+size_t likwid_sysfs_list_len(char* sysfsfile)
 {
-    int i = 0;
-    int len = 0;
+    size_t len = 0;
     FILE* fp;
     if (NULL != (fp = fopen (sysfsfile, "r")))
     {
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* first = bsplit(src, ',');
-        for (i = 0; i < first->qty; i++)
+        for (int i = 0; i < first->qty; i++)
         {
             struct bstrList* second = bsplit(first->entry[i], '-');
             if (second->qty == 1)
