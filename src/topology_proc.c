@@ -102,15 +102,6 @@ get_listPosition(int ownid, bstring list)
 }
 
 static int
-get_listLength(bstring list)
-{
-    struct bstrList* tokens = bsplit(list,(char) ',');
-    int len = tokens->qty;
-    bstrListDestroy(tokens);
-    return len;
-}
-
-static int
 fillList(int* outList, int outOffset, bstring list)
 {
     int current = 0;
@@ -183,8 +174,10 @@ static int readCacheInclusiveAMD(int level)
 int
 proc_init_cpuInfo(cpu_set_t cpuSet)
 {
+    (void)cpuSet;
+
     int i = 0;
-    int HWthreads = 0;
+    uint32_t HWthreads = 0;
     FILE *fp = NULL;
 
     int (*ownatoi)(const char*);
@@ -343,11 +336,6 @@ int
 proc_init_cpuFeatures(void)
 {
     int ret = 0;
-    FILE* file;
-    char buf[1024];
-    char ident[30];
-    char delimiter[] = " ";
-    char* cptr;
 #ifdef _ARCH_PPC
     return 0;
 #endif
@@ -637,6 +625,7 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         {
             bstring src = bread ((bNread) fread, fp);
             int packageId = ownatoi(bdata(src));
+            bdestroy(src);
             hwThreadPool[i].packageId = packageId;
             if (packageId > last_socket)
             {
@@ -650,7 +639,9 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         file = bformat("%s/core_id", bdata(cpudir));
         if (NULL != (fp = fopen (bdata(file), "r")))
         {
+            // TODO why are we reading this file if we don't use it?
             bstring src = bread ((bNread) fread, fp);
+            bdestroy(src);
             hwThreadPool[i].coreId = (++last_coreid);
             if (hwThreadPool[i].packageId == 0)
             {
@@ -664,6 +655,7 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         {
             bstring src = bread ((bNread) fread, fp);
             hwThreadPool[i].dieId = ownatoi(bdata(src));
+            bdestroy(src);
             if (hwThreadPool[i].packageId == 0 && hwThreadPool[i].dieId == 0)
             {
                 num_cores_per_die++;
@@ -676,6 +668,7 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         {
             bstring src = bread ((bNread) fread, fp);
             hwThreadPool[i].threadId = get_listPosition(i, src);
+            bdestroy(src);
             if (hwThreadPool[i].packageId == 0 &&
                 hwThreadPool[i].coreId == 0)
             {
@@ -725,18 +718,17 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
                             hwThreadPool[i].inCpuSet);
         bdestroy(cpudir);
     }
-    int* helper = malloc(cpuid_topology.numHWThreads * sizeof(int));
+    uint32_t* helper = calloc(cpuid_topology.numHWThreads, sizeof(*helper));
     if (!helper)
-    {
         return -ENOMEM;
-    }
+
     cpuid_topology.threadPool = hwThreadPool;
-    int hidx = 0;
-    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    uint32_t hidx = 0;
+    for (size_t i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-        int pid = hwThreadPool[i].packageId;
+        const uint32_t pid = hwThreadPool[i].packageId;
         int found = 0;
-        for (int j = 0; j < hidx; j++)
+        for (size_t j = 0; j < hidx; j++)
         {
             if (pid == helper[j])
             {
@@ -749,13 +741,14 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
             helper[hidx++] = pid;
         }
     }
-    int tmp_numSockets = hidx;
+
+    const uint32_t tmp_numSockets = hidx;
     hidx = 0;
-    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    for (size_t i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-        int pid = hwThreadPool[i].dieId;
+        const uint32_t pid = hwThreadPool[i].dieId;
         int found = 0;
-        for (int j = 0; j < hidx; j++)
+        for (size_t j = 0; j < hidx; j++)
         {
             if (pid == helper[j])
             {
@@ -768,7 +761,7 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
             helper[hidx++] = pid;
         }
     }
-    int tmp_numDies = hidx;
+    const uint32_t  tmp_numDies = hidx;
     if (tmp_numSockets == 1 && tmp_numDies == 1)
     {
         for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
@@ -791,11 +784,11 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         }
     }
     hidx = 0;
-    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    for (size_t i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-        int pid = hwThreadPool[i].packageId;
+        const uint32_t pid = hwThreadPool[i].packageId;
         int found = 0;
-        for (int j = 0; j < hidx; j++)
+        for (size_t j = 0; j < hidx; j++)
         {
             if (pid == helper[j])
             {
@@ -812,11 +805,11 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     /* Traverse all sockets to get maximal thread count per socket.
      * This should fix the code for architectures with "empty" sockets.
      */
-    int num_threads_per_socket = 0;
-    for (int i = 0; i < cpuid_topology.numSockets; i++)
+    uint32_t  num_threads_per_socket = 0;
+    for (size_t i = 0; i < cpuid_topology.numSockets; i++)
     {
-        int threadCount = 0;
-        for (int j = 0; j < cpuid_topology.numHWThreads; j++)
+        uint32_t threadCount = 0;
+        for (size_t j = 0; j < cpuid_topology.numHWThreads; j++)
         {
             if (helper[i] == hwThreadPool[j].packageId)
             {
@@ -829,15 +822,16 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         }
     }
 
-    int first_socket_id = helper[0];
+    const uint32_t first_socket_id = helper[0];
     hidx = 0;
-    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    for (size_t i = 0; i < cpuid_topology.numHWThreads; i++)
     {
-        int did = hwThreadPool[i].dieId;
-        int pid = hwThreadPool[i].packageId;
-        if (pid != first_socket_id) continue;
+        const uint32_t did = hwThreadPool[i].dieId;
+        const uint32_t pid = hwThreadPool[i].packageId;
+        if (pid != first_socket_id)
+            continue;
         int found = 0;
-        for (int j = 0; j < hidx; j++)
+        for (size_t j = 0; j < hidx; j++)
         {
             if (did == helper[j])
             {
@@ -856,8 +850,8 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     {
         cpuid_topology.numDies = 0;
     }
-    int max_thread_sibling_id = 0;
-    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    uint32_t max_thread_sibling_id = 0;
+    for (size_t i = 0; i < cpuid_topology.numHWThreads; i++)
     {
         if (hwThreadPool[i].threadId > max_thread_sibling_id)
         {
