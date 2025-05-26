@@ -72,16 +72,17 @@ count_characters(const char *str, char character)
 void*
 dummy_function(void* arg)
 {
-    return 0;
+    (void)arg;
+    return NULL;
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
+// TODO threads_test isn't used anymore. Can we just remove it?
 int
 threads_test()
 {
     int cnt = 0;
-    int err;
     pthread_t pid;
     int likwid_pin = count_characters(getenv("LIKWID_PIN"), ',');
     int max_cpus = sysconf(_SC_NPROCESSORS_CONF);
@@ -91,7 +92,7 @@ threads_test()
         max = max_cpus;
     }
     while (cnt < max) {
-        err = pthread_create(&pid, NULL, dummy_function, NULL);
+        pthread_create(&pid, NULL, dummy_function, NULL);
         cnt++;
     }
     return cnt;
@@ -266,6 +267,8 @@ threads_join(void)
 void
 threads_destroy(int numberOfGroups, int numberOfStreams)
 {
+    (void)numberOfStreams;
+
     int i = 0, j = 0;
     pthread_attr_destroy(&attr);
     pthread_barrier_destroy(&threads_barrier);
