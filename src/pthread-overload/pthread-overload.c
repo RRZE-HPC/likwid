@@ -220,7 +220,7 @@ pthread_create(pthread_t* thread,
             }
             else
             {
-                char* t = fgets(buff, 512, fpipe);
+                fgets(buff, 512, fpipe);
                 char* tmp = strstr(buff, "monitor");
                 if (tmp != NULL)
                 {
