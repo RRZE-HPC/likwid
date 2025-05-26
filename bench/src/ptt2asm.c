@@ -62,7 +62,52 @@
 #include <isa_ppc64.h>
 #endif
 
-static int registerMapLength(RegisterMap* map)
+static const RegisterMap StreamPatterns[] = {
+    {"STR0", "ARG2"},
+    {"STR1", "ARG3"},
+    {"STR2", "ARG4"},
+    {"STR3", "ARG5"},
+    {"STR4", "ARG6"},
+    {"STR5", "[rbp+16]"},
+    {"STR6", "[rbp+24]"},
+    {"STR7", "[rbp+32]"},
+    {"STR8", "[rbp+40]"},
+    {"STR9", "[rbp+48]"},
+    {"STR10", "[rbp+56]"},
+    {"STR11", "[rbp+64]"},
+    {"STR12", "[rbp+72]"},
+    {"STR13", "[rbp+80]"},
+    {"STR14", "[rbp+88]"},
+    {"STR15", "[rbp+96]"},
+    {"STR16", "[rbp+104]"},
+    {"STR17", "[rbp+112]"},
+    {"STR18", "[rbp+120]"},
+    {"STR19", "[rbp+128]"},
+    {"STR20", "[rbp+136]"},
+    {"STR21", "[rbp+144]"},
+    {"STR22", "[rbp+152]"},
+    {"STR23", "[rbp+160]"},
+    {"STR24", "[rbp+168]"},
+    {"STR25", "[rbp+176]"},
+    {"STR26", "[rbp+184]"},
+    {"STR27", "[rbp+192]"},
+    {"STR28", "[rbp+200]"},
+    {"STR29", "[rbp+208]"},
+    {"STR30", "[rbp+216]"},
+    {"STR31", "[rbp+224]"},
+    {"STR32", "[rbp+232]"},
+    {"STR33", "[rbp+240]"},
+    {"STR34", "[rbp+248]"},
+    {"STR35", "[rbp+256]"},
+    {"STR36", "[rbp+264]"},
+    {"STR37", "[rbp+272]"},
+    {"STR38", "[rbp+280]"},
+    {"STR39", "[rbp+288]"},
+    {"STR40", "[rbp+296]"},
+    {"", ""},
+};
+
+static int registerMapLength(const RegisterMap* map)
 {
     int i = 0;
     while (strlen(map[i].pattern) > 0)
@@ -72,7 +117,7 @@ static int registerMapLength(RegisterMap* map)
     return i;
 }
 
-static int registerMapMaxPattern(RegisterMap* map)
+static int registerMapMaxPattern(const RegisterMap* map)
 {
     int i = 0;
     size_t max = 0;
@@ -362,7 +407,7 @@ static struct bstrList* parse_asm(TestCase* testcase, struct bstrList* input)
     return output;
 }
 
-static int searchreplace(bstring line, RegisterMap* map)
+static int searchreplace(bstring line, const RegisterMap* map)
 {
     int maxlen = registerMapMaxPattern(map);
     int size = registerMapLength(map);
