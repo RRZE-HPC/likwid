@@ -1611,7 +1611,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
             cpuexpr_opt = "-C"
         else
             table.insert(cmd, LIKWID_PIN)
-            --table.insert(cmd,"-q")
+            table.insert(cmd,"-q")
             if #perf > 0 then
                 table.insert(only_pinned_processes, i)
             end
