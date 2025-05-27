@@ -143,6 +143,9 @@ copyThreadData(ThreadUserData* src,ThreadUserData* dst)
 
 void illhandler(int signum, siginfo_t *info, void *ptr)
 {
+    (void)signum;
+    (void)info;
+    (void)ptr;
     fprintf(stderr, "ERROR: Illegal instruction\n");
     fprintf(stderr, "This happens if you want to run a kernel that uses instructions not available on your system.\n");
     exit(EXIT_FAILURE);
@@ -154,7 +157,6 @@ void illhandler(int signum, siginfo_t *info, void *ptr)
 int main(int argc, char** argv)
 {
     uint64_t iter = 100;
-    uint32_t i;
     uint32_t j;
     int globalNumberOfThreads = 0;
     int optPrintDomains = 0;
@@ -166,7 +168,6 @@ int main(int argc, char** argv)
     uint64_t numberOfWorkgroups = 0;
     int tmp = 0;
     double time;
-    double cycPerUp = 0.0;
     double cycPerCL = 0.0;
     TestCase* test = NULL;
     uint64_t realSize = 0;
@@ -239,7 +240,7 @@ int main(int argc, char** argv)
                 if (l)
                 {
                     ownprintf("\nUser benchmarks:\n");
-                    for (i = 0; i < l->qty; i++)
+                    for (int i = 0; i < l->qty; i++)
                     {
                         if (dynbench_test(l->entry[i]))
                         {
@@ -274,7 +275,7 @@ int main(int argc, char** argv)
                 bdestroy(testcase);
                 testcase = bfromcstr(optarg);
                 int builtin = 1;
-                for (i=0; i<NUMKERNELS; i++)
+                for (uint32_t i=0; i<NUMKERNELS; i++)
                 {
                     if (biseqcstr(testcase, kernels[i].name))
                     {
@@ -375,7 +376,7 @@ int main(int argc, char** argv)
                 bdestroy(testcase);
                 testcase = bfromcstr(optarg);
 
-                for (i=0; i<NUMKERNELS; i++)
+                for (uint32_t i=0; i<NUMKERNELS; i++)
                 {
                     if (biseqcstr(testcase, kernels[i].name))
                     {
@@ -459,7 +460,7 @@ int main(int argc, char** argv)
         bdestroy(testcase);
         AffinityDomains_t affinity = get_affinityDomains();
         ownprintf("Number of Domains %d\n",affinity->numberOfAffinityDomains);
-        for (i=0; i < affinity->numberOfAffinityDomains; i++ )
+        for (uint32_t i=0; i < affinity->numberOfAffinityDomains; i++ )
         {
             ownprintf("Domain %d:\n",i);
             ownprintf("\tTag %s:",affinity->domains[i].tag);
@@ -491,17 +492,16 @@ int main(int argc, char** argv)
                 {
                     currentWorkgroup->init_per_thread = 1;
                 }
-                i = bstr_to_workgroup(currentWorkgroup, groupstr, test->type, test->streams);
+                int unknown = bstr_to_workgroup(currentWorkgroup, groupstr, test->type, test->streams);
                 bdestroy(groupstr);
                 size_t newsize = 0;
                 size_t stride = test->stride;
                 int nrThreads = currentWorkgroup->numberOfThreads;
-                int clsize = 128;
                 size_t orig_size = currentWorkgroup->size;
-                if (i == 0)
+                if (unknown == 0)
                 {
                     int warn_once = 1;
-                    for (i=0; i<  test->streams; i++)
+                    for (size_t i=0; i<  test->streams; i++)
                     {
                         if (currentWorkgroup->streams[i].offset%test->stride)
                         {
@@ -520,7 +520,7 @@ int main(int argc, char** argv)
                             else if (newsize == 0)
                             {
                                 int given = currentWorkgroup->size*test->streams*typesize;
-                                int each_iter = test->stride*test->bytes;
+                                size_t each_iter = test->stride*test->bytes;
                                 // For the case that one stream is used for loading and storing
                                 // Cases are daxpy and update
                                 if (test->streams*typesize*test->stride < each_iter)
@@ -575,9 +575,9 @@ int main(int argc, char** argv)
     }
     if (numberOfWorkgroups > 1)
     {
-        int g0_numberOfThreads = groups[0].numberOfThreads;
-        int g0_size = groups[0].size;
-        for (i = 1; i < numberOfWorkgroups; i++)
+        const uint32_t g0_numberOfThreads = groups[0].numberOfThreads;
+        const uint64_t g0_size = groups[0].size;
+        for (uint64_t i = 1; i < numberOfWorkgroups; i++)
         {
             if (g0_numberOfThreads != groups[i].numberOfThreads)
             {
@@ -585,7 +585,7 @@ int main(int argc, char** argv)
                 break;
             }
         }
-        for (i = 1; i < numberOfWorkgroups; i++)
+        for (uint64_t i = 1; i < numberOfWorkgroups; i++)
         {
             if (g0_size != groups[i].size)
             {
@@ -595,7 +595,7 @@ int main(int argc, char** argv)
         }
     }
 
-    for (i=0; i<numberOfWorkgroups; i++)
+    for (uint64_t i=0; i<numberOfWorkgroups; i++)
     {
         globalNumberOfThreads += groups[i].numberOfThreads;
     }
@@ -628,7 +628,7 @@ int main(int argc, char** argv)
 
 
     /* initialize data structures for threads */
-    for (i=0; i<numberOfWorkgroups; i++)
+    for (uint64_t i=0; i<numberOfWorkgroups; i++)
     {
         myData.iter = iter;
         if (demandIter > 0)
@@ -663,7 +663,7 @@ int main(int argc, char** argv)
     if (demandIter == 0)
     {
         getIterSingle((void*) &threads_data[0]);
-        for (i=0; i<numberOfWorkgroups; i++)
+        for (uint64_t i=0; i<numberOfWorkgroups; i++)
         {
             iter = threads_updateIterations(i, demandIter);
         }
@@ -719,7 +719,6 @@ int main(int argc, char** argv)
     uint64_t size_per_thread = threads_data[0].data.size;
     uint64_t iters_per_thread = threads_data[0].data.iter;
     uint64_t datavol = iters_per_thread * realSize * test->bytes;
-    uint64_t allIters = realIter * (int)(((double)realSize)/((double)test->stride*globalNumberOfThreads));
     ownprintf(bdata(HLINE));
     ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
     ownprintf("CPU Clock:\t\t%" PRIu64 "\n", timer_getCpuClock());
@@ -738,24 +737,20 @@ int main(int argc, char** argv)
     ownprintf("MByte/s:\t\t%.2f\n",
             1.0E-06 * ( (double) (iters_per_thread * realSize * test->bytes) / time));
 
-    size_t destsize = 0;
     size_t datasize = 0;
     double perUpFactor = 0.0;
     switch (test->type)
     {
         case INT:
             datasize = test->bytes/sizeof(int);
-            destsize = test->bytes/test->streams;
             perUpFactor = (clsize/sizeof(int));
             break;
         case SINGLE:
             datasize = test->bytes/sizeof(float);
-            destsize = test->bytes/test->streams;
             perUpFactor = (clsize/sizeof(float));
             break;
         case DOUBLE:
             datasize = test->bytes/sizeof(double);
-            destsize = test->bytes/test->streams;
             perUpFactor = (clsize/sizeof(double));
             break;
     }
