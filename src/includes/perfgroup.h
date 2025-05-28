@@ -34,6 +34,7 @@
 #include <bstrlib_helper.h>
 
 #include <likwid.h>
+#include "calculator_exptree.h"
 
 typedef enum {
     GROUP_NONE = 0,
@@ -54,7 +55,7 @@ static char* groupFileSectionNames[MAX_GROUP_FILE_SECTIONS] = {
     "LUA"
 };
 
-typedef struct {
+typedef struct CounterList {
     int counters; /*!< \brief Number of entries in the list */
     struct bstrList* cnames; /*!< \brief List of counter names */
     struct bstrList* cvalues; /*!< \brief List of counter values */
@@ -79,8 +80,7 @@ extern int update_clist(CounterList* clist, char* counter, double result);
 extern void destroy_clist(CounterList* clist);
 
 extern int calc_metric(char* formula, CounterList* clist, double *result);
-
-
+extern int calc_metric_new(const struct exptree_node* tree, const CounterList* clist, double *result);
 
 
 #endif /* PERFGROUP_H */

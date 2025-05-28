@@ -35,6 +35,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "calculator_exptree.h" // fwd declaration of struct exptree_node (maybe move to tree_types.h ?)
+
 #define DEBUGLEV_ONLY_ERROR 0
 #define DEBUGLEV_INFO 1
 #define DEBUGLEV_DETAIL 2
@@ -1284,6 +1286,7 @@ typedef struct {
   int nmetrics;       /*!< \brief Number of metrics */
   char **metricnames; /*!< \brief Metric names */
   char **metricformulas; /*!< \brief Metric formulas */
+  struct exptree_node **metrictrees; /*!< \brief Metric expression trees */
   char *longinfo; /*!< \brief Descriptive text about the group or empty */
 } GroupInfo;
 
