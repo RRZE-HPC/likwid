@@ -95,11 +95,10 @@ allocator_allocateVector(
         uint64_t size,
         int offset,
         DataType type,
-        int stride,
+        int /*stride*/,
         bstring domainString,
         int init_per_thread)
 {
-    int i;
     size_t bytesize = 0;
     const AffinityDomain* domain = NULL;
     int errorCode;
@@ -110,9 +109,10 @@ allocator_allocateVector(
     bytesize = (size+offset) * typesize;
     elements = alignment / typesize;
 
-    for (i=0;i<domains->numberOfAffinityDomains;i++)
+#pragma GCC diagnostic ignored "-Wnonnull"
+    for (size_t i=0;i<domains->numberOfAffinityDomains;i++)
     {
-        if (strncmp(domains->domains[i].tag, bdata(domainString), strlen(domains->domains[i].tag)) == 0)
+        if (strcmp(domains->domains[i].tag, bdata(domainString)) == 0)
         {
             domain = domains->domains + i;
         }

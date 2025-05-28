@@ -179,8 +179,10 @@ power_read(int cpuId, uint64_t reg, uint64_t *data)
 int
 power_tread(int socket_fd, int cpuId, uint64_t reg, uint64_t *data)
 {
+    (void)socket_fd;
+
     int i;
-    PowerType type;
+    PowerType type = 0;
     if (power_info.hasRAPL)
     {
         for (i = 0; i < NUM_POWER_DOMAINS; i++)

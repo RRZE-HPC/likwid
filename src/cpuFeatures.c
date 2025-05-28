@@ -258,9 +258,6 @@ cpuFeatureNames[CPUFEATURES_MAX] = {
     [FEAT_SPEEDSTEP_LOCK] = "Enhanced Intel SpeedStep Technology Select Lock",
 };
 
-static char*
-cpuFeatureNamesFixed[CPUFEATURES_MAX] = {};
-
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void
@@ -287,7 +284,7 @@ cpuFeatures_init(void)
     {
         HPMinit();
     }
-    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++)
     {
         int ret = HPMaddThread(cpuid_topology.threadPool[i].apicId);
         if (ret != 0)
@@ -296,7 +293,7 @@ cpuFeatures_init(void)
             return;
         }
     }
-    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++)
     {
         cpuFeatures_update(cpuid_topology.threadPool[i].apicId);
     }
@@ -307,7 +304,6 @@ cpuFeatures_init(void)
 void
 cpuFeatures_print(int cpu)
 {
-    uint64_t flags = 0x0ULL;
     if (!features_initialized)
     {
         return;

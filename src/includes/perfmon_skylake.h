@@ -66,9 +66,9 @@ int (*skylake_cbox_setup)(int, RegisterIndex, PerfmonEvent *);
 
 int skl_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    cpu_id++;
-    index++;
-    event++;
+    (void)cpu_id;
+    (void)index;
+    (void)event;
     return 0;
 }
 
@@ -160,10 +160,9 @@ int perfmon_init_skylake(int cpu_id)
 
 uint32_t skl_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    (void)cpu_id;
     uint32_t flags = (1ULL<<(1+(index*4)));
-    cpu_id++;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -181,7 +180,6 @@ uint32_t skl_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int skl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
     uint64_t latency_flags = 0x0ULL;
@@ -201,7 +199,7 @@ int skl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -280,7 +278,6 @@ int skl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int skl_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
 
     if (!has_uncore_lock(cpu_id))
@@ -292,7 +289,7 @@ int skl_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -339,7 +336,6 @@ int skl_uboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int skl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     if (!has_uncore_lock(cpu_id))
     {
@@ -349,7 +345,7 @@ int skl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -378,7 +374,6 @@ int skl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int skx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t filter_flags0 = 0x0ULL;
     uint64_t filter_flags1 = 0x0ULL;
@@ -406,7 +401,7 @@ int skx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -489,7 +484,6 @@ int skx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int skx_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -506,7 +500,7 @@ int skx_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -560,7 +554,6 @@ int skx_mboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int skx_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j = 0;
     uint64_t flags = 0x0ULL;
     uint64_t filter = box_map[counter_map[index].type].filterRegister1;
     int clean_filter = 1;
@@ -582,6 +575,7 @@ int skx_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     if (event->numberOfOptions > 0)
     {
+        uint64_t j;
         for(j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
@@ -613,13 +607,14 @@ int skx_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     break;
             }
         }
+
+        if (clean_filter)
+        {
+            VERBOSEPRINTREG(cpu_id, filter, (event->options[j].value & 0xFFFFFFFFULL), "CLEAN_WBOX_FILTER");
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter, 0x0ULL));
+        }
     }
 
-    if (clean_filter)
-    {
-        VERBOSEPRINTREG(cpu_id, filter, (event->options[j].value & 0xFFFFFFFFULL), "CLEAN_WBOX_FILTER");
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter, 0x0ULL));
-    }
     if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, "SETUP_WBOX");
@@ -631,7 +626,6 @@ int skx_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int skx_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j = 0;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -647,7 +641,7 @@ int skx_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -686,7 +680,6 @@ int skx_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int skx_uncorebox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -703,7 +696,7 @@ int skx_uncorebox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -732,7 +725,6 @@ int skx_uncorebox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int skx_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -749,7 +741,7 @@ int skx_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {

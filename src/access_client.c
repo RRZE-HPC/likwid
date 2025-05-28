@@ -75,7 +75,7 @@ static pthread_mutex_t *cpuLocks = NULL;
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 void __attribute__((destructor (104))) close_access_client(void);
 
-static char*
+static const char*
 access_client_strerror(AccessErrorType det)
 {
     switch (det)
@@ -108,28 +108,32 @@ access_client_errno(AccessErrorType det)
     }
 }
 
-static void access_client_signal_catcher(int sig) {
-    close_access_client();
-}
+// TODO do we still need these functions?
+// When I commented this out, they were not used anywhere.
+//
+//static void access_client_signal_catcher(int sig) {
+//    (void)sig;
+//    close_access_client();
+//}
+//
+//static int
+//access_client_catch_signal()
+//{
+//    struct sigaction sia;
+//    sia.sa_handler = access_client_signal_catcher;
+//    sigemptyset(&sia.sa_mask);
+//    sia.sa_flags = SA_ONSTACK;
+//    sigaction(SIGCHLD, &sia, NULL);
+//    return 0;
+//}
 
 static int
-access_client_catch_signal()
-{
-    struct sigaction sia;
-    sia.sa_handler = access_client_signal_catcher;
-    sigemptyset(&sia.sa_mask);
-    sia.sa_flags = SA_ONSTACK;
-    sigaction(SIGCHLD, &sia, NULL);
-    return 0;
-}
-
-static int
-access_client_startDaemon_direct(int cpu_id, struct sockaddr_un *address)
+access_client_startDaemon_direct(uint32_t cpu_id, struct sockaddr_un *address)
 {
     /* Check the function of the daemon here */
     char *newargv[] = { NULL };
     char *newenv[] = { NULL };
-    char *safeexeprog = TOSTRING(ACCESSDAEMON);
+    const char *safeexeprog = TOSTRING(ACCESSDAEMON);
     char exeprog[1024];
     int  ret;
     pid_t pid;
@@ -186,7 +190,7 @@ access_client_startDaemon_direct(int cpu_id, struct sockaddr_un *address)
 }
 
 static int
-access_client_startDaemon_bridge(int cpu_id, const char *bridge_path, struct sockaddr_un *daemon_address) {
+access_client_startDaemon_bridge(uint32_t cpu_id, const char *bridge_path, struct sockaddr_un *daemon_address) {
     struct sockaddr_un bridge_address;
     int socket_fd = -1;
     int address_length;
@@ -279,7 +283,7 @@ access_client_startDaemon_bridge(int cpu_id, const char *bridge_path, struct soc
 }
 
 static int
-access_client_daemon_connect(int cpu_id, struct sockaddr_un *address) {
+access_client_daemon_connect(uint32_t cpu_id, struct sockaddr_un *address) {
     int res = 0;
     char* filepath;
     size_t address_length;
@@ -340,7 +344,7 @@ access_client_daemon_connect(int cpu_id, struct sockaddr_un *address) {
 }
 
 static int
-access_client_startDaemon(int cpu_id) {
+access_client_startDaemon(uint32_t cpu_id) {
     const char *bridge_path;
     struct sockaddr_un address;
     int daemon_ret_code;
@@ -365,7 +369,7 @@ access_client_startDaemon(int cpu_id) {
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int
-access_client_init(int cpu_id)
+access_client_init(uint32_t cpu_id)
 {
     if (!lock_check())
     {
@@ -390,7 +394,7 @@ access_client_init(int cpu_id)
     if (!cpuLocks)
     {
         cpuLocks = malloc(cpuid_topology.numHWThreads * sizeof(pthread_mutex_t));
-        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++)
         {
             pthread_mutex_init(&cpuLocks[i], NULL);
         }
@@ -427,9 +431,8 @@ access_client_init(int cpu_id)
 }
 
 int
-access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *data)
+access_client_read(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t *data)
 {
-    int ret;
     int socket = globalSocket;
     pthread_mutex_t* lockptr = &globalLock;
     AccessDataRecord record;
@@ -524,10 +527,9 @@ access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t 
 }
 
 int
-access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t data)
+access_client_write(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t data)
 {
     int socket = globalSocket;
-    int ret;
     AccessDataRecord record;
     memset(&record, 0, sizeof(AccessDataRecord));
     record.cpu = cpu_id;
@@ -612,7 +614,7 @@ access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t
 }
 
 void
-access_client_finalize(int cpu_id)
+access_client_finalize(uint32_t cpu_id)
 {
     AccessDataRecord record;
     if (cpuSockets && cpuSockets[cpu_id] > 0)
@@ -648,7 +650,7 @@ access_client_finalize(int cpu_id)
 }
 
 int
-access_client_check(PciDeviceIndex dev, int cpu_id)
+access_client_check(PciDeviceIndex dev, uint32_t cpu_id)
 {
     int socket = globalSocket;
     pthread_mutex_t* lockptr = &globalLock;
@@ -699,7 +701,7 @@ void __attribute__((destructor (104))) close_access_client(void)
 {
     if (cpuSockets)
     {
-        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++)
         {
             if (cpuSockets[i] > 0)
             {
@@ -714,7 +716,7 @@ void __attribute__((destructor (104))) close_access_client(void)
     }
     if (daemon_pids)
     {
-        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++)
         {
             if (daemon_pids[i] != 0)
             {
@@ -732,7 +734,7 @@ void __attribute__((destructor (104))) close_access_client(void)
     }
     if (cpuLocks)
     {
-        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++)
         {
             pthread_mutex_destroy(&cpuLocks[i]);
         }

@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 
+#include <bstrlib_helper.h>
 #include <types.h>
 #include <likwid.h>
 #include <bitUtil.h>
@@ -209,8 +210,6 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
     int err = 0;
     uint64_t tmp = 0x0ULL;
     RegisterType type = oldtype;
-    int (*ownstrcmp)(const char*, const char*);
-    ownstrcmp = &strcmp;
     int testcpu = groupSet->threads[0].processorId;
     int firstpmcindex = -1;
     bstring checkName;
@@ -361,6 +360,10 @@ checkCounter(bstring counterName, const char* limit)
 static int
 getEvent(bstring event_str, bstring counter_str, PerfmonEvent* event)
 {
+    // TODO can we remove counter_str?
+    // at the time of ignoring the parameter, it was never used
+    (void)counter_str;
+
     int ret = FALSE;
     for (int i=0; i< perfmon_numArchEvents; i++)
     {
@@ -418,10 +421,9 @@ assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type
 static int
 parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
 {
-    int i,j;
     struct bstrList* subtokens;
 
-    for (i = event->numberOfOptions; i < MAX_EVENT_OPTIONS; i++)
+    for (uint64_t i = event->numberOfOptions; i < MAX_EVENT_OPTIONS; i++)
     {
         event->options[i].type = EVENT_OPTION_NONE;
     }
@@ -431,7 +433,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
     }
 
 
-    for (i=2;i<tokens->qty;i++)
+    for (int i=2;i<tokens->qty;i++)
     {
         subtokens = bsplit(tokens->entry[i],'=');
         btolower(subtokens->entry[0]);
@@ -585,11 +587,11 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
 #endif
             else if (biseqcstr(subtokens->entry[0], "config") == 1)
             {
-                event->eventId = strtoull(bdata(subtokens->entry[1]), NULL, 16);
+                event->eventId = bstr2u64(subtokens->entry[1], 16);
             }
             else if (biseqcstr(subtokens->entry[0], "umask") == 1)
             {
-                event->umask = strtoull(bdata(subtokens->entry[1]), NULL, 16);
+                event->umask = bstr2u64(subtokens->entry[1], 16);
             }
             else
             {
@@ -599,7 +601,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
         }
         bstrListDestroy(subtokens);
     }
-    for(i=event->numberOfOptions-1;i>=0;i--)
+    for(uint64_t i = event->numberOfOptions-1; i-- > 0;)
     {
 #ifdef LIKWID_USE_PERFEVENT
         if (event->options[i].type != EVENT_OPTION_PERF_PID && event->options[i].type != EVENT_OPTION_PERF_FLAGS && !(OPTIONS_TYPE_MASK(event->options[i].type) & (counter_map[index].optionMask|event->optionMask)))
@@ -615,12 +617,12 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
         }
     }
 
-    for(i=0;i<event->numberOfOptions;i++)
+    for(uint64_t i=0;i<event->numberOfOptions;i++)
     {
         if (event->options[i].type == EVENT_OPTION_EDGE)
         {
             int threshold_set = FALSE;
-            for (j=0;j<event->numberOfOptions;j++)
+            for (uint64_t j=0;j<event->numberOfOptions;j++)
             {
                 if (event->options[i].type == EVENT_OPTION_THRESHOLD)
                 {
@@ -644,7 +646,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
             int threshold_set = FALSE;
             int edge_set = FALSE;
             int invert_set = FALSE;
-            for (j=0;j<event->numberOfOptions;j++)
+            for (uint64_t j=0;j<event->numberOfOptions;j++)
             {
                 if (event->options[i].type == EVENT_OPTION_THRESHOLD)
                 {
@@ -1146,7 +1148,7 @@ perfmon_init_maps(void)
                     translate_types = skylake_translate_types;
                     break;
                 case SKYLAKEX:
-                    if (cpuid_info.stepping >= 0 && cpuid_info.stepping < 5)
+                    if (cpuid_info.stepping < 5)
                     {
                         box_map = skylakeX_box_map;
                         eventHash = skylakeX_arch_events;
@@ -2145,7 +2147,6 @@ getArchRegisterTypeNames()
 int
 perfmon_init(int nrThreads, const int* threadsToCpu)
 {
-    int i;
     int ret;
     int initialize_power = FALSE;
     int initialize_thermal = FALSE;
@@ -2221,8 +2222,8 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     groupSet->groups = NULL;
     groupSet->activeGroup = -1;
 
-    for(i=0; i<cpuid_topology.numSockets; i++) socket_lock[i] = LOCK_INIT;
-    for(i=0; i<cpuid_topology.numHWThreads; i++)
+    for(size_t i=0; i<cpuid_topology.numSockets; i++) socket_lock[i] = LOCK_INIT;
+    for(size_t i=0; i<cpuid_topology.numHWThreads; i++)
     {
         tile_lock[i] = LOCK_INIT;
         core_lock[i] = LOCK_INIT;
@@ -2232,7 +2233,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         currentConfig[i] = malloc(NUM_PMC * sizeof(uint64_t));
         if (!currentConfig[i])
         {
-            for (int j = 0; j < i; j++)
+            for (size_t j = 0; j < i; j++)
             {
                 free(currentConfig[j]);
             }
@@ -2253,7 +2254,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         free(groupSet->threads);
         free(groupSet);
         groupSet = NULL;
-        for(i=0; i<cpuid_topology.numHWThreads; i++)
+        for(size_t i=0; i<cpuid_topology.numHWThreads; i++)
             free(currentConfig[i]);
         free(currentConfig);
         currentConfig = NULL;
@@ -2272,7 +2273,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         free(groupSet->threads);
         free(groupSet);
         groupSet = NULL;
-        for(i=0; i<cpuid_topology.numHWThreads; i++)
+        for(size_t i=0; i<cpuid_topology.numHWThreads; i++)
             free(currentConfig[i]);
         free(currentConfig);
         currentConfig = NULL;
@@ -2291,7 +2292,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         free(groupSet->threads);
         free(groupSet);
         groupSet = NULL;
-        for(i=0; i<cpuid_topology.numHWThreads; i++)
+        for(size_t i=0; i<cpuid_topology.numHWThreads; i++)
             free(currentConfig[i]);
         free(currentConfig);
         currentConfig = NULL;
@@ -2303,7 +2304,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
 
     /* Store thread information and reset counters for processor*/
     /* If the arch supports it, initialize power and thermal measurements */
-    for(i=0;i<nrThreads;i++)
+    for(int i=0;i<nrThreads;i++)
     {
 #ifndef LIKWID_USE_PERFEVENT
         ret = HPMaddThread(threadsToCpu[i]);
@@ -2314,7 +2315,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
             free(groupSet->threads);
             free(groupSet);
             groupSet = NULL;
-            for(int j=0; j<cpuid_topology.numHWThreads; j++)
+            for(size_t j=0; j<cpuid_topology.numHWThreads; j++)
                 free(currentConfig[j]);
             free(currentConfig);
             currentConfig = NULL;
@@ -2329,7 +2330,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
             free(groupSet->threads);
             free(groupSet);
             groupSet = NULL;
-            for(int j=0; j<cpuid_topology.numHWThreads; j++)
+            for(size_t j=0; j<cpuid_topology.numHWThreads; j++)
                 free(currentConfig[j]);
             free(currentConfig);
             currentConfig = NULL;
@@ -2356,7 +2357,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
 void
 perfmon_finalize(void)
 {
-    int group, event;
+    int event;
     int thread;
     if (perfmon_initialized == 0)
     {
@@ -2366,7 +2367,7 @@ perfmon_finalize(void)
     {
         return;
     }
-    for(group=0;group < groupSet->numberOfActiveGroups; group++)
+    for(int group=0;group < groupSet->numberOfActiveGroups; group++)
     {
         for (thread=0;thread< groupSet->numberOfThreads; thread++)
         {
@@ -2400,7 +2401,7 @@ perfmon_finalize(void)
     }
     if (currentConfig)
     {
-        for (group=0; group < cpuid_topology.numHWThreads; group++)
+        for (size_t group=0; group < cpuid_topology.numHWThreads; group++)
         {
             memset(currentConfig[group], 0, NUM_PMC * sizeof(uint64_t));
             free(currentConfig[group]);
@@ -4104,7 +4105,7 @@ perfmon_readMarkerFile(const char* filename)
     buf[0] = '\0';
     char *ptr = NULL;
     int nr_regions = 0;
-    int cpus = 0, groups = 0, regions = 0;
+    int cpus = 0, groups = 0;
 
     if (perfmon_initialized != 1)
     {
@@ -4125,7 +4126,9 @@ perfmon_readMarkerFile(const char* filename)
         fprintf(stderr, "Error opening file %s\n", filename);
     }
     ptr = fgets(buf, sizeof(buf), fp);
-    ret = sscanf(buf, "%d %d %d", &cpus, &regions, &groups);
+
+    uint32_t regions;
+    ret = sscanf(buf, "%d %u %d", &cpus, &regions, &groups);
     if (ret != 3)
     {
         fprintf(stderr, "Marker file missformatted.\n");
@@ -4157,7 +4160,7 @@ perfmon_readMarkerFile(const char* filename)
         if (!markerResults[i].time)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the time storage\n", cpus * sizeof(double));
-            for (int j = 0; j < i; j++) {
+            for (size_t  j = 0; j < i; j++) {
                 free(markerResults[j].time);
                 free(markerResults[j].count);
                 free(markerResults[j].cpulist);
@@ -4170,7 +4173,7 @@ perfmon_readMarkerFile(const char* filename)
         {
             fprintf(stderr, "Failed to allocate %lu bytes for the count storage\n", cpus * sizeof(uint32_t));
             free(markerResults[i].time);
-            for (int j = 0; j < i; j++) {
+            for (size_t j = 0; j < i; j++) {
                 free(markerResults[j].time);
                 free(markerResults[j].count);
                 free(markerResults[j].cpulist);
@@ -4184,7 +4187,7 @@ perfmon_readMarkerFile(const char* filename)
             fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n", cpus * sizeof(int));
             free(markerResults[i].time);
             free(markerResults[i].count);
-            for (int j = 0; j < i; j++) {
+            for (size_t j = 0; j < i; j++) {
                 free(markerResults[j].time);
                 free(markerResults[j].count);
                 free(markerResults[j].cpulist);
@@ -4199,7 +4202,7 @@ perfmon_readMarkerFile(const char* filename)
             free(markerResults[i].time);
             free(markerResults[i].count);
             free(markerResults[i].cpulist);
-            for (int j = 0; j < i; j++) {
+            for (size_t j = 0; j < i; j++) {
                 free(markerResults[j].time);
                 free(markerResults[j].count);
                 free(markerResults[j].cpulist);

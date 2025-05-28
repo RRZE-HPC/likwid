@@ -50,9 +50,9 @@ int perfmon_init_zen(int cpu_id)
 
 int k17_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
+    (void)cpu_id;
+    (void)index;
     uint64_t flags = 0x0ULL;
-    cpu_id++;
-    index++;
     switch (event->eventId)
     {
         case 0x1:
@@ -81,7 +81,7 @@ int k17_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 
     if (event->numberOfOptions > 0)
     {
-        for(int j=0;j<event->numberOfOptions;j++)
+        for(uint64_t j=0;j<event->numberOfOptions;j++)
         {
             switch (event->options[j].type)
             {
@@ -126,7 +126,7 @@ int k17_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     flags |= ((event->eventId & AMD_K17_L3_EVSEL_MASK) << AMD_K17_L3_EVSEL_SHIFT);
     if (event->numberOfOptions > 0)
     {
-        for(int j=0;j<event->numberOfOptions;j++)
+        for(uint64_t j=0;j<event->numberOfOptions;j++)
         {
             switch (event->options[j].type)
             {
@@ -473,15 +473,10 @@ int perfmon_readCountersThread_zen(int thread_id, PerfmonEventSet* eventSet)
 
 int perfmon_finalizeCountersThread_zen(int thread_id, PerfmonEventSet* eventSet)
 {
-    int haveSLock = 0;
     int haveL3Lock = 0;
     int haveDLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
-        haveSLock = 1;
-    }
     if (die_lock[affinity_thread2die_lookup[cpu_id]] == cpu_id)
     {
         haveDLock = 1;

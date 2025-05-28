@@ -33,10 +33,10 @@
 
 #include <types.h>
 
-int access_x86_clientmem_init(const int socket);
-void access_x86_clientmem_finalize(const int socket);
-int access_x86_clientmem_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t *data);
-int access_x86_clientmem_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t data);
-int access_x86_clientmem_check(PciDeviceIndex dev, int socket);
+int access_x86_clientmem_init(uint32_t socket);
+void access_x86_clientmem_finalize(uint32_t  socket);
+int access_x86_clientmem_read(PciDeviceIndex dev, uint32_t socket, uint32_t reg, uint64_t *data);
+int access_x86_clientmem_write(PciDeviceIndex dev, uint32_t socket, uint32_t reg, uint64_t data);
+int access_x86_clientmem_check(PciDeviceIndex dev, uint32_t socket);
 
 #endif /* ACCESS_X86_CLIENTMEM_H */

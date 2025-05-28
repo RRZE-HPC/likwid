@@ -62,7 +62,52 @@
 #include <isa_ppc64.h>
 #endif
 
-static int registerMapLength(RegisterMap* map)
+static const RegisterMap StreamPatterns[] = {
+    {"STR0", "ARG2"},
+    {"STR1", "ARG3"},
+    {"STR2", "ARG4"},
+    {"STR3", "ARG5"},
+    {"STR4", "ARG6"},
+    {"STR5", "[rbp+16]"},
+    {"STR6", "[rbp+24]"},
+    {"STR7", "[rbp+32]"},
+    {"STR8", "[rbp+40]"},
+    {"STR9", "[rbp+48]"},
+    {"STR10", "[rbp+56]"},
+    {"STR11", "[rbp+64]"},
+    {"STR12", "[rbp+72]"},
+    {"STR13", "[rbp+80]"},
+    {"STR14", "[rbp+88]"},
+    {"STR15", "[rbp+96]"},
+    {"STR16", "[rbp+104]"},
+    {"STR17", "[rbp+112]"},
+    {"STR18", "[rbp+120]"},
+    {"STR19", "[rbp+128]"},
+    {"STR20", "[rbp+136]"},
+    {"STR21", "[rbp+144]"},
+    {"STR22", "[rbp+152]"},
+    {"STR23", "[rbp+160]"},
+    {"STR24", "[rbp+168]"},
+    {"STR25", "[rbp+176]"},
+    {"STR26", "[rbp+184]"},
+    {"STR27", "[rbp+192]"},
+    {"STR28", "[rbp+200]"},
+    {"STR29", "[rbp+208]"},
+    {"STR30", "[rbp+216]"},
+    {"STR31", "[rbp+224]"},
+    {"STR32", "[rbp+232]"},
+    {"STR33", "[rbp+240]"},
+    {"STR34", "[rbp+248]"},
+    {"STR35", "[rbp+256]"},
+    {"STR36", "[rbp+264]"},
+    {"STR37", "[rbp+272]"},
+    {"STR38", "[rbp+280]"},
+    {"STR39", "[rbp+288]"},
+    {"STR40", "[rbp+296]"},
+    {"", ""},
+};
+
+static int registerMapLength(const RegisterMap* map)
 {
     int i = 0;
     while (strlen(map[i].pattern) > 0)
@@ -72,10 +117,10 @@ static int registerMapLength(RegisterMap* map)
     return i;
 }
 
-static int registerMapMaxPattern(RegisterMap* map)
+static int registerMapMaxPattern(const RegisterMap* map)
 {
     int i = 0;
-    int max = 0;
+    size_t max = 0;
     while (strlen(map[i].pattern) > 0)
     {
         if (strlen(map[i].pattern) > max)
@@ -92,6 +137,7 @@ static struct bstrList* read_ptt(bstring pttfile)
     char buf[BUFSIZ];
     struct bstrList* l = NULL;
 
+#pragma GCC diagnostic ignored "-Wnonnull"
     if (access(bdata(pttfile), R_OK))
     {
         return NULL;
@@ -306,26 +352,6 @@ static struct bstrList* analyse_ptt(bstring pttfile, TestCase** testcase)
     return code;
 }
 
-static int set_testname(char *pttfile, TestCase* testcase)
-{
-    if ((!testcase)||(!pttfile))
-    {
-        return -EINVAL;
-    }
-    bstring ptt = bfromcstr(basename(pttfile));
-    int dot = bstrrchrp(ptt, '.', blength(ptt)-1);
-    btrunc(ptt, dot);
-    testcase->name = malloc((blength(ptt)+2) * sizeof(char));
-    int ret = snprintf(testcase->name, blength(ptt)+1, "%s", bdata(ptt));
-    if (ret > 0)
-    {
-        testcase->name[ret] = '\0';
-    }
-    bdestroy(ptt);
-    return 0;
-}
-
-
 static struct bstrList* parse_asm(TestCase* testcase, struct bstrList* input)
 {
     struct bstrList* output = NULL;
@@ -381,7 +407,7 @@ static struct bstrList* parse_asm(TestCase* testcase, struct bstrList* input)
     return output;
 }
 
-static int searchreplace(bstring line, RegisterMap* map)
+static int searchreplace(bstring line, const RegisterMap* map)
 {
     int maxlen = registerMapMaxPattern(map);
     int size = registerMapLength(map);
@@ -390,7 +416,7 @@ static int searchreplace(bstring line, RegisterMap* map)
         int c = 0;
         for (int j = 0; j < size; j++)
         {
-            if (strlen(map[j].pattern) == s)
+            if (strlen(map[j].pattern) == (size_t)s)
             {
                 bstring pat = bfromcstr(map[j].pattern);
                 bstring reg = bfromcstr(map[j].reg);
@@ -571,7 +597,6 @@ static int compile_file(bstring compiler, bstring flags, bstring asmfile, bstrin
 
 static int open_function(bstring location, TestCase *testcase)
 {
-    void* handle;
     char *error;
     void* (*owndlsym)(void*, const char*) = dlsym;
 
@@ -611,12 +636,15 @@ int dynbench_test(bstring testname)
         return exist;
     }
     path = bformat("%s/.likwid/bench/%s/%s.ptt", home, ARCHNAME, bdata(testname));
+
+#pragma GCC diagnostic ignored "-Wnonnull"
     if (!access(bdata(path), R_OK))
     {
         exist = 1;
     }
     bdestroy(path);
     path = bformat("%s/%s.ptt", pwd, bdata(testname));
+#pragma GCC diagnostic ignored "-Wnonnull"
     if (!access(bdata(path), R_OK))
     {
         exist = 1;
@@ -631,7 +659,6 @@ int dynbench_load(bstring testname, TestCase **testcase, char* tmpfolder, char *
     TestCase *test = NULL;
     char* home = getenv("HOME");
     char pwd[100];
-    bstring folder = NULL;
     if (!home)
     {
         fprintf(stderr, "Failed to get $HOME from environment\n");
@@ -644,10 +671,12 @@ int dynbench_load(bstring testname, TestCase **testcase, char* tmpfolder, char *
     }
 
     bstring pttfile = bformat("%s/%s.ptt", pwd, bdata(testname));
+#pragma GCC diagnostic ignored "-Wnonnull"
     if (access(bdata(pttfile), R_OK))
     {
         bdestroy(pttfile);
         pttfile = bformat("%s/.likwid/bench/%s/%s.ptt", home, ARCHNAME, bdata(testname));
+#pragma GCC diagnostic ignored "-Wnonnull"
         if (access(bdata(pttfile), R_OK))
         {
             fprintf(stderr, "Cannot open ptt file %s.ptt in CWD or %s/.likwid/bench/%s\n", bdata(testname), home, ARCHNAME);
@@ -673,6 +702,7 @@ int dynbench_load(bstring testname, TestCase **testcase, char* tmpfolder, char *
             {
                 pid_t pid = getpid();
                 bstring buildfolder = bformat("%s/%ld", tmpfolder, pid);
+#pragma GCC diagnostic ignored "-Wnonnull"
                 if (mkdir(bdata(buildfolder), 0700) == 0)
                 {
                     int asm_written = 0;
@@ -796,6 +826,7 @@ int dynbench_close(TestCase* testcase, char* tmpfolder)
             bstring asmfile = bformat("%s/%s.S", bdata(buildfolder), testcase->name);
             bstring objfile = bformat("%s/%s.o", bdata(buildfolder), testcase->name);
 
+#pragma GCC diagnostic ignored "-Wnonnull"
             if (!access(bdata(asmfile), R_OK)) unlink(bdata(asmfile));
             if (!access(bdata(objfile), R_OK)) unlink(bdata(objfile));
             if (!access(bdata(buildfolder), R_OK)) rmdir(bdata(buildfolder));
@@ -814,7 +845,7 @@ int dynbench_close(TestCase* testcase, char* tmpfolder)
     return 0;
 }
 
-int dynbench_asm(bstring testname, char* tmpfolder, bstring outfile)
+void dynbench_asm(bstring testname, char* tmpfolder, bstring outfile)
 {
     if (blength(testname) > 0 && tmpfolder && blength(outfile) > 0)
     {

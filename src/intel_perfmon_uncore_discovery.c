@@ -67,14 +67,20 @@ struct pci_dev {
 static struct pci_dev* sysfs_pci_devices = NULL;
 static int num_sysfs_pci_devices = 0;
 
+// TODO remove all this ugly file handling here:
+// - fix missing error handling
+// - fix hardcoded constants at e.g. snprintf
+// - do not check if a file exists with 'access'. Just open the file and handle the error accordingly
+// - fix more unsigned/signed variables
+
 
 // glibc memcpy uses optimized versions but copies have to be bytewise
 // otherwise the data is incorrect. 
-void mymemcpy(void* dest, void* src, int size)
+void mymemcpy(void* dest, void* src, size_t size)
 {
-    uint8_t volatile* udest = (uint8_t*)dest;
-    uint8_t volatile* usrc = (uint8_t*)src;
-    for (int i = 0; i < size/sizeof(uint8_t); i++)
+    uint8_t volatile* udest = dest;
+    uint8_t volatile* usrc = src;
+    for (unsigned i = 0; i < size/sizeof(uint8_t); i++)
     {
         *(udest + i) = *(usrc + i);
     }
@@ -124,25 +130,26 @@ static int pci_find_next_ext_capability(struct pci_dev *dev, int start, int cap)
 
 /* Helper function to read files from sysfs */
 static int file_to_uint(char* path, unsigned int *data) {
+    // TODO use fopen/fgets here
     int ret = -1;
     char content[1025];
     int fp = open(path, O_RDONLY);
     if (fp >= 0)
     {
-        ret = read(fp, content, 1024 * sizeof(char));
-        if (ret >= 0) {
-            content[ret] = '\0';
+        ssize_t read_count = read(fp, content, 1024 * sizeof(char));
+        if (read_count >= 0) {
+            content[read_count] = '\0';
             u64 new = 0x0;
-            ret = sscanf(content, "0x%x", &new);
-            if (ret == 1)
+            int scan_count = sscanf(content, "0x%x", &new);
+            if (scan_count == 1)
             {
                 *data = new;
                 ret = 0;
             }
             else
             {
-                ret = sscanf(content, "%d", &new);
-                if (ret == 1)
+                scan_count = sscanf(content, "%d", &new);
+                if (scan_count == 1)
                 {
                     *data = new;
                     ret = 0;
@@ -151,15 +158,25 @@ static int file_to_uint(char* path, unsigned int *data) {
         }
         close(fp);
     }
+    else
+    {
+        ret = -errno;
+    }
     
     return ret;
 }
 
-
+static int file_to_nonneg_int(char *path, int *data) {
+    unsigned uint_data = 0;
+    int retval = file_to_uint(path, &uint_data);
+    if (retval < 0)
+        return retval;
+    *data = (int)uint_data;
+    return 0;
+}
 
 static int read_sysfs_pci_devs()
 {
-    int err = 0;
     DIR *dp = NULL;
     struct dirent *ep = NULL;
 
@@ -203,20 +220,17 @@ static int read_sysfs_pci_devs()
             ret = file_to_uint(filename, &device_id);
             ret = snprintf(filename, 1023, "%s/numa_node", devbase);
             filename[ret] = '\0';
-            if (!access(filename, R_OK))
-            {
-                ret = file_to_uint(filename, &numa_node);
-            }
+            ret = file_to_nonneg_int(filename, &numa_node);
 
             if (numa_node >= 0)
             {
                 int cpuid = -1;
                 ret = snprintf(filename, 1023, "/sys/devices/system/node/node%d/cpulist", numa_node);
-                ret = file_to_uint(filename, &cpuid);
+                ret = file_to_nonneg_int(filename, &cpuid);
                 if (cpuid >= 0)
                 {
                     ret = snprintf(filename, 1023, "/sys/devices/system/cpu/cpu%d/topology/physical_package_id", cpuid);
-                    ret = file_to_uint(filename, &socket);
+                    ret = file_to_nonneg_int(filename, &socket);
                 }
             }
 
@@ -311,6 +325,9 @@ static int perfmon_uncore_discovery_update_dev_location(PerfmonDiscoveryUnit* un
             return 0;
     }
 
+    // TODO why do we need those variables?
+    (void)check_device;
+
     for (int i = 0; i < num_sysfs_pci_devices; i++)
     {
         struct pci_dev* dev = &sysfs_pci_devices[i];
@@ -335,14 +352,12 @@ static int perfmon_uncore_discovery_update_dev_location(PerfmonDiscoveryUnit* un
 int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
 {
     int ret = 0;
-    PerfmonDiscoverySocket* socks = NULL;
     int socket_id = 0;
     int num_sockets = 0;
     struct uncore_global_discovery global;
     int dvsec = 0;
     int PAGE_SIZE = sysconf (_SC_PAGESIZE);
     void * io_addr = NULL;
-    int max_sockets = 0;
     u32 val = 0;
     u32 entry_id = 0;
     u32 bir;

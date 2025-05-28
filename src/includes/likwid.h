@@ -321,7 +321,7 @@ the MSR/PCI files or the access daemon.
 @param [in] cpu_id CPU that should be enabled for measurements
 @return error code (0 for success, -ENODEV if access cannot be initialized
 */
-extern int HPMaddThread(int cpu_id) __attribute__((visibility("default")));
+extern int HPMaddThread(uint32_t cpu_id) __attribute__((visibility("default")));
 /*! \brief Close connections
 
 Close the connections to the MSR/PCI files or the access daemon
@@ -416,8 +416,8 @@ typedef struct {
   uint64_t clock;    /*!< \brief Current clock frequency of the executing CPU*/
   int turbo;         /*!< \brief Flag if CPU has a turbo mode */
   char *osname;      /*!< \brief Name of the CPU reported by OS */
-  char *name;        /*!< \brief Name of the CPU as identified by LIKWID */
-  char *short_name;  /*!< \brief Short name of the CPU*/
+  const char *name;        /*!< \brief Name of the CPU as identified by LIKWID */
+  const char *short_name;  /*!< \brief Short name of the CPU*/
   char *features;    /*!< \brief String with all features supported by the CPU*/
   int isIntel;       /*!< \brief Flag if it is an Intel CPU*/
   char architecture[20]; /*!< \brief name of the architecture like x86_64 or

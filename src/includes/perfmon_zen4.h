@@ -50,9 +50,9 @@ int perfmon_init_zen4(int cpu_id)
 
 int zen4_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
+    (void)cpu_id;
+    (void)index;
     uint64_t flags = 0x0ULL;
-    cpu_id++;
-    index++;
     switch (event->eventId)
     {
         case 0x1:
@@ -82,7 +82,7 @@ int zen4_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     // Currently no option for host/guest counting
     if (event->numberOfOptions > 0)
     {
-        for(int j=0;j<event->numberOfOptions;j++)
+        for(uint64_t j=0;j<event->numberOfOptions;j++)
         {
             switch (event->options[j].type)
             {
@@ -128,7 +128,7 @@ int zen4_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     flags |= ((event->eventId & AMD_K17_L3_EVSEL_MASK) << AMD_K17_L3_EVSEL_SHIFT);
     if (event->numberOfOptions > 0)
     {
-        for(int j=0;j<event->numberOfOptions;j++)
+        for(uint64_t j=0;j<event->numberOfOptions;j++)
         {
             switch (event->options[j].type)
             {
@@ -247,7 +247,6 @@ int perfmon_startCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
     int haveSLock = 0;
     int haveL3Lock = 0;
     int haveCLock = 0;
-    int haveMLock = 0;
     uint64_t flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
@@ -262,10 +261,6 @@ int perfmon_startCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
     if (core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
     {
         haveCLock = 1;
-    }
-    if (numa_lock[affinity_thread2numa_lookup[cpu_id]] == cpu_id)
-    {
-        haveMLock = 1;
     }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -325,7 +320,6 @@ int perfmon_stopCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
     int haveSLock = 0;
     int haveL3Lock = 0;
     int haveCLock = 0;
-    int haveMLock = 0;
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
@@ -340,10 +334,6 @@ int perfmon_stopCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
     if (core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
     {
         haveCLock = 1;
-    }
-    if (numa_lock[affinity_thread2numa_lookup[cpu_id]] == cpu_id)
-    {
-        haveMLock = 1;
     }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -415,7 +405,6 @@ int perfmon_readCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
     int haveSLock = 0;
     int haveL3Lock = 0;
     int haveCLock = 0;
-    int haveMLock = 0;
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
@@ -430,10 +419,6 @@ int perfmon_readCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
     if (core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
     {
         haveCLock = 1;
-    }
-    if (numa_lock[affinity_thread2numa_lookup[cpu_id]] == cpu_id)
-    {
-        haveMLock = 1;
     }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -498,7 +483,6 @@ int perfmon_readCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
 int perfmon_finalizeCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveSLock = 0;
-    int haveMLock = 0;
     int haveL3Lock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
@@ -510,11 +494,6 @@ int perfmon_finalizeCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet
     {
         haveL3Lock = 1;
     }
-    if (numa_lock[affinity_thread2numa_lookup[cpu_id]] == cpu_id)
-    {
-        haveMLock = 1;
-    }
-
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {

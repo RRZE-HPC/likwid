@@ -76,7 +76,6 @@ int
 access_x86_msr_init(const int cpu_id)
 {
     int fd = 0;
-    int i = 0;
 
     char* msr_file_name;
     if (!FD)
@@ -179,7 +178,6 @@ access_x86_msr_init(const int cpu_id)
 void
 access_x86_msr_finalize(const int cpu_id)
 {
-    int i = 0;
     access_x86_rdpmc_finalize(cpu_id);
     if (FD && FD[cpu_id] > 0)
     {
@@ -188,7 +186,7 @@ access_x86_msr_finalize(const int cpu_id)
         FD[cpu_id] = -1;
     }
     int c = 0;
-    for (i = 0; i < cpuid_topology.numHWThreads; i++)
+    for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++)
     {
         if (FD[i] >= 0) c++;
     }

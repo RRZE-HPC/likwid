@@ -147,7 +147,7 @@ typedef double number;
 
 void raise(Error err)
 {
-    char* msg;
+    const char *msg = "";
     switch(err)
     {
         case divZero:
@@ -166,7 +166,7 @@ void raise(Error err)
             msg = "Expression invalid";
             break;
     }
-    //printf("\tError: %s\n", msg);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "\tError: %s\n", msg);
 }
 
 inline unsigned int
@@ -415,7 +415,7 @@ int doOp(Stack *s, token op)
     token loperand = (token)stackPop(s);
     number lside = buildNumber(loperand);
     number rside = buildNumber(roperand);
-    number ret;
+    number ret = NAN;
     switch(*op)
     {
         case '^':
@@ -737,6 +737,8 @@ int tokenize(char *str, char *(**tokensRef))
                     }
                     // If it's not part of a number, it's an op - fall through
                 }
+                // The comment below supresses the fallthrough warning.
+                // fall through
             case multop:
             case expop:
             case lparen:

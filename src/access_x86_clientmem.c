@@ -112,8 +112,11 @@ clientmem_getStartAddr(uint64_t* startAddr)
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int
-access_x86_clientmem_init(const int socket)
+access_x86_clientmem_init(uint32_t socket)
 {
+    // TODO: Do we really need the socket argument?
+    (void)socket;
+
     uint64_t startAddr = 0;
 
     if (!access_clientmem_initialized)
@@ -146,8 +149,11 @@ access_x86_clientmem_init(const int socket)
 }
 
 void
-access_x86_clientmem_finalize(const int socket)
+access_x86_clientmem_finalize(uint32_t socket)
 {
+    // TODO, do we really need the socket argument?
+    (void)socket;
+
     if (access_clientmem_initialized)
     {
         if (clientmem_handle >= 0)
@@ -163,8 +169,11 @@ access_x86_clientmem_finalize(const int socket)
 }
 
 int
-access_x86_clientmem_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t *data)
+access_x86_clientmem_read(PciDeviceIndex dev, uint32_t socket, uint32_t reg, uint64_t *data)
 {
+    // TODO, do we really need the socket argument?
+    (void)socket;
+
     uint64_t d = 0;
     if (dev != PCI_IMC_DEVICE_0_CH_0)
     {
@@ -205,14 +214,23 @@ access_x86_clientmem_read(PciDeviceIndex dev, const int socket, uint32_t reg, ui
 
 
 int
-access_x86_clientmem_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t data)
+access_x86_clientmem_write(PciDeviceIndex dev, uint32_t socket, uint32_t reg, uint64_t data)
 {
+    // TODO: Why do we need this function if it always fails?
+    // If this is ever implemented? Do we need all the arguments?
+    (void)dev;
+    (void)socket;
+    (void)reg;
+    (void)data;
     return -EACCES;
 }
 
 int
-access_x86_clientmem_check(PciDeviceIndex dev, int socket)
+access_x86_clientmem_check(PciDeviceIndex dev, uint32_t socket)
 {
+    // TODO: Do we really need the socket argument?
+    (void)socket;
+
     if (dev != PCI_IMC_DEVICE_0_CH_0)
     {
         return 0;

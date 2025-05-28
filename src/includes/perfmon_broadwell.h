@@ -64,9 +64,9 @@ int print_ht_warn_once = 1;
 
 int bdw_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    cpu_id++;
-    index++;
-    event++;
+    (void)cpu_id;
+    (void)index;
+    (void)event;
     return 0;
 }
 
@@ -102,10 +102,9 @@ int perfmon_init_broadwell(int cpu_id)
 
 uint32_t bdw_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    (void)cpu_id;
     uint32_t flags = (1ULL<<(1+(index*4)));
-    cpu_id++;
-    for(j=0;j<event->numberOfOptions;j++)
+    for(uint64_t j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
@@ -123,7 +122,6 @@ uint32_t bdw_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int bdw_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
 
@@ -154,7 +152,7 @@ int bdw_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -220,7 +218,6 @@ int bdw_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int bdw_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -232,7 +229,7 @@ int bdw_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -261,7 +258,6 @@ int bdw_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
@@ -271,7 +267,7 @@ int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -300,7 +296,6 @@ int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int bdwep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t filter_flags0 = 0x0ULL;
     uint64_t filter_flags1 = 0x0ULL;
@@ -326,7 +321,7 @@ int bdwep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -400,7 +395,6 @@ int bdwep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int bdw_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j = 0;
     uint64_t flags = 0x0ULL;
     uint64_t filter = box_map[counter_map[index].type].filterRegister1;
     int clean_filter = 1;
@@ -422,6 +416,7 @@ int bdw_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     if (event->numberOfOptions > 0)
     {
+        uint64_t j;
         for(j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
@@ -453,13 +448,13 @@ int bdw_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     break;
             }
         }
+        if (clean_filter)
+        {
+            VERBOSEPRINTREG(cpu_id, filter, (event->options[j].value & 0xFFFFFFFFULL), "CLEAN_WBOX_FILTER");
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter, 0x0ULL));
+        }
     }
 
-    if (clean_filter)
-    {
-        VERBOSEPRINTREG(cpu_id, filter, (event->options[j].value & 0xFFFFFFFFULL), "CLEAN_WBOX_FILTER");
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter, 0x0ULL));
-    }
     if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, "SETUP_WBOX");
@@ -471,7 +466,6 @@ int bdw_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int bdw_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t filter = 0x0ULL;
     int opcode_flag = 0;
@@ -491,7 +485,7 @@ int bdw_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -548,7 +542,6 @@ int bdw_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int bdw_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -565,7 +558,7 @@ int bdw_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -594,7 +587,6 @@ int bdw_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int bdw_mboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -610,7 +602,7 @@ int bdw_mboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags = (1ULL<<20)|(1ULL<<22);
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -633,7 +625,6 @@ int bdw_mboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int bdw_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -650,7 +641,7 @@ int bdw_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -679,7 +670,6 @@ int bdw_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int bdw_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -696,7 +686,7 @@ int bdw_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -729,7 +719,6 @@ int bdw_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int bdw_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
 
@@ -746,7 +735,7 @@ int bdw_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -779,7 +768,6 @@ int bdw_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int bdw_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
     uint64_t flags = 0x0ULL;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -794,7 +782,7 @@ int bdw_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -835,7 +823,6 @@ int bdw_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int bdw_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDeviceIndex filterdev)
 {
-    int j;
     uint64_t flags = 0x0ULL;
     uint64_t filterreg;
     uint64_t filterval = 0x0ULL;
@@ -858,7 +845,7 @@ int bdw_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
     }
     if (event->numberOfOptions > 0)
     {
-        for(j = 0; j < event->numberOfOptions; j++)
+        for(uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {

@@ -32,6 +32,7 @@
 #define BSTRLIB_HELPER_INCLUDE
 
 #include <bstrlib.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +51,7 @@ int bstrListToCharList(struct bstrList* sl, char*** list);
 
 int btrimbrackets (bstring b);
 int bisnumber(bstring b);
+uint64_t bstr2u64(bstring b, int base);
 
 bstring read_file(char *filename);
 

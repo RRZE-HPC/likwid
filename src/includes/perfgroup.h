@@ -45,14 +45,7 @@ typedef enum {
     MAX_GROUP_FILE_SECTIONS
 } GroupFileSections;
 
-static char* groupFileSectionNames[MAX_GROUP_FILE_SECTIONS] = {
-    "NONE",
-    "SHORT",
-    "EVENTSET",
-    "METRICS",
-    "LONG",
-    "LUA"
-};
+extern const char *groupFileSectionNames[MAX_GROUP_FILE_SECTIONS];
 
 typedef struct {
     int counters; /*!< \brief Number of entries in the list */

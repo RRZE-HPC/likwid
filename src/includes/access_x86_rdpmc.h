@@ -32,10 +32,10 @@
 
 #include <types.h>
 
-int access_x86_rdpmc_init(const int cpu_id);
-void access_x86_rdpmc_finalize(const int cpu_id);
-int access_x86_rdpmc_read(const int cpu, uint32_t reg, uint64_t *data);
-int access_x86_rdpmc_write(const int cpu, uint32_t reg, uint64_t data);
-int access_x86_rdpmc_check(PciDeviceIndex dev, int cpu_id);
+int access_x86_rdpmc_init(uint32_t cpu_id);
+void access_x86_rdpmc_finalize(uint32_t cpu_id);
+int access_x86_rdpmc_read(uint32_t cpu, uint32_t reg, uint64_t *data);
+int access_x86_rdpmc_write(uint32_t cpu, uint32_t reg, uint64_t data);
+int access_x86_rdpmc_check(PciDeviceIndex dev, uint32_t cpu_id);
 
 #endif /* ACCESS_X86_RDPMC_H */

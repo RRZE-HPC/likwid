@@ -46,8 +46,6 @@
 int
 virtual_numa_init()
 {
-    int i;
-
     NumaNode* nodes = (NumaNode*) malloc(sizeof(NumaNode));
     if (!nodes)
     {
@@ -76,7 +74,7 @@ virtual_numa_init()
     nodes[0].numberOfProcessors = cpuid_topology.numHWThreads;
     nodes[0].totalMemory = proc_getTotalSysMem();
     nodes[0].freeMemory = proc_getFreeSysMem();
-    for (i = 0; i < cpuid_topology.numHWThreads; i++)
+    for (size_t i = 0; i < cpuid_topology.numHWThreads; i++)
     {
         nodes[0].processors[i] = cpuid_topology.threadPool[i].apicId;
     }

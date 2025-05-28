@@ -55,7 +55,7 @@
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int
-access_x86_init(int cpu_id)
+access_x86_init(uint32_t cpu_id)
 {
     int ret = access_x86_msr_init(cpu_id);
     if (ret == 0)
@@ -103,7 +103,7 @@ access_x86_init(int cpu_id)
 }
 
 int
-access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *data)
+access_x86_read(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t *data)
 {
     int err = -EINVAL;
     uint64_t tmp = 0x0ULL;
@@ -155,7 +155,7 @@ access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *da
 }
 
 int
-access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t data)
+access_x86_write(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t data)
 {
     int err = -EINVAL;
     if (dev == MSR_DEV)
@@ -201,7 +201,7 @@ access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t da
 }
 
 void
-access_x86_finalize(int cpu_id)
+access_x86_finalize(uint32_t cpu_id)
 {
     access_x86_msr_finalize(cpu_id);
     if (cpuid_info.supportUncore)
@@ -228,7 +228,7 @@ access_x86_finalize(int cpu_id)
 }
 
 int
-access_x86_check(PciDeviceIndex dev, int cpu_id)
+access_x86_check(PciDeviceIndex dev, uint32_t cpu_id)
 {
     if (dev == MSR_DEV)
     {

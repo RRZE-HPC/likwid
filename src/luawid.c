@@ -71,9 +71,13 @@ static int power_isInitialized = 0;
 static int power_hasRAPL = 0;
 static int config_isInitialized = 0;
 
+#ifdef LIKWID_WITH_NVMON
 static int nvmon_initialized = 0;
 static int cudatopology_isInitialized = 0;
+#endif
+#ifdef LIKWID_WITH_ROCMON
 static int rocmon_initialized = 0;
+#endif
 
 /* #####   VARIABLES  -  EXPORTED VARIABLES   ############################# */
 
@@ -157,6 +161,7 @@ static int lua_likwid_getConfiguration(lua_State *L) {
 }
 
 static int lua_likwid_putConfiguration(lua_State *L) {
+  (void)L;
   if (config_isInitialized == 1) {
     destroy_configuration();
     config_isInitialized = 0;
@@ -341,6 +346,7 @@ static int lua_likwid_switchGroup(lua_State *L) {
 }
 
 static int lua_likwid_finalize(lua_State *L) {
+  (void)L;
   if (perfmon_isInitialized == 1) {
     perfmon_finalize();
     perfmon_isInitialized = 0;
@@ -586,6 +592,7 @@ static int lua_likwid_getGroups(lua_State *L) {
 }
 
 static int lua_likwid_printSupportedCPUs(lua_State *L) {
+  (void)L;
   print_supportedCPUs();
   return 0;
 }
@@ -664,7 +671,6 @@ static int lua_likwid_getCpuInfo(lua_State *L) {
 }
 
 static int lua_likwid_getCpuTopology(lua_State *L) {
-  int i;
   TreeNode *socketNode;
   int socketCount = 0;
   TreeNode *coreNode;
@@ -721,7 +727,7 @@ static int lua_likwid_getCpuTopology(lua_State *L) {
 
   lua_pushstring(L, "threadPool");
   lua_newtable(L);
-  for (i = 0; i < cputopo->numHWThreads; i++) {
+  for (size_t i = 0; i < cputopo->numHWThreads; i++) {
     lua_pushnumber(L, i);
     lua_newtable(L);
     lua_pushstring(L, "threadId");
@@ -748,7 +754,7 @@ static int lua_likwid_getCpuTopology(lua_State *L) {
 
   lua_pushstring(L, "cacheLevels");
   lua_newtable(L);
-  for (i = 0; i < cputopo->numCacheLevels; i++) {
+  for (size_t i = 0; i < cputopo->numCacheLevels; i++) {
     lua_pushnumber(L, i + 1);
     lua_newtable(L);
 
@@ -853,6 +859,7 @@ static int lua_likwid_getCpuTopology(lua_State *L) {
 }
 
 static int lua_likwid_putTopology(lua_State *L) {
+  (void)L;
   if (topology_isInitialized == 1) {
     topology_finalize();
     topology_isInitialized = 0;
@@ -959,7 +966,7 @@ lua_likwid_getEventsAndCounters(lua_State* L)
         lua_pushstring(L,eventHash[i-1].limit);
         lua_settable(L,-3);
         lua_pushstring(L,"Options");
-        for(int j=0; j<eventHash[i-1].numberOfOptions; j++)
+        for(uint64_t j=0; j<eventHash[i-1].numberOfOptions; j++)
         {
             char* type = eventOptionTypeName[eventHash[i-1].options[j].type];
             uint64_t value = eventHash[i-1].options[j].value;
@@ -1104,6 +1111,7 @@ static int lua_likwid_getNumaInfo(lua_State *L) {
 }
 
 static int lua_likwid_putNumaInfo(lua_State *L) {
+  (void)L;
   if (numa_isInitialized) {
     numa_finalize();
     numa_isInitialized = 0;
@@ -1157,8 +1165,6 @@ static int lua_likwid_setMembind(lua_State *L) {
 }
 
 static int lua_likwid_getAffinityInfo(lua_State *L) {
-  int i, j;
-
   if (topology_isInitialized == 0) {
     topology_init();
     topology_isInitialized = 1;
@@ -1217,7 +1223,7 @@ static int lua_likwid_getAffinityInfo(lua_State *L) {
   lua_settable(L, -3);
   lua_pushstring(L, "domains");
   lua_newtable(L);
-  for (i = 0; i < affinity->numberOfAffinityDomains; i++) {
+  for (size_t i = 0; i < affinity->numberOfAffinityDomains; i++) {
     lua_pushinteger(L, (lua_Integer)(i + 1));
     lua_newtable(L);
     lua_pushstring(L, "tag");
@@ -1231,7 +1237,7 @@ static int lua_likwid_getAffinityInfo(lua_State *L) {
     lua_settable(L, -3);
     lua_pushstring(L, "processorList");
     lua_newtable(L);
-    for (j = 0; j < affinity->domains[i].numberOfProcessors; j++) {
+    for (size_t j = 0; j < affinity->domains[i].numberOfProcessors; j++) {
       lua_pushinteger(L, (lua_Integer)(j + 1));
       lua_pushinteger(L, (lua_Integer)(affinity->domains[i].processorList[j]));
       lua_settable(L, -3);
@@ -1353,6 +1359,7 @@ lua_likwid_sockstr_to_socklist(lua_State* L)
 static int
 lua_likwid_putAffinityInfo(lua_State* L)
 {
+    (void)L;
     if (affinity_isInitialized)
     {
         affinity_finalize();
@@ -1365,7 +1372,6 @@ lua_likwid_putAffinityInfo(lua_State* L)
 static int
 lua_likwid_getPowerInfo(lua_State* L)
 {
-    int i;
     if (topology_isInitialized == 0)
     {
         topology_init();
@@ -1396,7 +1402,7 @@ lua_likwid_getPowerInfo(lua_State* L)
         power_hasRAPL = power_init(0);
         if (power_hasRAPL > 0)
         {
-            for (i = 0; i < cputopo->numHWThreads; i++)
+            for (size_t i = 0; i < cputopo->numHWThreads; i++)
             {
                 if (cputopo->threadPool[i].inCpuSet)
                 {
@@ -1443,7 +1449,7 @@ lua_likwid_getPowerInfo(lua_State* L)
     lua_settable(L,-3);
     lua_pushstring(L,"steps");
     lua_newtable(L);
-    for(i=0;i<power->turbo.numSteps;i++)
+    for(int i=0;i<power->turbo.numSteps;i++)
     {
         lua_pushinteger(L, (lua_Integer)(i+1));
         lua_pushnumber(L,power->turbo.steps[i]);
@@ -1454,7 +1460,7 @@ lua_likwid_getPowerInfo(lua_State* L)
 
     lua_pushstring(L,"domains");
     lua_newtable(L);
-    for(i=0;i<power->numDomains;i++)
+    for(int i=0;i<power->numDomains;i++)
     {
         lua_pushstring(L,power_names[i]);
         lua_newtable(L);
@@ -1539,6 +1545,7 @@ lua_likwid_getPowerInfo(lua_State* L)
 
 
 static int lua_likwid_putPowerInfo(lua_State *L) {
+  (void)L;
   if (power_isInitialized) {
     power_finalize();
     power_isInitialized = 0;
@@ -1733,11 +1740,13 @@ static int lua_likwid_readTemp(lua_State *L) {
 static volatile int recv_sigint = 0;
 
 static void signal_catcher(int signo) {
+  (void)signo;
   recv_sigint++;
   return;
 }
 
 static int lua_likwid_catch_signal(lua_State *L) {
+  (void)L;
   signal(SIGINT, signal_catcher);
   signal(SIGTERM, signal_catcher);
   signal(SIGABRT, signal_catcher);
@@ -1800,8 +1809,7 @@ int parse(char *line, char **argv, int maxlen) {
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static void catch_sigchild(int signo) {
-  ;
-  ;
+  (void)signo;
 }
 
 static int lua_likwid_startProgram(lua_State *L) {
@@ -1812,7 +1820,10 @@ static int lua_likwid_startProgram(lua_State *L) {
   exec = (char *)luaL_checkstring(L, 1);
   int nrThreads = luaL_checknumber(L, 2);
   CpuTopology_t cputopo = get_cpuTopology();
-  if (nrThreads > cputopo->numHWThreads) {
+
+  luaL_argcheck(L, nrThreads >= 0, nrThreads, "Number of threads must be >= 0");
+
+  if ((uint32_t)nrThreads > cputopo->numHWThreads) {
     lua_pushstring(L, "Number of threads greater than available HW threads");
     lua_error(L);
     return 0;
@@ -1820,7 +1831,6 @@ static int lua_likwid_startProgram(lua_State *L) {
   int *cpus = malloc(cputopo->numHWThreads * sizeof(int));
   if (!cpus)
     return 0;
-  cpu_set_t cpuset;
   if (nrThreads > 0) {
     if (!lua_istable(L, -1)) {
       lua_pushstring(L, "No table given as second argument");
@@ -2050,7 +2060,7 @@ static int lua_likwid_access(lua_State *L) {
   if (!perm) {
     flags = F_OK;
   } else {
-    for (int i = 0; i < strlen(perm); i++) {
+    for (size_t i = 0; i < strlen(perm); i++) {
       if (perm[i] == 'r') {
         flags |= R_OK;
       } else if (perm[i] == 'w') {
@@ -2071,16 +2081,19 @@ static int lua_likwid_access(lua_State *L) {
 }
 
 static int lua_likwid_markerInit(lua_State *L) {
+  (void)L;
   likwid_markerInit();
   return 0;
 }
 
 static int lua_likwid_markerThreadInit(lua_State *L) {
+  (void)L;
   likwid_markerThreadInit();
   return 0;
 }
 
 static int lua_likwid_markerClose(lua_State *L) {
+  (void)L;
   likwid_markerClose();
   return 0;
 }
@@ -2092,6 +2105,7 @@ static int lua_likwid_markerWriteFile(lua_State *L) {
 }
 
 static int lua_likwid_markerNext(lua_State *L) {
+  (void)L;
   likwid_markerNextGroup();
   return 0;
 }
@@ -2150,6 +2164,7 @@ static int lua_likwid_resetRegion(lua_State *L) {
 }
 
 static int lua_likwid_cpuFeatures_init(lua_State *L) {
+  (void)L;
   cpuFeatures_init();
   return 0;
 }
@@ -2206,6 +2221,7 @@ static int lua_likwid_markerFile_read(lua_State *L) {
 }
 
 static int lua_likwid_markerFile_destroy(lua_State *L) {
+  (void)L;
   perfmon_destroyMarkerResults();
   return 0;
 }
@@ -2312,6 +2328,7 @@ static int lua_likwid_initFreq(lua_State *L) {
 }
 
 static int lua_likwid_finalizeFreq(lua_State *L) {
+  (void)L;
   freq_finalize();
   return 0;
 }
@@ -4132,6 +4149,8 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
   // CPU feature manipulation functions
   lua_register(L, "likwid_cpuFeaturesInit", lua_likwid_cpuFeatures_init);
   lua_register(L, "likwid_cpuFeaturesGet", lua_likwid_cpuFeatures_get);
+  lua_register(L, "likwid_cpuFeaturesPrint", lua_likwid_cpuFeatures_print);
+  lua_register(L, "likwid_cpuFeaturesName", lua_likwid_cpuFeatures_name);
   lua_register(L, "likwid_cpuFeaturesEnable", lua_likwid_cpuFeatures_enable);
   lua_register(L, "likwid_cpuFeaturesDisable", lua_likwid_cpuFeatures_disable);
   // Marker API related functions
