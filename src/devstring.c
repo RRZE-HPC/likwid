@@ -174,6 +174,7 @@ static int misc_init(void)
     return 0;
 }
 
+#if defined(LIKWID_WITH_NVMON) || defined(LIKWID_WITH_ROCMON)
 static int device_create_from_string_and_append(LikwidDeviceType type, const char *id, LikwidDeviceList_t dev_list)
 {
     LikwidDevice_t dev;
@@ -194,6 +195,7 @@ static int device_create_from_string_and_append(LikwidDeviceType type, const cha
     dev_list->devices[new_num_devices - 1] = dev;
     return 0;
 }
+#endif
 
 static int device_create_and_append(LikwidDeviceType type, int id, LikwidDeviceList_t dev_list)
 {
@@ -257,6 +259,7 @@ cleanup:
     return err;
 }
 
+#if defined(LIKWID_WITH_NVMON) || defined(LIKWID_WITH_ROCMON)
 static int parse_gpu(const bstring domain_selector, LikwidDeviceType type, LikwidDeviceList_t dev_list)
 {
     /* GPUs differ once again in their domain_selector, as they also allow a list of PCI adresses.
@@ -297,6 +300,7 @@ cleanup:
     bstrListDestroy(slist);
     return err;
 }
+#endif
 
 static int process_domain(const bstring domain_type, const bstring domain_selector, LikwidDeviceList_t dev_list)
 {

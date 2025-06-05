@@ -226,6 +226,8 @@ static int create_paths(void)
         closedir(hwmon_base_dir);
 
         /* Crawl hwmon dir for tempX_input and tempX_label and populate arrays accordingly. */
+
+#pragma GCC diagnostic ignored "-Wnonnull"
         DIR *hwmon_dir = opendir(bdata(s->hwmon_path));
         if (!hwmon_dir)
         {
@@ -389,7 +391,7 @@ static int amd_thermal_temperature_ctl_getter(LikwidDevice_t device, char **valu
     if (err < 0)
         return err;
 
-    if (device->id.simple.id >= info.count)
+    if ((size_t)device->id.simple.id >= info.count)
         return -EINVAL;
 
     return temp_getter(bdata(info.sockets[device->id.simple.id].temp_path), value);

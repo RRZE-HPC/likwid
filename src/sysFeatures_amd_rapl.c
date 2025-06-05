@@ -73,6 +73,7 @@ static int amd_rapl_energy_status_getter(const LikwidDevice_t device, char** val
 
 static int pkg_test_testFunc(uint64_t msrData, void * value)
 {
+    (void)value;
     if (amd_rapl_pkg_info.powerUnit == 0 && amd_rapl_pkg_info.energyUnit == 0 && amd_rapl_pkg_info.timeUnit == 0)
     {
         amd_rapl_pkg_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
@@ -113,6 +114,7 @@ static const _SysFeatureList amd_rapl_pkg_feature_list = {
 
 static int core_test_testFunc(uint64_t msrData, void * value)
 {
+    (void)value;
     if (amd_rapl_core_info.powerUnit == 0 && amd_rapl_core_info.energyUnit == 0 && amd_rapl_core_info.timeUnit == 0)
     {
         amd_rapl_core_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
@@ -153,6 +155,7 @@ static const _SysFeatureList amd_rapl_core_feature_list = {
 
 static int l3_test_testFunc(uint64_t msrData, void * value)
 {
+    (void)value;
     if (amd_rapl_l3_info.powerUnit == 0 && amd_rapl_l3_info.energyUnit == 0 && amd_rapl_l3_info.timeUnit == 0)
     {
         amd_rapl_l3_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));

@@ -114,6 +114,7 @@ static int device_create_simple(LikwidDeviceType type, int id, LikwidDevice_t* d
     return 0;
 }
 
+#if defined(LIKWID_WITH_NVMON) || defined(LIKWID_WITH_ROCMON)
 static int device_create_pci(LikwidDeviceType type, int id, uint16_t domain, uint8_t bus, uint8_t dev, uint8_t func, LikwidDevice_t *device)
 {
     int err = 0;
@@ -130,6 +131,7 @@ static int device_create_pci(LikwidDeviceType type, int id, uint16_t domain, uin
     *device = lw_dev;
     return 0;
 }
+#endif
 
 static int device_create_hwthread(int id, LikwidDevice_t *device)
 {

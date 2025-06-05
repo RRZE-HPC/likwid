@@ -71,7 +71,7 @@ static int intel_cpu_turbo_setter(const LikwidDevice_t device, const char* value
 }
 
 static _SysFeature intel_cpu_turbo_features[] = {
-    {"turbo", "cpu_freq", "Turbo mode", intel_cpu_turbo_getter, intel_cpu_turbo_setter, DEVICE_TYPE_HWTHREAD, intel_cpu_turbo_test},
+    {"turbo", "cpu_freq", "Turbo mode", intel_cpu_turbo_getter, intel_cpu_turbo_setter, DEVICE_TYPE_HWTHREAD, intel_cpu_turbo_test, NULL},
 };
 
 const _SysFeatureList likwid_sysft_intel_cpu_turbo_feature_list = {

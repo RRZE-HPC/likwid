@@ -29,6 +29,7 @@ static int test_leaf_0x15(void)
 
 static int denominator_getter(LikwidDevice_t device, char **value)
 {
+    (void)device;
     uint32_t eax = 0x15, ebx, ecx = 0, edx;
     CPUID(eax, ebx, ecx, edx);
     return likwid_sysft_uint64_to_string(eax, value);
@@ -36,6 +37,7 @@ static int denominator_getter(LikwidDevice_t device, char **value)
 
 static int numerator_getter(LikwidDevice_t device, char **value)
 {
+    (void)device;
     uint32_t eax = 0x15, ebx, ecx = 0, edx;
     CPUID(eax, ebx, ecx, edx);
     return likwid_sysft_uint64_to_string(ebx, value);
@@ -53,6 +55,7 @@ static int ratio_tester(void)
 
 static int crystal_freq_getter(LikwidDevice_t device, char **value)
 {
+    (void)device;
     uint32_t eax = 0x15, ebx, ecx = 0, edx;
     CPUID(eax, ebx, ecx, edx);
     return likwid_sysft_uint64_to_string(ecx, value);
@@ -70,6 +73,7 @@ static int crystal_freq_tester(void)
 
 static int freq_getter(LikwidDevice_t device, char **value)
 {
+    (void)device;
     uint32_t eax = 0x15, ebx, ecx = 0, edx;
     CPUID(eax, ebx, ecx, edx);
 
@@ -100,6 +104,7 @@ static int invariant_tester(void)
 
 static int invariant_getter(LikwidDevice_t device, char **value)
 {
+    (void)device;
     /* check if TSC is invariant */
     uint32_t eax = 0x80000007, ebx, ecx = 0, edx;
     CPUID(eax, ebx, ecx, edx);
@@ -107,11 +112,11 @@ static int invariant_getter(LikwidDevice_t device, char **value)
 }
 
 static _SysFeature freq_features[] = {
-    {"denominator", "tsc", "Denominator of Time Stamp Counter ratio", denominator_getter, NULL, DEVICE_TYPE_SOCKET, ratio_tester},
-    {"numerator", "tsc", "Numerator of Time Stamp Counter ratio", numerator_getter, NULL, DEVICE_TYPE_SOCKET, ratio_tester},
+    {"denominator", "tsc", "Denominator of Time Stamp Counter ratio", denominator_getter, NULL, DEVICE_TYPE_SOCKET, ratio_tester, NULL},
+    {"numerator", "tsc", "Numerator of Time Stamp Counter ratio", numerator_getter, NULL, DEVICE_TYPE_SOCKET, ratio_tester, NULL},
     {"crystal_freq", "tsc", "Crystal frequency of Time Stamp Counter", crystal_freq_getter, NULL, DEVICE_TYPE_SOCKET, crystal_freq_tester, "Hz"},
     {"freq", "tsc", "Effective frequency of Time Stamp Counter", freq_getter, NULL, DEVICE_TYPE_SOCKET, freq_tester, "Hz"},
-    {"invariant", "tsc", "Time Stamp Counter operates at a fixed frequency", invariant_getter, NULL, DEVICE_TYPE_SOCKET, invariant_tester},
+    {"invariant", "tsc", "Time Stamp Counter operates at a fixed frequency", invariant_getter, NULL, DEVICE_TYPE_SOCKET, invariant_tester, NULL},
 };
 
 const _SysFeatureList likwid_sysft_x86_cpu_freq_feature_list = {

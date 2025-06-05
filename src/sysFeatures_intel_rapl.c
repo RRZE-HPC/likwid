@@ -347,6 +347,7 @@ static int intel_rapl_policy_setter(const LikwidDevice_t device, const char* val
 
 static int pkg_test_testFunc(uint64_t msrData, void * value)
 {
+    (void)value;
     if (intel_rapl_pkg_info.powerUnit == 0 && intel_rapl_pkg_info.energyUnit == 0 && intel_rapl_pkg_info.timeUnit == 0)
     {
         intel_rapl_pkg_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
@@ -363,6 +364,7 @@ static int intel_rapl_pkg_test(void)
 
 static int pkg_limit_test_lock_testFunc(uint64_t msrData, void * value)
 {
+    (void)value;
     return field64(msrData, 63, 1);
 }
 
@@ -519,6 +521,7 @@ static const _SysFeatureList intel_rapl_pkg_feature_list = {
 
 static int dram_test_testFunc(uint64_t msrData, void * value)
 {
+    (void)value;
     if (intel_rapl_dram_info.powerUnit == 0 && intel_rapl_dram_info.energyUnit == 0 && intel_rapl_dram_info.timeUnit == 0)
     {
         CpuInfo_t info = get_cpuInfo();
@@ -566,8 +569,9 @@ static int intel_dram_energy_limit_test(void)
     return likwid_sysft_foreach_socket_testmsr(MSR_DRAM_RAPL_POWER_LIMIT);
 }
 
-static  int dram_limit_test_lock_testFunc(uint64_t msrData, void * value)
+static int dram_limit_test_lock_testFunc(uint64_t msrData, void * value)
 {
+    (void)value;
     return field64(msrData, 31, 1);
 }
 static int intel_rapl_dram_limit_test_lock(void)
@@ -664,6 +668,7 @@ static const _SysFeatureList intel_rapl_dram_feature_list = {
 
 static int psys_test_testFunc(uint64_t msrData, void * value)
 {
+    (void)value;
     if (intel_rapl_psys_info.powerUnit == 0 && intel_rapl_psys_info.energyUnit == 0 && intel_rapl_psys_info.timeUnit == 0)
     {
         CpuInfo_t info = get_cpuInfo();
@@ -700,6 +705,7 @@ static int intel_psys_energy_limit_test(void)
 
 static int psys_limit_test_lock_testFunc(uint64_t msrData, void * value)
 {
+    (void)value;
     return field64(msrData, 63, 1);
 }
 
@@ -812,6 +818,7 @@ static const _SysFeatureList intel_rapl_psys_feature_list = {
 
 static int pp0_test_testFunc(uint64_t msrData, void * value)
 {
+    (void)value;
     if (intel_rapl_pp0_info.powerUnit == 0 && intel_rapl_pp0_info.energyUnit == 0 && intel_rapl_pp0_info.timeUnit == 0)
     {
         intel_rapl_pp0_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
@@ -843,6 +850,7 @@ static int intel_pp0_energy_limit_test(void)
 
 static int pp0_limit_test_lock_testFunc(uint64_t msrData, void * value)
 {
+    (void)value;
     return field64(msrData, 31, 1);
 }
 
@@ -912,7 +920,7 @@ static _SysFeature intel_rapl_pp0_features[] = {
     {"pp0_limit_time", "rapl", "Long-term time window (PP0 domain)", intel_pp0_energy_limit_1_time_getter, intel_pp0_energy_limit_1_time_setter, DEVICE_TYPE_SOCKET, intel_pp0_energy_limit_test, "s"},
     {"pp0_limit_enable", "rapl", "Status of long-term energy limit (PP0 domain)", intel_pp0_energy_limit_1_enable_getter, intel_pp0_energy_limit_1_enable_setter, DEVICE_TYPE_SOCKET, intel_pp0_energy_limit_test, "bool"},
     {"pp0_limit_clamp", "rapl", "Clamping status of long-term energy limit (PP0 domain)", intel_pp0_energy_limit_1_clamp_getter, intel_pp0_energy_limit_1_clamp_setter, DEVICE_TYPE_SOCKET, intel_pp0_energy_limit_test, "bool"},
-    {"pp0_policy", "rapl", "Balance Power Policy (PP0 domain)", intel_pp0_policy_getter, intel_pp0_policy_setter, DEVICE_TYPE_SOCKET, intel_pp0_policy_test},
+    {"pp0_policy", "rapl", "Balance Power Policy (PP0 domain)", intel_pp0_policy_getter, intel_pp0_policy_setter, DEVICE_TYPE_SOCKET, intel_pp0_policy_test, NULL},
 };
 
 static const _SysFeatureList intel_rapl_pp0_feature_list = {
@@ -927,6 +935,7 @@ static const _SysFeatureList intel_rapl_pp0_feature_list = {
 
 static int pp1_test_testFunc(uint64_t msrData, void * value)
 {
+    (void)value;
     if (intel_rapl_pp1_info.powerUnit == 0 && intel_rapl_pp1_info.energyUnit == 0 && intel_rapl_pp1_info.timeUnit == 0)
     {
         intel_rapl_pp1_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
@@ -958,6 +967,7 @@ static int intel_pp1_energy_limit_test(void)
 
 static int pp1_limit_test_lock(uint64_t msrData, void * value)
 {
+    (void)value;
     return field64(msrData, 31, 1);
 }
 

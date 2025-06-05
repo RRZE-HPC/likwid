@@ -144,13 +144,13 @@ static int intel_cpu_spec_ctrl(void)
 }
 
 static _SysFeature intel_cpu_spec_ctrl_features[] = {
-    {"ibrs", "spec_ctrl", "Indirect Branch Restricted Speculation", intel_cpu_spec_ibrs_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_ibrs_tester},
-    {"stibp", "spec_ctrl", "Single Thread Indirect Branch Predictors", intel_cpu_spec_stibp_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_stibp_tester},
-    {"ssbd", "spec_ctrl", "Speculative Store Bypass Disable", intel_cpu_spec_ssbd_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_ssbd_tester},
-    {"ipred_dis", "spec_ctrl", "", intel_cpu_spec_ipred_dis_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_ipred_dis_tester},
-    {"rrsba_dis", "spec_ctrl", "", intel_cpu_spec_rrsba_dis_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_rrsba_dis_tester},
-    {"psfd", "spec_ctrl", "Fast Store Forwarding Predictor", intel_cpu_spec_psfd_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_psfd_tester},
-    {"ddpd", "spec_ctrl", "Data Dependent Prefetcher", intel_cpu_spec_ddpd_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_ddpd_tester},
+    {"ibrs", "spec_ctrl", "Indirect Branch Restricted Speculation", intel_cpu_spec_ibrs_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_ibrs_tester, NULL},
+    {"stibp", "spec_ctrl", "Single Thread Indirect Branch Predictors", intel_cpu_spec_stibp_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_stibp_tester, NULL},
+    {"ssbd", "spec_ctrl", "Speculative Store Bypass Disable", intel_cpu_spec_ssbd_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_ssbd_tester, NULL},
+    {"ipred_dis", "spec_ctrl", "", intel_cpu_spec_ipred_dis_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_ipred_dis_tester, NULL},
+    {"rrsba_dis", "spec_ctrl", "", intel_cpu_spec_rrsba_dis_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_rrsba_dis_tester, NULL},
+    {"psfd", "spec_ctrl", "Fast Store Forwarding Predictor", intel_cpu_spec_psfd_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_psfd_tester, NULL},
+    {"ddpd", "spec_ctrl", "Data Dependent Prefetcher", intel_cpu_spec_ddpd_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_ddpd_tester, NULL},
 };
 
 const _SysFeatureList likwid_sysft_intel_cpu_spec_ctrl_feature_list = {

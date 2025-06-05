@@ -69,7 +69,7 @@ typedef struct {
     int family;
     int model;
     const _SysFeatureList** features;
-    int max_stepping;
+    //int max_stepping;
 } _HWArchFeatures;
 
 #define IS_VALID_DEVICE_TYPE(scope) (((scope) >= MIN_DEVICE_TYPE) && ((scope) < MAX_DEVICE_TYPE))
