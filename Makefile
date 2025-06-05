@@ -363,11 +363,25 @@ $(BENCH_TARGET): $(TARGET_LIB)
 	$(Q)$(MAKE) --no-print-directory -C $(BENCH_FOLDER)
 
 #PATTERN RULES
-$(BUILD_DIR)/%.o: %.c $(PERFMONHEADERS)
+$(BUILD_DIR)/%.o: %.c
 	@echo "===>  COMPILE  $@"
 	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
+
+# At the moment the perfmon code is too complex to fix all unused variable warnings, so supress those for now
+$(BUILD_DIR)/perfmon.o: perfmon.c $(PERFMONHEADERS)
+	@echo "===>  COMPILE  $@"
+	@mkdir -p $(BUILD_DIR)
+	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) -Wno-unused-variable $(CPPFLAGS) $< -o $@
+	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(@:.o=.d)
+
+# same here
+$(BUILD_DIR)/intel_perfmon_uncore_discovery.o: intel_perfmon_uncore_discovery.c $(PERFMONHEADERS)
+	@echo "===>  COMPILE  $@"
+	@mkdir -p $(BUILD_DIR)
+	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) -Wno-unused-variable $(CPPFLAGS) $< -o $@
+	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(@:.o=.d)
 
 $(BUILD_DIR)/rocmon_marker.o:  rocmon_marker.c
 	@echo "===>  COMPILE  $@"

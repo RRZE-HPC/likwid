@@ -9,8 +9,9 @@ GEN_PMHEADER = ./perl/gen_events.pl
 
 ANSI_CFLAGS   =
 #ANSI_CFLAGS += -pedantic
-#ANSI_CFLAGS += -Wextra
-#ANSI_CFLAGS += -Wall
+ANSI_CFLAGS += -Wextra
+ANSI_CFLAGS += -Wall
+#ANSI_CFLAGS += -Wwrite-strings
 
 CFLAGS   =  -O2 -std=c99 -Wno-format -fPIC
 FCFLAGS  = -module ./  # ifort
