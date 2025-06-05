@@ -263,9 +263,10 @@ likwid_markerInit(void)
         }
     }
 #ifdef LIKWID_USE_PERFEVENT
-    if (perfpid != NULL)
+    if (getenv("LIKWID_PERF_EXECPID") != NULL)
     {
-        snprintf(execpid, 19, "%d", getpid());
+        char execpid[20];
+        snprintf(execpid, sizeof(execpid), "%d", getpid());
         setenv("LIKWID_PERF_PID", execpid, 1);
         char* perfflags = getenv("LIKWID_PERF_FLAGS");
         if (perfflags)
