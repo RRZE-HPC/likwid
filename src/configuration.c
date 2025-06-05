@@ -108,7 +108,9 @@ default_configuration(void)
 #endif
     init_config = 1;
     return 0;
+#ifndef LIKWID_USE_PERFEVENT
 use_hardcoded:
+#endif
     ret = sprintf(filename,"%s", TOSTRING(ACCESSDAEMON));
     filename[ret] = '\0';
     if (!access(filename, X_OK))
