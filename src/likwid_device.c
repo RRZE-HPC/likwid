@@ -42,6 +42,23 @@
 #include <access.h>
 #include <error.h>
 
+static const char* LikwidDeviceTypeNames[MAX_DEVICE_TYPE] = {
+    [DEVICE_TYPE_INVALID] = "invalid",
+    [DEVICE_TYPE_HWTHREAD] = "hwthread",
+    [DEVICE_TYPE_CORE] = "core",
+    [DEVICE_TYPE_LLC] = "LLC",
+    [DEVICE_TYPE_NUMA] = "numa",
+    [DEVICE_TYPE_DIE] = "die",
+    [DEVICE_TYPE_SOCKET] = "socket",
+    [DEVICE_TYPE_NODE] = "node",
+#ifdef LIKWID_WITH_NVMON
+    [DEVICE_TYPE_NVIDIA_GPU] = "nvidia_gpu",
+#endif
+#ifdef LIKWID_WITH_ROCMON
+    [DEVICE_TYPE_AMD_GPU] = "amd_gpu",
+#endif
+};
+
 static int parse_pci_addr(const char *id, uint16_t *domain, uint8_t *bus, uint8_t *dev, uint8_t *func)
 {
     /* Try to parse PCI address string of type: 00000000:00:00.0

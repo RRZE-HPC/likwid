@@ -3782,7 +3782,7 @@ lua_likwid_getSysFeatureList(lua_State *L)
         lua_pushboolean(L, list.features[i].writeonly);
         lua_settable(L,-3);
         lua_pushstring(L, "Type");
-        lua_pushstring(L, LikwidDeviceTypeNames[list.features[i].type]);
+        lua_pushstring(L, likwid_device_type_name(list.features[i].type));
         lua_settable(L,-3);
         lua_pushstring(L, "TypeID");
         lua_pushinteger(L, list.features[i].type);

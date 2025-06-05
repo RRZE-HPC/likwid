@@ -3304,25 +3304,6 @@ typedef struct {
 /*! \brief Pointer to a Likwid device list */
 typedef _LikwidDeviceList* LikwidDeviceList_t;
 
-/*! \brief List of device type names
-*/
-static const char* LikwidDeviceTypeNames[MAX_DEVICE_TYPE] = {
-    [DEVICE_TYPE_INVALID] = "invalid",
-    [DEVICE_TYPE_HWTHREAD] = "hwthread",
-    [DEVICE_TYPE_CORE] = "core",
-    [DEVICE_TYPE_LLC] = "LLC",
-    [DEVICE_TYPE_NUMA] = "numa",
-    [DEVICE_TYPE_DIE] = "die",
-    [DEVICE_TYPE_SOCKET] = "socket",
-    [DEVICE_TYPE_NODE] = "node",
-#ifdef LIKWID_WITH_NVMON
-    [DEVICE_TYPE_NVIDIA_GPU] = "nvidia_gpu",
-#endif
-#ifdef LIKWID_WITH_ROCMON
-    [DEVICE_TYPE_AMD_GPU] = "amd_gpu",
-#endif
-};
-
 /*!  \brief Read LikwidDevice selection string and create specified devices.
 
 Read the LikwidDevice selection string and creates list with created devices.
