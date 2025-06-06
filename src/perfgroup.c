@@ -62,21 +62,6 @@ const char *groupFileSectionNames[MAX_GROUP_FILE_SECTIONS] = {
     "LUA"
 };
 
-/* #####   FUNCTION DEFINITIONS  -  INTERNAL FUNCTIONS   ################## */
-
-static inline void *realloc_buffer(void *ptrmem, size_t size) {
-    void *ptr = realloc(ptrmem, size);
-    if (!ptr)  {
-        fprintf(stderr, "realloc(%p, %lu): errno=%d\n", ptrmem, size, errno);
-        free (ptrmem);
-    }
-    if (!ptrmem)
-    {
-        memset(ptr, 0, size);
-    }
-    return ptr;
-}
-
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int
