@@ -2904,18 +2904,10 @@ static void spr_check(AccessDataRecord *record)
     if (perfmon_discovery && record->cpu >= 0 && record->cpu < perfmon_discovery->num_sockets)
     {
         PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[record->cpu];
-        if (cur->units)
+        if (cur->units[record->device].num_regs > 0)
         {
-            if (cur->units[record->device].num_regs > 0)
-            {
-                record->errorcode = ERR_NOERROR;
-                return;
-            }
-            else
-            {
-                record->errorcode = ERR_NODEV;
-                return;
-            }
+            record->errorcode = ERR_NOERROR;
+            return;
         }
         else
         {
@@ -2951,6 +2943,8 @@ static int spr_get_register_offset(PerfmonDiscoveryUnit* unit)
                 return 8;
             }
             break;
+        default:
+            ACCESS_TYPE_ERROR(unit->access_type);
     }
     return 0;
 }
@@ -3031,7 +3025,7 @@ static void spr_read_unit(AccessDataRecord *record)
     if (perfmon_discovery && record->cpu >= 0 && record->cpu < perfmon_discovery->num_sockets)
     {
         PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[record->cpu];
-        if (cur->units && cur->socket_id == record->cpu && cur->units[record->device].num_regs > 0)
+        if (cur->socket_id == record->cpu && cur->units[record->device].num_regs > 0)
         {
             PerfmonDiscoveryUnit* unit = &cur->units[record->device];
             int offset = 0;
@@ -3088,6 +3082,8 @@ static void spr_read_unit(AccessDataRecord *record)
                             record->errorcode = msr_record.errorcode;
                             record->data = msr_record.data;
                             break;
+                        default:
+                            ACCESS_TYPE_ERROR(unit->access_type);
                     }
                     break;
                 case FAKE_UNC_UNIT_STATUS:
@@ -3119,6 +3115,8 @@ static void spr_read_unit(AccessDataRecord *record)
                             record->data = msr_record.data;
                             record->errorcode = msr_record.errorcode;
                             break;
+                        default:
+                            ACCESS_TYPE_ERROR(unit->access_type);
                     }
                     break;
                 case FAKE_UNC_CTRL0:
@@ -3165,6 +3163,8 @@ static void spr_read_unit(AccessDataRecord *record)
                             record->data = msr_record.data;
                             record->errorcode = msr_record.errorcode;
                             break;
+                        default:
+                            ACCESS_TYPE_ERROR(unit->access_type);
                     }
                     break;
                 case FAKE_UNC_CTR0:
@@ -3201,6 +3201,8 @@ static void spr_read_unit(AccessDataRecord *record)
                             record->data = msr_record.data;
                             record->errorcode = msr_record.errorcode;
                             break;
+                        default:
+                            ACCESS_TYPE_ERROR(unit->access_type);
                     }
                     break;
                 case FAKE_UNC_FILTER0:
@@ -3295,7 +3297,7 @@ static void spr_write_unit(AccessDataRecord *record)
     if (perfmon_discovery && record->cpu >= 0 && record->cpu < perfmon_discovery->num_sockets)
     {
         PerfmonDiscoverySocket* cur = &perfmon_discovery->sockets[record->cpu];
-        if (cur->units && cur->socket_id == record->cpu && cur->units[record->device].num_regs > 0)
+        if (cur->socket_id == record->cpu && cur->units[record->device].num_regs > 0)
         {
             PerfmonDiscoveryUnit* unit = &cur->units[record->device];
             int offset = 0;
@@ -3350,6 +3352,8 @@ static void spr_write_unit(AccessDataRecord *record)
                             msr_write_spr(&msr_record);
                             record->errorcode = msr_record.errorcode;
                             break;
+                        default:
+                            ACCESS_TYPE_ERROR(unit->access_type);
                     }
                     break;
                 case FAKE_UNC_UNIT_STATUS:
@@ -3379,6 +3383,8 @@ static void spr_write_unit(AccessDataRecord *record)
                             msr_write_spr(&msr_record);
                             record->errorcode = msr_record.errorcode;
                             break;
+                        default:
+                            ACCESS_TYPE_ERROR(unit->access_type);
                     }
                     break;
                 case FAKE_UNC_CTRL0:
@@ -3422,6 +3428,8 @@ static void spr_write_unit(AccessDataRecord *record)
                             msr_write_spr(&msr_record);
                             record->errorcode = msr_record.errorcode;
                             break;
+                        default:
+                            ACCESS_TYPE_ERROR(unit->access_type);
                     }
                     break;
                 case FAKE_UNC_CTR0:
@@ -3456,6 +3464,8 @@ static void spr_write_unit(AccessDataRecord *record)
                             msr_write_spr(&msr_record);
                             record->errorcode = msr_record.errorcode;
                             break;
+                        default:
+                            ACCESS_TYPE_ERROR(unit->access_type);
                     }
                     break;
                 case FAKE_UNC_FILTER0:
