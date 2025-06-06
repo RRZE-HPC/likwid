@@ -601,10 +601,10 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     ownatoi = &atoi;
     int last_socket = -1;
     int last_coreid = -1;
+#ifdef __ARM_ARCH_8A
     int num_sockets = 0;
-    int num_cores_per_socket = 0;
+#endif
     int num_threads_per_core = 0;
-    int num_cores_per_die = 0;
 
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
     for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
@@ -629,7 +629,9 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
             hwThreadPool[i].packageId = packageId;
             if (packageId > last_socket)
             {
+#ifdef __ARM_ARCH_8A
                 num_sockets++;
+#endif
                 last_socket = packageId;
                 last_coreid = -1;
             }
@@ -643,10 +645,6 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
             bstring src = bread ((bNread) fread, fp);
             bdestroy(src);
             hwThreadPool[i].coreId = (++last_coreid);
-            if (hwThreadPool[i].packageId == 0)
-            {
-                num_cores_per_socket++;
-            }
             fclose(fp);
         }
         bdestroy(file);
@@ -656,10 +654,6 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
             bstring src = bread ((bNread) fread, fp);
             hwThreadPool[i].dieId = ownatoi(bdata(src));
             bdestroy(src);
-            if (hwThreadPool[i].packageId == 0 && hwThreadPool[i].dieId == 0)
-            {
-                num_cores_per_die++;
-            }
             fclose(fp);
         }
         bdestroy(file);
@@ -775,7 +769,6 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
                 hwThreadPool[i].packageId = packageId;
                 if (packageId > last_socket)
                 {
-                    num_sockets++;
                     last_socket = packageId;
                 }
                 fclose(fp);
