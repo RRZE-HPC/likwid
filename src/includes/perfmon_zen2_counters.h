@@ -75,11 +75,11 @@ static RegisterMap zen2_counter_map[NUM_COUNTERS_ZEN2] = {
 };
 
 static BoxMap zen2_box_map[NUM_UNITS] = {
-    [FIXED] = {0, 0, 0, 0, 0, 0, 64},
-    [PMC] = {0, 0, 0, 0, 0, 0, 48},
-    [CBOX0] = {0, 0, 0, 0, 0, 0, 48},
-    [MBOX0] = {0, 0, 0, 0, 0, 0, 48},
-    [POWER] = {0, 0, 0, 0, 0, 0, 32},
+    [FIXED] = {0, 0, 0, 0, 0, 0, 64, 0, 0},
+    [PMC] = {0, 0, 0, 0, 0, 0, 48, 0, 0},
+    [CBOX0] = {0, 0, 0, 0, 0, 0, 48, 0, 0},
+    [MBOX0] = {0, 0, 0, 0, 0, 0, 48, 0, 0},
+    [POWER] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
 };
 
 static char* zen2_translate_types[NUM_UNITS] = {

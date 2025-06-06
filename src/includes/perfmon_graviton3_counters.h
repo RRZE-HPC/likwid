@@ -42,7 +42,7 @@ static RegisterMap graviton3_counter_map[NUM_COUNTERS_GRAVITON3] = {
 };
 
 static BoxMap graviton3_box_map[NUM_UNITS] = {
-    [PMC] = {0, 0, 0, 0, 0, 0, 32},
+    [PMC] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
 };
 
 static char* graviton3_translate_types[NUM_UNITS] = {

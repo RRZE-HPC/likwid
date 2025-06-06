@@ -44,7 +44,7 @@ static RegisterMap a64fx_counter_map[NUM_COUNTERS_A64FX] = {
 };
 
 static BoxMap a64fx_box_map[NUM_UNITS] = {
-    [PMC] = {0, 0, 0, 0, 0, 0, 32},
+    [PMC] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
 };
 
 static char* a64fx_translate_types[NUM_UNITS] = {

@@ -287,8 +287,9 @@ int ivb_pci_box_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int ivb_mboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
+    (void)event;
+
     uint64_t flags = 0x0ULL;
-    event++;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
@@ -572,8 +573,9 @@ int ivb_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int ivb_uboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
+    (void)event;
+
     uint32_t flags = 0x0UL;
-    event++;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
@@ -982,13 +984,14 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
 
 uint64_t ivb_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, int flags)
 {
+    (void)event;
+
     uint64_t result = 0x0ULL;
     uint64_t tmp = 0x0ULL;
     RegisterType type = counter_map[index].type;
     PciDeviceIndex dev = counter_map[index].device;
     uint64_t counter1 = counter_map[index].counterRegister;
     uint64_t counter2 = counter_map[index].counterRegister2;
-    event++;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
@@ -1029,11 +1032,12 @@ int ivb_uncore_overflow(int cpu_id, RegisterIndex index, PerfmonEvent *event,
                          int* overflows, uint64_t result, uint64_t cur_result,
                          int global_offset, int box_offset)
 {
+    (void)event;
+
     int test_local = 0;
     uint64_t ovf_values = 0x0ULL;
     RegisterType type = counter_map[index].type;
     PciDeviceIndex dev = counter_map[index].device;
-    event++;
     if (result < cur_result)
     {
         if (global_offset != -1)

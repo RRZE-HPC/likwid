@@ -42,7 +42,7 @@ static RegisterMap a57_counter_map[NUM_COUNTERS_A57] = {
 };
 
 static BoxMap a57_box_map[NUM_UNITS] = {
-    [PMC] = {A57_PERF_CONTROL_CTRL, A57_OVERFLOW_STATUS, A57_OVERFLOW_FLAGS, 0, 0, 0, 32},
+    [PMC] = {A57_PERF_CONTROL_CTRL, A57_OVERFLOW_STATUS, A57_OVERFLOW_FLAGS, 0, 0, 0, 32, 0, 0},
 };
 
 static char* a57_translate_types[NUM_UNITS] = {

@@ -46,7 +46,7 @@ static RegisterMap applem1_counter_map[NUM_COUNTERS_APPLEM1] = {
 };
 
 static BoxMap applem1_box_map[NUM_UNITS] = {
-    [PMC] = {0, 0, 0, 0, 0, 0, 32},
+    [PMC] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
 };
 
 static char* applem1_translate_types[NUM_UNITS] = {

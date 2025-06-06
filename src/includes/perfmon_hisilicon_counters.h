@@ -42,7 +42,7 @@ static RegisterMap tsv110_counter_map[NUM_COUNTERS_HISILICON_TSV110] = {
 };
 
 static BoxMap tsv110_box_map[NUM_UNITS] = {
-    [PMC] = {A57_PERF_CONTROL_CTRL, A57_OVERFLOW_STATUS, A57_OVERFLOW_FLAGS, 0, 0, 0, 32},
+    [PMC] = {A57_PERF_CONTROL_CTRL, A57_OVERFLOW_STATUS, A57_OVERFLOW_FLAGS, 0, 0, 0, 32, 0, 0},
 };
 
 static char* tsv110_translate_types[NUM_UNITS] = {

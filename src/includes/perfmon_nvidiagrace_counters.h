@@ -77,17 +77,17 @@ static RegisterMap nvidiagrace_counter_map[NUM_COUNTERS_NVIDIAGRACE] = {
 };
 
 static BoxMap nvidiagrace_box_map[NUM_UNITS] = {
-    [PMC] = {A57_PERF_CONTROL_CTRL, A57_OVERFLOW_STATUS, A57_OVERFLOW_FLAGS, 0, 0, 0, 32},
-    [MBOX0] = {0, 0, 0, 0, 0, 0, 32},
-    [BBOX0] = {0, 0, 0, 0, 0, 0, 32},
-    [QBOX0] = {0, 0, 0, 0, 0, 0, 32},
-    [SBOX0] = {0, 0, 0, 0, 0, 0, 32},
-    [PBOX0] = {0, 0, 0, 0, 0, 0, 32},
-    [MBOX1] = {0, 0, 0, 0, 0, 0, 32},
-    [BBOX1] = {0, 0, 0, 0, 0, 0, 32},
-    [QBOX1] = {0, 0, 0, 0, 0, 0, 32},
-    [SBOX1] = {0, 0, 0, 0, 0, 0, 32},
-    [PBOX1] = {0, 0, 0, 0, 0, 0, 32},
+    [PMC] = {A57_PERF_CONTROL_CTRL, A57_OVERFLOW_STATUS, A57_OVERFLOW_FLAGS, 0, 0, 0, 32, 0, 0},
+    [MBOX0] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
+    [BBOX0] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
+    [QBOX0] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
+    [SBOX0] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
+    [PBOX0] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
+    [MBOX1] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
+    [BBOX1] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
+    [QBOX1] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
+    [SBOX1] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
+    [PBOX1] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
 };
 
 static char* nvidiagrace_translate_types[NUM_UNITS] = {

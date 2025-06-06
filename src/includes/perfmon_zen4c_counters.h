@@ -94,11 +94,11 @@ static RegisterMap zen4c_counter_map[NUM_COUNTERS_ZEN4C] = {
 };
 
 static BoxMap zen4c_box_map[NUM_UNITS] = {
-    [FIXED] = {0, 0, 0, 0, 0, MSR_DEV, 64},
-    [PMC] = {MSR_AMD19_GLOBAL_CTRL, MSR_AMD19_GLOBAL_STATUS, MSR_AMD19_GLOBAL_GLOBAL_OVF_CTRL, 0, 0, MSR_DEV, 48},
-    [CBOX0] = {0, 0, 0, 0, 0, MSR_DEV, 48},
-    [MBOX0] = {0, 0, 0, 0, 0, MSR_DEV, 48},
-    [POWER] = {0, 0, 0, 0, 0, MSR_DEV, 64},
+    [FIXED] = {0, 0, 0, 0, 0, MSR_DEV, 64, 0, 0},
+    [PMC] = {MSR_AMD19_GLOBAL_CTRL, MSR_AMD19_GLOBAL_STATUS, MSR_AMD19_GLOBAL_GLOBAL_OVF_CTRL, 0, 0, MSR_DEV, 48, 0, 0},
+    [CBOX0] = {0, 0, 0, 0, 0, MSR_DEV, 48, 0, 0},
+    [MBOX0] = {0, 0, 0, 0, 0, MSR_DEV, 48, 0, 0},
+    [POWER] = {0, 0, 0, 0, 0, MSR_DEV, 64, 0, 0},
 };
 
 static char* zen4c_translate_types[NUM_UNITS] = {

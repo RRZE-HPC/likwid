@@ -318,8 +318,9 @@ int skl_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int skl_uboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
+    (void)event;
+
     uint64_t flags = 0x0ULL;
-    event++;
     if (!has_uncore_lock(cpu_id))
     {
         return 0;
@@ -529,10 +530,11 @@ int skx_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int skx_mboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
+    (void)event;
+
     int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
-    event++;
     if (!has_uncore_lock(cpu_id))
     {
         return 0;
@@ -1224,12 +1226,13 @@ int skl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
                      uint64_t* cur_result, int* overflows, int flags,
                      int global_offset, int box_offset)
 {
+    (void)event;
+
     uint64_t result = 0x0ULL;
     uint64_t tmp = 0x0ULL;
     RegisterType type = counter_map[index].type;
     PciDeviceIndex dev = counter_map[index].device;
     uint64_t counter1 = counter_map[index].counterRegister;
-    event++;
     int haveLock = has_uncore_lock(cpu_id);
 
     CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, counter1, &result));

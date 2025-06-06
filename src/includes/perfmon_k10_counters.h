@@ -44,7 +44,7 @@ static RegisterMap k10_counter_map[NUM_COUNTERS_K10] = {
 };
 
 static BoxMap k10_box_map[NUM_UNITS] = {
-    [PMC] = {0, 0, 0, 0, 0, 0, 48}
+    [PMC] = {0, 0, 0, 0, 0, 0, 48, 0, 0}
 };
 
 #endif //PERFMON_K10_COUNTERS_H

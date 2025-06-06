@@ -84,14 +84,13 @@ int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (event->umask<<8) + event->eventId;
 
     if (event->cfgBits != 0 &&
-       ((event->eventId != 0xB7) || (event->eventId != 0xBB)))
+       ((event->eventId != 0xB7) && (event->eventId != 0xBB)))
     {
         /* set custom cfg and cmask */
         flags |= ((event->cmask<<8) + event->cfgBits)<<16;
     }
 
-    if (event->numberOfOptions > 0)
-    {
+    if (event->numberOfOptions > 0) {
         for (uint64_t j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)

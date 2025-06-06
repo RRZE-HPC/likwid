@@ -56,9 +56,9 @@ static RegisterMap kabini_counter_map[NUM_COUNTERS_KABINI] = {
 };
 
 static BoxMap kabini_box_map[NUM_UNITS] = {
-    [PMC] = {0, 0, 0, 0, 0, 0, 48},
-    [UNCORE] = {0, 0, 0, 0, 0, 0, 48},
-    [CBOX0] = {0, 0, 0, 0, 0, 0, 48},
+    [PMC] = {0, 0, 0, 0, 0, 0, 48, 0, 0},
+    [UNCORE] = {0, 0, 0, 0, 0, 0, 48, 0, 0},
+    [CBOX0] = {0, 0, 0, 0, 0, 0, 48, 0, 0},
 };
 
 #endif //PERFMON_KABINI_COUNTERS_H

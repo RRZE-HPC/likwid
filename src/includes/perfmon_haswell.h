@@ -1311,6 +1311,8 @@ int has_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
                      uint64_t* cur_result, int* overflows, int flags,
                      int global_offset, int box_offset)
 {
+    (void)event;
+
     uint64_t result = 0x0ULL;
     uint64_t tmp = 0x0ULL;
     RegisterType type = counter_map[index].type;

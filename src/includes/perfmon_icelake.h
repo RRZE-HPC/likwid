@@ -326,6 +326,8 @@ int icx_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int icx_uboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
+    (void)event;
+
     uint64_t flags = 0x0ULL;
     event++;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
@@ -1265,6 +1267,8 @@ int icx_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
                      uint64_t* cur_result, int* overflows, int flags,
                      int global_offset, int box_offset)
 {
+    (void)event;
+
     uint64_t result = 0x0ULL;
     uint64_t tmp = 0x0ULL;
     RegisterType type = counter_map[index].type;

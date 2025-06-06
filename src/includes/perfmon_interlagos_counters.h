@@ -52,8 +52,8 @@ static RegisterMap interlagos_counter_map[NUM_COUNTERS_INTERLAGOS] = {
 };
 
 static BoxMap interlagos_box_map[NUM_UNITS] = {
-    [PMC] = {0, 0, 0, 0, 0, 0, 48},
-    [UNCORE] = {0, 0, 0, 0, 0, 0, 48},
+    [PMC] = {0, 0, 0, 0, 0, 0, 48, 0, 0},
+    [UNCORE] = {0, 0, 0, 0, 0, 0, 48, 0, 0},
 };
 
 #endif //PERFMON_INTERLAGOS_COUNTERS_H

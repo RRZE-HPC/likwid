@@ -42,7 +42,7 @@ static RegisterMap neon1_counter_map[NUM_COUNTERS_NEON1] = {
 };
 
 static BoxMap neon1_box_map[NUM_UNITS] = {
-    [PMC] = {0x0, 0x0, 0x0, 0, 0, 0, 32},
+    [PMC] = {0x0, 0x0, 0x0, 0, 0, 0, 32, 0, 0},
 };
 
 static char* neon1_translate_types[NUM_UNITS] = {

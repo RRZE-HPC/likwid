@@ -123,6 +123,10 @@ int tgl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
+
+    // TODO what do we need those offcore_flags for? They are not used yet/anymore (?)
+    (void)offcore_flags;
+
     if (event->eventId == 0xCD)
     {
         VERBOSEPRINTREG(cpu_id, MSR_PEBS_LD_LAT, LLU_CAST flags, "SETUP_LD_LAT");

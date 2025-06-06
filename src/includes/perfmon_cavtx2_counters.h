@@ -75,13 +75,13 @@ static RegisterMap cav_tx2_counter_map[NUM_COUNTERS_CAV_TX2] = {
 };
 
 static BoxMap cav_tx2_box_map[NUM_UNITS] = {
-    [PMC] = {A57_PERF_CONTROL_CTRL, A57_OVERFLOW_STATUS, A57_OVERFLOW_FLAGS, 0, 0, 0, 32},
-    [CBOX0] = {0x0, 0x0, 0x0, 0, 0, 0, 64},
-    [CBOX1] = {0x0, 0x0, 0x0, 0, 0, 0, 64},
-    [MBOX0] = {0x0, 0x0, 0x0, 0, 0, 0, 64},
-    [MBOX1] = {0x0, 0x0, 0x0, 0, 0, 0, 64},
-    [SBOX0] = {0x0, 0x0, 0x0, 0, 0, 0, 64},
-    [SBOX1] = {0x0, 0x0, 0x0, 0, 0, 0, 64},
+    [PMC] = {A57_PERF_CONTROL_CTRL, A57_OVERFLOW_STATUS, A57_OVERFLOW_FLAGS, 0, 0, 0, 32, 0, 0},
+    [CBOX0] = {0x0, 0x0, 0x0, 0, 0, 0, 64, 0, 0},
+    [CBOX1] = {0x0, 0x0, 0x0, 0, 0, 0, 64, 0, 0},
+    [MBOX0] = {0x0, 0x0, 0x0, 0, 0, 0, 64, 0, 0},
+    [MBOX1] = {0x0, 0x0, 0x0, 0, 0, 0, 64, 0, 0},
+    [SBOX0] = {0x0, 0x0, 0x0, 0, 0, 0, 64, 0, 0},
+    [SBOX1] = {0x0, 0x0, 0x0, 0, 0, 0, 64, 0, 0},
 };
 
 static char* cav_tx2_translate_types[NUM_UNITS] = {

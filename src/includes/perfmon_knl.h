@@ -760,13 +760,14 @@ int knl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
                      uint64_t* cur_result, int* overflows, int flags,
                      int global_offset, int box_offset)
 {
+    (void)event;
+
     uint64_t result = 0x0ULL;
     uint64_t tmp = 0x0ULL;
     RegisterType type = counter_map[index].type;
     PciDeviceIndex dev = counter_map[index].device;
     uint64_t counter1 = counter_map[index].counterRegister;
     uint64_t counter2 = counter_map[index].counterRegister2;
-    event++;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
