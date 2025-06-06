@@ -298,7 +298,6 @@ int likwid_sysft_get(const LikwidSysFeature* feature, const LikwidDevice_t devic
 int likwid_sysft_modifyByName(const char* name, const LikwidDevice_t device, const char* value)
 {
     int err = 0;
-    int dev_id = -1;
     _SysFeature *f = NULL;
     if ((!name) || (!device) || (!value))
     {

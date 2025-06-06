@@ -168,6 +168,8 @@ static int l3_test_testFunc(uint64_t msrData, void * value)
 static int amd_rapl_l3_test(void)
 {
     int err = topology_init();
+    if (err != 1)
+        return err;
     CpuInfo_t info = get_cpuInfo();
     if (info->family != ZEN3_FAMILY)
         return 0;
