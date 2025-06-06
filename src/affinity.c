@@ -800,7 +800,6 @@ affinity_init(void)
 {
     int err = 0;
     int numberOfDomains = 1; /* all systems have the node domain */
-    int finalNumberOfDomains = 0;
     int domid = 0;
     if (affinity_initialized == 1)
     {
@@ -927,7 +926,6 @@ affinity_init(void)
     if (!err)
     {
         domid++;
-        finalNumberOfDomains++;
     }
     /* Socket domains */
     for (unsigned i = 0; i < cputopo->numSockets; i++)
@@ -936,7 +934,6 @@ affinity_init(void)
         if (!err)
         {
             domid++;
-            finalNumberOfDomains++;
         }
     }
     /* CPU die domains */
@@ -953,7 +950,6 @@ affinity_init(void)
             if (!err)
             {
                 domid++;
-                finalNumberOfDomains++;
             }
         }
     }
@@ -971,7 +967,6 @@ affinity_init(void)
                 if (!err)
                 {
                     domid++;
-                    finalNumberOfDomains++;
                 }
             }
         }
@@ -983,7 +978,6 @@ affinity_init(void)
         if (!err)
         {
             domid++;
-            finalNumberOfDomains++;
         }
     }
 #ifdef LIKWID_WITH_NVMON
@@ -995,7 +989,6 @@ affinity_init(void)
             if (!err)
             {
                 domid++;
-                finalNumberOfDomains++;
             }
         }
     }
@@ -1013,7 +1006,6 @@ affinity_init(void)
             if (!err)
             {
                 domid++;
-                finalNumberOfDomains++;
             }
         }
     }
