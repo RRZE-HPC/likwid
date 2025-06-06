@@ -140,7 +140,7 @@ static int file_to_uint(char* path, unsigned int *data) {
         if (read_count >= 0) {
             content[read_count] = '\0';
             u64 new = 0x0;
-            int scan_count = sscanf(content, "0x%x", &new);
+            int scan_count = sscanf(content, "0x%lx", &new);
             if (scan_count == 1)
             {
                 *data = new;
@@ -148,7 +148,7 @@ static int file_to_uint(char* path, unsigned int *data) {
             }
             else
             {
-                scan_count = sscanf(content, "%d", &new);
+                scan_count = sscanf(content, "%ld", &new);
                 if (scan_count == 1)
                 {
                     *data = new;
@@ -297,7 +297,7 @@ static void print_unit(PciDeviceIndex idx, PerfmonDiscoveryUnit* unit)
     }
     if (name != NULL)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "PCIIDX %d Access %s NumRegs %d ID %d Type %s(%d) box_ctl 0x%X ctrl_offset 0x%X ctr_offset 0x%X mmap_addr 0x%X mmap_offset 0x%X",
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "PCIIDX %d Access %s NumRegs %d ID %d Type %s(%d) box_ctl 0x%lX ctrl_offset 0x%lX ctr_offset 0x%lX mmap_addr 0x%lX mmap_offset 0x%lX",
                 idx, AccessTypeNames[unit->access_type], unit->num_regs, unit->box_id, name, unit->box_type,
                 unit->box_ctl, unit->ctrl_offset, unit->ctr_offset, unit->mmap_addr, unit->mmap_offset);
     }
