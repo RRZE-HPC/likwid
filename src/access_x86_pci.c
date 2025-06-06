@@ -233,7 +233,6 @@ int
 access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t *data)
 {
     bstring filepath = NULL;
-    uint32_t tmp;
 
     if (dev == MSR_DEV)
     {
@@ -263,6 +262,7 @@ access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t
         DEBUG_PRINT(DEBUGLEV_DETAIL, "Opened PCI device %s: %s", pci_devices[dev].name, bdata(filepath));
     }
 
+    uint32_t tmp = 0;
     if ( FD[socket][dev] > 0 &&
          pread(FD[socket][dev], &tmp, sizeof(tmp), reg) != sizeof(tmp) )
     {
