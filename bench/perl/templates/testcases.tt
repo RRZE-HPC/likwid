@@ -4,7 +4,7 @@
 #include <test_types.h>
 
 [% FOREACH test IN Testcases %]
-extern void [% test.name %]();
+extern void [% test.name %](size_t, ...);
 [% END %]
 
 #define TESTS  "[% allTests %]"

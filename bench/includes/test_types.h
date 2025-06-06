@@ -33,7 +33,7 @@
 #include <stdint.h>
 #include <bstrlib.h>
 
-typedef void (*FuncPrototype)();
+typedef void (*FuncPrototype)(size_t size, ...);
 
 typedef enum {
     SINGLE = 0,
