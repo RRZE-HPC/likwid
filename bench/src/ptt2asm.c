@@ -502,18 +502,16 @@ static int dynbench_getall_folder(char *path, struct bstrList** benchmarks)
 
 struct bstrList* dynbench_getall()
 {
-    int totalfiles = 0;
-
     struct bstrList* list = bstrListCreate();
 
     bstring home = bformat("%s/.likwid/bench/%s", getenv("HOME"), ARCHNAME);
-    totalfiles += dynbench_getall_folder(bdata(home), &list);
+    dynbench_getall_folder(bdata(home), &list);
     bdestroy(home);
 
     char cwd[200];
     if (getcwd(cwd, 200) != NULL)
     {
-        totalfiles += dynbench_getall_folder(cwd, &list);
+        dynbench_getall_folder(cwd, &list);
     }
     return list;
 }
