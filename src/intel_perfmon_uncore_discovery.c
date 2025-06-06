@@ -352,7 +352,6 @@ static int perfmon_uncore_discovery_update_dev_location(PerfmonDiscoveryUnit* un
 int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
 {
     int ret = 0;
-    int socket_id = 0;
     int num_sockets = 0;
     struct uncore_global_discovery global;
     int dvsec = 0;
@@ -594,7 +593,6 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
                 /* Unmap PCI config space */
                 munmap(io_addr, UNCORE_DISCOVERY_MAP_SIZE);
                 io_addr = NULL;
-                socket_id++;
             }
         }
 /*        printf("Add M2IOSF devices \n");*/
