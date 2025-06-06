@@ -95,10 +95,12 @@ allocator_allocateVector(
         uint64_t size,
         int offset,
         DataType type,
-        int /*stride*/,
+        int stride,
         bstring domainString,
         int init_per_thread)
 {
+    (void)stride;
+
     size_t bytesize = 0;
     const AffinityDomain* domain = NULL;
     int errorCode;
