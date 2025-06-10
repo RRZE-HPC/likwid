@@ -207,7 +207,7 @@ pthread_create(pthread_t* thread,
         unsigned int ptr = ((void*)start_routine) - info.dli_fbase;
 
         buff[0] = '\0';
-        snprintf(file, 255, "/tmp/likwidpin.%d", gettid());
+        snprintf(file, 255, "/tmp/likwidpin.%ld", gettid());
         snprintf(cmd, 511, "rm -f %s; nm %s 2>/dev/null | grep %x > %s",
                  file, info.dli_fname, ptr, file);
         ret = system(cmd);

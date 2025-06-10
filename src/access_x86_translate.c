@@ -72,7 +72,7 @@ int access_x86_translate_open_unit(PerfmonDiscoveryUnit* unit)
     }
     if (unit->access_type == ACCESS_TYPE_MMIO)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Opening /dev/mem at 0x%X", unit->mmap_addr);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Opening /dev/mem at 0x%lX", unit->mmap_addr);
         void* io_addr = mmap(NULL, unit->mmap_size, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, unit->mmap_addr);
         if (io_addr == MAP_FAILED)
         {
@@ -81,12 +81,12 @@ int access_x86_translate_open_unit(PerfmonDiscoveryUnit* unit)
             ERROR_PRINT("Failed to mmap offset 0x%lX (MMIO)", unit->box_ctl);
             return -err;
         }
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Opening /dev/mem at 0x%X -> 0x%X", unit->mmap_addr, io_addr);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Opening /dev/mem at 0x%lX -> 0x%p", unit->mmap_addr, io_addr);
         unit->io_addr = io_addr;
     }
     else if (unit->access_type == ACCESS_TYPE_PCI)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Opening /dev/mem at 0x%X", unit->mmap_addr);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Opening /dev/mem at 0x%lX", unit->mmap_addr);
         void* io_addr = mmap(NULL, unit->mmap_size, PROT_READ|PROT_WRITE, MAP_SHARED, pcihandle, unit->mmap_addr );
         if (io_addr == MAP_FAILED)
         {
@@ -184,7 +184,7 @@ access_x86_translate_read(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uin
                 newreg = cur->global.global_ctl + cur->global.status_offset + ((reg - FAKE_UNC_GLOBAL_STATUS0));
             }
             uint64_t tmp = 0x0;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read Uncore counter 0x%X (%s) on CPU %d (socket %d)", newreg, pci_device_names[dev], cpu_id, socket_id);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read Uncore counter 0x%lX (%s) on CPU %d (socket %d)", newreg, pci_device_names[dev], cpu_id, socket_id);
             err = access_x86_msr_read(cpu_id, newreg, &tmp);
             if (err == 0)
             {
@@ -285,12 +285,12 @@ access_x86_translate_read(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uin
                             if ((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_1_CH_7) ||
                                 (dev >= MMIO_HBM_DEVICE_0 && dev <= MMIO_HBM_DEVICE_31))
                             {
-                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "0x%X + 0x%X + 0x%X + (%d * %d)", unit->io_addr, unit->mmap_offset, unit->ctrl_offset, sizeof(uint32_t), offset);
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "0x%lX + 0x%lX + 0x%lX + (%zu * %lu)", (uint64_t)unit->io_addr, unit->mmap_offset, unit->ctrl_offset, sizeof(uint32_t), offset);
                                 *data = (uint32_t)*((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset)));
                             }
                             else
                             {
-                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "0x%X + 0x%X + 0x%X + (%d * %d)", unit->io_addr, unit->mmap_offset, unit->ctrl_offset, reg_offset, offset);
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "0x%lX + 0x%lX + 0x%lX + (%lu * %lu)", (uint64_t)unit->io_addr, unit->mmap_offset, unit->ctrl_offset, reg_offset, offset);
                                 *data = (uint64_t)*((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (reg_offset * offset)));
                             }
                             break;
@@ -419,7 +419,7 @@ access_x86_translate_write(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, ui
             }
             if (newreg != 0x0)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Write Uncore counter 0x%X (%s) on CPU %d (socket %d): 0x%lX", newreg, pci_device_names[dev], cpu_id, socket_id, data);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Write Uncore counter 0x%lX (%s) on CPU %d (socket %d): 0x%lX", newreg, pci_device_names[dev], cpu_id, socket_id, data);
                 int err = access_x86_msr_write(cpu_id, newreg, data);
                 if (err < 0)
                     return err;
@@ -520,12 +520,12 @@ access_x86_translate_write(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, ui
                             if ((dev >= MMIO_IMC_DEVICE_0_CH_0 && dev <= MMIO_IMC_DEVICE_1_CH_7) ||
                                 (dev >= MMIO_HBM_DEVICE_0 && dev <= MMIO_HBM_DEVICE_31))
                             {
-                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "0x%X + 0x%X + 0x%X + (%d * %d) = 0x%X", unit->io_addr, unit->mmap_offset, unit->ctrl_offset, sizeof(uint32_t), offset, (uint32_t)data);
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "0x%lX + 0x%lX + 0x%lX + (%zu * %lu) = 0x%X", (uint64_t)unit->io_addr, unit->mmap_offset, unit->ctrl_offset, sizeof(uint32_t), offset, (uint32_t)data);
                                 *((uint32_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (sizeof(uint32_t) * offset))) = (uint32_t)data;
                             }
                             else
                             {
-                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "0x%X + 0x%X + 0x%X + (%d * %d) = 0x%X", unit->io_addr, unit->mmap_offset, unit->ctrl_offset, reg_offset, offset, (uint64_t)data);
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "0x%lX + 0x%lX + 0x%lX + (%lu * %lu) = 0x%lX", (uint64_t)unit->io_addr, unit->mmap_offset, unit->ctrl_offset, reg_offset, offset, (uint64_t)data);
                                 *((uint64_t *)(unit->io_addr + unit->mmap_offset + unit->ctrl_offset + (reg_offset * offset))) = (uint64_t)data;
                             }
                             break;

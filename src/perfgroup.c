@@ -1292,25 +1292,25 @@ perfgroup_addMetric(GroupInfo* ginfo, char* mname, char* mcalc)
     ginfo->metricnames = realloc(ginfo->metricnames, (ginfo->nmetrics + 1) * sizeof(char*));
     if (!ginfo->metricnames)
     {
-        ERROR_PRINT("Cannot increase space for metricnames to %d bytes", (ginfo->nmetrics + 1) * sizeof(char*));
+        ERROR_PRINT("Cannot increase space for metricnames to %zu bytes", (ginfo->nmetrics + 1) * sizeof(char*));
         return -ENOMEM;
     }
     ginfo->metricformulas = realloc(ginfo->metricformulas, (ginfo->nmetrics + 1) * sizeof(char*));
     if (!ginfo->metricformulas)
     {
-        ERROR_PRINT("Cannot increase space for metricformulas to %d bytes", (ginfo->nmetrics + 1) * sizeof(char*));
+        ERROR_PRINT("Cannot increase space for metricformulas to %zu bytes", (ginfo->nmetrics + 1) * sizeof(char*));
         return -ENOMEM;
     }
     ginfo->metricnames[ginfo->nmetrics] = malloc((strlen(mname) + 1) * sizeof(char));
     if (!ginfo->metricnames[ginfo->nmetrics])
     {
-        ERROR_PRINT("Cannot increase space for metricname to %d bytes", (strlen(mname) + 1) * sizeof(char));
+        ERROR_PRINT("Cannot increase space for metricname to %zu bytes", (strlen(mname) + 1) * sizeof(char));
         return -ENOMEM;
     }
     ginfo->metricformulas[ginfo->nmetrics] = malloc((strlen(mcalc) + 1) * sizeof(char));
     if (!ginfo->metricformulas[ginfo->nmetrics])
     {
-        ERROR_PRINT("Cannot increase space for metricformula to %d bytes", (strlen(mcalc) + 1) * sizeof(char));
+        ERROR_PRINT("Cannot increase space for metricformula to %zu bytes", (strlen(mcalc) + 1) * sizeof(char));
         return -ENOMEM;
     }
     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding metric %s = %s", mname, mcalc);
@@ -1380,11 +1380,11 @@ perfgroup_setGroupName(GroupInfo* ginfo, char* groupName)
 {
     if ((ginfo == NULL) || (groupName == NULL))
         return -EINVAL;
-    int size = strlen(groupName)+1;
+    size_t size = strlen(groupName)+1;
     ginfo->groupname = realloc(ginfo->groupname, size * sizeof(char));
     if (ginfo->groupname == NULL)
     {
-        ERROR_PRINT("Cannot increase space for groupname to %d bytes", size * sizeof(char));
+        ERROR_PRINT("Cannot increase space for groupname to %zu bytes", size * sizeof(char));
         return -ENOMEM;
     }
     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Setting group name to %s", groupName);

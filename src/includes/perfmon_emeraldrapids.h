@@ -814,7 +814,7 @@ int perfmon_setupCounterThread_emeraldrapids(
                     err = emr_setup_uncore(thread_id, index, event);
                     if (err < 0)
                     {
-                        ERROR_PRINT("Failed to setup register 0x%X", reg);
+                        ERROR_PRINT("Failed to setup register 0x%lX", reg);
                     }
                 }
                 break;

@@ -105,7 +105,6 @@ int sysfs_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     struct dirent *pDirent, *pDirentInner;
     DIR *pDir, *pDirInner;
     pDir = opendir ("/sys/devices");
-    FILE* fp = NULL;
     char iPath[200], iiPath[200], buff[100];
     int nrSocks = 0;
     if (pDir == NULL)
@@ -119,11 +118,12 @@ int sysfs_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
         //printf ("[%s]\n", pDirent->d_name);
         if (strncmp(pDirent->d_name, "pci0", 4) == 0)
         {
-            sprintf(iPath, "/sys/devices/%s", pDirent->d_name);
+            snprintf(iPath, sizeof(iPath), "/sys/devices/%s", pDirent->d_name);
             char bus[4];
-            strncpy(bus, &(pDirent->d_name[strlen(pDirent->d_name)-2]), 2);
-            bus[2] = '/';
-            bus[3] = '\0';
+            size_t index = strlen(pDirent->d_name);
+            if (index >= 2)
+                index -= 2;
+            snprintf(bus, sizeof(bus), "%s/", &pDirent->d_name[index]);
             //printf("PATH %s\n", iPath);
             pDirInner = opendir (iPath);
             if (pDir == NULL)
@@ -137,8 +137,8 @@ int sysfs_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
                 {
                     uint32_t dev_id = 0x0;
                     int numa_node = 0;
-                    sprintf(iiPath, "/sys/devices/%s/%s/device", pDirent->d_name, pDirentInner->d_name);
-                    fp = fopen(iiPath,"r");
+                    snprintf(iiPath, sizeof(iiPath), "/sys/devices/%s/%s/device", pDirent->d_name, pDirentInner->d_name);
+                    FILE *fp = fopen(iiPath,"r");
                     if( fp == NULL )
                     {
                         continue;
@@ -149,7 +149,7 @@ int sysfs_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
                     {
                         fclose(fp);
                         iiPath[0] = '\0';
-                        sprintf(iiPath, "/sys/devices/%s/%s/numa_node", pDirent->d_name, pDirentInner->d_name);
+                        snprintf(iiPath, sizeof(iiPath), "/sys/devices/%s/%s/numa_node", pDirent->d_name, pDirentInner->d_name);
                         fp = fopen(iiPath,"r");
                         if( fp == NULL )
                         {
@@ -158,7 +158,7 @@ int sysfs_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
                         fread(buff, sizeof(char), 99, fp);
                         numa_node = atoi(buff);
                         socket_bus[numa_node] = (char*)malloc(4);
-                        sprintf(socket_bus[numa_node], "%02x/", bus);
+                        snprintf(socket_bus[numa_node], 4, "%s", bus);
                         nrSocks++;
                     }
                     fclose(fp);

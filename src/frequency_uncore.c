@@ -68,7 +68,7 @@ static int _freq_getUncoreMinMax(const int socket_id, int *cpuId, double* min, d
         avail = malloc(1000 * sizeof(char));
         if (avail)
         {
-            int ret = snprintf(avail, 999, "%d %d", freq_getConfCpuClockMin(cpu)/1000000, freq_getConfCpuClockMax(cpu)/1000000);
+            int ret = snprintf(avail, 999, "%lu %lu", freq_getConfCpuClockMin(cpu)/1000000, freq_getConfCpuClockMax(cpu)/1000000);
             if (ret > 0)
             {
                 avail[ret] = '\0';
@@ -179,12 +179,12 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
     }
     if (freq < (uint64_t)fmin)
     {
-        ERROR_PRINT("Given frequency %llu MHz lower than system limit of %.0f MHz", freq, fmin);
+        ERROR_PRINT("Given frequency %lu MHz lower than system limit of %.0f MHz", freq, fmin);
         return -EINVAL;
     }
     if (freq > (uint64_t)fmax)
     {
-        ERROR_PRINT("Given frequency %llu MHz higher than system limit of %.0f MHz", freq, fmax);
+        ERROR_PRINT("Given frequency %lu MHz higher than system limit of %.0f MHz", freq, fmax);
         return -EINVAL;
     }
 #ifdef LIKWID_USE_PERFEVENT
@@ -310,12 +310,12 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
     }
     if (freq < (uint64_t)fmin)
     {
-        ERROR_PRINT("Given frequency %llu MHz lower than system limit of %.0f MHz", freq, fmin);
+        ERROR_PRINT("Given frequency %lu MHz lower than system limit of %.0f MHz", freq, fmin);
         return -EINVAL;
     }
     if (freq > (uint64_t)fmax)
     {
-        ERROR_PRINT("Given frequency %llu MHz higher than system limit of %.0f MHz", freq, fmax);
+        ERROR_PRINT("Given frequency %lu MHz higher than system limit of %.0f MHz", freq, fmax);
         return -EINVAL;
     }
 #ifdef LIKWID_USE_PERFEVENT

@@ -62,7 +62,7 @@ int zen2_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
         case 0x3:
             break;
         default:
-            fprintf(stderr, "Unknown fixed event 0x%X\n", event->eventId);
+            fprintf(stderr, "Unknown fixed event 0x%lX\n", event->eventId);
             break;
     }
     return flags;

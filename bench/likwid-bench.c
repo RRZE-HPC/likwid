@@ -496,7 +496,7 @@ int main(int argc, char** argv)
                 bdestroy(groupstr);
                 size_t newsize = 0;
                 size_t stride = test->stride;
-                int nrThreads = currentWorkgroup->numberOfThreads;
+                uint32_t nrThreads = currentWorkgroup->numberOfThreads;
                 size_t orig_size = currentWorkgroup->size;
                 if (unknown == 0)
                 {
@@ -505,7 +505,7 @@ int main(int argc, char** argv)
                     {
                         if (currentWorkgroup->streams[i].offset%test->stride)
                         {
-                            fprintf (stderr, "Error: Stream %d: offset is not a multiple of stride!\n",i);
+                            fprintf (stderr, "Error: Stream %zu: offset is not a multiple of stride!\n",i);
                             return EXIT_FAILURE;
                         }
                         if ((int)(floor(orig_size/currentWorkgroup->numberOfThreads)) % test->stride)
@@ -514,7 +514,7 @@ int main(int argc, char** argv)
                             newsize = (((size_t)(floor(orig_size/nrThreads))/stride)*(stride))*nrThreads;
                             if (newsize > 0 && warn_once)
                             {
-                                fprintf (stdout, "Warning: Sanitizing vector length to a multiple of the loop stride %d and thread count %d from %ld elements (%ld bytes) to %ld elements (%ld bytes)\n",stride, nrThreads, orig_size, orig_size*typesize, newsize, newsize*typesize);
+                                fprintf (stdout, "Warning: Sanitizing vector length to a multiple of the loop stride %zu and thread count %u from %ld elements (%ld bytes) to %ld elements (%ld bytes)\n",stride, nrThreads, orig_size, orig_size*typesize, newsize, newsize*typesize);
                                 warn_once = 0;
                             }
                             else if (newsize == 0)
@@ -527,7 +527,7 @@ int main(int argc, char** argv)
                                 {
                                     each_iter = test->streams*typesize*test->stride;
                                 }
-                                fprintf(stderr, "Error: The given vector length of %dB is too small to fit %d threads because each loop iteration of kernel '%s' requires %d Bytes (%d x %dB = %dB). So the minimal selectable size for the kernel is %dB.\n", given, nrThreads, test->name, each_iter, nrThreads, each_iter, each_iter*nrThreads, each_iter*nrThreads);
+                                fprintf(stderr, "Error: The given vector length of %dB is too small to fit %u threads because each loop iteration of kernel '%s' requires %zu Bytes (%d x %zuB = %zuB). So the minimal selectable size for the kernel is %zuB.\n", given, nrThreads, test->name, each_iter, nrThreads, each_iter, each_iter*nrThreads, each_iter*nrThreads);
                                 allocator_finalize();
                                 workgroups_destroy(&groups, numberOfWorkgroups, test->streams);
                                 exit(EXIT_FAILURE);

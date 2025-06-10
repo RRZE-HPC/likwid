@@ -122,10 +122,10 @@ int likwid_sysft_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList
 int likwid_sysft_uint64_to_string(uint64_t value, char** str)
 {
     char s[HWFEATURES_MAX_STR_LENGTH];
-    const int len = snprintf(s, sizeof(s), "%llu", value);
+    const int len = snprintf(s, sizeof(s), "%lu", value);
     if (len < 0)
     {
-        ERROR_PRINT("Conversion of uint64_t %lld failed: %s", value, strerror(errno));
+        ERROR_PRINT("Conversion of uint64_t %lu failed: %s", value, strerror(errno));
         return -errno;
     }
     char *newstr = realloc(*str, len+1);
@@ -155,7 +155,7 @@ int likwid_sysft_string_to_uint64(const char* str, uint64_t* value)
     uint64_t v = strtoull(str, &ptr, 0);
     if (v == 0 && errno != 0)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Conversion of string '%s' to uint64_t failed %d: %s", str, v, strerror(errno));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Conversion of string '%s' to uint64_t failed: %s", str, strerror(errno));
         return -errno;
     }
     *value = v;
@@ -193,7 +193,7 @@ int likwid_sysft_string_to_double(const char* str, double *value)
     }
     if (errno != 0)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Conversion of string '%s' to double failed: %s", str, result, strerror(errno));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Conversion of string '%s' to double failed: %s", str, strerror(errno));
         return -errno;
     }
     *value = result;

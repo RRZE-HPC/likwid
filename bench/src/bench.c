@@ -97,7 +97,7 @@ runTest(void* arg)
     offset = data->threadId * size;
     //printf("Orig size %lu Size %lu\n", myData->size / data->numberOfThreads, size);
     if (size != vecsize && data->threadId == 0)
-        printf("Sanitizing vector length to a multiple of the loop stride from %d elements (%d bytes) to %d elements (%d bytes)\n", vecsize, vecsize*myData->test->bytes, size, size*myData->test->bytes);
+        printf("Sanitizing vector length to a multiple of the loop stride from %zu elements (%zu bytes) to %zu elements (%zu bytes)\n", vecsize, vecsize*myData->test->bytes, size, size*myData->test->bytes);
 
     /* pin the thread */
     likwid_pinThread(myData->processors[threadId]);

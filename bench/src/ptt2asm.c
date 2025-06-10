@@ -132,7 +132,6 @@ static int registerMapMaxPattern(const RegisterMap* map)
 
 static struct bstrList* read_ptt(bstring pttfile)
 {
-    int ret = 0;
     FILE* fp = NULL;
     char buf[BUFSIZ];
     struct bstrList* l = NULL;
@@ -146,20 +145,15 @@ static struct bstrList* read_ptt(bstring pttfile)
     bstring content = bfromcstr("");
     fp = fopen(bdata(pttfile), "r");
     if (fp == NULL) {
-        fprintf(stderr, "fopen(%s): errno=%d\n", pttfile, errno);
+        perror("fopen");
         return NULL;
     }
     for (;;) {
         /* Read another chunk */
-        ret = fread(buf, 1, sizeof(buf), fp);
-        if (ret < 0) {
-            fprintf(stderr, "fread(%p, 1, %lu, %p): %d, errno=%d\n", buf, sizeof(buf), fp, ret, errno);
-            return NULL;
-        }
-        else if (ret == 0) {
+        size_t bytes_read = fread(buf, 1, sizeof(buf), fp);
+        if (bytes_read == 0)
             break;
-        }
-        bcatblk(content, buf, ret);
+        bcatblk(content, buf, (size_t)bytes_read);
     }
     btrimws(content);
 

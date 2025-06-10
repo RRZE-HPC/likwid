@@ -807,7 +807,7 @@ perfmon_check_counter_map(int cpu_id)
             counter_map[i].optionMask = 0x0ULL;
         }
 #ifndef LIKWID_USE_PERFEVENT
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Counter %s at pos %d with dev %s (%d)", counter_map[i].key, i, pci_device_names[counter_map[i].device], counter_map[i].device, cpu_id);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Counter %s at pos %d with dev %s (%d) %d", counter_map[i].key, i, pci_device_names[counter_map[i].device], counter_map[i].device, cpu_id);
         if (HPMcheck(counter_map[i].device, cpu_id))
         {
             uint32_t reg = counter_map[i].configRegister;
@@ -1663,7 +1663,7 @@ perfmon_init_maps(void)
                             bstring bkey = bfromcstr(counter_map[k].key);
                             if (bstrncmp(xlist->entry[j], bkey, blength(xlist->entry[j])) == BSTR_OK)
                             {
-                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Checking counter %s (device %d (%s), HWThread %d)", bdata(bkey), pci_device_names[counter_map[k].device], counter_map[k].device, cpu_id);
+                                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Checking counter %s (device %s (%d), HWThread %d)", bdata(bkey), pci_device_names[counter_map[k].device], counter_map[k].device, cpu_id);
 #ifndef LIKWID_USE_PERFEVENT
                                 if (HPMcheck(counter_map[k].device, cpu_id))
 #else

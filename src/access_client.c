@@ -684,12 +684,12 @@ access_client_check(PciDeviceIndex dev, uint32_t cpu_id)
         {
             if (dev == MSR_DEV)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Device check for dev %d on CPU %d with accessDaemon failed",
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Device check for dev %d on CPU %d with accessDaemon failed: %s",
                             dev, record.cpu, access_client_strerror(record.errorcode));
             }
             else
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Device check for dev %d on socket %d with accessDaemon failed",
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Device check for dev %d on socket %d with accessDaemon failed: %s",
                             dev, record.cpu, access_client_strerror(record.errorcode));
             }
         }

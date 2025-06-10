@@ -3917,7 +3917,7 @@ static int lua_likwiddevice_get_id(lua_State *L)
         return 1;
     }
 #endif
-    snprintf(buf, sizeof(buf), "%d", dev->id);
+    snprintf(buf, sizeof(buf), "%d", dev->id.simple.id);
     lua_pushstring(L, buf);
     return 1;
 }
