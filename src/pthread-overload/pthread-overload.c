@@ -203,12 +203,12 @@ pthread_create(pthread_t* thread,
         FILE* fpipe;
         char cmd[512];
         char buff[512];
-        char file[256];
+        char file[64];
         unsigned int ptr = ((void*)start_routine) - info.dli_fbase;
 
         buff[0] = '\0';
-        snprintf(file, 255, "/tmp/likwidpin.%ld", gettid());
-        snprintf(cmd, 511, "rm -f %s; nm %s 2>/dev/null | grep %x > %s",
+        snprintf(file, sizeof(file), "/tmp/likwidpin.%ld", gettid());
+        snprintf(cmd, sizeof(cmd), "rm -f %s; nm %s 2>/dev/null | grep %x > %s",
                  file, info.dli_fname, ptr, file);
         ret = system(cmd);
         if (!access(file, R_OK))

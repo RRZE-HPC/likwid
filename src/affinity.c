@@ -688,7 +688,7 @@ static int _affinity_addMemoryDomain(int nodeId, AffinityDomain* domain, int* he
             {
                 return -ENOMEM;
             }
-            domain->tag = malloc(10);
+            domain->tag = malloc(12);
             if (!domain->tag)
             {
                 free(domain->processorList);
@@ -706,7 +706,7 @@ static int _affinity_addMemoryDomain(int nodeId, AffinityDomain* domain, int* he
             }
             domain->numberOfProcessors = num_hwthreads;
             domain->numberOfCores = affinity_countSocketCores(domain->numberOfProcessors, domain->processorList, help);
-            snprintf(domain->tag, 9, "M%d", nodeId);
+            snprintf(domain->tag, 12, "M%d", nodeId);
             return 0;
         }
     }

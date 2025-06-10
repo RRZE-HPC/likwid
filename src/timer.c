@@ -519,23 +519,23 @@ timer_getCpuClockCurrent( int cpu_id )
     uint64_t clock = 0x0ULL;
     FILE *fpipe;
     char cmd[256];
-    char buff[256];
+    char buff[128];
     char* eptr, *rptr;
 
-    sprintf(buff, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_cur_freq", cpu_id);
+    snprintf(buff, sizeof(buff), "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_cur_freq", cpu_id);
     if (access(buff, R_OK))
     {
         ERROR_PRINT("File %s not readable", buff);
         return clock;
     }
-    sprintf(cmd, "cat %s", buff);
+    snprintf(cmd, sizeof(cmd), "cat %s", buff);
     if ( !(fpipe = (FILE*)popen(cmd,"r")) )
     {  // If fpipe is NULL
         ERROR_PRINT("Problems reading cpu frequency of CPU %d", cpu_id);
         return clock;
     }
 
-    rptr = fgets(buff, 256, fpipe);
+    rptr = fgets(buff, sizeof(buff), fpipe);
     pclose(fpipe);
     if (rptr != NULL)
     {

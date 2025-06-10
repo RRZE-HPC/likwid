@@ -105,7 +105,7 @@ int sysfs_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     struct dirent *pDirent, *pDirentInner;
     DIR *pDir, *pDirInner;
     pDir = opendir ("/sys/devices");
-    char iPath[200], iiPath[200], buff[100];
+    char iPath[512], iiPath[512], buff[100];
     int nrSocks = 0;
     if (pDir == NULL)
     {
