@@ -2460,13 +2460,16 @@ typedef NvmonEventList *NvmonEventList_t;
 @param [out] list List of events
 @return Number of supported events or -errno
 */
-int nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t *list);
+int nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t *list)
+    __attribute__((visibility("default")));
+
 /*! \brief Return the list of supported event of a GPU
 
 Return the list of supported event of a GPU from nvmon_getEventsOfGpu()
 @param [in] list List of events
 */
-void nvmon_returnEventsOfGpu(NvmonEventList_t list);
+void nvmon_returnEventsOfGpu(NvmonEventList_t list)
+    __attribute__((visibility("default")));
 
 /*! \brief Initialize the Nvidia GPU performance monitoring facility (Nvmon)
 
@@ -2793,7 +2796,7 @@ int topology_rocm_init(void) __attribute__((visibility("default")));
 /*! \brief Finalize ROCM topology */
 void topology_rocm_finalize(void) __attribute__((visibility("default")));
 
-/*! \brief Get the ROCM topology 
+/*! \brief Get the ROCM topology
 
 @return Pointer to ROCM topology (or NULL in case of errors)
 */
@@ -3246,7 +3249,7 @@ double rocmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
  * functions to create LIKWID devices.
  */
 
-/*! 
+/*!
    \brief List of valid LIKWID device types
 */
 typedef enum {
@@ -3267,7 +3270,7 @@ typedef enum {
     MAX_DEVICE_TYPE, /*!< \brief maximal device type */
 } LikwidDeviceType;
 
-/*! 
+/*!
    \brief minimal device type.
 */
 #define MIN_DEVICE_TYPE DEVICE_TYPE_HWTHREAD
@@ -3354,7 +3357,7 @@ const char *likwid_device_type_name(LikwidDeviceType type) __attribute__ ((visib
 
 @param [in] buf string buffer
 @param [in] size size of string buffer
-@param [in] device Likwid device 
+@param [in] device Likwid device
 */
 void likwid_device_fmt_pci(char *buf, size_t size, LikwidDevice_t device) __attribute__ ((visibility ("default") ));
 /*! \brief Get available device strings.
