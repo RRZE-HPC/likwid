@@ -1293,6 +1293,20 @@ allowed_amd19_zen4c(uint32_t reg)
 }
 
 static int
+allowed_amd1a_zen5(uint32_t reg)
+{
+    if (allowed_amd19_zen4c(reg))
+    {
+        return 1;
+    }
+    else if (reg >= 0xC001080 && reg <= 0xC001087F)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+static int
 clientmem_getStartAddr(uint64_t* startAddr)
 {
     uint64_t imcbar = 0;
@@ -3644,6 +3658,8 @@ int main(void)
         CPUID(eax, ebx, ecx, edx);
         num_pmc_counters = (int)((eax>>8)&0xFFU);
 
+        allowed = NULL;
+
         switch (family)
         {
             case P6_FAMILY:
@@ -3806,11 +3822,27 @@ int main(void)
                         break;
                 }
                 break;
+            case ZEN5_FAMILY:
+                switch (model)
+                {
+                    case ZEN5_EPYC:
+                        allowed = allowed_amd1a_zen5;
+                        break;
+                    default:
+                        break;
+                }
+                break;
             default:
                 syslog(LOG_ERR, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
                         __FILE__, __LINE__);
                 exit(EXIT_FAILURE);
         }
+    }
+    if (allowed == NULL)
+    {
+        syslog(LOG_ERR, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
+                        __FILE__, __LINE__);
+        exit(EXIT_FAILURE);
     }
 
     /* setup filename for socket */
