@@ -162,6 +162,7 @@ struct topology_functions {
 #define ZEN4_RYZEN3     0x75
 #define ZEN4_EPYC       0x11
 #define ZEN4_EPYC_BERGAMO 0xA0
+#define ZEN5_EPYC       0x02
 
 /* ARM */
 #define  ARM7L          0x3U
@@ -213,6 +214,7 @@ struct topology_functions {
 #define  NETBURST_FAMILY  0xFFU
 #define  ZEN_FAMILY       0x17U
 #define  ZEN3_FAMILY      0x19U
+#define  ZEN5_FAMILY      0x1AU
 #define  K15_FAMILY       0x15U
 #define  K16_FAMILY       0x16U
 #define  K10_FAMILY       0x10U
