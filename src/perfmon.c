@@ -604,7 +604,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
         }
         bstrListDestroy(subtokens);
     }
-    for(uint64_t i = event->numberOfOptions-1; i-- > 0;)
+    for(uint64_t i = event->numberOfOptions; i-- > 0;)
     {
 #ifdef LIKWID_USE_PERFEVENT
         if (event->options[i].type != EVENT_OPTION_PERF_PID && event->options[i].type != EVENT_OPTION_PERF_FLAGS && !(OPTIONS_TYPE_MASK(event->options[i].type) & (counter_map[index].optionMask|event->optionMask)))
