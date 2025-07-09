@@ -45,6 +45,7 @@
 #include <cpuid.h>
 #endif
 #include <affinity.h>
+#include <lw_alloc.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -79,7 +80,7 @@ intelCpuidFunc_4(CacheLevel** cachePool)
     }
 
     maxNumLevels = level;
-    *cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
+    *cachePool = lw_malloc(maxNumLevels * sizeof(CacheLevel));
     pool = *cachePool;
 
     for (size_t i=0; i < maxNumLevels; i++)
@@ -285,7 +286,7 @@ cpuid_set_osname(void)
 {
     FILE *fp;
     bstring nameString = bformat("model name");
-    cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
+    cpuid_info.osname = lw_malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
     memset(cpuid_info.osname, '\0', MAX_MODEL_STRING_LENGTH);
     ownstrcpy = strcpy;
     int i;

@@ -40,6 +40,7 @@
 #include <affinity.h>
 #include <topology.h>
 #include <error.h>
+#include <lw_alloc.h>
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -181,15 +182,14 @@ proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
         if ( sscanf(buf, "%02x%02x\t%04x%04x", &sbus, &sdevfn, &svend, &sdev) == 4 &&
              svend == testVendor && sdev == testDevice )
         {
-            socket_bus[cntr] = (char*)malloc(4);
             busID = getBusFromSocketByDevid(cntr, testDevice);
             if (busID == sbus)
             {
-                sprintf(socket_bus[cntr], "%02x/", sbus);
+                socket_bus[cntr] = lw_asprintf("%02x/", sbus);
             }
             else
             {
-                sprintf(socket_bus[cntr], "%02x/", busID);
+                socket_bus[cntr] = lw_asprintf("%02x/", busID);
             }
             cntr++;
         }

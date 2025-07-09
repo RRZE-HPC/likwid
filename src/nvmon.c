@@ -63,7 +63,7 @@
 #include <libnvctr_types.h>
 
 #include <likwid.h>
-
+#include <lw_alloc.h>
 
 
 static int nvmon_initialized = 0;
@@ -1428,7 +1428,7 @@ nvmon_readMarkerFile(const char* filename)
                 gMarkerResults[regionid].eventCount = nevents;
                 gMarkerResults[regionid].time[gpuidx] = time;
                 gMarkerResults[regionid].count[gpuidx] = count;
-                gMarkerResults[regionid].counters[gpuidx] = malloc(nevents * sizeof(double));
+                gMarkerResults[regionid].counters[gpuidx] = lw_malloc(nevents * sizeof(double));
 
                 eventidx = 0;
                 ptr = strtok(remain, " ");

@@ -180,9 +180,7 @@ int perfmon_init_perfevent(int cpu_id)
     lock_acquire((int*) &core_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     if (cpu_event_fds == NULL)
     {
-        cpu_event_fds = malloc(cpuid_topology.numHWThreads * sizeof(int*));
-        for (size_t i=0; i < cpuid_topology.numHWThreads; i++)
-            cpu_event_fds[i] = NULL;
+        cpu_event_fds = lw_calloc(cpuid_topology.numHWThreads, sizeof(*cpu_event_fds));
     }
     if (cpu_event_fds[cpu_id] == NULL)
     {

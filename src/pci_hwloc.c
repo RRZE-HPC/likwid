@@ -45,6 +45,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <lw_alloc.h>
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -80,8 +81,7 @@ hwloc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
             while (walk->type != HWLOC_OBJ_SOCKET) walk = walk->parent;
             if (socket_bus[walk->os_index] == NULL)
             {
-                socket_bus[walk->os_index] = (char*)malloc(5);
-                snprintf(socket_bus[walk->os_index], 4, "%02x/", obj->attr->pcidev.bus);
+                socket_bus[walk->os_index] = lw_asprintf("%02x/", obj->attr->pcidev.bus);
                 cntr++;
             }
         }
@@ -157,8 +157,7 @@ int sysfs_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
                         }
                         fread(buff, sizeof(char), 99, fp);
                         numa_node = atoi(buff);
-                        socket_bus[numa_node] = (char*)malloc(4);
-                        snprintf(socket_bus[numa_node], 4, "%s", bus);
+                        socket_bus[numa_node] = lw_strndup(bus, 3);
                         nrSocks++;
                     }
                     fclose(fp);

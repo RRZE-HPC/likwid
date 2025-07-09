@@ -59,7 +59,7 @@ likwid_markerclose_(void)
 void __attribute__ ((visibility ("default") ))
 likwid_markerwritefile_(char* markerfile, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char));
     strncpy(tmp, markerfile, len * sizeof(char));
 
     for (int i = (len - 1); len > 0; len--)
@@ -83,7 +83,7 @@ likwid_markernextgroup_(void)
 void __attribute__ ((visibility ("default") ))
 likwid_markerregisterregion_(char* regionTag, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char) );
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char) );
     strncpy(tmp, regionTag, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -101,7 +101,7 @@ likwid_markerregisterregion_(char* regionTag, int len)
 void __attribute__ ((visibility ("default") ))
 likwid_markerstartregion_(char* regionTag, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char) );
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char) );
     strncpy(tmp, regionTag, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -119,7 +119,7 @@ likwid_markerstartregion_(char* regionTag, int len)
 void __attribute__ ((visibility ("default") ))
 likwid_markerstopregion_(char* regionTag, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char));
     strncpy(tmp, regionTag, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -143,7 +143,7 @@ likwid_markergetregion_(
         int *count,
         int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char));
     strncpy(tmp, regionTag, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -160,7 +160,7 @@ likwid_markergetregion_(
 void __attribute__ ((visibility ("default") ))
 likwid_markerresetregion_(char* regionTag, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char));
     strncpy(tmp, regionTag, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -199,7 +199,7 @@ likwid_nvmarkernextgroup_(void)
 void __attribute__ ((visibility ("default") ))
 likwid_nvmarkerregisterregion_(char* regionTag, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char) );
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char) );
     strncpy(tmp, regionTag, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -217,7 +217,7 @@ likwid_nvmarkerregisterregion_(char* regionTag, int len)
 void __attribute__ ((visibility ("default") ))
 likwid_nvmarkerstartregion_(char* regionTag, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char) );
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char) );
     strncpy(tmp, regionTag, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -235,7 +235,7 @@ likwid_nvmarkerstartregion_(char* regionTag, int len)
 void __attribute__ ((visibility ("default") ))
 likwid_nvmarkerstopregion_(char* regionTag, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char));
     strncpy(tmp, regionTag, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -253,7 +253,7 @@ likwid_nvmarkerstopregion_(char* regionTag, int len)
 void __attribute__ ((visibility ("default") ))
 likwid_nvmarkerresetregion_(char* regionTag, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char));
     strncpy(tmp, regionTag, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -270,7 +270,7 @@ likwid_nvmarkerresetregion_(char* regionTag, int len)
 int __attribute__ ((visibility ("default") ))
 likwid_nvmarkerwritefile_(char* filename, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char));
     strncpy(tmp, filename, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -308,7 +308,7 @@ likwid_rocmmarkernextgroup_(void)
 void __attribute__ ((visibility ("default") ))
 likwid_rocmmarkerregisterregion_(char* regionTag, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char) );
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char) );
     strncpy(tmp, regionTag, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -326,7 +326,7 @@ likwid_rocmmarkerregisterregion_(char* regionTag, int len)
 void __attribute__ ((visibility ("default") ))
 likwid_rocmmarkerstartregion_(char* regionTag, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char) );
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char) );
     strncpy(tmp, regionTag, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -344,7 +344,7 @@ likwid_rocmmarkerstartregion_(char* regionTag, int len)
 void __attribute__ ((visibility ("default") ))
 likwid_rocmmarkerstopregion_(char* regionTag, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char));
     strncpy(tmp, regionTag, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -362,7 +362,7 @@ likwid_rocmmarkerstopregion_(char* regionTag, int len)
 void __attribute__ ((visibility ("default") ))
 likwid_rocmmarkerresetregion_(char* regionTag, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char));
     strncpy(tmp, regionTag, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)
@@ -379,7 +379,7 @@ likwid_rocmmarkerresetregion_(char* regionTag, int len)
 int __attribute__ ((visibility ("default") ))
 likwid_rocmmarkerwritefile_(char* filename, int len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    char* tmp = (char*) lw_malloc((len+1) * sizeof(char));
     strncpy(tmp, filename, len * sizeof(char) );
 
     for (int i=(len-1); len > 0; len--)

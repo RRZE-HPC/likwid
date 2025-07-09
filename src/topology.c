@@ -46,6 +46,7 @@
 //#include <strUtil.h>
 #include <configuration.h>
 #include <topology_static.h>
+#include <lw_alloc.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -222,11 +223,11 @@ initTopologyFile(FILE* file)
 
     fread((void*) &cpuid_topology, sizeof(CpuTopology), 1, file);
 
-    hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
+    hwThreadPool = lw_calloc(cpuid_topology.numHWThreads, sizeof(*hwThreadPool));
     fread((void*) hwThreadPool, sizeof(HWThread), cpuid_topology.numHWThreads, file);
     cpuid_topology.threadPool = hwThreadPool;
 
-    cacheLevels = (CacheLevel*) malloc(cpuid_topology.numCacheLevels * sizeof(CacheLevel));
+    cacheLevels = lw_calloc(cpuid_topology.numCacheLevels, sizeof(*cacheLevels));
     fread((void*) cacheLevels, sizeof(CacheLevel), cpuid_topology.numCacheLevels, file);
     cpuid_topology.cacheLevels = cacheLevels;
     cpuid_topology.topologyTree = NULL;
@@ -316,7 +317,7 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
         goto error;
     }
 
-    numProcessorsPerNumaNode = calloc(numa_info.numberOfNodes, sizeof(*numProcessorsPerNumaNode));
+    numProcessorsPerNumaNode = lw_calloc(numa_info.numberOfNodes, sizeof(*numProcessorsPerNumaNode));
     int curNumaNode = 0;
     while (fgets(line, sizeof(line), fp) != NULL) {
         int numaNode = -1; // starting from 1, not from 0
@@ -1592,7 +1593,7 @@ standard_init:
                         case CAVIUM2:
                             switch (cpuid_info.part) {
                                 case CAV_THUNDERX2T99:
-                                    cachePool = (CacheLevel*) malloc(3 * sizeof(CacheLevel));
+                                    cachePool = lw_calloc(3, sizeof(*cachePool));
                                     for(int i=0;i < 3; i++)
                                     {
                                         cachePool[i].level = caviumTX2_caches[i].level;
@@ -1613,7 +1614,7 @@ standard_init:
                         case CAVIUM1:
                             switch (cpuid_info.part) {
                                 case CAV_THUNDERX2T99P1:
-                                    cachePool = (CacheLevel*) malloc(3 * sizeof(CacheLevel));
+                                    cachePool = lw_calloc(3, sizeof(*cachePool));
                                     for(int i=0;i < 3; i++)
                                     {
                                         cachePool[i].level = caviumTX2_caches[i].level;
@@ -1634,7 +1635,7 @@ standard_init:
                         case FUJITSU_ARM:
                             switch(cpuid_info.part) {
                                 case FUJITSU_A64FX:
-                                    cachePool = (CacheLevel*) malloc(2 * sizeof(CacheLevel));
+                                    cachePool = lw_calloc(2, sizeof(*cachePool));
                                     for(int i=0;i < 2; i++)
                                     {
                                         cachePool[i].level = a64fx_caches[i].level;
@@ -1655,7 +1656,7 @@ standard_init:
 /*                        case APPLE_M1:*/
 /*                            switch(cpuid_info.model) {*/
 /*                                case APPLE_M1_STUDIO:*/
-/*                                    cachePool = (CacheLevel*) malloc(2 * sizeof(CacheLevel));*/
+/*                                    cachePool = lw_calloc(2, sizeof(*cachePool));*/
 /*                                    for(int i=0;i < 2; i++)*/
 /*                                    {*/
 /*                                        cachePool[i].level = apple_m1_caches[i].level;*/

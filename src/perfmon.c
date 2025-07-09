@@ -53,6 +53,7 @@
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
 #include <cpuid.h>
 #endif
+#include <lw_alloc.h>
 
 #include <perfmon_pm.h>
 #include <perfmon_atom.h>
@@ -1684,13 +1685,7 @@ perfmon_init_maps(void)
             }
 
             bstring blim = bjoin(outlist, &bsep);
-            eventHash[perfmon_numArchEvents].limit = malloc((blength(blim)+2)*sizeof(char));
-            int ret = snprintf(eventHash[perfmon_numArchEvents].limit,
-                               blength(blim)+1, "%s", bdata(blim));
-            if (ret > 0)
-            {
-                eventHash[perfmon_numArchEvents].limit[ret] = '\0';
-            }
+            eventHash[perfmon_numArchEvents].limit = lw_strdup(bdata(blim));
             bdestroy(blim);
             bstrListDestroy(outlist);
             eventHash[perfmon_numArchEvents].optionMask = EVENT_OPTION_GENERIC_CONFIG_MASK|EVENT_OPTION_GENERIC_UMASK_MASK;
@@ -4265,7 +4260,7 @@ perfmon_readMarkerFile(const char* filename)
                 markerResults[regionid].eventCount = nevents;
                 markerResults[regionid].time[cpuidx] = time;
                 markerResults[regionid].count[cpuidx] = count;
-                markerResults[regionid].counters[cpuidx] = malloc(nevents * sizeof(double));
+                markerResults[regionid].counters[cpuidx] = lw_calloc(nevents, sizeof(double));
 
                 eventidx = 0;
                 ptr = strtok(remain, " ");

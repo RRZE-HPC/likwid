@@ -45,6 +45,7 @@
 #include <textcolor.h>
 #include <likwid.h>
 #include <lock.h>
+#include <lw_alloc.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -276,7 +277,7 @@ cpuFeatures_init(void)
     topology_init();
     if (!cpuFeatureMask)
     {
-        cpuFeatureMask = malloc(cpuid_topology.numHWThreads*sizeof(uint64_t));
+        cpuFeatureMask = lw_malloc(cpuid_topology.numHWThreads*sizeof(uint64_t));
         memset(cpuFeatureMask, 0, cpuid_topology.numHWThreads*sizeof(uint64_t));
     }
 

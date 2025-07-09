@@ -43,6 +43,7 @@
 #include <sys/un.h>
 #include <pthread.h>
 
+#include <lw_alloc.h>
 #include <types.h>
 #include <error.h>
 #include <topology.h>
@@ -98,7 +99,7 @@ HPMinit(void)
     config = get_configuration();
     if (registeredCpuList == NULL)
     {
-        registeredCpuList = malloc(cpuid_topology.numHWThreads* sizeof(int));
+        registeredCpuList = lw_malloc(cpuid_topology.numHWThreads* sizeof(int));
         memset(registeredCpuList, 0, cpuid_topology.numHWThreads* sizeof(int));
         registeredCpus = 0;
     }
@@ -149,7 +150,7 @@ HPMaddThread(uint32_t cpu_id)
     int ret;
     if (registeredCpuList == NULL)
     {
-        registeredCpuList = malloc(cpuid_topology.numHWThreads* sizeof(int));
+        registeredCpuList = lw_malloc(cpuid_topology.numHWThreads* sizeof(int));
         memset(registeredCpuList, 0, cpuid_topology.numHWThreads* sizeof(int));
         registeredCpus = 0;
     }

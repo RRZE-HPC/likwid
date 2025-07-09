@@ -57,6 +57,7 @@
 #ifdef LIKWID_PROFILE_COUNTER_READ
 #include <timer.h>
 #endif
+#include <lw_alloc.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -80,7 +81,7 @@ access_x86_msr_init(const int cpu_id)
     char* msr_file_name;
     if (!FD)
     {
-        FD = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        FD = lw_malloc(cpuid_topology.numHWThreads * sizeof(int));
         memset(FD, -1, cpuid_topology.numHWThreads * sizeof(int));
     }
     if (FD[cpu_id] > 0)

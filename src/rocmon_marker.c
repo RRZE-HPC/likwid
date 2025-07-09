@@ -40,6 +40,7 @@
 
 #include <likwid.h>
 #include <rocmon_types.h>
+#include <lw_alloc.h>
 
 #define gettid() syscall(SYS_gettid)
 
@@ -810,7 +811,7 @@ rocmon_readMarkerFile(const char* filename)
                 rocmMarkerResults[regionid].eventCount = nevents;
                 rocmMarkerResults[regionid].time[gpuidx] = time;
                 rocmMarkerResults[regionid].count[gpuidx] = count;
-                rocmMarkerResults[regionid].counters[gpuidx] = malloc(nevents * sizeof(double));
+                rocmMarkerResults[regionid].counters[gpuidx] = lw_calloc(nevents, sizeof(double));
 
                 eventidx = 0;
                 ptr = strtok(remain, " ");

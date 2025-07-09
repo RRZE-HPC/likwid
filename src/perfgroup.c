@@ -50,6 +50,7 @@
 #include <calculator.h>
 #include <bstrlib.h>
 #include <bstrlib_helper.h>
+#include <lw_alloc.h>
 
 static size_t totalgroups = 0;
 
@@ -732,35 +733,27 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
     {
         if ((!has_fix0) && cpuid_info.perf_num_fixed_ctr > 0)
         {
-            ginfo->events[i] = malloc(18 * sizeof(char));
-            ginfo->counters[i] = malloc(6 * sizeof(char));
-            sprintf(ginfo->events[i], "%s", "INSTR_RETIRED_ANY");
-            sprintf(ginfo->counters[i], "%s", "FIXC0");
+            ginfo->events[i] = lw_strdup("INSTR_RETIRED_ANY");
+            ginfo->counters[i] = lw_strdup("FIXC0");
             i++;
         }
         if ((!has_fix1) && cpuid_info.perf_num_fixed_ctr > 1)
         {
-            ginfo->events[i] = malloc(22 * sizeof(char));
-            ginfo->counters[i] = malloc(6 * sizeof(char));
-            sprintf(ginfo->events[i], "%s", "CPU_CLK_UNHALTED_CORE");
-            sprintf(ginfo->counters[i], "%s", "FIXC1");
+            ginfo->events[i] = lw_strdup("CPU_CLK_UNHALTED_CORE");
+            ginfo->counters[i] = lw_strdup("FIXC1");
             i++;
         }
         if ((!has_fix2) && cpuid_info.perf_num_fixed_ctr > 2)
         {
-            ginfo->events[i] = malloc(21 * sizeof(char));
-            ginfo->counters[i] = malloc(6 * sizeof(char));
-            sprintf(ginfo->events[i], "%s", "CPU_CLK_UNHALTED_REF");
-            sprintf(ginfo->counters[i], "%s", "FIXC2");
+            ginfo->events[i] = lw_strdup("CPU_CLK_UNHALTED_REF");
+            ginfo->counters[i] = lw_strdup("FIXC2");
             i++;
         }
         if ((!has_fix3) && cpuid_info.perf_num_fixed_ctr > 3 && 
             (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2 || cpuid_info.model == ROCKETLAKE || cpuid_info.model == SAPPHIRERAPIDS || cpuid_info.model == EMERALDRAPIDS || cpuid_info.model == TIGERLAKE1 || cpuid_info.model == TIGERLAKE2 || cpuid_info.model == GRANITERAPIDS))
         {
-            ginfo->events[i] = malloc(14 * sizeof(char));
-            ginfo->counters[i] = malloc(6 * sizeof(char));
-            sprintf(ginfo->events[i], "%s", "TOPDOWN_SLOTS");
-            sprintf(ginfo->counters[i], "%s", "FIXC3");
+            ginfo->events[i] = lw_strdup("TOPDOWN_SLOTS");
+            ginfo->counters[i] = lw_strdup("FIXC3");
             i++;
         }
     }
@@ -769,18 +762,14 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
 #ifdef _ARCH_PPC
     if (!has_fix0)
     {
-        ginfo->events[i] = malloc(18 * sizeof(char));
-        ginfo->counters[i] = malloc(6 * sizeof(char));
-        sprintf(ginfo->events[i], "%s", "PM_RUN_INST_CMPL");
-        sprintf(ginfo->counters[i], "%s", "PMC4");
+        ginfo->events[i] = lw_strdup("PM_RUN_INST_CMPL");
+        ginfo->counters[i] = lw_strdup("PMC4");
         i++;
     }
     if (!has_fix1)
     {
-        ginfo->events[i] = malloc(22 * sizeof(char));
-        ginfo->counters[i] = malloc(6 * sizeof(char));
-        sprintf(ginfo->events[i], "%s", "PM_RUN_CYC");
-        sprintf(ginfo->counters[i], "%s", "PMC5");
+        ginfo->events[i] = lw_strdup("PM_RUN_CYC");
+        ginfo->counters[i] = lw_strdup("PMC5");
         i++;
     }
 #endif
@@ -891,8 +880,8 @@ perfgroup_readGroup(
                     continue;
                 break;
             }
-            ginfo->shortinfo = malloc(strlen(&(buf[i])) * sizeof(char));
-            sprintf(ginfo->shortinfo, "%.*s", (int)strlen(&(buf[i]))-1, &(buf[i]));
+            size_t l = strlen(&buf[i]);
+            ginfo->shortinfo = (l >= 1) ? lw_strndup(&buf[i], l-1) : lw_strdup("");
             continue;
         }
         else if (strncmp(bdata(REQUIRE), buf, blength(REQUIRE)) == 0)

@@ -33,8 +33,9 @@
 #include <stdint.h>
 
 #include <ghash.h>
+#include <lw_alloc.h>
 
-#define  g_slice_new(type)      ((type*) malloc (sizeof (type)))
+#define  g_slice_new(type)      ((type*) lw_malloc (sizeof (type)))
 
 #define HASH_TABLE_MIN_SHIFT 3  /* 1 << 3 == 8 buckets */
 #define UNUSED_HASH_VALUE 0
@@ -199,7 +200,7 @@ g_memdup (gconstpointer mem,
 
   if (mem)
     {
-      new_mem = malloc (byte_size);
+      new_mem = lw_malloc (byte_size);
       memcpy (new_mem, mem, byte_size);
     }
   else

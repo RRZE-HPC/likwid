@@ -38,6 +38,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <lw_alloc.h>
 
 #include <configuration.h>
 
@@ -63,7 +64,7 @@ default_configuration(void)
     filename[0] = '\0';
 
     groupPath_len = strlen(TOSTRING(GROUPPATH))+10;
-    config.groupPath = malloc(groupPath_len+1);
+    config.groupPath = lw_malloc(groupPath_len+1);
     ret = snprintf(config.groupPath, groupPath_len, "%s", TOSTRING(GROUPPATH));
     config.groupPath[ret] = '\0';
 #ifndef LIKWID_USE_PERFEVENT
@@ -90,11 +91,8 @@ default_configuration(void)
     }
     if (!access(fptr, X_OK))
     {
-        config.daemonPath = (char*)malloc((len+1) * sizeof(char));
-        strncpy(config.daemonPath, fptr, len);
-        config.daemonPath[len] = '\0';
-        if (fptr)
-            free(fptr);
+        config.daemonPath = lw_strdup(fptr);
+        free(fptr);
     }
     else
     {
@@ -115,8 +113,7 @@ use_hardcoded:
     filename[ret] = '\0';
     if (!access(filename, X_OK))
     {
-        config.daemonPath = (char*)malloc((strlen(filename)+1) * sizeof(char));
-        strcpy(config.daemonPath, filename);
+        config.daemonPath = lw_strdup(filename);
         init_config = 1;
     }
     else
@@ -167,8 +164,7 @@ init_configuration(void)
             ERROR_PRINT("Topology file path too long for internal buffer");
             return -1;
         }
-        config.topologyCfgFileName = (char*)malloc((strlen(filename)+1) * sizeof(char));
-        stpcpy(config.topologyCfgFileName, filename);
+        config.topologyCfgFileName = lw_strdup(filename);
     }
 
     filename[0] = '\0';
@@ -193,8 +189,7 @@ init_configuration(void)
             if (config.topologyCfgFileName) free(config.topologyCfgFileName);
             return -1;
         }
-        config.configFileName = (char*)malloc((strlen(filename)+1) * sizeof(char));
-        stpcpy(config.configFileName, filename);
+        config.configFileName = lw_strdup(filename);
     }
     else
     {
@@ -214,13 +209,11 @@ init_configuration(void)
         }
         if (strcmp(name, "topology_file") == 0 && /*don't overrule user request*/!(customtopo && !access(customtopo, R_OK)))
         {
-            config.topologyCfgFileName = (char*)malloc((strlen(value)+1) * sizeof(char));
-            stpcpy(config.topologyCfgFileName, value);
+            config.topologyCfgFileName = lw_strdup(value);
         }
         else if (strcmp(name, "daemon_path") == 0)
         {
-            config.daemonPath = (char*)malloc((strlen(value)+1) * sizeof(char));
-            stpcpy(config.daemonPath, value);
+            config.daemonPath = lw_strdup(value);
             if (access(config.daemonPath, R_OK))
             {
                 if (default_configuration() < 0)
@@ -240,8 +233,7 @@ init_configuration(void)
             stat(value, &st);
             if (S_ISDIR(st.st_mode))
             {
-                config.groupPath = (char*)malloc((strlen(value)+1) * sizeof(char));
-                stpcpy(config.groupPath, value);
+                config.groupPath = lw_strdup(value);
             }
             else
             {

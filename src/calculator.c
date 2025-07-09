@@ -69,6 +69,7 @@
 #include <getopt.h>
 #include <error.h>
 #include <calculator_stack.h>
+#include <lw_alloc.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -192,7 +193,7 @@ token num2Str(number num)
     int precision = MAXPRECISION;
     if (prefs.precision >= 0 && prefs.precision < precision)
         precision = prefs.precision;
-    token str = (token)malloc(prefs.maxtokenlength*sizeof(char));
+    token str = (token)lw_malloc(prefs.maxtokenlength*sizeof(char));
     len = snprintf(str, prefs.maxtokenlength-1, "%.*f", precision, num);
     if (prefs.precision == AUTOPRECISION)
     {

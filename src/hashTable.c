@@ -42,6 +42,7 @@
 #include <types.h>
 #include <hashTable.h>
 #include <likwid.h>
+#include <lw_alloc.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -72,7 +73,7 @@ hashTable_initThread(int coreID)
     /* check if thread was already initialized */
     if (resPtr == NULL)
     {
-        resPtr = (ThreadList*) malloc(sizeof(ThreadList));
+        resPtr = lw_malloc(sizeof(ThreadList));
         /* initialize structure */
         resPtr->tid =  pthread_self();
         resPtr->coreId  = coreID;
@@ -104,7 +105,7 @@ hashTable_get(bstring label, LikwidThreadResults** resEntry)
     /* check if thread was already initialized */
     if (resPtr == NULL)
     {
-        resPtr = (ThreadList*) malloc(sizeof(ThreadList));
+        resPtr = lw_malloc(sizeof(ThreadList));
         /* initialize structure */
         resPtr->tid =  pthread_self();
         resPtr->coreId  = coreID;
@@ -118,7 +119,7 @@ hashTable_get(bstring label, LikwidThreadResults** resEntry)
     /* if region is not known create new region and add to hashtable */
     if ( (*resEntry) == NULL )
     {
-        (*resEntry) = (LikwidThreadResults*) malloc(sizeof(LikwidThreadResults));
+        (*resEntry) = lw_malloc(sizeof(LikwidThreadResults));
         (*resEntry)->label = bstrcpy (label);
         (*resEntry)->time = 0.0;
         (*resEntry)->count = 0;

@@ -44,6 +44,7 @@
 #include <hwloc.h>
 #include <topology_hwloc.h>
 #endif
+#include <lw_alloc.h>
 
 /* #####  EXPORTED VARIABLESE   ########################################### */
 
@@ -268,7 +269,7 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     cpuid_info.stepping = 0;
     cpuid_info.vendor = 0;
     cpuid_info.part = 0;
-    cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
+    cpuid_info.osname = lw_malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
     cpuid_info.osname[0] = '\0';
     if (!obj)
     {
@@ -383,7 +384,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     int from_file = (getenv("HWLOC_FSROOT") != NULL);
     hwloc_obj_type_t socket_type = HWLOC_OBJ_SOCKET;
     hwloc_obj_type_t die_type = HWLOC_OBJ_DIE;
-    hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
+    hwThreadPool = lw_malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
     for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
     {
         hwThreadPool[i].apicId = -1;

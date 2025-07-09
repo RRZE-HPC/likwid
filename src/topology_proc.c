@@ -40,6 +40,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <lw_alloc.h>
 
 #include <bstrlib.h>
 #include <bstrlib_helper.h>
@@ -219,7 +220,7 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
 #endif
     cpuid_info.stepping = 0;
     cpuid_topology.numHWThreads = 0;
-    cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
+    cpuid_info.osname = lw_malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
     cpuid_info.osname[0] = '\0';
 
     if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
@@ -606,7 +607,7 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
 #endif
     int num_threads_per_core = 0;
 
-    hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
+    hwThreadPool = lw_malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
     for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
     {
         hwThreadPool[i].apicId = i;

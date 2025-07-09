@@ -53,6 +53,7 @@
 #include <configuration.h>
 #include <affinity.h>
 #include <lock.h>
+#include <lw_alloc.h>
 
 #if defined(__x86_64__) || defined(__i386__)
 #include <access_x86_rdpmc.h>
@@ -212,7 +213,7 @@ access_client_startDaemon_bridge(uint32_t cpu_id, const char *bridge_path, struc
     }
 
     address_length = sizeof(struct sockaddr_un);
-    filepath = strdup(bridge_address.sun_path);
+    filepath = lw_strdup(bridge_address.sun_path);
     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Waiting for bridge socket file %s", bridge_address.sun_path);
     while (access(bridge_address.sun_path, F_OK) && timeout > 0)
     {
@@ -298,7 +299,7 @@ access_client_daemon_connect(uint32_t cpu_id, struct sockaddr_un *address) {
     }
 
     address_length = sizeof(struct sockaddr_un);
-    filepath = strdup(address->sun_path);
+    filepath = lw_strdup(address->sun_path);
     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Waiting for socket file %s", address->sun_path);
     while (access(address->sun_path, F_OK) && timeout > 0)
     {
@@ -381,19 +382,19 @@ access_client_init(uint32_t cpu_id)
     affinity_init();
     if (!cpuSockets)
     {
-        cpuSockets = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        cpuSockets = lw_malloc(cpuid_topology.numHWThreads * sizeof(int));
         memset(cpuSockets, -1, cpuid_topology.numHWThreads * sizeof(int));
     }
     if (!daemon_pids)
     {
-        daemon_pids = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        daemon_pids = lw_malloc(cpuid_topology.numHWThreads * sizeof(int));
         memset(daemon_pids, 0, cpuid_topology.numHWThreads * sizeof(int));
-        daemon_pinned = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        daemon_pinned = lw_malloc(cpuid_topology.numHWThreads * sizeof(int));
         memset(daemon_pinned, 0, cpuid_topology.numHWThreads * sizeof(int));
     }
     if (!cpuLocks)
     {
-        cpuLocks = malloc(cpuid_topology.numHWThreads * sizeof(pthread_mutex_t));
+        cpuLocks = lw_malloc(cpuid_topology.numHWThreads * sizeof(pthread_mutex_t));
         for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++)
         {
             pthread_mutex_init(&cpuLocks[i], NULL);

@@ -35,10 +35,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <calculator_stack.h>
+#include <lw_alloc.h>
 
 void stackInit(Stack *s, int size)
 {
-    s->content = malloc(size * sizeof(void*));
+    s->content = lw_malloc(size * sizeof(void*));
     s->size = size;
     s->top = -1;
 }
