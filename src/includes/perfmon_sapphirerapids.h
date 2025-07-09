@@ -1189,9 +1189,16 @@ int perfmon_startCountersThread_sapphirerapids(int thread_id, PerfmonEventSet* e
     {
         if (flags & (1ULL << 48))
         {
-            VERBOSEPRINTREG(cpu_id, MSR_PERF_METRICS, 0x0ULL, "CLEAR_METRICS");
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_METRICS, 0x0ULL));
+            if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
+            {
+                /* Core-wide reset */
+                VERBOSEPRINTREG(cpu_id, MSR_PERF_METRICS, 0x0ULL, "CLEAR_METRICS");
+                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_METRICS_ENABLE, 0x0ULL));
+            }
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_METRICS_ENABLE, 0x1ULL));
         }
+        // VERBOSEPRINTREG(cpu_id, MSR_PERF_METRICS, 0x0ULL, "CLEAR_METRICS");
+        // CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_METRICS, 0x0ULL));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST (1ULL<<63)|(1ULL<<62)|flags, "CLEAR_PMC_AND_FIXED_OVERFLOW");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<63)|(1ULL<<62)|flags));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, "UNFREEZE_PMC_AND_FIXED");
