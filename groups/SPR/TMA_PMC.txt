@@ -1,0 +1,33 @@
+SHORT Top down cycle allocation (perf_event version)
+
+EVENTSET
+FIXC3 TOPDOWN_SLOTS
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0 TD_RETIRED
+PMC1 TD_BAD_SPEC
+PMC2 TD_FRONTEND_BOUND
+PMC3 TD_BACKEND_BOUND
+PMC4 TD_HEAVY_OPS
+PMC5 TD_BR_MISPRED
+PMC6 TD_FETCH_LAT
+PMC7 TD_MEM_BOUND
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Total slots FIXC3
+Front End [%] (TD_FRONTEND_BOUND/FIXC3)*100
+Bad Speculation [%] (TD_BAD_SPEC/FIXC3)*100
+Retiring [%] (TD_RETIRED/FIXC3)*100
+Back End [%] (TD_BACKEND_BOUND/FIXC3)*100
+Heavy Ops [%] (TD_HEAVY_OPS/FIXC3)*100
+Branch Misprediction [%] (TD_BR_MISPRED/FIXC3)*100
+Fetch Latency [%] (TD_FETCH_LAT/FIXC3)*100
+
+LONG
+This performance group uses Linux perf_event native "topdown-*" and "slots" events, which are available to unprivileged users on Sapphire Rapids (and newer) processors. It computes the Top-Down micro-architecture categories as percentages of total pipeline slots, without relying on MSR_PERF_METRICS. It is therefore usable when the metrics engine cannot be enabled (e.g., no root access).
+--
