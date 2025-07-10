@@ -44,6 +44,7 @@
 #include <perfmon_sapphirerapids_counters.h>
 #include <perfmon_graniterapids_counters.h>
 #include <perfmon_sierraforrest_counters.h>
+#include <perfmon_emeraldrapids_counters.h>
 
 static PerfmonUncoreDiscovery* uncore_discovery_map = NULL;
 
@@ -374,6 +375,9 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
         case SIERRAFORREST:
             uncore_discovery_map = sierraforrest_uncore_discovery_map;
             break;
+        case EMERALDRAPIDS:
+            uncore_discovery_map = emeraldrapids_uncore_discovery_map;
+            break;
         default:
             ERROR_PRINT("Uncore discovery not supported for model 0x%X", model);
             return -1;
@@ -559,12 +563,13 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
                         switch (model)
                         {
                             case SAPPHIRERAPIDS:
+                            case EMERALDRAPIDS:
                             case GRANITERAPIDS:
                                 if (unit.box_type == SPR_DEVICE_ID_CHA)
                                 {
                                     cur->units[idx].filter_offset = 0xE;
                                 }
-                                else if (unit.box_type == SPR_DEVICE_ID_iMC || (unit.box_type == SPR_DEVICE_ID_HBM && model == SAPPHIRERAPIDS))
+                                else if (unit.box_type == SPR_DEVICE_ID_iMC || (unit.box_type == SPR_DEVICE_ID_HBM && model == SAPPHIRERAPIDS || model == EMERALDRAPIDS||model == GRANITERAPIDS))
                                 {
                                     cur->units[idx].fixed_ctrl_offset = 0x54;
                                     cur->units[idx].fixed_ctr_offset = 0x38;
@@ -577,6 +582,8 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
                         switch (model)
                         {
                             case SAPPHIRERAPIDS:
+                            case EMERALDRAPIDS:
+                            case GRANITERAPIDS:
                                 perfmon_uncore_discovery_update_dev_location(&cur->units[idx]);
                                 break;
                             default:
