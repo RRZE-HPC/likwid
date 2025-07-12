@@ -490,7 +490,7 @@ int perf_perf_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEv
 int perf_metrics_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
 {
     (void)index;
-    attr->type = 4;
+    attr->type = PERF_TYPE_RAW;
     attr->exclude_kernel = 1;
     attr->exclude_hv = 1;
     attr->exclude_guest = 1;
