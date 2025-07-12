@@ -1546,7 +1546,7 @@ static char* graniterapids_translate_types[NUM_UNITS] = {
     [FIXED] = "/sys/bus/event_source/devices/cpu",
     [PMC] = "/sys/bus/event_source/devices/cpu",
     // I don't get it to work, so no TMA metrics with perf_event at the moment
-    //[METRICS] = "/sys/bus/event_source/devices/cpu",
+    [METRICS] = "/sys/bus/event_source/devices/cpu",
     [POWER] = "/sys/bus/event_source/devices/power",
     [CBOX0] = "/sys/bus/event_source/devices/uncore_cha_0 /sys/bus/event_source/devices/uncore_type_0_0",
     [CBOX1] = "/sys/bus/event_source/devices/uncore_cha_1 /sys/bus/event_source/devices/uncore_type_0_1",
