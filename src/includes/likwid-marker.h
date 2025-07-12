@@ -31,6 +31,17 @@
 #ifndef LIKWID_MARKER_H
 #define LIKWID_MARKER_H
 
+#ifdef LIKWID_NVMON
+#ifndef LIKWID_WITH_NVMON
+#define LIKWID_WITH_NVMON
+#endif
+#endif
+
+#ifdef LIKWID_ROCMON
+#ifndef LIKWID_WITH_ROCMON
+#define LIKWID_WITH_ROCMON
+#endif
+#endif
 
 /** \addtogroup MarkerAPI Marker API module
 *  @{
@@ -149,9 +160,6 @@ Shortcut for nvmon_markerWriteFile() with \a filename if compiled with -DLIKWID_
 /** @}*/
 
 #ifdef LIKWID_NVMON
-#ifndef LIKWID_WITH_NVMON
-#define LIKWID_WITH_NVMON
-#endif
 #include <likwid.h>
 #define NVMON_MARKER_INIT nvmon_markerInit()
 #define NVMON_MARKER_THREADINIT
@@ -225,9 +233,6 @@ Shortcut for rocmon_markerWriteFile() with \a filename if compiled with -DLIKWID
 /** @}*/
 
 #ifdef LIKWID_ROCMON
-#ifndef LIKWID_WITH_ROCMON
-#define LIKWID_WITH_ROCMON
-#endif
 #include <likwid.h>
 #define ROCMON_MARKER_INIT rocmon_markerInit()
 #define ROCMON_MARKER_THREADINIT rocmon_markerThreadInit()
