@@ -233,5 +233,11 @@ static char* zen5_translate_types[NUM_UNITS] = {
 
 };
 
+static char* registerTypeNamesZen5[MAX_UNITS] = {
+    [POWER] = "AMD RAPL",
+    [CBOX0] = "L3 Cache",
+    [MBOX0] = "Data Fabric",
+    [BBOX0 ... BBOX63] = "Unified Memory Controller",
+};
 
 #endif //PERFMON_ZEN5_COUNTERS_H
