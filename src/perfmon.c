@@ -1405,6 +1405,20 @@ perfmon_init_maps(void)
                     box_map = zen5_box_map;
                     perfmon_numCounters = perfmon_numCountersZen5;
                     translate_types = zen5_translate_types;
+                    archRegisterTypeNames = registerTypeNamesZen5;
+                    unsigned eax = 0x80000022, ebx = 0x0, ecx = 0x0, edx = 0x0;
+                    CPUID(eax, ebx, ecx, edx);
+                    int umc_count = (ebx >> 16) & 0xFF;
+                    for (int c = 0; c < perfmon_numCounters; c++)
+                    {
+                        if (counter_map[c].type >= BBOX0 && counter_map[c].type <= BBOX63)
+                        {
+                            if ((int)(counter_map[c].type - BBOX0) >= umc_count)
+                            {
+                                counter_map[c].type = NOTYPE;
+                            }
+                        }
+                    }
                     break;
                 default:
                     ERROR_PRINT("Unsupported AMD Zen Processor");
