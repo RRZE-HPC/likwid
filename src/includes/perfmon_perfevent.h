@@ -386,7 +386,8 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
     attr->type = PERF_TYPE_HARDWARE;
     attr->disabled = 1;
     attr->inherit = 1;
-    attr->pinned = 1;
+
+    attr->pinned = 0;
     if (translate_types[FIXED] != NULL &&
         strcmp(translate_types[PMC], translate_types[FIXED]) == 0)
     {
@@ -1468,7 +1469,7 @@ int perfmon_setupCountersThread_perfevent(
             if (!is_uncore)
             {
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, "perf_event_open: cpu_id=%d pid=%d flags=%d", cpu_id, curpid, allflags);
-                cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, -1, allflags);
+                cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, (group_fd >= 0 ? group_fd : -1), allflags);
             }
             else if ((perf_disable_uncore == 0) && (has_lock))
             {
@@ -1489,7 +1490,7 @@ int perfmon_setupCountersThread_perfevent(
                 ERROR_PRINT("Setup of event %s on CPU %d failed: %s", event->name, cpu_id, strerror(errno));
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, "open error: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX", cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
             }
-            if (group_fd < 0)
+            if (!is_uncore && group_fd < 0)
             {
                 group_fd = cpu_event_fds[cpu_id][index];
                 running_group = group_fd;

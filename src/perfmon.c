@@ -3284,6 +3284,9 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     {
         add_to_clist(&clist,groupSet->groups[groupId].group.counters[e],
                      perfmon_getResult(groupId, e, threadId));
+        
+        add_to_clist(&clist, groupSet->groups[groupId].group.events[e],
+                     perfmon_getResult(groupId, e, threadId));
     }
     add_to_clist(&clist, "time", perfmon_getTimeOfGroup(groupId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());

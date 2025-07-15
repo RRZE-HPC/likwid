@@ -3541,6 +3541,7 @@
 #define MSR_PPERF                       0x64E
 #define MSR_PERF_CAPABILITIES           0x345
 #define MSR_PERF_METRICS                0x329
+#define MSR_PERF_METRICS_ENABLE         0x3F0
 #define MSR_WEIGHTED_CORE_C0            0x658
 #define MSR_ANY_CORE_C0                 0x659
 #define MSR_ANY_GFXE_C0                 0x65A
