@@ -80,6 +80,7 @@
 #include <perfmon_zen3.h>
 #include <perfmon_zen4.h>
 #include <perfmon_zen4c.h>
+#include <perfmon_zen5.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
 #include <perfmon_tigerlake.h>
@@ -1393,6 +1394,37 @@ perfmon_init_maps(void)
                     break;
             }
             break;
+        case ZEN5_FAMILY:
+            switch ( cpuid_info.model )
+            {
+                case ZEN5_EPYC:
+                    eventHash = zen5_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsZen5;
+                    counter_map = zen5_counter_map;
+                    box_map = zen5_box_map;
+                    perfmon_numCounters = perfmon_numCountersZen5;
+                    translate_types = zen5_translate_types;
+                    archRegisterTypeNames = registerTypeNamesZen5;
+                    unsigned eax = 0x80000022, ebx = 0x0, ecx = 0x0, edx = 0x0;
+                    CPUID(eax, ebx, ecx, edx);
+                    int umc_count = (ebx >> 16) & 0xFF;
+                    for (int c = 0; c < perfmon_numCounters; c++)
+                    {
+                        if (counter_map[c].type >= BBOX0 && counter_map[c].type <= BBOX63)
+                        {
+                            if ((int)(counter_map[c].type - BBOX0) >= umc_count)
+                            {
+                                counter_map[c].type = NOTYPE;
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    ERROR_PRINT("Unsupported AMD Zen Processor");
+                    err = -EINVAL;
+                    break;
+            }
+            break;
 #ifdef _ARCH_PPC
         case PPC_FAMILY:
             switch ( cpuid_info.model )
@@ -2116,6 +2148,25 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
                 default:
                     ERROR_PRINT("Unsupported AMD K19 Processor");
+                    err = -EINVAL;
+                    break;
+            }
+            break;
+
+        case ZEN5_FAMILY:
+            switch ( cpuid_info.model )
+            {
+                case ZEN5_EPYC:
+                    initThreadArch = perfmon_init_zen3;
+                    initialize_power = TRUE;
+                    perfmon_startCountersThread = perfmon_startCountersThread_zen5;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_zen5;
+                    perfmon_readCountersThread = perfmon_readCountersThread_zen5;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_zen5;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen5;
+                    break;
+                default:
+                    ERROR_PRINT("Unsupported AMD K1A Processor");
                     err = -EINVAL;
                     break;
             }
