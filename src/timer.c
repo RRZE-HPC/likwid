@@ -62,24 +62,29 @@ void (*TSTOP)(TscCounter*) = NULL;
 static void
 fRDTSC(TscCounter* cpu_c)
 {
-    __asm__ volatile("xor %%eax,%%eax\n\t"           \
-    "cpuid\n\t"           \
-    "rdtsc\n\t"           \
-    "movl %%eax, %0\n\t"  \
-    "movl %%edx, %1\n\t"  \
+    __asm__ volatile(
+    "mfence\n\t"            \
+    "lfence\n\t"            \
+    "rdtsc\n\t"             \
+    "movl %%eax, %0\n\t"    \
+    "movl %%edx, %1\n\t"    \
+    "lfence\n\t"            \
     : "=r" ((cpu_c)->int32.lo), "=r" ((cpu_c)->int32.hi) \
-    : : "%eax","%ebx","%ecx","%edx");
+    : : "%rax", "rbx", "rcx", "%rdx", "memory");
 }
 
 static void
 fRDTSC_CR(TscCounter* cpu_c)
 {
-    __asm__ volatile(   \
-    "rdtsc\n\t"           \
-    "movl %%eax, %0\n\t"  \
-    "movl %%edx, %1\n\t"  \
+    __asm__ volatile(
+    "lfence\n\t"            \
+    "rdtscp\n\t"            \
+    "movl %%eax, %0\n\t"    \
+    "movl %%edx, %1\n\t"    \
+    "lfence\n\t"            \
+    "cpuid\n\t"             \
     : "=r" ((cpu_c)->int32.lo), "=r" ((cpu_c)->int32.hi) \
-    : : "%eax","%ebx","%ecx","%edx");
+    : : "%rax", "rbx", "rcx", "%rdx", "memory");
 }
 #ifndef __MIC__
 static void
