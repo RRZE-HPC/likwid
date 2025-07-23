@@ -250,7 +250,7 @@ struct pci_dev * pci_get_device (unsigned int vendor, unsigned int device, struc
     for (int dom = domStart; dom < _max_pci_domain_id; dom++) {
         // if we are beyond the domain given in from, we start with bus=0 again
         // instead of the bus given in from
-        if (from && dom > from->domain) busStart = 0;
+        if (from && dom > from->domain) { busStart = 0; devStart = 0; funcStart = 0; }
         for (int bus = busStart; bus < 0xff; bus++) {
             int ret = 0;
             // Early skip if PCI bus does not exist
@@ -260,7 +260,7 @@ struct pci_dev * pci_get_device (unsigned int vendor, unsigned int device, struc
             }
             // if we are beyond the bus given in from, we start with devid=0 again
             // instead of the device given in from
-            if (from && bus > from->bus) devStart = 0;
+            if (from && bus > from->bus) { devStart = 0; funcStart = 0; }
             for (int devid = devStart; devid < 0xff; devid++) {
                 // if we are beyond the device given in from, we start with func=0 again
                 // instead of the func given in from
