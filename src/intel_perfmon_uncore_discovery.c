@@ -569,7 +569,7 @@ int perfmon_uncore_discovery(int model, PerfmonDiscovery** perfmon)
                                 {
                                     cur->units[idx].filter_offset = 0xE;
                                 }
-                                else if (unit.box_type == SPR_DEVICE_ID_iMC || (unit.box_type == SPR_DEVICE_ID_HBM && model == SAPPHIRERAPIDS || model == EMERALDRAPIDS||model == GRANITERAPIDS))
+                                else if (unit.box_type == SPR_DEVICE_ID_iMC || (unit.box_type == SPR_DEVICE_ID_HBM && model == SAPPHIRERAPIDS))
                                 {
                                     cur->units[idx].fixed_ctrl_offset = 0x54;
                                     cur->units[idx].fixed_ctr_offset = 0x38;
