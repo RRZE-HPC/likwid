@@ -34,16 +34,26 @@ use lib './perl';
 use Template;
 use Ptt;
 
-my $PttInputPath = $ARGV[0];
-my $PasOutputPath = $ARGV[1];
-my $TemplateRoot = $ARGV[2];
+my $TestcaseOutputPath = shift @ARGV;
+my $TemplateRoot = shift @ARGV;
+my @PttInputPaths = @ARGV;
 
 my $tpl = Template->new({
         INCLUDE_PATH => ["$TemplateRoot"]
     });
 
-$PttInputPath =~ /([A-Za-z_0-9]+)\.ptt/;
-my $name = $1;
+my @Testcases;
+foreach my $file (@PttInputPaths) {
+    $file =~ /([A-Za-z_0-9]+)\.ptt/;
+    my $name = $1;
+    my ($PttVars, $TestcaseVars) = Ptt::ReadPtt($file, $name);
+    push(@Testcases, $TestcaseVars);
+}
 
-my ($PttVars, $TestcaseVars) = Ptt::ReadPtt($PttInputPath, $name);
-$tpl->process('bench.tt', $PttVars, $PasOutputPath);
+my @TestcasesSorted = sort {$a->{name} cmp $b->{name}} @Testcases;
+
+my $Vars;
+$Vars->{Testcases} = \@TestcasesSorted;
+$Vars->{numKernels} = $#TestcasesSorted+1;
+$Vars->{allTests} = join('\n',map {$_->{name}." - ".$_->{desc}} @TestcasesSorted);
+$tpl->process('testcases.tt', $Vars, $TestcaseOutputPath);

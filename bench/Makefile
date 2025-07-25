@@ -113,6 +113,8 @@ OBJ_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(PTT_BENCH))
 PAS_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.pas,$(PTT_BENCH))
 BENCH = $(shell basename $(BENCH_TARGET))
 
+TESTCASES_HEADER = $(BUILD_DIR)/testcases.h
+
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
 all: $(BENCH_TARGET)
@@ -124,24 +126,22 @@ $(BENCH): likwid-bench.c $(OBJ) $(OBJ_BENCH)
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(LFLAGS) -Wl,-z,noexecstack $^ $(BENCH_LIBS) -o $(BENCH) $(TARGET_LIB) $(LIBS) $(RPATHS)
 
 #PATTERN RULES
-$(BUILD_DIR)/%.o:  %.c
+$(BUILD_DIR)/%.o: %.c $(TESTCASES_HEADER)
 	@echo "===>  COMPILE C $@"
 	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) -g -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) -g $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 
-# Note: GEN_PAS can only create *.pas from *.ptt all at once, so build the rule accordingly.
-# The &: operator only works with GNU make 4.3+, so keep backwards compatibility.
-ifneq ($(shell [ "$(MAKE_VERSION)" = "$(echo -e "$(MAKE_VERSION)\n4.3" | sort -V | head -n1)" ] && echo TOO_OLD || echo OK),TOO_OLD)
-$(PAS_BENCH) &: $(PTT_BENCH)
-else
-.NOTPARALLEL: $(PAS_BENCH)
-$(PAS_BENCH) : $(PTT_BENCH)
-endif
-	@echo "===>  GENERATE BENCHMARKS"
+$(BUILD_DIR)/%.pas: $(BENCH_DIR)/%.ptt
+	@echo "===>  GEN BENCHMARK  $@"
 	@mkdir -p $(BUILD_DIR)
-	$(Q)$(GEN_PAS) $(BENCH_DIR) $(BUILD_DIR) ./perl/templates
+	$(Q)$(GEN_PAS) $< $@ ./perl/templates
+
+$(TESTCASES_HEADER): $(PTT_BENCH)
+	@echo "===>  GEN TESTCASES  $@"
+	@mkdir -p $(BUILD_DIR)
+	$(Q)$(GEN_TEST) $@ ./perl/templates $^
 
 $(BUILD_DIR)/%.o:  $(BUILD_DIR)/%.pas
 	@echo "===>  ASSEMBLE  $@"
