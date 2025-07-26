@@ -198,6 +198,12 @@ int perfmon_init_perfevent(int cpu_id)
         perfEventOptionNames[EVENT_OPTION_TID] = "threadmask";
         perfEventOptionNames[EVENT_OPTION_CID] = "coreid";
         perfEventOptionNames[EVENT_OPTION_SLICE] = "sliceid";
+    } else if (cpuid_info.family == ZEN5_FAMILY && (cpuid_info.model == ZEN5_EPYC)) {
+        perfEventOptionNames[EVENT_OPTION_TID] = "threadmask";
+        perfEventOptionNames[EVENT_OPTION_CID] = "coreid";
+        perfEventOptionNames[EVENT_OPTION_SLICE] = "sliceid";
+        perfEventOptionNames[EVENT_OPTION_MASK0] = "rdwrmask";
+
     }
     perf_event_initialized = 1;
     return 0;
@@ -893,6 +899,8 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                 case EVENT_OPTION_IN_TRANS_ABORT:
                 case EVENT_OPTION_MATCH0:
                 case EVENT_OPTION_MATCH1:
+                case EVENT_OPTION_MASK0:
+                case EVENT_OPTION_MASK1:
                 case EVENT_OPTION_TID:
                 case EVENT_OPTION_CID:
                 case EVENT_OPTION_SLICE:
@@ -1328,6 +1336,44 @@ int perfmon_setupCountersThread_perfevent(
             case BBOX29:
             case BBOX30:
             case BBOX31:
+            case BBOX32:
+            case BBOX33:
+            case BBOX34:
+            case BBOX35:
+            case BBOX36:
+            case BBOX37:
+            case BBOX38:
+            case BBOX39:
+            case BBOX40:
+            case BBOX41:
+            case BBOX42:
+            case BBOX43:
+            case BBOX44:
+            case BBOX45:
+            case BBOX46:
+            case BBOX47:
+            case BBOX48:
+            case BBOX49:
+            case BBOX50:
+            case BBOX51:
+            case BBOX52:
+            case BBOX53:
+            case BBOX54:
+            case BBOX55:
+            case BBOX56:
+            case BBOX57:
+            case BBOX58:
+            case BBOX59:
+            case BBOX60:
+            case BBOX61:
+            case BBOX62:
+            case BBOX63:
+            case BBOX64:
+            case BBOX65:
+            case BBOX66:
+            case BBOX67:
+            case BBOX68:
+            case BBOX69:
             case EDBOX0:
             case EDBOX1:
             case EDBOX2:
@@ -1415,7 +1461,7 @@ int perfmon_setupCountersThread_perfevent(
                         has_lock = 1;
                     }
                 }
-                else if ((cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY) && type == CBOX0)
+                else if ((cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY || cpuid_info.family == ZEN5_FAMILY) && type == CBOX0)
                 {
                     if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id)
                     {
