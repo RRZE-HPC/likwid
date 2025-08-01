@@ -32,67 +32,63 @@
 #define INTEL_PERFMON_UNCORE_DISCOVERY_H
 
 #include <error.h>
-#include <registers.h>
-#include <topology.h>
 #include <pci_types.h>
 #include <perfmon_types.h>
+#include <registers.h>
+#include <topology.h>
 
 // Data structures provided by Intel
 typedef uint64_t u64;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-#define PCI_EXT_CAP_BASE_OFFSET                 0x100
-#define PCI_EXT_CAP_ID_MASK                     0xffff
-#define PCI_EXT_CAP_NEXT_OFFSET                 0x2
-#define PCI_EXT_CAP_NEXT_SHIFT                  4
-#define PCI_EXT_CAP_NEXT_MASK                   0xfff
-#define  PCI_BASE_ADDRESS_MEM_MASK              (~0x0fUL)
-#define  PCI_BASE_ADDRESS_MEM_TYPE_64           0x04    /* 64 bit address */
-#define  PCI_BASE_ADDRESS_MEM_TYPE_MASK         0x06
+#define PCI_EXT_CAP_BASE_OFFSET 0x100
+#define PCI_EXT_CAP_ID_MASK 0xffff
+#define PCI_EXT_CAP_NEXT_OFFSET 0x2
+#define PCI_EXT_CAP_NEXT_SHIFT 4
+#define PCI_EXT_CAP_NEXT_MASK 0xfff
+#define PCI_BASE_ADDRESS_MEM_MASK (~0x0fUL)
+#define PCI_BASE_ADDRESS_MEM_TYPE_64 0x04 /* 64 bit address */
+#define PCI_BASE_ADDRESS_MEM_TYPE_MASK 0x06
 
-
-#define UNCORE_DISCOVERY_TABLE_DEVICE           0x09a7
+#define UNCORE_DISCOVERY_TABLE_DEVICE 0x09a7
 
 /* Capability ID for discovery table device */
-#define UNCORE_EXT_CAP_ID_DISCOVERY             0x23
+#define UNCORE_EXT_CAP_ID_DISCOVERY 0x23
 /* First DVSEC offset */
-#define UNCORE_DISCOVERY_DVSEC_OFFSET           0x8
+#define UNCORE_DISCOVERY_DVSEC_OFFSET 0x8
 /* Mask of the supported discovery entry type */
-#define UNCORE_DISCOVERY_DVSEC_ID_MASK          0xffff
+#define UNCORE_DISCOVERY_DVSEC_ID_MASK 0xffff
 /* PMON discovery entry type ID */
-#define UNCORE_DISCOVERY_DVSEC_ID_PMON          0x1
+#define UNCORE_DISCOVERY_DVSEC_ID_PMON 0x1
 /* Second DVSEC offset */
-#define UNCORE_DISCOVERY_DVSEC2_OFFSET          0xC
+#define UNCORE_DISCOVERY_DVSEC2_OFFSET 0xC
 /* Mask of the discovery table BAR offset */
-#define UNCORE_DISCOVERY_DVSEC2_BIR_MASK        0x7
+#define UNCORE_DISCOVERY_DVSEC2_BIR_MASK 0x7
 /* Discovery table BAR base offset */
-#define UNCORE_DISCOVERY_BIR_BASE               0x10
+#define UNCORE_DISCOVERY_BIR_BASE 0x10
 /* Discovery table BAR step */
-#define UNCORE_DISCOVERY_BIR_STEP               0x4
+#define UNCORE_DISCOVERY_BIR_STEP 0x4
 /* Global discovery table size */
-#define UNCORE_DISCOVERY_GLOBAL_MAP_SIZE        0x20
-#define UNCORE_DISCOVERY_MAP_SIZE               0x80000
+#define UNCORE_DISCOVERY_GLOBAL_MAP_SIZE 0x20
+#define UNCORE_DISCOVERY_MAP_SIZE 0x80000
 
-#define UNCORE_DISCOVERY_PCI_DOMAIN_OFFSET      28
-#define UNCORE_DISCOVERY_PCI_DOMAIN(data)       ((data >> UNCORE_DISCOVERY_PCI_DOMAIN_OFFSET) & 0x7)
-#define UNCORE_DISCOVERY_PCI_BUS_OFFSET         20
-#define UNCORE_DISCOVERY_PCI_BUS(data)          ((data >> UNCORE_DISCOVERY_PCI_BUS_OFFSET) & 0xff)
-#define UNCORE_DISCOVERY_PCI_DEVFN_OFFSET       12
-#define UNCORE_DISCOVERY_PCI_DEVFN(data)        ((data >> UNCORE_DISCOVERY_PCI_DEVFN_OFFSET) & 0xff)
+#define UNCORE_DISCOVERY_PCI_DOMAIN_OFFSET 28
+#define UNCORE_DISCOVERY_PCI_DOMAIN(data) ((data >> UNCORE_DISCOVERY_PCI_DOMAIN_OFFSET) & 0x7)
+#define UNCORE_DISCOVERY_PCI_BUS_OFFSET 20
+#define UNCORE_DISCOVERY_PCI_BUS(data) ((data >> UNCORE_DISCOVERY_PCI_BUS_OFFSET) & 0xff)
+#define UNCORE_DISCOVERY_PCI_DEVFN_OFFSET 12
+#define UNCORE_DISCOVERY_PCI_DEVFN(data) ((data >> UNCORE_DISCOVERY_PCI_DEVFN_OFFSET) & 0xff)
 
-#define UNCORE_DISCOVERY_PCI_BOX_CTRL(data)     (data & 0xfff)
+#define UNCORE_DISCOVERY_PCI_BOX_CTRL(data) (data & 0xfff)
 
 #define PCI_ANY_ID (-1)
 #define PCI_VENDOR_ID_INTEL 0x8086
 #define PCI_SLOT(devfn) (((devfn) >> 3) & 0x1f)
 #define PCI_DEV_TO_DEVFN(dev) ((dev != NULL) ? (((dev)->device << 3) | (dev)->func) : 0)
 
-#define uncore_discovery_invalid_unit(unit)                    \
-       (!unit.table1 || \
-        unit.table1 == -1ULL ||        \
-        unit.table3 == -1ULL)
-
+#define uncore_discovery_invalid_unit(unit)                                                        \
+    (!unit.table1 || unit.table1 == -1ULL || unit.table3 == -1ULL)
 
 struct uncore_global_discovery {
     union {
@@ -120,7 +116,6 @@ struct uncore_global_discovery {
         };
     };
 };
-
 
 struct uncore_unit_discovery {
     union {
@@ -151,22 +146,22 @@ struct uncore_unit_discovery {
 };
 
 typedef enum {
-    ACCESS_TYPE_MSR = 0,
+    ACCESS_TYPE_MSR  = 0,
     ACCESS_TYPE_MMIO = 1,
-    ACCESS_TYPE_PCI = 2,
+    ACCESS_TYPE_PCI  = 2,
     ACCESS_TYPE_MAX
 } AccessTypes;
 
-static const char* AccessTypeNames[ACCESS_TYPE_MAX] = {
-    [ACCESS_TYPE_MSR] = "MSR",
-    [ACCESS_TYPE_PCI] = "PCI",
+static const char *AccessTypeNames[ACCESS_TYPE_MAX] = {
+    [ACCESS_TYPE_MSR]  = "MSR",
+    [ACCESS_TYPE_PCI]  = "PCI",
     [ACCESS_TYPE_MMIO] = "MMIO",
 };
 
 // Data structures used by LIKWID
 
 typedef enum {
-    FAKE_UNC_UNIT_CTRL = (1ULL<<31),
+    FAKE_UNC_UNIT_CTRL = (1ULL << 31),
     FAKE_UNC_UNIT_STATUS,
     FAKE_UNC_UNIT_RESET,
     FAKE_UNC_CTRL0,
@@ -210,7 +205,6 @@ typedef enum {
     FAKE_UNC_CTR_FREERUN3,
 } LikwidFakePerfmonCounters;
 
-
 typedef struct {
     int num_regs;
     uint64_t ctrl_offset;
@@ -227,7 +221,7 @@ typedef struct {
     uint64_t mmap_addr;
     uint64_t mmap_offset;
     size_t mmap_size;
-    void volatile* io_addr;
+    void volatile *io_addr;
 } PerfmonDiscoveryUnit;
 
 typedef struct {
@@ -238,7 +232,7 @@ typedef struct {
     uint64_t mmap_addr;
     uint64_t mmap_offset;
     size_t mmap_size;
-    void* io_addr;
+    void *io_addr;
 } PerfmonDiscoveryGlobal;
 
 typedef struct {
@@ -249,17 +243,16 @@ typedef struct {
 
 typedef struct {
     int num_sockets;
-    PerfmonDiscoverySocket* sockets;
+    PerfmonDiscoverySocket *sockets;
 } PerfmonDiscovery;
 
-#define ACCESS_TYPE_ERROR(access_type) \
-    do { \
-        ERROR_PRINT("%s has invalid value: %d", (#access_type), (access_type)); \
-        exit(EXIT_FAILURE); \
+#define ACCESS_TYPE_ERROR(access_type)                                                             \
+    do {                                                                                           \
+        ERROR_PRINT("%s has invalid value: %d", (#access_type), (access_type));                    \
+        exit(EXIT_FAILURE);                                                                        \
     } while (0)
 
 int perfmon_uncore_discovery(int model, PerfmonDiscovery **perfmon);
-void perfmon_uncore_discovery_free(PerfmonDiscovery* perfmon);
-
+void perfmon_uncore_discovery_free(PerfmonDiscovery *perfmon);
 
 #endif /* INTEL_PERFMON_UNCORE_DISCOVERY_H */

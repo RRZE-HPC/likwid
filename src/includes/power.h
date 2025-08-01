@@ -32,15 +32,15 @@
 #ifndef POWER_H
 #define POWER_H
 
-#include <types.h>
-#include <registers.h>
+#include <access.h>
 #include <bitUtil.h>
 #include <error.h>
-#include <access.h>
+#include <registers.h>
+#include <types.h>
 #include <unistd.h>
 
-const char* power_names[NUM_POWER_DOMAINS] = {"PKG", "PP0", "PP1", "DRAM", "PLATFORM"};
-const char* perf_power_names[NUM_POWER_DOMAINS] = {
+const char *power_names[NUM_POWER_DOMAINS]      = { "PKG", "PP0", "PP1", "DRAM", "PLATFORM" };
+const char *perf_power_names[NUM_POWER_DOMAINS] = {
     "/sys/devices/power/events/energy-pkg.scale",
     "/sys/devices/power/events/energy-cores.scale",
     "",
@@ -48,185 +48,139 @@ const char* perf_power_names[NUM_POWER_DOMAINS] = {
     "/sys/devices/power/events/energy-platform.scale",
 };
 
-uint32_t power_regs[NUM_POWER_DOMAINS] = {MSR_PKG_ENERGY_STATUS,
-                                MSR_PP0_ENERGY_STATUS,
-                                MSR_PP1_ENERGY_STATUS,
-                                MSR_DRAM_ENERGY_STATUS,
-                                MSR_PLATFORM_ENERGY_STATUS};
+uint32_t power_regs[NUM_POWER_DOMAINS]  = { MSR_PKG_ENERGY_STATUS,
+     MSR_PP0_ENERGY_STATUS,
+     MSR_PP1_ENERGY_STATUS,
+     MSR_DRAM_ENERGY_STATUS,
+     MSR_PLATFORM_ENERGY_STATUS };
 
-uint32_t limit_regs[NUM_POWER_DOMAINS] = {MSR_PKG_RAPL_POWER_LIMIT,
-                                MSR_PP0_RAPL_POWER_LIMIT,
-                                MSR_PP1_RAPL_POWER_LIMIT,
-                                MSR_DRAM_RAPL_POWER_LIMIT,
-                                MSR_PLATFORM_POWER_LIMIT};
+uint32_t limit_regs[NUM_POWER_DOMAINS]  = { MSR_PKG_RAPL_POWER_LIMIT,
+     MSR_PP0_RAPL_POWER_LIMIT,
+     MSR_PP1_RAPL_POWER_LIMIT,
+     MSR_DRAM_RAPL_POWER_LIMIT,
+     MSR_PLATFORM_POWER_LIMIT };
 
-uint32_t policy_regs[NUM_POWER_DOMAINS] = {0,
-                                MSR_PP0_ENERGY_POLICY,
-                                MSR_PP1_ENERGY_POLICY,
-                                0,
-                                0};
+uint32_t policy_regs[NUM_POWER_DOMAINS] = { 0, MSR_PP0_ENERGY_POLICY, MSR_PP1_ENERGY_POLICY, 0, 0 };
 
-uint32_t perf_regs[NUM_POWER_DOMAINS] = {MSR_PKG_PERF_STATUS,
-                                MSR_PP0_PERF_STATUS,
-                                0,
-                                MSR_DRAM_PERF_STATUS,
-                                0};
+uint32_t perf_regs[NUM_POWER_DOMAINS]   = {
+    MSR_PKG_PERF_STATUS, MSR_PP0_PERF_STATUS, 0, MSR_DRAM_PERF_STATUS, 0
+};
 
-uint32_t info_regs[NUM_POWER_DOMAINS] = {MSR_PKG_POWER_INFO,
-                                0,
-                                0,
-                                MSR_DRAM_POWER_INFO,
-                                MSR_PLATFORM_INFO};
+uint32_t info_regs[NUM_POWER_DOMAINS] = {
+    MSR_PKG_POWER_INFO, 0, 0, MSR_DRAM_POWER_INFO, MSR_PLATFORM_INFO
+};
 
-
-double
-power_printEnergy(const PowerData* data)
+double power_printEnergy(const PowerData *data)
 {
-    return  (double) ((data->after - data->before) * power_info.domains[data->domain].energyUnit);
+    return (double)((data->after - data->before) * power_info.domains[data->domain].energyUnit);
 }
 
-int
-power_start(PowerData* data, int cpuId, PowerType type)
+int power_start(PowerData *data, int cpuId, PowerType type)
 {
-    if (power_info.hasRAPL)
-    {
-        if (power_info.domains[type].supportFlags & POWER_DOMAIN_SUPPORT_STATUS)
-        {
+    if (power_info.hasRAPL) {
+        if (power_info.domains[type].supportFlags & POWER_DOMAIN_SUPPORT_STATUS) {
             uint64_t result = 0;
-            data->before = 0;
+            data->before    = 0;
             CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, power_regs[type], &result));
             data->before = field64(result, 0, power_info.statusRegWidth);
             data->domain = type;
             return 0;
-        }
-        else
-        {
+        } else {
             DEBUG_PRINT(DEBUGLEV_DEVELOP, "RAPL domain %s not supported", power_names[type]);
             return -EFAULT;
         }
-    }
-    else
-    {
+    } else {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
         return -EIO;
     }
 }
 
-int
-power_stop(PowerData* data, int cpuId, PowerType type)
+int power_stop(PowerData *data, int cpuId, PowerType type)
 {
-    if (power_info.hasRAPL)
-    {
-        if (power_info.domains[type].supportFlags & POWER_DOMAIN_SUPPORT_STATUS)
-        {
+    if (power_info.hasRAPL) {
+        if (power_info.domains[type].supportFlags & POWER_DOMAIN_SUPPORT_STATUS) {
             uint64_t result = 0;
-            data->after = 0;
+            data->after     = 0;
             CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, power_regs[type], &result));
-            data->after = field64(result, 0, power_info.statusRegWidth);
+            data->after  = field64(result, 0, power_info.statusRegWidth);
             data->domain = type;
             return 0;
-        }
-        else
-        {
+        } else {
             DEBUG_PRINT(DEBUGLEV_DEVELOP, "RAPL domain %s not supported", power_names[type]);
             return -EFAULT;
         }
-    }
-    else
-    {
+    } else {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
         return -EIO;
     }
 }
 
-int
-power_read(int cpuId, uint64_t reg, uint64_t *data)
+int power_read(int cpuId, uint64_t reg, uint64_t *data)
 {
     int i;
     PowerType type = -1;
 
-    if (power_info.hasRAPL)
-    {
-        for (i = 0; i < power_info.numDomains; i++)
-        {
-            if (reg == power_regs[i])
-            {
+    if (power_info.hasRAPL) {
+        for (i = 0; i < power_info.numDomains; i++) {
+            if (reg == power_regs[i]) {
                 type = i;
                 break;
             }
         }
-        if (power_info.domains[type].supportFlags & POWER_DOMAIN_SUPPORT_STATUS)
-        {
+        if (power_info.domains[type].supportFlags & POWER_DOMAIN_SUPPORT_STATUS) {
             uint64_t result = 0;
-            *data = 0;
+            *data           = 0;
             CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, reg, &result));
             *data = field64(result, 0, power_info.statusRegWidth);
             return 0;
-        }
-        else
-        {
+        } else {
             DEBUG_PRINT(DEBUGLEV_DEVELOP, "RAPL domain %s not supported", power_names[type]);
             return -EFAULT;
         }
-    }
-    else
-    {
+    } else {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
         return -EIO;
     }
 }
 
-int
-power_tread(int socket_fd, int cpuId, uint64_t reg, uint64_t *data)
+int power_tread(int socket_fd, int cpuId, uint64_t reg, uint64_t *data)
 {
     (void)socket_fd;
 
     int i;
     PowerType type = 0;
-    if (power_info.hasRAPL)
-    {
-        for (i = 0; i < NUM_POWER_DOMAINS; i++)
-        {
-            if (reg == power_regs[i])
-            {
+    if (power_info.hasRAPL) {
+        for (i = 0; i < NUM_POWER_DOMAINS; i++) {
+            if (reg == power_regs[i]) {
                 type = i;
                 break;
             }
         }
-        if (power_info.domains[type].supportFlags & POWER_DOMAIN_SUPPORT_STATUS)
-        {
+        if (power_info.domains[type].supportFlags & POWER_DOMAIN_SUPPORT_STATUS) {
             uint64_t result = 0;
-            *data = 0;
+            *data           = 0;
             CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, reg, &result));
             *data = field64(result, 0, power_info.statusRegWidth);
             return 0;
-        }
-        else
-        {
+        } else {
             DEBUG_PRINT(DEBUGLEV_DEVELOP, "RAPL domain %s not supported", power_names[type]);
             return -EFAULT;
         }
-    }
-    else
-    {
+    } else {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "No RAPL support");
         return -EIO;
     }
 }
 
-double
-power_getEnergyUnit(int domain)
+double power_getEnergyUnit(int domain)
 {
 #ifdef LIKWID_USE_PERFEVENT
-    FILE* fd = NULL;
+    FILE *fd = NULL;
     char out[512];
-    if (power_info.domains[domain].energyUnit == 0)
-    {
-        if (!access(perf_power_names[domain], R_OK))
-        {
+    if (power_info.domains[domain].energyUnit == 0) {
+        if (!access(perf_power_names[domain], R_OK)) {
             fd = fopen(perf_power_names[domain], "r");
-            if (fd != NULL)
-            {
+            if (fd != NULL) {
                 float energyUnit = 0.0f;
                 if (fgets(out, sizeof(out), fd)) {
                     energyUnit = atof(out);

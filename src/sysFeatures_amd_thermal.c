@@ -42,12 +42,10 @@ struct sysfs_info {
 
 __attribute__((destructor)) static void free_paths(void)
 {
-    for (size_t i = 0; i < info.count; i++)
-    {
+    for (size_t i = 0; i < info.count; i++) {
         struct sysfs_socket *socket = &info.sockets[i];
 
-        for (size_t j = 0; j < socket->count; j++)
-        {
+        for (size_t j = 0; j < socket->count; j++) {
             struct sysfs_ccd *ccd = &socket->ccds[j];
 
             bdestroy(ccd->temp_path);
@@ -74,18 +72,18 @@ static int read_sysfs_file(const char *path, char *buf, size_t size)
     if (!file)
         return -errno;
     const size_t len = fread(buf, sizeof(buf[0]), size - 1, file);
-    buf[len] = '\0';
+    buf[len]         = '\0';
     fclose(file);
     return 0;
 }
 
 static int ccd_sort(const void *a, const void *b)
 {
-    const struct sysfs_ccd *ca = a;
-    const struct sysfs_ccd *cb = b;
+    const struct sysfs_ccd *ca    = a;
+    const struct sysfs_ccd *cb    = b;
 
-    const char *sa = bdata(ca->label);
-    const char *sb = bdata(cb->label);
+    const char *sa                = bdata(ca->label);
+    const char *sb                = bdata(cb->label);
 
     static const size_t digit_pos = strlen("Tccd");
     assert(strncmp(sa, "Tccd", digit_pos) == 0);
@@ -114,27 +112,28 @@ static int create_paths(void)
 
     /* Enumerate PCI devices associated with k10temp driver. */
     const char *k10temp_base = "/sys/bus/pci/drivers/k10temp";
-    DIR *k10temp_dir = opendir(k10temp_base);
-    if (!k10temp_dir)
-    {
+    DIR *k10temp_dir         = opendir(k10temp_base);
+    if (!k10temp_dir) {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s not found. Not initializing k10temp", k10temp_base);
         return -errno;
     }
 
     struct dirent *pcidevice_file;
-    while (errno = 0, (pcidevice_file = readdir(k10temp_dir)))
-    {
+    while (errno = 0, (pcidevice_file = readdir(k10temp_dir))) {
         char d_name_tokenized[sizeof(pcidevice_file->d_name)];
-        snprintf(d_name_tokenized, sizeof(d_name_tokenized), "%s", pcidevice_file->d_name); // <-- manual strlcpy
+        snprintf(d_name_tokenized,
+            sizeof(d_name_tokenized),
+            "%s",
+            pcidevice_file->d_name); // <-- manual strlcpy
         /* Read all entries in the k10temp directory.
          * Find all entries, which look like a PCI address in order to determine
          * which devices are associated with the k10temp driver.
          * A PCI address looks like 0000:00:00:0 */
-        char *saveptr = NULL;
+        char *saveptr      = NULL;
         const char *domain = strtok_r(d_name_tokenized, ":", &saveptr);
-        const char *bus = strtok_r(NULL, ":", &saveptr);
-        const char *dev = strtok_r(NULL, ".", &saveptr);
-        const char *func = strtok_r(NULL, "", &saveptr);
+        const char *bus    = strtok_r(NULL, ":", &saveptr);
+        const char *dev    = strtok_r(NULL, ".", &saveptr);
+        const char *func   = strtok_r(NULL, "", &saveptr);
 
         /* Incase not all tokens are in the file name, just continue to next file. */
         if (!domain || !bus || !dev || !func)
@@ -144,21 +143,19 @@ static int create_paths(void)
         if (!new_sockets)
             break;
 
-        info.sockets = new_sockets;
+        info.sockets           = new_sockets;
         struct sysfs_socket *s = &info.sockets[info.count];
         info.count += 1;
 
         memset(s, 0, sizeof(*s));
         s->pci_path = bformat("%s/%s", k10temp_base, pcidevice_file->d_name);
-        if (!s->pci_path)
-        {
+        if (!s->pci_path) {
             errno = ENOMEM;
             break;
         }
     }
 
-    if (errno != 0)
-    {
+    if (errno != 0) {
         const int errno_save = errno;
         closedir(k10temp_dir);
         free_paths();
@@ -176,16 +173,14 @@ static int create_paths(void)
     qsort(info.sockets, info.count, sizeof(info.sockets[0]), socket_sort);
 
     /* Populate hwmon_path for each socket. */
-    for (size_t socket_id = 0; socket_id < info.count; socket_id++)
-    {
+    for (size_t socket_id = 0; socket_id < info.count; socket_id++) {
         /* Determine hwmon path */
         struct sysfs_socket *s = &info.sockets[socket_id];
 
         char hwmon_base[PATH_MAX];
         snprintf(hwmon_base, sizeof(hwmon_base), "%s/hwmon", bdata(s->pci_path));
         DIR *hwmon_base_dir = opendir(hwmon_base);
-        if (!hwmon_base_dir)
-        {
+        if (!hwmon_base_dir) {
             const int errno_save = errno;
             DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "k10temp: Unable to read dir %s", hwmon_base);
             free_paths();
@@ -193,21 +188,18 @@ static int create_paths(void)
         }
 
         struct dirent *hwmon_candidate_dir;
-        while (errno = 0, (hwmon_candidate_dir = readdir(hwmon_base_dir)))
-        {
+        while (errno = 0, (hwmon_candidate_dir = readdir(hwmon_base_dir))) {
             /* only allow hwmon subdirectories */
             if (strncmp(hwmon_candidate_dir->d_name, "hwmon", 5) != 0)
                 continue;
 
             /* Check if the current dirent is actually a directory */
             char hwmon_candidate_path[PATH_MAX];
-            snprintf(
-                hwmon_candidate_path,
+            snprintf(hwmon_candidate_path,
                 sizeof(hwmon_candidate_path),
                 "%s/%s",
-                bdata(s->hwmon_path), 
-                hwmon_candidate_dir->d_name
-            );
+                bdata(s->hwmon_path),
+                hwmon_candidate_dir->d_name);
 
             s->hwmon_path = bformat("%s/%s", hwmon_base, hwmon_candidate_dir->d_name);
             if (!s->hwmon_path)
@@ -215,8 +207,7 @@ static int create_paths(void)
             break;
         }
 
-        if (errno != 0)
-        {
+        if (errno != 0) {
             const int errno_save = errno;
             closedir(hwmon_base_dir);
             free_paths();
@@ -229,24 +220,23 @@ static int create_paths(void)
 
 #pragma GCC diagnostic ignored "-Wnonnull"
         DIR *hwmon_dir = opendir(bdata(s->hwmon_path));
-        if (!hwmon_dir)
-        {
+        if (!hwmon_dir) {
             const int errno_save = errno;
-            DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "k10temp: Unable to read dir %s", bdata(s->hwmon_path));
+            DEBUG_PRINT(
+                DEBUGLEV_ONLY_ERROR, "k10temp: Unable to read dir %s", bdata(s->hwmon_path));
             free_paths();
             return -errno_save;
         }
 
         struct dirent *temp_dirent;
-        while (errno = 0, (temp_dirent = readdir(hwmon_dir)))
-        {
+        while (errno = 0, (temp_dirent = readdir(hwmon_dir))) {
             /* check if file name is of form  'temp\d+_label'. */
             if (strncmp(temp_dirent->d_name, "temp", strlen("temp")) != 0)
                 continue;
 
             const char *numstart = &temp_dirent->d_name[strlen("temp")];
             char *numend;
-            errno = 0;
+            errno            = 0;
             unsigned long no = strtoul(numstart, &numend, 10);
             if (numstart == numend || errno != 0)
                 continue;
@@ -260,13 +250,13 @@ static int create_paths(void)
 
             /* temporarily store path to e.g. /sys/...../temp3_label */
             char label_path[PATH_MAX];
-            snprintf(label_path, sizeof(label_path), "%s/%s", bdata(s->hwmon_path), temp_dirent->d_name);
+            snprintf(
+                label_path, sizeof(label_path), "%s/%s", bdata(s->hwmon_path), temp_dirent->d_name);
 
             /* read e.g. temp3_label to string and store it. */
             char label_string[64];
             int err = read_sysfs_file(label_path, label_string, sizeof(label_string));
-            if (err < 0)
-            {
+            if (err < 0) {
                 errno = -err;
                 break;
             }
@@ -279,46 +269,44 @@ static int create_paths(void)
              * sensors. The CCD temperatures are stored in the 'ccds' array, while we should
              * hopefully only find a single Tctl temperature. The latter one will be stored
              * only once per socket. */
-            if (strncmp(label_string, "Tccd", strlen("Tccd")) == 0)
-            {
+            if (strncmp(label_string, "Tccd", strlen("Tccd")) == 0) {
                 void *new_ccds = realloc(s->ccds, (s->count + 1) * sizeof(s->ccds[0]));
                 if (!new_ccds)
                     break;
 
-                s->ccds = new_ccds;
+                s->ccds               = new_ccds;
                 struct sysfs_ccd *ccd = &s->ccds[s->count];
                 s->count += 1;
 
                 memset(ccd, 0, sizeof(*ccd));
                 ccd->temp_path = bfromcstr(temp_path);
-                ccd->label = bfromcstr(label_string);
-                if (!ccd->temp_path || !ccd->label)
-                {
+                ccd->label     = bfromcstr(label_string);
+                if (!ccd->temp_path || !ccd->label) {
                     errno = ENOMEM;
                     break;
                 }
             } else {
-                if (s->label)
-                {
+                if (s->label) {
                     /* If s->label is alreay set, we have encountered more then one non-CCD temperature.
                      * We only support one sensors per socket, so issue a warning but continue regardless. */
-                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Found more than one non-Tccd. current=%s new=%s", bdata(s->label), label_string);
+                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
+                        "Found more than one non-Tccd. current=%s new=%s",
+                        bdata(s->label),
+                        label_string);
                     bdestroy(s->label);
                     bdestroy(s->temp_path);
                 }
 
-                s->label = bfromcstr(label_string);
+                s->label     = bfromcstr(label_string);
                 s->temp_path = bfromcstr(temp_path);
-                if (!s->label || !s->temp_path)
-                {
+                if (!s->label || !s->temp_path) {
                     errno = ENOMEM;
                     break;
                 }
             }
         }
 
-        if (errno != 0)
-        {
+        if (errno != 0) {
             const int errno_save = errno;
             closedir(hwmon_dir);
             free_paths();
@@ -350,7 +338,7 @@ static int temp_getter(const char *file, char **value)
 
     /* parse to value */
     char *endptr;
-    errno = 0;
+    errno     = 0;
     long temp = strtol(temp_data, &endptr, 10);
     if (temp_data == endptr)
         return -EIO;
@@ -371,10 +359,10 @@ static int amd_thermal_temperature_ccd_getter(LikwidDevice_t device, char **valu
         return err;
 
     /* determine CCD to read from */
-    CpuTopology_t topo = get_cpuTopology();
+    CpuTopology_t topo          = get_cpuTopology();
 
     const uint32_t local_die_id = device->id.simple.id % (topo->numDies / topo->numSockets);
-    const uint32_t socket_id = device->id.simple.id / (topo->numDies / topo->numSockets);
+    const uint32_t socket_id    = device->id.simple.id / (topo->numDies / topo->numSockets);
 
     if (socket_id >= info.count)
         return -EINVAL;
@@ -408,12 +396,20 @@ static int amd_thermal_tester(void)
 }
 
 static _SysFeature amd_thermal_features[] = {
-    {"ccd_temp", "thermal", "Current CPU CCD temperature (Tccd)", amd_thermal_temperature_ccd_getter, NULL, DEVICE_TYPE_DIE, NULL, "degrees C"},
-    {"pkg_temp", "thermal", "Current CPU socket temperature (Tctl)", amd_thermal_temperature_ctl_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "degrees C"},
+    { "ccd_temp",
+     "thermal", "Current CPU CCD temperature (Tccd)",
+     amd_thermal_temperature_ccd_getter, NULL,
+     DEVICE_TYPE_DIE,    NULL,
+     "degrees C" },
+    { "pkg_temp",
+     "thermal", "Current CPU socket temperature (Tctl)",
+     amd_thermal_temperature_ctl_getter, NULL,
+     DEVICE_TYPE_SOCKET, NULL,
+     "degrees C" },
 };
 
 const _SysFeatureList likwid_sysft_amd_k10_cpu_thermal_feature_list = {
     .num_features = ARRAY_COUNT(amd_thermal_features),
-    .tester = amd_thermal_tester,
-    .features = amd_thermal_features,
+    .tester       = amd_thermal_tester,
+    .features     = amd_thermal_features,
 };

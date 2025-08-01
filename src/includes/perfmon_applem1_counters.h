@@ -33,23 +33,23 @@
 #define NUM_COUNTERS_APPLEM1 10
 
 static RegisterMap applem1_counter_map[NUM_COUNTERS_APPLEM1] = {
-    {"PMC0", PMC0, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC1", PMC1, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC2", PMC2, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC3", PMC3, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC4", PMC4, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC5", PMC5, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC6", PMC6, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC7", PMC7, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC8", PMC8, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC9", PMC9, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    { "PMC0", PMC0, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC1", PMC1, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC2", PMC2, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC3", PMC3, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC4", PMC4, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC5", PMC5, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC6", PMC6, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC7", PMC7, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC8", PMC8, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC9", PMC9, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
 };
 
 static BoxMap applem1_box_map[NUM_UNITS] = {
-    [PMC] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
+    [PMC] = { 0, 0, 0, 0, 0, 0, 32, 0, 0 },
 };
 
-static char* applem1_translate_types[NUM_UNITS] = {
+static char *applem1_translate_types[NUM_UNITS] = {
     [IPMC] = "/sys/bus/event_source/devices/apple_icestorm_pmu",
     [FPMC] = "/sys/bus/event_source/devices/apple_firestorm_pmu",
 };

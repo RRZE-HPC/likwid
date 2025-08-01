@@ -30,16 +30,16 @@
 #ifndef PERFMON_NVIDIAGRACE_H
 #define PERFMON_NVIDIAGRACE_H
 
-#include <perfmon_nvidiagrace_events.h>
 #include <perfmon_nvidiagrace_counters.h>
+#include <perfmon_nvidiagrace_events.h>
 
-#include <error.h>
+#include <access.h>
 #include <affinity.h>
+#include <error.h>
 #include <limits.h>
 #include <topology.h>
-#include <access.h>
 
-static int perfmon_numCountersNvidiaGrace = NUM_COUNTERS_NVIDIAGRACE;
+static int perfmon_numCountersNvidiaGrace   = NUM_COUNTERS_NVIDIAGRACE;
 static int perfmon_numArchEventsNvidiaGrace = NUM_ARCH_EVENTS_NVIDIAGRACE;
 
 #endif //PERFMON_NVIDIAGRACE_H

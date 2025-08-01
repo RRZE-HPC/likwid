@@ -30,59 +30,54 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
 #include <fcntl.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include <types.h>
-#include <bstrlib.h>
 #include <affinity.h>
-#include <topology.h>
+#include <bstrlib.h>
 #include <error.h>
 #include <lw_alloc.h>
+#include <topology.h>
+#include <types.h>
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-int
-getBusFromSocket(const uint32_t socket)
+int getBusFromSocket(const uint32_t socket)
 {
-    int cur_bus = 0;
+    int cur_bus         = 0;
     uint32_t cur_socket = 0;
     char pci_filepath[1024];
     int fp;
     int ret = 0;
-    while(cur_socket <= socket)
-    {
+    while (cur_socket <= socket) {
         sprintf(pci_filepath, "/proc/bus/pci/%02x/05.0", cur_bus);
         fp = open(pci_filepath, O_RDONLY);
-        if (fp < 0)
-        {
+        if (fp < 0) {
             return -1;
         }
         uint32_t cpubusno = 0;
-        ret = pread(fp, &cpubusno, sizeof(uint32_t), 0x108);
-        if (ret != sizeof(uint32_t))
-        {
+        ret               = pread(fp, &cpubusno, sizeof(uint32_t), 0x108);
+        if (ret != sizeof(uint32_t)) {
             close(fp);
             return -1;
         }
         cur_bus = (cpubusno >> 8) & 0x0ff;
         close(fp);
-        if(socket == cur_socket)
+        if (socket == cur_socket)
             return cur_bus;
         ++cur_socket;
         ++cur_bus;
-        if(cur_bus > 0x0ff)
-           return -1;
+        if (cur_bus > 0x0ff)
+            return -1;
     }
 
     return -1;
 }
 
-#define PCI_SLOT(devfn)         (((devfn) >> 3) & 0x1f)
-#define PCI_FUNC(devfn)         ((devfn) & 0x07)
-
+#define PCI_SLOT(devfn) (((devfn) >> 3) & 0x1f)
+#define PCI_FUNC(devfn) ((devfn) & 0x07)
 
 /* This code gets the PCI device using the given devid in pcidev. It assumes that the
  * PCI busses are sorted like: if sock_id1 < sock_id2 then bus1 < bus2 end
@@ -96,57 +91,45 @@ typedef struct {
 
 static int getBusFromSocketByDevid(const uint32_t socket, uint16_t testDevice)
 {
-    int ret = 0;
+    int ret        = 0;
     int cur_socket = (int)socket;
-    int bufflen = 1024;
+    int bufflen    = 1024;
     char buff[1024];
-    FILE* fp = NULL;
+    FILE *fp = NULL;
     uint32_t bus, devfn, vendor, devid;
     PciCandidate candidates[10];
     int candidate = -1;
-    int cand_idx = 0;
+    int cand_idx  = 0;
 
-    fp = fopen("/proc/bus/pci/devices", "r");
-    if (fp)
-    {
-        while (fgets(buff, bufflen, fp) != NULL)
-        {
-            ret = sscanf((char*)buff, "%02x%02x\t%04x%04x", &bus, &devfn, &vendor, &devid);
-            if (ret == 4 && devid == testDevice)
-            {
-                candidates[cand_idx].bus = bus;
+    fp            = fopen("/proc/bus/pci/devices", "r");
+    if (fp) {
+        while (fgets(buff, bufflen, fp) != NULL) {
+            ret = sscanf((char *)buff, "%02x%02x\t%04x%04x", &bus, &devfn, &vendor, &devid);
+            if (ret == 4 && devid == testDevice) {
+                candidates[cand_idx].bus   = bus;
                 candidates[cand_idx].devfn = devfn;
                 cand_idx++;
             }
         }
         fclose(fp);
-    }
-    else
-    {
+    } else {
         ERROR_PRINT("Failed read file /proc/bus/pci/devices");
     }
 
-    while (cur_socket >= 0)
-    {
-        int min_idx = 0;
+    while (cur_socket >= 0) {
+        int min_idx  = 0;
         uint32_t min = 0xFFF;
-        for (ret = 0; ret < cand_idx; ret++)
-        {
-            if (candidates[ret].bus < min)
-            {
-                min = candidates[ret].bus;
+        for (ret = 0; ret < cand_idx; ret++) {
+            if (candidates[ret].bus < min) {
+                min     = candidates[ret].bus;
                 min_idx = ret;
             }
         }
-        if (cur_socket > 0)
-        {
+        if (cur_socket > 0) {
             candidates[min_idx].bus = 0xFFF;
             cur_socket--;
-        }
-        else
-        {
-            if (candidates[min_idx].bus <= 0xff)
-            {
+        } else {
+            if (candidates[min_idx].bus <= 0xff) {
                 candidate = min_idx;
             }
             cur_socket = -1;
@@ -159,36 +142,28 @@ static int getBusFromSocketByDevid(const uint32_t socket, uint16_t testDevice)
     return -1;
 }
 
-
-int
-proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
+int proc_pci_init(uint16_t testDevice, char **socket_bus, int *nrSockets)
 {
     FILE *fptr;
     char buf[1024];
-    int cntr = 0;
+    int cntr            = 0;
     uint16_t testVendor = 0x8086;
     uint32_t sbus, sdevfn, svend, sdev;
     uint32_t busID;
 
-    if ( (fptr = fopen( "/proc/bus/pci/devices", "r")) == NULL )
-    {
+    if ((fptr = fopen("/proc/bus/pci/devices", "r")) == NULL) {
         fprintf(stderr, "Unable to open /proc/bus/pci/devices. \
                 Thus, no support for PCI based Uncore counters.\n");
         return -ENODEV;
     }
 
-    while( fgets(buf, sizeof(buf)-1, fptr) )
-    {
-        if ( sscanf(buf, "%02x%02x\t%04x%04x", &sbus, &sdevfn, &svend, &sdev) == 4 &&
-             svend == testVendor && sdev == testDevice )
-        {
+    while (fgets(buf, sizeof(buf) - 1, fptr)) {
+        if (sscanf(buf, "%02x%02x\t%04x%04x", &sbus, &sdevfn, &svend, &sdev) == 4 &&
+            svend == testVendor && sdev == testDevice) {
             busID = getBusFromSocketByDevid(cntr, testDevice);
-            if (busID == sbus)
-            {
+            if (busID == sbus) {
                 socket_bus[cntr] = lw_asprintf("%02x/", sbus);
-            }
-            else
-            {
+            } else {
                 socket_bus[cntr] = lw_asprintf("%02x/", busID);
             }
             cntr++;
@@ -196,11 +171,9 @@ proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     }
     fclose(fptr);
     *nrSockets = cntr;
-    if ( cntr == 0 )
-    {
+    if (cntr == 0) {
         //fprintf(stderr, "Uncore not supported on this system\n");
         return -ENODEV;
     }
     return 0;
 }
-

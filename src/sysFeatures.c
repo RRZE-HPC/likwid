@@ -30,26 +30,25 @@
  * =======================================================================================
  */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
-#include <topology.h>
 #include <access.h>
 #include <error.h>
 #include <likwid.h>
+#include <topology.h>
 
 #include <sysFeatures.h>
-#include <sysFeatures_types.h>
-#include <sysFeatures_common.h>
 #include <sysFeatures_amd.h>
-#include <sysFeatures_intel.h>
+#include <sysFeatures_common.h>
 #include <sysFeatures_cpufreq.h>
+#include <sysFeatures_intel.h>
 #include <sysFeatures_linux_numa_balancing.h>
 #include <sysFeatures_nvml.h>
+#include <sysFeatures_types.h>
 
-static _SysFeatureList _feature_list = {0, NULL, NULL};
-
+static _SysFeatureList _feature_list = { 0, NULL, NULL };
 
 static int get_device_access(LikwidDevice_t device)
 {
@@ -57,87 +56,75 @@ static int get_device_access(LikwidDevice_t device)
      * which is implicitly called in every getter/settter. */
     int hwt = -1;
     int err = topology_init();
-    if (err < 0)
-    {
+    if (err < 0) {
         return err;
     }
     CpuTopology_t topo = get_cpuTopology();
 
-    if (device->type == DEVICE_TYPE_INVALID)
-    {
+    if (device->type == DEVICE_TYPE_INVALID) {
         return -EINVAL;
     }
 
     switch (device->type) {
-        case DEVICE_TYPE_HWTHREAD:
-            if (device->id.simple.id >= 0 && device->id.simple.id < (int)topo->numHWThreads)
-            {
-                hwt = device->id.simple.id;
+    case DEVICE_TYPE_HWTHREAD:
+        if (device->id.simple.id >= 0 && device->id.simple.id < (int)topo->numHWThreads) {
+            hwt = device->id.simple.id;
+        }
+        break;
+    case DEVICE_TYPE_CORE:
+        for (unsigned i = 0; i < topo->numHWThreads; i++) {
+            HWThread *t = &topo->threadPool[i];
+            if (t->inCpuSet == 1 && device->id.simple.id == (int)t->coreId) {
+                hwt = t->apicId;
+                break;
             }
-            break;
-        case DEVICE_TYPE_CORE:
-            for (unsigned i = 0; i < topo->numHWThreads; i++)
-            {
-                HWThread* t = &topo->threadPool[i];
-                if (t->inCpuSet == 1 && device->id.simple.id == (int)t->coreId)
-                {
-                    hwt = t->apicId;
-                    break;
-                }
+        }
+        break;
+    case DEVICE_TYPE_NODE:
+        for (unsigned i = 0; i < topo->numHWThreads; i++) {
+            HWThread *t = &topo->threadPool[i];
+            if (t->inCpuSet == 1) {
+                hwt = t->apicId;
+                break;
             }
-            break;
-        case DEVICE_TYPE_NODE:
-            for (unsigned i = 0; i < topo->numHWThreads; i++)
-            {
-                HWThread* t = &topo->threadPool[i];
-                if (t->inCpuSet == 1)
-                {
-                    hwt = t->apicId;
-                    break;
-                }
+        }
+        break;
+    case DEVICE_TYPE_SOCKET:
+        for (unsigned i = 0; i < topo->numHWThreads; i++) {
+            HWThread *t = &topo->threadPool[i];
+            if (t->inCpuSet == 1 && device->id.simple.id == (int)t->packageId) {
+                hwt = t->apicId;
+                break;
             }
-            break;
-        case DEVICE_TYPE_SOCKET:
-            for (unsigned i = 0; i < topo->numHWThreads; i++)
-            {
-                HWThread* t = &topo->threadPool[i];
-                if (t->inCpuSet == 1 && device->id.simple.id == (int)t->packageId)
-                {
-                    hwt = t->apicId;
-                    break;
-                }
-            }
-            break;
+        }
+        break;
 #ifdef LIKWID_WITH_NVMON
-        case DEVICE_TYPE_NVIDIA_GPU:
-            return 0;
+    case DEVICE_TYPE_NVIDIA_GPU:
+        return 0;
 #endif
 #ifdef LIKWID_WITH_ROCMON
-        case DEVICE_TYPE_AMD_GPU:
-            return 0;
+    case DEVICE_TYPE_AMD_GPU:
+        return 0;
 #endif
-        default:
-            ERROR_PRINT("get_device_access: Unimplemented device type: %d\n", device->type);
-            return -EPERM;
+    default:
+        ERROR_PRINT("get_device_access: Unimplemented device type: %d\n", device->type);
+        return -EPERM;
     }
 #if defined(__x86_64) || defined(__i386__)
-    if (hwt >= 0)
-    {
+    if (hwt >= 0) {
         return HPMaddThread(hwt);
     }
     return -EINVAL;
 #else
-    return (hwt >= 0 ? 0 : -EINVAL);
+    return hwt >= 0 ? 0 : -EINVAL;
 #endif
 }
-
 
 int likwid_sysft_init(void)
 {
     int err = 0;
 
-    if (_feature_list.num_features > 0 || _feature_list.features)
-    {
+    if (_feature_list.num_features > 0 || _feature_list.features) {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "likwid_sysft_init: Already initialized");
         return 0;
     }
@@ -145,44 +132,35 @@ int likwid_sysft_init(void)
     topology_init();
     CpuInfo_t cpuinfo = get_cpuInfo();
 #if defined(__x86_64) || defined(__i386__)
-    if (!HPMinitialized())
-    {
+    if (!HPMinitialized()) {
         err = HPMinit();
-        if (err < 0)
-        {
+        if (err < 0) {
             ERROR_PRINT("Failed to initialize access to hardware registers");
             return err;
         }
     }
-    if (cpuinfo->isIntel)
-    {
+    if (cpuinfo->isIntel) {
         err = likwid_sysft_init_x86_intel(&_feature_list);
-        if (err < 0)
-        {
+        if (err < 0) {
             ERROR_PRINT("Failed to initialize SysFeatures for Intel architecture");
             return err;
         }
-    }
-    else
-    {
+    } else {
         err = likwid_sysft_init_x86_amd(&_feature_list);
-        if (err < 0)
-        {
+        if (err < 0) {
             ERROR_PRINT("Failed to initialize SysFeatures for AMD architecture");
             return err;
         }
     }
 #endif
     err = likwid_sysft_init_cpufreq(&_feature_list);
-    if (err < 0)
-    {
+    if (err < 0) {
         ERROR_PRINT("Failed to initialize SysFeatures cpufreq module");
         return err;
     }
 
     err = likwid_sysft_init_linux_numa_balancing(&_feature_list);
-    if (err < 0)
-    {
+    if (err < 0) {
         ERROR_PRINT("Failed to initialize SysFeatures numa_balancing module");
         return err;
     }
@@ -191,51 +169,44 @@ int likwid_sysft_init(void)
     if (err < 0)
         DEBUG_PRINT(DEBUGLEV_INFO, "Failed to initialize SysFeatures nvml module");
 #endif
-    
+
     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Initialized %d features", _feature_list.num_features);
     return 0;
 }
 
-static int get_feature_index(const char* name)
+static int get_feature_index(const char *name)
 {
-    if (!name)
-    {
+    if (!name) {
         return -EINVAL;
     }
-    if (!strchr(name, '.'))
-    {
+    if (!strchr(name, '.')) {
         int out = -1;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Features name has no dot -> compare with name");
-        for (int i = 0; i < _feature_list.num_features; i++)
-        {
-            if (strcmp(name, _feature_list.features[i].name) == 0)
-            {
-                if (out < 0)
-                {
+        for (int i = 0; i < _feature_list.num_features; i++) {
+            if (strcmp(name, _feature_list.features[i].name) == 0) {
+                if (out < 0) {
                     out = i;
-                }
-                else
-                {
+                } else {
                     ERROR_PRINT("Feature name '%s' matches multiple features", name);
                     return -EINVAL;
                 }
             }
         }
-        if (out >= 0)
-        {
+        if (out >= 0) {
             return out;
         }
-    }
-    else
-    {
+    } else {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Features name contains dot -> compare with category.name");
-        for (int i = 0; i < _feature_list.num_features; i++)
-        {
-            int featlen = strlen(_feature_list.features[i].name) + strlen(_feature_list.features[i].category) + 2;
+        for (int i = 0; i < _feature_list.num_features; i++) {
+            int featlen = strlen(_feature_list.features[i].name) +
+                          strlen(_feature_list.features[i].category) + 2;
             char combined_name[featlen];
-            snprintf(combined_name, featlen, "%s.%s", _feature_list.features[i].category, _feature_list.features[i].name);
-            if (strcmp(name, combined_name) == 0)
-            {
+            snprintf(combined_name,
+                featlen,
+                "%s.%s",
+                _feature_list.features[i].category,
+                _feature_list.features[i].name);
+            if (strcmp(name, combined_name) == 0) {
                 return i;
             }
         }
@@ -244,42 +215,34 @@ static int get_feature_index(const char* name)
     return -ENOTSUP;
 }
 
-
-
-int likwid_sysft_getByName(const char* name, const LikwidDevice_t device, char** value)
+int likwid_sysft_getByName(const char *name, const LikwidDevice_t device, char **value)
 {
-    int err = 0;
+    int err        = 0;
     _SysFeature *f = NULL;
-    if ((!name) || (!device) || (!value))
-    {
+    if ((!name) || (!device) || (!value)) {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Invalid inputs to sysFeatures_getByName");
         return -EINVAL;
     }
-    if (device->type == DEVICE_TYPE_INVALID)
-    {
+    if (device->type == DEVICE_TYPE_INVALID) {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Invalid device type");
         return -EINVAL;
     }
     int idx = get_feature_index(name);
-    if (idx < 0)
-    {
+    if (idx < 0) {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Failed to get index for %s", name);
         return -EINVAL;
     }
     f = &_feature_list.features[idx];
-    if ((!f) || (!f->getter))
-    {
+    if ((!f) || (!f->getter)) {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "No feature %s or no support to read current state", name);
         return -EINVAL;
     }
-    if (f->type != device->type)
-    {
+    if (f->type != device->type) {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Feature %s has a different type than device", name);
         return -EINVAL;
     }
     err = get_device_access(device);
-    if (err < 0)
-    {
+    if (err < 0) {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Failed to get access to device");
         return err;
     }
@@ -287,7 +250,7 @@ int likwid_sysft_getByName(const char* name, const LikwidDevice_t device, char**
     return err;
 }
 
-int likwid_sysft_get(const LikwidSysFeature* feature, const LikwidDevice_t device, char** value)
+int likwid_sysft_get(const LikwidSysFeature *feature, const LikwidDevice_t device, char **value)
 {
     int len = strlen(feature->name) + strlen(feature->category) + 2;
     char real[len];
@@ -295,41 +258,36 @@ int likwid_sysft_get(const LikwidSysFeature* feature, const LikwidDevice_t devic
     return likwid_sysft_getByName(real, device, value);
 }
 
-int likwid_sysft_modifyByName(const char* name, const LikwidDevice_t device, const char* value)
+int likwid_sysft_modifyByName(const char *name, const LikwidDevice_t device, const char *value)
 {
-    int err = 0;
+    int err        = 0;
     _SysFeature *f = NULL;
-    if ((!name) || (!device) || (!value))
-    {
+    if ((!name) || (!device) || (!value)) {
         return -EINVAL;
     }
-    if (device->type == DEVICE_TYPE_INVALID)
-    {
+    if (device->type == DEVICE_TYPE_INVALID) {
         return -EINVAL;
     }
     int idx = get_feature_index(name);
-    if (idx < 0)
-    {
+    if (idx < 0) {
         return -EINVAL;
     }
     f = &_feature_list.features[idx];
-    if ((!f) || (!f->setter))
-    {
+    if ((!f) || (!f->setter)) {
         return -EPERM;
     }
-    if (f->type != device->type)
-    {
+    if (f->type != device->type) {
         return -ENODEV;
     }
     err = get_device_access(device);
-    if (err < 0)
-    {
+    if (err < 0) {
         return err;
     }
     return f->setter(device, value);
 }
 
-int likwid_sysft_modify(const LikwidSysFeature* feature, const LikwidDevice_t device, const char* value)
+int likwid_sysft_modify(
+    const LikwidSysFeature *feature, const LikwidDevice_t device, const char *value)
 {
     int len = strlen(feature->name) + strlen(feature->category) + 2;
     char real[len];
@@ -339,28 +297,25 @@ int likwid_sysft_modify(const LikwidSysFeature* feature, const LikwidDevice_t de
 
 void likwid_sysft_finalize(void)
 {
-    if (_feature_list.num_features > 0)
-    {
+    if (_feature_list.num_features > 0) {
         _free_feature_list(&_feature_list);
     }
 }
 
-int likwid_sysft_list(LikwidSysFeatureList* list)
+int likwid_sysft_list(LikwidSysFeatureList *list)
 {
-    if (!list)
-    {
+    if (!list) {
         return -EINVAL;
     }
     return likwid_sysft_internal_to_external_feature_list(&_feature_list, list);
 }
 
-void likwid_sysft_list_return(LikwidSysFeatureList* list)
+void likwid_sysft_list_return(LikwidSysFeatureList *list)
 {
-    if (!list || !list->features)
-    {
+    if (!list || !list->features) {
         return;
     }
     likwid_sysft_free_feature_list(list);
-    list->features = NULL;
+    list->features     = NULL;
     list->num_features = 0;
 }

@@ -35,19 +35,18 @@
 #ifndef CALCULATOR_STACK_H
 #define CALCULATOR_STACK_H
 
-typedef struct
-{
+typedef struct {
     void **content;
     int size;
     int top;
 } Stack;
 
-#define FRESH_STACK {NULL, 0, -1}
+#define FRESH_STACK { NULL, 0, -1 }
 
 void stackInit(Stack *s, int size);
-void stackPush(Stack *s, void* val);
-void* stackTop(Stack *s);
-void* stackPop(Stack *s);
+void stackPush(Stack *s, void *val);
+void *stackTop(Stack *s);
+void *stackPop(Stack *s);
 int stackSize(Stack *s);
 void stackFree(Stack *s);
 

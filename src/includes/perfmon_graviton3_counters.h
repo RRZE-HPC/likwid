@@ -33,19 +33,19 @@
 #define NUM_COUNTERS_GRAVITON3 6
 
 static RegisterMap graviton3_counter_map[NUM_COUNTERS_GRAVITON3] = {
-    {"PMC0", PMC0, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC1", PMC1, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC2", PMC2, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC3", PMC3, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC4", PMC4, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC5", PMC5, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    { "PMC0", PMC0, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC1", PMC1, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC2", PMC2, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC3", PMC3, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC4", PMC4, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC5", PMC5, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
 };
 
 static BoxMap graviton3_box_map[NUM_UNITS] = {
-    [PMC] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
+    [PMC] = { 0, 0, 0, 0, 0, 0, 32, 0, 0 },
 };
 
-static char* graviton3_translate_types[NUM_UNITS] = {
+static char *graviton3_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/armv8_pmuv3_0",
 };
 

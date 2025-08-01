@@ -30,124 +30,107 @@
  * =======================================================================================
  */
 
-#include <bstrlib.h>
-#include <likwid.h>
-#include <types.h>
-#include <error.h>
-#include <topology.h>
 #include <access.h>
-#include <registers.h>
+#include <bstrlib.h>
+#include <error.h>
+#include <likwid.h>
 #include <lock.h>
+#include <registers.h>
+#include <topology.h>
+#include <types.h>
 
 #include <frequency.h>
 
-
-static int _freq_getUncoreMinMax(const int socket_id, int *cpuId, double* min, double* max)
+static int _freq_getUncoreMinMax(const int socket_id, int *cpuId, double *min, double *max)
 {
     int cpu = -1;
-    *cpuId = -1;
-    *min = 0;
-    *max = 0;
-    for (unsigned i=0; i<cpuid_topology.numHWThreads; i++)
-    {
-        if (cpuid_topology.threadPool[i].packageId == (unsigned)socket_id)
-        {
+    *cpuId  = -1;
+    *min    = 0;
+    *max    = 0;
+    for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++) {
+        if (cpuid_topology.threadPool[i].packageId == (unsigned)socket_id) {
             cpu = cpuid_topology.threadPool[i].apicId;
             break;
         }
     }
-    if (cpu < 0)
-    {
+    if (cpu < 0) {
         fprintf(stderr, "Unknown socket ID %d\n", socket_id);
         return -ENODEV;
     }
 
-    char* avail = freq_getAvailFreq(cpu);
-    if (!avail)
-    {
+    char *avail = freq_getAvailFreq(cpu);
+    if (!avail) {
         avail = malloc(1000 * sizeof(char));
-        if (avail)
-        {
-            int ret = snprintf(avail, 999, "%lu %lu", freq_getConfCpuClockMin(cpu)/1000000, freq_getConfCpuClockMax(cpu)/1000000);
-            if (ret > 0)
-            {
+        if (avail) {
+            int ret = snprintf(avail,
+                999,
+                "%lu %lu",
+                freq_getConfCpuClockMin(cpu) / 1000000,
+                freq_getConfCpuClockMax(cpu) / 1000000);
+            if (ret > 0) {
                 avail[ret] = '\0';
-            }
-            else
-            {
+            } else {
                 free(avail);
                 fprintf(stderr, "Failed to get available CPU frequencies\n");
                 return -EINVAL;
             }
-        }
-        else
-        {
+        } else {
             fprintf(stderr, "Failed to get available CPU frequencies\n");
             return -EINVAL;
         }
     }
 
-    double dmin = 0.0;
-    double dmax = 0.0;
+    double dmin    = 0.0;
+    double dmax    = 0.0;
     bstring bavail = bfromcstr(avail);
     free(avail);
-    struct bstrList* bavail_list;
+    struct bstrList *bavail_list;
     bavail_list = bsplit(bavail, ' ');
     bdestroy(bavail);
-    if (bavail_list->qty < 2)
-    {
+    if (bavail_list->qty < 2) {
         fprintf(stderr, "Failed to read minimal and maximal frequencies\n");
         bstrListDestroy(bavail_list);
         return -EINVAL;
     }
-    if (blength(bavail_list->entry[0]) > 0)
-    {
-        char* tptr = NULL;
+    if (blength(bavail_list->entry[0]) > 0) {
+        char *tptr = NULL;
 #pragma GCC diagnostic ignored "-Wnonnull"
         dmin = strtod(bdata(bavail_list->entry[0]), &tptr);
-        if (bdata(bavail_list->entry[0]) != tptr)
-        {
+        if (bdata(bavail_list->entry[0]) != tptr) {
             dmin *= 1000;
-        }
-        else
-        {
-            fprintf(stderr, "Problem converting %s to double for comparison with given freq.\n", bdata(bavail_list->entry[0]));
+        } else {
+            fprintf(stderr,
+                "Problem converting %s to double for comparison with given freq.\n",
+                bdata(bavail_list->entry[0]));
             return -EINVAL;
         }
     }
-    if (blength(bavail_list->entry[bavail_list->qty-1]) > 0)
-    {
-        char* tptr = NULL;
-        dmax = strtod(bdata(bavail_list->entry[bavail_list->qty-1]), &tptr);
-        if (bdata(bavail_list->entry[bavail_list->qty-1]) != tptr)
-        {
+    if (blength(bavail_list->entry[bavail_list->qty - 1]) > 0) {
+        char *tptr = NULL;
+        dmax       = strtod(bdata(bavail_list->entry[bavail_list->qty - 1]), &tptr);
+        if (bdata(bavail_list->entry[bavail_list->qty - 1]) != tptr) {
             dmax *= 1000;
-        }
-        else
-        {
-            fprintf(stderr, "Problem converting %s to double for comparison with given freq.\n", bdata(bavail_list->entry[bavail_list->qty-1]));
+        } else {
+            fprintf(stderr,
+                "Problem converting %s to double for comparison with given freq.\n",
+                bdata(bavail_list->entry[bavail_list->qty - 1]));
             return -EINVAL;
         }
     }
     bstrListDestroy(bavail_list);
 
     *cpuId = cpu;
-    if (dmin < dmax)
-    {
+    if (dmin < dmax) {
         *min = dmin;
         *max = dmax;
-    }
-    else
-    {
+    } else {
         *max = dmin;
         *min = dmax;
     }
 
     power_init(cpu);
-    if (power_info.turbo.numSteps > 0)
-    {
-        if (power_info.turbo.steps[0] > *max)
-        {
+    if (power_info.turbo.numSteps > 0) {
+        if (power_info.turbo.steps[0] > *max) {
             *max = power_info.turbo.steps[0];
         }
     }
@@ -155,66 +138,56 @@ static int _freq_getUncoreMinMax(const int socket_id, int *cpuId, double* min, d
     return 0;
 }
 
-
 int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
 {
-    int err = 0;
+    int err     = 0;
     int own_hpm = 0;
-    int cpuId = -1;
-    uint64_t f = freq / 100;
+    int cpuId   = -1;
+    uint64_t f  = freq / 100;
     double fmin, fmax;
-    if (!lock_check())
-    {
-        fprintf(stderr,"Access to frequency backend is locked.\n");
+    if (!lock_check()) {
+        fprintf(stderr, "Access to frequency backend is locked.\n");
         return -EPERM;
     }
-    if (isAMD())
-    {
+    if (isAMD()) {
         return 0;
     }
     err = _freq_getUncoreMinMax(socket_id, &cpuId, &fmin, &fmax);
-    if (err < 0)
-    {
+    if (err < 0) {
         return err;
     }
-    if (freq < (uint64_t)fmin)
-    {
+    if (freq < (uint64_t)fmin) {
         ERROR_PRINT("Given frequency %lu MHz lower than system limit of %.0f MHz", freq, fmin);
         return -EINVAL;
     }
-    if (freq > (uint64_t)fmax)
-    {
+    if (freq > (uint64_t)fmax) {
         ERROR_PRINT("Given frequency %lu MHz higher than system limit of %.0f MHz", freq, fmax);
         return -EINVAL;
     }
 #ifdef LIKWID_USE_PERFEVENT
-    fprintf(stderr,"Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
+    fprintf(stderr, "Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
     return 0;
 #else
-    if (!HPMinitialized())
-    {
+    if (!HPMinitialized()) {
         HPMinit();
         own_hpm = 1;
     }
     err = HPMaddThread(cpuId);
-    if (err != 0)
-    {
+    if (err != 0) {
         ERROR_PRINT("Cannot get access to MSRs");
         return 0;
     }
 
     uint64_t tmp = 0x0ULL;
-    err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
-    if (err)
-    {
+    err          = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
+    if (err) {
         //ERROR_PRINT("Cannot read register 0x%X on CPU %d", MSR_UNCORE_FREQ, cpuId);
         return err;
     }
     tmp &= ~(0xFF00);
-    tmp |= (f<<8);
+    tmp |= (f << 8);
     err = HPMwrite(cpuId, MSR_DEV, MSR_UNCORE_FREQ, tmp);
-    if (err)
-    {
+    if (err) {
         ERROR_PRINT("Cannot write register 0x%X on CPU %d", MSR_UNCORE_FREQ, cpuId);
         return err;
     }
@@ -225,61 +198,50 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
 #endif
 }
 
-
-
-
 uint64_t freq_getUncoreFreqMin(const int socket_id)
 {
-    int err = 0;
+    int err     = 0;
     int own_hpm = 0;
-    int cpuId = -1;
+    int cpuId   = -1;
 
-    if (!lock_check())
-    {
-        fprintf(stderr,"Access to frequency backend is locked.\n");
+    if (!lock_check()) {
+        fprintf(stderr, "Access to frequency backend is locked.\n");
         return 0;
     }
-    if (isAMD())
-    {
+    if (isAMD()) {
         return 0;
     }
-    for (unsigned i=0; i<cpuid_topology.numHWThreads; i++)
-    {
-        if (cpuid_topology.threadPool[i].packageId == (unsigned)socket_id)
-        {
+    for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++) {
+        if (cpuid_topology.threadPool[i].packageId == (unsigned)socket_id) {
             cpuId = cpuid_topology.threadPool[i].apicId;
             break;
         }
     }
-    if (cpuId < 0)
-    {
+    if (cpuId < 0) {
         ERROR_PRINT("Unknown socket ID %d", socket_id);
         return 0;
     }
 #ifdef LIKWID_USE_PERFEVENT
-    fprintf(stderr,"Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
+    fprintf(stderr, "Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
     return 0;
 #else
-    if (!HPMinitialized())
-    {
+    if (!HPMinitialized()) {
         HPMinit();
         own_hpm = 1;
     }
     err = HPMaddThread(cpuId);
-    if (err != 0)
-    {
+    if (err != 0) {
         ERROR_PRINT("Cannot get access to MSRs");
         return 0;
     }
 
     uint64_t tmp = 0x0ULL;
-    err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
-    if (err)
-    {
+    err          = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
+    if (err) {
         //ERROR_PRINT("Cannot read register 0x%X on CPU %d", MSR_UNCORE_FREQ, cpuId);
         return 0;
     }
-    tmp = ((tmp>>8) & 0xFFULL) * 100;
+    tmp = ((tmp >> 8) & 0xFFULL) * 100;
 
     if (own_hpm)
         HPMfinalize();
@@ -289,63 +251,54 @@ uint64_t freq_getUncoreFreqMin(const int socket_id)
 
 int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
 {
-    int err = 0;
+    int err     = 0;
     int own_hpm = 0;
-    int cpuId = -1;
-    uint64_t f = freq / 100;
+    int cpuId   = -1;
+    uint64_t f  = freq / 100;
     double fmin, fmax;
-    if (!lock_check())
-    {
-        fprintf(stderr,"Access to frequency backend is locked.\n");
+    if (!lock_check()) {
+        fprintf(stderr, "Access to frequency backend is locked.\n");
         return -EPERM;
     }
-    if (isAMD())
-    {
+    if (isAMD()) {
         return 0;
     }
     err = _freq_getUncoreMinMax(socket_id, &cpuId, &fmin, &fmax);
-    if (err < 0)
-    {
+    if (err < 0) {
         return err;
     }
-    if (freq < (uint64_t)fmin)
-    {
+    if (freq < (uint64_t)fmin) {
         ERROR_PRINT("Given frequency %lu MHz lower than system limit of %.0f MHz", freq, fmin);
         return -EINVAL;
     }
-    if (freq > (uint64_t)fmax)
-    {
+    if (freq > (uint64_t)fmax) {
         ERROR_PRINT("Given frequency %lu MHz higher than system limit of %.0f MHz", freq, fmax);
         return -EINVAL;
     }
 #ifdef LIKWID_USE_PERFEVENT
-    fprintf(stderr,"Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
+    fprintf(stderr, "Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
     return -1;
 #else
-    if (!HPMinitialized())
-    {
+    if (!HPMinitialized()) {
         HPMinit();
         own_hpm = 1;
     }
     err = HPMaddThread(cpuId);
-    if (err != 0)
-    {
+    if (err != 0) {
         ERROR_PRINT("Cannot get access to MSRs");
         return 0;
     }
 
     uint64_t tmp = 0x0ULL;
-    err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
-    if (err)
-    {
+    err          = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
+    if (err) {
         //ERROR_PRINT("Cannot read register 0x%X on CPU %d", MSR_UNCORE_FREQ, cpuId);
         return err;
     }
     tmp &= ~(0xFFULL);
     tmp |= (f & 0xFFULL);
     err = HPMwrite(cpuId, MSR_DEV, MSR_UNCORE_FREQ, tmp);
-    if (err)
-    {
+    if (err) {
         ERROR_PRINT("Cannot write register 0x%X on CPU %d", MSR_UNCORE_FREQ, cpuId);
         return err;
     }
@@ -358,53 +311,45 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
 
 uint64_t freq_getUncoreFreqMax(const int socket_id)
 {
-    int err = 0;
+    int err     = 0;
     int own_hpm = 0;
-    int cpuId = -1;
+    int cpuId   = -1;
 
-    if (!lock_check())
-    {
-        fprintf(stderr,"Access to frequency backend is locked.\n");
+    if (!lock_check()) {
+        fprintf(stderr, "Access to frequency backend is locked.\n");
         return 0;
     }
 
-    if (isAMD())
-    {
+    if (isAMD()) {
         return 0;
     }
-    for (unsigned i=0; i<cpuid_topology.numHWThreads; i++)
-    {
-        if (cpuid_topology.threadPool[i].packageId == (unsigned)socket_id)
-        {
+    for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++) {
+        if (cpuid_topology.threadPool[i].packageId == (unsigned)socket_id) {
             cpuId = cpuid_topology.threadPool[i].apicId;
             break;
         }
     }
-    if (cpuId < 0)
-    {
+    if (cpuId < 0) {
         ERROR_PRINT("Unknown socket ID %d", socket_id);
         return 0;
     }
 #ifdef LIKWID_USE_PERFEVENT
-    fprintf(stderr,"Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
+    fprintf(stderr, "Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
     return 0;
 #else
-    if (!HPMinitialized())
-    {
+    if (!HPMinitialized()) {
         HPMinit();
         own_hpm = 1;
     }
     err = HPMaddThread(cpuId);
-    if (err != 0)
-    {
+    if (err != 0) {
         ERROR_PRINT("Cannot get access to MSRs");
         return 0;
     }
 
     uint64_t tmp = 0x0ULL;
-    err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
-    if (err)
-    {
+    err          = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
+    if (err) {
         //ERROR_PRINT("Cannot read register 0x%X on CPU %d", MSR_UNCORE_FREQ, cpuId);
         return 0;
     }
@@ -418,52 +363,44 @@ uint64_t freq_getUncoreFreqMax(const int socket_id)
 
 uint64_t freq_getUncoreFreqCur(const int socket_id)
 {
-    int err = 0;
+    int err     = 0;
     int own_hpm = 0;
-    int cpuId = -1;
+    int cpuId   = -1;
 
-    if (!lock_check())
-    {
-        fprintf(stderr,"Access to frequency backend is locked.\n");
+    if (!lock_check()) {
+        fprintf(stderr, "Access to frequency backend is locked.\n");
         return 0;
     }
-    if (isAMD())
-    {
+    if (isAMD()) {
         return 0;
     }
-    for (unsigned i=0; i<cpuid_topology.numHWThreads; i++)
-    {
-        if (cpuid_topology.threadPool[i].packageId == (unsigned)socket_id)
-        {
+    for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++) {
+        if (cpuid_topology.threadPool[i].packageId == (unsigned)socket_id) {
             cpuId = cpuid_topology.threadPool[i].apicId;
             break;
         }
     }
-    if (cpuId < 0)
-    {
+    if (cpuId < 0) {
         ERROR_PRINT("Unknown socket ID %d", socket_id);
         return 0;
     }
 #ifdef LIKWID_USE_PERFEVENT
-    fprintf(stderr,"Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
+    fprintf(stderr, "Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
     return 0;
 #else
-    if (!HPMinitialized())
-    {
+    if (!HPMinitialized()) {
         HPMinit();
         own_hpm = 1;
-        err = HPMaddThread(cpuId);
-        if (err != 0)
-        {
+        err     = HPMaddThread(cpuId);
+        if (err != 0) {
             ERROR_PRINT("Cannot get access to MSRs");
             return 0;
         }
     }
 
     uint64_t tmp = 0x0ULL;
-    err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ_READ, &tmp);
-    if (err)
-    {
+    err          = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ_READ, &tmp);
+    if (err) {
         //ERROR_PRINT("Cannot read register 0x%X on CPU %d", MSR_UNCORE_FREQ_READ, cpuId);
         return 0;
     }

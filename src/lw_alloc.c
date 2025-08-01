@@ -1,10 +1,11 @@
 #include "lw_alloc.h"
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-void *lw_malloc(size_t size) {
+void *lw_malloc(size_t size)
+{
     void *retval = malloc(size);
     if (!retval) {
         perror("malloc");
@@ -13,7 +14,8 @@ void *lw_malloc(size_t size) {
     return retval;
 }
 
-void *lw_calloc(size_t nmemb, size_t size) {
+void *lw_calloc(size_t nmemb, size_t size)
+{
     void *retval = calloc(nmemb, size);
     if (!retval) {
         perror("calloc");
@@ -22,7 +24,8 @@ void *lw_calloc(size_t nmemb, size_t size) {
     return retval;
 }
 
-void *lw_realloc(void *ptr, size_t size) {
+void *lw_realloc(void *ptr, size_t size)
+{
     void *retval = realloc(ptr, size);
     if (!retval) {
         perror("realloc");
@@ -31,7 +34,8 @@ void *lw_realloc(void *ptr, size_t size) {
     return retval;
 }
 
-char *lw_strdup(const char *s) {
+char *lw_strdup(const char *s)
+{
     char *retval = strdup(s);
     if (!retval) {
         perror("strdup");
@@ -40,7 +44,8 @@ char *lw_strdup(const char *s) {
     return retval;
 }
 
-char *lw_strndup(const char *s, size_t size) {
+char *lw_strndup(const char *s, size_t size)
+{
     char *retval = strndup(s, size);
     if (!retval) {
         perror("strndup");
@@ -49,7 +54,8 @@ char *lw_strndup(const char *s, size_t size) {
     return retval;
 }
 
-char *lw_asprintf(const char *__restrict__ fmt, ...) {
+char *lw_asprintf(const char *__restrict__ fmt, ...)
+{
     va_list ap;
     va_start(ap, fmt);
     char *retval = lw_vasprintf(fmt, ap);
@@ -57,7 +63,8 @@ char *lw_asprintf(const char *__restrict__ fmt, ...) {
     return retval;
 }
 
-char *lw_vasprintf(const char *__restrict__ fmt, va_list ap) {
+char *lw_vasprintf(const char *__restrict__ fmt, va_list ap)
+{
     va_list ap2;
     va_copy(ap2, ap);
 
@@ -69,7 +76,7 @@ char *lw_vasprintf(const char *__restrict__ fmt, va_list ap) {
 
     const size_t bytes = (size_t)len + 1;
 
-    char *retval = lw_malloc(bytes);
+    char *retval       = lw_malloc(bytes);
     vsnprintf(retval, bytes, fmt, ap2);
     return retval;
 }

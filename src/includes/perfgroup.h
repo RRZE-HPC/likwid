@@ -48,9 +48,9 @@ typedef enum {
 extern const char *groupFileSectionNames[MAX_GROUP_FILE_SECTIONS];
 
 typedef struct {
-    int counters; /*!< \brief Number of entries in the list */
-    struct bstrList* cnames; /*!< \brief List of counter names */
-    struct bstrList* cvalues; /*!< \brief List of counter values */
+    int counters;             /*!< \brief Number of entries in the list */
+    struct bstrList *cnames;  /*!< \brief List of counter names */
+    struct bstrList *cvalues; /*!< \brief List of counter values */
 } CounterList;
 
 //extern int get_groups(const char* grouppath, const char* architecture, char*** groupnames, char*** groupshort, char*** grouplong);
@@ -65,15 +65,11 @@ typedef struct {
 //void put_longInfo(char* linfo);
 //extern void return_group(GroupInfo* ginfo);
 
+extern void init_clist(CounterList *clist);
+extern int add_to_clist(CounterList *clist, char *counter, double result);
+extern int update_clist(CounterList *clist, char *counter, double result);
+extern void destroy_clist(CounterList *clist);
 
-extern void init_clist(CounterList* clist);
-extern int add_to_clist(CounterList* clist, char* counter, double result);
-extern int update_clist(CounterList* clist, char* counter, double result);
-extern void destroy_clist(CounterList* clist);
-
-extern int calc_metric(char* formula, CounterList* clist, double *result);
-
-
-
+extern int calc_metric(char *formula, CounterList *clist, double *result);
 
 #endif /* PERFGROUP_H */

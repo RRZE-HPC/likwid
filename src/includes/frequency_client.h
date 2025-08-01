@@ -31,14 +31,9 @@
 #ifndef LIKWID_FREQUENCY_CLIENT_H
 #define LIKWID_FREQUENCY_CLIENT_H
 
-#define LIKWID_FREQUENCY_MAX_DATA_LENGTH   200
+#define LIKWID_FREQUENCY_MAX_DATA_LENGTH 200
 
-typedef enum {
-    FREQ_READ = 0,
-    FREQ_WRITE,
-    FREQ_EXIT
-} FreqDataRecordType;
-
+typedef enum { FREQ_READ = 0, FREQ_WRITE, FREQ_EXIT } FreqDataRecordType;
 
 typedef enum {
     FREQ_LOC_MIN = 0,
@@ -50,7 +45,7 @@ typedef enum {
     FREQ_LOC_CONF_MIN,
     FREQ_LOC_CONF_MAX,
     MAX_FREQ_LOCS
-}FreqDataRecordLocation;
+} FreqDataRecordLocation;
 
 typedef enum {
     FREQ_ERR_NONE = 0,

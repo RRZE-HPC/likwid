@@ -30,9 +30,9 @@
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
-#include <types.h>
-#include <likwid.h>
 #include <error.h>
+#include <likwid.h>
+#include <types.h>
 
 extern Likwid_Configuration config;
 extern int init_config;

@@ -46,14 +46,13 @@ typedef struct {
 } RocmonEventResult;
 
 typedef struct {
-    RocmonEventResult* results; // First rocprofiler results, then SMI results
+    RocmonEventResult *results; // First rocprofiler results, then SMI results
     int numResults;
 } RocmonEventResultList;
 
-
-
 struct RocmonSmiEvent_struct;
-typedef int (*RocmonSmiMeasureFunc)(int deviceId, struct RocmonSmiEvent_struct* event, RocmonEventResult* result);
+typedef int (*RocmonSmiMeasureFunc)(
+    int deviceId, struct RocmonSmiEvent_struct *event, RocmonEventResult *result);
 
 typedef enum {
     ROCMON_SMI_EVENT_TYPE_NORMAL = 0,
@@ -73,7 +72,7 @@ typedef struct RocmonSmiEvent_struct {
 } RocmonSmiEvent;
 
 typedef struct {
-    RocmonSmiEvent* entries;
+    RocmonSmiEvent *entries;
     int numEntries;
 } RocmonSmiEventList;
 
@@ -81,25 +80,25 @@ typedef struct {
     int deviceId; // LIKWID device id
 
     hsa_agent_t hsa_agent;  // HSA agent handle for this device
-    rocprofiler_t* context; // Rocprofiler context (has activeEvents configured)
+    rocprofiler_t *context; // Rocprofiler context (has activeEvents configured)
 
     // Available rocprofiler metrics
-    rocprofiler_info_data_t* rocMetrics;
+    rocprofiler_info_data_t *rocMetrics;
     int numRocMetrics;
 
     // Available ROCm SMI events
     Map_t smiMetrics;
 
     // Currently configured rocprofiler events (bound to context)
-    rocprofiler_feature_t* activeRocEvents;
+    rocprofiler_feature_t *activeRocEvents;
     int numActiveRocEvents;
 
     // Currently configured ROCm SMI events
-    RocmonSmiEvent* activeSmiEvents;
+    RocmonSmiEvent *activeSmiEvents;
     int numActiveSmiEvents;
 
     // Results for all events in all event sets
-    RocmonEventResultList* groupResults;
+    RocmonEventResultList *groupResults;
     int numGroupResults;
 
     // Timestamps in ns
@@ -112,14 +111,14 @@ typedef struct {
 
 typedef struct {
     // Event Groups
-    GroupInfo   *groups;
-    int         numGroups;       // Number of allocated groups
-    int         numActiveGroups; // Number of used groups
-    int         activeGroup;     // Currently active group
+    GroupInfo *groups;
+    int numGroups;       // Number of allocated groups
+    int numActiveGroups; // Number of used groups
+    int activeGroup;     // Currently active group
 
     // Devices (HSA agents)
-    RocmonDevice    *devices;
-    int             numDevices;
+    RocmonDevice *devices;
+    int numDevices;
 
     // System information
     long double hsa_timestamp_factor; // hsa_timestamp * hsa_timestamp_factor = timestamp_in_ns
@@ -130,15 +129,14 @@ typedef struct {
 
 extern RocmonContext *rocmon_context;
 
-
 typedef struct {
-    bstring  tag;
+    bstring tag;
     int groupID;
     int gpuCount;
     int eventCount;
-    double*  time;
-    uint32_t*  count;
-    int* gpulist;
-    double** counters;
+    double *time;
+    uint32_t *count;
+    int *gpulist;
+    double **counters;
 } LikwidRocmResults;
 #endif /* LIKWID_ROCMON_TYPES_H */

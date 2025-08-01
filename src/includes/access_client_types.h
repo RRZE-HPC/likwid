@@ -30,25 +30,20 @@
 #ifndef ACCESSCLIENT_TYPES_H
 #define ACCESSCLIENT_TYPES_H
 
-#include <stdint.h>
 #include <pci_types.h>
+#include <stdint.h>
+
+typedef enum { DAEMON_READ = 0, DAEMON_WRITE, DAEMON_CHECK, DAEMON_EXIT } AccessType;
 
 typedef enum {
-    DAEMON_READ = 0,
-    DAEMON_WRITE,
-    DAEMON_CHECK,
-    DAEMON_EXIT
-} AccessType;
-
-typedef enum {
-    ERR_NOERROR = 0,  /* no error */
-    ERR_UNKNOWN,      /* unknown command */
-    ERR_RESTREG,      /* attempt to access restricted MSR */
-    ERR_OPENFAIL,     /* failure to open msr files */
-    ERR_RWFAIL,       /* failure to read/write msr */
-    ERR_DAEMONBUSY,   /* daemon already has another client */
-    ERR_NODEV,        /* No such device */
-    ERR_LOCKED        /* Global lock is set */
+    ERR_NOERROR = 0, /* no error */
+    ERR_UNKNOWN,     /* unknown command */
+    ERR_RESTREG,     /* attempt to access restricted MSR */
+    ERR_OPENFAIL,    /* failure to open msr files */
+    ERR_RWFAIL,      /* failure to read/write msr */
+    ERR_DAEMONBUSY,  /* daemon already has another client */
+    ERR_NODEV,       /* No such device */
+    ERR_LOCKED       /* Global lock is set */
 } AccessErrorType;
 
 typedef struct {

@@ -29,20 +29,18 @@
  * =======================================================================================
  */
 
-#include <types.h>
-#include <registers.h>
+#include <access.h>
 #include <bitUtil.h>
 #include <error.h>
-#include <access.h>
+#include <registers.h>
+#include <types.h>
 
 #include <voltage.h>
 
-int
-voltage_read(int cpuId, uint64_t *data)
+int voltage_read(int cpuId, uint64_t *data)
 {
     uint64_t result = 0;
-    if (HPMread(cpuId, MSR_DEV, MSR_PERF_STATUS, &result))
-    {
+    if (HPMread(cpuId, MSR_DEV, MSR_PERF_STATUS, &result)) {
         *data = 0;
         return -EIO;
     }
@@ -50,14 +48,12 @@ voltage_read(int cpuId, uint64_t *data)
     return 0;
 }
 
-int
-voltage_tread(int socket_fd, int cpuId, uint64_t *data)
+int voltage_tread(int socket_fd, int cpuId, uint64_t *data)
 {
     (void)socket_fd;
 
     uint64_t result = 0;
-    if (HPMread(cpuId, MSR_DEV, MSR_PERF_STATUS, &result))
-    {
+    if (HPMread(cpuId, MSR_DEV, MSR_PERF_STATUS, &result)) {
         *data = 0;
         return -EIO;
     }
@@ -65,9 +61,7 @@ voltage_tread(int socket_fd, int cpuId, uint64_t *data)
     return 0;
 }
 
-double
-voltage_value(uint64_t raw_value)
+double voltage_value(uint64_t raw_value)
 {
     return (double)(raw_value) / 8192.0;
 }
-

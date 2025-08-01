@@ -30,22 +30,21 @@
 #ifndef LOCK_H
 #define LOCK_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <types.h>
+#include <unistd.h>
 
 #define LOCK_INIT -1
 
-static inline int
-lock_acquire(int* var, int newval)
+static inline int lock_acquire(int *var, int newval)
 {
     int oldval = LOCK_INIT;
-    return __sync_bool_compare_and_swap (var, oldval, newval);
+    return __sync_bool_compare_and_swap(var, oldval, newval);
 }
 
 int lock_check(void);

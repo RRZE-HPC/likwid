@@ -562,12 +562,12 @@ typedef struct {
     char *name;
     char *likwid_name;
     uint32_t devid;
-    int  online;
+    int online;
 } PciDevice;
 
 typedef struct {
-    char* name;
-    char* desc;
+    char *name;
+    char *desc;
 } PciType;
 
 extern const PciType pci_types[MAX_NUM_PCI_TYPES];

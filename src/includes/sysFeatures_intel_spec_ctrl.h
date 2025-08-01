@@ -30,7 +30,6 @@
  * =======================================================================================
  */
 
-
 #ifndef HWFEATURES_X86_INTEL_SPEC_CTRL_H
 #define HWFEATURES_X86_INTEL_SPEC_CTRL_H
 

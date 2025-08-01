@@ -77,10 +77,10 @@ static int freq_getter(LikwidDevice_t device, char **value)
     uint32_t eax = 0x15, ebx, ecx = 0, edx;
     CPUID(eax, ebx, ecx, edx);
 
-    const double den = eax;
-    const double num = ebx;
+    const double den           = eax;
+    const double num           = ebx;
     const double crystal_clock = ecx;
-    const double freq = crystal_clock * num / den;
+    const double freq          = crystal_clock * num / den;
     return likwid_sysft_double_to_string(freq, value);
 }
 
@@ -112,14 +112,34 @@ static int invariant_getter(LikwidDevice_t device, char **value)
 }
 
 static _SysFeature freq_features[] = {
-    {"denominator", "tsc", "Denominator of Time Stamp Counter ratio", denominator_getter, NULL, DEVICE_TYPE_SOCKET, ratio_tester, NULL},
-    {"numerator", "tsc", "Numerator of Time Stamp Counter ratio", numerator_getter, NULL, DEVICE_TYPE_SOCKET, ratio_tester, NULL},
-    {"crystal_freq", "tsc", "Crystal frequency of Time Stamp Counter", crystal_freq_getter, NULL, DEVICE_TYPE_SOCKET, crystal_freq_tester, "Hz"},
-    {"freq", "tsc", "Effective frequency of Time Stamp Counter", freq_getter, NULL, DEVICE_TYPE_SOCKET, freq_tester, "Hz"},
-    {"invariant", "tsc", "Time Stamp Counter operates at a fixed frequency", invariant_getter, NULL, DEVICE_TYPE_SOCKET, invariant_tester, NULL},
+    { "denominator",
+     "tsc", "Denominator of Time Stamp Counter ratio",
+     denominator_getter,  NULL,
+     DEVICE_TYPE_SOCKET, ratio_tester,
+     NULL },
+    { "numerator",
+     "tsc", "Numerator of Time Stamp Counter ratio",
+     numerator_getter,    NULL,
+     DEVICE_TYPE_SOCKET, ratio_tester,
+     NULL },
+    { "crystal_freq",
+     "tsc", "Crystal frequency of Time Stamp Counter",
+     crystal_freq_getter, NULL,
+     DEVICE_TYPE_SOCKET, crystal_freq_tester,
+     "Hz" },
+    { "freq",
+     "tsc", "Effective frequency of Time Stamp Counter",
+     freq_getter,         NULL,
+     DEVICE_TYPE_SOCKET, freq_tester,
+     "Hz" },
+    { "invariant",
+     "tsc", "Time Stamp Counter operates at a fixed frequency",
+     invariant_getter,    NULL,
+     DEVICE_TYPE_SOCKET, invariant_tester,
+     NULL },
 };
 
 const _SysFeatureList likwid_sysft_x86_cpu_freq_feature_list = {
     .num_features = ARRAY_COUNT(freq_features),
-    .features = freq_features,
+    .features     = freq_features,
 };
