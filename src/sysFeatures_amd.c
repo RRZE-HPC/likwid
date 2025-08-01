@@ -153,6 +153,7 @@ static int amd_cpu_up_down_setter(const LikwidDevice_t device, const char* value
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_PREFETCH_CONTROL, 5, true, value);
 }
 
+// clang-format off
 static _SysFeature amd_k19_cpu_prefetch_features[] = {
     {"l1_stream", "prefetch", "Stream prefetcher that uses history of memory access patterns to fetch additional sequential lines into L1 cache", amd_cpu_l1_stream_getter, amd_cpu_l1_stream_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"l1_stride", "prefetch", "Stride prefetcher that uses memory access history of individual instructions to fetch additional lines into L1 cache when each access is a constant distance from the previous", amd_cpu_l1_stride_getter, amd_cpu_l1_stride_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
@@ -160,6 +161,7 @@ static _SysFeature amd_k19_cpu_prefetch_features[] = {
     {"l2_stream", "prefetch", "Stream prefetcher that uses history of memory access patterns to fetch additional sequential lines into L2 cache", amd_cpu_l2_stream_getter, amd_cpu_l2_stream_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"up_down", "prefetch", "Prefetcher that uses memory access history to determine whether to fetch the next or previous line into L2 cache for all memory accesses", amd_cpu_up_down_getter, amd_cpu_up_down_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
 };
+// clang-format on
 
 static const _SysFeatureList amd_k19_cpu_prefetch_feature_list = {
     .num_features = ARRAY_COUNT(amd_k19_cpu_prefetch_features),
