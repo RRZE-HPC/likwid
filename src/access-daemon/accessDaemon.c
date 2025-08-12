@@ -1299,7 +1299,7 @@ allowed_amd1a_zen5(uint32_t reg)
     {
         return 1;
     }
-    else if (reg >= 0xC001080 && reg <= 0xC001087F)
+    else if (reg >= MSR_AMD1A_UMC_PERFEVTSEL0 && reg <= MSR_AMD1A_UMC_PMC63)
     {
         return 1;
     }
