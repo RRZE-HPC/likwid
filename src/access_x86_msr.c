@@ -141,7 +141,15 @@ access_x86_msr_init(const int cpu_id)
     //     rdpmc_works_fixed = test_rdpmc(cpu_id, (1<<30), 0);
     //     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for FIXED counters returned %d", rdpmc_works_fixed);
     // }
-    access_x86_rdpmc_init(cpu_id);
+
+    if (getenv("LIKWID_NO_RDPMC") == NULL)
+    {
+        access_x86_rdpmc_init(cpu_id);
+    }
+    else
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, "No initialization of RDPMC access module");
+    }
 
     sprintf(msr_file_name,"/dev/msr%d",cpu_id);
     fd = open(msr_file_name, O_RDWR);

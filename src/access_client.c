@@ -400,7 +400,14 @@ access_client_init(uint32_t cpu_id)
         }
     }
 #if defined(__x86_64__) || defined(__i386__)
-    access_x86_rdpmc_init(cpu_id);
+    if (getenv("LIKWID_NO_RDPMC") == NULL)
+    {
+        access_x86_rdpmc_init(cpu_id);
+    }
+    else
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, "No initialization of RDPMC access module");
+    }
 #endif
     if (masterPid != 0 && gettid() == masterPid)
     {
