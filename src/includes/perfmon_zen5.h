@@ -48,6 +48,56 @@ int perfmon_init_zen5(int cpu_id)
     return 0;
 }
 
+int zen5_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+{
+    uint64_t flags = 0x0ULL;
+
+    // per default LIKWID counts in user-space
+    flags |= (1ULL<<AMD_K17_PMC_USER_BIT);
+    flags |= ((event->umask & AMD_K17_PMC_UNIT_MASK) << AMD_K17_PMC_UNIT_SHIFT);
+    flags |= ((event->eventId & AMD_K17_PMC_EVSEL_MASK) << AMD_K17_PMC_EVSEL_SHIFT);
+    flags |= (((event->eventId >> 8) & AMD_K17_PMC_EVSEL_MASK2) << AMD_K17_PMC_EVSEL_SHIFT2);
+
+    // Currently no option for host/guest counting
+    if (event->numberOfOptions > 0)
+    {
+        for(uint64_t j=0;j<event->numberOfOptions;j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<AMD_K17_PMC_EDGE_BIT);
+                    break;
+                case EVENT_OPTION_COUNT_KERNEL:
+                    flags |= (1ULL<<AMD_K17_PMC_KERNEL_BIT);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<AMD_K17_PMC_INVERT_BIT);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= (event->options[j].value & AMD_K17_PMC_THRES_MASK) << AMD_K17_PMC_THRES_SHIFT;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    if (event->eventId == 0xFFF)
+    {
+        flags = 0x0ULL;
+        flags |= ((event->eventId & AMD_K17_PMC_EVSEL_MASK) << AMD_K17_PMC_EVSEL_SHIFT);
+        flags |= (((event->eventId >> 8) & AMD_K17_PMC_EVSEL_MASK2) << AMD_K17_PMC_EVSEL_SHIFT2);
+        flags |= (1ULL<<22);
+    }
+    if (flags != currentConfig[cpu_id][index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_PMC");
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[cpu_id][index] = flags;
+    }
+    return 0;
+}
+
 int zen5_umc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags = 0x0ULL;
@@ -104,7 +154,7 @@ int perfmon_setupCounterThread_zen5(int thread_id, PerfmonEventSet* eventSet)
         switch (type)
         {
             case PMC:
-                zen4_pmc_setup(cpu_id, index, event);
+                zen5_pmc_setup(cpu_id, index, event);
                 break;
             case CBOX0:
                 zen4_cache_setup(cpu_id, index, event);
