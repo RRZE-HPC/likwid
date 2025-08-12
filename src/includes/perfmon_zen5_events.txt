@@ -83,7 +83,6 @@ UMASK_RETIRED_SSE_AVX_FLOPS_MULT_DP_PACKED       0xA2
 UMASK_RETIRED_SSE_AVX_FLOPS_DIV_SQRT_DP_PACKED   0xA4
 UMASK_RETIRED_SSE_AVX_FLOPS_FMA_DP_PACKED        0xA8
 ### Events added by Thomas Gruber
-UMASK_RETIRED_SSE_AVX_FLOPS_ALL                  0xEF
 UMASK_RETIRED_SSE_AVX_FLOPS_ALL_BF16             0x2F
 UMASK_RETIRED_SSE_AVX_FLOPS_ALL_SP_SCALAR        0x4F
 UMASK_RETIRED_SSE_AVX_FLOPS_ALL_SP_PACKED        0x6F
@@ -97,6 +96,7 @@ UMASK_RETIRED_FP_OPS_BY_WIDTH_SCALAR        0x04
 UMASK_RETIRED_FP_OPS_BY_WIDTH_PACK128       0x08
 UMASK_RETIRED_FP_OPS_BY_WIDTH_PACK256       0x10
 UMASK_RETIRED_FP_OPS_BY_WIDTH_PACK512       0x20
+UMASK_RETIRED_FP_OPS_BY_WIDTH_ANY           0x3F
 
 EVENT_RETIRED_FP_OPS_BY_TYPE                0x0A PMC
 UMASK_RETIRED_FP_OPS_BY_TYPE_SCALAR_ADD     0x01
@@ -278,6 +278,12 @@ UMASK_ST_TO_LD_FWD                          0x00
 
 EVENT_ST_GLOBAL_VISIBLE_CANCELS                    0x37 PMC
 UMASK_ST_GLOBAL_VISIBLE_CANCELS_OLDER_ST_VISIBLE   0x01
+
+# Each increment represents an up to 32-byte access
+# Added by Thomas Gruber. Not documented by AMD for Zen5
+# but Zen4.
+EVENT_DATA_CACHE_ACCESSES                   0x40 PMC
+UMASK_DATA_CACHE_ACCESSES                   0x00
 
 EVENT_LS_MAB_ALLOC                          0x41 PMC
 UMASK_LS_MAB_ALLOC_LD_ST                    0x07
@@ -573,6 +579,14 @@ UMASK_REQUESTS_TO_L2_GRP1_CACHEABLE_IC_READ   0x10
 UMASK_REQUESTS_TO_L2_GRP1_LS_RD_BLOCK_C_S     0x20
 UMASK_REQUESTS_TO_L2_GRP1_RD_BLOCK_X          0x40
 UMASK_REQUESTS_TO_L2_GRP1_RD_BLOCK_L          0x80
+# Table 28: Guidance for Common Performance Statistics with Complex Event Selects
+# L2 Cache Access from L1 Data Cache Miss (including Prefetch) 
+# Event[0x43E060]
+UMASK_REQUESTS_TO_L2_GPR1_L1_MISS             0xE0
+# Table 28: Guidance for Common Performance Statistics with Complex Event Selects
+# All L2 Cache Accesses
+# Event[0x43F160]
+UMASK_REQUESTS_TO_L2_GRP1_RD_ANY              0xF1
 
 EVENT_REQUESTS_TO_L2_GRP2                     0x61 PMC
 UMASK_REQUESTS_TO_L2_GRP2_LS_READ_NC          0x20
@@ -680,7 +694,7 @@ UMASK_L3_XI_SAMPLED_LATENCY_REQUESTS_ANY                         0xFF
 EVENT_RAPL_CORE_ENERGY                    0x01 PWR0
 UMASK_RAPL_CORE_ENERGY                    0x00
 
-EVENT_RAPL_PKG_ENERGY                    0x01 PWR1
+EVENT_RAPL_PKG_ENERGY                    0x02 PWR1
 UMASK_RAPL_PKG_ENERGY                    0x00
 
 EVENT_RAPL_L3_ENERGY                     0x03 PWR2
