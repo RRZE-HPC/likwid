@@ -455,184 +455,164 @@ typedef struct CUpti_Profiler_Host_GetSubMetrics_Params
 //#endif
 
 #ifndef DECLARE_CUFUNC
-#ifndef CUAPIWEAK
-#define CUAPIWEAK __attribute__( ( weak ) )
-#endif
-#define DECLARE_CUFUNC(funcname, funcsig)                                      \
-  CUresult CUAPIWEAK funcname funcsig;                                         \
-  CUresult(*funcname##Ptr) funcsig;
+#define DECLARE_CUFUNC(funcname, ...) CUresult __attribute__((weak)) funcname(__VA_ARGS__);  static CUresult (*funcname##_ptr)(__VA_ARGS__);
 #endif
 
-DECLARE_CUFUNC(cuCtxGetCurrent, (CUcontext *));
-DECLARE_CUFUNC(cuCtxSetCurrent, (CUcontext));
-DECLARE_CUFUNC(cuCtxDestroy, (CUcontext));
-DECLARE_CUFUNC(cuDeviceGet, (CUdevice *, int));
-DECLARE_CUFUNC(cuDeviceGetCount, (int *));
-DECLARE_CUFUNC(cuDeviceGetName, (char *, int, CUdevice));
-DECLARE_CUFUNC(cuInit, (unsigned int));
-DECLARE_CUFUNC(cuCtxPopCurrent, (CUcontext * pctx));
-DECLARE_CUFUNC(cuCtxPushCurrent, (CUcontext pctx));
-DECLARE_CUFUNC(cuCtxSynchronize, ());
-DECLARE_CUFUNC(cuDeviceGetAttribute, (int *, CUdevice_attribute, CUdevice));
-DECLARE_CUFUNC(cuCtxCreate, (CUcontext *, unsigned int, CUdevice));
-DECLARE_CUFUNC(cuDevicePrimaryCtxRetain, (CUcontext *, CUdevice));
+DECLARE_CUFUNC(cuCtxGetCurrent, CUcontext *);
+DECLARE_CUFUNC(cuCtxSetCurrent, CUcontext);
+DECLARE_CUFUNC(cuCtxDestroy, CUcontext);
+DECLARE_CUFUNC(cuDeviceGet, CUdevice *, int);
+DECLARE_CUFUNC(cuDeviceGetCount, int *);
+DECLARE_CUFUNC(cuDeviceGetName, char *, int, CUdevice);
+DECLARE_CUFUNC(cuInit, unsigned int);
+DECLARE_CUFUNC(cuCtxPopCurrent, CUcontext * pctx);
+DECLARE_CUFUNC(cuCtxPushCurrent, CUcontext pctx);
+DECLARE_CUFUNC(cuCtxSynchronize);
+DECLARE_CUFUNC(cuDeviceGetAttribute, int *, CUdevice_attribute, CUdevice);
+DECLARE_CUFUNC(cuCtxCreate, CUcontext *, unsigned int, CUdevice);
+DECLARE_CUFUNC(cuDevicePrimaryCtxRetain, CUcontext *, CUdevice);
 
 #ifndef DECLARE_CUDAFUNC
-#ifndef CUDAAPIWEAK
-#define CUDAAPIWEAK __attribute__((weak))
+#define DECLARE_CUDAFUNC(funcname, ...) cudaError_t __attribute__((weak)) funcname(__VA_ARGS__);  static cudaError_t (*funcname##_ptr)(__VA_ARGS__);
 #endif
-#define DECLARE_CUDAFUNC(funcname, funcsig)                                    \
-  cudaError_t CUDAAPIWEAK funcname funcsig;                                    \
-  cudaError_t(*funcname##Ptr) funcsig;
-#endif
-DECLARE_CUDAFUNC(cudaGetDevice, (int *));
-DECLARE_CUDAFUNC(cudaSetDevice, (int));
-DECLARE_CUDAFUNC(cudaFree, (void *));
-DECLARE_CUDAFUNC(cudaDriverGetVersion, (int *));
-DECLARE_CUDAFUNC(cudaRuntimeGetVersion, (int *));
+DECLARE_CUDAFUNC(cudaGetDevice, int *);
+DECLARE_CUDAFUNC(cudaSetDevice, int);
+DECLARE_CUDAFUNC(cudaFree, void *);
+DECLARE_CUDAFUNC(cudaDriverGetVersion, int *);
+DECLARE_CUDAFUNC(cudaRuntimeGetVersion, int *);
 
 #ifndef DECLARE_NVPWFUNC
-#ifndef NVPWAPIWEAK
-#define NVPWAPIWEAK __attribute__((weak))
-#endif
-#define DECLARE_NVPWFUNC(fname, fsig)                                          \
-  NVPA_Status NVPWAPIWEAK fname fsig;                                          \
-  NVPA_Status(*fname##Ptr) fsig;
+#define DECLARE_NVPWFUNC(funcname, ...) NVPA_Status __attribute__((weak)) funcname(__VA_ARGS__);  static NVPA_Status (*funcname##_ptr)(__VA_ARGS__);
 #endif
 
 DECLARE_NVPWFUNC(NVPW_GetSupportedChipNames,
-                 (NVPW_GetSupportedChipNames_Params * params));
+                 NVPW_GetSupportedChipNames_Params * params);
 DECLARE_NVPWFUNC(NVPW_CUDA_MetricsContext_Create,
-                 (NVPW_CUDA_MetricsContext_Create_Params * params));
+                 NVPW_CUDA_MetricsContext_Create_Params * params);
 DECLARE_NVPWFUNC(NVPW_MetricsContext_Destroy,
-                 (NVPW_MetricsContext_Destroy_Params * params));
+                 NVPW_MetricsContext_Destroy_Params * params);
 DECLARE_NVPWFUNC(NVPW_MetricsContext_GetMetricNames_Begin,
-                 (NVPW_MetricsContext_GetMetricNames_Begin_Params * params));
+                 NVPW_MetricsContext_GetMetricNames_Begin_Params * params);
 DECLARE_NVPWFUNC(NVPW_MetricsContext_GetMetricNames_End,
-                 (NVPW_MetricsContext_GetMetricNames_End_Params * params));
-DECLARE_NVPWFUNC(NVPW_InitializeHost, (NVPW_InitializeHost_Params * params));
+                 NVPW_MetricsContext_GetMetricNames_End_Params * params);
+DECLARE_NVPWFUNC(NVPW_InitializeHost, NVPW_InitializeHost_Params * params);
 DECLARE_NVPWFUNC(NVPW_MetricsContext_GetMetricProperties_Begin,
-                 (NVPW_MetricsContext_GetMetricProperties_Begin_Params * p));
+                 NVPW_MetricsContext_GetMetricProperties_Begin_Params * p);
 DECLARE_NVPWFUNC(NVPW_MetricsContext_GetMetricProperties_End,
-                 (NVPW_MetricsContext_GetMetricProperties_End_Params * p));
+                 NVPW_MetricsContext_GetMetricProperties_End_Params * p);
 DECLARE_NVPWFUNC(NVPW_CUDA_RawMetricsConfig_Create,
-                 (NVPW_CUDA_RawMetricsConfig_Create_Params *));
+                 NVPW_CUDA_RawMetricsConfig_Create_Params *);
 DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_Destroy,
-                 (NVPW_RawMetricsConfig_Destroy_Params * params));
+                 NVPW_RawMetricsConfig_Destroy_Params * params);
 DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_BeginPassGroup,
-                 (NVPW_RawMetricsConfig_BeginPassGroup_Params * params));
+                 NVPW_RawMetricsConfig_BeginPassGroup_Params * params);
 DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_EndPassGroup,
-                 (NVPW_RawMetricsConfig_EndPassGroup_Params * params));
+                 NVPW_RawMetricsConfig_EndPassGroup_Params * params);
 DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_AddMetrics,
-                 (NVPW_RawMetricsConfig_AddMetrics_Params * params));
+                 NVPW_RawMetricsConfig_AddMetrics_Params * params);
 DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_GenerateConfigImage,
-                 (NVPW_RawMetricsConfig_GenerateConfigImage_Params * params));
+                 NVPW_RawMetricsConfig_GenerateConfigImage_Params * params);
 DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_GetConfigImage,
-                 (NVPW_RawMetricsConfig_GetConfigImage_Params * params));
+                 NVPW_RawMetricsConfig_GetConfigImage_Params * params);
 DECLARE_NVPWFUNC(NVPW_CounterDataBuilder_Create,
-                 (NVPW_CounterDataBuilder_Create_Params * params));
+                 NVPW_CounterDataBuilder_Create_Params * params);
 DECLARE_NVPWFUNC(NVPW_CounterDataBuilder_Destroy,
-                 (NVPW_CounterDataBuilder_Destroy_Params * params));
+                 NVPW_CounterDataBuilder_Destroy_Params * params);
 DECLARE_NVPWFUNC(NVPW_CounterDataBuilder_AddMetrics,
-                 (NVPW_CounterDataBuilder_AddMetrics_Params * params));
+                 NVPW_CounterDataBuilder_AddMetrics_Params * params);
 DECLARE_NVPWFUNC(NVPW_CounterDataBuilder_GetCounterDataPrefix,
-                 (NVPW_CounterDataBuilder_GetCounterDataPrefix_Params *
-                  params));
+                 NVPW_CounterDataBuilder_GetCounterDataPrefix_Params *
+                  params);
 DECLARE_NVPWFUNC(NVPW_CounterData_GetNumRanges,
-                 (NVPW_CounterData_GetNumRanges_Params * params));
+                 NVPW_CounterData_GetNumRanges_Params * params);
 DECLARE_NVPWFUNC(NVPW_Profiler_CounterData_GetRangeDescriptions,
-                 (NVPW_Profiler_CounterData_GetRangeDescriptions_Params *
-                  params));
+                 NVPW_Profiler_CounterData_GetRangeDescriptions_Params *
+                  params);
 DECLARE_NVPWFUNC(NVPW_MetricsContext_SetCounterData,
-                 (NVPW_MetricsContext_SetCounterData_Params * params));
+                 NVPW_MetricsContext_SetCounterData_Params * params);
 DECLARE_NVPWFUNC(NVPW_MetricsContext_EvaluateToGpuValues,
-                 (NVPW_MetricsContext_EvaluateToGpuValues_Params * params));
+                 NVPW_MetricsContext_EvaluateToGpuValues_Params * params);
 DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_GetNumPasses,
-                 (NVPW_RawMetricsConfig_GetNumPasses_Params * params));
+                 NVPW_RawMetricsConfig_GetNumPasses_Params * params);
 DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_SetCounterAvailability,
-                 (NVPW_RawMetricsConfig_SetCounterAvailability_Params *
-                  params));
+                 NVPW_RawMetricsConfig_SetCounterAvailability_Params *
+                  params);
 
 DECLARE_NVPWFUNC(NVPW_CUDA_MetricsEvaluator_CalculateScratchBufferSize,
-                 (NVPW_CUDA_MetricsEvaluator_CalculateScratchBufferSize_Params *
-                  params));
+                 NVPW_CUDA_MetricsEvaluator_CalculateScratchBufferSize_Params *
+                  params);
 DECLARE_NVPWFUNC(NVPW_CUDA_MetricsEvaluator_Initialize,
-                 (NVPW_CUDA_MetricsEvaluator_Initialize_Params * params));
+                 NVPW_CUDA_MetricsEvaluator_Initialize_Params * params);
 DECLARE_NVPWFUNC(
     NVPW_MetricsEvaluator_ConvertMetricNameToMetricEvalRequest,
-    (NVPW_MetricsEvaluator_ConvertMetricNameToMetricEvalRequest_Params *
-     params));
+    NVPW_MetricsEvaluator_ConvertMetricNameToMetricEvalRequest_Params *
+     params);
 DECLARE_NVPWFUNC(NVPW_MetricsEvaluator_GetMetricRawDependencies,
-                 (NVPW_MetricsEvaluator_GetMetricRawDependencies_Params *
-                  params));
+                 NVPW_MetricsEvaluator_GetMetricRawDependencies_Params *
+                  params);
 DECLARE_NVPWFUNC(NVPW_MetricsEvaluator_EvaluateToGpuValues,
-                 (NVPW_MetricsEvaluator_EvaluateToGpuValues_Params * params));
+                 NVPW_MetricsEvaluator_EvaluateToGpuValues_Params * params);
 DECLARE_NVPWFUNC(NVPW_MetricsEvaluator_Destroy,
-                 (NVPW_MetricsEvaluator_Destroy_Params * params));
+                 NVPW_MetricsEvaluator_Destroy_Params * params);
 DECLARE_NVPWFUNC(NVPW_CUDA_RawMetricsConfig_Create_V2,
-                 (NVPW_CUDA_RawMetricsConfig_Create_V2_Params * params));
-DECLARE_NVPWFUNC(NVPA_RawMetricsConfig_Create, (const NVPA_RawMetricsConfigOptions*, NVPA_RawMetricsConfig**));
+                 NVPW_CUDA_RawMetricsConfig_Create_V2_Params * params);
+DECLARE_NVPWFUNC(NVPA_RawMetricsConfig_Create, const NVPA_RawMetricsConfigOptions*, NVPA_RawMetricsConfig**);
 
 #ifndef DECLARE_CUPTIFUNC
-#ifndef CUPTIAPIWEAK
-#define CUPTIAPIWEAK __attribute__((weak))
-#endif
-#define DECLARE_CUPTIFUNC(funcname, funcsig)                                   \
-  CUptiResult CUPTIAPIWEAK funcname funcsig;                                   \
-  CUptiResult(*funcname##Ptr) funcsig;
+#define DECLARE_CUPTIFUNC(funcname, ...) CUptiResult __attribute__((weak)) funcname(__VA_ARGS__);  static CUptiResult (*funcname##_ptr)(__VA_ARGS__);
 #endif
 DECLARE_CUPTIFUNC(cuptiDeviceGetChipName,
-                  (CUpti_Device_GetChipName_Params * params));
+                  CUpti_Device_GetChipName_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerInitialize,
-                  (CUpti_Profiler_Initialize_Params * params));
+                  CUpti_Profiler_Initialize_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerDeInitialize,
-                  (CUpti_Profiler_DeInitialize_Params * params));
+                  CUpti_Profiler_DeInitialize_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerCounterDataImageCalculateSize,
-                  (CUpti_Profiler_CounterDataImage_CalculateSize_Params *
-                   params));
+                  CUpti_Profiler_CounterDataImage_CalculateSize_Params *
+                   params);
 DECLARE_CUPTIFUNC(cuptiProfilerCounterDataImageInitialize,
-                  (CUpti_Profiler_CounterDataImage_Initialize_Params * params));
+                  CUpti_Profiler_CounterDataImage_Initialize_Params * params);
 DECLARE_CUPTIFUNC(
     cuptiProfilerCounterDataImageCalculateScratchBufferSize,
-    (CUpti_Profiler_CounterDataImage_CalculateScratchBufferSize_Params *
-     params));
+    CUpti_Profiler_CounterDataImage_CalculateScratchBufferSize_Params *
+     params);
 DECLARE_CUPTIFUNC(
     cuptiProfilerCounterDataImageInitializeScratchBuffer,
-    (CUpti_Profiler_CounterDataImage_InitializeScratchBuffer_Params * params));
+    CUpti_Profiler_CounterDataImage_InitializeScratchBuffer_Params * params);
 
 DECLARE_CUPTIFUNC(cuptiProfilerBeginSession,
-                  (CUpti_Profiler_BeginSession_Params * params));
+                  CUpti_Profiler_BeginSession_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerSetConfig,
-                  (CUpti_Profiler_SetConfig_Params * params));
+                  CUpti_Profiler_SetConfig_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerBeginPass,
-                  (CUpti_Profiler_BeginPass_Params * params));
+                  CUpti_Profiler_BeginPass_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerEnableProfiling,
-                  (CUpti_Profiler_EnableProfiling_Params * params));
+                  CUpti_Profiler_EnableProfiling_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerPushRange,
-                  (CUpti_Profiler_PushRange_Params * params));
+                  CUpti_Profiler_PushRange_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerPopRange,
-                  (CUpti_Profiler_PopRange_Params * params));
+                  CUpti_Profiler_PopRange_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerDisableProfiling,
-                  (CUpti_Profiler_DisableProfiling_Params * params));
+                  CUpti_Profiler_DisableProfiling_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerEndPass,
-                  (CUpti_Profiler_EndPass_Params * params));
+                  CUpti_Profiler_EndPass_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerFlushCounterData,
-                  (CUpti_Profiler_FlushCounterData_Params * params));
+                  CUpti_Profiler_FlushCounterData_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerUnsetConfig,
-                  (CUpti_Profiler_UnsetConfig_Params * params));
+                  CUpti_Profiler_UnsetConfig_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerEndSession,
-                  (CUpti_Profiler_EndSession_Params * params));
+                  CUpti_Profiler_EndSession_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerGetCounterAvailability,
-                  (CUpti_Profiler_GetCounterAvailability_Params * params));
-DECLARE_CUPTIFUNC(cuptiGetResultString, (CUptiResult result, const char **str));
+                  CUpti_Profiler_GetCounterAvailability_Params * params);
+DECLARE_CUPTIFUNC(cuptiGetResultString, CUptiResult result, const char **str);
 DECLARE_CUPTIFUNC(cuptiProfilerHostInitialize,
-                  (CUpti_Profiler_Host_Initialize_Params * params));
+                  CUpti_Profiler_Host_Initialize_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerHostDeinitialize,
-                  (CUpti_Profiler_Host_Deinitialize_Params * params));
+                  CUpti_Profiler_Host_Deinitialize_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerHostGetBaseMetrics,
-                  (CUpti_Profiler_Host_GetBaseMetrics_Params * params));
+                  CUpti_Profiler_Host_GetBaseMetrics_Params * params);
 DECLARE_CUPTIFUNC(cuptiProfilerHostGetSubMetrics,
-                  (CUpti_Profiler_Host_GetSubMetrics_Params * params));
+                  CUpti_Profiler_Host_GetSubMetrics_Params * params);
 
 #ifndef DLSYM_AND_CHECK
 #define DLSYM_AND_CHECK(dllib, name)                                           \

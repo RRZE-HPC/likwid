@@ -57,8 +57,7 @@ static RocmTopology _rocmTopology = {0, NULL};
 
 
 // HIP function declarations
-#define HIPWEAK __attribute__( ( weak ) )
-#define DECLAREHIPFUNC(funcname, funcsig) hipError_t HIPWEAK funcname funcsig;  hipError_t ( *funcname##TopoPtr ) funcsig;
+#define DECLAREHIPFUNC(funcname, ...) hipError_t __attribute__((weak)) funcname(__VA_ARGS__);  static hipError_t (*funcname##_ptr)(__VA_ARGS__);
 
 DECLAREHIPFUNC(hipGetProcAddress, (const char *symbol, void **pfn, int hipVersion, uint64_t flags, hipDriverProcAddressQueryResult *symbolStatus))
 

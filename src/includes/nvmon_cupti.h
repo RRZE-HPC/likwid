@@ -71,49 +71,40 @@ void (*_dl_non_dynamic_init) (void) __attribute__ ((weak));
         }                                                               \
     } while (0)
 
-#ifndef CUAPIWEAK
-#define CUAPIWEAK __attribute__( ( weak ) )
-#endif
-#define DECLARECUFUNC(funcname, funcsig) CUresult CUAPIWEAK funcname funcsig;  CUresult( *funcname##Ptr ) funcsig;
-DECLARECUFUNC(cuCtxGetCurrent, (CUcontext *));
-DECLARECUFUNC(cuCtxSetCurrent, (CUcontext));
-DECLARECUFUNC(cuCtxDestroy, (CUcontext));
-DECLARECUFUNC(cuDeviceGet, (CUdevice *, int));
-DECLARECUFUNC(cuDeviceGetCount, (int *));
-DECLARECUFUNC(cuDeviceGetName, (char *, int, CUdevice));
-DECLARECUFUNC(cuInit, (unsigned int));
-DECLARECUFUNC(cuCtxPopCurrent, (CUcontext * pctx));
-DECLARECUFUNC(cuCtxPushCurrent, (CUcontext pctx));
-DECLARECUFUNC(cuCtxSynchronize, ());
+#define DECLARECUFUNC(funcname, ...) CUresult __attribute__((weak)) funcname(__VA_ARGS__);  static CUresult (*funcname##_ptr)(__VA_ARGS__);
+DECLARECUFUNC(cuCtxGetCurrent, CUcontext *);
+DECLARECUFUNC(cuCtxSetCurrent, CUcontext);
+DECLARECUFUNC(cuCtxDestroy, CUcontext);
+DECLARECUFUNC(cuDeviceGet, CUdevice *, int);
+DECLARECUFUNC(cuDeviceGetCount, int *);
+DECLARECUFUNC(cuDeviceGetName, char *, int, CUdevice);
+DECLARECUFUNC(cuInit, unsigned int);
+DECLARECUFUNC(cuCtxPopCurrent, CUcontext * pctx);
+DECLARECUFUNC(cuCtxPushCurrent, CUcontext pctx);
+DECLARECUFUNC(cuCtxSynchronize);
 
-#ifndef CUDAAPIWEAK
-#define CUDAAPIWEAK __attribute__( ( weak ) )
-#endif
-#define DECLARECUDAFUNC(funcname, funcsig) cudaError_t CUDAAPIWEAK funcname funcsig;  cudaError_t( *funcname##Ptr ) funcsig;
-DECLARECUDAFUNC(cudaGetDevice, (int *));
-DECLARECUDAFUNC(cudaSetDevice, (int));
-DECLARECUDAFUNC(cudaFree, (void *));
+#define DECLARECUDAFUNC(funcname, ...) cudaError_t __attribute__((weak)) funcname(__VA_ARGS__);  static cudaError_t (*funcname##_ptr)(__VA_ARGS__);
+DECLARECUDAFUNC(cudaGetDevice, int *);
+DECLARECUDAFUNC(cudaSetDevice, int);
+DECLARECUDAFUNC(cudaFree, void *);
 
-#ifndef CUPTIAPIWEAK
-#define CUPTIAPIWEAK __attribute__( ( weak ) )
-#endif
-#define DECLARECUPTIFUNC(funcname, funcsig) CUptiResult CUPTIAPIWEAK funcname funcsig;  CUptiResult( *funcname##Ptr ) funcsig;
-DECLARECUPTIFUNC(cuptiEventGroupGetAttribute, (CUpti_EventGroup eventGroup, CUpti_EventGroupAttribute attrib, size_t * valueSize, void *value));
-DECLARECUPTIFUNC(cuptiDeviceGetEventDomainAttribute, (CUdevice device, CUpti_EventDomainID eventDomain, CUpti_EventDomainAttribute attrib, size_t * valueSize, void *value));
-DECLARECUPTIFUNC(cuptiEventGroupReadEvent, (CUpti_EventGroup eventGroup, CUpti_ReadEventFlags flags, CUpti_EventID event, size_t * eventValueBufferSizeBytes, uint64_t *        eventValueBuffer));
-DECLARECUPTIFUNC(cuptiEventGroupSetAttribute, (CUpti_EventGroup eventGroup, CUpti_EventGroupAttribute attrib, size_t valueSize, void *value));
-DECLARECUPTIFUNC(cuptiEventGroupSetDisable, (CUpti_EventGroupSet * eventGroupSet));
-DECLARECUPTIFUNC(cuptiEventGroupSetEnable, (CUpti_EventGroupSet * eventGroupSet));
-DECLARECUPTIFUNC(cuptiEventGroupSetsCreate, (CUcontext context, size_t eventIdArraySizeBytes, CUpti_EventID * eventIdArray, CUpti_EventGroupSets ** eventGroupPasses));
-DECLARECUPTIFUNC(cuptiEventGroupSetsDestroy, (CUpti_EventGroupSets * eventGroupSets));
-DECLARECUPTIFUNC(cuptiGetTimestamp, (uint64_t * timestamp));
-DECLARECUPTIFUNC(cuptiSetEventCollectionMode, (CUcontext context, CUpti_EventCollectionMode mode));
-DECLARECUPTIFUNC(cuptiDeviceEnumEventDomains, (CUdevice, size_t *, CUpti_EventDomainID *));
-DECLARECUPTIFUNC(cuptiDeviceGetNumEventDomains, (CUdevice, uint32_t *));
-DECLARECUPTIFUNC(cuptiEventDomainEnumEvents, (CUpti_EventDomainID, size_t *, CUpti_EventID *));
-DECLARECUPTIFUNC(cuptiEventDomainGetNumEvents, (CUpti_EventDomainID, uint32_t *));
-DECLARECUPTIFUNC(cuptiEventGetAttribute, (CUpti_EventID, CUpti_EventAttribute, size_t *, void *));
-DECLARECUPTIFUNC(cuptiGetResultString, (CUptiResult result, const char **str));
+#define DECLARECUPTIFUNC(funcname, ...) CUptiResult __attribute__((weak)) funcname(__VA_ARGS__);  static CUptiResult (*funcname##_ptr)(__VA_ARGS__);
+DECLARECUPTIFUNC(cuptiEventGroupGetAttribute, CUpti_EventGroup eventGroup, CUpti_EventGroupAttribute attrib, size_t * valueSize, void *value);
+DECLARECUPTIFUNC(cuptiDeviceGetEventDomainAttribute, CUdevice device, CUpti_EventDomainID eventDomain, CUpti_EventDomainAttribute attrib, size_t * valueSize, void *value);
+DECLARECUPTIFUNC(cuptiEventGroupReadEvent, CUpti_EventGroup eventGroup, CUpti_ReadEventFlags flags, CUpti_EventID event, size_t * eventValueBufferSizeBytes, uint64_t *        eventValueBuffer);
+DECLARECUPTIFUNC(cuptiEventGroupSetAttribute, CUpti_EventGroup eventGroup, CUpti_EventGroupAttribute attrib, size_t valueSize, void *value);
+DECLARECUPTIFUNC(cuptiEventGroupSetDisable, CUpti_EventGroupSet * eventGroupSet);
+DECLARECUPTIFUNC(cuptiEventGroupSetEnable, CUpti_EventGroupSet * eventGroupSet);
+DECLARECUPTIFUNC(cuptiEventGroupSetsCreate, CUcontext context, size_t eventIdArraySizeBytes, CUpti_EventID * eventIdArray, CUpti_EventGroupSets ** eventGroupPasses);
+DECLARECUPTIFUNC(cuptiEventGroupSetsDestroy, CUpti_EventGroupSets * eventGroupSets);
+DECLARECUPTIFUNC(cuptiGetTimestamp, uint64_t * timestamp);
+DECLARECUPTIFUNC(cuptiSetEventCollectionMode, CUcontext context, CUpti_EventCollectionMode mode);
+DECLARECUPTIFUNC(cuptiDeviceEnumEventDomains, CUdevice, size_t *, CUpti_EventDomainID *);
+DECLARECUPTIFUNC(cuptiDeviceGetNumEventDomains, CUdevice, uint32_t *);
+DECLARECUPTIFUNC(cuptiEventDomainEnumEvents, CUpti_EventDomainID, size_t *, CUpti_EventID *);
+DECLARECUPTIFUNC(cuptiEventDomainGetNumEvents, CUpti_EventDomainID, uint32_t *);
+DECLARECUPTIFUNC(cuptiEventGetAttribute, CUpti_EventID, CUpti_EventAttribute, size_t *, void *);
+DECLARECUPTIFUNC(cuptiGetResultString, CUptiResult result, const char **str);
 
 
 static void *dl_libcuda = NULL;

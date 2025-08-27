@@ -92,47 +92,47 @@ int likwid_rocmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
 // ROCm function declarations
 #define ROCMWEAK __attribute__(( weak ))
-#define DECLAREFUNC_HSA(funcname, funcsig) hsa_status_t ROCMWEAK funcname funcsig;  hsa_status_t ( *funcname##_ptr ) funcsig;
-#define DECLAREFUNC_SMI(funcname, funcsig) rsmi_status_t ROCMWEAK funcname funcsig; rsmi_status_t ( *funcname##_ptr ) funcsig;
+#define DECLAREFUNC_HSA(funcname, ...) hsa_status_t __attribute__((weak)) funcname(__VA_ARGS__);  static hsa_status_t (*funcname##_ptr)(__VA_ARGS__);
+#define DECLAREFUNC_SMI(funcname, ...) rsmi_status_t __attribute__((weak)) funcname(__VA_ARGS__);  static rsmi_status_t (*funcname##_ptr)(__VA_ARGS__);
 
-DECLAREFUNC_HSA(hsa_init, ());
-DECLAREFUNC_HSA(hsa_shut_down, ());
-DECLAREFUNC_HSA(hsa_iterate_agents, (hsa_status_t (*callback)(hsa_agent_t agent, void* data), void* data));
-DECLAREFUNC_HSA(hsa_agent_get_info, (hsa_agent_t agent, hsa_agent_info_t attribute, void* value));
-DECLAREFUNC_HSA(hsa_system_get_info, (hsa_system_info_t attribute, void *value));
+DECLAREFUNC_HSA(hsa_init);
+DECLAREFUNC_HSA(hsa_shut_down);
+DECLAREFUNC_HSA(hsa_iterate_agents, hsa_status_t (*callback)(hsa_agent_t agent, void* data), void* data);
+DECLAREFUNC_HSA(hsa_agent_get_info, hsa_agent_t agent, hsa_agent_info_t attribute, void* value);
+DECLAREFUNC_HSA(hsa_system_get_info, hsa_system_info_t attribute, void *value);
 
-DECLAREFUNC_HSA(rocprofiler_iterate_info, (const hsa_agent_t* agent, rocprofiler_info_kind_t kind, hsa_status_t (*callback)(const rocprofiler_info_data_t, void* data), void* data));
-DECLAREFUNC_HSA(rocprofiler_close, (rocprofiler_t* context));
-DECLAREFUNC_HSA(rocprofiler_open, (hsa_agent_t agent, rocprofiler_feature_t* features, uint32_t feature_count, rocprofiler_t** context, uint32_t mode, rocprofiler_properties_t* properties));
-DECLAREFUNC_HSA(rocprofiler_error_string, ());
-DECLAREFUNC_HSA(rocprofiler_start, (rocprofiler_t* context, uint32_t group_index));
-DECLAREFUNC_HSA(rocprofiler_stop, (rocprofiler_t* context, uint32_t group_index));
-DECLAREFUNC_HSA(rocprofiler_read, (rocprofiler_t* context, uint32_t group_index));
-DECLAREFUNC_HSA(rocprofiler_get_data, (rocprofiler_t* context, uint32_t group_index));
-DECLAREFUNC_HSA(rocprofiler_get_metrics, (const rocprofiler_t* context));
+DECLAREFUNC_HSA(rocprofiler_iterate_info, const hsa_agent_t* agent, rocprofiler_info_kind_t kind, hsa_status_t (*callback)(const rocprofiler_info_data_t, void* data), void* data);
+DECLAREFUNC_HSA(rocprofiler_close, rocprofiler_t* context);
+DECLAREFUNC_HSA(rocprofiler_open, hsa_agent_t agent, rocprofiler_feature_t* features, uint32_t feature_count, rocprofiler_t** context, uint32_t mode, rocprofiler_properties_t* properties);
+DECLAREFUNC_HSA(rocprofiler_error_string);
+DECLAREFUNC_HSA(rocprofiler_start, rocprofiler_t* context, uint32_t group_index);
+DECLAREFUNC_HSA(rocprofiler_stop, rocprofiler_t* context, uint32_t group_index);
+DECLAREFUNC_HSA(rocprofiler_read, rocprofiler_t* context, uint32_t group_index);
+DECLAREFUNC_HSA(rocprofiler_get_data, rocprofiler_t* context, uint32_t group_index);
+DECLAREFUNC_HSA(rocprofiler_get_metrics, const rocprofiler_t* context);
 
-DECLAREFUNC_SMI(rsmi_init, (uint64_t flags));
-DECLAREFUNC_SMI(rsmi_shut_down, ());
-DECLAREFUNC_SMI(rsmi_dev_supported_func_iterator_open, (uint32_t dv_ind, rsmi_func_id_iter_handle_t* handle));
-DECLAREFUNC_SMI(rsmi_dev_supported_variant_iterator_open, (rsmi_func_id_iter_handle_t obj_h, rsmi_func_id_iter_handle_t* var_iter));
-DECLAREFUNC_SMI(rsmi_func_iter_value_get, (rsmi_func_id_iter_handle_t handle, rsmi_func_id_value_t* value ));
-DECLAREFUNC_SMI(rsmi_func_iter_next, (rsmi_func_id_iter_handle_t handle));
-DECLAREFUNC_SMI(rsmi_dev_supported_func_iterator_close, (rsmi_func_id_iter_handle_t* handle));
-DECLAREFUNC_SMI(rsmi_dev_power_ave_get, (uint32_t dv_ind, uint32_t sensor_ind, uint64_t* power));
-DECLAREFUNC_SMI(rsmi_dev_pci_throughput_get, (uint32_t dv_ind, uint64_t* sent, uint64_t* received, uint64_t* max_pkt_sz));
-DECLAREFUNC_SMI(rsmi_dev_pci_replay_counter_get, (uint32_t dv_ind, uint64_t* counter));
-DECLAREFUNC_SMI(rsmi_dev_memory_total_get, (uint32_t dv_ind, rsmi_memory_type_t mem_type, uint64_t* total));
-DECLAREFUNC_SMI(rsmi_dev_memory_usage_get, (uint32_t dv_ind, rsmi_memory_type_t mem_type, uint64_t* used ));
-DECLAREFUNC_SMI(rsmi_dev_memory_busy_percent_get, (uint32_t dv_ind, uint32_t* busy_percent));
-DECLAREFUNC_SMI(rsmi_dev_memory_reserved_pages_get, (uint32_t dv_ind, uint32_t* num_pages, rsmi_retired_page_record_t* records));
-DECLAREFUNC_SMI(rsmi_dev_fan_rpms_get, (uint32_t dv_ind, uint32_t sensor_ind, int64_t* speed));
-DECLAREFUNC_SMI(rsmi_dev_fan_speed_get, (uint32_t dv_ind, uint32_t sensor_ind, int64_t* speed));
-DECLAREFUNC_SMI(rsmi_dev_fan_speed_max_get, (uint32_t dv_ind, uint32_t sensor_ind, uint64_t* max_speed));
-DECLAREFUNC_SMI(rsmi_dev_temp_metric_get, (uint32_t dv_ind, uint32_t sensor_type, rsmi_temperature_metric_t metric, int64_t* temperature));
-DECLAREFUNC_SMI(rsmi_dev_volt_metric_get, (uint32_t dv_ind, rsmi_voltage_type_t sensor_type, rsmi_voltage_metric_t metric, int64_t* voltage));
-DECLAREFUNC_SMI(rsmi_dev_overdrive_level_get, (uint32_t dv_ind, uint32_t* od));
-DECLAREFUNC_SMI(rsmi_dev_ecc_count_get, (uint32_t dv_ind, rsmi_gpu_block_t block, rsmi_error_count_t* ec));
-DECLAREFUNC_SMI(rsmi_compute_process_info_get, (rsmi_process_info_t* procs, uint32_t* num_items));
+DECLAREFUNC_SMI(rsmi_init, uint64_t flags);
+DECLAREFUNC_SMI(rsmi_shut_down);
+DECLAREFUNC_SMI(rsmi_dev_supported_func_iterator_open, uint32_t dv_ind, rsmi_func_id_iter_handle_t* handle);
+DECLAREFUNC_SMI(rsmi_dev_supported_variant_iterator_open, rsmi_func_id_iter_handle_t obj_h, rsmi_func_id_iter_handle_t* var_iter);
+DECLAREFUNC_SMI(rsmi_func_iter_value_get, rsmi_func_id_iter_handle_t handle, rsmi_func_id_value_t* value );
+DECLAREFUNC_SMI(rsmi_func_iter_next, rsmi_func_id_iter_handle_t handle);
+DECLAREFUNC_SMI(rsmi_dev_supported_func_iterator_close, rsmi_func_id_iter_handle_t* handle);
+DECLAREFUNC_SMI(rsmi_dev_power_ave_get, uint32_t dv_ind, uint32_t sensor_ind, uint64_t* power);
+DECLAREFUNC_SMI(rsmi_dev_pci_throughput_get, uint32_t dv_ind, uint64_t* sent, uint64_t* received, uint64_t* max_pkt_sz);
+DECLAREFUNC_SMI(rsmi_dev_pci_replay_counter_get, uint32_t dv_ind, uint64_t* counter);
+DECLAREFUNC_SMI(rsmi_dev_memory_total_get, uint32_t dv_ind, rsmi_memory_type_t mem_type, uint64_t* total);
+DECLAREFUNC_SMI(rsmi_dev_memory_usage_get, uint32_t dv_ind, rsmi_memory_type_t mem_type, uint64_t* used );
+DECLAREFUNC_SMI(rsmi_dev_memory_busy_percent_get, uint32_t dv_ind, uint32_t* busy_percent);
+DECLAREFUNC_SMI(rsmi_dev_memory_reserved_pages_get, uint32_t dv_ind, uint32_t* num_pages, rsmi_retired_page_record_t* records);
+DECLAREFUNC_SMI(rsmi_dev_fan_rpms_get, uint32_t dv_ind, uint32_t sensor_ind, int64_t* speed);
+DECLAREFUNC_SMI(rsmi_dev_fan_speed_get, uint32_t dv_ind, uint32_t sensor_ind, int64_t* speed);
+DECLAREFUNC_SMI(rsmi_dev_fan_speed_max_get, uint32_t dv_ind, uint32_t sensor_ind, uint64_t* max_speed);
+DECLAREFUNC_SMI(rsmi_dev_temp_metric_get, uint32_t dv_ind, uint32_t sensor_type, rsmi_temperature_metric_t metric, int64_t* temperature);
+DECLAREFUNC_SMI(rsmi_dev_volt_metric_get, uint32_t dv_ind, rsmi_voltage_type_t sensor_type, rsmi_voltage_metric_t metric, int64_t* voltage);
+DECLAREFUNC_SMI(rsmi_dev_overdrive_level_get, uint32_t dv_ind, uint32_t* od);
+DECLAREFUNC_SMI(rsmi_dev_ecc_count_get, uint32_t dv_ind, rsmi_gpu_block_t block, rsmi_error_count_t* ec);
+DECLAREFUNC_SMI(rsmi_compute_process_info_get, rsmi_process_info_t* procs, uint32_t* num_items);
 
 
 // ----------------------------------------------------

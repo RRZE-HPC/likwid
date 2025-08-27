@@ -55,8 +55,7 @@
         }                                                               \
     } while (0)
 
-#define CUAPIWEAK __attribute__( ( weak ) )
-#define DECLARECUFUNC(funcname, funcsig) CUresult CUAPIWEAK funcname funcsig;  CUresult( *funcname##TopoPtr ) funcsig;
+#define DECLARECUFUNC(funcname, ...) CUresult __attribute__((weak)) funcname(__VA_ARGS__);  static CUresult (*funcname##_ptr)(__VA_ARGS__);
 
 
 #define CUDA_CALL( call, handleerror )                                \
@@ -68,8 +67,7 @@
         }                                                               \
     } while (0)
 
-#define CUDAAPIWEAK __attribute__( ( weak ) )
-#define DECLARECUDAFUNC(funcname, funcsig) cudaError_t CUDAAPIWEAK funcname funcsig;  cudaError_t( *funcname##TopoPtr ) funcsig;
+#define DECLARECUDAFUNC(funcname, ...) cudaError_t __attribute__((weak)) funcname(__VA_ARGS__);  static cudaError_t (*funcname##_ptr)(__VA_ARGS__);
 
 /* Copy from PAPI's cuda component (BSD License)
  * @author  Asim YarKhan yarkhan@icl.utk.edu (updated in 2017 to support CUDA metrics)
@@ -85,18 +83,18 @@ CudaTopology cudaTopology = {0, NULL};
 
 #ifdef LIKWID_WITH_NVMON
 
-DECLARECUFUNC(cuDeviceGet, (CUdevice *, int));
-DECLARECUFUNC(cuDeviceGetCount, (int *));
-DECLARECUFUNC(cuDeviceGetName, (char *, int, CUdevice));
-DECLARECUFUNC(cuInit, (unsigned int));
-DECLARECUFUNC(cuDeviceComputeCapability, (int*, int*, CUdevice));
-DECLARECUFUNC(cuDeviceGetAttribute, (int*, CUdevice_attribute, CUdevice));
-DECLARECUFUNC(cuDeviceGetProperties, (CUdevprop* prop, CUdevice));
-DECLARECUFUNC(cuDeviceTotalMem, (size_t*, CUdevice));
-DECLARECUFUNC(cuDeviceTotalMem_v2, (size_t*, CUdevice));
+DECLARECUFUNC(cuDeviceGet, CUdevice *, int);
+DECLARECUFUNC(cuDeviceGetCount, int *);
+DECLARECUFUNC(cuDeviceGetName, char *, int, CUdevice);
+DECLARECUFUNC(cuInit, unsigned int);
+DECLARECUFUNC(cuDeviceComputeCapability, int*, int*, CUdevice);
+DECLARECUFUNC(cuDeviceGetAttribute, int*, CUdevice_attribute, CUdevice);
+DECLARECUFUNC(cuDeviceGetProperties, CUdevprop* prop, CUdevice);
+DECLARECUFUNC(cuDeviceTotalMem, size_t*, CUdevice);
+DECLARECUFUNC(cuDeviceTotalMem_v2, size_t*, CUdevice);
 
-DECLARECUDAFUNC(cudaDriverGetVersion, (int*));
-DECLARECUDAFUNC(cudaRuntimeGetVersion, (int*))
+DECLARECUDAFUNC(cudaDriverGetVersion, int*);
+DECLARECUDAFUNC(cudaRuntimeGetVersion, int*)
 
 static int
 cuda_topo_link_libraries(void)
