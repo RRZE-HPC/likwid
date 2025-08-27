@@ -155,56 +155,67 @@ static NvmlContext nvmlContext;
 
 
 // Macros
-#define FREE_IF_NOT_NULL(x) if (x) { free(x); }
-#define DLSYM_AND_CHECK( dllib, name ) name##_ptr = dlsym( dllib, #name ); if ( dlerror() != NULL ) { return -1; }
-#define NVML_CALL(call, args, handleerror)                                            \
-    do {                                                                           \
-        nvmlReturn_t _status = (*call##_ptr)args;                                         \
-        if (_status != NVML_SUCCESS) {                                            \
-            fprintf(stderr, "Error: function %s failed with error %d.\n", #call, _status);                    \
-            handleerror;                                                             \
-        }                                                                          \
-    } while (0)
-#define CUPTI_CALL(call, args, handleerror)                                            \
+#define DLSYM_AND_CHECK(dllib, name) name##_ptr = dlsym(dllib, #name);  \
     do {                                                                \
-        CUptiResult _status = (*call##_ptr)args;                                  \
-        if (_status != CUPTI_SUCCESS) {                                 \
-            const char *errstr;                                         \
-            (*cuptiGetResultString)(_status, &errstr);               \
-            fprintf(stderr, "Error: function %s failed with error %s.\n", #call, errstr); \
-            handleerror;                                                \
+        const char *err = dlerror();                                    \
+        if (err) {                                                      \
+            ERROR_PRINT("Error: dlsym on symbol '%s' failed with error: %s", #name, err); \
+            return -EINVAL;                                             \
         }                                                               \
     } while (0)
 
-// NVML function declarations
-#define NVMLWEAK __attribute__(( weak ))
-#define DECLAREFUNC_NVML(funcname, funcsig) nvmlReturn_t NVMLWEAK funcname funcsig;  nvmlReturn_t ( *funcname##_ptr ) funcsig;
+#define NVML_CALL(func, ...)                            \
+    do {                                                \
+        nvmlReturn_t s = (*func##_ptr)(__VA_ARGS__);    \
+        if (s != NVML_SUCCESS) {                        \
+            ERROR_PRINT("Error: function %s failed with error: '%s' (nvmlReturn=%d).", #func, nvmlErrorString_ptr(s), s);   \
+            return -EPERM;                              \
+        }                                               \
+    } while (0)
 
-DECLAREFUNC_NVML(nvmlInit_v2, (void));
-DECLAREFUNC_NVML(nvmlShutdown, (void));
-DECLAREFUNC_NVML(nvmlDeviceGetHandleByIndex_v2, (unsigned int  index, nvmlDevice_t* device));
-DECLAREFUNC_NVML(nvmlDeviceGetClockInfo, (nvmlDevice_t device, nvmlClockType_t type, unsigned int* clock));
-DECLAREFUNC_NVML(nvmlDeviceGetInforomVersion, (nvmlDevice_t device, nvmlInforomObject_t object, char* version, unsigned int  length));
-DECLAREFUNC_NVML(nvmlDeviceGetEccMode, (nvmlDevice_t device, nvmlEnableState_t* current, nvmlEnableState_t* pending));
-DECLAREFUNC_NVML(nvmlDeviceGetDetailedEccErrors, (nvmlDevice_t device, nvmlMemoryErrorType_t errorType, nvmlEccCounterType_t counterType, nvmlEccErrorCounts_t* eccCounts));
-DECLAREFUNC_NVML(nvmlDeviceGetTotalEccErrors, (nvmlDevice_t device, nvmlMemoryErrorType_t errorType, nvmlEccCounterType_t counterType, unsigned long long* eccCounts));
-DECLAREFUNC_NVML(nvmlDeviceGetFanSpeed_v2, (nvmlDevice_t device, unsigned int fan, unsigned int* speed));
-DECLAREFUNC_NVML(nvmlDeviceGetClock, (nvmlDevice_t device, nvmlClockType_t clockType, nvmlClockId_t clockId, unsigned int* clockMHz));
-DECLAREFUNC_NVML(nvmlDeviceGetMemoryInfo, (nvmlDevice_t device, nvmlMemory_t* memory));
-DECLAREFUNC_NVML(nvmlDeviceGetPerformanceState, (nvmlDevice_t device, nvmlPstates_t* pState));
-DECLAREFUNC_NVML(nvmlDeviceGetPowerUsage, (nvmlDevice_t device, unsigned int* power));
-DECLAREFUNC_NVML(nvmlDeviceGetTemperature, (nvmlDevice_t device, nvmlTemperatureSensors_t sensorType, unsigned int* temp));
-DECLAREFUNC_NVML(nvmlDeviceGetPowerManagementLimit, (nvmlDevice_t device, unsigned int* limit));
-DECLAREFUNC_NVML(nvmlDeviceGetPowerManagementLimitConstraints, (nvmlDevice_t device, unsigned int* minLimit, unsigned int* maxLimit));
-DECLAREFUNC_NVML(nvmlDeviceGetUtilizationRates, (nvmlDevice_t device, nvmlUtilization_t* utilization));
-DECLAREFUNC_NVML(nvmlDeviceGetTotalEnergyConsumption, (nvmlDevice_t device, unsigned long long *energy));
+#ifndef CUPTI_CALL
+#define CUPTI_CALL(func, ...)                            \
+    do {                                                \
+        CUptiResult s = (*func##_ptr)(__VA_ARGS__);    \
+        if (s != CUPTI_SUCCESS) {                        \
+            const char *errstr = NULL; \
+            cuptiGetResultString_ptr(s, &errstr); \
+            ERROR_PRINT("Error: function %s failed with error: '%s' (CUptiResult=%d)", #func, errstr, s);   \
+            return -EPERM;                              \
+        }                                               \
+    } while (0)
+#endif
+
+// NVML function declarations
+#define DECLAREFUNC_NVML(funcname, ...) nvmlReturn_t __attribute__((weak)) funcname(__VA_ARGS__);  static nvmlReturn_t (*funcname##_ptr)(__VA_ARGS__);
+
+DECLAREFUNC_NVML(nvmlInit_v2, void);
+DECLAREFUNC_NVML(nvmlShutdown, void);
+DECLAREFUNC_NVML(nvmlDeviceGetHandleByIndex_v2, unsigned int  index, nvmlDevice_t* device);
+DECLAREFUNC_NVML(nvmlDeviceGetClockInfo, nvmlDevice_t device, nvmlClockType_t type, unsigned int* clock);
+DECLAREFUNC_NVML(nvmlDeviceGetInforomVersion, nvmlDevice_t device, nvmlInforomObject_t object, char* version, unsigned int  length);
+DECLAREFUNC_NVML(nvmlDeviceGetEccMode, nvmlDevice_t device, nvmlEnableState_t* current, nvmlEnableState_t* pending);
+DECLAREFUNC_NVML(nvmlDeviceGetDetailedEccErrors, nvmlDevice_t device, nvmlMemoryErrorType_t errorType, nvmlEccCounterType_t counterType, nvmlEccErrorCounts_t* eccCounts);
+DECLAREFUNC_NVML(nvmlDeviceGetTotalEccErrors, nvmlDevice_t device, nvmlMemoryErrorType_t errorType, nvmlEccCounterType_t counterType, unsigned long long* eccCounts);
+DECLAREFUNC_NVML(nvmlDeviceGetFanSpeed_v2, nvmlDevice_t device, unsigned int fan, unsigned int* speed);
+DECLAREFUNC_NVML(nvmlDeviceGetClock, nvmlDevice_t device, nvmlClockType_t clockType, nvmlClockId_t clockId, unsigned int* clockMHz);
+DECLAREFUNC_NVML(nvmlDeviceGetMemoryInfo, nvmlDevice_t device, nvmlMemory_t* memory);
+DECLAREFUNC_NVML(nvmlDeviceGetPerformanceState, nvmlDevice_t device, nvmlPstates_t* pState);
+DECLAREFUNC_NVML(nvmlDeviceGetPowerUsage, nvmlDevice_t device, unsigned int* power);
+DECLAREFUNC_NVML(nvmlDeviceGetTemperature, nvmlDevice_t device, nvmlTemperatureSensors_t sensorType, unsigned int* temp);
+DECLAREFUNC_NVML(nvmlDeviceGetPowerManagementLimit, nvmlDevice_t device, unsigned int* limit);
+DECLAREFUNC_NVML(nvmlDeviceGetPowerManagementLimitConstraints, nvmlDevice_t device, unsigned int* minLimit, unsigned int* maxLimit);
+DECLAREFUNC_NVML(nvmlDeviceGetUtilizationRates, nvmlDevice_t device, nvmlUtilization_t* utilization);
+DECLAREFUNC_NVML(nvmlDeviceGetTotalEnergyConsumption, nvmlDevice_t device, unsigned long long *energy);
+__attribute__((weak)) const char *nvmlErrorString(nvmlReturn_t result);
+static const char *(*nvmlErrorString_ptr)(nvmlReturn_t result);
 
 // CUPTI function declarations
 #define CUPTIWEAK __attribute__(( weak ))
-#define DECLAREFUNC_CUPTI(funcname, funcsig) CUptiResult CUPTIWEAK funcname funcsig;  CUptiResult( *funcname##_ptr ) funcsig;
+#define DECLAREFUNC_CUPTI(funcname, ...) CUptiResult __attribute__((weak)) funcname(__VA_ARGS__);  static CUptiResult (*funcname##_ptr)(__VA_ARGS__);
 
-DECLAREFUNC_CUPTI(cuptiGetTimestamp, (uint64_t * timestamp));
-DECLAREFUNC_CUPTI(cuptiGetResultString, (CUptiResult result, const char **str));
+DECLAREFUNC_CUPTI(cuptiGetTimestamp, uint64_t * timestamp);
+DECLAREFUNC_CUPTI(cuptiGetResultString, CUptiResult result, const char **str);
 
 
 // ----------------------------------------------------
@@ -223,7 +234,7 @@ _nvml_wrapper_getClockInfo(nvmlDevice_t device, NvmlEvent* event, NvmlEventResul
 {
     unsigned int clock = 0;
 
-    NVML_CALL(nvmlDeviceGetClockInfo, (device, event->options.clock, &clock), return -1);
+    NVML_CALL(nvmlDeviceGetClockInfo, device, event->options.clock, &clock);
     _nvml_resultAddMeasurement(result, clock);
 
     return 0;
@@ -235,7 +246,7 @@ _nvml_wrapper_getMaxClock(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult
 {
     unsigned int clock = 0;
 
-    NVML_CALL(nvmlDeviceGetClock, (device, event->options.clock, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, &clock), return -1);
+    NVML_CALL(nvmlDeviceGetClock, device, event->options.clock, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, &clock);
     _nvml_resultAddMeasurement(result, clock);
 
     return 0;
@@ -247,7 +258,7 @@ _nvml_wrapper_getEccLocalErrors(nvmlDevice_t device, NvmlEvent* event, NvmlEvent
 {
     nvmlEccErrorCounts_t counts;
 
-    NVML_CALL(nvmlDeviceGetDetailedEccErrors, (device, event->options.ecc.type, NVML_VOLATILE_ECC, &counts), return -1);
+    NVML_CALL(nvmlDeviceGetDetailedEccErrors, device, event->options.ecc.type, NVML_VOLATILE_ECC, &counts);
     switch (event->options.ecc.counter)
     {
     case LOCAL_ECC_L1:      _nvml_resultAddMeasurement(result, counts.l1Cache);         break;
@@ -266,7 +277,7 @@ _nvml_wrapper_getEccTotalErrors(nvmlDevice_t device, NvmlEvent* event, NvmlEvent
 {
     unsigned long long count = 0;
 
-    NVML_CALL(nvmlDeviceGetTotalEccErrors, (device, event->options.ecc.type, NVML_VOLATILE_ECC, &count), return -1);
+    NVML_CALL(nvmlDeviceGetTotalEccErrors, device, event->options.ecc.type, NVML_VOLATILE_ECC, &count);
     _nvml_resultAddMeasurement(result, count);
 
     return 0;
@@ -278,7 +289,7 @@ _nvml_wrapper_getFanSpeed(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult
 {
     unsigned int speed = 0;
 
-    NVML_CALL(nvmlDeviceGetFanSpeed_v2, (device, event->options.fan, &speed), return -1);
+    NVML_CALL(nvmlDeviceGetFanSpeed_v2, device, event->options.fan, &speed);
     _nvml_resultAddMeasurement(result, speed);
     
     return 0;
@@ -290,7 +301,7 @@ _nvml_wrapper_getMemoryInfo(nvmlDevice_t device, NvmlEvent* event, NvmlEventResu
 {
     nvmlMemory_t memory;
 
-    NVML_CALL(nvmlDeviceGetMemoryInfo, (device, &memory), return -1);
+    NVML_CALL(nvmlDeviceGetMemoryInfo, device, &memory);
     switch (event->options.memory)
     {
     case MEMORY_FREE:   _nvml_resultAddMeasurement(result, memory.free);    break;
@@ -308,7 +319,7 @@ _nvml_wrapper_getPerformanceState(nvmlDevice_t device, NvmlEvent* event, NvmlEve
 {
     nvmlPstates_t state;
 
-    NVML_CALL(nvmlDeviceGetPerformanceState, (device, &state), return -1);
+    NVML_CALL(nvmlDeviceGetPerformanceState, device, &state);
     _nvml_resultAddMeasurement(result, state);
 
     return 0;
@@ -320,7 +331,7 @@ _nvml_wrapper_getPowerUsage(nvmlDevice_t device, NvmlEvent* event, NvmlEventResu
 {
     unsigned int power = 0;
 
-    NVML_CALL(nvmlDeviceGetPowerUsage, (device, &power), return -1);
+    NVML_CALL(nvmlDeviceGetPowerUsage, device, &power);
     _nvml_resultAddMeasurement(result, power);
 
     return 0;
@@ -331,7 +342,7 @@ _nvml_wrapper_getEnergyConsumption(nvmlDevice_t device, NvmlEvent* event, NvmlEv
 {
     unsigned long long energy = 0;
 
-    NVML_CALL(nvmlDeviceGetTotalEnergyConsumption, (device, &energy), return -1);
+    NVML_CALL(nvmlDeviceGetTotalEnergyConsumption, device, &energy);
     double last = ((double)energy) - result->fullValue;
     result->fullValue = ((double)energy);
     result->lastValue = last;
@@ -345,7 +356,7 @@ _nvml_wrapper_getTemperature(nvmlDevice_t device, NvmlEvent* event, NvmlEventRes
 {
     unsigned int temp = 0;
 
-    NVML_CALL(nvmlDeviceGetTemperature, (device, event->options.tempSensor, &temp), return -1);
+    NVML_CALL(nvmlDeviceGetTemperature, device, event->options.tempSensor, &temp);
     _nvml_resultAddMeasurement(result, temp);
 
     return 0;
@@ -357,7 +368,7 @@ _nvml_wrapper_getPowerManagementLimit(nvmlDevice_t device, NvmlEvent* event, Nvm
 {
     unsigned int limit = 0;
 
-    NVML_CALL(nvmlDeviceGetPowerManagementLimit, (device, &limit), return -1);
+    NVML_CALL(nvmlDeviceGetPowerManagementLimit, device, &limit);
     _nvml_resultAddMeasurement(result, limit);
 
     return 0;
@@ -370,7 +381,7 @@ _nvml_wrapper_getPowerManagementLimitConstraints(nvmlDevice_t device, NvmlEvent*
     unsigned int maxLimit = 0;
     unsigned int minLimit = 0;
 
-    NVML_CALL(nvmlDeviceGetPowerManagementLimitConstraints, (device, &minLimit, &maxLimit), return -1);
+    NVML_CALL(nvmlDeviceGetPowerManagementLimitConstraints, device, &minLimit, &maxLimit);
     if (event->options.powerLimit == LIMIT_MIN)
     {
         _nvml_resultAddMeasurement(result, minLimit);
@@ -389,7 +400,7 @@ _nvml_wrapper_getUtilization(nvmlDevice_t device, NvmlEvent* event, NvmlEventRes
 {
     nvmlUtilization_t utilization;
 
-    NVML_CALL(nvmlDeviceGetUtilizationRates, (device, &utilization), return -1);
+    NVML_CALL(nvmlDeviceGetUtilizationRates, device, &utilization);
     switch (event->options.utilization)
     {
     case UTILIZATION_GPU:       _nvml_resultAddMeasurement(result, utilization.gpu);        break;
@@ -438,6 +449,7 @@ _nvml_linkLibraries()
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetPowerManagementLimitConstraints);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetUtilizationRates);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetTotalEnergyConsumption);
+    DLSYM_AND_CHECK(dl_nvml, nvmlErrorString);
 
     // Load CUPTI library and link functions
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Init NVML Libaries");
@@ -840,10 +852,7 @@ _nvml_createDevice(int idx, NvmlDevice* device)
     device->numFans = 0;
 
     // Get NVML device handle
-    NVML_CALL(nvmlDeviceGetHandleByIndex_v2, (device->nvDevice->deviceId, &device->nvmlDevice), {
-        ERROR_PRINT("Failed to get device handle for GPU %d", device->nvDevice->deviceId);
-        return -1;
-    });
+    NVML_CALL(nvmlDeviceGetHandleByIndex_v2, device->nvDevice->deviceId, &device->nvmlDevice);
 
     ret = _nvml_getFeaturesOfDevice(device);
     if (ret < 0) return ret;
@@ -870,7 +879,7 @@ _nvml_readCounters(void (*saveTimestamp)(NvmlDevice* device, uint64_t timestamp)
 
     // Get timestamp
     uint64_t timestamp;
-    CUPTI_CALL(cuptiGetTimestamp, (&timestamp), return -EFAULT);
+    CUPTI_CALL(cuptiGetTimestamp, &timestamp);
     if (ret < 0)
     {
         return -EFAULT;
@@ -969,7 +978,7 @@ nvml_init()
     }
 
     // Init NVML
-    NVML_CALL(nvmlInit_v2, (), return -1);
+    NVML_CALL(nvmlInit_v2);
 
     // Do device specific setup
     for (int i = 0; i < nvmlContext.numDevices; i++)
@@ -997,19 +1006,19 @@ nvml_finalize()
         {
             NvmlDevice* device = &nvmlContext.devices[i];
 
-            FREE_IF_NOT_NULL(device->allEvents);
+            free(device->allEvents);
             for (int j = 0; j < device->numEventSets; j++)
             {
-                FREE_IF_NOT_NULL(device->eventSets[j].events);
-                FREE_IF_NOT_NULL(device->eventSets[j].results);
+                free(device->eventSets[j].events);
+                free(device->eventSets[j].results);
             }
-            FREE_IF_NOT_NULL(device->eventSets);
+            free(device->eventSets);
         }
         free(nvmlContext.devices);
     }
 
     // Shutdown NVML
-    NVML_CALL(nvmlShutdown, (), return);
+    nvmlShutdown_ptr();
 }
 
 
