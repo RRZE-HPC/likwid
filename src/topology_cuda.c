@@ -46,25 +46,27 @@
 #include <error.h>
 #include <likwid.h>
 
-#define CU_CALL( call, handleerror )                                    \
-    do {                                                                \
-        CUresult _status = (call);                                      \
-        if (_status != CUDA_SUCCESS) {                                  \
-            ERROR_PRINT("Function %s failed with error %d", #call, _status); \
-            handleerror;                                                \
-        }                                                               \
+#define CU_CALL(handleerror, func, ...)                            \
+    do {                                                \
+        CUresult s = (*func##_ptr)(__VA_ARGS__);    \
+        if (s != CUDA_SUCCESS) {                        \
+            const char *errstr = NULL;\
+            cuGetErrorString_ptr(s, &errstr);\
+            ERROR_PRINT("Error: function %s failed with error: '%s' (CUresult=%d).", #func, errstr, s);   \
+            handleerror;\
+        }                                               \
     } while (0)
 
 #define DECLARECUFUNC(funcname, ...) CUresult __attribute__((weak)) funcname(__VA_ARGS__);  static CUresult (*funcname##_ptr)(__VA_ARGS__);
 
 
-#define CUDA_CALL( call, handleerror )                                \
-    do {                                                                \
-        cudaError_t _status = (call);                                   \
-        if (_status != cudaSuccess) {                                   \
-            ERROR_PRINT("Function %s failed with error %d", #call, _status); \
-            handleerror;                                                \
-        }                                                               \
+#define CUDA_CALL(handleerror, func, ...)                            \
+    do {                                                \
+        cudaError_t s = (*func##_ptr)(__VA_ARGS__);    \
+        if (s != cudaSuccess) {                        \
+            ERROR_PRINT("Error: function %s failed with error: '%s' (cudaError_t=%d).", #func, cudaGetErrorString_ptr(s), s);   \
+            handleerror;\
+        }                                               \
     } while (0)
 
 #define DECLARECUDAFUNC(funcname, ...) cudaError_t __attribute__((weak)) funcname(__VA_ARGS__);  static cudaError_t (*funcname##_ptr)(__VA_ARGS__);
@@ -86,6 +88,7 @@ CudaTopology cudaTopology = {0, NULL};
 DECLARECUFUNC(cuDeviceGet, CUdevice *, int);
 DECLARECUFUNC(cuDeviceGetCount, int *);
 DECLARECUFUNC(cuDeviceGetName, char *, int, CUdevice);
+DECLARECUFUNC(cuGetErrorString, CUresult, const char **);
 DECLARECUFUNC(cuInit, unsigned int);
 DECLARECUFUNC(cuDeviceComputeCapability, int*, int*, CUdevice);
 DECLARECUFUNC(cuDeviceGetAttribute, int*, CUdevice_attribute, CUdevice);
@@ -95,6 +98,8 @@ DECLARECUFUNC(cuDeviceTotalMem_v2, size_t*, CUdevice);
 
 DECLARECUDAFUNC(cudaDriverGetVersion, int*);
 DECLARECUDAFUNC(cudaRuntimeGetVersion, int*)
+const char * __attribute__((weak)) cudaGetErrorString(cudaError_t);
+static const char *(*cudaGetErrorString_ptr)(cudaError_t);
 
 static int
 cuda_topo_link_libraries(void)
@@ -118,20 +123,21 @@ cuda_topo_link_libraries(void)
         DEBUG_PRINT(DEBUGLEV_INFO, "CUDA library libcudart.so not found");
         return -1;
     }
-    cuDeviceGetTopoPtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGet");
-    cuDeviceGetCountTopoPtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGetCount");
-    cuDeviceGetNameTopoPtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGetName");
-    cuInitTopoPtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuInit");
-    cuDeviceComputeCapabilityTopoPtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceComputeCapability");
-    cuDeviceGetAttributeTopoPtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGetAttribute");
-    cuDeviceGetPropertiesTopoPtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGetProperties");
-    cuDeviceTotalMemTopoPtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceTotalMem");
+    cuDeviceGet_ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGet");
+    cuDeviceGetCount_ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGetCount");
+    cuDeviceGetName_ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGetName");
+    cuInit_ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuInit");
+    cuDeviceComputeCapability_ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceComputeCapability");
+    cuDeviceGetAttribute_ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGetAttribute");
+    cuDeviceGetProperties_ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGetProperties");
+    cuDeviceTotalMem_ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceTotalMem");
     
-    cudaDriverGetVersionTopoPtr = DLSYM_AND_CHECK(topo_dl_libcudart, "cudaDriverGetVersion");
-    cudaRuntimeGetVersionTopoPtr = DLSYM_AND_CHECK(topo_dl_libcudart, "cudaRuntimeGetVersion");
+    cudaDriverGetVersion_ptr = DLSYM_AND_CHECK(topo_dl_libcudart, "cudaDriverGetVersion");
+    cudaRuntimeGetVersion_ptr = DLSYM_AND_CHECK(topo_dl_libcudart, "cudaRuntimeGetVersion");
+    cudaGetErrorString_ptr = DLSYM_AND_CHECK(topo_dl_libcudart, "cudaGetErrorString");
     
 #if CUDA_VERSION >= 10000
-    cuDeviceTotalMem_v2TopoPtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceTotalMem_v2");
+    cuDeviceTotalMem_v2_ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceTotalMem_v2");
 #endif
     
     return 0;
@@ -140,7 +146,7 @@ cuda_topo_link_libraries(void)
 static int
 cuda_topo_init(void)
 {
-    CUresult cuErr = (*cuInitTopoPtr)(0);
+    CUresult cuErr = cuInit_ptr(0);
     if (cuErr != CUDA_SUCCESS)
     {
         DEBUG_PRINT(DEBUGLEV_INFO, "CUDA cannot be found and initialized (cuInit failed): %d", cuErr);
@@ -153,7 +159,7 @@ static int
 cuda_topo_get_numDevices(void)
 {
     int count = 0;
-    CUresult cuErr = (*cuDeviceGetCountTopoPtr)(&count);
+    CUresult cuErr = cuDeviceGetCount_ptr(&count);
     if (cuErr == CUDA_SUCCESS)
         return count;
 
@@ -161,7 +167,7 @@ cuda_topo_get_numDevices(void)
     if (ret < 0)
         return ret;
 
-    cuErr = (*cuDeviceGetCountTopoPtr)(&count);
+    cuErr = cuDeviceGetCount_ptr(&count);
     if (cuErr == CUDA_SUCCESS)
         return count;
     DEBUG_PRINT(DEBUGLEV_INFO, "uDeviceGetCount failed even though cuda_topo_init succeeded: %d", cuErr);
@@ -220,8 +226,8 @@ topology_cuda_init()
     {
         return -ENODEV;
     }
-    CUDA_CALL((*cudaDriverGetVersionTopoPtr)(&cuda_version), ret = -1; goto topology_gpu_init_error;);
-    CUDA_CALL((*cudaRuntimeGetVersionTopoPtr)(&cudart_version), ret = -1; goto topology_gpu_init_error;);
+    CUDA_CALL(ret = -1; goto topology_gpu_init_error, cudaDriverGetVersion,&cuda_version);
+    CUDA_CALL(ret = -1; goto topology_gpu_init_error, cudaRuntimeGetVersion,&cudart_version);
     if (num_devs > 0)
     {
         cudaTopology.devices = malloc(num_devs * sizeof(CudaDevice));
@@ -234,23 +240,23 @@ topology_cuda_init()
             CUdevice dev;
             cudaTopology.devices[i].name = NULL;
             cudaTopology.devices[i].short_name = NULL;
-            CU_CALL((*cuDeviceGetTopoPtr)(&dev, i), ret = -ENODEV; goto topology_gpu_init_error;);
+            CU_CALL(ret = -ENODEV; goto topology_gpu_init_error, cuDeviceGet, &dev, i);
             size_t s = 0;
 #if CUDA_VERSION >= 10000
             if (cuda_version >= 10000 && cudart_version >= 10000)
             {
-                CU_CALL((*cuDeviceTotalMem_v2TopoPtr)(&s, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+                CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceTotalMem_v2, &s, dev);
                 if (s == 0)
                 {
-                    CU_CALL((*cuDeviceTotalMemTopoPtr)(&s, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+                    CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceTotalMem, &s, dev);
                 }
             }
             else
             {
-                CU_CALL((*cuDeviceTotalMemTopoPtr)(&s, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+                CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceTotalMem, &s, dev);
             }
 #else
-            CU_CALL((*cuDeviceTotalMemTopoPtr)(&s, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceTotalMem, &s, dev);
 #endif
             const size_t NAME_LONG_MAX = 1024;
             const size_t NAME_SHORT_MAX = 64;
@@ -262,7 +268,7 @@ topology_cuda_init()
                 ret = -ENOMEM;
                 goto topology_gpu_init_error;
             }
-            CU_CALL((*cuDeviceGetNameTopoPtr)(cudaTopology.devices[i].name, NAME_LONG_MAX-1, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetName, cudaTopology.devices[i].name, NAME_LONG_MAX-1, dev);
             cudaTopology.devices[i].devid = i;
             cudaTopology.devices[i].short_name = calloc(NAME_SHORT_MAX, sizeof(char));
             if (!cudaTopology.devices[i].short_name)
@@ -272,7 +278,7 @@ topology_cuda_init()
                 goto topology_gpu_init_error;
             }
 
-            CU_CALL((*cuDeviceComputeCapabilityTopoPtr)(&cudaTopology.devices[i].ccapMajor, &cudaTopology.devices[i].ccapMinor, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceComputeCapability, &cudaTopology.devices[i].ccapMajor, &cudaTopology.devices[i].ccapMinor, dev);
             if (cudaTopology.devices[i].ccapMajor < 7)
             {
                 ret = snprintf(cudaTopology.devices[i].short_name, NAME_SHORT_MAX, "nvidia_gpu_cc_lt_7");
@@ -282,7 +288,7 @@ topology_cuda_init()
                 ret = snprintf(cudaTopology.devices[i].short_name, NAME_SHORT_MAX, "nvidia_gpu_cc_ge_7");
             }
             CUdevprop props;
-            CU_CALL((*cuDeviceGetPropertiesTopoPtr)(&props, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetProperties, &props, dev);
             cudaTopology.devices[i].maxThreadsPerBlock = props.maxThreadsPerBlock;
             cudaTopology.devices[i].maxThreadsDim[0] = props.maxThreadsDim[0];
             cudaTopology.devices[i].maxThreadsDim[1] = props.maxThreadsDim[1];
@@ -296,24 +302,24 @@ topology_cuda_init()
             cudaTopology.devices[i].memPitch = props.memPitch;
             cudaTopology.devices[i].clockRatekHz = props.clockRate;
             cudaTopology.devices[i].textureAlign = props.textureAlign;
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].l2Size, CU_DEVICE_ATTRIBUTE_L2_CACHE_SIZE, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].memClockRatekHz, CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].memClockRatekHz, CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].pciBus, CU_DEVICE_ATTRIBUTE_PCI_BUS_ID, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].pciDev, CU_DEVICE_ATTRIBUTE_PCI_DEVICE_ID, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].pciDom, CU_DEVICE_ATTRIBUTE_PCI_DOMAIN_ID, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].l2Size, CU_DEVICE_ATTRIBUTE_L2_CACHE_SIZE, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].memClockRatekHz, CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].memClockRatekHz, CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].pciBus, CU_DEVICE_ATTRIBUTE_PCI_BUS_ID, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].pciDev, CU_DEVICE_ATTRIBUTE_PCI_DEVICE_ID, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].pciDom, CU_DEVICE_ATTRIBUTE_PCI_DOMAIN_ID, dev);
             // TODO: Get PCI function through nvmlDeviceGetPciInfo_v3, nvmlPciInfo_t->function
             cudaTopology.devices[i].pciFunc = 0;
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].maxBlockRegs, CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].numMultiProcs, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].maxThreadPerMultiProc, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].memBusWidth, CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].unifiedAddrSpace, CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].ecc, CU_DEVICE_ATTRIBUTE_ECC_ENABLED, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].asyncEngines, CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].mapHostMem, CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].integrated, CU_DEVICE_ATTRIBUTE_INTEGRATED, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
-            CU_CALL((*cuDeviceGetAttributeTopoPtr)(&cudaTopology.devices[i].surfaceAlign, CU_DEVICE_ATTRIBUTE_SURFACE_ALIGNMENT, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].maxBlockRegs, CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].numMultiProcs, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].maxThreadPerMultiProc, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].memBusWidth, CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].unifiedAddrSpace, CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].ecc, CU_DEVICE_ATTRIBUTE_ECC_ENABLED, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].asyncEngines, CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].mapHostMem, CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].integrated, CU_DEVICE_ATTRIBUTE_INTEGRATED, dev);
+            CU_CALL(ret = -ENOMEM; goto topology_gpu_init_error, cuDeviceGetAttribute, &cudaTopology.devices[i].surfaceAlign, CU_DEVICE_ATTRIBUTE_SURFACE_ALIGNMENT, dev);
 
             cudaTopology.devices[i].numaNode = cuda_topo_get_numNode(cudaTopology.devices[i].pciBus, cudaTopology.devices[i].pciDev, cudaTopology.devices[i].pciDom);
         }

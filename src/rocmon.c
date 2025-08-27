@@ -68,26 +68,26 @@ int likwid_rocmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
 // Macros
 #define membersize(type, member) sizeof(((type *) NULL)->member)
-#define FREE_IF_NOT_NULL(var) if ( var ) { free( var ); var = NULL; }
-#define ROCM_CALL( call, args, handleerror )                                  \
-    do {                                                                \
-        hsa_status_t _status = (*call##_ptr)args;                                  \
-        if (_status != HSA_STATUS_SUCCESS && _status != HSA_STATUS_INFO_BREAK) {           \
-            const char* err = NULL; \
-            fprintf(stderr, "Error: function %s failed with error %d\n", #call, _status); \
-            rocprofiler_error_string(&err); \
-            fprintf(stderr, "Error: %s\n", err); \
-            handleerror;                                                \
-        }                                                               \
+#define ROCM_CALL(handleerror, func, ...) \
+    do { \
+        hsa_status_t s = (*func##_ptr)(__VA_ARGS__);\
+        if (s != HSA_STATUS_SUCCESS && s != HSA_STATUS_INFO_BREAK) {           \
+            const char *errstr = NULL;\
+            rocprofiler_error_string(&errstr); \
+            ERROR_PRINT("Error: function %s failed with error: '%s' (hsa_status_t=%d).", #func, errstr, s);\
+            handleerror;\
+        }\
     } while (0)
 
-#define RSMI_CALL( call, args, handleerror )                                  \
-    do {                                                                \
-        rsmi_status_t _status = (*call##_ptr)args;                                  \
-        if (_status != RSMI_STATUS_SUCCESS) {           \
-            fprintf(stderr, "Error: function %s failed with error %d.\n", #call, _status); \
-            handleerror;                                                \
-        }                                                               \
+#define RSMI_CALL(handleerror, func, ...)\
+    do {\
+        rsmi_status_t s = (*func##_ptr)(__VA_ARGS__);\
+        if (s != RSMI_STATUS_SUCCESS) {\
+            const char *errstr = NULL;\
+            rsmi_status_string_ptr(s, &errstr);\
+            ERROR_PRINT("Error: function %s failed with error: '%s' (rsmi_status_t=%d)", #func, errstr, s);\
+            handleerror;\
+        }\
     } while (0)
 
 // ROCm function declarations
@@ -133,6 +133,7 @@ DECLAREFUNC_SMI(rsmi_dev_volt_metric_get, uint32_t dv_ind, rsmi_voltage_type_t s
 DECLAREFUNC_SMI(rsmi_dev_overdrive_level_get, uint32_t dv_ind, uint32_t* od);
 DECLAREFUNC_SMI(rsmi_dev_ecc_count_get, uint32_t dv_ind, rsmi_gpu_block_t block, rsmi_error_count_t* ec);
 DECLAREFUNC_SMI(rsmi_compute_process_info_get, rsmi_process_info_t* procs, uint32_t* num_items);
+DECLAREFUNC_SMI(rsmi_status_string_ptr, rsmi_status_t status, const char **status_string);
 
 
 // ----------------------------------------------------
@@ -145,9 +146,9 @@ _smi_wrapper_pci_throughput_get(int deviceId, RocmonSmiEvent* event, RocmonEvent
     uint64_t value;
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "_smi_wrapper_pci_throughput_get(%d, %d)", deviceId, event->extra);
     // Internal variant: 0 for sent, 1 for received bytes and 2 for max packet size
-    if (event->extra == 0)       RSMI_CALL(rsmi_dev_pci_throughput_get, (deviceId, &value, NULL, NULL), return -1);
-    else if (event->extra == 1)  RSMI_CALL(rsmi_dev_pci_throughput_get, (deviceId, NULL, &value, NULL), return -1);
-    else if (event->extra == 2)  RSMI_CALL(rsmi_dev_pci_throughput_get, (deviceId, NULL, NULL, &value), return -1);
+    if (event->extra == 0)       RSMI_CALL(return -1, rsmi_dev_pci_throughput_get, deviceId, &value, NULL, NULL);
+    else if (event->extra == 1)  RSMI_CALL(return -1, rsmi_dev_pci_throughput_get, deviceId, NULL, &value, NULL);
+    else if (event->extra == 2)  RSMI_CALL(return -1, rsmi_dev_pci_throughput_get, deviceId, NULL, NULL, &value);
     else return -1;
 
     result->fullValue += value;
@@ -161,7 +162,7 @@ static int
 _smi_wrapper_pci_replay_counter_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t counter;
-    RSMI_CALL(rsmi_dev_pci_replay_counter_get, (deviceId, &counter), return -1);
+    RSMI_CALL(return -1, rsmi_dev_pci_replay_counter_get, deviceId, &counter);
     result->fullValue += counter;
     result->lastValue = counter;
 
@@ -173,7 +174,7 @@ static int
 _smi_wrapper_power_ave_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t power;
-    RSMI_CALL(rsmi_dev_power_ave_get, (deviceId, event->subvariant, &power), return -1);
+    RSMI_CALL(return -1, rsmi_dev_power_ave_get, deviceId, event->subvariant, &power);
     result->fullValue += power;
     result->lastValue = power;
 
@@ -185,7 +186,7 @@ static int
 _smi_wrapper_memory_total_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t total;
-    RSMI_CALL(rsmi_dev_memory_total_get, (deviceId, event->variant, &total), return -1);
+    RSMI_CALL(return -1, rsmi_dev_memory_total_get, deviceId, event->variant, &total);
     result->fullValue += total;
     result->lastValue = total;
 
@@ -197,7 +198,7 @@ static int
 _smi_wrapper_memory_usage_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t used;
-    RSMI_CALL(rsmi_dev_memory_usage_get, (deviceId, event->variant, &used), return -1);
+    RSMI_CALL(return -1, rsmi_dev_memory_usage_get, deviceId, event->variant, &used);
     result->fullValue += used;
     result->lastValue = used;
 
@@ -209,7 +210,7 @@ static int
 _smi_wrapper_memory_busy_percent_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint32_t percent;
-    RSMI_CALL(rsmi_dev_memory_busy_percent_get, (deviceId, &percent), return -1);
+    RSMI_CALL(return -1, rsmi_dev_memory_busy_percent_get, deviceId, &percent);
     result->fullValue += percent;
     result->lastValue = percent;
 
@@ -221,7 +222,7 @@ static int
 _smi_wrapper_memory_reserved_pages_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint32_t num_pages;
-    RSMI_CALL(rsmi_dev_memory_reserved_pages_get, (deviceId, &num_pages, NULL), return -1);
+    RSMI_CALL(return -1, rsmi_dev_memory_reserved_pages_get, deviceId, &num_pages, NULL);
     result->fullValue += num_pages;
     result->lastValue = num_pages;
 
@@ -233,7 +234,7 @@ static int
 _smi_wrapper_fan_rpms_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t speed;
-    RSMI_CALL(rsmi_dev_fan_rpms_get, (deviceId, event->subvariant, &speed), return -1);
+    RSMI_CALL(return -1, rsmi_dev_fan_rpms_get, deviceId, event->subvariant, &speed);
     result->fullValue += speed;
     result->lastValue = speed;
 
@@ -245,7 +246,7 @@ static int
 _smi_wrapper_fan_speed_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t speed;
-    RSMI_CALL(rsmi_dev_fan_speed_get, (deviceId, event->subvariant, &speed), return -1);
+    RSMI_CALL(return -1, rsmi_dev_fan_speed_get, deviceId, event->subvariant, &speed);
     result->fullValue += speed;
     result->lastValue = speed;
 
@@ -257,7 +258,7 @@ static int
 _smi_wrapper_fan_speed_max_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t max_speed;
-    RSMI_CALL(rsmi_dev_fan_speed_max_get, (deviceId, event->subvariant, &max_speed), return -1);
+    RSMI_CALL(return -1, rsmi_dev_fan_speed_max_get, deviceId, event->subvariant, &max_speed);
     result->fullValue += max_speed;
     result->lastValue = max_speed;
 
@@ -269,7 +270,7 @@ static int
 _smi_wrapper_temp_metric_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t temperature;
-    RSMI_CALL(rsmi_dev_temp_metric_get, (deviceId, event->subvariant, event->variant, &temperature), return -1);
+    RSMI_CALL(return -1, rsmi_dev_temp_metric_get, deviceId, event->subvariant, event->variant, &temperature);
     result->fullValue += temperature;
     result->lastValue = temperature;
 
@@ -281,7 +282,7 @@ static int
 _smi_wrapper_volt_metric_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t voltage;
-    RSMI_CALL(rsmi_dev_volt_metric_get, (deviceId, event->subvariant, event->variant, &voltage), return -1);
+    RSMI_CALL(return -1, rsmi_dev_volt_metric_get, deviceId, event->subvariant, event->variant, &voltage);
     result->fullValue += voltage;
     result->lastValue = voltage;
 
@@ -293,7 +294,7 @@ static int
 _smi_wrapper_overdrive_level_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint32_t overdrive;
-    RSMI_CALL(rsmi_dev_overdrive_level_get, (deviceId, &overdrive), return -1);
+    RSMI_CALL(return -1, rsmi_dev_overdrive_level_get, deviceId, &overdrive);
     result->fullValue += overdrive;
     result->lastValue = overdrive;
 
@@ -305,7 +306,7 @@ static int
 _smi_wrapper_ecc_count_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     rsmi_error_count_t error_count;
-    RSMI_CALL(rsmi_dev_ecc_count_get, (deviceId, event->variant, &error_count), return -1);
+    RSMI_CALL(return -1, rsmi_dev_ecc_count_get, deviceId, event->variant, &error_count);
 
     if (event->extra == 0)
     {
@@ -330,7 +331,7 @@ static int
 _smi_wrapper_compute_process_info_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint32_t num_items;
-    RSMI_CALL(rsmi_compute_process_info_get, (NULL, &num_items), return -1);
+    RSMI_CALL(return -1, rsmi_compute_process_info_get, NULL, &num_items);
     result->fullValue += num_items;
     result->lastValue = num_items;
 
@@ -504,7 +505,7 @@ _rocmon_iterate_agents_callback(hsa_agent_t agent, void* argv)
 
     // Check if device is a GPU
     hsa_device_type_t type;
-    ROCM_CALL(hsa_agent_get_info, (agent, HSA_AGENT_INFO_DEVICE, &type), return -1);
+    ROCM_CALL(return -1, hsa_agent_get_info, agent, HSA_AGENT_INFO_DEVICE, &type);
     if (type != HSA_DEVICE_TYPE_GPU)
     {
         return HSA_STATUS_SUCCESS;
@@ -539,12 +540,12 @@ _rocmon_iterate_agents_callback(hsa_agent_t agent, void* argv)
 
     // Get number of available metrics
     device->numRocMetrics = 0;
-    ROCM_CALL(rocprofiler_iterate_info, (&agent, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_count, device), return HSA_STATUS_ERROR);
+    ROCM_CALL(return HSA_STATUS_ERROR, rocprofiler_iterate_info, &agent, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_count, device);
     ROCMON_DEBUG_PRINT(DEBUGLEV_INFO, "RocProfiler provides %d events", device->numRocMetrics);
 
     // workaround for bug in ROCm 5.4.0
     if(device->numRocMetrics == 0) {
-        ROCM_CALL(rocprofiler_iterate_info, (NULL, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_count, device), return HSA_STATUS_ERROR);
+        ROCM_CALL(return HSA_STATUS_ERROR, rocprofiler_iterate_info, NULL, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_count, device);
         noAgent = true;
     }
 
@@ -573,9 +574,9 @@ _rocmon_iterate_agents_callback(hsa_agent_t agent, void* argv)
     // If the call fails with agent, call rocprofiler_iterate_info without agent
     if(noAgent)
     {
-        ROCM_CALL(rocprofiler_iterate_info, (NULL, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_add, &info_arg), return HSA_STATUS_ERROR);
+        ROCM_CALL(return HSA_STATUS_ERROR, rocprofiler_iterate_info, NULL, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_add, &info_arg);
     } else {
-        ROCM_CALL(rocprofiler_iterate_info, (&agent, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_add, &info_arg), return HSA_STATUS_ERROR);
+        ROCM_CALL(return HSA_STATUS_ERROR, rocprofiler_iterate_info, &agent, ROCPROFILER_INFO_KIND_METRIC, _rocmon_iterate_info_callback_add, &info_arg);
     }
 
     return HSA_STATUS_SUCCESS;
@@ -630,7 +631,7 @@ _rocmon_get_timestamp(uint64_t* timestamp_ns)
     uint64_t timestamp;
 
     // Get timestamp from system
-    ROCM_CALL(hsa_system_get_info, (HSA_SYSTEM_INFO_TIMESTAMP, &timestamp), return -1);
+    ROCM_CALL(return -1, hsa_system_get_info, HSA_SYSTEM_INFO_TIMESTAMP, &timestamp);
     // Convert to nanoseconds
     *timestamp_ns = (uint64_t)((long double)timestamp * rocmon_context->hsa_timestamp_factor);
 
@@ -684,9 +685,9 @@ _rocmon_readCounters_rocprofiler(RocmonDevice* device)
         return 0;
     }
 
-    ROCM_CALL(rocprofiler_read, (device->context, 0), return -1);
-    ROCM_CALL(rocprofiler_get_data, (device->context, 0), return -1);
-    ROCM_CALL(rocprofiler_get_metrics, (device->context), return -1);
+    ROCM_CALL(return -1, rocprofiler_read, device->context, 0);
+    ROCM_CALL(return -1, rocprofiler_get_data, device->context, 0);
+    ROCM_CALL(return -1, rocprofiler_get_metrics, device->context);
 
     // Update results
     RocmonEventResultList* groupResult = &device->groupResults[rocmon_context->activeGroup];
@@ -963,26 +964,24 @@ _rocmon_smi_get_functions(RocmonDevice* device)
 
     // Open iterator
     //(*rsmi_dev_supported_func_iterator_open_ptr)(device->deviceId, &iter_handle);
-    RSMI_CALL(rsmi_dev_supported_func_iterator_open, (device->deviceId, &iter_handle), {
-        return -1;
-    });
+    RSMI_CALL(return -1, rsmi_dev_supported_func_iterator_open, device->deviceId, &iter_handle);
 
     do
     {
         // Get function information
         //(*rsmi_func_iter_value_get_ptr)(iter_handle, &value);
-        RSMI_CALL(rsmi_func_iter_value_get, (iter_handle, &value), {
+        RSMI_CALL({
             ERROR_PRINT("Failed to get smi function value for device %d", device->deviceId);
-            RSMI_CALL(rsmi_dev_supported_func_iterator_close, (&iter_handle), );
+            RSMI_CALL(, rsmi_dev_supported_func_iterator_close, &iter_handle);
             return -1;
-        });
+        }, rsmi_func_iter_value_get, iter_handle, &value);
 
         // Get function variants
         ret = _rocmon_smi_get_function_variants(device, value.name, iter_handle);
         if (ret < 0)
         {
             ERROR_PRINT("Failed to get smi function variants for device %d", device->deviceId);
-            RSMI_CALL(rsmi_dev_supported_func_iterator_close, (&iter_handle), );
+            RSMI_CALL(, rsmi_dev_supported_func_iterator_close, &iter_handle);
             return -1;
         }
 
@@ -995,7 +994,7 @@ _rocmon_smi_get_functions(RocmonDevice* device)
 
     // Close iterator
     //(*rsmi_dev_supported_func_iterator_close_ptr)(&iter_handle);
-    RSMI_CALL(rsmi_dev_supported_func_iterator_close, (&iter_handle), );
+    RSMI_CALL(, rsmi_dev_supported_func_iterator_close, &iter_handle);
 
     // Add device independent functions
     ret = _rocmon_smi_add_event_to_device(device, "rsmi_compute_process_info_get", ROCMON_SMI_EVENT_TYPE_NORMAL, 0, 0);
@@ -1062,7 +1061,7 @@ _rcomon_smi_free_event_list(void* vlist)
     RocmonSmiEventList* list = (RocmonSmiEventList*)vlist;
     if (list)
     {
-        FREE_IF_NOT_NULL(list->entries);
+        free(list->entries);
         free(list);
     }
 }
@@ -1195,28 +1194,16 @@ rocmon_init(int numGpus, const int* gpuIds)
 
     // init hsa library
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Initializing HSA");
-    ROCM_CALL(hsa_init, (),
-    {
-        ERROR_PRINT("Failed to init hsa library");
-        goto rocmon_init_hsa_failed;
-    });
+    ROCM_CALL(goto rocmon_init_hsa_failed, hsa_init);
 
     // init rocm smi library
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Initializing RSMI");
-    RSMI_CALL(rsmi_init, (0),
-    {
-        ERROR_PRINT("Failed to init rocm_smi");
-        goto rocmon_init_rsmi_failed;
-    });
+    RSMI_CALL(goto rocmon_init_rsmi_failed, rsmi_init, 0);
 
     // Get hsa timestamp factor
     uint64_t frequency_hz;
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Getting HSA timestamp factor");
-    ROCM_CALL(hsa_system_get_info, (HSA_SYSTEM_INFO_TIMESTAMP_FREQUENCY, &frequency_hz),
-    {
-        ERROR_PRINT("Failed to get HSA timestamp factor");
-        goto rocmon_init_info_agents_failed;
-    });
+    ROCM_CALL(ERROR_PRINT("Failed to get HSA timestamp factor"); goto rocmon_init_info_agents_failed, hsa_system_get_info, HSA_SYSTEM_INFO_TIMESTAMP_FREQUENCY, &frequency_hz);
     rocmon_context->hsa_timestamp_factor = (long double)1000000000 / (long double)frequency_hz;
 
     // initialize structures for specified devices (fetch ROCm specific info)
@@ -1226,11 +1213,7 @@ rocmon_init(int numGpus, const int* gpuIds)
         .gpuIds = gpuIds,
     };
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Iterating through %d available agents", numGpus);
-    ROCM_CALL(hsa_iterate_agents, (_rocmon_iterate_agents_callback, &arg),
-    {
-        ERROR_PRINT("Error while iterating through available agents");
-        goto rocmon_init_info_agents_failed;
-    });
+    ROCM_CALL(ERROR_PRINT("Error while iterating through available agents"); goto rocmon_init_info_agents_failed, hsa_iterate_agents, _rocmon_iterate_agents_callback, &arg);
 
     // Get available SMI events for devices
     _rocmon_smi_init_events();
@@ -1246,13 +1229,9 @@ rocmon_init(int numGpus, const int* gpuIds)
     rocmon_initialized = TRUE;
     return 0;
 rocmon_init_info_agents_failed:
-    RSMI_CALL(rsmi_shut_down, (), {
-        // fall through
-    });
+    RSMI_CALL(, rsmi_shut_down);
 rocmon_init_rsmi_failed:
-    ROCM_CALL(hsa_shut_down, (), {
-        // fall through
-    });
+    ROCM_CALL(, hsa_shut_down);
 rocmon_init_hsa_failed:
     free(rocmon_context->devices);
     free(rocmon_context);
@@ -1280,22 +1259,22 @@ rocmon_finalize(void)
             for (int i = 0; i < context->numDevices; i++)
             {
                 RocmonDevice* device = &context->devices[i];
-                FREE_IF_NOT_NULL(device->rocMetrics);
-                FREE_IF_NOT_NULL(device->activeRocEvents);
-                FREE_IF_NOT_NULL(device->activeSmiEvents);
+                free(device->rocMetrics);
+                free(device->activeRocEvents);
+                free(device->activeSmiEvents);
                 if (device->groupResults)
                 {
                     // Free events of event result lists
                     for (int j = 0; j < device->numGroupResults; j++)
                     {
-                        FREE_IF_NOT_NULL(device->groupResults[j].results);
+                        free(device->groupResults[j].results);
                     }
                     // Free list
                     free(device->groupResults);
                 }
                 if (device->context)
                 {
-                    ROCM_CALL(rocprofiler_close, (device->context),);
+                    ROCM_CALL(, rocprofiler_close, device->context);
                 }
                 destroy_smap(device->smiMetrics);
             }
@@ -1304,21 +1283,15 @@ rocmon_finalize(void)
             context->devices = NULL;
         }
 
-        FREE_IF_NOT_NULL(context->groups);
+        free(context->groups);
         destroy_smap(context->smiEvents);
 
         free(context);
         context = NULL;
     }
 
-    RSMI_CALL(rsmi_shut_down, (), {
-        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Shutdown SMI");
-        // fall through
-    });
-    ROCM_CALL(hsa_shut_down, (), {
-        ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Shutdown HSA");
-        // fall through
-    });
+    RSMI_CALL(ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Shutdown SMI"), rsmi_shut_down);
+    ROCM_CALL(ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Shutdown HSA"), hsa_shut_down);
 
     rocmon_initialized = FALSE;
 }
@@ -1400,7 +1373,7 @@ _rocmon_setupCounters_rocprofiler(RocmonDevice* device, const char** events, int
     if (device->context)
     {
         ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Closing previous rocprofiler context");
-        ROCM_CALL(rocprofiler_close, (device->context), return -1);
+        ROCM_CALL(return -1, rocprofiler_close, device->context);
     }
 
     // Look if the are any events
@@ -1424,7 +1397,7 @@ _rocmon_setupCounters_rocprofiler(RocmonDevice* device, const char** events, int
     }
 
     // Free previous feature array if present
-    FREE_IF_NOT_NULL(device->activeRocEvents);
+    free(device->activeRocEvents);
 
     device->numActiveRocEvents = numEvents;
     device->activeRocEvents = features;
@@ -1435,7 +1408,7 @@ _rocmon_setupCounters_rocprofiler(RocmonDevice* device, const char** events, int
     uint32_t mode = ROCPROFILER_MODE_STANDALONE | ROCPROFILER_MODE_CREATEQUEUE | ROCPROFILER_MODE_SINGLEGROUP;
 
     // Important: only a single profiling group is supported at this time which limits the number of events that can be monitored at a time.
-    ROCM_CALL(rocprofiler_open, (device->hsa_agent, device->activeRocEvents, device->numActiveRocEvents, &device->context, mode, &properties), return -1);
+    ROCM_CALL(return -1, rocprofiler_open, device->hsa_agent, device->activeRocEvents, device->numActiveRocEvents, &device->context, mode, &properties);
 
     return 0;
 }
@@ -1689,7 +1662,7 @@ _rocmon_startCounters_rocprofiler(RocmonDevice* device)
 
     if (device->context)
     {
-        ROCM_CALL(rocprofiler_start, (device->context, 0), return -1);
+        ROCM_CALL(return -1, rocprofiler_start, device->context, 0);
     }
 
     return 0;
@@ -1771,7 +1744,7 @@ _rocmon_stopCounters_rocprofiler(RocmonDevice* device)
     if (device->context)
     {
         // Close context
-        ROCM_CALL(rocprofiler_stop, (device->context, 0), return -1);
+        ROCM_CALL(return -1, rocprofiler_stop, device->context, 0);
     }
 
     return 0;
