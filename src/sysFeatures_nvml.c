@@ -57,9 +57,9 @@
 
 #define NVML_CALL(func, ...)                            \
     do {                                                \
-        nvmlReturn_t s = (*func##_ptr)(__VA_ARGS__);    \
-        if (s != NVML_SUCCESS) {                        \
-            ERROR_PRINT("Error: function %s failed with error: '%s' (nvmlReturn=%d).", #func, nvmlErrorString_ptr(s), s);   \
+        nvmlReturn_t s_ = (*func##_ptr)(__VA_ARGS__);    \
+        if (s_ != NVML_SUCCESS) {                        \
+            ERROR_PRINT("Error: function %s failed with error: '%s' (nvmlReturn=%d).", #func, nvmlErrorString_ptr(s_), s_);   \
             return -EPERM;                              \
         }                                               \
     } while (0)

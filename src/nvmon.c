@@ -83,7 +83,6 @@ int gMarkerRegions = 0;
 int
 nvmon_init(int nrGpus, const int* gpuIds)
 {
-    int idx = 0;
     int ret = 0;
     CudaTopology_t gtopo = NULL;
     if (nvmon_initialized == 1)
@@ -190,7 +189,7 @@ nvmon_init(int nrGpus, const int* gpuIds)
         device->timeRead = 0;
         if (cputicount > 0 && perfworkscount > 0)
         {
-            ERROR_PRINT("Cannot use GPUs with different backends in a session", gpuIds[i]);
+            ERROR_PRINT("Cannot use GPUs (ID=%d) with different backends in a session", gpuIds[i]);
             free(nvGroupSet->gpus);
             free(nvGroupSet);
             nvGroupSet = NULL;
@@ -516,15 +515,12 @@ nvmon_initEventSourceLookupMaps(int gid, int gpuId)
 int
 nvmon_addEventSet(const char* eventCString)
 {
-    int i = 0, j = 0, k = 0, l = 0, m = 0, err = 0;
+    int err = 0;
 
     int devId = 0;
-    int configuredEvents = 0;
 
     NvmonDevice_t device = NULL;
     Configuration_t config = NULL;
-    GroupInfo ginfo;
-
 
     if (!eventCString)
     {
@@ -699,8 +695,6 @@ int nvmon_setupCounters(int gid)
 {
     int i = 0;
     int err = 0;
-    int oldDevId;
-    CUcontext curContext;
 
     if ((!nvGroupSet) || (!nvmon_initialized) || (gid < 0))
     {
@@ -1105,7 +1099,6 @@ int nvmon_getGroups(int gpuId, char*** groups, char*** shortinfos, char*** longi
     int ret = 0;
 
     init_configuration();
-    int ccapMajor = 0;
     Configuration_t config = get_configuration();
     ret = topology_cuda_init();
     if (ret != EXIT_SUCCESS)
@@ -1292,7 +1285,7 @@ nvmon_printMarkerResults()
         printf("Group %d\n", gMarkerResults[i].groupID);
         for (j=0;j<gMarkerResults[i].gpuCount; j++)
         {
-            printf("GPU %d:\n", j, gMarkerResults[i].gpulist[j]);
+            printf("GPU %d (%d):\n", j, gMarkerResults[i].gpulist[j]);
             printf("\t Measurement time %f sec\n", gMarkerResults[i].time[j]);
             printf("\t Call count %d\n", gMarkerResults[i].count[j]);
             for(k=0;k<gMarkerResults[i].eventCount;k++)
@@ -1306,7 +1299,7 @@ nvmon_printMarkerResults()
 int
 nvmon_readMarkerFile(const char* filename)
 {
-    int ret = 0, i = 0;
+    int ret = 0;
     FILE* fp = NULL;
     char buf[2048];
     buf[0] = '\0';

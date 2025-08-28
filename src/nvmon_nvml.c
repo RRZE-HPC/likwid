@@ -93,7 +93,7 @@ struct NvmlEvent_struct;
 typedef int (*NvmlMeasureFunc)(nvmlDevice_t device, struct NvmlEvent_struct* event, NvmlEventResult* result);
 
 #define LIKWID_NVML_NAME_LEN 40
-#define LIKWID_NVML_DESC_LEN 50
+#define LIKWID_NVML_DESC_LEN 128
 typedef struct NvmlEvent_struct {
     char name[LIKWID_NVML_NAME_LEN];
     char description[LIKWID_NVML_DESC_LEN];
@@ -166,9 +166,9 @@ static NvmlContext nvmlContext;
 
 #define NVML_CALL(func, ...)                            \
     do {                                                \
-        nvmlReturn_t s = (*func##_ptr)(__VA_ARGS__);    \
-        if (s != NVML_SUCCESS) {                        \
-            ERROR_PRINT("Error: function %s failed with error: '%s' (nvmlReturn=%d).", #func, nvmlErrorString_ptr(s), s);   \
+        nvmlReturn_t s_ = (*func##_ptr)(__VA_ARGS__);    \
+        if (s_ != NVML_SUCCESS) {                        \
+            ERROR_PRINT("Error: function %s failed with error: '%s' (nvmlReturn=%d).", #func, nvmlErrorString_ptr(s_), s_);   \
             return -EPERM;                              \
         }                                               \
     } while (0)
@@ -176,11 +176,11 @@ static NvmlContext nvmlContext;
 #ifndef CUPTI_CALL
 #define CUPTI_CALL(func, ...)                            \
     do {                                                \
-        CUptiResult s = (*func##_ptr)(__VA_ARGS__);    \
-        if (s != CUPTI_SUCCESS) {                        \
+        CUptiResult s_ = (*func##_ptr)(__VA_ARGS__);    \
+        if (s_ != CUPTI_SUCCESS) {                        \
             const char *errstr = NULL; \
-            cuptiGetResultString_ptr(s, &errstr); \
-            ERROR_PRINT("Error: function %s failed with error: '%s' (CUptiResult=%d)", #func, errstr, s);   \
+            cuptiGetResultString_ptr(s_, &errstr); \
+            ERROR_PRINT("Error: function %s failed with error: '%s' (CUptiResult=%d)", #func, errstr, s_);   \
             return -EPERM;                              \
         }                                               \
     } while (0)
@@ -317,6 +317,7 @@ _nvml_wrapper_getMemoryInfo(nvmlDevice_t device, NvmlEvent* event, NvmlEventResu
 static int
 _nvml_wrapper_getPerformanceState(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
+    (void)event;
     nvmlPstates_t state;
 
     NVML_CALL(nvmlDeviceGetPerformanceState, device, &state);
@@ -329,6 +330,7 @@ _nvml_wrapper_getPerformanceState(nvmlDevice_t device, NvmlEvent* event, NvmlEve
 static int
 _nvml_wrapper_getPowerUsage(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
+    (void)event;
     unsigned int power = 0;
 
     NVML_CALL(nvmlDeviceGetPowerUsage, device, &power);
@@ -340,6 +342,7 @@ _nvml_wrapper_getPowerUsage(nvmlDevice_t device, NvmlEvent* event, NvmlEventResu
 static int
 _nvml_wrapper_getEnergyConsumption(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
+    (void)event;
     unsigned long long energy = 0;
 
     NVML_CALL(nvmlDeviceGetTotalEnergyConsumption, device, &energy);
@@ -366,6 +369,7 @@ _nvml_wrapper_getTemperature(nvmlDevice_t device, NvmlEvent* event, NvmlEventRes
 static int
 _nvml_wrapper_getPowerManagementLimit(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
 {
+    (void)event;
     unsigned int limit = 0;
 
     NVML_CALL(nvmlDeviceGetPowerManagementLimit, device, &limit);
@@ -604,9 +608,9 @@ _nvml_getEventsForDevice(NvmlDevice* device)
 
     if (device->features & FEATURE_FAN_SPEED)
     {
-        for (int i = 0; i < device->numFans; i++)
+        for (unsigned i = 0; i < device->numFans; i++)
         {
-            snprintf(event->name, LIKWID_NVML_NAME_LEN, "FAN_SPEED[%d]", i);
+            snprintf(event->name, LIKWID_NVML_NAME_LEN, "FAN_SPEED[%u]", i);
             snprintf(event->description, LIKWID_NVML_DESC_LEN, "Indended fan speed represented as a percentage of the maximum noise tolerance fan speed. May exceed 100 in certain cases");
             event->measureFunc = &_nvml_wrapper_getFanSpeed;
             event->options.fan = i;
@@ -875,15 +879,9 @@ _nvml_createDevice(int idx, NvmlDevice* device)
 static int
 _nvml_readCounters(void (*saveTimestamp)(NvmlDevice* device, uint64_t timestamp), void (*afterMeasure)(NvmlEventResult* result))
 {
-    int ret;
-
     // Get timestamp
     uint64_t timestamp;
     CUPTI_CALL(cuptiGetTimestamp, &timestamp);
-    if (ret < 0)
-    {
-        return -EFAULT;
-    }
 
     for (int i = 0; i < nvmlContext.numDevices; i++)
     {
@@ -903,8 +901,9 @@ _nvml_readCounters(void (*saveTimestamp)(NvmlDevice* device, uint64_t timestamp)
             NvmlEventResult* result = &eventSet->results[i];
             if (event->measureFunc)
             {
-                ret = event->measureFunc(device->nvmlDevice, event, result);
-                if (ret < 0) return ret;
+                int ret = event->measureFunc(device->nvmlDevice, event, result);
+                if (ret < 0)
+                    return ret;
 
                 if (afterMeasure)
                 {
@@ -1145,7 +1144,6 @@ nvml_getEventsOfGpu(int gpuId, NvmonEventList_t* output)
     {
         NvmlEvent* event = &device->allEvents[i];
         NvmonEventListEntry* entry = &entries[i];
-        int len;
 
         entry->name = event->name;
         entry->desc = "No description"; // TODO: Add event descriptions

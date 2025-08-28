@@ -48,11 +48,11 @@
 
 #define CU_CALL(handleerror, func, ...)                            \
     do {                                                \
-        CUresult s = (*func##_ptr)(__VA_ARGS__);    \
-        if (s != CUDA_SUCCESS) {                        \
+        CUresult s_ = (*func##_ptr)(__VA_ARGS__);    \
+        if (s_ != CUDA_SUCCESS) {                        \
             const char *errstr = NULL;\
-            cuGetErrorString_ptr(s, &errstr);\
-            ERROR_PRINT("Error: function %s failed with error: '%s' (CUresult=%d).", #func, errstr, s);   \
+            cuGetErrorString_ptr(s_, &errstr);\
+            ERROR_PRINT("Error: function %s failed with error: '%s' (CUresult=%d).", #func, errstr, s_);   \
             handleerror;\
         }                                               \
     } while (0)
@@ -62,9 +62,9 @@
 
 #define CUDA_CALL(handleerror, func, ...)                            \
     do {                                                \
-        cudaError_t s = (*func##_ptr)(__VA_ARGS__);    \
-        if (s != cudaSuccess) {                        \
-            ERROR_PRINT("Error: function %s failed with error: '%s' (cudaError_t=%d).", #func, cudaGetErrorString_ptr(s), s);   \
+        cudaError_t s_ = (*func##_ptr)(__VA_ARGS__);    \
+        if (s_ != cudaSuccess) {                        \
+            ERROR_PRINT("Error: function %s failed with error: '%s' (cudaError_t=%d).", #func, cudaGetErrorString_ptr(s_), s_);   \
             handleerror;\
         }                                               \
     } while (0)
@@ -340,9 +340,7 @@ void
 topology_cuda_finalize(void)
 {
     if (topology_cuda_initialized)
-    {
-        int ret = topology_cuda_cleanup(cudaTopology.numDevices-1, 0);
-    }
+        topology_cuda_cleanup(cudaTopology.numDevices-1, 0);
 }
 
 CudaTopology_t
