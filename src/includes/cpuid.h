@@ -36,28 +36,26 @@
 */
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 
-
 #if defined(__i386__) && defined(__PIC__)
-# define EBX_REG "=r"
+#define EBX_REG "=r"
 #else
-# define EBX_REG "=b"
+#define EBX_REG "=b"
 #endif
 
 #ifndef __clang__
-#define CPUID(eax,ebx,ecx,edx)                            \
-    __asm__ volatile(".ifnc %%ebx,%3 ; movl  %%ebx,%3 ; .endif  \n\t" \
-                     "cpuid                                     \n\t" \
-                     ".ifnc %%ebx,%3 ; xchgl %%ebx,%3 ; .endif  \n\t" \
-                     : "=a" (eax), "=c" (ecx), "=d" (edx), EBX_REG (ebx) \
-                     : "a" (eax), "c" (ecx) \
-                     )
+#define CPUID(eax, ebx, ecx, edx)                                                                  \
+    __asm__ volatile(".ifnc %%ebx,%3 ; movl  %%ebx,%3 ; .endif  \n\t"                              \
+                     "cpuid                                     \n\t"                              \
+                     ".ifnc %%ebx,%3 ; xchgl %%ebx,%3 ; .endif  \n\t"                              \
+        : "=a"(eax), "=c"(ecx), "=d"(edx), EBX_REG(ebx)                                            \
+        : "a"(eax), "c"(ecx))
 #else
-#define CPUID(eax,ebx,ecx,edx)         \
-    __asm__ volatile("cpuid" : "=a" (eax), "=c" (ecx), "=d" (edx), EBX_REG (ebx) : "a" (eax), "c" (ecx) );
+#define CPUID(eax, ebx, ecx, edx)                                                                  \
+    __asm__ volatile("cpuid" : "=a"(eax), "=c"(ecx), "=d"(edx), EBX_REG(ebx) : "a"(eax), "c"(ecx));
 #endif
 
 #else /* ARCH Filters */
-#define CPUID(eax,ebx,ecx,edx)
+#define CPUID(eax, ebx, ecx, edx)
 #endif /* ARCH Filters */
 
 #endif /* LIKWID_CPUID_H */

@@ -37,15 +37,15 @@
 
 #include <types.h>
 
-extern void timer_init( void );
-extern double timer_print( const TimerData* );
-extern uint64_t timer_printCycles( const TimerData* );
-extern uint64_t timer_getCpuClock( void );
-extern uint64_t timer_getCpuClockCurrent( int cpu_id );
-extern uint64_t timer_getCycleClock( void );
-extern uint64_t timer_getBaseline( void );
+extern void timer_init(void);
+extern double timer_print(const TimerData *);
+extern uint64_t timer_printCycles(const TimerData *);
+extern uint64_t timer_getCpuClock(void);
+extern uint64_t timer_getCpuClockCurrent(int cpu_id);
+extern uint64_t timer_getCycleClock(void);
+extern uint64_t timer_getBaseline(void);
 
-extern void timer_start( TimerData* );
-extern void timer_stop ( TimerData* );
+extern void timer_start(TimerData *);
+extern void timer_stop(TimerData *);
 
 #endif /* TIMER_H */

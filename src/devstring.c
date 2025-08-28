@@ -28,8 +28,8 @@
  * =======================================================================================
  */
 
-#include <devstring.h>
 #include <bstrlib.h>
+#include <devstring.h>
 
 #include <limits.h>
 #include <stdbool.h>
@@ -41,7 +41,7 @@ static int btoi(const bstring bstr, int *i)
 {
     const char *cstr = bdata(bstr);
     char *endptr;
-    errno = 0;
+    errno                     = 0;
     unsigned long long result = strtoull(cstr, &endptr, 0);
     if (cstr == endptr || *endptr != '\0')
         return -EINVAL;
@@ -53,14 +53,12 @@ static int btoi(const bstring bstr, int *i)
     return 0;
 }
 
-typedef struct
-{
-    int start;  // inclusive
-    int end;    // exclusive
+typedef struct {
+    int start; // inclusive
+    int end;   // exclusive
 } range_t;
 
-typedef struct
-{
+typedef struct {
     int count;
     range_t ranges[];
 } range_list_t;
@@ -73,27 +71,24 @@ static int range_parse(const bstring range_str, range_t *range)
      * by '-'. */
     int start, end;
     int err = btoi(range_str, &start);
-    if (err == 0)
-    {
+    if (err == 0) {
         range->start = start;
-        range->end = start + 1;
+        range->end   = start + 1;
         return 0;
     }
 
     bstring start_str = NULL;
-    bstring end_str = NULL;
+    bstring end_str   = NULL;
 
-    int sep_index = bstrchr(range_str, '-');
-    if (sep_index == BSTR_ERR)
-    {
+    int sep_index     = bstrchr(range_str, '-');
+    if (sep_index == BSTR_ERR) {
         err = -EINVAL;
         goto cleanup;
     }
 
     start_str = bmidstr(range_str, 0, sep_index);
-    end_str = bmidstr(range_str, sep_index + 1, INT_MAX);
-    if (!start_str || !end_str)
-    {
+    end_str   = bmidstr(range_str, sep_index + 1, INT_MAX);
+    if (!start_str || !end_str) {
         err = -ENOMEM;
         goto cleanup;
     }
@@ -107,7 +102,7 @@ static int range_parse(const bstring range_str, range_t *range)
         goto cleanup;
 
     range->start = start;
-    range->end = end + 1;
+    range->end   = end + 1;
 
 cleanup:
     bdestroy(start_str);
@@ -122,24 +117,22 @@ static int range_create(const bstring range_list_str, range_list_t **rlist)
     if (!slist)
         return -ENOMEM;
 
-    int err = 0;
+    int err                 = 0;
     range_list_t *new_rlist = malloc(sizeof(range_list_t) + sizeof(range_t) * slist->qty);
-    if (!new_rlist)
-    {
+    if (!new_rlist) {
         err = -ENOMEM;
         goto cleanup;
     }
 
     new_rlist->count = slist->qty;
-    for (int i = 0; i < slist->qty; i++)
-    {
+    for (int i = 0; i < slist->qty; i++) {
         err = range_parse(slist->entry[i], &new_rlist->ranges[i]);
         if (err < 0)
             goto cleanup;
     }
 
     *rlist = new_rlist;
-    
+
 cleanup:
     bstrListDestroy(slist);
     return err;
@@ -175,7 +168,8 @@ static int misc_init(void)
 }
 
 #if defined(LIKWID_WITH_NVMON) || defined(LIKWID_WITH_ROCMON)
-static int device_create_from_string_and_append(LikwidDeviceType type, const char *id, LikwidDeviceList_t dev_list)
+static int device_create_from_string_and_append(
+    LikwidDeviceType type, const char *id, LikwidDeviceList_t dev_list)
 {
     LikwidDevice_t dev;
     int err = likwid_device_create_from_string(type, id, &dev);
@@ -183,15 +177,15 @@ static int device_create_from_string_and_append(LikwidDeviceType type, const cha
         return err;
 
     const int new_num_devices = dev_list->num_devices + 1;
-    LikwidDevice_t *new_devices = realloc(dev_list->devices, new_num_devices * sizeof(dev_list->devices[0]));
-    if (!new_devices)
-    {
+    LikwidDevice_t *new_devices =
+        realloc(dev_list->devices, new_num_devices * sizeof(dev_list->devices[0]));
+    if (!new_devices) {
         likwid_device_destroy(dev);
         return -ENOMEM;
     }
 
-    dev_list->num_devices = new_num_devices;
-    dev_list->devices = new_devices;
+    dev_list->num_devices                  = new_num_devices;
+    dev_list->devices                      = new_devices;
     dev_list->devices[new_num_devices - 1] = dev;
     return 0;
 }
@@ -205,15 +199,15 @@ static int device_create_and_append(LikwidDeviceType type, int id, LikwidDeviceL
         return err;
 
     const int new_num_devices = dev_list->num_devices + 1;
-    LikwidDevice_t *new_devices = realloc(dev_list->devices, new_num_devices * sizeof(dev_list->devices[0]));
-    if (!new_devices)
-    {
+    LikwidDevice_t *new_devices =
+        realloc(dev_list->devices, new_num_devices * sizeof(dev_list->devices[0]));
+    if (!new_devices) {
         likwid_device_destroy(dev);
         return -ENOMEM;
     }
 
-    dev_list->num_devices = new_num_devices;
-    dev_list->devices = new_devices;
+    dev_list->num_devices                  = new_num_devices;
+    dev_list->devices                      = new_devices;
     dev_list->devices[new_num_devices - 1] = dev;
     return 0;
 }
@@ -223,31 +217,29 @@ static int parse_node(const bstring domain_selector, LikwidDeviceList_t dev_list
     /* A node string must not have a domain_selector, as only domain 0 is allowed.
      * Optionally domain 0 is allowed. */
     const char *ds = bdata(domain_selector);
-    if (domain_selector && strcmp(ds, "0") != 0)
-    {
-        ERROR_PRINT("If specified node domain may only sppecify node '0' found: '%s'", bdata(domain_selector));
+    if (domain_selector && strcmp(ds, "0") != 0) {
+        ERROR_PRINT("If specified node domain may only sppecify node '0' found: '%s'",
+            bdata(domain_selector));
         return -EINVAL;
     }
 
     return device_create_and_append(DEVICE_TYPE_NODE, 0, dev_list);
 }
 
-static int parse_simple(const bstring domain_selector, LikwidDeviceType type, LikwidDeviceList_t dev_list)
+static int parse_simple(
+    const bstring domain_selector, LikwidDeviceType type, LikwidDeviceList_t dev_list)
 {
     /* All others (except GPUs) have a domain_selector like this: '0,1,4-5,7' */
     range_list_t *range_list;
     int err = range_create(domain_selector, &range_list);
-    if (err < 0)
-    {
+    if (err < 0) {
         ERROR_PRINT("Unable to parse malformed range: %s", bdata(domain_selector));
         return err;
     }
 
-    for (int range_index = 0; range_index < range_list->count; range_index++)
-    {
+    for (int range_index = 0; range_index < range_list->count; range_index++) {
         range_t *range = &range_list->ranges[range_index];
-        for (int i = range->start; i < range->end; i++)
-        {
+        for (int i = range->start; i < range->end; i++) {
             err = device_create_and_append(type, i, dev_list);
             if (err < 0)
                 goto cleanup;
@@ -260,26 +252,24 @@ cleanup:
 }
 
 #if defined(LIKWID_WITH_NVMON) || defined(LIKWID_WITH_ROCMON)
-static int parse_gpu(const bstring domain_selector, LikwidDeviceType type, LikwidDeviceList_t dev_list)
+static int parse_gpu(
+    const bstring domain_selector, LikwidDeviceType type, LikwidDeviceList_t dev_list)
 {
     /* GPUs differ once again in their domain_selector, as they also allow a list of PCI adresses.
      * So it may look like '0,1,4-5,7' or '00000000:e0:1f:1,00000000:30:13:0'. */
     range_list_t *range_list;
     int err = range_create(domain_selector, &range_list);
-    if (err == 0)
-    {
-        for (int range_index = 0; range_index < range_list->count; range_index++)
-        {
+    if (err == 0) {
+        for (int range_index = 0; range_index < range_list->count; range_index++) {
             range_t *range = &range_list->ranges[range_index];
-            for (int i = range->start; i < range->end; i++)
-            {
+            for (int i = range->start; i < range->end; i++) {
                 err = device_create_and_append(type, i, dev_list);
                 if (err < 0)
                     goto cleanup;
             }
         }
 
-cleanup:
+    cleanup:
         range_destroy(range_list);
         return err;
     }
@@ -290,8 +280,7 @@ cleanup:
     if (!slist)
         return -ENOMEM;
 
-    for (int i = 0; i < slist->qty; i++)
-    {
+    for (int i = 0; i < slist->qty; i++) {
         err = device_create_from_string_and_append(type, bdata(slist->entry[i]), dev_list);
         if (err < 0)
             break;
@@ -302,7 +291,8 @@ cleanup:
 }
 #endif
 
-static int process_domain(const bstring domain_type, const bstring domain_selector, LikwidDeviceList_t dev_list)
+static int process_domain(
+    const bstring domain_type, const bstring domain_selector, LikwidDeviceList_t dev_list)
 {
     const char *dt = bdata(domain_type);
     if (strcmp(dt, "N") == 0)
@@ -335,18 +325,14 @@ static int parse_domain(const bstring dev_bstr, LikwidDeviceList_t dev_list)
      * We call this the domain_type and domain_selector. */
     int err;
     int sep_index = bstrchr(dev_bstr, ':');
-    if (sep_index == BSTR_ERR)
-    {
+    if (sep_index == BSTR_ERR) {
         err = process_domain(dev_bstr, NULL, dev_list);
-    }
-    else
-    {
+    } else {
         bstring domain_name = bmidstr(dev_bstr, 0, sep_index);
         if (!domain_name)
             return -ENOMEM;
         bstring domain_selector = bmidstr(dev_bstr, sep_index + 1, INT_MAX);
-        if (!domain_selector)
-        {
+        if (!domain_selector) {
             bdestroy(domain_name);
             return -ENOMEM;
         }
@@ -370,18 +356,16 @@ int likwid_devstr_to_devlist(const char *str, LikwidDeviceList_t *dev_list)
         return -ENOMEM;
 
     /* Split input string by '@' */
-    bstring bstr = bfromcstr(str);
+    bstring bstr               = bfromcstr(str);
     struct bstrList *bstr_list = bsplit(bstr, '@');
 
-    if (!bstr_list)
-    {
+    if (!bstr_list) {
         free(new_list);
         return -ENOMEM;
     }
 
     /* Iterate over all devices and add them to the list */
-    for (int i = 0; i < bstr_list->qty; i++)
-    {
+    for (int i = 0; i < bstr_list->qty; i++) {
         err = parse_domain(bstr_list->entry[i], new_list);
         if (err < 0)
             break;

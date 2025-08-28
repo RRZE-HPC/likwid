@@ -32,10 +32,10 @@
 #ifndef LIKWID_NVMON_TYPES_H
 #define LIKWID_NVMON_TYPES_H
 
-#include <perfmon_types.h>
 #include <bstrlib.h>
 #include <inttypes.h>
 #include <perfgroup.h>
+#include <perfmon_types.h>
 
 #include <cupti.h>
 
@@ -78,7 +78,7 @@ typedef struct {
     NvmonEventType type;
     NvmonEventResultType rtype;
 } NvmonEvent;
-typedef NvmonEvent* NvmonEvent_t;
+typedef NvmonEvent *NvmonEvent_t;
 
 typedef struct {
     int eventId;
@@ -93,7 +93,7 @@ typedef struct {
     CUpti_EventGroupSet *cuGroupSet;
 
 } NvmonActiveEvent;
-typedef NvmonActiveEvent* NvmonActiveEvent_t;
+typedef NvmonActiveEvent *NvmonActiveEvent_t;
 
 /*! \brief Structure specifying an performance monitoring event group
 
@@ -101,28 +101,27 @@ A NvmonEventSet holds a set of event and counter combinations and some global in
 \extends NvmonGroupSet
 */
 typedef struct {
-    int                   id; /*!< \brief ID of event set */
-    int                   numberOfEvents; /*!< \brief Number of events in \a events */
-    NvmonEvent_t*         nvEvents; /*!< \brief List of events with length numberOfEvents */
-    NvmonEventResult*     results; /* \brief List of event results with length numberOfEvents */
-    CUpti_EventID*        cuEventIDs; /*!< \brief List of CUPTI event IDs with length numberOfEvents */
-    TimerData             timer; /*!< \brief Time information how long the counters were running */
-    double                rdtscTime; /*!< \brief Evaluation of the Time information in seconds */
-    double                runTime; /*!< \brief Sum of all time information in seconds that the group was running */
-    struct bstrList*      events;
+    int id;                    /*!< \brief ID of event set */
+    int numberOfEvents;        /*!< \brief Number of events in \a events */
+    NvmonEvent_t *nvEvents;    /*!< \brief List of events with length numberOfEvents */
+    NvmonEventResult *results; /* \brief List of event results with length numberOfEvents */
+    CUpti_EventID *cuEventIDs; /*!< \brief List of CUPTI event IDs with length numberOfEvents */
+    TimerData timer;           /*!< \brief Time information how long the counters were running */
+    double rdtscTime;          /*!< \brief Evaluation of the Time information in seconds */
+    double runTime; /*!< \brief Sum of all time information in seconds that the group was running */
+    struct bstrList *events;
     uint32_t numStages;
-    uint8_t* configImage;
+    uint8_t *configImage;
     size_t configImageSize;
-    uint8_t* counterDataImage;
+    uint8_t *counterDataImage;
     size_t counterDataImageSize;
-    uint8_t* counterDataScratchBuffer;
+    uint8_t *counterDataScratchBuffer;
     size_t counterDataScratchBufferSize;
-    uint8_t* counterDataImagePrefix;
+    uint8_t *counterDataImagePrefix;
     size_t counterDataImagePrefixSize;
-    uint8_t* counterAvailabilityImage;
+    uint8_t *counterAvailabilityImage;
     size_t counterAvailabilityImageSize;
 } NvmonEventSet;
-
 
 typedef enum {
     LIKWID_NVMON_CUPTI_BACKEND = 0,
@@ -137,12 +136,12 @@ typedef struct {
     int numEventSets;
     int activeEventSet;
     CUpti_EventGroupSets *cuEventSets;
-    GHashTable* eventHash;
-    GHashTable* evIdHash;
+    GHashTable *eventHash;
+    GHashTable *evIdHash;
     int numAllEvents;
     NvmonEvent_t *allevents;
     int numNvEventSets;
-    NvmonEventSet* nvEventSets;
+    NvmonEventSet *nvEventSets;
     char *name;
     char *chip;
     int numActiveEvents;
@@ -154,7 +153,7 @@ typedef struct {
     uint64_t timeStop;
     NvmonBackends backend;
 } NvmonDevice;
-typedef NvmonDevice* NvmonDevice_t;
+typedef NvmonDevice *NvmonDevice_t;
 
 /*typedef struct {*/
 /*    int numDevices;*/
@@ -162,28 +161,25 @@ typedef NvmonDevice* NvmonDevice_t;
 /*} NvmonControl;*/
 /*typedef NvmonControl* NvmonControl_t;*/
 
-
 typedef struct {
-    int  (*getEventList)(int gpuId, NvmonEventList_t* list);
+    int (*getEventList)(int gpuId, NvmonEventList_t *list);
     int (*createDevice)(int id, NvmonDevice *dev);
-    void (*freeDevice)(NvmonDevice* dev);
-    int (*addEvents)(NvmonDevice* device, const char* eventString);
-    int (*setupCounters)(NvmonDevice* device, NvmonEventSet* eventSet);
-    int (*startCounters)(NvmonDevice* device);
-    int (*stopCounters)(NvmonDevice* device);
-    int (*readCounters)(NvmonDevice* device);
-    int (*finalizeCounters)(NvmonDevice* device);
+    void (*freeDevice)(NvmonDevice *dev);
+    int (*addEvents)(NvmonDevice *device, const char *eventString);
+    int (*setupCounters)(NvmonDevice *device, NvmonEventSet *eventSet);
+    int (*startCounters)(NvmonDevice *device);
+    int (*stopCounters)(NvmonDevice *device);
+    int (*readCounters)(NvmonDevice *device);
+    int (*finalizeCounters)(NvmonDevice *device);
 } NvmonFunctions;
-
 
 #define NVMON_SOURCE_BACKEND 0
 #define NVMON_SOURCE_NVML 1
 typedef struct {
     int numEvents;
-    int* sourceTypes;
-    int* sourceIds;
+    int *sourceTypes;
+    int *sourceIds;
 } NvmonGroupSourceInfo;
-
 
 /*! \brief Structure specifying all performance monitoring event groups
 
@@ -192,22 +188,21 @@ configured to measure. Only one eventSet can be measured at a time but the group
 can be switched to perform some kind of multiplexing.
 */
 typedef struct {
-    int              numberOfGroups; /*!< \brief List length of \a groups*/
-    int              numberOfActiveGroups; /*!< \brief Amount of added eventSets. Only those eventSets can be accessed in \a groups. */
-    GroupState       state; /*!< \brief Current state of the event group (configured, started, none) */
-    GroupInfo        *groups; /*!< \brief Structure holding the performance group information */
-    int              activeGroup; /*!< \brief Currently active eventSet */
+    int numberOfGroups; /*!< \brief List length of \a groups*/
+    int numberOfActiveGroups; /*!< \brief Amount of added eventSets. Only those eventSets can be accessed in \a groups. */
+    GroupState state;  /*!< \brief Current state of the event group (configured, started, none) */
+    GroupInfo *groups; /*!< \brief Structure holding the performance group information */
+    int activeGroup;   /*!< \brief Currently active eventSet */
     //NvmonEventSet*   groups; /*!< \brief List of eventSets */
-    int              numberOfGPUs; /*!< \brief Amount of GPUs in \a gpus */
-    NvmonDevice*     gpus; /*!< \brief List of GPUs */
-    int              numberOfBackends;
-    NvmonFunctions*  backends[LIKWID_NVMON_BACKEND_COUNT];
+    int numberOfGPUs;  /*!< \brief Amount of GPUs in \a gpus */
+    NvmonDevice *gpus; /*!< \brief List of GPUs */
+    int numberOfBackends;
+    NvmonFunctions *backends[LIKWID_NVMON_BACKEND_COUNT];
 
-    int                   numGroupSources;
-    NvmonGroupSourceInfo* groupSources;
+    int numGroupSources;
+    NvmonGroupSourceInfo *groupSources;
 } NvmonGroupSet;
 
-extern NvmonGroupSet* nvGroupSet;
-
+extern NvmonGroupSet *nvGroupSet;
 
 #endif

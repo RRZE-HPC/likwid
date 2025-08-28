@@ -31,12 +31,10 @@
 #ifndef ACCESS_X86_TRANSLATE_H
 #define ACCESS_X86_TRANSLATE_H
 
-
 int access_x86_translate_init(uint32_t cpu_id);
 int access_x86_translate_check(PciDeviceIndex dev, uint32_t cpu_id);
 int access_x86_translate_read(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t *data);
 int access_x86_translate_write(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t data);
 int access_x86_translate_finalize(uint32_t cpu_id);
-
 
 #endif /* ACCESS_X86_TRANSLATE_H */

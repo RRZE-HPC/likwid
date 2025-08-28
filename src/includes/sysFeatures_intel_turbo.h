@@ -29,7 +29,6 @@
  * =======================================================================================
  */
 
-
 #ifndef HWFEATURES_X86_INTEL_TURBO_H
 #define HWFEATURES_X86_INTEL_TURBO_H
 

@@ -32,18 +32,18 @@
 #define TYPES_H
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
-#include <stdint.h>
 #include <bstrlib.h>
+#include <stdint.h>
 
 #include <access_client_types.h>
-#include <registers_types.h>
-#include <pci_types.h>
-#include <power_types.h>
-#include <thermal_types.h>
-#include <tree_types.h>
-#include <topology_types.h>
-#include <perfmon_types.h>
 #include <libperfctr_types.h>
+#include <pci_types.h>
+#include <perfmon_types.h>
+#include <power_types.h>
+#include <registers_types.h>
+#include <thermal_types.h>
+#include <topology_types.h>
+#include <tree_types.h>
 
 typedef struct {
     uint64_t mask[2];
@@ -52,21 +52,21 @@ typedef struct {
 /* #####   EXPORTED MACROS   ############################################## */
 
 #ifndef MIN
-#define MIN(x,y) ((x)<(y)?(x):(y))
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
 #ifndef MAX
-#define MAX(x,y) ((x)>(y)?(x):(y))
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
 #ifndef GLIB_MAJOR_VERSION
-#define TRUE  1
+#define TRUE 1
 #define FALSE 0
 #endif
 
 #define HLINE "-------------------------------------------------------------\n"
 #define SLINE "*************************************************************\n"
 
-#define LLU_CAST  (unsigned long long)
+#define LLU_CAST (unsigned long long)
 
 // borrowed from https://www.scs.stanford.edu/~dm/blog/va-opt.html
 #define PARENS ()
@@ -74,16 +74,15 @@ typedef struct {
 #define EXPAND3(...) EXPAND2(EXPAND2(EXPAND2(__VA_ARGS__)))
 #define EXPAND2(...) EXPAND1(EXPAND1(EXPAND1(__VA_ARGS__)))
 #define EXPAND1(...) __VA_ARGS__
-#define FOR_EACH(macro, ...)                                                  \
-      __VA_OPT__(EXPAND(FOR_EACH_HELPER(macro, __VA_ARGS__)))
-#define FOR_EACH_HELPER(macro, a1, ...)                                       \
-      macro(a1) __VA_OPT__(FOR_EACH_AGAIN PARENS (macro, __VA_ARGS__))
+#define FOR_EACH(macro, ...) __VA_OPT__(EXPAND(FOR_EACH_HELPER(macro, __VA_ARGS__)))
+#define FOR_EACH_HELPER(macro, a1, ...)                                                            \
+    macro(a1) __VA_OPT__(FOR_EACH_AGAIN PARENS(macro, __VA_ARGS__))
 #define FOR_EACH_AGAIN() FOR_EACH_HELPER
 #define STRINGIFY(x) #x
 #define TOSTRING(...) FOR_EACH(STRINGIFY, __VA_ARGS__)
 
-#define likely(x)       __builtin_expect(!!(x), 1)
-#define unlikely(x)     __builtin_expect(!!(x), 0)
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
 
 #define ARRAY_COUNT(arr) (sizeof(arr) / sizeof((arr)[0]))
 

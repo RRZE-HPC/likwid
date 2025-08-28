@@ -31,44 +31,44 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
-#include <stdlib.h>
+#include <inttypes.h>
+#include <math.h>
+#include <pthread.h>
+#include <sched.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <sched.h>
-#include <pthread.h>
-#include <inttypes.h>
-#include <math.h>
 
-#include <likwid.h>
-#include <bitUtil.h>
-#include <lock.h>
-#include <tree.h>
-#include <timer.h>
-#include <hashTable.h>
-#include <registers.h>
-#include <error.h>
 #include <access.h>
 #include <affinity.h>
-#include <perfmon.h>
+#include <bitUtil.h>
 #include <bstrlib.h>
+#include <error.h>
+#include <hashTable.h>
+#include <likwid.h>
+#include <lock.h>
+#include <perfmon.h>
+#include <registers.h>
+#include <timer.h>
+#include <tree.h>
 #include <voltage.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-static int likwid_init = 0;
+static int likwid_init    = 0;
 static int numberOfGroups = 0;
-static int* groups;
+static int *groups;
 static int threads2Cpu[MAX_NUM_THREADS];
 static pthread_t threads2Pthread[MAX_NUM_THREADS];
-static int num_cpus = 0;
-static int registered_cpus = 0;
-static pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
-static int use_locks = 0;
-static pthread_mutex_t threadLocks[MAX_NUM_THREADS] = { [ 0 ... (MAX_NUM_THREADS-1)] = PTHREAD_MUTEX_INITIALIZER};
-
+static int num_cpus                                 = 0;
+static int registered_cpus                          = 0;
+static pthread_mutex_t globalLock                   = PTHREAD_MUTEX_INITIALIZER;
+static int use_locks                                = 0;
+static pthread_mutex_t threadLocks[MAX_NUM_THREADS] = { [0 ...(MAX_NUM_THREADS - 1)] =
+                                                            PTHREAD_MUTEX_INITIALIZER };
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -76,70 +76,51 @@ static pthread_mutex_t threadLocks[MAX_NUM_THREADS] = { [ 0 ... (MAX_NUM_THREADS
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-
-
-static int
-getProcessorID(cpu_set_t* cpu_set)
+static int getProcessorID(cpu_set_t *cpu_set)
 {
     int processorId;
 
-    for (processorId=0;processorId<MAX_NUM_THREADS;processorId++)
-    {
-        if (CPU_ISSET(processorId,cpu_set))
-        {
+    for (processorId = 0; processorId < MAX_NUM_THREADS; processorId++) {
+        if (CPU_ISSET(processorId, cpu_set)) {
             break;
         }
     }
     return processorId;
 }
 
-static int
-getThreadID(int cpu_id)
+static int getThreadID(int cpu_id)
 {
     int i;
-    for(i=0;i<groupSet->numberOfThreads;i++)
-    {
-        if (cpu_id == groupSet->threads[i].processorId)
-        {
+    for (i = 0; i < groupSet->numberOfThreads; i++) {
+        if (cpu_id == groupSet->threads[i].processorId) {
             return i;
         }
     }
     return -1;
 }
 
-static double
-calculateMarkerResult(RegisterIndex index, uint64_t start, uint64_t stop, int overflows)
+static double calculateMarkerResult(
+    RegisterIndex index, uint64_t start, uint64_t stop, int overflows)
 {
-    double result = 0.0;
+    double result     = 0.0;
     uint64_t maxValue = 0ULL;
-    if (start > stop)
-    {
+    if (start > stop) {
         overflows++;
     }
-    if (overflows == 0)
-    {
-        result = (double) (stop - start);
-    }
-    else if (overflows > 0)
-    {
+    if (overflows == 0) {
+        result = (double)(stop - start);
+    } else if (overflows > 0) {
         maxValue = perfmon_getMaxCounterValue(counter_map[index].type);
-        result += (double) ((maxValue - start) + stop);
-        if (overflows > 1)
-        {
-            result += (double) ((overflows-1) * maxValue);
+        result += (double)((maxValue - start) + stop);
+        if (overflows > 1) {
+            result += (double)((overflows - 1) * maxValue);
         }
     }
-    if (counter_map[index].type == POWER)
-    {
+    if (counter_map[index].type == POWER) {
         result *= power_getEnergyUnit(getCounterTypeOffset(index));
-    }
-    else if ((counter_map[index].type == THERMAL) ||
-             (counter_map[index].type == MBOX0TMP))
-    {
+    } else if ((counter_map[index].type == THERMAL) || (counter_map[index].type == MBOX0TMP)) {
         result = (double)stop;
-    }
-    else if (counter_map[index].type == VOLTAGE)
-    {
+    } else if (counter_map[index].type == VOLTAGE) {
         result = voltage_value(stop);
     }
     return result;
@@ -147,66 +128,58 @@ calculateMarkerResult(RegisterIndex index, uint64_t start, uint64_t stop, int ov
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void
-likwid_markerInit(void)
+void likwid_markerInit(void)
 {
     int i;
     int verbosity;
     int setinit = 0;
     bstring bThreadStr;
     bstring bEventStr;
-    struct bstrList* threadTokens;
-    struct bstrList* eventStrings;
+    struct bstrList *threadTokens;
+    struct bstrList *eventStrings;
     cpu_set_t cpuset;
-    char* modeStr = getenv("LIKWID_MODE");
-    char* eventStr = getenv("LIKWID_EVENTS");
-    char* cThreadStr = getenv("LIKWID_THREADS");
-    char* filepath = getenv("LIKWID_FILEPATH");
-    char* debugStr = getenv("LIKWID_DEBUG");
-    char* pinStr = getenv("LIKWID_PIN");
+    char *modeStr    = getenv("LIKWID_MODE");
+    char *eventStr   = getenv("LIKWID_EVENTS");
+    char *cThreadStr = getenv("LIKWID_THREADS");
+    char *filepath   = getenv("LIKWID_FILEPATH");
+    char *debugStr   = getenv("LIKWID_DEBUG");
+    char *pinStr     = getenv("LIKWID_PIN");
     /* Dirty hack to avoid nonnull warnings */
-    int (*ownatoi)(const char*);
+    int (*ownatoi)(const char *);
     ownatoi = &atoi;
 
-    if ((modeStr != NULL) && (filepath != NULL) && (eventStr != NULL) && (cThreadStr != NULL) && likwid_init == 0)
-    {
+    if ((modeStr != NULL) && (filepath != NULL) && (eventStr != NULL) && (cThreadStr != NULL) &&
+        likwid_init == 0) {
         setinit = 1;
-    }
-    else if (likwid_init == 0)
-    {
-        fprintf(stderr, "Running without Marker API. Activate Marker API with -m on commandline.\n");
+    } else if (likwid_init == 0) {
+        fprintf(
+            stderr, "Running without Marker API. Activate Marker API with -m on commandline.\n");
         return;
-    }
-    else
-    {
+    } else {
         return;
     }
 
-    if (!lock_check())
-    {
-        fprintf(stderr,"Access to performance counters is locked.\n");
+    if (!lock_check()) {
+        fprintf(stderr, "Access to performance counters is locked.\n");
         return;
     }
 
-    if (debugStr != NULL)
-    {
+    if (debugStr != NULL) {
         verbosity = atoi(debugStr);
         perfmon_setVerbosity(verbosity);
     }
 
-    bThreadStr = bfromcstr(cThreadStr);
-    threadTokens = bsplit(bThreadStr,',');
-    num_cpus = threadTokens->qty;
-    for (i = 0; i < num_cpus; i++)
-    {
+    bThreadStr   = bfromcstr(cThreadStr);
+    threadTokens = bsplit(bThreadStr, ',');
+    num_cpus     = threadTokens->qty;
+    for (i = 0; i < num_cpus; i++) {
         threads2Cpu[i] = ownatoi(bdata(threadTokens->entry[i]));
     }
     bdestroy(bThreadStr);
     bstrListDestroy(threadTokens);
 
     CPU_ZERO(&cpuset);
-    if (pinStr != NULL)
-    {
+    if (pinStr != NULL) {
         // If LIKWID should pin the threads, we check whether we are already
         // in a restricted cpuset with a single hwthread. This happens
         // when an OpenMP region is executed before LIKWID_MARKER_INIT.
@@ -215,23 +188,18 @@ likwid_markerInit(void)
         // here. We don't need to set it back because the first operation
         // after getting the topology is the pinning of the master process.
         int err = sched_getaffinity(0, sizeof(cpu_set_t), &cpuset);
-        if (err == 0)
-        {
+        if (err == 0) {
             int count = CPU_COUNT(&cpuset);
-            if (count == 1 && count != num_cpus)
-            {
+            if (count == 1 && count != num_cpus) {
                 cpu_set_t newcpuset;
                 CPU_ZERO(&newcpuset);
-                for (i = 0; i < num_cpus; i++)
-                {
+                for (i = 0; i < num_cpus; i++) {
                     CPU_SET(threads2Cpu[i], &newcpuset);
                 }
                 err = sched_setaffinity(0, sizeof(cpu_set_t), &newcpuset);
             }
-        }
-        else
-        {
-            fprintf(stderr,"Failed to get cpuset for master thread.\n");
+        } else {
+            fprintf(stderr, "Failed to get cpuset for master thread.\n");
         }
     }
 
@@ -244,75 +212,62 @@ likwid_markerInit(void)
     HPMmode(atoi(modeStr));
 #endif
 
-    if (pinStr != NULL)
-    {
+    if (pinStr != NULL) {
         likwid_pinThread(threads2Cpu[0]);
-        if (getenv("OMP_NUM_THREADS") != NULL)
-        {
-            if (ownatoi(getenv("OMP_NUM_THREADS")) > num_cpus)
-            {
+        if (getenv("OMP_NUM_THREADS") != NULL) {
+            if (ownatoi(getenv("OMP_NUM_THREADS")) > num_cpus) {
                 use_locks = 1;
             }
         }
-        if (getenv("CILK_NWORKERS") != NULL)
-        {
-            if (ownatoi(getenv("CILK_NWORKERS")) > num_cpus)
-            {
+        if (getenv("CILK_NWORKERS") != NULL) {
+            if (ownatoi(getenv("CILK_NWORKERS")) > num_cpus) {
                 use_locks = 1;
             }
         }
     }
 #ifdef LIKWID_USE_PERFEVENT
-    if (getenv("LIKWID_PERF_EXECPID") != NULL)
-    {
+    if (getenv("LIKWID_PERF_EXECPID") != NULL) {
         char execpid[20];
         snprintf(execpid, sizeof(execpid), "%d", getpid());
         setenv("LIKWID_PERF_PID", execpid, 1);
-        char* perfflags = getenv("LIKWID_PERF_FLAGS");
-        if (perfflags)
-        {
+        char *perfflags = getenv("LIKWID_PERF_FLAGS");
+        if (perfflags) {
             setenv("LIKWID_PERF_FLAGS", getenv("LIKWID_PERF_FLAGS"), 1);
         }
     }
 #endif
 
     i = perfmon_init(num_cpus, threads2Cpu);
-    if (i<0)
-    {
+    if (i < 0) {
         //fprintf(stderr,"Failed to initialize LIKWID perfmon library.\n");
         return;
     }
 
-    bEventStr = bfromcstr(eventStr);
-    eventStrings = bsplit(bEventStr,'|');
+    bEventStr      = bfromcstr(eventStr);
+    eventStrings   = bsplit(bEventStr, '|');
     numberOfGroups = eventStrings->qty;
-    groups = malloc(numberOfGroups * sizeof(int));
-    if (!groups)
-    {
-        fprintf(stderr,"Cannot allocate space for group handling.\n");
+    groups         = malloc(numberOfGroups * sizeof(int));
+    if (!groups) {
+        fprintf(stderr, "Cannot allocate space for group handling.\n");
         bstrListDestroy(eventStrings);
         bdestroy(bEventStr);
         perfmon_finalize();
         return;
     }
-    for (i=0; i<eventStrings->qty; i++)
-    {
+    for (i = 0; i < eventStrings->qty; i++) {
         groups[i] = perfmon_addEventSet(bdata(eventStrings->entry[i]));
     }
     bstrListDestroy(eventStrings);
     bdestroy(bEventStr);
 
-    for (i=0; i<num_cpus; i++)
-    {
+    for (i = 0; i < num_cpus; i++) {
         hashTable_initThread(threads2Cpu[i]);
-        for(int j=0; j<groupSet->groups[groups[0]].numberOfEvents;j++)
-        {
+        for (int j = 0; j < groupSet->groups[groups[0]].numberOfEvents; j++) {
             groupSet->groups[groups[0]].events[j].threadCounter[i].init = TRUE;
-            groupSet->groups[groups[0]].state = STATE_START;
+            groupSet->groups[groups[0]].state                           = STATE_START;
         }
     }
-    if (setinit)
-    {
+    if (setinit) {
         likwid_init = 1;
     }
     threads2Pthread[registered_cpus] = pthread_self();
@@ -324,60 +279,57 @@ likwid_markerInit(void)
     perfmon_startCounters();
 }
 
-void
-likwid_markerThreadInit(void)
+void likwid_markerThreadInit(void)
 {
     int myID = 0, i = 0;
     pthread_t t;
-    if ( !likwid_init )
-    {
+    if (!likwid_init) {
         return;
     }
-    char* pinStr = getenv("LIKWID_PIN");
+    char *pinStr = getenv("LIKWID_PIN");
 
     pthread_mutex_lock(&globalLock);
     t = pthread_self();
-    for (i=0; i<registered_cpus; i++)
-    {
-        if (pthread_equal(t, threads2Pthread[i]))
-        {
+    for (i = 0; i < registered_cpus; i++) {
+        if (pthread_equal(t, threads2Pthread[i])) {
             t = 0;
         }
     }
-    if (t != 0)
-    {
+    if (t != 0) {
         threads2Pthread[registered_cpus] = t;
-        myID = registered_cpus++;
+        myID                             = registered_cpus++;
     }
     pthread_mutex_unlock(&globalLock);
 
-    if (pinStr != NULL)
-    {
+    if (pinStr != NULL) {
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
         sched_getaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
-        if ((CPU_COUNT(&cpuset) > 1) || (likwid_getProcessorId() != threads2Cpu[myID % num_cpus]))
-        {
+        if ((CPU_COUNT(&cpuset) > 1) || (likwid_getProcessorId() != threads2Cpu[myID % num_cpus])) {
             likwid_pinThread(threads2Cpu[myID % num_cpus]);
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Pin thread %lu to CPU %d currently %d", gettid(), threads2Cpu[myID % num_cpus], sched_getcpu());
+            DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                "Pin thread %lu to CPU %d currently %d",
+                gettid(),
+                threads2Cpu[myID % num_cpus],
+                sched_getcpu());
         }
     }
 }
 
-void
-likwid_markerNextGroup(void)
+void likwid_markerNextGroup(void)
 {
     int next_group;
 
-    if (!likwid_init)
-    {
+    if (!likwid_init) {
         return;
     }
 
     next_group = (groupSet->activeGroup + 1) % numberOfGroups;
-    if (next_group != groupSet->activeGroup)
-    {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Switch from group %d to group %d", groupSet->activeGroup, next_group);
+    if (next_group != groupSet->activeGroup) {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP,
+            "Switch from group %d to group %d",
+            groupSet->activeGroup,
+            next_group);
         perfmon_switchActiveGroup(next_group);
     }
     return;
@@ -390,130 +342,117 @@ likwid_markerNextGroup(void)
  * 4 regionID threadID countersvalues(space separated)
  * 5 regionID threadID countersvalues
  */
-void
-likwid_markerClose(void)
+void likwid_markerClose(void)
 {
-    FILE *file = NULL;
-    LikwidResults* results = NULL;
-    int numberOfThreads = 0;
-    int numberOfRegions = 0;
-    char* markerfile = NULL;
-    int* validRegions = NULL;
+    FILE *file             = NULL;
+    LikwidResults *results = NULL;
+    int numberOfThreads    = 0;
+    int numberOfRegions    = 0;
+    char *markerfile       = NULL;
+    int *validRegions      = NULL;
 
-    if ( ! likwid_init )
-    {
+    if (!likwid_init) {
         return;
     }
     hashTable_finalize(&numberOfThreads, &numberOfRegions, &results);
-    if ((numberOfThreads == 0)||(numberOfRegions == 0))
-    {
+    if ((numberOfThreads == 0) || (numberOfRegions == 0)) {
         fprintf(stderr, "No threads or regions defined in hash table\n");
         return;
     }
     markerfile = getenv("LIKWID_FILEPATH");
-    if (markerfile == NULL)
-    {
+    if (markerfile == NULL) {
         fprintf(stderr,
-                "Is the application executed with LIKWID wrapper? No file path for the Marker API output defined.\n");
+            "Is the application executed with LIKWID wrapper? No file path for the Marker API "
+            "output defined.\n");
         return;
     }
-    validRegions = (int*)malloc(numberOfRegions*sizeof(int));
-    if (!validRegions)
-    {
+    validRegions = (int *)malloc(numberOfRegions * sizeof(int));
+    if (!validRegions) {
         return;
     }
-    for (int i=0; i<numberOfRegions; i++)
-    {
+    for (int i = 0; i < numberOfRegions; i++) {
         validRegions[i] = 0;
     }
-    file = fopen(markerfile,"w");
+    file = fopen(markerfile, "w");
 
-    if (file != NULL)
-    {
+    if (file != NULL) {
         int newNumberOfRegions = 0;
-        int newRegionID = 0;
-        for (int i=0; i<numberOfRegions; i++)
-        {
-            for (int j=0; j<numberOfThreads; j++)
-            {
+        int newRegionID        = 0;
+        for (int i = 0; i < numberOfRegions; i++) {
+            for (int j = 0; j < numberOfThreads; j++) {
                 validRegions[i] += results[i].count[j];
             }
             if (validRegions[i] > 0)
                 newNumberOfRegions++;
             else
-                fprintf(stderr, "WARN: Skipping region %s for evaluation.\n", bdata(results[i].tag));
+                fprintf(
+                    stderr, "WARN: Skipping region %s for evaluation.\n", bdata(results[i].tag));
         }
-        if (newNumberOfRegions < numberOfRegions)
-        {
+        if (newNumberOfRegions < numberOfRegions) {
             fprintf(stderr, "WARN: Regions are skipped because:\n");
             fprintf(stderr, "      - The region was only registered\n");
             fprintf(stderr, "      - The region was started but never stopped\n");
             fprintf(stderr, "      - The region was never started but stopped\n");
         }
         DEBUG_PRINT(DEBUGLEV_DEVELOP,
-                "Creating Marker file %s with %d regions %d groups and %d threads",
-                markerfile, newNumberOfRegions, numberOfGroups, numberOfThreads);
-        bstring thread_regs_grps = bformat("%d %d %d", numberOfThreads, newNumberOfRegions, numberOfGroups);
-        fprintf(file,"%s\n", bdata(thread_regs_grps));
+            "Creating Marker file %s with %d regions %d groups and %d threads",
+            markerfile,
+            newNumberOfRegions,
+            numberOfGroups,
+            numberOfThreads);
+        bstring thread_regs_grps =
+            bformat("%d %d %d", numberOfThreads, newNumberOfRegions, numberOfGroups);
+        fprintf(file, "%s\n", bdata(thread_regs_grps));
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(thread_regs_grps));
         bdestroy(thread_regs_grps);
 
-        for (int i=0; i<numberOfRegions; i++)
-        {
+        for (int i = 0; i < numberOfRegions; i++) {
             if (validRegions[i] == 0)
                 continue;
             bstring tmp = bformat("%d:%s", newRegionID, bdata(results[i].tag));
-            fprintf(file,"%s\n", bdata(tmp));
+            fprintf(file, "%s\n", bdata(tmp));
             DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(tmp));
             bdestroy(tmp);
             newRegionID++;
         }
         newRegionID = 0;
-        for (int i=0; i<numberOfRegions; i++)
-        {
+        for (int i = 0; i < numberOfRegions; i++) {
             if (validRegions[i] == 0)
                 continue;
             int nevents = groupSet->groups[results[i].groupID].numberOfEvents;
-            for (int j=0; j<numberOfThreads; j++)
-            {
-                bstring l = bformat("%d %d %d %u %e %d ", newRegionID,
-                                                          results[i].groupID,
-                                                          results[i].cpulist[j],
-                                                          results[i].count[j],
-                                                          results[i].time[j],
-                                                          nevents);
+            for (int j = 0; j < numberOfThreads; j++) {
+                bstring l = bformat("%d %d %d %u %e %d ",
+                    newRegionID,
+                    results[i].groupID,
+                    results[i].cpulist[j],
+                    results[i].count[j],
+                    results[i].time[j],
+                    nevents);
 
-                for (int k=0; k < MIN(nevents, NUM_PMC); k++)
-                {
+                for (int k = 0; k < MIN(nevents, NUM_PMC); k++) {
                     bstring tmp = bformat("%e ", results[i].counters[j][k]);
                     bconcat(l, tmp);
                     bdestroy(tmp);
                 }
-                fprintf(file,"%s\n", bdata(l));
+                fprintf(file, "%s\n", bdata(l));
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(l));
                 bdestroy(l);
             }
             newRegionID++;
         }
         fclose(file);
-    }
-    else
-    {
+    } else {
         fprintf(stderr, "Cannot open file %s\n", markerfile);
         fprintf(stderr, "%s", strerror(errno));
     }
-    if (validRegions)
-    {
+    if (validRegions) {
         free(validRegions);
     }
-    if ((numberOfThreads == 0)||(numberOfThreads == 0))
-    {
+    if ((numberOfThreads == 0) || (numberOfThreads == 0)) {
         return;
     }
-    for (int i=0;i<numberOfRegions; i++)
-    {
-        for (int j=0;j<numberOfThreads; j++)
-        {
+    for (int i = 0; i < numberOfRegions; i++) {
+        for (int j = 0; j < numberOfThreads; j++) {
             free(results[i].counters[j]);
         }
         free(results[i].time);
@@ -522,8 +461,7 @@ likwid_markerClose(void)
         free(results[i].cpulist);
         free(results[i].counters);
     }
-    if (results != NULL)
-    {
+    if (results != NULL) {
         free(results);
     }
     perfmon_finalize();
@@ -531,120 +469,108 @@ likwid_markerClose(void)
     likwid_init = 0;
 }
 
-int
-likwid_markerWriteFile(const char* markerfile)
+int likwid_markerWriteFile(const char *markerfile)
 {
-    if (markerfile == NULL)
-    {
+    if (markerfile == NULL) {
         fprintf(stderr, "File can not be NULL.\n");
         return -EFAULT;
     }
 
-    FILE *file = NULL;
-    int* validRegions = NULL;
+    FILE *file          = NULL;
+    int *validRegions   = NULL;
 
     int numberOfThreads = perfmon_getNumberOfThreads();
     int numberOfRegions = perfmon_getNumberOfRegions();
 
-    if ( ! likwid_init )
-    {
-        return -EFAULT;;
+    if (!likwid_init) {
+        return -EFAULT;
+        ;
     }
-    if ((numberOfThreads == 0)||(numberOfRegions == 0))
-    {
+    if ((numberOfThreads == 0) || (numberOfRegions == 0)) {
         fprintf(stderr, "No threads or regions defined in hash table\n");
         return -EFAULT;
     }
 
-    file = fopen(markerfile,"w");
-    if (!file)
-    {
+    file = fopen(markerfile, "w");
+    if (!file) {
         fprintf(stderr, "Unable open marker file for writing: %s\n", markerfile);
         perror("fopen");
         return -errno;
     }
 
     int newNumberOfRegions = 0;
-    int newRegionID = 0;
-    validRegions = (int*)malloc(numberOfRegions*sizeof(int));
-    if (!validRegions)
-    {
+    int newRegionID        = 0;
+    validRegions           = (int *)malloc(numberOfRegions * sizeof(int));
+    if (!validRegions) {
         return -EFAULT;
     }
-    for (int i=0; i<numberOfRegions; i++)
-    {
+    for (int i = 0; i < numberOfRegions; i++) {
         validRegions[i] = 0;
     }
-    for (int i=0; i<numberOfRegions; i++)
-    {
-        for (int j=0; j<numberOfThreads; j++)
-        {
+    for (int i = 0; i < numberOfRegions; i++) {
+        for (int j = 0; j < numberOfThreads; j++) {
             validRegions[i] += perfmon_getCountOfRegion(i, j);
         }
         if (validRegions[i] > 0)
             newNumberOfRegions++;
         else
-            fprintf(stderr, "WARN: Skipping region %s for evaluation.\n", perfmon_getTagOfRegion(i));
+            fprintf(
+                stderr, "WARN: Skipping region %s for evaluation.\n", perfmon_getTagOfRegion(i));
     }
-    if (newNumberOfRegions < numberOfRegions)
-    {
+    if (newNumberOfRegions < numberOfRegions) {
         fprintf(stderr, "WARN: Regions are skipped because:\n");
         fprintf(stderr, "      - The region was only registered\n");
         fprintf(stderr, "      - The region was started but never stopped\n");
         fprintf(stderr, "      - The region was never started but stopped\n");
     }
     DEBUG_PRINT(DEBUGLEV_DEVELOP,
-            "Creating Marker file %s with %d regions %d groups and %d threads",
-            markerfile, newNumberOfRegions, numberOfGroups, numberOfThreads);
-    bstring thread_regs_grps = bformat("%d %d %d", numberOfThreads, newNumberOfRegions, numberOfGroups);
-    fprintf(file,"%s\n", bdata(thread_regs_grps));
+        "Creating Marker file %s with %d regions %d groups and %d threads",
+        markerfile,
+        newNumberOfRegions,
+        numberOfGroups,
+        numberOfThreads);
+    bstring thread_regs_grps =
+        bformat("%d %d %d", numberOfThreads, newNumberOfRegions, numberOfGroups);
+    fprintf(file, "%s\n", bdata(thread_regs_grps));
     DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(thread_regs_grps));
     bdestroy(thread_regs_grps);
 
-    for (int i=0; i<numberOfRegions; i++)
-    {
+    for (int i = 0; i < numberOfRegions; i++) {
         if (validRegions[i] == 0)
             continue;
         bstring tmp = bformat("%d:%s", newRegionID, perfmon_getTagOfRegion(i));
-        fprintf(file,"%s\n", bdata(tmp));
+        fprintf(file, "%s\n", bdata(tmp));
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(tmp));
         bdestroy(tmp);
         newRegionID++;
     }
-    int *cpulist = (int*) malloc(numberOfThreads * sizeof(int));
-    if (cpulist == NULL)
-    {
-        fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n",
-                    numberOfThreads * sizeof(int));
+    int *cpulist = (int *)malloc(numberOfThreads * sizeof(int));
+    if (cpulist == NULL) {
+        fprintf(stderr,
+            "Failed to allocate %lu bytes for the cpulist storage\n",
+            numberOfThreads * sizeof(int));
         free(validRegions);
         return -EFAULT;
     }
     newRegionID = 0;
-    for (int i=0; i<numberOfRegions; i++)
-    {
+    for (int i = 0; i < numberOfRegions; i++) {
         if (validRegions[i] == 0)
             continue;
         int groupID = perfmon_getGroupOfRegion(i);
         int nevents = groupSet->groups[groupID].numberOfEvents;
         perfmon_getCpulistOfRegion(i, numberOfThreads, cpulist);
-        for (int j=0; j<numberOfThreads; j++)
-        {
-            int count = perfmon_getCountOfRegion(i, j);
+        for (int j = 0; j < numberOfThreads; j++) {
+            int count   = perfmon_getCountOfRegion(i, j);
             double time = perfmon_getTimeOfRegion(i, j);
-            bstring l = bformat("%d %d %d %u %e %d ", newRegionID,
-                                                      groupID,
-                                                      cpulist[j],
-                                                      count,
-                                                      time,
-                                                      nevents);
+            bstring l   = bformat(
+                "%d %d %d %u %e %d ", newRegionID, groupID, cpulist[j], count, time, nevents);
 
-            for (int k=0; k < MIN(nevents, NUM_PMC); k++)
-            {
+            for (int k = 0; k < MIN(nevents, NUM_PMC); k++) {
                 bstring tmp = bformat("%e ", perfmon_getResultOfRegionThread(i, k, j));
                 bconcat(l, tmp);
                 bdestroy(tmp);
             }
-            fprintf(file,"%s\n", bdata(l));
+            fprintf(file, "%s\n", bdata(l));
             DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(l));
             bdestroy(l);
         }
@@ -656,28 +582,25 @@ likwid_markerWriteFile(const char* markerfile)
     return 0;
 }
 
-int
-likwid_markerRegisterRegion(const char* regionTag)
+int likwid_markerRegisterRegion(const char *regionTag)
 {
-    if ( ! likwid_init )
-    {
+    if (!likwid_init) {
         return -EFAULT;
     }
-    int ret = 0;
-    uint64_t tmp = 0x0ULL;
-    LikwidThreadResults* results = NULL;
-    bstring tag = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
-    int cpu_id = hashTable_get(tag, &results);
+    int ret                      = 0;
+    uint64_t tmp                 = 0x0ULL;
+    LikwidThreadResults *results = NULL;
+    bstring tag                  = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
+    int cpu_id                   = hashTable_get(tag, &results);
     bdestroy(tag);
-    if (!results)
-    {
+    if (!results) {
         fprintf(stderr, "ERROR: Failed to get thread data for tag %s\n", regionTag);
         return -EFAULT;
     }
 
 #ifndef LIKWID_USE_PERFEVENT
     // Add CPU to access layer if ACCESSMODE is direct or accessdaemon
-    ret =  HPMaddThread(cpu_id);
+    ret = HPMaddThread(cpu_id);
     // Perform one access to fully initialize connection to access daemon
     uint32_t reg = counter_map[groupSet->groups[groups[0]].events[0].index].counterRegister;
     HPMread(cpu_id, MSR_DEV, reg, &tmp);
@@ -685,51 +608,55 @@ likwid_markerRegisterRegion(const char* regionTag)
     return ret;
 }
 
-int
-likwid_markerStartRegion(const char* regionTag)
+int likwid_markerStartRegion(const char *regionTag)
 {
-    LikwidThreadResults* results = NULL;
-    if ( ! likwid_init )
-    {
+    LikwidThreadResults *results = NULL;
+    if (!likwid_init) {
         return -EFAULT;
     }
     int myCPU = likwid_getProcessorId();
-    if (getThreadID(myCPU) < 0)
-    {
+    if (getThreadID(myCPU) < 0) {
         return -EFAULT;
     }
 
     bstring tag = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
-    int cpu_id = hashTable_get(tag, &results);
-    if (!results)
-    {
+    int cpu_id  = hashTable_get(tag, &results);
+    if (!results) {
         fprintf(stderr, "ERROR: Failed to get thread data for tag %s\n", regionTag);
         return -EFAULT;
     }
     int thread_id = getThreadID(cpu_id);
-    if (results->state == MARKER_STATE_START)
-    {
+    if (results->state == MARKER_STATE_START) {
         fprintf(stderr, "WARN: Region %s was already started\n", regionTag);
     }
     perfmon_readCountersCpu(cpu_id);
     results->cpuID = cpu_id;
-    for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
-    {
-        if (groupSet->groups[groupSet->activeGroup].events[i].type != NOTYPE)
-        {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "START [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu",
-                    regionTag, thread_id, cpu_id, i,
-                    LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
+    for (int i = 0; i < groupSet->groups[groupSet->activeGroup].numberOfEvents; i++) {
+        if (groupSet->groups[groupSet->activeGroup].events[i].type != NOTYPE) {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                "START [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu",
+                regionTag,
+                thread_id,
+                cpu_id,
+                i,
+                LLU_CAST groupSet->groups[groupSet->activeGroup]
+                    .events[i]
+                    .threadCounter[thread_id]
+                    .counterData);
             //groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].startData =
             //        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
 
-            results->StartPMcounters[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
-            results->StartOverflows[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows;
-        }
-        else
-        {
+            results->StartPMcounters[i] = groupSet->groups[groupSet->activeGroup]
+                                              .events[i]
+                                              .threadCounter[thread_id]
+                                              .counterData;
+            results->StartOverflows[i] = groupSet->groups[groupSet->activeGroup]
+                                             .events[i]
+                                             .threadCounter[thread_id]
+                                             .overflows;
+        } else {
             results->StartPMcounters[i] = NAN;
-            results->StartOverflows[i] = -1;
+            results->StartOverflows[i]  = -1;
         }
     }
     results->state = MARKER_STATE_START;
@@ -739,52 +666,44 @@ likwid_markerStartRegion(const char* regionTag)
     return 0;
 }
 
-int
-likwid_markerStopRegion(const char* regionTag)
+int likwid_markerStopRegion(const char *regionTag)
 {
-    if (! likwid_init)
-    {
+    if (!likwid_init) {
         return -EFAULT;
     }
 
     TimerData timestamp;
-    LikwidThreadResults* results = NULL;
+    LikwidThreadResults *results = NULL;
     timer_stop(&timestamp);
     double result = 0.0;
     int cpu_id;
     int myCPU = likwid_getProcessorId();
-    if (getThreadID(myCPU) < 0)
-    {
+    if (getThreadID(myCPU) < 0) {
         return -EFAULT;
     }
     int thread_id;
     bstring tag = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
-    if (use_locks == 1)
-    {
+    if (use_locks == 1) {
         pthread_mutex_lock(&threadLocks[myCPU]);
     }
 
     cpu_id = hashTable_get(tag, &results);
-    if (!results)
-    {
+    if (!results) {
         fprintf(stderr, "ERROR: Failed to get thread data for tag %s\n", regionTag);
-        if (use_locks == 1)
-        {
+        if (use_locks == 1) {
             pthread_mutex_unlock(&threadLocks[myCPU]);
         }
         return -EFAULT;
     }
     thread_id = getThreadID(cpu_id);
-    if (results->state != MARKER_STATE_START)
-    {
+    if (results->state != MARKER_STATE_START) {
         fprintf(stderr, "WARN: Stopping an unknown/not-started region %s\n", regionTag);
-        if (use_locks == 1)
-        {
+        if (use_locks == 1) {
             pthread_mutex_unlock(&threadLocks[myCPU]);
         }
         return -EFAULT;
     }
-    results->groupID = groupSet->activeGroup;
+    results->groupID              = groupSet->activeGroup;
     results->startTime.stop.int64 = timestamp.stop.int64;
     results->time += timer_print(&(results->startTime));
     results->count++;
@@ -792,78 +711,78 @@ likwid_markerStopRegion(const char* regionTag)
 
     perfmon_readCountersCpu(cpu_id);
 
-    for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
-    {
-        if (groupSet->groups[groupSet->activeGroup].events[i].type != NOTYPE)
-        {
-            result = calculateMarkerResult(groupSet->groups[groupSet->activeGroup].events[i].index, results->StartPMcounters[i],
-                                            groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData,
-                                            groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows -
-                                            results->StartOverflows[i]);
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu DIFF %f", regionTag, thread_id, cpu_id, i,
-                            LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData, result);
-            if ((counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != THERMAL) &&
-                (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != VOLTAGE) &&
-                (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != MBOX0TMP))
-            {
+    for (int i = 0; i < groupSet->groups[groupSet->activeGroup].numberOfEvents; i++) {
+        if (groupSet->groups[groupSet->activeGroup].events[i].type != NOTYPE) {
+            result = calculateMarkerResult(groupSet->groups[groupSet->activeGroup].events[i].index,
+                results->StartPMcounters[i],
+                groupSet->groups[groupSet->activeGroup]
+                    .events[i]
+                    .threadCounter[thread_id]
+                    .counterData,
+                groupSet->groups[groupSet->activeGroup]
+                        .events[i]
+                        .threadCounter[thread_id]
+                        .overflows -
+                    results->StartOverflows[i]);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                "STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu DIFF %f",
+                regionTag,
+                thread_id,
+                cpu_id,
+                i,
+                LLU_CAST groupSet->groups[groupSet->activeGroup]
+                    .events[i]
+                    .threadCounter[thread_id]
+                    .counterData,
+                result);
+            if ((counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type !=
+                    THERMAL) &&
+                (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type !=
+                    VOLTAGE) &&
+                (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type !=
+                    MBOX0TMP)) {
                 results->PMcounters[i] += result;
-            }
-            else
-            {
+            } else {
                 results->PMcounters[i] = result;
             }
-        }
-        else
-        {
+        } else {
             results->PMcounters[i] = NAN;
         }
     }
     results->state = MARKER_STATE_STOP;
-    if (use_locks == 1)
-    {
+    if (use_locks == 1) {
         pthread_mutex_unlock(&threadLocks[myCPU]);
     }
     return 0;
 }
 
-void
-likwid_markerGetRegion(
-        const char* regionTag,
-        int* nr_events,
-        double* events,
-        double *time,
-        int *count)
+void likwid_markerGetRegion(
+    const char *regionTag, int *nr_events, double *events, double *time, int *count)
 {
-    if (! likwid_init)
-    {
+    if (!likwid_init) {
         *nr_events = 0;
-        *time = 0;
-        *count = 0;
+        *time      = 0;
+        *count     = 0;
         return;
     }
-    int length = 0;
-    LikwidThreadResults* results = NULL;
-    bstring tag = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
+    int length                   = 0;
+    LikwidThreadResults *results = NULL;
+    bstring tag                  = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
 
     hashTable_get(tag, &results);
-    if (!results)
-    {
+    if (!results) {
         fprintf(stderr, "ERROR: Failed to get thread data for tag %s\n", regionTag);
         return;
     }
-    if (count != NULL)
-    {
+    if (count != NULL) {
         *count = results->count;
     }
-    if (time != NULL)
-    {
+    if (time != NULL) {
         *time = results->time;
     }
-    if (nr_events != NULL && events != NULL && *nr_events > 0)
-    {
+    if (nr_events != NULL && events != NULL && *nr_events > 0) {
         length = MIN(groupSet->groups[groupSet->activeGroup].numberOfEvents, *nr_events);
-        for(int i=0;i<length;i++)
-        {
+        for (int i = 0; i < length; i++) {
             events[i] = results->PMcounters[i];
         }
         *nr_events = length;
@@ -872,63 +791,58 @@ likwid_markerGetRegion(
     return;
 }
 
-
-int
-likwid_markerResetRegion(const char* regionTag)
+int likwid_markerResetRegion(const char *regionTag)
 {
-    LikwidThreadResults* results = NULL;
-    if (! likwid_init)
-    {
+    LikwidThreadResults *results = NULL;
+    if (!likwid_init) {
         return -EFAULT;
     }
     int myCPU = likwid_getProcessorId();
-    if (getThreadID(myCPU) < 0)
-    {
+    if (getThreadID(myCPU) < 0) {
         return -EFAULT;
     }
     bstring tag = bformat("%.*s-%d", 100, regionTag, groupSet->activeGroup);
 
     hashTable_get(tag, &results);
-    if (!results)
-    {
+    if (!results) {
         fprintf(stderr, "ERROR: Failed to get thread data for tag %s\n", regionTag);
         return -EFAULT;
     }
-    if (results->state != MARKER_STATE_STOP)
-    {
+    if (results->state != MARKER_STATE_STOP) {
         fprintf(stderr, "ERROR: Can only reset stopped regions\n");
         return -EFAULT;
     }
 
-    memset(results->StartPMcounters, 0, groupSet->groups[groupSet->activeGroup].numberOfEvents*sizeof(double));
-    memset(results->PMcounters, 0, groupSet->groups[groupSet->activeGroup].numberOfEvents*sizeof(double));
-    memset(results->StartOverflows, 0, groupSet->groups[groupSet->activeGroup].numberOfEvents*sizeof(double));
+    memset(results->StartPMcounters,
+        0,
+        groupSet->groups[groupSet->activeGroup].numberOfEvents * sizeof(double));
+    memset(results->PMcounters,
+        0,
+        groupSet->groups[groupSet->activeGroup].numberOfEvents * sizeof(double));
+    memset(results->StartOverflows,
+        0,
+        groupSet->groups[groupSet->activeGroup].numberOfEvents * sizeof(double));
     results->count = 0;
-    results->time = 0;
+    results->time  = 0;
     timer_reset(&results->startTime);
     return 0;
 }
 
-int
-likwid_getProcessorId(void)
+int likwid_getProcessorId(void)
 {
-    cpu_set_t  cpu_set;
+    cpu_set_t cpu_set;
     CPU_ZERO(&cpu_set);
-    sched_getaffinity(gettid(),sizeof(cpu_set_t), &cpu_set);
-    if (CPU_COUNT(&cpu_set) > 1)
-    {
+    sched_getaffinity(gettid(), sizeof(cpu_set_t), &cpu_set);
+    if (CPU_COUNT(&cpu_set) > 1) {
         return sched_getcpu();
-    }
-    else
-    {
+    } else {
         return getProcessorID(&cpu_set);
     }
     return -1;
 }
 
 #ifdef HAS_SCHEDAFFINITY
-int
-likwid_pinThread(int processorId)
+int likwid_pinThread(int processorId)
 {
     int ret;
     cpu_set_t cpuset;
@@ -939,8 +853,7 @@ likwid_pinThread(int processorId)
     CPU_SET(processorId, &cpuset);
     ret = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
 
-    if (ret != 0)
-    {
+    if (ret != 0) {
         ERROR_PRINT("ERROR: Pinning of thread to CPU %d failed\n", processorId);
         return FALSE;
     }
@@ -949,8 +862,7 @@ likwid_pinThread(int processorId)
 }
 #endif
 
-int
-likwid_pinProcess(int processorId)
+int likwid_pinProcess(int processorId)
 {
     int ret;
     cpu_set_t cpuset;
@@ -959,12 +871,10 @@ likwid_pinProcess(int processorId)
     CPU_SET(processorId, &cpuset);
     ret = sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
 
-    if (ret < 0)
-    {
+    if (ret < 0) {
         ERROR_PRINT("ERROR: Pinning of process to CPU %d failed\n", processorId);
         return FALSE;
     }
 
     return TRUE;
 }
-

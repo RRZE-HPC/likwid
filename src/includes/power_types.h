@@ -31,8 +31,8 @@
 #ifndef POWER_TYPES_H
 #define POWER_TYPES_H
 
-#include <stdint.h>
 #include <likwid.h>
+#include <stdint.h>
 
 extern uint32_t power_regs[NUM_POWER_DOMAINS];
 

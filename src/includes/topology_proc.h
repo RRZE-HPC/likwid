@@ -30,16 +30,15 @@
 #ifndef TOPOLOGY_PROC_H
 #define TOPOLOGY_PROC_H
 
-#include <stdlib.h>
+#include <sched.h>
 #include <stdio.h>
-#include <sched.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <sched.h>
 
-#include <error.h>
-#include <tree.h>
 #include <bitUtil.h>
+#include <error.h>
 #include <topology.h>
+#include <tree.h>
 
 int proc_init_cpuInfo(cpu_set_t cpuSet);
 int proc_init_cpuFeatures(void);

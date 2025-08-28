@@ -31,14 +31,9 @@
 #ifndef LIKWID_SYSFS_CLIENT_H
 #define LIKWID_SYSFS_CLIENT_H
 
-#define LIKWID_SYSFS_MAX_DATA_LENGTH   1025
+#define LIKWID_SYSFS_MAX_DATA_LENGTH 1025
 
-typedef enum {
-    SYSFS_READ = 0,
-    SYSFS_WRITE,
-    SYSFS_EXIT
-} SysfsDataRecordType;
-
+typedef enum { SYSFS_READ = 0, SYSFS_WRITE, SYSFS_EXIT } SysfsDataRecordType;
 
 typedef enum {
     SYSFS_ERR_NONE = 0,

@@ -44,43 +44,43 @@ it gathers the data only for output purposes. It is not a complete list.
 \extends CpuInfo
 */
 typedef enum {
-    SSE3=0, /*!< \brief Streaming SIMD Extensions 3 */
-    MMX, /*!< \brief Multi Media Extension */
-    SSE, /*!< \brief Streaming SIMD Extensions */
-    SSE2, /*!< \brief Streaming SIMD Extensions 2 */
-    MONITOR, /*!< \brief MONITOR and MWAIT instructions (part of SSE3) */
-    ACPI, /*!< \brief Advanced Configuration and Power Interface */
-    RDTSCP, /*!< \brief Serializing Read of the Time Stamp Counter */
-    VMX, /*!< \brief Virtual Machine eXtensions (VT-x) */
-    EIST, /*!< \brief Enhanced Intel SpeedStep */
-    TM, /*!< \brief Thermal Monitor */
-    TM2, /*!< \brief Thermal Monitor 2 */
-    AES, /*!< \brief AES instruction set */
-    RDRAND, /*!< \brief Random numbers from an on-chip hardware random number generator */
-    SSSE3, /*!< \brief Supplemental Streaming SIMD Extensions 3 */
-    SSE41, /*!< \brief Streaming SIMD Extensions 4.1 */
-    SSE42, /*!< \brief Streaming SIMD Extensions 4.2 */
-    SSE4A, /*!< \brief Streaming SIMD Extensions 4A */
-    AVX, /*!< \brief Advanced Vector Extensions */
-    FMA, /*!< \brief Fused multiply-add (FMA3) */
-    AVX2, /*!< \brief Advanced Vector Extensions 2 */
-    RTM, /*!< \brief Restricted Transactional Memory */
-    HLE, /*!< \brief Hardware Lock Elision */
-    HTT, /*!< \brief Hyper-Threading Technology */
-    RDSEED, /*!< \brief Non-deterministic random bit generator */
-    AVX512, /*!< \brief 512-bit wide vector registers for Advanced Vector Extensions */
-    SWP, /*!< \brief Atomic read-modify-write */
-    VFP, /*!< \brief First generation SIMD */
-    NEON, /*!< \brief Second generation SIMD */
-    EDSP, /*!< \brief DSP extensions */
-    VFPV3, /*!< \brief First generation SIMD Version 3 */
-    VFPV4, /*!< \brief First generation SIMD Version 4 */
-    TLS, /*!< \brief Thread-local storage registers */
-    FP, /*!< \brief Floating-point support */
-    ASIMD, /*!< \brief ARMv8 Advanced SIMD */
+    SSE3 = 0, /*!< \brief Streaming SIMD Extensions 3 */
+    MMX,      /*!< \brief Multi Media Extension */
+    SSE,      /*!< \brief Streaming SIMD Extensions */
+    SSE2,     /*!< \brief Streaming SIMD Extensions 2 */
+    MONITOR,  /*!< \brief MONITOR and MWAIT instructions (part of SSE3) */
+    ACPI,     /*!< \brief Advanced Configuration and Power Interface */
+    RDTSCP,   /*!< \brief Serializing Read of the Time Stamp Counter */
+    VMX,      /*!< \brief Virtual Machine eXtensions (VT-x) */
+    EIST,     /*!< \brief Enhanced Intel SpeedStep */
+    TM,       /*!< \brief Thermal Monitor */
+    TM2,      /*!< \brief Thermal Monitor 2 */
+    AES,      /*!< \brief AES instruction set */
+    RDRAND,   /*!< \brief Random numbers from an on-chip hardware random number generator */
+    SSSE3,    /*!< \brief Supplemental Streaming SIMD Extensions 3 */
+    SSE41,    /*!< \brief Streaming SIMD Extensions 4.1 */
+    SSE42,    /*!< \brief Streaming SIMD Extensions 4.2 */
+    SSE4A,    /*!< \brief Streaming SIMD Extensions 4A */
+    AVX,      /*!< \brief Advanced Vector Extensions */
+    FMA,      /*!< \brief Fused multiply-add (FMA3) */
+    AVX2,     /*!< \brief Advanced Vector Extensions 2 */
+    RTM,      /*!< \brief Restricted Transactional Memory */
+    HLE,      /*!< \brief Hardware Lock Elision */
+    HTT,      /*!< \brief Hyper-Threading Technology */
+    RDSEED,   /*!< \brief Non-deterministic random bit generator */
+    AVX512,   /*!< \brief 512-bit wide vector registers for Advanced Vector Extensions */
+    SWP,      /*!< \brief Atomic read-modify-write */
+    VFP,      /*!< \brief First generation SIMD */
+    NEON,     /*!< \brief Second generation SIMD */
+    EDSP,     /*!< \brief DSP extensions */
+    VFPV3,    /*!< \brief First generation SIMD Version 3 */
+    VFPV4,    /*!< \brief First generation SIMD Version 4 */
+    TLS,      /*!< \brief Thread-local storage registers */
+    FP,       /*!< \brief Floating-point support */
+    ASIMD,    /*!< \brief ARMv8 Advanced SIMD */
     ASIMDRDM, /*!< \brief ARMv8 Advanced SIMD: Rounding double multiply */
-    PMULL, /*!< \brief ARMv8 Advanced SIMD: Polynomial multiply long */
-    SVE, /*!< \brief ARMv8 Scalable Vector Extension */
+    PMULL,    /*!< \brief ARMv8 Advanced SIMD: Polynomial multiply long */
+    SVE,      /*!< \brief ARMv8 Scalable Vector Extension */
 } FeatureBit;
 /** @}*/
 #endif /*CPUID_TYPES_H*/

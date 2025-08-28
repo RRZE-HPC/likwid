@@ -35,7 +35,6 @@
 
 extern CpuFeatureFlags cpuFeatureFlags;
 
-
 extern void cpuFeatures_init(int cpu);
 extern void cpuFeatures_print(int cpu);
 extern void cpuFeatures_enable(int cpu, CpuFeature type);

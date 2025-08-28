@@ -30,81 +30,77 @@
 #ifndef PERFMON_ZEN4_H
 #define PERFMON_ZEN4_H
 
-#include <perfmon_zen4_events.h>
-#include <perfmon_zen4_counters.h>
-#include <error.h>
 #include <affinity.h>
+#include <error.h>
+#include <perfmon_zen4_counters.h>
+#include <perfmon_zen4_events.h>
 
-static int perfmon_numCountersZen4 = NUM_COUNTERS_ZEN4;
+static int perfmon_numCountersZen4   = NUM_COUNTERS_ZEN4;
 static int perfmon_numArchEventsZen4 = NUM_ARCH_EVENTS_ZEN4;
 
 int perfmon_init_zen4(int cpu_id)
 {
-    lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
-    lock_acquire((int*) &core_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
-    lock_acquire((int*) &sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]], cpu_id);
-    lock_acquire((int*) &numa_lock[affinity_thread2numa_lookup[cpu_id]], cpu_id);
-    lock_acquire((int*) &die_lock[affinity_thread2die_lookup[cpu_id]], cpu_id);
+    lock_acquire((int *)&socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
+    lock_acquire((int *)&core_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
+    lock_acquire((int *)&sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]], cpu_id);
+    lock_acquire((int *)&numa_lock[affinity_thread2numa_lookup[cpu_id]], cpu_id);
+    lock_acquire((int *)&die_lock[affinity_thread2die_lookup[cpu_id]], cpu_id);
     return 0;
 }
 
-int zen4_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+int zen4_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     (void)cpu_id;
     (void)index;
     uint64_t flags = 0x0ULL;
-    switch (event->eventId)
-    {
-        case 0x1:
-            flags |= (1ULL << AMD_K17_INST_RETIRE_ENABLE_BIT);
-            VERBOSEPRINTREG(cpu_id, 0x00, LLU_CAST flags, "SETUP_FIXC0");
-            break;
-        case 0x2:
-        case 0x3:
-            break;
-        default:
-            fprintf(stderr, "Unknown fixed event 0x%lX\n", event->eventId);
-            break;
+    switch (event->eventId) {
+    case 0x1:
+        flags |= (1ULL << AMD_K17_INST_RETIRE_ENABLE_BIT);
+        VERBOSEPRINTREG(cpu_id, 0x00, LLU_CAST flags, "SETUP_FIXC0");
+        break;
+    case 0x2:
+    case 0x3:
+        break;
+    default:
+        fprintf(stderr, "Unknown fixed event 0x%lX\n", event->eventId);
+        break;
     }
     return flags;
 }
 
-int zen4_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+int zen4_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
 
     // per default LIKWID counts in user-space
-    flags |= (1ULL<<AMD_K17_PMC_USER_BIT);
+    flags |= (1ULL << AMD_K17_PMC_USER_BIT);
     flags |= ((event->umask & AMD_K17_PMC_UNIT_MASK) << AMD_K17_PMC_UNIT_SHIFT);
     flags |= ((event->eventId & AMD_K17_PMC_EVSEL_MASK) << AMD_K17_PMC_EVSEL_SHIFT);
     flags |= (((event->eventId >> 8) & AMD_K17_PMC_EVSEL_MASK2) << AMD_K17_PMC_EVSEL_SHIFT2);
 
     // Currently no option for host/guest counting
-    if (event->numberOfOptions > 0)
-    {
-        for(uint64_t j=0;j<event->numberOfOptions;j++)
-        {
-            switch (event->options[j].type)
-            {
-                case EVENT_OPTION_EDGE:
-                    flags |= (1ULL<<AMD_K17_PMC_EDGE_BIT);
-                    break;
-                case EVENT_OPTION_COUNT_KERNEL:
-                    flags |= (1ULL<<AMD_K17_PMC_KERNEL_BIT);
-                    break;
-                case EVENT_OPTION_INVERT:
-                    flags |= (1ULL<<AMD_K17_PMC_INVERT_BIT);
-                    break;
-                case EVENT_OPTION_THRESHOLD:
-                    flags |= (event->options[j].value & AMD_K17_PMC_THRES_MASK) << AMD_K17_PMC_THRES_SHIFT;
-                    break;
-                default:
-                    break;
+    if (event->numberOfOptions > 0) {
+        for (uint64_t j = 0; j < event->numberOfOptions; j++) {
+            switch (event->options[j].type) {
+            case EVENT_OPTION_EDGE:
+                flags |= (1ULL << AMD_K17_PMC_EDGE_BIT);
+                break;
+            case EVENT_OPTION_COUNT_KERNEL:
+                flags |= (1ULL << AMD_K17_PMC_KERNEL_BIT);
+                break;
+            case EVENT_OPTION_INVERT:
+                flags |= (1ULL << AMD_K17_PMC_INVERT_BIT);
+                break;
+            case EVENT_OPTION_THRESHOLD:
+                flags |= (event->options[j].value & AMD_K17_PMC_THRES_MASK)
+                         << AMD_K17_PMC_THRES_SHIFT;
+                break;
+            default:
+                break;
             }
         }
     }
-    if (flags != currentConfig[cpu_id][index])
-    {
+    if (flags != currentConfig[cpu_id][index]) {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_PMC");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
@@ -112,40 +108,39 @@ int zen4_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     return 0;
 }
 
-int zen4_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+int zen4_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
-    int has_tid = 0;
-    int has_cid = 0;
-    int has_slice = 0;
+    int has_tid    = 0;
+    int has_cid    = 0;
+    int has_slice  = 0;
 
-    if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] != cpu_id)
-    {
+    if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] != cpu_id) {
         return 0;
     }
 
     flags |= ((event->umask & AMD_K17_L3_UNIT_MASK) << AMD_K17_L3_UNIT_SHIFT);
     flags |= ((event->eventId & AMD_K17_L3_EVSEL_MASK) << AMD_K17_L3_EVSEL_SHIFT);
-    if (event->numberOfOptions > 0)
-    {
-        for(uint64_t j=0;j<event->numberOfOptions;j++)
-        {
-            switch (event->options[j].type)
-            {
-                case EVENT_OPTION_TID:
-                    flags |= ((uint64_t)(event->options[j].value & AMD_K17_L3_TID_MASK)) << AMD_K17_L3_TID_SHIFT;
-                    has_tid = 1;
-                    break;
-                case EVENT_OPTION_CID:
-                    flags |= ((uint64_t)(event->options[j].value & AMD_K17_L3_CID_MASK)) << AMD_K17_L3_CID_SHIFT;
-                    has_cid = 1;
-                    break;
-                case EVENT_OPTION_SLICE:
-                    flags |= ((uint64_t)(event->options[j].value & AMD_K17_L3_SLICE_MASK)) << AMD_K17_L3_SLICE_SHIFT;
-                    has_slice = 1;
-                    break;
-                default:
-                    break;
+    if (event->numberOfOptions > 0) {
+        for (uint64_t j = 0; j < event->numberOfOptions; j++) {
+            switch (event->options[j].type) {
+            case EVENT_OPTION_TID:
+                flags |= ((uint64_t)(event->options[j].value & AMD_K17_L3_TID_MASK))
+                         << AMD_K17_L3_TID_SHIFT;
+                has_tid = 1;
+                break;
+            case EVENT_OPTION_CID:
+                flags |= ((uint64_t)(event->options[j].value & AMD_K17_L3_CID_MASK))
+                         << AMD_K17_L3_CID_SHIFT;
+                has_cid = 1;
+                break;
+            case EVENT_OPTION_SLICE:
+                flags |= ((uint64_t)(event->options[j].value & AMD_K17_L3_SLICE_MASK))
+                         << AMD_K17_L3_SLICE_SHIFT;
+                has_slice = 1;
+                break;
+            default:
+                break;
             }
         }
     }
@@ -156,8 +151,7 @@ int zen4_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     if (!has_cid)
         flags |= 0x1ULL << AMD_K17_L3_ALL_CORES_BIT;
 
-    if (flags != currentConfig[cpu_id][index])
-    {
+    if (flags != currentConfig[cpu_id][index]) {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_CBOX");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
@@ -165,12 +159,11 @@ int zen4_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     return 0;
 }
 
-int zen4_datafabric_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+int zen4_datafabric_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
-    {
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id) {
         return 0;
     }
 
@@ -184,9 +177,7 @@ int zen4_datafabric_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 
     flags |= (1ULL << AMD_K19_DF_ENABLE_OFFSET);
 
-
-    if (flags != currentConfig[cpu_id][index])
-    {
+    if (flags != currentConfig[cpu_id][index]) {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, "SETUP_DF");
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
@@ -194,44 +185,39 @@ int zen4_datafabric_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     return 0;
 }
 
-
-int perfmon_setupCounterThread_zen4(int thread_id, PerfmonEventSet* eventSet)
+int perfmon_setupCounterThread_zen4(int thread_id, PerfmonEventSet *eventSet)
 {
-    int cpu_id = groupSet->threads[thread_id].processorId;
+    int cpu_id           = groupSet->threads[thread_id].processorId;
     uint64_t fixed_flags = 0x0ULL;
 
-    for (int i=0;i < eventSet->numberOfEvents;i++)
-    {
+    for (int i = 0; i < eventSet->numberOfEvents; i++) {
         RegisterType type = eventSet->events[i].type;
-        if (!TESTTYPE(eventSet, type))
-        {
+        if (!TESTTYPE(eventSet, type)) {
             continue;
         }
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
-        switch (type)
-        {
-            case PMC:
-                zen4_pmc_setup(cpu_id, index, event);
-                break;
-            case CBOX0:
-                zen4_cache_setup(cpu_id, index, event);
-                break;
-            case POWER:
-                break;
-            case FIXED:
-                fixed_flags |= zen4_fixed_setup(cpu_id, index, event);
-                break;
-            case MBOX0:
-                zen4_datafabric_setup(cpu_id, index, event);
-                break;
-            default:
-                break;
+        switch (type) {
+        case PMC:
+            zen4_pmc_setup(cpu_id, index, event);
+            break;
+        case CBOX0:
+            zen4_cache_setup(cpu_id, index, event);
+            break;
+        case POWER:
+            break;
+        case FIXED:
+            fixed_flags |= zen4_fixed_setup(cpu_id, index, event);
+            break;
+        case MBOX0:
+            zen4_datafabric_setup(cpu_id, index, event);
+            break;
+        default:
+            break;
         }
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
     }
-    if ((fixed_flags > 0x0ULL))
-    {
+    if (fixed_flags > 0x0ULL) {
         uint64_t tmp = 0x0ULL;
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_AMD17_HW_CONFIG, &tmp));
         VERBOSEPRINTREG(cpu_id, MSR_AMD17_HW_CONFIG, LLU_CAST tmp, "READ_HW_CONFIG");
@@ -242,56 +228,46 @@ int perfmon_setupCounterThread_zen4(int thread_id, PerfmonEventSet* eventSet)
     return 0;
 }
 
-int perfmon_startCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
+int perfmon_startCountersThread_zen4(int thread_id, PerfmonEventSet *eventSet)
 {
-    int haveSLock = 0;
+    int haveSLock  = 0;
     int haveL3Lock = 0;
-    int haveCLock = 0;
+    int haveCLock  = 0;
     uint64_t flags = 0x0ULL;
-    int cpu_id = groupSet->threads[thread_id].processorId;
+    int cpu_id     = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id) {
         haveSLock = 1;
     }
-    if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id)
-    {
+    if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id) {
         haveL3Lock = 1;
     }
-    if (core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
-    {
+    if (core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id) {
         haveCLock = 1;
     }
 
-    for (int i=0;i < eventSet->numberOfEvents;i++)
-    {
-        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
-        {
+    for (int i = 0; i < eventSet->numberOfEvents; i++) {
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE) {
             RegisterType type = eventSet->events[i].type;
-            if (!TESTTYPE(eventSet, type))
-            {
+            if (!TESTTYPE(eventSet, type)) {
                 continue;
             }
-            flags = 0x0ULL;
+            flags               = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
-            uint32_t reg = counter_map[index].configRegister;
-            uint32_t counter = counter_map[index].counterRegister;
-            eventSet->events[i].threadCounter[thread_id].startData = 0;
+            uint32_t reg        = counter_map[index].configRegister;
+            uint32_t counter    = counter_map[index].counterRegister;
+            eventSet->events[i].threadCounter[thread_id].startData   = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
-            if ((type == PMC) ||
-                ((type == MBOX0) && (haveSLock)) ||
-                ((type == CBOX0) && (haveL3Lock)))
-            {
+            if ((type == PMC) || ((type == MBOX0) && (haveSLock)) ||
+                ((type == CBOX0) && (haveL3Lock))) {
                 VERBOSEPRINTREG(cpu_id, counter, LLU_CAST 0x0ULL, "RESET_CTR");
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter, 0x0ULL));
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, reg, &flags));
                 VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, "READ_CTRL");
-                flags |= (1ULL << AMD_K17_ENABLE_BIT);  /* enable flag */
+                flags |= (1ULL << AMD_K17_ENABLE_BIT); /* enable flag */
                 VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, "START_CTRL");
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, flags));
-            }
-            else if (type == POWER)
-            {
+            } else if (type == POWER) {
                 if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock))
                     continue;
                 if (counter == MSR_AMD17_RAPL_CORE_STATUS && (!haveCLock))
@@ -301,72 +277,65 @@ int perfmon_startCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &flags));
                 eventSet->events[i].threadCounter[thread_id].startData = flags;
                 VERBOSEPRINTREG(cpu_id, counter, LLU_CAST flags, "START_POWER");
-            }
-            else if (type == FIXED)
-            {
+            } else if (type == FIXED) {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &flags));
-                eventSet->events[i].threadCounter[thread_id].startData = field64(flags, 0, box_map[type].regWidth);
-                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST field64(flags, 0, box_map[type].regWidth), "START_FIXED");
+                eventSet->events[i].threadCounter[thread_id].startData =
+                    field64(flags, 0, box_map[type].regWidth);
+                VERBOSEPRINTREG(cpu_id,
+                    counter,
+                    LLU_CAST field64(flags, 0, box_map[type].regWidth),
+                    "START_FIXED");
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = eventSet->events[i].threadCounter[thread_id].startData;
+            eventSet->events[i].threadCounter[thread_id].counterData =
+                eventSet->events[i].threadCounter[thread_id].startData;
         }
     }
     return 0;
 }
 
-int perfmon_stopCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
+int perfmon_stopCountersThread_zen4(int thread_id, PerfmonEventSet *eventSet)
 {
-    uint64_t flags = 0x0ULL;
-    int haveSLock = 0;
-    int haveL3Lock = 0;
-    int haveCLock = 0;
+    uint64_t flags          = 0x0ULL;
+    int haveSLock           = 0;
+    int haveL3Lock          = 0;
+    int haveCLock           = 0;
     uint64_t counter_result = 0x0ULL;
-    int cpu_id = groupSet->threads[thread_id].processorId;
+    int cpu_id              = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id) {
         haveSLock = 1;
     }
-    if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id)
-    {
+    if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id) {
         haveL3Lock = 1;
     }
-    if (core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
-    {
+    if (core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id) {
         haveCLock = 1;
     }
 
-    for (int i=0;i < eventSet->numberOfEvents;i++)
-    {
-        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
-        {
+    for (int i = 0; i < eventSet->numberOfEvents; i++) {
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE) {
             RegisterType type = eventSet->events[i].type;
-            if (!TESTTYPE(eventSet, type))
-            {
+            if (!TESTTYPE(eventSet, type)) {
                 continue;
             }
-            counter_result = 0x0ULL;
+            counter_result      = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
-            uint32_t reg = counter_map[index].configRegister;
-            uint32_t counter = counter_map[index].counterRegister;
-            if ((type == PMC) ||
-                ((type == MBOX0) && (haveSLock)) ||
-                ((type == CBOX0) && (haveL3Lock)))
-            {
+            uint32_t reg        = counter_map[index].configRegister;
+            uint32_t counter    = counter_map[index].counterRegister;
+            if ((type == PMC) || ((type == MBOX0) && (haveSLock)) ||
+                ((type == CBOX0) && (haveL3Lock))) {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, reg, &flags));
-                flags &= ~(1ULL<<AMD_K17_ENABLE_BIT);  /* clear enable flag */
+                flags &= ~(1ULL << AMD_K17_ENABLE_BIT); /* clear enable flag */
                 VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, "STOP_CTRL");
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, flags));
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                 VERBOSEPRINTREG(cpu_id, reg, LLU_CAST counter_result, "READ_CTR");
-                if (field64(counter_result, 0, box_map[type].regWidth) < eventSet->events[i].threadCounter[thread_id].counterData)
-                {
+                if (field64(counter_result, 0, box_map[type].regWidth) <
+                    eventSet->events[i].threadCounter[thread_id].counterData) {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
                     VERBOSEPRINTREG(cpu_id, reg, LLU_CAST counter_result, "OVERFLOW");
                 }
-            }
-            else if (type == POWER)
-            {
+            } else if (type == POWER) {
                 if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock))
                     continue;
                 if (counter == MSR_AMD17_RAPL_CORE_STATUS && (!haveCLock))
@@ -374,20 +343,16 @@ int perfmon_stopCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
                 if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock))
                     continue;
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
-                if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
-                {
+                if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
                     VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "OVERFLOW_POWER");
                 }
 
                 VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "STOP_POWER");
-            }
-            else if (type == FIXED)
-            {
+            } else if (type == FIXED) {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                 counter_result = field64(counter_result, 0, box_map[type].regWidth);
-                if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
-                {
+                if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
                     VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "OVERFLOW_FIXED");
                 }
@@ -399,76 +364,60 @@ int perfmon_stopCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
     return 0;
 }
 
-
-int perfmon_readCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
+int perfmon_readCountersThread_zen4(int thread_id, PerfmonEventSet *eventSet)
 {
-    int haveSLock = 0;
-    int haveL3Lock = 0;
-    int haveCLock = 0;
+    int haveSLock           = 0;
+    int haveL3Lock          = 0;
+    int haveCLock           = 0;
     uint64_t counter_result = 0x0ULL;
-    int cpu_id = groupSet->threads[thread_id].processorId;
+    int cpu_id              = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id) {
         haveSLock = 1;
     }
-    if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id)
-    {
+    if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id) {
         haveL3Lock = 1;
     }
-    if (core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
-    {
+    if (core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id) {
         haveCLock = 1;
     }
 
-    for (int i=0;i < eventSet->numberOfEvents;i++)
-    {
-        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
-        {
+    for (int i = 0; i < eventSet->numberOfEvents; i++) {
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE) {
             RegisterType type = eventSet->events[i].type;
-            if (!TESTTYPE(eventSet, type))
-            {
+            if (!TESTTYPE(eventSet, type)) {
                 continue;
             }
-            counter_result = 0x0ULL;
+            counter_result      = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
-            uint32_t counter = counter_map[index].counterRegister;
-            uint64_t* current = &(eventSet->events[i].threadCounter[thread_id].counterData);
-            if ((type == PMC) ||
-                ((type == MBOX0) && (haveSLock)) ||
-                ((type == CBOX0) && (haveL3Lock)))
-            {
+            uint32_t counter    = counter_map[index].counterRegister;
+            uint64_t *current   = &(eventSet->events[i].threadCounter[thread_id].counterData);
+            if ((type == PMC) || ((type == MBOX0) && (haveSLock)) ||
+                ((type == CBOX0) && (haveL3Lock))) {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                 VERBOSEPRINTREG(cpu_id, counter, counter_result, "READ_CTR");
-                if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
-                {
+                if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
                 }
                 *current = field64(counter_result, 0, box_map[type].regWidth);
-            }
-            else if (type == POWER)
-            {
+            } else if (type == POWER) {
                 if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock))
                     continue;
                 if (counter == MSR_AMD17_RAPL_CORE_STATUS && (!haveCLock))
                     continue;
                 if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock))
                     continue;
-                CHECK_POWER_READ_ERROR(power_read(cpu_id, counter, (uint64_t*)&counter_result));
+                CHECK_POWER_READ_ERROR(power_read(cpu_id, counter, (uint64_t *)&counter_result));
                 VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "READ_POWER");
-                if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
-                {
+                if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {
                     VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "OVERFLOW_POWER");
                     eventSet->events[i].threadCounter[thread_id].overflows++;
                 }
                 *current = field64(counter_result, 0, box_map[type].regWidth);
-            }
-            else if (type == FIXED)
-            {
+            } else if (type == FIXED) {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                 VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "READ_FIXED");
-                if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
-                {
+                if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) {
                     VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "OVERFLOW_FIXED");
                     eventSet->events[i].threadCounter[thread_id].overflows++;
                 }
@@ -479,52 +428,42 @@ int perfmon_readCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
     return 0;
 }
 
-
-int perfmon_finalizeCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
+int perfmon_finalizeCountersThread_zen4(int thread_id, PerfmonEventSet *eventSet)
 {
-    int haveSLock = 0;
+    int haveSLock  = 0;
     int haveL3Lock = 0;
-    int cpu_id = groupSet->threads[thread_id].processorId;
+    int cpu_id     = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id) {
         haveSLock = 1;
     }
-    if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id)
-    {
+    if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id) {
         haveL3Lock = 1;
     }
 
-    for (int i=0;i < eventSet->numberOfEvents;i++)
-    {
+    for (int i = 0; i < eventSet->numberOfEvents; i++) {
         RegisterType type = eventSet->events[i].type;
-        if (!TESTTYPE(eventSet, type))
-        {
+        if (!TESTTYPE(eventSet, type)) {
             continue;
         }
         RegisterIndex index = eventSet->events[i].index;
-        if ((type == PMC) ||
-            ((type == MBOX0) && (haveSLock)) ||
-            ((type == CBOX0) && (haveL3Lock)))
-        {
-            if (counter_map[index].configRegister != 0x0)
-            {
+        if ((type == PMC) || ((type == MBOX0) && (haveSLock)) ||
+            ((type == CBOX0) && (haveL3Lock))) {
+            if (counter_map[index].configRegister != 0x0) {
                 VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, 0x0ULL, "CLEAR_CTRL");
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, 0x0ULL));
+                CHECK_MSR_WRITE_ERROR(
+                    HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, 0x0ULL));
             }
-            if (counter_map[index].counterRegister != 0x0)
-            {
+            if (counter_map[index].counterRegister != 0x0) {
                 VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, 0x0ULL, "CLEAR_CTR");
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
+                CHECK_MSR_WRITE_ERROR(
+                    HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
             }
             eventSet->events[i].threadCounter[thread_id].init = FALSE;
-        }
-        else if (type == FIXED)
-        {
+        } else if (type == FIXED) {
             uint64_t tmp = 0x0ULL;
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_AMD17_HW_CONFIG, &tmp));
-            if (tmp & (1ULL << AMD_K17_INST_RETIRE_ENABLE_BIT))
-            {
+            if (tmp & (1ULL << AMD_K17_INST_RETIRE_ENABLE_BIT)) {
                 tmp &= ~(1ULL << AMD_K17_INST_RETIRE_ENABLE_BIT);
             }
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_AMD17_HW_CONFIG, tmp));

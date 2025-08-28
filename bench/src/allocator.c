@@ -29,186 +29,155 @@
  */
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include <allocator_types.h>
 #include <allocator.h>
+#include <allocator_types.h>
 #include <likwid.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int numberOfAllocatedVectors = 0;
-static allocation* allocList;
+static allocation *allocList;
 static AffinityDomains_t domains = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void
-allocator_init(int numVectors)
+void allocator_init(int numVectors)
 {
-    allocList = (allocation*) malloc(numVectors * sizeof(allocation));
-    domains = get_affinityDomains();
+    allocList = (allocation *)malloc(numVectors * sizeof(allocation));
+    domains   = get_affinityDomains();
 }
 
-
-void
-allocator_finalize()
+void allocator_finalize()
 {
     int i;
 
-    for (i=0; i<numberOfAllocatedVectors; i++)
-    {
+    for (i = 0; i < numberOfAllocatedVectors; i++) {
         free(allocList[i].ptr);
-        allocList[i].ptr = NULL;
-        allocList[i].size = 0;
+        allocList[i].ptr    = NULL;
+        allocList[i].size   = 0;
         allocList[i].offset = 0;
     }
     numberOfAllocatedVectors = 0;
 }
 
-size_t
-allocator_dataTypeLength(DataType type)
+size_t allocator_dataTypeLength(DataType type)
 {
-    switch (type)
-    {
-        case INT:
-            return sizeof(int);
-            break;
-        case SINGLE:
-            return sizeof(float);
-            break;
-        case DOUBLE:
-            return sizeof(double);
-            break;
-        default:
-            return 0;
+    switch (type) {
+    case INT:
+        return sizeof(int);
+        break;
+    case SINGLE:
+        return sizeof(float);
+        break;
+    case DOUBLE:
+        return sizeof(double);
+        break;
+    default:
+        return 0;
     }
     return 0;
 }
 
-void
-allocator_allocateVector(
-        void** ptr,
-        int alignment,
-        uint64_t size,
-        int offset,
-        DataType type,
-        int stride,
-        bstring domainString,
-        int init_per_thread)
+void allocator_allocateVector(void **ptr, int alignment, uint64_t size, int offset, DataType type,
+    int stride, bstring domainString, int init_per_thread)
 {
     (void)stride;
 
-    size_t bytesize = 0;
-    const AffinityDomain* domain = NULL;
+    size_t bytesize              = 0;
+    const AffinityDomain *domain = NULL;
     int errorCode;
     int elements = 0;
     affinity_init();
 
     size_t typesize = allocator_dataTypeLength(type);
-    bytesize = (size+offset) * typesize;
-    elements = alignment / typesize;
+    bytesize        = (size + offset) * typesize;
+    elements        = alignment / typesize;
 
 #pragma GCC diagnostic ignored "-Wnonnull"
-    for (size_t i=0;i<domains->numberOfAffinityDomains;i++)
-    {
-        if (strcmp(domains->domains[i].tag, bdata(domainString)) == 0)
-        {
+    for (size_t i = 0; i < domains->numberOfAffinityDomains; i++) {
+        if (strcmp(domains->domains[i].tag, bdata(domainString)) == 0) {
             domain = domains->domains + i;
         }
     }
-    if (!domain)
-    {
-        fprintf(stderr, "Error: Cannot use desired domain %s for vector placement, Domain %s does not exist.\n",
-                        bdata(domainString), bdata(domainString));
+    if (!domain) {
+        fprintf(stderr,
+            "Error: Cannot use desired domain %s for vector placement, Domain %s does not exist.\n",
+            bdata(domainString),
+            bdata(domainString));
         exit(EXIT_FAILURE);
     }
 
-    errorCode =  posix_memalign(ptr, alignment, bytesize);
+    errorCode = posix_memalign(ptr, alignment, bytesize);
 
-    if (errorCode)
-    {
-        if (errorCode == EINVAL)
-        {
-            fprintf(stderr,
-                    "Error: Alignment parameter is not a power of two\n");
+    if (errorCode) {
+        if (errorCode == EINVAL) {
+            fprintf(stderr, "Error: Alignment parameter is not a power of two\n");
             exit(EXIT_FAILURE);
         }
-        if (errorCode == ENOMEM)
-        {
-            fprintf(stderr,
-                    "Error: Insufficient memory to fulfill the request\n");
+        if (errorCode == ENOMEM) {
+            fprintf(stderr, "Error: Insufficient memory to fulfill the request\n");
             exit(EXIT_FAILURE);
         }
     }
 
-    if ((*ptr) == NULL)
-    {
+    if ((*ptr) == NULL) {
         fprintf(stderr, "Error: posix_memalign failed!\n");
         exit(EXIT_FAILURE);
     }
 
-    allocList[numberOfAllocatedVectors].ptr = *ptr;
-    allocList[numberOfAllocatedVectors].size = bytesize;
+    allocList[numberOfAllocatedVectors].ptr    = *ptr;
+    allocList[numberOfAllocatedVectors].size   = bytesize;
     allocList[numberOfAllocatedVectors].offset = offset;
-    allocList[numberOfAllocatedVectors].type = type;
+    allocList[numberOfAllocatedVectors].type   = type;
     numberOfAllocatedVectors++;
 
     affinity_pinProcess(domain->processorList[0]);
-    printf("Allocate: Process running on hwthread %d (Domain %s) - Vector length %llu/%llu Offset %d Alignment %llu\n",
-            affinity_processGetProcessorId(),
-            domain->tag,
-            LLU_CAST size,
-            LLU_CAST bytesize,
-            offset,
-            LLU_CAST elements);
+    printf("Allocate: Process running on hwthread %d (Domain %s) - Vector length %llu/%llu Offset "
+           "%d Alignment %llu\n",
+        affinity_processGetProcessorId(),
+        domain->tag,
+        LLU_CAST size,
+        LLU_CAST bytesize,
+        offset,
+        LLU_CAST elements);
 
-    if (!init_per_thread)
-    {
-        switch ( type )
-        {
-            case INT:
-                {
-                    int* sptr = (int*) (*ptr);
-                    sptr += offset;
+    if (!init_per_thread) {
+        switch (type) {
+        case INT: {
+            int *sptr = (int *)(*ptr);
+            sptr += offset;
 
-                    for ( uint64_t i=0; i < size; i++ )
-                    {
-                        sptr[i] = 1;
-                    }
-                    *ptr = (void*) sptr;
+            for (uint64_t i = 0; i < size; i++) {
+                sptr[i] = 1;
+            }
+            *ptr = (void *)sptr;
 
-                }
-                break;
+        } break;
 
-            case SINGLE:
-                {
-                    float* sptr = (float*) (*ptr);
-                    sptr += offset;
+        case SINGLE: {
+            float *sptr = (float *)(*ptr);
+            sptr += offset;
 
-                    for ( uint64_t i=0; i < size; i++ )
-                    {
-                        sptr[i] = 1.0;
-                    }
-                    *ptr = (void*) sptr;
+            for (uint64_t i = 0; i < size; i++) {
+                sptr[i] = 1.0;
+            }
+            *ptr = (void *)sptr;
 
-                }
-                break;
+        } break;
 
-            case DOUBLE:
-                {
-                    double* dptr = (double*) (*ptr);
-                    dptr += offset;
+        case DOUBLE: {
+            double *dptr = (double *)(*ptr);
+            dptr += offset;
 
-                    for ( uint64_t i=0; i < size; i++ )
-                    {
-                        dptr[i] = 1.0;
-                    }
-                    *ptr = (void*) dptr;
-                }
-                break;
+            for (uint64_t i = 0; i < size; i++) {
+                dptr[i] = 1.0;
+            }
+            *ptr = (void *)dptr;
+        } break;
         }
     }
 }

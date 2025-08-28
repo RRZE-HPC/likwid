@@ -34,6 +34,6 @@
 
 #include <sysFeatures_types.h>
 
-int likwid_sysft_init_intel_rapl(_SysFeatureList* out);
+int likwid_sysft_init_intel_rapl(_SysFeatureList *out);
 
 #endif /* HWFEATURES_X86_INTEL_UNCOREFREQ_H */

@@ -33,25 +33,25 @@
 #ifndef PERFMON_H
 #define PERFMON_H
 
-#include <types.h>
 #include <likwid.h>
+#include <types.h>
 
 #define FREEZE_FLAG_ONLYFREEZE 0x0ULL
-#define FREEZE_FLAG_CLEAR_CTR (1ULL<<1)
-#define FREEZE_FLAG_CLEAR_CTL (1ULL<<0)
+#define FREEZE_FLAG_CLEAR_CTR (1ULL << 1)
+#define FREEZE_FLAG_CLEAR_CTL (1ULL << 0)
 
 extern uint64_t **currentConfig;
 
-extern int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-extern int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-extern int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-extern int (*perfmon_readCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-extern int (*perfmon_finalizeCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-extern int (*initThreadArch) (int cpu_id);
+extern int (*perfmon_startCountersThread)(int thread_id, PerfmonEventSet *eventSet);
+extern int (*perfmon_stopCountersThread)(int thread_id, PerfmonEventSet *eventSet);
+extern int (*perfmon_setupCountersThread)(int thread_id, PerfmonEventSet *eventSet);
+extern int (*perfmon_readCountersThread)(int thread_id, PerfmonEventSet *eventSet);
+extern int (*perfmon_finalizeCountersThread)(int thread_id, PerfmonEventSet *eventSet);
+extern int (*initThreadArch)(int cpu_id);
 
 /* Internal helpers */
 extern int getCounterTypeOffset(int index);
 extern uint64_t perfmon_getMaxCounterValue(RegisterType type);
-extern char** getArchRegisterTypeNames();
+extern char **getArchRegisterTypeNames();
 
 #endif /*PERFMON_H*/

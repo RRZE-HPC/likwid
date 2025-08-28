@@ -34,6 +34,6 @@
 
 #include <sysFeatures_types.h>
 
-int likwid_sysft_init_x86_amd(_SysFeatureList* out);
+int likwid_sysft_init_x86_amd(_SysFeatureList *out);
 
 #endif

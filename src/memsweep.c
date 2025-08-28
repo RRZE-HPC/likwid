@@ -30,37 +30,35 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
 
-#include <error.h>
-#include <types.h>
-#include <memsweep.h>
-#include <topology.h>
-#include <numa.h>
 #include <affinity.h>
+#include <error.h>
+#include <memsweep.h>
+#include <numa.h>
+#include <topology.h>
+#include <types.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
-extern void _loadData(uint32_t size, void* ptr);
+extern void _loadData(uint32_t size, void *ptr);
 
 /* #####   LOCAL VARIABLES   ############################################## */
 
-static uint64_t  memoryFraction = 80ULL;
+static uint64_t memoryFraction = 80ULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static void*
-allocateOnNode(size_t size, int domainId)
+static void *allocateOnNode(size_t size, int domainId)
 {
     char *ptr;
 
-    ptr = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);
+    ptr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
 
-    if (ptr == (char *)-1)
-    {
+    if (ptr == (char *)-1) {
         ERROR;
     }
 
@@ -69,24 +67,19 @@ allocateOnNode(size_t size, int domainId)
     return ptr;
 }
 
-static void
-initMemory(size_t size, char* ptr, int domainId)
+static void initMemory(size_t size, char *ptr, int domainId)
 {
     affinity_pinProcess(numa_info.nodes[domainId].processors[0]);
 
-    for (size_t i=0; i < size; i += PAGE_ALIGNMENT)
-    {
-        ptr[i] = (char) 0xEF;
+    for (size_t i = 0; i < size; i += PAGE_ALIGNMENT) {
+        ptr[i] = (char)0xEF;
     }
 }
 
-static int
-findProcessor(uint32_t nodeId, uint32_t coreId)
+static int findProcessor(uint32_t nodeId, uint32_t coreId)
 {
-    for (size_t i=0; i<numa_info.nodes[nodeId].numberOfProcessors; i++)
-    {
-        if (numa_info.nodes[nodeId].processors[i] == coreId)
-        {
+    for (size_t i = 0; i < numa_info.nodes[nodeId].numberOfProcessors; i++) {
+        if (numa_info.nodes[nodeId].processors[i] == coreId) {
             return 1;
         }
     }
@@ -94,14 +87,13 @@ findProcessor(uint32_t nodeId, uint32_t coreId)
 }
 
 /* evict all dirty cachelines from last level cache */
-static void
-cleanupCache(char* ptr)
+static void cleanupCache(char *ptr)
 {
 #if defined(__x86_64__) || defined(__i386__)
-    uint32_t cachesize = 2 * cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].size;
+    uint32_t cachesize = 2 * cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels - 1].size;
     if (getenv("LIKWID_SILENT") == NULL)
-        printf("Cleaning LLC with %g MB\n", (double)cachesize/(1024.0 * 1024.0));
-    _loadData(cachesize,ptr);
+        printf("Cleaning LLC with %g MB\n", (double)cachesize / (1024.0 * 1024.0));
+    _loadData(cachesize, ptr);
 #else
     ERROR_PRINT("Cleanup cache is currently only available on X86 systems.");
 #endif
@@ -109,52 +101,42 @@ cleanupCache(char* ptr)
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void
-memsweep_setMemoryFraction(uint64_t fraction)
+void memsweep_setMemoryFraction(uint64_t fraction)
 {
     memoryFraction = fraction;
 }
 
-void
-memsweep_node(void)
+void memsweep_node(void)
 {
-    for ( uint32_t i=0; i < numa_info.numberOfNodes; i++)
-    {
+    for (uint32_t i = 0; i < numa_info.numberOfNodes; i++) {
         memsweep_domain(i);
     }
 }
 
-void
-memsweep_domain(int domainId)
+void memsweep_domain(int domainId)
 {
-    char* ptr = NULL;
+    char *ptr   = NULL;
     size_t size = numa_info.nodes[domainId].totalMemory * 1024ULL * memoryFraction / 100ULL;
-    if (getenv("LIKWID_SILENT") == NULL)
-    {
+    if (getenv("LIKWID_SILENT") == NULL) {
         printf("Sweeping domain %d: Using %g MB of %g MB\n",
-                domainId,
-                size / (1024.0 * 1024.0),
-                numa_info.nodes[domainId].totalMemory/ 1024.0);
+            domainId,
+            size / (1024.0 * 1024.0),
+            numa_info.nodes[domainId].totalMemory / 1024.0);
     }
-    ptr = (char*) allocateOnNode(size, domainId);
+    ptr = (char *)allocateOnNode(size, domainId);
     initMemory(size, ptr, domainId);
     cleanupCache(ptr);
     munmap(ptr, size);
 }
 
-void
-memsweep_threadGroup(const int* processorList, int numberOfProcessors)
+void memsweep_threadGroup(const int *processorList, int numberOfProcessors)
 {
-    for (uint32_t i=0; i<numa_info.numberOfNodes; i++)
-    {
-        for (int j=0; j<numberOfProcessors; j++)
-        {
-            if (findProcessor(i,processorList[j]))
-            {
+    for (uint32_t i = 0; i < numa_info.numberOfNodes; i++) {
+        for (int j = 0; j < numberOfProcessors; j++) {
+            if (findProcessor(i, processorList[j])) {
                 memsweep_domain(i);
                 break;
             }
         }
     }
 }
-

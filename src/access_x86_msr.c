@@ -35,25 +35,25 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
 #include <fcntl.h>
-#include <string.h>
-#include <unistd.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/un.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
-#include <types.h>
-#include <error.h>
-#include <topology.h>
 #include <access_x86_msr.h>
 #include <access_x86_rdpmc.h>
+#include <error.h>
 #include <registers.h>
+#include <topology.h>
+#include <types.h>
 #ifdef LIKWID_PROFILE_COUNTER_READ
 #include <timer.h>
 #endif
@@ -61,7 +61,7 @@
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-#define MAX_LENGTH_MSR_DEV_NAME  24
+#define MAX_LENGTH_MSR_DEV_NAME 24
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -69,67 +69,52 @@ static int *FD = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-
-int
-access_x86_msr_init(const int cpu_id)
+int access_x86_msr_init(const int cpu_id)
 {
     int fd = 0;
 
-    char* msr_file_name;
-    if (!FD)
-    {
+    char *msr_file_name;
+    if (!FD) {
         FD = lw_malloc(cpuid_topology.numHWThreads * sizeof(int));
         memset(FD, -1, cpuid_topology.numHWThreads * sizeof(int));
     }
-    if (FD[cpu_id] > 0)
-    {
+    if (FD[cpu_id] > 0) {
         return 0;
     }
-    msr_file_name = (char*) malloc(MAX_LENGTH_MSR_DEV_NAME * sizeof(char));
-    if (!msr_file_name)
-    {
+    msr_file_name = (char *)malloc(MAX_LENGTH_MSR_DEV_NAME * sizeof(char));
+    if (!msr_file_name) {
         return -ENOMEM;
     }
 
-    sprintf(msr_file_name,"/dev/msr%d", cpu_id);
+    sprintf(msr_file_name, "/dev/msr%d", cpu_id);
     fd = open(msr_file_name, O_RDWR);
-    if (fd < 0)
-    {
-        sprintf(msr_file_name,"/dev/cpu/%d/msr_safe", cpu_id);
+    if (fd < 0) {
+        sprintf(msr_file_name, "/dev/cpu/%d/msr_safe", cpu_id);
         fd = open(msr_file_name, O_RDWR);
-        if (fd < 0)
-        {
-            sprintf(msr_file_name,"/dev/cpu/%d/msr", cpu_id);
-        }
-        else
-        {
-            if(geteuid() != 0 && cpuid_info.supportUncore)
-            {
+        if (fd < 0) {
+            sprintf(msr_file_name, "/dev/cpu/%d/msr", cpu_id);
+        } else {
+            if (geteuid() != 0 && cpuid_info.supportUncore) {
                 fprintf(stdout, "Using msr_safe kernel module. Currently, this deactivates the\n");
                 fprintf(stdout, "PCI-based Uncore monitoring.\n");
                 cpuid_info.supportUncore = 0;
             }
             close(fd);
         }
-    }
-    else
-    {
+    } else {
         close(fd);
     }
     fd = open(msr_file_name, O_RDWR);
-    if (fd < 0)
-    {
-        ERROR_PRINT("Cannot access MSR device file %s: %s.", msr_file_name , strerror(errno));
-        ERROR_PRINT("Please check if 'msr' module is loaded and device files have correct permissions");
+    if (fd < 0) {
+        ERROR_PRINT("Cannot access MSR device file %s: %s.", msr_file_name, strerror(errno));
+        ERROR_PRINT(
+            "Please check if 'msr' module is loaded and device files have correct permissions");
         ERROR_PRINT("Alternatively you might want to look into (sys)daemonmode");
         free(msr_file_name);
         return -EPERM;
-    }
-    else
-    {
+    } else {
         close(fd);
     }
     // if (rdpmc_works_pmc < 0)
@@ -144,28 +129,21 @@ access_x86_msr_init(const int cpu_id)
     // }
     access_x86_rdpmc_init(cpu_id);
 
-    sprintf(msr_file_name,"/dev/msr%d",cpu_id);
+    sprintf(msr_file_name, "/dev/msr%d", cpu_id);
     fd = open(msr_file_name, O_RDWR);
-    if (fd < 0)
-    {
-        sprintf(msr_file_name,"/dev/cpu/%d/msr_safe", cpu_id);
+    if (fd < 0) {
+        sprintf(msr_file_name, "/dev/cpu/%d/msr_safe", cpu_id);
         fd = open(msr_file_name, O_RDWR);
-        if (fd < 0)
-        {
-            sprintf(msr_file_name,"/dev/cpu/%d/msr", cpu_id);
-        }
-        else
-        {
+        if (fd < 0) {
+            sprintf(msr_file_name, "/dev/cpu/%d/msr", cpu_id);
+        } else {
             close(fd);
         }
-    }
-    else
-    {
+    } else {
         close(fd);
     }
     FD[cpu_id] = open(msr_file_name, O_RDWR);
-    if ( FD[cpu_id] < 0 )
-    {
+    if (FD[cpu_id] < 0) {
         ERROR_PRINT("Cannot access MSR device file %s in direct mode", msr_file_name);
         free(msr_file_name);
         return -EPERM;
@@ -176,90 +154,87 @@ access_x86_msr_init(const int cpu_id)
     return 0;
 }
 
-void
-access_x86_msr_finalize(const int cpu_id)
+void access_x86_msr_finalize(const int cpu_id)
 {
     access_x86_rdpmc_finalize(cpu_id);
-    if (FD && FD[cpu_id] > 0)
-    {
+    if (FD && FD[cpu_id] > 0) {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Closing FD for CPU %d", cpu_id);
         close(FD[cpu_id]);
         FD[cpu_id] = -1;
     }
     int c = 0;
-    for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++)
-    {
-        if (FD[i] >= 0) c++;
+    for (unsigned i = 0; i < cpuid_topology.numHWThreads; i++) {
+        if (FD[i] >= 0)
+            c++;
     }
-    if (c == 0 && FD)
-    {
+    if (c == 0 && FD) {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Free FD space");
         memset(FD, -1, cpuid_topology.numHWThreads * sizeof(int));
         free(FD);
         FD = NULL;
     }
-    
 }
 
-int
-access_x86_msr_read( const int cpu_id, uint32_t reg, uint64_t *data)
+int access_x86_msr_read(const int cpu_id, uint32_t reg, uint64_t *data)
 {
     int ret;
 
     ret = access_x86_rdpmc_read(cpu_id, reg, data);
-    if (ret == -EAGAIN && FD[cpu_id] > 0)
-    {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read MSR counter 0x%X with RDMSR instruction on CPU %d", reg, cpu_id);
+    if (ret == -EAGAIN && FD[cpu_id] > 0) {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP,
+            "Read MSR counter 0x%X with RDMSR instruction on CPU %d",
+            reg,
+            cpu_id);
         ret = pread(FD[cpu_id], data, sizeof(*data), reg);
-        if ( ret != sizeof(*data) )
-        {
+        if (ret != sizeof(*data)) {
             return ret;
         }
     }
-//     if ((rdpmc_works_pmc == 1) && (reg >= MSR_PMC0) && (reg <=MSR_PMC7))
-//     {
-//         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read PMC counter with RDPMC instruction with index %d", reg - MSR_PMC0);
-//         if (__rdpmc(cpu_id, reg - MSR_PMC0, data) )
-//         {
-//             rdpmc_works_pmc = 0;
-//             goto fallback;
-//         }
-//     }
-//     else if ((rdpmc_works_fixed == 1) && (reg >= MSR_PERF_FIXED_CTR0) && (reg <= MSR_PERF_FIXED_CTR2))
-//     {
-//         DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED counter with RDPMC instruction with index %d, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
-//         if (__rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data) )
-//         {
-//             rdpmc_works_fixed = 0;
-//             goto fallback;
-//         }
-//     }
-//     else
-//     {
-// fallback:
-//         if (FD[cpu_id] > 0)
-//         {
-//             DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read MSR counter 0x%X with RDMSR instruction on CPU %d", reg, cpu_id);
-//             ret = pread(FD[cpu_id], data, sizeof(*data), reg);
-//             if ( ret != sizeof(*data) )
-//             {
-//                 return ret;
-//             }
-//         }
-//     }
+    //     if ((rdpmc_works_pmc == 1) && (reg >= MSR_PMC0) && (reg <=MSR_PMC7))
+    //     {
+    //         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read PMC counter with RDPMC instruction with index %d", reg - MSR_PMC0);
+    //         if (__rdpmc(cpu_id, reg - MSR_PMC0, data) )
+    //         {
+    //             rdpmc_works_pmc = 0;
+    //             goto fallback;
+    //         }
+    //     }
+    //     else if ((rdpmc_works_fixed == 1) && (reg >= MSR_PERF_FIXED_CTR0) && (reg <= MSR_PERF_FIXED_CTR2))
+    //     {
+    //         DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED counter with RDPMC instruction with index %d, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
+    //         if (__rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data) )
+    //         {
+    //             rdpmc_works_fixed = 0;
+    //             goto fallback;
+    //         }
+    //     }
+    //     else
+    //     {
+    // fallback:
+    //         if (FD[cpu_id] > 0)
+    //         {
+    //             DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read MSR counter 0x%X with RDMSR instruction on CPU %d", reg, cpu_id);
+    //             ret = pread(FD[cpu_id], data, sizeof(*data), reg);
+    //             if ( ret != sizeof(*data) )
+    //             {
+    //                 return ret;
+    //             }
+    //         }
+    //     }
     return 0;
 }
 
-int
-access_x86_msr_write( const int cpu_id, uint32_t reg, uint64_t data)
+int access_x86_msr_write(const int cpu_id, uint32_t reg, uint64_t data)
 {
     int ret;
-    if (FD[cpu_id] > 0)
-    {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Write MSR counter 0x%X with WRMSR instruction on CPU %d data 0x%lX", reg, cpu_id, data);
+    if (FD[cpu_id] > 0) {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP,
+            "Write MSR counter 0x%X with WRMSR instruction on CPU %d data 0x%lX",
+            reg,
+            cpu_id,
+            data);
         ret = pwrite(FD[cpu_id], &data, sizeof(data), reg);
-        if (ret != sizeof(data))
-        {
+        if (ret != sizeof(data)) {
             return ret;
         }
     }
@@ -269,18 +244,13 @@ access_x86_msr_write( const int cpu_id, uint32_t reg, uint64_t data)
 int access_x86_msr_check(PciDeviceIndex dev, int cpu_id)
 {
     int ret = 0;
-    if (dev == MSR_DEV)
-    {
+    if (dev == MSR_DEV) {
         ret = access_x86_rdpmc_check(dev, cpu_id);
-        if (ret == 1)
-        {
+        if (ret == 1) {
             return 1;
-        }
-        else if (FD[cpu_id] > 0)
-        {
+        } else if (FD[cpu_id] > 0) {
             return 1;
         }
     }
     return 0;
 }
-

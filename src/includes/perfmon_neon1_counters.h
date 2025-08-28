@@ -33,23 +33,23 @@
 #define NUM_COUNTERS_NEON1 6
 
 static RegisterMap neon1_counter_map[NUM_COUNTERS_NEON1] = {
-    {"PMC0", PMC0, PMC, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC1", PMC1, PMC, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC2", PMC2, PMC, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC3", PMC3, PMC, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC4", PMC4, PMC, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC5", PMC5, PMC, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    { "PMC0", PMC0, PMC, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC1", PMC1, PMC, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC2", PMC2, PMC, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC3", PMC3, PMC, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC4", PMC4, PMC, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC5", PMC5, PMC, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK },
 };
 
 static BoxMap neon1_box_map[NUM_UNITS] = {
-    [PMC] = {0x0, 0x0, 0x0, 0, 0, 0, 32, 0, 0},
+    [PMC] = { 0x0, 0x0, 0x0, 0, 0, 0, 32, 0, 0 },
 };
 
-static char* neon1_translate_types[NUM_UNITS] = {
+static char *neon1_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/armv8_pmuv3_0",
 };
 
-static char* a76_translate_types[NUM_UNITS] = {
+static char *a76_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/armv8_cortex_a76",
 };
 

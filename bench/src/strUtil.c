@@ -30,61 +30,52 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
-#include <strUtil.h>
-#include <math.h>
-#include <likwid.h>
 #include <allocator.h>
+#include <likwid.h>
+#include <math.h>
+#include <strUtil.h>
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE  ################## */
 
-static int
-str2int(const char* str)
+static int str2int(const char *str)
 {
-    char* endptr;
+    char *endptr;
     errno = 0;
     unsigned long val;
     val = strtoul(str, &endptr, 10);
 
-    if ((errno == ERANGE && val == LONG_MAX)
-        || (errno != 0 && val == 0))
-    {
+    if ((errno == ERANGE && val == LONG_MAX) || (errno != 0 && val == 0)) {
         fprintf(stderr, "Value in string %s out of range\n", str);
         return -EINVAL;
     }
 
-    if (endptr == str)
-    {
+    if (endptr == str) {
         fprintf(stderr, "No digits were found in %s\n", str);
         return -EINVAL;
     }
 
-    return (int) val;
+    return (int)val;
 }
 
-static int
-str2uint64_t(const char* str, uint64_t* result)
+static int str2uint64_t(const char *str, uint64_t *result)
 {
-    char* endptr;
+    char *endptr;
     errno = 0;
     unsigned long long val;
     val = strtoull(str, &endptr, 10);
 
-    if ((errno == ERANGE && val == ULLONG_MAX)
-        || (errno != 0 && val == 0))
-    {
+    if ((errno == ERANGE && val == ULLONG_MAX) || (errno != 0 && val == 0)) {
         fprintf(stderr, "Value in string %s out of range\n", str);
         return -EINVAL;
     }
 
-    if (endptr == str)
-    {
+    if (endptr == str) {
         fprintf(stderr, "No digits were found in %s\n", str);
         return -EINVAL;
     }
 
     // long long could be larger than 64 bits
-    if (val > 0xFFFFFFFFFFFFFFFF)
-    {
+    if (val > 0xFFFFFFFFFFFFFFFF) {
         fprintf(stderr, "Value in string %s out of range for uint64_t\n", str);
         return -EINVAL;
     }
@@ -95,70 +86,52 @@ str2uint64_t(const char* str, uint64_t* result)
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-uint64_t
-bstr_to_doubleSize(const_bstring str, DataType type)
+uint64_t bstr_to_doubleSize(const_bstring str, DataType type)
 {
     int ret;
-    bstring unit = bmidstr(str, blength(str)-2, 2);
-    bstring single_unit = bmidstr(str, blength(str)-1, 1);
-    bstring triple_unit = bmidstr(str, blength(str)-3, 3);
-    bstring sizeStr = bmidstr(str, 0, blength(str)-2);
-    bstring single_sizeStr = bmidstr(str, 0, blength(str)-1);
-    bstring triple_sizeStr = bmidstr(str, 0, blength(str)-3);
-    uint64_t sizeU = 0;
-    uint64_t single_sizeU = 0;
-    uint64_t triple_sizeU = 0;
-    uint64_t junk = 0;
-    uint64_t bytesize = 0;
-    if (blength(sizeStr) == 0)
-    {
+    bstring unit           = bmidstr(str, blength(str) - 2, 2);
+    bstring single_unit    = bmidstr(str, blength(str) - 1, 1);
+    bstring triple_unit    = bmidstr(str, blength(str) - 3, 3);
+    bstring sizeStr        = bmidstr(str, 0, blength(str) - 2);
+    bstring single_sizeStr = bmidstr(str, 0, blength(str) - 1);
+    bstring triple_sizeStr = bmidstr(str, 0, blength(str) - 3);
+    uint64_t sizeU         = 0;
+    uint64_t single_sizeU  = 0;
+    uint64_t triple_sizeU  = 0;
+    uint64_t junk          = 0;
+    uint64_t bytesize      = 0;
+    if (blength(sizeStr) == 0) {
         return 0;
     }
     ret = str2uint64_t(bdata(sizeStr), &sizeU);
-    if (ret < 0)
-    {
+    if (ret < 0) {
         return 0;
     }
     ret = str2uint64_t(bdata(single_sizeStr), &single_sizeU);
-    if (ret < 0)
-    {
+    if (ret < 0) {
         return 0;
     }
     ret = str2uint64_t(bdata(triple_sizeStr), &triple_sizeU);
-    if (ret < 0)
-    {
+    if (ret < 0) {
         return 0;
     }
 
     bytesize = allocator_dataTypeLength(type);
 
-    if ((biseqcstr(unit, "kB"))||(biseqcstr(unit, "KB")))
-    {
-        junk = (sizeU *1000)/bytesize;
-    }
-    else if (biseqcstr(unit, "MB"))
-    {
-        junk = (sizeU *1000000)/bytesize;
-    }
-    else if (biseqcstr(unit, "GB"))
-    {
-        junk = (sizeU *1000000000)/bytesize;
-    }
-    else if ((biseqcstr(triple_unit, "kiB"))||(biseqcstr(triple_unit, "KiB")))
-    {
-        junk = (triple_sizeU *1024)/bytesize;
-    }
-    else if (biseqcstr(triple_unit, "MiB"))
-    {
-        junk = (triple_sizeU *1024*1024)/bytesize;
-    }
-    else if (biseqcstr(triple_unit, "GiB"))
-    {
-        junk = (triple_sizeU *1024*1024*1024)/bytesize;
-    }
-    else if (biseqcstr(single_unit, "B"))
-    {
-        junk = (single_sizeU)/bytesize;
+    if ((biseqcstr(unit, "kB")) || (biseqcstr(unit, "KB"))) {
+        junk = (sizeU * 1000) / bytesize;
+    } else if (biseqcstr(unit, "MB")) {
+        junk = (sizeU * 1000000) / bytesize;
+    } else if (biseqcstr(unit, "GB")) {
+        junk = (sizeU * 1000000000) / bytesize;
+    } else if ((biseqcstr(triple_unit, "kiB")) || (biseqcstr(triple_unit, "KiB"))) {
+        junk = (triple_sizeU * 1024) / bytesize;
+    } else if (biseqcstr(triple_unit, "MiB")) {
+        junk = (triple_sizeU * 1024 * 1024) / bytesize;
+    } else if (biseqcstr(triple_unit, "GiB")) {
+        junk = (triple_sizeU * 1024 * 1024 * 1024) / bytesize;
+    } else if (biseqcstr(single_unit, "B")) {
+        junk = (single_sizeU) / bytesize;
     }
     bdestroy(unit);
     bdestroy(single_unit);
@@ -169,90 +142,73 @@ bstr_to_doubleSize(const_bstring str, DataType type)
     return junk;
 }
 
-bstring
-parse_workgroup(Workgroup* group, const_bstring str, DataType type)
+bstring parse_workgroup(Workgroup *group, const_bstring str, DataType type)
 {
-    struct bstrList* tokens;
+    struct bstrList *tokens;
     bstring cpustr;
     int numThreads = 0;
     bstring domain;
 
-    tokens = bsplit(str,':');
-    if (tokens->qty == 2)
-    {
-        int domidx = -1;
+    tokens = bsplit(str, ':');
+    if (tokens->qty == 2) {
+        int domidx             = -1;
         AffinityDomains_t doms = get_affinityDomains();
 
-        for (int i = 0; i < (int)doms->numberOfAffinityDomains; i++)
-        {
+        for (int i = 0; i < (int)doms->numberOfAffinityDomains; i++) {
 #pragma GCC diagnostic ignored "-Wnonnull"
-            if (strcmp(doms->domains[i].tag, bdata(tokens->entry[0])) == 0)
-            {
+            if (strcmp(doms->domains[i].tag, bdata(tokens->entry[0])) == 0) {
                 domidx = i;
                 break;
             }
         }
-        if (domidx >= 0)
-        {
+        if (domidx >= 0) {
             numThreads = doms->domains[domidx].numberOfProcessors;
-        }
-        else
-        {
+        } else {
             fprintf(stderr, "Unknown affinity domain %s\n", bdata(tokens->entry[0]));
             bstrListDestroy(tokens);
             return NULL;
         }
-        cpustr = bformat("E:%s:%d", bdata(tokens->entry[0]), numThreads );
-    }
-    else if (tokens->qty == 3)
-    {
-        cpustr = bformat("E:%s:%s", bdata(tokens->entry[0]), bdata(tokens->entry[2]));
+        cpustr = bformat("E:%s:%d", bdata(tokens->entry[0]), numThreads);
+    } else if (tokens->qty == 3) {
+        cpustr     = bformat("E:%s:%s", bdata(tokens->entry[0]), bdata(tokens->entry[2]));
         numThreads = str2int(bdata(tokens->entry[2]));
-        if (numThreads < 0)
-        {
+        if (numThreads < 0) {
             fprintf(stderr, "Cannot convert %s to integer\n", bdata(tokens->entry[2]));
             bstrListDestroy(tokens);
             return NULL;
         }
-    }
-    else if (tokens->qty == 5)
-    {
-        cpustr = bformat("E:%s:%s:%s:%s", bdata(tokens->entry[0]),
-                                          bdata(tokens->entry[2]),
-                                          bdata(tokens->entry[3]),
-                                          bdata(tokens->entry[4]));
+    } else if (tokens->qty == 5) {
+        cpustr     = bformat("E:%s:%s:%s:%s",
+            bdata(tokens->entry[0]),
+            bdata(tokens->entry[2]),
+            bdata(tokens->entry[3]),
+            bdata(tokens->entry[4]));
         numThreads = str2int(bdata(tokens->entry[2]));
-        if (numThreads < 0)
-        {
+        if (numThreads < 0) {
             fprintf(stderr, "Cannot convert %s to integer\n", bdata(tokens->entry[2]));
             bstrListDestroy(tokens);
             return NULL;
         }
-    }
-    else
-    {
+    } else {
         fprintf(stderr, "Misformated workgroup string\n");
         bstrListDestroy(tokens);
         return NULL;
     }
 
     group->size = bstr_to_doubleSize(tokens->entry[1], type);
-    if (group->size == 0)
-    {
+    if (group->size == 0) {
         fprintf(stderr, "Stream size cannot be read, should look like <domain>:<size>\n");
         bstrListDestroy(tokens);
         return NULL;
     }
-    group->processorIds = (int*) malloc(numThreads * sizeof(int));
-    if (group->processorIds == NULL)
-    {
+    group->processorIds = (int *)malloc(numThreads * sizeof(int));
+    if (group->processorIds == NULL) {
         fprintf(stderr, "No more memory to allocate list of processors\n");
         bstrListDestroy(tokens);
         return NULL;
     }
     group->numberOfThreads = numThreads;
-    if (cpustr_to_cpulist(bdata(cpustr), group->processorIds, numThreads) < 0 )
-    {
+    if (cpustr_to_cpulist(bdata(cpustr), group->processorIds, numThreads) < 0) {
         fprintf(stderr, "Failed to get list of CPUs for string %s\n", bdata(cpustr));
         free(group->processorIds);
         bstrListDestroy(tokens);
@@ -264,39 +220,34 @@ parse_workgroup(Workgroup* group, const_bstring str, DataType type)
     return domain;
 }
 
-int
-parse_streams(Workgroup* group, const_bstring str, int numberOfStreams)
+int parse_streams(Workgroup *group, const_bstring str, int numberOfStreams)
 {
-    struct bstrList* tokens;
-    struct bstrList* subtokens;
-    if (group->init_per_thread)
-    {
-        fprintf(stderr, "Error: Cannot place stream in different stream when initialization per thread is selected.\n");
+    struct bstrList *tokens;
+    struct bstrList *subtokens;
+    if (group->init_per_thread) {
+        fprintf(stderr,
+            "Error: Cannot place stream in different stream when initialization per thread is "
+            "selected.\n");
         return -1;
     }
-    tokens = bsplit(str,',');
+    tokens = bsplit(str, ',');
 
-    if (tokens->qty < numberOfStreams)
-    {
+    if (tokens->qty < numberOfStreams) {
         fprintf(stderr, "Error: Testcase requires at least %d streams\n", numberOfStreams);
         bstrListDestroy(tokens);
         return -1;
     }
 
-    group->streams = (Stream*) malloc(numberOfStreams * sizeof(Stream));
-    if (group->streams == NULL)
-    {
+    group->streams = (Stream *)malloc(numberOfStreams * sizeof(Stream));
+    if (group->streams == NULL) {
         bstrListDestroy(tokens);
         return -1;
     }
-    for (int i=0; i<numberOfStreams; i++)
-    {
-        subtokens = bsplit(tokens->entry[i],':');
-        if (subtokens->qty >= 2)
-        {
+    for (int i = 0; i < numberOfStreams; i++) {
+        subtokens = bsplit(tokens->entry[i], ':');
+        if (subtokens->qty >= 2) {
             int index = str2int(bdata(subtokens->entry[0]));
-            if ((index < 0) && (index >= numberOfStreams))
-            {
+            if ((index < 0) && (index >= numberOfStreams)) {
                 free(group->streams);
                 bstrListDestroy(subtokens);
                 bstrListDestroy(tokens);
@@ -304,20 +255,16 @@ parse_streams(Workgroup* group, const_bstring str, int numberOfStreams)
             }
             group->streams[index].domain = bstrcpy(subtokens->entry[1]);
             group->streams[index].offset = 0;
-            if (subtokens->qty == 3)
-            {
+            if (subtokens->qty == 3) {
                 group->streams[index].offset = str2int(bdata(subtokens->entry[2]));
-                if (group->streams[index].offset < 0)
-                {
-                free(group->streams);
-                bstrListDestroy(subtokens);
-                bstrListDestroy(tokens);
-                return -1;
+                if (group->streams[index].offset < 0) {
+                    free(group->streams);
+                    bstrListDestroy(subtokens);
+                    bstrListDestroy(tokens);
+                    return -1;
                 }
             }
-        }
-        else
-        {
+        } else {
             fprintf(stderr, "Error in parsing stream definition %s\n", bdata(tokens->entry[i]));
             bstrListDestroy(subtokens);
             bstrListDestroy(tokens);
@@ -331,52 +278,41 @@ parse_streams(Workgroup* group, const_bstring str, int numberOfStreams)
     return 0;
 }
 
-int
-bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int numberOfStreams)
+int bstr_to_workgroup(Workgroup *group, const_bstring str, DataType type, int numberOfStreams)
 {
     int parseStreams = 0;
-    struct bstrList* tokens;
-    tokens = bsplit(str,'-');
+    struct bstrList *tokens;
+    tokens = bsplit(str, '-');
     bstring domain;
-    if (tokens->qty == 2)
-    {
+    if (tokens->qty == 2) {
         domain = parse_workgroup(group, tokens->entry[0], type);
-        if (domain == NULL)
-        {
+        if (domain == NULL) {
             bstrListDestroy(tokens);
             return 1;
         }
         parseStreams = parse_streams(group, tokens->entry[1], numberOfStreams);
         bdestroy(domain);
-        if (parseStreams)
-        {
+        if (parseStreams) {
             bstrListDestroy(tokens);
             return parseStreams;
         }
-    }
-    else if (tokens->qty == 1)
-    {
+    } else if (tokens->qty == 1) {
         domain = parse_workgroup(group, tokens->entry[0], type);
-        if (domain == NULL)
-        {
+        if (domain == NULL) {
             bstrListDestroy(tokens);
             return 1;
         }
-        group->streams = (Stream*) malloc(numberOfStreams * sizeof(Stream));
-        if (group->streams == NULL)
-        {
+        group->streams = (Stream *)malloc(numberOfStreams * sizeof(Stream));
+        if (group->streams == NULL) {
             bstrListDestroy(tokens);
             return 1;
         }
-        for (int i = 0; i< numberOfStreams; i++)
-        {
+        for (int i = 0; i < numberOfStreams; i++) {
             group->streams[i].domain = bstrcpy(domain);
             group->streams[i].offset = 0;
         }
         bdestroy(domain);
-    }
-    else
-    {
+    } else {
         fprintf(stderr, "Error in parsing workgroup string %s\n", bdata(str));
         bstrListDestroy(tokens);
         return 1;
@@ -386,24 +322,20 @@ bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int number
     return 0;
 }
 
-void
-workgroups_destroy(Workgroup** groupList, int numberOfGroups, int numberOfStreams)
+void workgroups_destroy(Workgroup **groupList, int numberOfGroups, int numberOfStreams)
 {
     int i = 0, j = 0;
     if (groupList == NULL)
         return;
     if (*groupList == NULL)
         return;
-    Workgroup* list = *groupList;
-    for (i = 0; i < numberOfGroups; i++)
-    {
+    Workgroup *list = *groupList;
+    for (i = 0; i < numberOfGroups; i++) {
         free(list[i].processorIds);
-        for (j = 0; j < numberOfStreams; j++)
-        {
+        for (j = 0; j < numberOfStreams; j++) {
             bdestroy(list[i].streams[j].domain);
         }
         free(list[i].streams);
     }
     free(list);
 }
-

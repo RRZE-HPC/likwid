@@ -32,10 +32,11 @@
 
 #include <stdint.h>
 
-typedef union
-{
+typedef union {
     uint64_t int64;
-    struct {uint32_t lo, hi;} int32;
+    struct {
+        uint32_t lo, hi;
+    } int32;
 } TscCounter;
 
 typedef struct {

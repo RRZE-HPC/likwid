@@ -34,22 +34,22 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
 #include <fcntl.h>
-#include <string.h>
-#include <unistd.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/un.h>
+#include <unistd.h>
 
-#include <types.h>
 #include <bstrlib.h>
 #include <error.h>
 #include <topology.h>
+#include <types.h>
 
 #include <access_x86_pci.h>
 
@@ -58,17 +58,16 @@
 #endif
 #include <pci_proc.h>
 
-
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-#define PCI_ROOT_PATH  "/proc/bus/pci/"
-#define PCM_PCI_CLASS  0x1101
+#define PCI_ROOT_PATH "/proc/bus/pci/"
+#define PCM_PCI_CLASS 0x1101
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int FD[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
 static int access_x86_initialized = 0;
-static int nr_sockets = 0;
+static int nr_sockets             = 0;
 
 /* Socket to bus mapping -- will be determined at runtime;
  * typical mappings are:
@@ -80,80 +79,77 @@ static int nr_sockets = 0;
  *
  * With Intel IcelakeSP, the 2S mappings are 0x7e and 0xfe
  */
-static char* socket_bus[MAX_NUM_NODES] = { [0 ... (MAX_NUM_NODES-1)] = NULL};
+static char *socket_bus[MAX_NUM_NODES] = { [0 ...(MAX_NUM_NODES - 1)] = NULL };
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 /* Dirty hack to avoid nonull warnings */
-int (*ownaccess)(const char*, int);
-int (*ownopen)(const char*, int, ...);
+int (*ownaccess)(const char *, int);
+int (*ownopen)(const char *, int, ...);
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-int
-access_x86_pci_init(const int socket)
+int access_x86_pci_init(const int socket)
 {
     int ret = 0;
 
-
-    if (access_x86_initialized == 0)
-    {
+    if (access_x86_initialized == 0) {
         uint16_t testDevice;
         ownaccess = &access;
-        ownopen = &open;
+        ownopen   = &open;
 
         /* PCI is only provided by Intel systems */
-        if (!cpuid_info.isIntel)
-        {
-            DEBUG_PRINT(DEBUGLEV_DETAIL, "PCI based Uncore performance monitoring only supported on Intel systems");
+        if (!cpuid_info.isIntel) {
+            DEBUG_PRINT(DEBUGLEV_DETAIL,
+                "PCI based Uncore performance monitoring only supported on Intel systems");
             return -ENODEV;
         }
-        switch (cpuid_info.model)
-        {
-            case SANDYBRIDGE_EP:
-                testDevice = 0x3c44;
-                break;
-            case IVYBRIDGE_EP:
-                testDevice = 0x0e36;
-                break;
-            case HASWELL_EP:
-                testDevice = 0x2f30;
-                break;
-            case BROADWELL_D:
-                testDevice = 0x6f30;
-                break;
-            case BROADWELL_E:
-                testDevice = 0x6f30;
-                break;
-            case XEON_PHI_KNL:
-            case XEON_PHI_KML:
-                testDevice = 0x7843;
-                break;
-            case SKYLAKEX:
-                testDevice = 0x2042;
-                break;
-            case ICELAKEX1:
-            case ICELAKEX2:
-                testDevice = 0x344A;
-                break;
-            default:
-                DEBUG_PRINT(DEBUGLEV_INFO, "CPU model %s does not support PCI based Uncore performance monitoring", cpuid_info.name);
-                return -ENODEV;
-                break;
+        switch (cpuid_info.model) {
+        case SANDYBRIDGE_EP:
+            testDevice = 0x3c44;
+            break;
+        case IVYBRIDGE_EP:
+            testDevice = 0x0e36;
+            break;
+        case HASWELL_EP:
+            testDevice = 0x2f30;
+            break;
+        case BROADWELL_D:
+            testDevice = 0x6f30;
+            break;
+        case BROADWELL_E:
+            testDevice = 0x6f30;
+            break;
+        case XEON_PHI_KNL:
+        case XEON_PHI_KML:
+            testDevice = 0x7843;
+            break;
+        case SKYLAKEX:
+            testDevice = 0x2042;
+            break;
+        case ICELAKEX1:
+        case ICELAKEX2:
+            testDevice = 0x344A;
+            break;
+        default:
+            DEBUG_PRINT(DEBUGLEV_INFO,
+                "CPU model %s does not support PCI based Uncore performance monitoring",
+                cpuid_info.name);
+            return -ENODEV;
+            break;
         }
-        if(geteuid() != 0)
-        {
+        if (geteuid() != 0) {
             fprintf(stderr, "WARNING\n");
-            fprintf(stderr, "Direct access to the PCI Cfg Adressspace is only allowed for uid root!\n");
-            fprintf(stderr, "This means you can use performance groups as MEM only as root in direct mode.\n");
+            fprintf(
+                stderr, "Direct access to the PCI Cfg Adressspace is only allowed for uid root!\n");
+            fprintf(stderr,
+                "This means you can use performance groups as MEM only as root in direct mode.\n");
             fprintf(stderr, "Alternatively you might want to look into (sys)daemonmode.\n\n");
             return -EPERM;
         }
 
-        for(int i=0; i<MAX_NUM_NODES; i++)
-        {
-            for(int j=1;j<MAX_NUM_PCI_DEVICES;j++)
-            {
+        for (int i = 0; i < MAX_NUM_NODES; i++) {
+            for (int j = 1; j < MAX_NUM_PCI_DEVICES; j++) {
                 FD[i][j] = -2;
             }
         }
@@ -162,46 +158,44 @@ access_x86_pci_init(const int socket)
 #ifdef LIKWID_USE_HWLOC
         DEBUG_PRINT(DEBUGLEV_DETAIL, "Using hwloc to find pci devices");
         ret = hwloc_pci_init(testDevice, socket_bus, &nr_sockets);
-        if (ret)
-        {
+        if (ret) {
             ERROR_PRINT("Using hwloc to find pci devices failed");
         }
 #endif
-        if (ret)
-        {
+        if (ret) {
             DEBUG_PRINT(DEBUGLEV_DETAIL, "Using procfs to find pci devices");
             ret = proc_pci_init(testDevice, socket_bus, &nr_sockets);
-            if (ret)
-            {
+            if (ret) {
                 ERROR_PRINT("Using procfs to find pci devices failed");
                 return -ENODEV;
             }
         }
     }
 
-    for(int j=1;j<MAX_NUM_PCI_DEVICES;j++)
-    {
-        if ((pci_devices[j].path != NULL) && (FD[socket][j] == -2))
-        {
-            bstring filepath = bformat("%s%s%s",PCI_ROOT_PATH,
-                                                socket_bus[socket],
-                                                pci_devices[j].path);
-            if (!ownaccess(bdata(filepath),F_OK))
-            {
-                FD[socket][j] = 0;
+    for (int j = 1; j < MAX_NUM_PCI_DEVICES; j++) {
+        if ((pci_devices[j].path != NULL) && (FD[socket][j] == -2)) {
+            bstring filepath =
+                bformat("%s%s%s", PCI_ROOT_PATH, socket_bus[socket], pci_devices[j].path);
+            if (!ownaccess(bdata(filepath), F_OK)) {
+                FD[socket][j]         = 0;
                 pci_devices[j].online = 1;
-                if (access_x86_initialized == 0)
-                {
+                if (access_x86_initialized == 0) {
                     DEBUG_PRINT(DEBUGLEV_DETAIL,
-                            "PCI device %s (%d) online for socket %d at path %s", pci_devices[j].name,j, socket,bdata(filepath));
-                    if (ownaccess(bdata(filepath),R_OK|W_OK))
-                    {
-                        ERROR_PRINT("PCI device %s (%d) online for socket %d at path %s but not accessible", pci_devices[j].name,j, socket,bdata(filepath));
+                        "PCI device %s (%d) online for socket %d at path %s",
+                        pci_devices[j].name,
+                        j,
+                        socket,
+                        bdata(filepath));
+                    if (ownaccess(bdata(filepath), R_OK | W_OK)) {
+                        ERROR_PRINT(
+                            "PCI device %s (%d) online for socket %d at path %s but not accessible",
+                            pci_devices[j].name,
+                            j,
+                            socket,
+                            bdata(filepath));
                     }
                 }
-            }
-            else
-            {
+            } else {
                 pci_devices[j].online = 0;
             }
         }
@@ -211,17 +205,13 @@ access_x86_pci_init(const int socket)
     return 0;
 }
 
-void
-access_x86_pci_finalize(const int socket)
+void access_x86_pci_finalize(const int socket)
 {
-    if (access_x86_initialized)
-    {
-        for (int j=1; j<MAX_NUM_PCI_DEVICES; j++)
-        {
-            if (FD[socket][j] > 0)
-            {
+    if (access_x86_initialized) {
+        for (int j = 1; j < MAX_NUM_PCI_DEVICES; j++) {
+            if (FD[socket][j] > 0) {
                 close(FD[socket][j]);
-                FD[socket][j] = -2;
+                FD[socket][j]         = -2;
                 pci_devices[j].online = 0;
             }
         }
@@ -229,43 +219,36 @@ access_x86_pci_finalize(const int socket)
     }
 }
 
-int
-access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t *data)
+int access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t *data)
 {
     bstring filepath = NULL;
 
-    if (dev == MSR_DEV)
-    {
+    if (dev == MSR_DEV) {
         return -ENODEV;
     }
 
-    if (FD[socket][dev] < 0)
-    {
+    if (FD[socket][dev] < 0) {
         *data = 0ULL;
         return -ENODEV;
-    }
-    else if ( !FD[socket][dev] )
-    {
-        filepath =  bfromcstr ( PCI_ROOT_PATH );
+    } else if (!FD[socket][dev]) {
+        filepath = bfromcstr(PCI_ROOT_PATH);
         bcatcstr(filepath, socket_bus[socket]);
         bcatcstr(filepath, pci_devices[dev].path);
-        FD[socket][dev] = ownopen( bdata(filepath), O_RDWR);
+        FD[socket][dev] = ownopen(bdata(filepath), O_RDWR);
 
-        if ( FD[socket][dev] < 0)
-        {
+        if (FD[socket][dev] < 0) {
             ERROR_PRINT("Failed to open PCI device %s at path %s\n",
-                            pci_devices[dev].name,
-                            bdata(filepath));
+                pci_devices[dev].name,
+                bdata(filepath));
             *data = 0ULL;
             return -EACCES;
         }
-        DEBUG_PRINT(DEBUGLEV_DETAIL, "Opened PCI device %s: %s", pci_devices[dev].name, bdata(filepath));
+        DEBUG_PRINT(
+            DEBUGLEV_DETAIL, "Opened PCI device %s: %s", pci_devices[dev].name, bdata(filepath));
     }
 
     uint32_t tmp = 0;
-    if ( FD[socket][dev] > 0 &&
-         pread(FD[socket][dev], &tmp, sizeof(tmp), reg) != sizeof(tmp) )
-    {
+    if (FD[socket][dev] > 0 && pread(FD[socket][dev], &tmp, sizeof(tmp), reg) != sizeof(tmp)) {
         ERROR_PRINT("Read from PCI device %s at register 0x%x failed", pci_devices[dev].name, reg);
         *data = 0ULL;
         return -EIO;
@@ -274,57 +257,45 @@ access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t
     return 0;
 }
 
-int
-access_x86_pci_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t data)
+int access_x86_pci_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t data)
 {
     bstring filepath = NULL;
-    uint32_t tmp = (uint32_t)data;
+    uint32_t tmp     = (uint32_t)data;
 
-    if (dev == MSR_DEV)
-    {
+    if (dev == MSR_DEV) {
         return -ENODEV;
     }
-    if (FD[socket][dev] < 0)
-    {
+    if (FD[socket][dev] < 0) {
         return -ENODEV;
-    }
-    else if ( !FD[socket][dev] )
-    {
-        filepath = bfromcstr ( PCI_ROOT_PATH );
+    } else if (!FD[socket][dev]) {
+        filepath = bfromcstr(PCI_ROOT_PATH);
         bcatcstr(filepath, socket_bus[socket]);
-        bcatcstr(filepath, pci_devices[dev].path );
-        FD[socket][dev] = ownopen( bdata(filepath), O_RDWR);
+        bcatcstr(filepath, pci_devices[dev].path);
+        FD[socket][dev] = ownopen(bdata(filepath), O_RDWR);
 
-        if ( FD[socket][dev] < 0)
-        {
+        if (FD[socket][dev] < 0) {
             ERROR_PRINT("Failed to open PCI device %s at path %s\n",
-                                pci_devices[dev].name,
-                                bdata(filepath));
+                pci_devices[dev].name,
+                bdata(filepath));
             return -EACCES;
         }
-        DEBUG_PRINT(DEBUGLEV_DETAIL, "Opened PCI device %s: %s", pci_devices[dev].name, bdata(filepath));
+        DEBUG_PRINT(
+            DEBUGLEV_DETAIL, "Opened PCI device %s: %s", pci_devices[dev].name, bdata(filepath));
     }
 
-    if ( FD[socket][dev] > 0 &&
-         pwrite(FD[socket][dev], &tmp, sizeof tmp, reg) != sizeof tmp)
-    {
+    if (FD[socket][dev] > 0 && pwrite(FD[socket][dev], &tmp, sizeof tmp, reg) != sizeof tmp) {
         ERROR_PRINT("Write to PCI device %s at register 0x%x failed", pci_devices[dev].name, reg);
         return -EIO;
     }
     return 0;
 }
 
-int
-access_x86_pci_check(PciDeviceIndex dev, int socket)
+int access_x86_pci_check(PciDeviceIndex dev, int socket)
 {
-    if (dev == MSR_DEV)
-    {
+    if (dev == MSR_DEV) {
         return 1;
-    }
-    else if ((pci_devices[dev].online == 1) || (FD[socket][dev] > 0))
-    {
+    } else if ((pci_devices[dev].online == 1) || (FD[socket][dev] > 0)) {
         return 1;
     }
     return 0;
 }
-

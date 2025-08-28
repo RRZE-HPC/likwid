@@ -29,35 +29,35 @@
  * =======================================================================================
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
 #include <float.h>
-#include <unistd.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
+#include <unistd.h>
 
+#include <cupti.h>
 #include <dlfcn.h>
 #include <nvml.h>
-#include <cupti.h>
 
-#include <likwid.h>
 #include <error.h>
-#include <nvmon_types.h>
 #include <libnvctr_types.h>
+#include <likwid.h>
+#include <nvmon_types.h>
 
 typedef enum {
-    FEATURE_CLOCK_INFO          = 1,
-    FEATURE_ECC_LOCAL_ERRORS    = 2,
-    FEATURE_FAN_SPEED           = 4,
-    FEATURE_MAX_CLOCK           = 8,
-    FEATURE_MEMORY_INFO         = 16,
-    FEATURE_PERF_STATES         = 32,
-    FEATURE_POWER               = 64,
-    FEATURE_TEMP                = 128,
-    FEATURE_ECC_TOTAL_ERRORS    = 256,
-    FEATURE_UTILIZATION         = 512,
-    FEATURE_POWER_MANAGEMENT    = 1024,
+    FEATURE_CLOCK_INFO                             = 1,
+    FEATURE_ECC_LOCAL_ERRORS                       = 2,
+    FEATURE_FAN_SPEED                              = 4,
+    FEATURE_MAX_CLOCK                              = 8,
+    FEATURE_MEMORY_INFO                            = 16,
+    FEATURE_PERF_STATES                            = 32,
+    FEATURE_POWER                                  = 64,
+    FEATURE_TEMP                                   = 128,
+    FEATURE_ECC_TOTAL_ERRORS                       = 256,
+    FEATURE_UTILIZATION                            = 512,
+    FEATURE_POWER_MANAGEMENT                       = 1024,
     FEATURE_NVML_POWER_MANAGEMENT_LIMIT_CONSTRAINT = 2048,
 } NvmlFeature;
 
@@ -90,7 +90,8 @@ typedef struct {
 } NvmlEventResult;
 
 struct NvmlEvent_struct;
-typedef int (*NvmlMeasureFunc)(nvmlDevice_t device, struct NvmlEvent_struct* event, NvmlEventResult* result);
+typedef int (*NvmlMeasureFunc)(
+    nvmlDevice_t device, struct NvmlEvent_struct *event, NvmlEventResult *result);
 
 #define LIKWID_NVML_NAME_LEN 40
 #define LIKWID_NVML_DESC_LEN 50
@@ -115,20 +116,20 @@ typedef struct NvmlEvent_struct {
 
 typedef struct {
     int numEvents;
-    NvmlEvent* events;
-    NvmlEventResult* results;
+    NvmlEvent *events;
+    NvmlEventResult *results;
 } NvmlEventSet;
 
 typedef struct {
-    NvmonDevice* nvDevice;
+    NvmonDevice *nvDevice;
     nvmlDevice_t nvmlDevice;
 
     int numAllEvents;
-    NvmlEvent* allEvents;
+    NvmlEvent *allEvents;
 
     int activeEventSet;
     int numEventSets;
-    NvmlEventSet* eventSets;
+    NvmlEventSet *eventSets;
 
     uint32_t features;
     unsigned int numFans;
@@ -143,94 +144,111 @@ typedef struct {
 
 typedef struct {
     int numDevices;
-    NvmlDevice* devices;
+    NvmlDevice *devices;
 } NvmlContext;
-
 
 // Variables
 static int nvml_initialized = 0;
-static void* dl_nvml = NULL;
-static void* dl_cupti = NULL;
+static void *dl_nvml        = NULL;
+static void *dl_cupti       = NULL;
 static NvmlContext nvmlContext;
 
-
 // Macros
-#define DLSYM_AND_CHECK(dllib, name) name##_ptr = dlsym(dllib, #name);  \
-    do {                                                                \
-        const char *err = dlerror();                                    \
-        if (err) {                                                      \
-            ERROR_PRINT("Error: dlsym on symbol '%s' failed with error: %s", #name, err); \
-            return -EINVAL;                                             \
-        }                                                               \
+#define DLSYM_AND_CHECK(dllib, name)                                                               \
+    name##_ptr = dlsym(dllib, #name);                                                              \
+    do {                                                                                           \
+        const char *err = dlerror();                                                               \
+        if (err) {                                                                                 \
+            ERROR_PRINT("Error: dlsym on symbol '%s' failed with error: %s", #name, err);          \
+            return -EINVAL;                                                                        \
+        }                                                                                          \
     } while (0)
 
-#define NVML_CALL(func, ...)                            \
-    do {                                                \
-        nvmlReturn_t s = (*func##_ptr)(__VA_ARGS__);    \
-        if (s != NVML_SUCCESS) {                        \
-            ERROR_PRINT("Error: function %s failed with error: '%s' (nvmlReturn=%d).", #func, nvmlErrorString_ptr(s), s);   \
-            return -EPERM;                              \
-        }                                               \
+#define NVML_CALL(func, ...)                                                                       \
+    do {                                                                                           \
+        nvmlReturn_t s = (*func##_ptr)(__VA_ARGS__);                                               \
+        if (s != NVML_SUCCESS) {                                                                   \
+            ERROR_PRINT("Error: function %s failed with error: '%s' (nvmlReturn=%d).",             \
+                #func,                                                                             \
+                nvmlErrorString_ptr(s),                                                            \
+                s);                                                                                \
+            return -EPERM;                                                                         \
+        }                                                                                          \
     } while (0)
 
 #ifndef CUPTI_CALL
-#define CUPTI_CALL(func, ...)                            \
-    do {                                                \
-        CUptiResult s = (*func##_ptr)(__VA_ARGS__);    \
-        if (s != CUPTI_SUCCESS) {                        \
-            const char *errstr = NULL; \
-            cuptiGetResultString_ptr(s, &errstr); \
-            ERROR_PRINT("Error: function %s failed with error: '%s' (CUptiResult=%d)", #func, errstr, s);   \
-            return -EPERM;                              \
-        }                                               \
+#define CUPTI_CALL(func, ...)                                                                      \
+    do {                                                                                           \
+        CUptiResult s = (*func##_ptr)(__VA_ARGS__);                                                \
+        if (s != CUPTI_SUCCESS) {                                                                  \
+            const char *errstr = NULL;                                                             \
+            cuptiGetResultString_ptr(s, &errstr);                                                  \
+            ERROR_PRINT(                                                                           \
+                "Error: function %s failed with error: '%s' (CUptiResult=%d)", #func, errstr, s);  \
+            return -EPERM;                                                                         \
+        }                                                                                          \
     } while (0)
 #endif
 
 // NVML function declarations
-#define DECLAREFUNC_NVML(funcname, ...) nvmlReturn_t __attribute__((weak)) funcname(__VA_ARGS__);  static nvmlReturn_t (*funcname##_ptr)(__VA_ARGS__);
+#define DECLAREFUNC_NVML(funcname, ...)                                                            \
+    nvmlReturn_t __attribute__((weak)) funcname(__VA_ARGS__);                                      \
+    static nvmlReturn_t (*funcname##_ptr)(__VA_ARGS__);
 
 DECLAREFUNC_NVML(nvmlInit_v2, void);
 DECLAREFUNC_NVML(nvmlShutdown, void);
-DECLAREFUNC_NVML(nvmlDeviceGetHandleByIndex_v2, unsigned int  index, nvmlDevice_t* device);
-DECLAREFUNC_NVML(nvmlDeviceGetClockInfo, nvmlDevice_t device, nvmlClockType_t type, unsigned int* clock);
-DECLAREFUNC_NVML(nvmlDeviceGetInforomVersion, nvmlDevice_t device, nvmlInforomObject_t object, char* version, unsigned int  length);
-DECLAREFUNC_NVML(nvmlDeviceGetEccMode, nvmlDevice_t device, nvmlEnableState_t* current, nvmlEnableState_t* pending);
-DECLAREFUNC_NVML(nvmlDeviceGetDetailedEccErrors, nvmlDevice_t device, nvmlMemoryErrorType_t errorType, nvmlEccCounterType_t counterType, nvmlEccErrorCounts_t* eccCounts);
-DECLAREFUNC_NVML(nvmlDeviceGetTotalEccErrors, nvmlDevice_t device, nvmlMemoryErrorType_t errorType, nvmlEccCounterType_t counterType, unsigned long long* eccCounts);
-DECLAREFUNC_NVML(nvmlDeviceGetFanSpeed_v2, nvmlDevice_t device, unsigned int fan, unsigned int* speed);
-DECLAREFUNC_NVML(nvmlDeviceGetClock, nvmlDevice_t device, nvmlClockType_t clockType, nvmlClockId_t clockId, unsigned int* clockMHz);
-DECLAREFUNC_NVML(nvmlDeviceGetMemoryInfo, nvmlDevice_t device, nvmlMemory_t* memory);
-DECLAREFUNC_NVML(nvmlDeviceGetPerformanceState, nvmlDevice_t device, nvmlPstates_t* pState);
-DECLAREFUNC_NVML(nvmlDeviceGetPowerUsage, nvmlDevice_t device, unsigned int* power);
-DECLAREFUNC_NVML(nvmlDeviceGetTemperature, nvmlDevice_t device, nvmlTemperatureSensors_t sensorType, unsigned int* temp);
-DECLAREFUNC_NVML(nvmlDeviceGetPowerManagementLimit, nvmlDevice_t device, unsigned int* limit);
-DECLAREFUNC_NVML(nvmlDeviceGetPowerManagementLimitConstraints, nvmlDevice_t device, unsigned int* minLimit, unsigned int* maxLimit);
-DECLAREFUNC_NVML(nvmlDeviceGetUtilizationRates, nvmlDevice_t device, nvmlUtilization_t* utilization);
-DECLAREFUNC_NVML(nvmlDeviceGetTotalEnergyConsumption, nvmlDevice_t device, unsigned long long *energy);
+DECLAREFUNC_NVML(nvmlDeviceGetHandleByIndex_v2, unsigned int index, nvmlDevice_t *device);
+DECLAREFUNC_NVML(
+    nvmlDeviceGetClockInfo, nvmlDevice_t device, nvmlClockType_t type, unsigned int *clock);
+DECLAREFUNC_NVML(nvmlDeviceGetInforomVersion, nvmlDevice_t device, nvmlInforomObject_t object,
+    char *version, unsigned int length);
+DECLAREFUNC_NVML(nvmlDeviceGetEccMode, nvmlDevice_t device, nvmlEnableState_t *current,
+    nvmlEnableState_t *pending);
+DECLAREFUNC_NVML(nvmlDeviceGetDetailedEccErrors, nvmlDevice_t device,
+    nvmlMemoryErrorType_t errorType, nvmlEccCounterType_t counterType,
+    nvmlEccErrorCounts_t *eccCounts);
+DECLAREFUNC_NVML(nvmlDeviceGetTotalEccErrors, nvmlDevice_t device, nvmlMemoryErrorType_t errorType,
+    nvmlEccCounterType_t counterType, unsigned long long *eccCounts);
+DECLAREFUNC_NVML(
+    nvmlDeviceGetFanSpeed_v2, nvmlDevice_t device, unsigned int fan, unsigned int *speed);
+DECLAREFUNC_NVML(nvmlDeviceGetClock, nvmlDevice_t device, nvmlClockType_t clockType,
+    nvmlClockId_t clockId, unsigned int *clockMHz);
+DECLAREFUNC_NVML(nvmlDeviceGetMemoryInfo, nvmlDevice_t device, nvmlMemory_t *memory);
+DECLAREFUNC_NVML(nvmlDeviceGetPerformanceState, nvmlDevice_t device, nvmlPstates_t *pState);
+DECLAREFUNC_NVML(nvmlDeviceGetPowerUsage, nvmlDevice_t device, unsigned int *power);
+DECLAREFUNC_NVML(nvmlDeviceGetTemperature, nvmlDevice_t device, nvmlTemperatureSensors_t sensorType,
+    unsigned int *temp);
+DECLAREFUNC_NVML(nvmlDeviceGetPowerManagementLimit, nvmlDevice_t device, unsigned int *limit);
+DECLAREFUNC_NVML(nvmlDeviceGetPowerManagementLimitConstraints, nvmlDevice_t device,
+    unsigned int *minLimit, unsigned int *maxLimit);
+DECLAREFUNC_NVML(
+    nvmlDeviceGetUtilizationRates, nvmlDevice_t device, nvmlUtilization_t *utilization);
+DECLAREFUNC_NVML(
+    nvmlDeviceGetTotalEnergyConsumption, nvmlDevice_t device, unsigned long long *energy);
 __attribute__((weak)) const char *nvmlErrorString(nvmlReturn_t result);
 static const char *(*nvmlErrorString_ptr)(nvmlReturn_t result);
 
 // CUPTI function declarations
-#define CUPTIWEAK __attribute__(( weak ))
-#define DECLAREFUNC_CUPTI(funcname, ...) CUptiResult __attribute__((weak)) funcname(__VA_ARGS__);  static CUptiResult (*funcname##_ptr)(__VA_ARGS__);
+#define CUPTIWEAK __attribute__((weak))
+#define DECLAREFUNC_CUPTI(funcname, ...)                                                           \
+    CUptiResult __attribute__((weak)) funcname(__VA_ARGS__);                                       \
+    static CUptiResult (*funcname##_ptr)(__VA_ARGS__);
 
-DECLAREFUNC_CUPTI(cuptiGetTimestamp, uint64_t * timestamp);
+DECLAREFUNC_CUPTI(cuptiGetTimestamp, uint64_t *timestamp);
 DECLAREFUNC_CUPTI(cuptiGetResultString, CUptiResult result, const char **str);
-
 
 // ----------------------------------------------------
 //   Wrapper functions
 // ----------------------------------------------------
 
-static void
-_nvml_resultAddMeasurement(NvmlEventResult* result, double value)
+static void _nvml_resultAddMeasurement(NvmlEventResult *result, double value)
 {
     result->lastValue = value;
     result->fullValue += value;
 }
 
-static int
-_nvml_wrapper_getClockInfo(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+static int _nvml_wrapper_getClockInfo(
+    nvmlDevice_t device, NvmlEvent *event, NvmlEventResult *result)
 {
     unsigned int clock = 0;
 
@@ -240,82 +258,94 @@ _nvml_wrapper_getClockInfo(nvmlDevice_t device, NvmlEvent* event, NvmlEventResul
     return 0;
 }
 
-
-static int
-_nvml_wrapper_getMaxClock(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+static int _nvml_wrapper_getMaxClock(nvmlDevice_t device, NvmlEvent *event, NvmlEventResult *result)
 {
     unsigned int clock = 0;
 
-    NVML_CALL(nvmlDeviceGetClock, device, event->options.clock, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, &clock);
+    NVML_CALL(
+        nvmlDeviceGetClock, device, event->options.clock, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, &clock);
     _nvml_resultAddMeasurement(result, clock);
 
     return 0;
 }
 
-
-static int
-_nvml_wrapper_getEccLocalErrors(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+static int _nvml_wrapper_getEccLocalErrors(
+    nvmlDevice_t device, NvmlEvent *event, NvmlEventResult *result)
 {
     nvmlEccErrorCounts_t counts;
 
-    NVML_CALL(nvmlDeviceGetDetailedEccErrors, device, event->options.ecc.type, NVML_VOLATILE_ECC, &counts);
-    switch (event->options.ecc.counter)
-    {
-    case LOCAL_ECC_L1:      _nvml_resultAddMeasurement(result, counts.l1Cache);         break;
-    case LOCAL_ECC_L2:      _nvml_resultAddMeasurement(result, counts.l2Cache);         break;
-    case LOCAL_ECC_MEM:     _nvml_resultAddMeasurement(result, counts.deviceMemory);    break;
-    case LOCAL_ECC_REGFILE: _nvml_resultAddMeasurement(result, counts.registerFile);    break;
-    default:                return -1;
+    NVML_CALL(nvmlDeviceGetDetailedEccErrors,
+        device,
+        event->options.ecc.type,
+        NVML_VOLATILE_ECC,
+        &counts);
+    switch (event->options.ecc.counter) {
+    case LOCAL_ECC_L1:
+        _nvml_resultAddMeasurement(result, counts.l1Cache);
+        break;
+    case LOCAL_ECC_L2:
+        _nvml_resultAddMeasurement(result, counts.l2Cache);
+        break;
+    case LOCAL_ECC_MEM:
+        _nvml_resultAddMeasurement(result, counts.deviceMemory);
+        break;
+    case LOCAL_ECC_REGFILE:
+        _nvml_resultAddMeasurement(result, counts.registerFile);
+        break;
+    default:
+        return -1;
     }
 
     return 0;
 }
 
-
-static int
-_nvml_wrapper_getEccTotalErrors(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+static int _nvml_wrapper_getEccTotalErrors(
+    nvmlDevice_t device, NvmlEvent *event, NvmlEventResult *result)
 {
     unsigned long long count = 0;
 
-    NVML_CALL(nvmlDeviceGetTotalEccErrors, device, event->options.ecc.type, NVML_VOLATILE_ECC, &count);
+    NVML_CALL(
+        nvmlDeviceGetTotalEccErrors, device, event->options.ecc.type, NVML_VOLATILE_ECC, &count);
     _nvml_resultAddMeasurement(result, count);
 
     return 0;
 }
 
-
-static int
-_nvml_wrapper_getFanSpeed(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+static int _nvml_wrapper_getFanSpeed(nvmlDevice_t device, NvmlEvent *event, NvmlEventResult *result)
 {
     unsigned int speed = 0;
 
     NVML_CALL(nvmlDeviceGetFanSpeed_v2, device, event->options.fan, &speed);
     _nvml_resultAddMeasurement(result, speed);
-    
+
     return 0;
 }
 
-
-static int
-_nvml_wrapper_getMemoryInfo(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+static int _nvml_wrapper_getMemoryInfo(
+    nvmlDevice_t device, NvmlEvent *event, NvmlEventResult *result)
 {
     nvmlMemory_t memory;
 
     NVML_CALL(nvmlDeviceGetMemoryInfo, device, &memory);
-    switch (event->options.memory)
-    {
-    case MEMORY_FREE:   _nvml_resultAddMeasurement(result, memory.free);    break;
-    case MEMORY_TOTAL:  _nvml_resultAddMeasurement(result, memory.total);   break;
-    case MEMORY_USED:   _nvml_resultAddMeasurement(result, memory.used);    break;
-    default:            return -1;
+    switch (event->options.memory) {
+    case MEMORY_FREE:
+        _nvml_resultAddMeasurement(result, memory.free);
+        break;
+    case MEMORY_TOTAL:
+        _nvml_resultAddMeasurement(result, memory.total);
+        break;
+    case MEMORY_USED:
+        _nvml_resultAddMeasurement(result, memory.used);
+        break;
+    default:
+        return -1;
     }
-    
+
     return 0;
 }
 
-
-static int
-_nvml_wrapper_getPerformanceState(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+static int _nvml_wrapper_getPerformanceState(
+    nvmlDevice_t device, NvmlEvent *event, NvmlEventResult *result)
 {
     nvmlPstates_t state;
 
@@ -325,9 +355,8 @@ _nvml_wrapper_getPerformanceState(nvmlDevice_t device, NvmlEvent* event, NvmlEve
     return 0;
 }
 
-
-static int
-_nvml_wrapper_getPowerUsage(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+static int _nvml_wrapper_getPowerUsage(
+    nvmlDevice_t device, NvmlEvent *event, NvmlEventResult *result)
 {
     unsigned int power = 0;
 
@@ -337,22 +366,21 @@ _nvml_wrapper_getPowerUsage(nvmlDevice_t device, NvmlEvent* event, NvmlEventResu
     return 0;
 }
 
-static int
-_nvml_wrapper_getEnergyConsumption(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+static int _nvml_wrapper_getEnergyConsumption(
+    nvmlDevice_t device, NvmlEvent *event, NvmlEventResult *result)
 {
     unsigned long long energy = 0;
 
     NVML_CALL(nvmlDeviceGetTotalEnergyConsumption, device, &energy);
-    double last = ((double)energy) - result->fullValue;
+    double last       = ((double)energy) - result->fullValue;
     result->fullValue = ((double)energy);
     result->lastValue = last;
 
     return 0;
 }
 
-
-static int
-_nvml_wrapper_getTemperature(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+static int _nvml_wrapper_getTemperature(
+    nvmlDevice_t device, NvmlEvent *event, NvmlEventResult *result)
 {
     unsigned int temp = 0;
 
@@ -362,9 +390,8 @@ _nvml_wrapper_getTemperature(nvmlDevice_t device, NvmlEvent* event, NvmlEventRes
     return 0;
 }
 
-
-static int
-_nvml_wrapper_getPowerManagementLimit(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+static int _nvml_wrapper_getPowerManagementLimit(
+    nvmlDevice_t device, NvmlEvent *event, NvmlEventResult *result)
 {
     unsigned int limit = 0;
 
@@ -374,50 +401,47 @@ _nvml_wrapper_getPowerManagementLimit(nvmlDevice_t device, NvmlEvent* event, Nvm
     return 0;
 }
 
-
-static int
-_nvml_wrapper_getPowerManagementLimitConstraints(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+static int _nvml_wrapper_getPowerManagementLimitConstraints(
+    nvmlDevice_t device, NvmlEvent *event, NvmlEventResult *result)
 {
     unsigned int maxLimit = 0;
     unsigned int minLimit = 0;
 
     NVML_CALL(nvmlDeviceGetPowerManagementLimitConstraints, device, &minLimit, &maxLimit);
-    if (event->options.powerLimit == LIMIT_MIN)
-    {
+    if (event->options.powerLimit == LIMIT_MIN) {
         _nvml_resultAddMeasurement(result, minLimit);
-    }
-    else if (event->options.powerLimit == LIMIT_MAX)
-    {
+    } else if (event->options.powerLimit == LIMIT_MAX) {
         _nvml_resultAddMeasurement(result, maxLimit);
     }
 
     return 0;
 }
 
-
-static int
-_nvml_wrapper_getUtilization(nvmlDevice_t device, NvmlEvent* event, NvmlEventResult* result)
+static int _nvml_wrapper_getUtilization(
+    nvmlDevice_t device, NvmlEvent *event, NvmlEventResult *result)
 {
     nvmlUtilization_t utilization;
 
     NVML_CALL(nvmlDeviceGetUtilizationRates, device, &utilization);
-    switch (event->options.utilization)
-    {
-    case UTILIZATION_GPU:       _nvml_resultAddMeasurement(result, utilization.gpu);        break;
-    case UTILIZATION_MEMORY:    _nvml_resultAddMeasurement(result, utilization.memory);     break;
-    default:                    return -1;
+    switch (event->options.utilization) {
+    case UTILIZATION_GPU:
+        _nvml_resultAddMeasurement(result, utilization.gpu);
+        break;
+    case UTILIZATION_MEMORY:
+        _nvml_resultAddMeasurement(result, utilization.memory);
+        break;
+    default:
+        return -1;
     }
-    
+
     return 0;
 }
-
 
 // ----------------------------------------------------
 //   Helper functions
 // ----------------------------------------------------
 
-static int
-_nvml_linkLibraries()
+static int _nvml_linkLibraries()
 {
     // Load NVML libary and link functions
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Init NVML Libaries");
@@ -425,8 +449,7 @@ _nvml_linkLibraries()
     if (!dl_nvml)
         dl_nvml = dlopen("libnvidia-ml.so.1", RTLD_NOW | RTLD_GLOBAL);
 
-    if (!dl_nvml)
-    {
+    if (!dl_nvml) {
         fprintf(stderr, "Unable to open NVML library libnvidia-ml.so: %s", dlerror());
         return -1;
     }
@@ -454,8 +477,7 @@ _nvml_linkLibraries()
     // Load CUPTI library and link functions
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Init NVML Libaries");
     dl_cupti = dlopen("libcupti.so", RTLD_NOW | RTLD_GLOBAL);
-    if (!dl_cupti || dlerror() != NULL)
-    {
+    if (!dl_cupti || dlerror() != NULL) {
         fprintf(stderr, "CUPTI library libcupti.so not found.");
         return -1;
     }
@@ -466,239 +488,249 @@ _nvml_linkLibraries()
     return 0;
 }
 
-
-static int
-_nvml_getEventsForDevice(NvmlDevice* device)
+static int _nvml_getEventsForDevice(NvmlDevice *device)
 {
-    NvmlEvent* event = device->allEvents;
+    NvmlEvent *event = device->allEvents;
 
-    if (device->features & FEATURE_CLOCK_INFO)
-    {
+    if (device->features & FEATURE_CLOCK_INFO) {
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "CLOCK_GRAPHICS");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Graphics clock domain in MHz");
-        event->measureFunc = &_nvml_wrapper_getClockInfo;
+        event->measureFunc   = &_nvml_wrapper_getClockInfo;
         event->options.clock = NVML_CLOCK_GRAPHICS;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "CLOCK_SM");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "SM clock domain in MHz");
-        event->measureFunc = &_nvml_wrapper_getClockInfo;
+        event->measureFunc   = &_nvml_wrapper_getClockInfo;
         event->options.clock = NVML_CLOCK_SM;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "CLOCK_MEM");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Memory clock domain in MHz");
-        event->measureFunc = &_nvml_wrapper_getClockInfo;
+        event->measureFunc   = &_nvml_wrapper_getClockInfo;
         event->options.clock = NVML_CLOCK_MEM;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "CLOCK_VIDEO");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Video clock domain in MHz");
-        event->measureFunc = &_nvml_wrapper_getClockInfo;
+        event->measureFunc   = &_nvml_wrapper_getClockInfo;
         event->options.clock = NVML_CLOCK_VIDEO;
         event++;
     }
 
-    if (device->features & FEATURE_MAX_CLOCK)
-    {
+    if (device->features & FEATURE_MAX_CLOCK) {
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "MAX_CLOCK_GRAPHICS");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Maximum graphics clock domain in MHz");
-        event->measureFunc = &_nvml_wrapper_getMaxClock;
+        event->measureFunc   = &_nvml_wrapper_getMaxClock;
         event->options.clock = NVML_CLOCK_GRAPHICS;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "MAX_CLOCK_SM");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Maximum SM clock domain in MHz");
-        event->measureFunc = &_nvml_wrapper_getMaxClock;
+        event->measureFunc   = &_nvml_wrapper_getMaxClock;
         event->options.clock = NVML_CLOCK_SM;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "MAX_CLOCK_MEM");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Maximum memory clock domain in MHz");
-        event->measureFunc = &_nvml_wrapper_getMaxClock;
+        event->measureFunc   = &_nvml_wrapper_getMaxClock;
         event->options.clock = NVML_CLOCK_MEM;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "MAX_CLOCK_VIDEO");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Maximum video clock domain in MHz");
-        event->measureFunc = &_nvml_wrapper_getClockInfo;
+        event->measureFunc   = &_nvml_wrapper_getClockInfo;
         event->options.clock = NVML_CLOCK_VIDEO;
         event++;
     }
 
-    if (device->features & FEATURE_ECC_LOCAL_ERRORS)
-    {
+    if (device->features & FEATURE_ECC_LOCAL_ERRORS) {
         // Single bit errors
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "L1_LOCAL_ECC_ERRORS_SINGLE_BIT");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "L1 cache single bit ECC errors");
-        event->measureFunc = &_nvml_wrapper_getEccLocalErrors;
-        event->options.ecc.type = NVML_MEMORY_ERROR_TYPE_CORRECTED;
+        event->measureFunc         = &_nvml_wrapper_getEccLocalErrors;
+        event->options.ecc.type    = NVML_MEMORY_ERROR_TYPE_CORRECTED;
         event->options.ecc.counter = LOCAL_ECC_L1;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "L2_LOCAL_ECC_ERRORS_SINGLE_BIT");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "L2 cache single bit ECC errors");
-        event->measureFunc = &_nvml_wrapper_getEccLocalErrors;
-        event->options.ecc.type = NVML_MEMORY_ERROR_TYPE_CORRECTED;
+        event->measureFunc         = &_nvml_wrapper_getEccLocalErrors;
+        event->options.ecc.type    = NVML_MEMORY_ERROR_TYPE_CORRECTED;
         event->options.ecc.counter = LOCAL_ECC_L2;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "MEM_LOCAL_ECC_ERRORS_SINGLE_BIT");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Memory single bit ECC errors");
-        event->measureFunc = &_nvml_wrapper_getEccLocalErrors;
-        event->options.ecc.type = NVML_MEMORY_ERROR_TYPE_CORRECTED;
+        event->measureFunc         = &_nvml_wrapper_getEccLocalErrors;
+        event->options.ecc.type    = NVML_MEMORY_ERROR_TYPE_CORRECTED;
         event->options.ecc.counter = LOCAL_ECC_MEM;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "REGFILE_LOCAL_ECC_ERRORS_SINGLE_BIT");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Register file single bit ECC errors");
-        event->measureFunc = &_nvml_wrapper_getEccLocalErrors;
-        event->options.ecc.type = NVML_MEMORY_ERROR_TYPE_CORRECTED;
+        event->measureFunc         = &_nvml_wrapper_getEccLocalErrors;
+        event->options.ecc.type    = NVML_MEMORY_ERROR_TYPE_CORRECTED;
         event->options.ecc.counter = LOCAL_ECC_REGFILE;
         event++;
 
         // Double bit errors
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "L1_LOCAL_ECC_ERRORS_DOUBLE_BIT");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "L1 cache double bit ECC errors");
-        event->measureFunc = &_nvml_wrapper_getEccLocalErrors;
-        event->options.ecc.type = NVML_MEMORY_ERROR_TYPE_UNCORRECTED;
+        event->measureFunc         = &_nvml_wrapper_getEccLocalErrors;
+        event->options.ecc.type    = NVML_MEMORY_ERROR_TYPE_UNCORRECTED;
         event->options.ecc.counter = LOCAL_ECC_L1;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "L2_LOCAL_ECC_ERRORS_DOUBLE_BIT");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "L2 cache double bit ECC errors");
-        event->measureFunc = &_nvml_wrapper_getEccLocalErrors;
-        event->options.ecc.type = NVML_MEMORY_ERROR_TYPE_UNCORRECTED;
+        event->measureFunc         = &_nvml_wrapper_getEccLocalErrors;
+        event->options.ecc.type    = NVML_MEMORY_ERROR_TYPE_UNCORRECTED;
         event->options.ecc.counter = LOCAL_ECC_L2;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "MEM_LOCAL_ECC_ERRORS_DOUBLE_BIT");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Memory double bit ECC errors");
-        event->measureFunc = &_nvml_wrapper_getEccLocalErrors;
-        event->options.ecc.type = NVML_MEMORY_ERROR_TYPE_UNCORRECTED;
+        event->measureFunc         = &_nvml_wrapper_getEccLocalErrors;
+        event->options.ecc.type    = NVML_MEMORY_ERROR_TYPE_UNCORRECTED;
         event->options.ecc.counter = LOCAL_ECC_MEM;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "REGFILE_LOCAL_ECC_ERRORS_DOUBLE_BIT");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Register file double bit ECC errors");
-        event->measureFunc = &_nvml_wrapper_getEccLocalErrors;
-        event->options.ecc.type = NVML_MEMORY_ERROR_TYPE_UNCORRECTED;
+        event->measureFunc         = &_nvml_wrapper_getEccLocalErrors;
+        event->options.ecc.type    = NVML_MEMORY_ERROR_TYPE_UNCORRECTED;
         event->options.ecc.counter = LOCAL_ECC_REGFILE;
         event++;
     }
 
-    if (device->features & FEATURE_ECC_TOTAL_ERRORS)
-    {
+    if (device->features & FEATURE_ECC_TOTAL_ERRORS) {
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "TOTAL_ECC_ERRORS_SINGLE_BIT");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Total single bit ECC errors");
-        event->measureFunc = &_nvml_wrapper_getEccTotalErrors;
+        event->measureFunc      = &_nvml_wrapper_getEccTotalErrors;
         event->options.ecc.type = NVML_MEMORY_ERROR_TYPE_CORRECTED;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "TOTAL_ECC_ERRORS_DOUBLE_BIT");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Total double bit ECC errors");
-        event->measureFunc = &_nvml_wrapper_getEccTotalErrors;
+        event->measureFunc      = &_nvml_wrapper_getEccTotalErrors;
         event->options.ecc.type = NVML_MEMORY_ERROR_TYPE_UNCORRECTED;
         event++;
     }
 
-    if (device->features & FEATURE_FAN_SPEED)
-    {
-        for (int i = 0; i < device->numFans; i++)
-        {
+    if (device->features & FEATURE_FAN_SPEED) {
+        for (int i = 0; i < device->numFans; i++) {
             snprintf(event->name, LIKWID_NVML_NAME_LEN, "FAN_SPEED[%d]", i);
-            snprintf(event->description, LIKWID_NVML_DESC_LEN, "Indended fan speed represented as a percentage of the maximum noise tolerance fan speed. May exceed 100 in certain cases");
+            snprintf(event->description,
+                LIKWID_NVML_DESC_LEN,
+                "Indended fan speed represented as a percentage of the maximum noise tolerance fan "
+                "speed. May exceed 100 in certain cases");
             event->measureFunc = &_nvml_wrapper_getFanSpeed;
             event->options.fan = i;
             event++;
         }
     }
 
-    if (device->features & FEATURE_MEMORY_INFO)
-    {
+    if (device->features & FEATURE_MEMORY_INFO) {
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "FREE_MEMORY");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Unallocated FB memory (in bytes)");
-        event->measureFunc = &_nvml_wrapper_getMemoryInfo;
+        event->measureFunc    = &_nvml_wrapper_getMemoryInfo;
         event->options.memory = MEMORY_FREE;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "TOTAL_MEMORY");
         snprintf(event->description, LIKWID_NVML_DESC_LEN, "Total installed FB memory (in bytes)");
-        event->measureFunc = &_nvml_wrapper_getMemoryInfo;
+        event->measureFunc    = &_nvml_wrapper_getMemoryInfo;
         event->options.memory = MEMORY_TOTAL;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "USED_MEMORY");
-        snprintf(event->description, LIKWID_NVML_DESC_LEN, "Allocated FB memory (in bytes). Note that the driver/GPU always sets aside a small amount of memory for bookkeeping");
-        event->measureFunc = &_nvml_wrapper_getMemoryInfo;
+        snprintf(event->description,
+            LIKWID_NVML_DESC_LEN,
+            "Allocated FB memory (in bytes). Note that the driver/GPU always sets aside a small "
+            "amount of memory for bookkeeping");
+        event->measureFunc    = &_nvml_wrapper_getMemoryInfo;
         event->options.memory = MEMORY_USED;
         event++;
     }
 
-    if (device->features & FEATURE_PERF_STATES)
-    {
+    if (device->features & FEATURE_PERF_STATES) {
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "PERF_STATE");
-        snprintf(event->description, LIKWID_NVML_DESC_LEN, "Current performance state for the device");
+        snprintf(
+            event->description, LIKWID_NVML_DESC_LEN, "Current performance state for the device");
         event->measureFunc = &_nvml_wrapper_getPerformanceState;
         event++;
     }
 
-    if (device->features & FEATURE_POWER)
-    {
+    if (device->features & FEATURE_POWER) {
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "POWER_USAGE");
-        snprintf(event->description, LIKWID_NVML_DESC_LEN, "Power usage for this GPU in milliwatts and its associated circuitry (e.g. memory)");
+        snprintf(event->description,
+            LIKWID_NVML_DESC_LEN,
+            "Power usage for this GPU in milliwatts and its associated circuitry (e.g. memory)");
         event->measureFunc = &_nvml_wrapper_getPowerUsage;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "ENERGY_CONSUMPTION");
-        snprintf(event->description, LIKWID_NVML_DESC_LEN, "Energy consumption for this GPU in milliJoules");
+        snprintf(event->description,
+            LIKWID_NVML_DESC_LEN,
+            "Energy consumption for this GPU in milliJoules");
         event->measureFunc = &_nvml_wrapper_getEnergyConsumption;
         event++;
     }
 
-    if (device->features & FEATURE_TEMP)
-    {
+    if (device->features & FEATURE_TEMP) {
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "TEMP_GPU");
-        snprintf(event->description, LIKWID_NVML_DESC_LEN, "Current temperature readings for the device, in degrees C");
-        event->measureFunc = &_nvml_wrapper_getTemperature;
+        snprintf(event->description,
+            LIKWID_NVML_DESC_LEN,
+            "Current temperature readings for the device, in degrees C");
+        event->measureFunc        = &_nvml_wrapper_getTemperature;
         event->options.tempSensor = NVML_TEMPERATURE_GPU;
         event++;
     }
 
-    if (device->features & FEATURE_POWER_MANAGEMENT)
-    {
+    if (device->features & FEATURE_POWER_MANAGEMENT) {
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "POWER_LIMIT");
-        snprintf(event->description, LIKWID_NVML_DESC_LEN, "Power management limit associated with this device in milliwatts");
+        snprintf(event->description,
+            LIKWID_NVML_DESC_LEN,
+            "Power management limit associated with this device in milliwatts");
         event->measureFunc = &_nvml_wrapper_getPowerManagementLimit;
         event++;
     }
 
-    if (device->features & FEATURE_NVML_POWER_MANAGEMENT_LIMIT_CONSTRAINT)
-    {
+    if (device->features & FEATURE_NVML_POWER_MANAGEMENT_LIMIT_CONSTRAINT) {
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "POWER_LIMIT_MIN");
-        snprintf(event->description, LIKWID_NVML_DESC_LEN, "Minimum power management limit in milliwatts");
-        event->measureFunc = &_nvml_wrapper_getPowerManagementLimitConstraints;
+        snprintf(event->description,
+            LIKWID_NVML_DESC_LEN,
+            "Minimum power management limit in milliwatts");
+        event->measureFunc        = &_nvml_wrapper_getPowerManagementLimitConstraints;
         event->options.powerLimit = LIMIT_MIN;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "POWER_LIMIT_MAX");
-        snprintf(event->description, LIKWID_NVML_DESC_LEN, "Maximum power management limit in milliwatts");
-        event->measureFunc = &_nvml_wrapper_getPowerManagementLimitConstraints;
+        snprintf(event->description,
+            LIKWID_NVML_DESC_LEN,
+            "Maximum power management limit in milliwatts");
+        event->measureFunc        = &_nvml_wrapper_getPowerManagementLimitConstraints;
         event->options.powerLimit = LIMIT_MAX;
         event++;
     }
 
-    if (device->features & FEATURE_UTILIZATION)
-    {
+    if (device->features & FEATURE_UTILIZATION) {
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "GPU_UTILIZATION");
-        snprintf(event->description, LIKWID_NVML_DESC_LEN, "Percent of time over the past sample period during which one or more kernels was executing on the GPU");
-        event->measureFunc = &_nvml_wrapper_getUtilization;
+        snprintf(event->description,
+            LIKWID_NVML_DESC_LEN,
+            "Percent of time over the past sample period during which one or more kernels was "
+            "executing on the GPU");
+        event->measureFunc         = &_nvml_wrapper_getUtilization;
         event->options.utilization = UTILIZATION_GPU;
         event++;
 
         snprintf(event->name, LIKWID_NVML_NAME_LEN, "MEMORY_UTILIZATION");
-        snprintf(event->description, LIKWID_NVML_DESC_LEN, "Percent of time over the past sample period during which global (device) memory was being read or written");
-        event->measureFunc = &_nvml_wrapper_getUtilization;
+        snprintf(event->description,
+            LIKWID_NVML_DESC_LEN,
+            "Percent of time over the past sample period during which global (device) memory was "
+            "being read or written");
+        event->measureFunc         = &_nvml_wrapper_getUtilization;
         event->options.utilization = UTILIZATION_MEMORY;
         event++;
     }
@@ -706,13 +738,11 @@ _nvml_getEventsForDevice(NvmlDevice* device)
     return 0;
 }
 
-
-static void
-_nvml_getEccFeaturesOfDevice(NvmlDevice* device)
+static void _nvml_getEccFeaturesOfDevice(NvmlDevice *device)
 {
     char inforomECC[16];
-    float ecc_version = 0;
-    nvmlEnableState_t mode = NVML_FEATURE_DISABLED;
+    float ecc_version             = 0;
+    nvmlEnableState_t mode        = NVML_FEATURE_DISABLED;
     nvmlEnableState_t pendingmode = NVML_FEATURE_DISABLED;
 
     /*
@@ -723,8 +753,8 @@ _nvml_getEccFeaturesOfDevice(NvmlDevice* device)
     */
 
     // Query ecc version
-    if ((*nvmlDeviceGetInforomVersion_ptr)(device->nvmlDevice, NVML_INFOROM_ECC, inforomECC, 16) == NVML_SUCCESS)
-    {
+    if ((*nvmlDeviceGetInforomVersion_ptr)(device->nvmlDevice, NVML_INFOROM_ECC, inforomECC, 16) ==
+        NVML_SUCCESS) {
         ecc_version = strtof(inforomECC, NULL);
     }
 
@@ -733,7 +763,8 @@ _nvml_getEccFeaturesOfDevice(NvmlDevice* device)
         if (mode == NVML_FEATURE_ENABLED) {
             if (ecc_version >= 2.0) {
                 device->features |= FEATURE_ECC_LOCAL_ERRORS;
-                device->numAllEvents += 8; /* {single bit, two bit errors} x { reg, l1, l2, memory } */
+                device->numAllEvents +=
+                    8; /* {single bit, two bit errors} x { reg, l1, l2, memory } */
             }
             if (ecc_version >= 1.0) {
                 device->features |= FEATURE_ECC_TOTAL_ERRORS;
@@ -743,9 +774,7 @@ _nvml_getEccFeaturesOfDevice(NvmlDevice* device)
     }
 }
 
-
-static int
-_nvml_getFeaturesOfDevice(NvmlDevice* device)
+static int _nvml_getFeaturesOfDevice(NvmlDevice *device)
 {
     unsigned int value;
 
@@ -754,19 +783,20 @@ _nvml_getFeaturesOfDevice(NvmlDevice* device)
     */
 
     // Reset state
-    device->features = 0;
+    device->features     = 0;
     device->numAllEvents = 0;
 
     // Check FEATURE_CLOCK_INFO
-    if ((*nvmlDeviceGetClockInfo_ptr)(device->nvmlDevice, NVML_CLOCK_GRAPHICS, &value) == NVML_SUCCESS)
-    {
+    if ((*nvmlDeviceGetClockInfo_ptr)(device->nvmlDevice, NVML_CLOCK_GRAPHICS, &value) ==
+        NVML_SUCCESS) {
         device->features |= FEATURE_CLOCK_INFO;
         device->numAllEvents += 4;
     }
 
     // Check FEATURE_MAX_CLOCK
-    if ((*nvmlDeviceGetClock_ptr)(device->nvmlDevice, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, &value) == NVML_SUCCESS)
-    {
+    if ((*nvmlDeviceGetClock_ptr)(
+            device->nvmlDevice, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, &value) ==
+        NVML_SUCCESS) {
         device->features |= FEATURE_MAX_CLOCK;
         device->numAllEvents += 4;
     }
@@ -775,10 +805,9 @@ _nvml_getFeaturesOfDevice(NvmlDevice* device)
     _nvml_getEccFeaturesOfDevice(device);
 
     // Check FEATURE_FAN_SPEED
-    while (1)
-    {
-        if ((*nvmlDeviceGetFanSpeed_v2_ptr)(device->nvmlDevice, device->numFans, &value) != NVML_SUCCESS)
-        {
+    while (1) {
+        if ((*nvmlDeviceGetFanSpeed_v2_ptr)(device->nvmlDevice, device->numFans, &value) !=
+            NVML_SUCCESS) {
             break;
         }
         device->features |= FEATURE_FAN_SPEED;
@@ -792,45 +821,41 @@ _nvml_getFeaturesOfDevice(NvmlDevice* device)
 
     // Check FEATURE_PERF_STATES
     nvmlPstates_t state;
-    if ((*nvmlDeviceGetPerformanceState_ptr)(device->nvmlDevice, &state) == NVML_SUCCESS)
-    {
+    if ((*nvmlDeviceGetPerformanceState_ptr)(device->nvmlDevice, &state) == NVML_SUCCESS) {
         device->features |= FEATURE_PERF_STATES;
         device->numAllEvents += 1;
     }
 
     // Check FEATURE_POWER
-    if ((*nvmlDeviceGetPowerUsage_ptr)(device->nvmlDevice, &value) == NVML_SUCCESS)
-    {
+    if ((*nvmlDeviceGetPowerUsage_ptr)(device->nvmlDevice, &value) == NVML_SUCCESS) {
         device->features |= FEATURE_POWER;
         device->numAllEvents += 1;
     }
 
     // Check FEATURE_TEMP
-    if ((*nvmlDeviceGetTemperature_ptr)(device->nvmlDevice, NVML_TEMPERATURE_GPU, &value) == NVML_SUCCESS)
-    {
+    if ((*nvmlDeviceGetTemperature_ptr)(device->nvmlDevice, NVML_TEMPERATURE_GPU, &value) ==
+        NVML_SUCCESS) {
         device->features |= FEATURE_TEMP;
         device->numAllEvents += 1;
     }
 
     // Check FEATURE_POWER_MANAGEMENT
-    if ((*nvmlDeviceGetPowerManagementLimit_ptr)(device->nvmlDevice, &value) == NVML_SUCCESS)
-    {
+    if ((*nvmlDeviceGetPowerManagementLimit_ptr)(device->nvmlDevice, &value) == NVML_SUCCESS) {
         device->features |= FEATURE_POWER_MANAGEMENT;
         device->numAllEvents += 1;
     }
 
     // Check FEATURE_NVML_POWER_MANAGEMENT_LIMIT_CONSTRAINT
     unsigned int minLimit, maxLimit;
-    if ((*nvmlDeviceGetPowerManagementLimitConstraints_ptr)(device->nvmlDevice, &minLimit, &maxLimit) == NVML_SUCCESS)
-    {
+    if ((*nvmlDeviceGetPowerManagementLimitConstraints_ptr)(
+            device->nvmlDevice, &minLimit, &maxLimit) == NVML_SUCCESS) {
         device->features |= FEATURE_NVML_POWER_MANAGEMENT_LIMIT_CONSTRAINT;
         device->numAllEvents += 2;
     }
 
     // Check FEATURE_UTILIZATION
     nvmlUtilization_t utilization;
-    if ((*nvmlDeviceGetUtilizationRates_ptr)(device->nvmlDevice, &utilization) == NVML_SUCCESS)
-    {
+    if ((*nvmlDeviceGetUtilizationRates_ptr)(device->nvmlDevice, &utilization) == NVML_SUCCESS) {
         device->features |= FEATURE_UTILIZATION;
         device->numAllEvents += 2;
     }
@@ -838,76 +863,70 @@ _nvml_getFeaturesOfDevice(NvmlDevice* device)
     return 0;
 }
 
-
-static int
-_nvml_createDevice(int idx, NvmlDevice* device)
+static int _nvml_createDevice(int idx, NvmlDevice *device)
 {
     int ret;
 
     // Set corresponding nvmon device
-    device->nvDevice = &nvGroupSet->gpus[idx];
+    device->nvDevice       = &nvGroupSet->gpus[idx];
     device->activeEventSet = 0;
-    device->numEventSets = 0;
-    device->eventSets = NULL;
-    device->numFans = 0;
+    device->numEventSets   = 0;
+    device->eventSets      = NULL;
+    device->numFans        = 0;
 
     // Get NVML device handle
     NVML_CALL(nvmlDeviceGetHandleByIndex_v2, device->nvDevice->deviceId, &device->nvmlDevice);
 
     ret = _nvml_getFeaturesOfDevice(device);
-    if (ret < 0) return ret;
+    if (ret < 0)
+        return ret;
 
     // Allocate memory for event list
-    device->allEvents = (NvmlEvent*) malloc(device->numAllEvents * sizeof(NvmlEvent));
-    if (device->allEvents == NULL)
-    {
-        ERROR_PRINT("Failed to allocate memory for event list of GPU %d", device->nvDevice->deviceId);
+    device->allEvents = (NvmlEvent *)malloc(device->numAllEvents * sizeof(NvmlEvent));
+    if (device->allEvents == NULL) {
+        ERROR_PRINT(
+            "Failed to allocate memory for event list of GPU %d", device->nvDevice->deviceId);
         return -ENOMEM;
     }
 
     ret = _nvml_getEventsForDevice(device);
-    if (ret < 0) return ret;
+    if (ret < 0)
+        return ret;
 
     return 0;
 }
 
-
-static int
-_nvml_readCounters(void (*saveTimestamp)(NvmlDevice* device, uint64_t timestamp), void (*afterMeasure)(NvmlEventResult* result))
+static int _nvml_readCounters(void (*saveTimestamp)(NvmlDevice *device, uint64_t timestamp),
+    void (*afterMeasure)(NvmlEventResult *result))
 {
     int ret;
 
     // Get timestamp
     uint64_t timestamp;
     CUPTI_CALL(cuptiGetTimestamp, &timestamp);
-    if (ret < 0)
-    {
+    if (ret < 0) {
         return -EFAULT;
     }
 
-    for (int i = 0; i < nvmlContext.numDevices; i++)
-    {
-        NvmlDevice* device = &nvmlContext.devices[i];
-        NvmlEventSet* eventSet = &device->eventSets[device->activeEventSet];
+    for (int i = 0; i < nvmlContext.numDevices; i++) {
+        NvmlDevice *device     = &nvmlContext.devices[i];
+        NvmlEventSet *eventSet = &device->eventSets[device->activeEventSet];
 
         // Save timestamp
-        if (saveTimestamp)
-        {
+        if (saveTimestamp) {
             saveTimestamp(device, timestamp);
         }
 
         // Read value of each event
-        for (int i = 0; i < eventSet->numEvents; i++)
-        {
-            NvmlEvent* event = &eventSet->events[i];
-            NvmlEventResult* result = &eventSet->results[i];
-            if (event->measureFunc)
-            {
+        for (int i = 0; i < eventSet->numEvents; i++) {
+            NvmlEvent *event        = &eventSet->events[i];
+            NvmlEventResult *result = &eventSet->results[i];
+            if (event->measureFunc) {
                 ret = event->measureFunc(device->nvmlDevice, event, result);
-                if (ret < 0) return ret;
+                if (ret < 0)
+                    return ret;
 
-                if (afterMeasure)
-                {
+                if (afterMeasure) {
                     afterMeasure(result);
                 }
             }
@@ -917,62 +936,49 @@ _nvml_readCounters(void (*saveTimestamp)(NvmlDevice* device, uint64_t timestamp)
     return 0;
 }
 
-
-static void
-_nvml_saveStartTime(NvmlDevice* device, uint64_t timestamp)
+static void _nvml_saveStartTime(NvmlDevice *device, uint64_t timestamp)
 {
     device->time.start = timestamp;
-    device->time.read = timestamp;
+    device->time.read  = timestamp;
 }
 
-
-static void
-_nvml_resetFullValue(NvmlEventResult* result)
+static void _nvml_resetFullValue(NvmlEventResult *result)
 {
     result->fullValue = 0;
 }
 
-
-static void
-_nvml_saveReadTime(NvmlDevice* device, uint64_t timestamp)
+static void _nvml_saveReadTime(NvmlDevice *device, uint64_t timestamp)
 {
     device->time.read = timestamp;
 }
 
-
-static void
-_nvml_saveStopTime(NvmlDevice* device, uint64_t timestamp)
+static void _nvml_saveStopTime(NvmlDevice *device, uint64_t timestamp)
 {
     device->time.stop = timestamp;
 }
-
 
 // ----------------------------------------------------
 //   Exported functions
 // ----------------------------------------------------
 
-int
-nvml_init()
+int nvml_init()
 {
     int ret;
 
-    if (nvml_initialized == 1)
-    {
+    if (nvml_initialized == 1) {
         return 0;
     }
 
     ret = _nvml_linkLibraries();
-    if (ret < 0)
-    {
+    if (ret < 0) {
         ERROR_PRINT("Failed to link libraries");
         return -1;
     }
 
     // Allocate space for nvml specific structures
     nvmlContext.numDevices = nvGroupSet->numberOfGPUs;
-    nvmlContext.devices = (NvmlDevice*) malloc(nvmlContext.numDevices * sizeof(NvmlDevice));
-    if (nvmlContext.devices == NULL)
-    {   
+    nvmlContext.devices    = (NvmlDevice *)malloc(nvmlContext.numDevices * sizeof(NvmlDevice));
+    if (nvmlContext.devices == NULL) {
         ERROR_PRINT("Cannot allocate NVML device structures");
         return -ENOMEM;
     }
@@ -981,12 +987,10 @@ nvml_init()
     NVML_CALL(nvmlInit_v2);
 
     // Do device specific setup
-    for (int i = 0; i < nvmlContext.numDevices; i++)
-    {
-        NvmlDevice* device = &nvmlContext.devices[i];
-        ret = _nvml_createDevice(i, device);
-        if (ret < 0)
-        {
+    for (int i = 0; i < nvmlContext.numDevices; i++) {
+        NvmlDevice *device = &nvmlContext.devices[i];
+        ret                = _nvml_createDevice(i, device);
+        if (ret < 0) {
             ERROR_PRINT("Failed to create device #%d", i);
             return ret;
         }
@@ -996,19 +1000,14 @@ nvml_init()
     return 0;
 }
 
-
-void
-nvml_finalize()
+void nvml_finalize()
 {
-    if (nvmlContext.devices)
-    {
-        for (int i = 0; i < nvmlContext.numDevices; i++)
-        {
-            NvmlDevice* device = &nvmlContext.devices[i];
+    if (nvmlContext.devices) {
+        for (int i = 0; i < nvmlContext.numDevices; i++) {
+            NvmlDevice *device = &nvmlContext.devices[i];
 
             free(device->allEvents);
-            for (int j = 0; j < device->numEventSets; j++)
-            {
+            for (int j = 0; j < device->numEventSets; j++) {
                 free(device->eventSets[j].events);
                 free(device->eventSets[j].results);
             }
@@ -1021,32 +1020,28 @@ nvml_finalize()
     nvmlShutdown_ptr();
 }
 
-
-int
-nvml_addEventSet(char** events, int numEvents)
+int nvml_addEventSet(char **events, int numEvents)
 {
     // Allocate memory for event results
-    for (int i = 0; i < nvmlContext.numDevices; i++)
-    {
-        NvmlDevice* device = &nvmlContext.devices[i];
+    for (int i = 0; i < nvmlContext.numDevices; i++) {
+        NvmlDevice *device = &nvmlContext.devices[i];
 
         // Allocate new event set in device
-        NvmlEvent* tmpEvents = (NvmlEvent*) malloc(numEvents * sizeof(NvmlEvent));
-        if (tmpEvents == NULL)
-        {
+        NvmlEvent *tmpEvents = (NvmlEvent *)malloc(numEvents * sizeof(NvmlEvent));
+        if (tmpEvents == NULL) {
             ERROR_PRINT("Cannot allocate events for new event set");
             return -ENOMEM;
         }
-        NvmlEventResult* tmpResults = (NvmlEventResult*) malloc(numEvents * sizeof(NvmlEventResult));
-        if (tmpResults == NULL)
-        {
+        NvmlEventResult *tmpResults =
+            (NvmlEventResult *)malloc(numEvents * sizeof(NvmlEventResult));
+        if (tmpResults == NULL) {
             ERROR_PRINT("Cannot allocate event results");
             free(tmpEvents);
             return -ENOMEM;
         }
-        NvmlEventSet* tmpEventSets = (NvmlEventSet*) realloc(device->eventSets, (device->numEventSets+1) * sizeof(NvmlEventSet));
-        if (tmpEventSets == NULL)
-        {
+        NvmlEventSet *tmpEventSets = (NvmlEventSet *)realloc(
+            device->eventSets, (device->numEventSets + 1) * sizeof(NvmlEventSet));
+        if (tmpEventSets == NULL) {
             ERROR_PRINT("Cannot allocate new event set");
             free(tmpEvents);
             free(tmpResults);
@@ -1054,22 +1049,18 @@ nvml_addEventSet(char** events, int numEvents)
         }
 
         // Copy event information
-        for (int j = 0; j < numEvents; j++)
-        {
+        for (int j = 0; j < numEvents; j++) {
             // Search for it in allEvents
             int idx = -1;
-            for (int k = 0; k < device->numAllEvents; k++)
-            {
-                if (strcmp(device->allEvents[k].name, events[j]) == 0)
-                {
+            for (int k = 0; k < device->numAllEvents; k++) {
+                if (strcmp(device->allEvents[k].name, events[j]) == 0) {
                     idx = k;
                     break;
                 }
             }
 
             // Check if event was found
-            if (idx < 0)
-            {
+            if (idx < 0) {
                 ERROR_PRINT("Could not find event %s", events[j]);
                 return -EINVAL;
             }
@@ -1078,98 +1069,84 @@ nvml_addEventSet(char** events, int numEvents)
             memcpy(&tmpEvents[j], &device->allEvents[idx], sizeof(NvmlEvent));
         }
 
-        device->eventSets = tmpEventSets;
+        device->eventSets                                 = tmpEventSets;
         device->eventSets[device->numEventSets].numEvents = numEvents;
-        device->eventSets[device->numEventSets].events = tmpEvents;
-        device->eventSets[device->numEventSets].results = tmpResults;
+        device->eventSets[device->numEventSets].events    = tmpEvents;
+        device->eventSets[device->numEventSets].results   = tmpResults;
         device->numEventSets++;
     }
 
     return 0;
 }
 
-
-int
-nvml_setupCounters(int gid)
+int nvml_setupCounters(int gid)
 {
     // Update active events of each device
-    for (int i = 0; i < nvmlContext.numDevices; i++)
-    {
+    for (int i = 0; i < nvmlContext.numDevices; i++) {
         nvmlContext.devices[i].activeEventSet = gid;
     }
 
     return 0;
 }
 
-
 // Strings inside structure are only valid as long as nvmon/nvml is initialized
-int
-nvml_getEventsOfGpu(int gpuId, NvmonEventList_t* output)
+int nvml_getEventsOfGpu(int gpuId, NvmonEventList_t *output)
 {
     int gpuIdx = -1;
 
     // Find index with given gpuId
-    for (int i = 0; i < nvmlContext.numDevices; i++)
-    {
-        if (nvmlContext.devices[i].nvDevice->deviceId == gpuId)
-        {
+    for (int i = 0; i < nvmlContext.numDevices; i++) {
+        if (nvmlContext.devices[i].nvDevice->deviceId == gpuId) {
             gpuIdx = i;
             break;
         }
     }
-    if (gpuIdx < 0)
-    {
+    if (gpuIdx < 0) {
         return -EINVAL;
     }
 
     // Get device handle
-    NvmlDevice* device = &nvmlContext.devices[gpuIdx];
+    NvmlDevice *device = &nvmlContext.devices[gpuIdx];
 
     // Allocate space for output structure
-    NvmonEventListEntry* entries = (NvmonEventListEntry*) malloc(device->numAllEvents * sizeof(NvmonEventListEntry));
-    if (entries == NULL)
-    {
+    NvmonEventListEntry *entries =
+        (NvmonEventListEntry *)malloc(device->numAllEvents * sizeof(NvmonEventListEntry));
+    if (entries == NULL) {
         ERROR_PRINT("Cannot allocate event list entries");
         return -ENOMEM;
     }
-    NvmonEventList* list = (NvmonEventList*) malloc(sizeof(NvmonEventList));
-    if (list == NULL)
-    {
+    NvmonEventList *list = (NvmonEventList *)malloc(sizeof(NvmonEventList));
+    if (list == NULL) {
         ERROR_PRINT("Cannot allocate event list");
         free(entries);
         return -ENOMEM;
     }
 
     // Fill structure
-    for (int i = 0; i < device->numAllEvents; i++)
-    {
-        NvmlEvent* event = &device->allEvents[i];
-        NvmonEventListEntry* entry = &entries[i];
+    for (int i = 0; i < device->numAllEvents; i++) {
+        NvmlEvent *event           = &device->allEvents[i];
+        NvmonEventListEntry *entry = &entries[i];
         int len;
 
-        entry->name = event->name;
-        entry->desc = "No description"; // TODO: Add event descriptions
+        entry->name  = event->name;
+        entry->desc  = "No description"; // TODO: Add event descriptions
         entry->limit = "GPU";
     }
 
-    list->events = entries;
+    list->events    = entries;
     list->numEvents = device->numAllEvents;
-    *output = list;
+    *output         = list;
 
     return 0;
 }
 
-
-void
-nvml_returnEventsOfGpu(NvmonEventList_t list)
+void nvml_returnEventsOfGpu(NvmonEventList_t list)
 {
-    if (list == NULL)
-    {
+    if (list == NULL) {
         return;
     }
 
-    if (list->events != NULL && list->numEvents > 0)
-    {
+    if (list->events != NULL && list->numEvents > 0) {
         // Event entries do not have owned strings, so nothing to free per entry
         free(list->events);
     }
@@ -1177,83 +1154,72 @@ nvml_returnEventsOfGpu(NvmonEventList_t list)
     free(list);
 }
 
-
-int
-nvml_startCounters()
+int nvml_startCounters()
 {
     int ret;
 
     // Ensure nvml is initialized
-    if (!nvml_initialized)
-    {
+    if (!nvml_initialized) {
         return -EFAULT;
     }
 
     // Read initial counter values and reset full value
     ret = _nvml_readCounters(_nvml_saveStartTime, _nvml_resetFullValue);
-    if (ret < 0) return ret;
+    if (ret < 0)
+        return ret;
 
     return 0;
 }
 
-
-int
-nvml_stopCounters()
+int nvml_stopCounters()
 {
     int ret;
 
     // Ensure nvml is initialized
-    if (!nvml_initialized)
-    {
+    if (!nvml_initialized) {
         return -EFAULT;
     }
 
     // Read counters
     ret = _nvml_readCounters(_nvml_saveStopTime, NULL);
-    if (ret < 0) return ret;
+    if (ret < 0)
+        return ret;
 
     return 0;
 }
 
-
-int
-nvml_readCounters()
+int nvml_readCounters()
 {
     int ret;
 
     // Ensure nvml is initialized
-    if (!nvml_initialized)
-    {
+    if (!nvml_initialized) {
         return -EFAULT;
     }
 
     // Read counters
     ret = _nvml_readCounters(_nvml_saveReadTime, NULL);
-    if (ret < 0) return ret;
+    if (ret < 0)
+        return ret;
 
     return 0;
 }
 
-
-int
-nvml_getNumberOfEvents(int groupId)
+int nvml_getNumberOfEvents(int groupId)
 {
     // Ensure nvml is initialized
-    if (!nvml_initialized)
-    {
+    if (!nvml_initialized) {
         return -EFAULT;
     }
 
     // Verify that at least one device is registered
-    if (nvmlContext.numDevices < 1)
-    {
+    if (nvmlContext.numDevices < 1) {
         return 0; // No events registered
     }
 
     // Verify groupId
-    NvmlDevice* device = &nvmlContext.devices[0];
-    if (groupId < 0 || groupId >= device->numEventSets)
-    {
+    NvmlDevice *device = &nvmlContext.devices[0];
+    if (groupId < 0 || groupId >= device->numEventSets) {
         return -EINVAL;
     }
 
@@ -1261,33 +1227,27 @@ nvml_getNumberOfEvents(int groupId)
     return device->eventSets[groupId].numEvents;
 }
 
-
-double
-nvml_getResult(int gpuIdx, int groupId, int eventId)
+double nvml_getResult(int gpuIdx, int groupId, int eventId)
 {
     // Ensure nvml is initialized
-    if (!nvml_initialized)
-    {
+    if (!nvml_initialized) {
         return -EFAULT;
     }
 
     // Validate gpuIdx
-    if (gpuIdx < 0 || gpuIdx >= nvmlContext.numDevices)
-    {
+    if (gpuIdx < 0 || gpuIdx >= nvmlContext.numDevices) {
         return -EINVAL;
     }
 
     // Validate groupId
-    NvmlDevice* device = &nvmlContext.devices[gpuIdx];
-    if (groupId < 0 || groupId >= device->numEventSets)
-    {
+    NvmlDevice *device = &nvmlContext.devices[gpuIdx];
+    if (groupId < 0 || groupId >= device->numEventSets) {
         return -EINVAL;
     }
 
     // Validate eventId
-    NvmlEventSet* eventSet = &device->eventSets[groupId];
-    if (eventId < 0 || eventId >= eventSet->numEvents)
-    {
+    NvmlEventSet *eventSet = &device->eventSets[groupId];
+    if (eventId < 0 || eventId >= eventSet->numEvents) {
         return -EINVAL;
     }
 
@@ -1295,33 +1255,27 @@ nvml_getResult(int gpuIdx, int groupId, int eventId)
     return eventSet->results[eventId].fullValue;
 }
 
-
-double
-nvml_getLastResult(int gpuIdx, int groupId, int eventId)
+double nvml_getLastResult(int gpuIdx, int groupId, int eventId)
 {
     // Ensure nvml is initialized
-    if (!nvml_initialized)
-    {
+    if (!nvml_initialized) {
         return -EFAULT;
     }
 
     // Validate gpuIdx
-    if (gpuIdx < 0 || gpuIdx >= nvmlContext.numDevices)
-    {
+    if (gpuIdx < 0 || gpuIdx >= nvmlContext.numDevices) {
         return -EINVAL;
     }
 
     // Validate groupId
-    NvmlDevice* device = &nvmlContext.devices[gpuIdx];
-    if (groupId < 0 || groupId >= device->numEventSets)
-    {
+    NvmlDevice *device = &nvmlContext.devices[gpuIdx];
+    if (groupId < 0 || groupId >= device->numEventSets) {
         return -EINVAL;
     }
 
     // Validate eventId
-    NvmlEventSet* eventSet = &device->eventSets[groupId];
-    if (eventId < 0 || eventId >= eventSet->numEvents)
-    {
+    NvmlEventSet *eventSet = &device->eventSets[groupId];
+    if (eventId < 0 || eventId >= eventSet->numEvents) {
         return -EINVAL;
     }
 
@@ -1329,86 +1283,74 @@ nvml_getLastResult(int gpuIdx, int groupId, int eventId)
     return eventSet->results[eventId].lastValue;
 }
 
-
-double 
-nvml_getTimeOfGroup(int groupId)
+double nvml_getTimeOfGroup(int groupId)
 {
     double time = 0;
 
     // Ensure nvml is initialized
-    if (!nvml_initialized)
-    {
+    if (!nvml_initialized) {
         return -EFAULT;
     }
 
     // Validate gpuIdx
-    if (groupId < 0 || groupId >= nvGroupSet->numberOfActiveGroups)
-    {
+    if (groupId < 0 || groupId >= nvGroupSet->numberOfActiveGroups) {
         return -EINVAL;
     }
 
     // Get largest time measured
-    for (int i = 0; i < nvmlContext.numDevices; i++)
-    {
-        time = MAX(time, (double)(nvmlContext.devices[i].time.stop - nvmlContext.devices[i].time.start));
+    for (int i = 0; i < nvmlContext.numDevices; i++) {
+        time = MAX(
+            time, (double)(nvmlContext.devices[i].time.stop - nvmlContext.devices[i].time.start));
     }
 
     // Return time as seconds
-    return time*1E-9;
+    return time * 1E-9;
 }
 
-
-double 
-nvml_getLastTimeOfGroup(int groupId)
+double nvml_getLastTimeOfGroup(int groupId)
 {
     double time = 0;
 
     // Ensure nvml is initialized
-    if (!nvml_initialized)
-    {
+    if (!nvml_initialized) {
         return -EFAULT;
     }
 
     // Validate gpuIdx
-    if (groupId < 0 || groupId >= nvGroupSet->numberOfActiveGroups)
-    {
+    if (groupId < 0 || groupId >= nvGroupSet->numberOfActiveGroups) {
         return -EINVAL;
     }
 
     // Get largest time measured
-    for (int i = 0; i < nvmlContext.numDevices; i++)
-    {
-        time = MAX(time, (double)(nvmlContext.devices[i].time.stop - nvmlContext.devices[i].time.read));
+    for (int i = 0; i < nvmlContext.numDevices; i++) {
+        time = MAX(
+            time, (double)(nvmlContext.devices[i].time.stop - nvmlContext.devices[i].time.read));
     }
 
     // Return time as seconds
-    return time*1E-9;
+    return time * 1E-9;
 }
 
-
-double
-nvml_getTimeToLastReadOfGroup(int groupId)
+double nvml_getTimeToLastReadOfGroup(int groupId)
 {
     double time = 0;
 
     // Ensure nvml is initialized
-    if (!nvml_initialized)
-    {
+    if (!nvml_initialized) {
         return -EFAULT;
     }
 
     // Validate gpuIdx
-    if (groupId < 0 || groupId >= nvGroupSet->numberOfActiveGroups)
-    {
+    if (groupId < 0 || groupId >= nvGroupSet->numberOfActiveGroups) {
         return -EINVAL;
     }
 
     // Get largest time measured
-    for (int i = 0; i < nvmlContext.numDevices; i++)
-    {
-        time = MAX(time, (double)(nvmlContext.devices[i].time.read - nvmlContext.devices[i].time.start));
+    for (int i = 0; i < nvmlContext.numDevices; i++) {
+        time = MAX(
+            time, (double)(nvmlContext.devices[i].time.read - nvmlContext.devices[i].time.start));
     }
 
     // Return time as seconds
-    return time*1E-9;
+    return time * 1E-9;
 }

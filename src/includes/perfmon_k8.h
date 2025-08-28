@@ -32,8 +32,8 @@
 #ifndef PERFMON_K8_H
 #define PERFMON_K8_H
 
-#include <perfmon_k8_events.h>
 #include <error.h>
+#include <perfmon_k8_events.h>
 
 static int perfmon_numArchEventsK8 = NUM_ARCH_EVENTS_K8;
 

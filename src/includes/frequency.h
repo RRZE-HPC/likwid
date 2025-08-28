@@ -31,7 +31,7 @@
 #ifndef FREQUENCY_H
 #define FREQUENCY_H
 
-extern char* daemon_path;
+extern char *daemon_path;
 
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 #include <cpuid.h>
@@ -40,8 +40,8 @@ extern char* daemon_path;
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 static int isAMD()
 {
-    unsigned int eax = 0,ebx,ecx = 0,edx;
-    CPUID(eax,ebx,ecx,edx);
+    unsigned int eax = 0, ebx, ecx = 0, edx;
+    CPUID(eax, ebx, ecx, edx);
     if (ecx == 0x444d4163)
         return 1;
     return 0;
@@ -52,6 +52,5 @@ static int isAMD()
     return 0;
 }
 #endif
-
 
 #endif /* FREQUENCY_H */

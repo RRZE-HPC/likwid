@@ -33,21 +33,21 @@
 #define NUM_COUNTERS_A64FX 8
 
 static RegisterMap a64fx_counter_map[NUM_COUNTERS_A64FX] = {
-    {"PMC0", PMC0, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC1", PMC1, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC2", PMC2, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC3", PMC3, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC4", PMC4, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC5", PMC5, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC6", PMC6, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
-    {"PMC7", PMC7, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
+    { "PMC0", PMC0, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC1", PMC1, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC2", PMC2, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC3", PMC3, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC4", PMC4, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC5", PMC5, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC6", PMC6, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
+    { "PMC7", PMC7, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK },
 };
 
 static BoxMap a64fx_box_map[NUM_UNITS] = {
-    [PMC] = {0, 0, 0, 0, 0, 0, 32, 0, 0},
+    [PMC] = { 0, 0, 0, 0, 0, 0, 32, 0, 0 },
 };
 
-static char* a64fx_translate_types[NUM_UNITS] = {
+static char *a64fx_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/armv8_pmuv3_0",
 };
 

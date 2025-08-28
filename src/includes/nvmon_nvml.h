@@ -34,9 +34,9 @@
 
 int nvml_init();
 void nvml_finalize();
-int nvml_getEventsOfGpu(int gpuId, NvmonEventList_t* output);
+int nvml_getEventsOfGpu(int gpuId, NvmonEventList_t *output);
 void nvml_returnEventsOfGpu(NvmonEventList_t list);
-int nvml_addEventSet(char** events, int numEvents);
+int nvml_addEventSet(char **events, int numEvents);
 int nvml_setupCounters(int gid);
 int nvml_startCounters();
 int nvml_stopCounters();
