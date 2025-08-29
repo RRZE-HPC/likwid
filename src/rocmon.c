@@ -144,7 +144,7 @@ static int
 _smi_wrapper_pci_throughput_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t value;
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "_smi_wrapper_pci_throughput_get(%d, %d)", deviceId, event->extra);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "_smi_wrapper_pci_throughput_get(%d, %lu)", deviceId, event->extra);
     // Internal variant: 0 for sent, 1 for received bytes and 2 for max packet size
     if (event->extra == 0)       RSMI_CALL(return -1, rsmi_dev_pci_throughput_get, deviceId, &value, NULL, NULL);
     else if (event->extra == 1)  RSMI_CALL(return -1, rsmi_dev_pci_throughput_get, deviceId, NULL, &value, NULL);
@@ -161,6 +161,8 @@ _smi_wrapper_pci_throughput_get(int deviceId, RocmonSmiEvent* event, RocmonEvent
 static int
 _smi_wrapper_pci_replay_counter_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
+    (void)event;
+
     uint64_t counter;
     RSMI_CALL(return -1, rsmi_dev_pci_replay_counter_get, deviceId, &counter);
     result->fullValue += counter;
@@ -209,6 +211,8 @@ _smi_wrapper_memory_usage_get(int deviceId, RocmonSmiEvent* event, RocmonEventRe
 static int
 _smi_wrapper_memory_busy_percent_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
+    (void)event;
+
     uint32_t percent;
     RSMI_CALL(return -1, rsmi_dev_memory_busy_percent_get, deviceId, &percent);
     result->fullValue += percent;
@@ -221,6 +225,8 @@ _smi_wrapper_memory_busy_percent_get(int deviceId, RocmonSmiEvent* event, Rocmon
 static int
 _smi_wrapper_memory_reserved_pages_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
+    (void)event;
+
     uint32_t num_pages;
     RSMI_CALL(return -1, rsmi_dev_memory_reserved_pages_get, deviceId, &num_pages, NULL);
     result->fullValue += num_pages;
@@ -257,7 +263,7 @@ _smi_wrapper_fan_speed_get(int deviceId, RocmonSmiEvent* event, RocmonEventResul
 static int
 _smi_wrapper_fan_speed_max_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
-    int64_t max_speed;
+    uint64_t max_speed;
     RSMI_CALL(return -1, rsmi_dev_fan_speed_max_get, deviceId, event->subvariant, &max_speed);
     result->fullValue += max_speed;
     result->lastValue = max_speed;
@@ -293,6 +299,8 @@ _smi_wrapper_volt_metric_get(int deviceId, RocmonSmiEvent* event, RocmonEventRes
 static int
 _smi_wrapper_overdrive_level_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
+    (void)event;
+
     uint32_t overdrive;
     RSMI_CALL(return -1, rsmi_dev_overdrive_level_get, deviceId, &overdrive);
     result->fullValue += overdrive;
@@ -330,6 +338,9 @@ _smi_wrapper_ecc_count_get(int deviceId, RocmonSmiEvent* event, RocmonEventResul
 static int
 _smi_wrapper_compute_process_info_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
+    (void)deviceId;
+    (void)event;
+
     uint32_t num_items;
     RSMI_CALL(return -1, rsmi_compute_process_info_get, NULL, &num_items);
     result->fullValue += num_items;
@@ -437,6 +448,8 @@ typedef struct {
 static hsa_status_t 
 _rocmon_iterate_info_callback_count(const rocprofiler_info_data_t info, void* data)
 {
+    (void)info;
+
     RocmonDevice* device = (RocmonDevice*) data;
     if (device) {
         device->numRocMetrics++;
@@ -723,7 +736,6 @@ _rocmon_readCounters_smi(RocmonDevice* device)
     RocmonEventResultList* groupResult = &device->groupResults[rocmon_context->activeGroup];
     for (int i = 0; i < device->numActiveSmiEvents; i++)
     {
-        double value = 0;
         RocmonSmiEvent* event = &device->activeSmiEvents[i];
         RocmonEventResult* result = &groupResult->results[device->numActiveRocEvents+i];
 
@@ -745,7 +757,7 @@ _rocmon_readCounters(uint64_t* (*getDestTimestampFunc)(RocmonDevice* device))
 
     // Get timestamp
     uint64_t timestamp;
-    if (ret = _rocmon_get_timestamp(&timestamp))
+    if ((ret = _rocmon_get_timestamp(&timestamp)))
     {
         return ret;
     }
@@ -809,6 +821,7 @@ _rocmon_smi_build_label(RocmonSmiEventType type, const char* funcname, uint64_t 
     case ROCMON_SMI_EVENT_TYPE_INSTANCES:
         return bfromcstr(funcname);
     }
+    return bfromcstr("ERROR");
 }
 
 
@@ -1042,8 +1055,7 @@ _rocmon_smi_add_event_to_map(char* name, RocmonSmiEventType type, char* smifunc,
 
     // Set event properties
     RocmonSmiEvent* event = &list->entries[list->numEntries-1];
-    strncpy(event->name, name, sizeof(event->name));
-    event->name[sizeof(event->name)] = '\0';
+    snprintf(event->name, sizeof(event->name), "%s", name);
     event->type = type;
     event->variant = variant;
     event->subvariant = subvariant;
@@ -1141,8 +1153,6 @@ _rocmon_smi_init_events()
 int
 rocmon_init(int numGpus, const int* gpuIds)
 {
-    hsa_status_t status;
-
     // check if already initialized
     if (rocmon_initialized)
     {
@@ -1487,7 +1497,7 @@ _rocmon_setupCounters_smi(RocmonDevice* device, const char** events, int numEven
         else
         {
             // Copy entire event name
-            strncpy(eventName, event, membersize(RocmonSmiEvent, name));
+            snprintf(eventName, sizeof(eventName), "%s", event);
         }
 
         // Lookup event in available events
@@ -1682,7 +1692,6 @@ _rocmon_startCounters_smi(RocmonDevice* device)
     RocmonEventResultList* groupResult = &device->groupResults[rocmon_context->activeGroup];
     for (int i = 0; i < device->numActiveSmiEvents; i++)
     {
-        double value = 0;
         RocmonSmiEvent* event = &device->activeSmiEvents[i];
         RocmonEventResult* result = &groupResult->results[device->numActiveRocEvents+i];
 
@@ -1713,7 +1722,7 @@ rocmon_startCounters(void)
 
     // Get timestamp
     uint64_t timestamp;
-    if (ret = _rocmon_get_timestamp(&timestamp))
+    if ((ret = _rocmon_get_timestamp(&timestamp)))
     {
         return ret;
     }
@@ -2245,6 +2254,7 @@ int
 rocmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos)
 {
     perfgroup_returnGroups(nrgroups, groups, shortinfos, longinfos);
+    return 0;
 }
 
 void rocmon_setVerbosity(int level)

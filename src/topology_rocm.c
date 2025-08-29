@@ -309,6 +309,7 @@ get_rocmTopology(void)
     {
         return &_rocmTopology;
     }
+    return NULL;
 }
 
 #endif /* LIKWID_WITH_ROCMON */

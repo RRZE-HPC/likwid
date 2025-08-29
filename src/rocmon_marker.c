@@ -613,6 +613,8 @@ rocmon_markerGetRegion(
 
     // TODO: implement this function
     fprintf(stderr, "WARN: Function 'rocmon_markerGetRegion' is not implemented.\n");
+
+    (void)regionTag;
     
     *nr_gpus = 0;
     *nr_events = 0;
@@ -697,7 +699,7 @@ int rocmMarkerRegions = 0;
 int
 rocmon_readMarkerFile(const char* filename)
 {
-    int ret = 0, i = 0;
+    int ret = 0;
     FILE* fp = NULL;
     char buf[2048];
     buf[0] = '\0';
@@ -738,7 +740,7 @@ rocmon_readMarkerFile(const char* filename)
         return -ENOMEM;
     }
     rocmMarkerRegions = regions;
-    for ( uint32_t i=0; i < regions; i++ )
+    for ( int i=0; i < regions; i++ )
     {
         regionGPUs[i] = 0;
         rocmMarkerResults[i].gpuCount = gpus;
@@ -825,7 +827,7 @@ rocmon_readMarkerFile(const char* filename)
             }
         }
     }
-    for ( uint32_t i=0; i < regions; i++ )
+    for ( int i=0; i < regions; i++ )
     {
         rocmMarkerResults[i].gpuCount = regionGPUs[i];
     }
