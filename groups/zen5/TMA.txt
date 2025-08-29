@@ -1,0 +1,42 @@
+SHORT Pipeline Utilization Analysis
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  CPU_CLOCKS_UNHALTED
+PMC1  DISPATCH_STALLS_PER_SLOT_FRONTEND
+PMC2  DISPATCH_STALLS_PER_SLOT_BACKEND
+PMC3  RETIRED_UOPS
+PMC4  UOPS_DISP_FROM_ANY
+PMC5  DISPATCH_STALLS_PER_SLOT_OTHER_SMT_THREAD
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s]   FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+Total Dispatch Slots PMC0*8
+Frontend Bound PMC1/(PMC0*8)
+Backend Bound PMC2/(PMC0*8)
+Retiring PMC3/(PMC0*8)
+Bad Speculation (PMC4-PMC3)/(PMC0*8)
+SMT contention PMC5/(PMC0*8)
+
+LONG
+Formulas:
+Total Dispatch Slots = (CPU_CLOCKS_UNHALTED*8)
+Frontend Bound = DISPATCH_STALLS_PER_SLOT_FRONTEND / (CPU_CLOCKS_UNHALTED*8)
+Backend Bound = DISPATCH_STALLS_PER_SLOT_FRONTEND / (CPU_CLOCKS_UNHALTED*8)
+Retiring = RETIRED_UOPS / (CPU_CLOCKS_UNHALTED*8)
+Bad Speculation = (UOPS_DISP_FROM_ANY - RETIRED_UOPS) / (CPU_CLOCKS_UNHALTED*8)
+SMT contention = DISPATCH_STALLS_PER_SLOT_OTHER_SMT_THREAD / (CPU_CLOCKS_UNHALTED*8)
+-
+This group provides the level 1 metrics of the Topdown method, introduced
+by Intel.
+- Frontend Bound: Fraction of dispatch slots that remained unused because the
+frontend did not supply enough instructions/ops.
+- Backend Bound: Fraction of dispatch slots that remained unused
+because of backend stalls.
+- Retiring: Fraction of dispatch slots used by ops that retired.
+- Bad Speculation: Fraction of dispatched ops that did not retire.
+Moreover, the group measures the AMD defined "SMT contention":
+Fraction of unused dispatch slots because the other thread was selected.

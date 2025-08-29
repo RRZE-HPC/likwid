@@ -169,6 +169,59 @@ static const _SysFeatureList amd_k19_cpu_prefetch_feature_list = {
     .tester = amd_cpu_register_access_test,
 };
 
+static int amd_cpu_master_getter(const LikwidDevice_t device, char** value)
+{
+    return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_PREFETCH_CONTROL, 6, true, value);
+}
+
+static int amd_cpu_master_setter(const LikwidDevice_t device, const char* value)
+{
+    return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_PREFETCH_CONTROL, 6, true, value);
+}
+
+static int amd_cpu_aggr_profile_getter(const LikwidDevice_t device, char** value)
+{
+    return likwid_sysft_readmsr_field(device, MSR_AMD19_PREFETCH_CONTROL, 7, 3, value);
+}
+
+static int amd_cpu_aggr_profile_setter(const LikwidDevice_t device, const char* value)
+{
+    value = (value & 0x7);
+    if (value >= 0x4 && value <= 0x7)
+    {
+        return -EINVAL;
+    }
+    return likwid_sysft_writemsr_field(device, MSR_AMD19_PREFETCH_CONTROL, 7, 3, value);
+}
+
+static int amd_cpu_aggr_profile_test_cb(uint64_t msrData, void * value)
+{
+    if (value == 0x7) return 0;
+    return 1;
+}
+
+static int amd_cpu_aggr_profile_tester(void)
+{
+    return likwid_sysft_foreach_core_testmsr_cb(MSR_AMD19_PREFETCH_CONTROL, amd_cpu_aggr_profile_test_cb, NULL);
+}
+
+
+static _SysFeature amd_k1a_cpu_prefetch_features[] = {
+    {"l1_stream", "prefetch", "Stream prefetcher that uses history of memory access patterns to fetch additional sequential lines into L1 cache", amd_cpu_l1_stream_getter, amd_cpu_l1_stream_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"l1_stride", "prefetch", "Stride prefetcher that uses memory access history of individual instructions to fetch additional lines into L1 cache when each access is a constant distance from the previous", amd_cpu_l1_stride_getter, amd_cpu_l1_stride_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"l1_region", "prefetch", "Prefetcher that uses memory access history to fetch additional lines into L1 cache when the data access for a given instruction tends to be followed by a consistent pattern of other accesses within a localized region", amd_cpu_l1_region_getter, amd_cpu_l1_region_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"l2_stream", "prefetch", "Stream prefetcher that uses history of memory access patterns to fetch additional sequential lines into L2 cache", amd_cpu_l2_stream_getter, amd_cpu_l2_stream_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"up_down", "prefetch", "Prefetcher that uses memory access history to determine whether to fetch the next or previous line into L2 cache for all memory accesses", amd_cpu_up_down_getter, amd_cpu_up_down_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"master", "prefetch", "Enable prefetch aggressiveness profiles", amd_cpu_master_getter, amd_cpu_master_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"prefetch_aggressiveness_profile.", "prefetch", "Prefetch aggressiveness profile", amd_cpu_aggr_profile_getter, amd_cpu_aggr_profile_setter, DEVICE_TYPE_HWTHREAD, amd_cpu_aggr_profile_tester, NULL},
+};
+
+static const _SysFeatureList amd_k1a_cpu_prefetch_feature_list = {
+    .num_features = ARRAY_COUNT(amd_k1a_cpu_prefetch_features),
+    .features = amd_k1a_cpu_prefetch_features,
+    .tester = amd_cpu_register_access_test,
+};
+
 static int amd_cpu_spec_ibrs_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_SPEC_CTRL, 0, false, value);
@@ -310,7 +363,15 @@ static const _SysFeatureList* amd_k19_zen4_cpu_feature_inputs[] = {
     NULL,
 };
 
-
+static const _SysFeatureList* amd_k1a_zen5_cpu_feature_inputs[] = {
+    &amd_k1a_cpu_prefetch_feature_list,
+    &amd_k19_cpu_speculation_feature_list,
+    &amd_k19_cpu_l1dflush_feature_list,
+    &amd_k17_cpu_hwconfig_feature_list,
+    &likwid_sysft_amd_k10_cpu_thermal_feature_list,
+    &likwid_sysft_x86_cpu_freq_feature_list,
+    NULL,
+};
 
 static const _HWArchFeatures amd_arch_features[] = {
     {ZEN_FAMILY, ZEN_RYZEN, amd_k17_cpu_feature_inputs},
@@ -329,5 +390,6 @@ static const _HWArchFeatures amd_arch_features[] = {
     {ZEN3_FAMILY, ZEN4_RYZEN_PRO, amd_k19_zen4_cpu_feature_inputs},
     {ZEN3_FAMILY, ZEN4_EPYC, amd_k19_zen4_cpu_feature_inputs},
     {ZEN3_FAMILY, ZEN4_EPYC_BERGAMO, amd_k19_zen4_cpu_feature_inputs},
+    {ZEN5_FAMILY, ZEN5_EPYC, amd_k1a_zen5_cpu_feature_inputs},
     {-1, -1, NULL},
 };
