@@ -221,14 +221,26 @@ initTopologyFile(FILE* file)
     CacheLevel* cacheLevels;
     TreeNode* currentNode;
 
-    fread((void*) &cpuid_topology, sizeof(CpuTopology), 1, file);
+    // TODO, may raise errors. Though, the signature currently does not allow to
+    // return them. So let's abort for now.
+
+    if (fread(&cpuid_topology, sizeof(cpuid_topology), 1, file) != sizeof(cpuid_topology)) {
+        ERROR_PRINT("Cannot read cpuid topology, not enough bytes");
+        abort();
+    }
 
     hwThreadPool = lw_calloc(cpuid_topology.numHWThreads, sizeof(*hwThreadPool));
-    fread((void*) hwThreadPool, sizeof(HWThread), cpuid_topology.numHWThreads, file);
+    if (fread(hwThreadPool, sizeof(*hwThreadPool), cpuid_topology.numHWThreads, file) != sizeof(sizeof(*hwThreadPool))) {
+        ERROR_PRINT("Cannot read thread pool, not enough bytes");
+        abort();
+    }
     cpuid_topology.threadPool = hwThreadPool;
 
     cacheLevels = lw_calloc(cpuid_topology.numCacheLevels, sizeof(*cacheLevels));
-    fread((void*) cacheLevels, sizeof(CacheLevel), cpuid_topology.numCacheLevels, file);
+    if (fread(cacheLevels, sizeof(*cacheLevels), cpuid_topology.numCacheLevels, file) != sizeof(*cacheLevels)) {
+        ERROR_PRINT("Cannot read cache levels, not enough bytes");
+        abort();
+    }
     cpuid_topology.cacheLevels = cacheLevels;
     cpuid_topology.topologyTree = NULL;
 

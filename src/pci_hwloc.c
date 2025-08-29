@@ -143,7 +143,11 @@ int sysfs_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
                     {
                         continue;
                     }
-                    fread(buff, sizeof(char), 99, fp);
+
+                    if (fgets(buff, sizeof(buff), fp) == NULL) {
+                        fclose(fp);
+                        continue;
+                    }
                     dev_id = strtoul(buff, NULL, 16);
                     if (dev_id == SKYLAKE_SERVER_SOCKETID_MBOX_DID)
                     {
@@ -155,7 +159,10 @@ int sysfs_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
                         {
                             continue;
                         }
-                        fread(buff, sizeof(char), 99, fp);
+                        if (fgets(buff, sizeof(char), fp) == NULL) {
+                            fclose(fp);
+                            continue;
+                        }
                         numa_node = atoi(buff);
                         socket_bus[numa_node] = lw_strndup(bus, 3);
                         nrSocks++;
