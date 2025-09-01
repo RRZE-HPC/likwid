@@ -46,7 +46,7 @@ static cerr_t *error_init(void) {
         if (pthread_key_create(&tsd, error_free_pthread) != 0) {
             fprintf(stderr, "pthread_key_create: Unable to create thread local error state: %s\n", strerror(err));
             retval = &INIT_ERROR;
-        } else if (atexit(error_clear)) {
+        } else if (atexit(lw_error_clear)) {
             // The deleter function of pthread_key_create only affects launched threads, not the main thread.
             // Use atexit to delete the error from the main thread.
             fprintf(stderr, "atexit: Unable to register error cleanup function");
@@ -63,14 +63,14 @@ static cerr_t *error_init(void) {
     return retval;
 }
 
-static cerr_t *error_append_valist(const char *file, const char *func, int line, int error_val, error_val_to_str_t error_val_to_str, const char *fmt, va_list args);
+static cerr_t *error_append_valist(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, va_list args);
 
-cerr_t *error_set(const char *file, const char *func, int line, int error_val, error_val_to_str_t error_val_to_str, const char *fmt, ...) {
+cerr_t *lw_error_set(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, ...) {
     cerr_t *retval = error_init();
     if (retval)
         return retval;
 
-    error_clear();
+    lw_error_clear();
 
     va_list args;
     va_start(args, fmt);
@@ -82,7 +82,7 @@ cerr_t *error_set(const char *file, const char *func, int line, int error_val, e
     return retval;
 }
 
-cerr_t *error_append(const char *file, const char *func, int line, int error_val, error_val_to_str_t error_val_to_str, const char *fmt, ...) {
+cerr_t *lw_error_append(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, ...) {
     cerr_t *retval = error_init();
     if (retval)
         return retval;
@@ -97,7 +97,7 @@ cerr_t *error_append(const char *file, const char *func, int line, int error_val
     return retval;
 }
 
-cerr_t *error_get(void) {
+cerr_t *lw_error_get(void) {
     cerr_t *retval = error_init();
     if (retval)
         return retval;
@@ -105,20 +105,20 @@ cerr_t *error_get(void) {
     return pthread_getspecific(tsd);
 }
 
-void error_clear(void) {
+void lw_error_clear(void) {
     if (!tsd_init)
         return;
 
-    error_free_scope(pthread_getspecific(tsd));
+    lw_error_free_scope(pthread_getspecific(tsd));
     pthread_setspecific(tsd, NULL);
 }
 
-static cerr_t *error_append_valist(const char *file, const char *func, int line, int error_val, error_val_to_str_t error_val_to_str, const char *fmt, va_list args) {
+static cerr_t *error_append_valist(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, va_list args) {
     cerr_t *retval = error_init();
     if (retval)
         return retval;
 
-    struct error_scope *new_scope = calloc(1, sizeof(*new_scope));
+    err_t *new_scope = calloc(1, sizeof(*new_scope));
     if (!new_scope) {
         int err = pthread_setspecific(tsd, &OUT_OF_MEMORY);
         assert(err == 0);
@@ -154,11 +154,11 @@ static cerr_t *error_append_valist(const char *file, const char *func, int line,
     return new_scope;
 }
 
-err_t *error_copy(void) {
-    return error_copy_scope(error_get());
+err_t *lw_error_copy(void) {
+    return lw_error_copy_scope(lw_error_get());
 }
 
-err_t *error_copy_scope(cerr_t *scope) {
+err_t *lw_error_copy_scope(cerr_t *scope) {
     if (!scope)
         return NULL;
 
@@ -175,7 +175,7 @@ err_t *error_copy_scope(cerr_t *scope) {
     new_scope->line = scope->line;
     new_scope->error_val = scope->error_val;
     new_scope->error_val_to_str = scope->error_val_to_str;
-    new_scope->prev = error_copy_scope(scope->prev);
+    new_scope->prev = lw_error_copy_scope(scope->prev);
     return new_scope;
 
 out_of_memory:
@@ -185,24 +185,24 @@ out_of_memory:
     return &OUT_OF_MEMORY;
 }
 
-void error_free_scope(err_t *scope) {
+void lw_error_free_scope(err_t *scope) {
     if (!scope || scope == &OUT_OF_MEMORY || scope == &INIT_ERROR)
         return;
 
     if (scope->prev)
-        error_free_scope(scope->prev);
+        lw_error_free_scope(scope->prev);
 
     free(scope->message);
     free(scope);
 }
 
 static void error_free_pthread(void *scope) {
-    error_free_scope(scope);
+    lw_error_free_scope(scope);
 }
 
 static void error_print_scope_recurse(FILE *handle, cerr_t *scope, int depth);
 
-void error_print(FILE *handle) {
+void lw_error_print(FILE *handle) {
     if (error_init()) {
         fprintf(handle, "Unable to print error: Library/Error init failure\n");
         return;
@@ -210,24 +210,24 @@ void error_print(FILE *handle) {
     error_print_scope_recurse(handle, pthread_getspecific(tsd), 0);
 }
 
-void error_print_stdout(void) {
-    error_print(stdout);
+void lw_error_print_stdout(void) {
+    lw_error_print(stdout);
 }
 
-void error_print_stderr(void) {
-    error_print(stderr);
+void lw_error_print_stderr(void) {
+    lw_error_print(stderr);
 }
 
-void error_print_scope(FILE *handle, cerr_t *scope) {
+void lw_error_print_scope(FILE *handle, cerr_t *scope) {
     error_print_scope_recurse(handle, scope, 0);
 }
 
-void error_print_scope_stdout(cerr_t *scope) {
-    error_print_scope(stdout, scope);
+void lw_error_print_scope_stdout(cerr_t *scope) {
+    lw_error_print_scope(stdout, scope);
 }
 
-void error_print_scope_stderr(cerr_t *scope) {
-    error_print_scope(stderr, scope);
+void lw_error_print_scope_stderr(cerr_t *scope) {
+    lw_error_print_scope(stderr, scope);
 }
 
 static void error_print_scope_recurse(FILE *handle, cerr_t *scope, int depth) {
@@ -240,7 +240,7 @@ static void error_print_scope_recurse(FILE *handle, cerr_t *scope, int depth) {
     const char *func = "?";
     int line = 0;
     int error_val = 0;
-    error_val_to_str_t error_val_to_str = (error_val_to_str_t)strerror; // cast due to const return value
+    lw_error_val_to_str_t error_val_to_str = (lw_error_val_to_str_t)strerror; // cast due to const return value
 
     if (scope == &OUT_OF_MEMORY) {
         msg = "Out of memory";
@@ -295,7 +295,7 @@ static void error_print_scope_recurse(FILE *handle, cerr_t *scope, int depth) {
                 errstr = "<null>";
             fprintf(handle, "errval: %s%s (%d)%s, ", tty_underline, errstr, error_val, tty_reset);
         } else {
-            fprintf(handle, "%d, ", error_val);
+            fprintf(handle, "%s%d%s, ", tty_underline, error_val, tty_reset);
         }
     }
 
