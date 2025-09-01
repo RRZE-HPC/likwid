@@ -65,7 +65,7 @@ int xml_attr_set(struct xml_elem_t *elem, const char *key, const char *value) {
         }
     }
 
-    struct xml_attr_t *new_attr;
+    struct xml_attr_t *new_attr = NULL;
     int err = attr_create(&new_attr, key, value);
     if (err < 0)
         return err;
@@ -180,7 +180,7 @@ int xml_elem_attach(struct xml_elem_t *parent, struct xml_elem_t *elem) {
 
 int xml_elem_create_and_attach(struct xml_elem_t *parent, struct xml_elem_t **elem, xml_elem_type_t type) {
     // alloc new element
-    struct xml_elem_t *new_elem;
+    struct xml_elem_t *new_elem = NULL;
     int err = xml_elem_create(&new_elem, type);
     if (err < 0)
         return err;
@@ -241,7 +241,7 @@ int xml_elem_copy(const struct xml_elem_t *src, struct xml_elem_t **dst) {
     if (!src || !dst)
         return -EINVAL;
 
-    struct xml_elem_t *new_elem;
+    struct xml_elem_t *new_elem = NULL;
     int err = xml_elem_create(&new_elem, src->type);
     if (err < 0)
         return err;
@@ -761,7 +761,7 @@ static int xml_parse_attrlist(struct xml_elem_t *elem, const char *buf, size_t *
             return -EINVAL;
         }
 
-        char *value;
+        char *value = NULL;
         err = xml_parse_string(buf, buf_pos, &value);
         if (err < 0) {
             free(key);
