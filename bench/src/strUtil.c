@@ -98,74 +98,76 @@ str2uint64_t(const char* str, uint64_t* result)
 uint64_t
 bstr_to_doubleSize(const_bstring str, DataType type)
 {
-    int ret;
-    bstring unit = bmidstr(str, blength(str)-2, 2);
-    bstring single_unit = bmidstr(str, blength(str)-1, 1);
-    bstring triple_unit = bmidstr(str, blength(str)-3, 3);
-    bstring sizeStr = bmidstr(str, 0, blength(str)-2);
-    bstring single_sizeStr = bmidstr(str, 0, blength(str)-1);
-    bstring triple_sizeStr = bmidstr(str, 0, blength(str)-3);
-    uint64_t sizeU = 0;
-    uint64_t single_sizeU = 0;
-    uint64_t triple_sizeU = 0;
-    uint64_t junk = 0;
-    uint64_t bytesize = 0;
-    if (blength(sizeStr) == 0)
-    {
-        return 0;
+    int ret = 0;
+    int unitlen = 0;
+    uint64_t sizeU = 0x0ULL;
+    uint64_t junk = 0x0ULL;
+    size_t bytesize = 0;
+
+    for (int i = blength(str)-1; ((i >= 0) && (!isdigit(bchar(str, i)))); i--) {
+        unitlen++;
     }
+    bstring unitStr = bmidstr(str, blength(str)-unitlen, unitlen);
+    bstring sizeStr = bmidstr(str, 0, blength(str)-unitlen);
+
+    if (blength(unitStr) == 0) {
+        bconchar(unitStr, 'B');
+    }
+
+    ret = 0;
+    for (int i = 0; i < blength(sizeStr); i++) {
+        if (!isdigit(bchar(sizeStr, i))) {
+            ret = -EINVAL;
+            break;
+        }
+    }
+    if (ret != 0) {
+        bdestroy(unitStr);
+        bdestroy(sizeStr);
+        return ret;
+    }
+
     ret = str2uint64_t(bdata(sizeStr), &sizeU);
-    if (ret < 0)
-    {
-        return 0;
-    }
-    ret = str2uint64_t(bdata(single_sizeStr), &single_sizeU);
-    if (ret < 0)
-    {
-        return 0;
-    }
-    ret = str2uint64_t(bdata(triple_sizeStr), &triple_sizeU);
-    if (ret < 0)
-    {
+    if ((ret < 0) || (sizeU == 0)) {
+        bdestroy(unitStr);
+        bdestroy(sizeStr);
         return 0;
     }
 
     bytesize = allocator_dataTypeLength(type);
 
-    if ((biseqcstr(unit, "kB"))||(biseqcstr(unit, "KB")))
+    if ((bisstemeqblk(unitStr, "kB", 2))||(bisstemeqblk(unitStr, "KB", 2)))
     {
         junk = (sizeU *1000)/bytesize;
     }
-    else if (biseqcstr(unit, "MB"))
+    else if (bisstemeqblk(unitStr, "MB", 2))
     {
         junk = (sizeU *1000000)/bytesize;
     }
-    else if (biseqcstr(unit, "GB"))
+    else if (bisstemeqblk(unitStr, "GB",2 ))
     {
         junk = (sizeU *1000000000)/bytesize;
     }
-    else if ((biseqcstr(triple_unit, "kiB"))||(biseqcstr(triple_unit, "KiB")))
+    else if ((bisstemeqblk(unitStr, "kiB", 3))||(bisstemeqblk(unitStr, "KiB", 3)))
     {
-        junk = (triple_sizeU *1024)/bytesize;
+        junk = (sizeU *1024)/bytesize;
     }
-    else if (biseqcstr(triple_unit, "MiB"))
+    else if (bisstemeqblk(unitStr, "MiB", 3))
     {
-        junk = (triple_sizeU *1024*1024)/bytesize;
+        junk = (sizeU *1024*1024)/bytesize;
     }
-    else if (biseqcstr(triple_unit, "GiB"))
+    else if (bisstemeqblk(unitStr, "GiB", 3))
     {
-        junk = (triple_sizeU *1024*1024*1024)/bytesize;
+        junk = (sizeU *1024*1024*1024)/bytesize;
     }
-    else if (biseqcstr(single_unit, "B"))
+    else if (bisstemeqblk(unitStr, "B", 1))
     {
-        junk = (single_sizeU)/bytesize;
+        junk = (sizeU)/bytesize;
     }
-    bdestroy(unit);
-    bdestroy(single_unit);
-    bdestroy(triple_unit);
+
+    bdestroy(unitStr);
     bdestroy(sizeStr);
-    bdestroy(single_sizeStr);
-    bdestroy(triple_sizeStr);
+
     return junk;
 }
 

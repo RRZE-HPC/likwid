@@ -111,6 +111,11 @@ allocator_allocateVector(
     bytesize = (size+offset) * typesize;
     elements = alignment / typesize;
 
+    if ((bytesize == 0) || (elements == 0)) {
+        fprintf(stderr, "Error: Streams too small for all HW threads in the workgroup\n");
+        exit(EXIT_FAILURE);
+    }
+
 #pragma GCC diagnostic ignored "-Wnonnull"
     for (size_t i=0;i<domains->numberOfAffinityDomains;i++)
     {
