@@ -30,7 +30,7 @@ Power PKG [W] = RAPL_PKG_ENERGY/time
 Power L3 [W] = RAPL_L3_ENERGY/time
 -
 This interface enables to monitor the consumed energy on the core and L3
-domain when using ACCESSMODE=accessdaemon or ACCESSMODE=direct. In contrast,
-with ACCESSMODE=perf_event, the interface provides only the consumed energy
-at a socket level.
+domain (PWR0 and PWR2) when using ACCESSMODE=accessdaemon or ACCESSMODE=direct.
+In contrast, with ACCESSMODE=perf_event, the interface provides only the
+consumed energy at a socket level (PWR1).
 

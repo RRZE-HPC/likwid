@@ -178,6 +178,7 @@ int perfmon_init_perfevent(int cpu_id)
     lock_acquire((int*) &sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &die_lock[affinity_thread2die_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &core_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
+    
     if (cpu_event_fds == NULL)
     {
         cpu_event_fds = malloc(cpuid_topology.numHWThreads * sizeof(int*));
@@ -1044,7 +1045,7 @@ int perfmon_setupCountersThread_perfevent(
         is_uncore = 0;
         ret = 1;
         RegisterIndex index = eventSet->events[i].index;
-        if (cpu_event_fds[cpu_id][index] != -1)
+        if (((int)index > perfmon_numCounters) || (cpu_event_fds[cpu_id][index] != -1))
         {
             continue;
         }
@@ -1494,6 +1495,11 @@ int perfmon_setupCountersThread_perfevent(
                 {
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating uncore type for socket %d on Nvidia Grace", affinity_thread2socket_lookup[cpu_id]);
                     type += affinity_thread2socket_lookup[cpu_id];
+                }
+                if ((cpuid_info.family == ZEN5_FAMILY) && (cpuid_info.model == ZEN5_EPYC) && (cpuid_topology.numSockets > 1))
+                {
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating UMC uncore type for socket %d on AMD Zen5", affinity_thread2socket_lookup[cpu_id]);
+                    type += (affinity_thread2socket_lookup[cpu_id] * AMD_K1A_UMC_MAX_UNITS);
                 }
                 if (has_lock)
                 {

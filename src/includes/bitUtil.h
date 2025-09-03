@@ -67,4 +67,7 @@ uint32_t getBitFieldWidth(uint32_t number);
 #define bitMask_toString(_string,_mask)  \
     sprintf(_string,"%llX %llX", LLU_CAST (_mask).mask[0], LLU_CAST (_mask).mask[1]);
 
+#define bitMask_popcount(_mask) \
+    __builtin_popcountll(LLU_CAST _mask);
+
 #endif /*BITUTIL_H*/
