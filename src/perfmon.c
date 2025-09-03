@@ -106,10 +106,16 @@
 #include <perfmon_power9.h>
 #endif
 
+#ifndef FREE_IF_NOT_NULL
+#define FREE_IF_NOT_NULL(var) if ( var ) { free( var ); var = NULL; }
+#endif
+
+
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 PerfmonEvent* eventHash = NULL;
 RegisterMap* counter_map = NULL;
+int is_runtime_counter_map = 0;
 BoxMap* box_map = NULL;
 PciDevice* pci_devices = NULL;
 char** translate_types = NULL;
@@ -333,6 +339,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
     return type;
 }
 #endif
+
 
 static int
 checkCounter(bstring counterName, const char* limit)
@@ -910,10 +917,14 @@ perfmon_check_counter_map(int cpu_id)
         HPMfinalize();
 }
 
+
+typedef int (*arch_perfmon_init_counter_map)(int num_in_counters, RegisterMap* in_counters, int* num_out_counters, RegisterMap** out_counters);
+
 int
 perfmon_init_maps(void)
 {
     int err = 0;
+    arch_perfmon_init_counter_map post_counter_func = NULL;
     if (eventHash != NULL && counter_map != NULL && box_map != NULL && perfmon_numCounters > 0 && perfmon_numArchEvents > 0)
     {
         // Already initialized
@@ -1406,19 +1417,8 @@ perfmon_init_maps(void)
                     perfmon_numCounters = perfmon_numCountersZen5;
                     translate_types = zen5_translate_types;
                     archRegisterTypeNames = registerTypeNamesZen5;
-                    unsigned eax = 0x80000022, ebx = 0x0, ecx = 0x0, edx = 0x0;
-                    CPUID(eax, ebx, ecx, edx);
-                    int umc_count = (ebx >> 16) & 0xFF;
-                    for (int c = 0; c < perfmon_numCounters; c++)
-                    {
-                        if (counter_map[c].type >= BBOX0 && counter_map[c].type <= BBOX63)
-                        {
-                            if ((int)(counter_map[c].type - BBOX0) >= umc_count)
-                            {
-                                counter_map[c].type = NOTYPE;
-                            }
-                        }
-                    }
+                    post_counter_func = zen5_init_counter_map;
+
                     break;
                 default:
                     ERROR_PRINT("Unsupported AMD Zen Processor");
@@ -1657,6 +1657,20 @@ perfmon_init_maps(void)
             ERROR_PRINT("Unsupported Processor");
             err = -EINVAL;
             break;
+    }
+    if (post_counter_func) {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Creating runtime counter map");
+        int num_counters = 0;
+        RegisterMap* counters = NULL;
+        err = post_counter_func(perfmon_numCounters, counter_map, &num_counters, &counters);
+        if (err != 0) {
+            errno = -err;
+            ERROR_PRINT("Failed to generate arch-specific counter map");
+            return err;
+        }
+        perfmon_numCounters = num_counters;
+        counter_map = counters;
+        is_runtime_counter_map = 1;
     }
     err = 1;
     if ((eventHash != NULL) && (err == 0))
@@ -2478,6 +2492,10 @@ perfmon_finalize(void)
         }
         added_generic_event = 0;
     }
+    if (counter_map && is_runtime_counter_map) {
+        FREE_IF_NOT_NULL(counter_map);
+        perfmon_numCounters = 0;
+    }
     perfmon_initialized = 0;
     return;
 }
@@ -2671,8 +2689,9 @@ perfmon_addEventSet(const char* eventCString)
         {
             if (!getIndexAndType(subtokens->entry[1], &event->index, &event->type))
             {
-                fprintf(stderr, "WARN: Counter %s not defined for current architecture\n", bdata(subtokens->entry[1]));
+                DEBUG_PRINT(DEBUGLEV_INFO, "WARN: Counter %s not defined for current architecture", bdata(subtokens->entry[1]));
                 event->type = NOTYPE;
+                event->index = perfmon_numCounters+1;
                 goto past_checks;
             }
 #ifndef LIKWID_USE_PERFEVENT

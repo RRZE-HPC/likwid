@@ -34,9 +34,48 @@
 #include <perfmon_zen5_counters.h>
 #include <error.h>
 #include <affinity.h>
+#include <cpuid.h>
 
 static int perfmon_numCountersZen5 = NUM_COUNTERS_ZEN5;
 static int perfmon_numArchEventsZen5 = NUM_ARCH_EVENTS_ZEN5;
+
+int zen5_init_counter_map(int num_in_counters, RegisterMap * in_counters, int* num_out_counters, RegisterMap ** out_counters) {
+    unsigned eax = 0x80000022, ebx = 0x0, ecx = 0x0, edx = 0x0;
+    CPUID(eax, ebx, ecx, edx);
+    int umc_count = (ebx >> 16) & 0xFF;
+    int umc_units = bitMask_popcount(ecx);
+    int umc_pmcs = umc_count/umc_units;
+    int outcount = 0;
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Creating runtime counter map for AMD Zen5");
+    RegisterMap * out = malloc((num_in_counters + umc_count) * sizeof(RegisterMap));
+    if (!out) {
+        return -ENOMEM;
+    }
+    memcpy(out, in_counters, num_in_counters * sizeof(RegisterMap));
+
+    int umcoff = 0;
+    for (int i = 0; i < umc_units; i++) {
+        RegisterType unit_type = BBOX0+i;
+        for (int j = 0; j < umc_pmcs; j++) {
+            RegisterMap* out_umc = &out[num_in_counters+umcoff];
+            out_umc->index = num_in_counters+umcoff;
+            out_umc->type = unit_type;
+            snprintf(out_umc->key, 127, "UMC%dC%d", i, j);
+            out_umc->configRegister = MSR_AMD1A_UMC_PERFEVTSEL0 + umcoff;
+            out_umc->counterRegister = MSR_AMD1A_UMC_PMC0 + umcoff;
+            out_umc->counterRegister2 = 0x0;
+            out_umc->device = MSR_DEV;
+            out_umc->optionMask = ZEN5_VALID_OPTIONS_UMC;
+            umcoff++;
+        }
+    }
+
+    *num_out_counters = num_in_counters + umcoff;
+    *out_counters = out;
+
+    return 0;
+}
+
 
 int perfmon_init_zen5(int cpu_id)
 {

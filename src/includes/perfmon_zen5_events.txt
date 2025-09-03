@@ -463,6 +463,10 @@ UMASK_UOPS_QUEUE_EMTPY                  0x00
 EVENT_UOPS_DISP                           0xAA PMC
 UMASK_UOPS_DISP_FROM_DEC                  0x01
 UMASK_UOPS_DISP_FROM_OPCACHE              0x02
+# Derived from Pipeline Utilization Analysis
+# Bad Speculation
+# (Event[4307AA] – Event[4300C1]) / Total Dispatch Slots
+UMASK_UOPS_DISP_FROM_ANY                  0x07
 
 EVENT_TYPE_UOPS_FROM_DECODER                0xAB PMC
 UMASK_TYPE_UOPS_FROM_DECODER_FP             0x04
@@ -691,14 +695,17 @@ UMASK_L3_XI_SAMPLED_LATENCY_REQUESTS_ANY                         0xFF
 
 ## Energy Events
 
+# Only available with ACCESSMODE=accessdaemon or ACCESSMODE=direct
 EVENT_RAPL_CORE_ENERGY                    0x01 PWR0
 UMASK_RAPL_CORE_ENERGY                    0x00
 
-EVENT_RAPL_PKG_ENERGY                    0x02 PWR1
-UMASK_RAPL_PKG_ENERGY                    0x00
+# Only available with ACCESSMODE=accessdaemon or ACCESSMODE=direct
+EVENT_RAPL_L3_ENERGY                      0x03 PWR2
+UMASK_RAPL_L3_ENERGY                      0x00
 
-EVENT_RAPL_L3_ENERGY                     0x03 PWR2
-UMASK_RAPL_L3_ENERGY                     0x00
+# Only available with ACCESSMODE=perf_event
+EVENT_RAPL_PKG_ENERGY                     0x02 PWR1
+UMASK_RAPL_PKG_ENERGY                     0x00
 
 ## DataFabric Events
 

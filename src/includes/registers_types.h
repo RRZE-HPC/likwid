@@ -991,9 +991,9 @@ extern const char *RegisterTypeNames[MAX_UNITS];
 #define MEASURE_UNCORE(eventset) \
         (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(PERF)|REG_TYPE_MASK(POWER)|REG_TYPE_MASK(METRICS)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4 || eventset->regTypeMask5 || eventset->regTypeMask6 || eventset->regTypeMask7 || eventset->regTypeMask8 || eventset->regTypeMask9)
 
-
+#define MAX_REGISTER_NAME_LENGTH 128
 typedef struct {
-    char*               key;
+    char                key[MAX_REGISTER_NAME_LENGTH];
     RegisterIndex       index;
     RegisterType        type;
     uint64_t            configRegister;
