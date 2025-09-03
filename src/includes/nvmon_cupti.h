@@ -42,78 +42,78 @@
  */
 void (*_dl_non_dynamic_init) (void) __attribute__ ((weak));
 
-#define CU_CALL( call, handleerror )                                    \
-    do {                                                                \
-        CUresult _status = (call);                                      \
-        if (_status != CUDA_SUCCESS) {                                  \
-            fprintf(stderr, "Error: function %s failed with error %d.\n", #call, _status); \
-            handleerror;                                                \
-        }                                                               \
+#ifndef CU_CALL
+#define CU_CALL(func, ...)                            \
+    do {                                                \
+        CUresult s_ = (*func##_ptr)(__VA_ARGS__);    \
+        if (s_ != CUDA_SUCCESS) {                        \
+            const char *errstr = NULL;\
+            cuGetErrorString_ptr(s_, &errstr);\
+            ERROR_PRINT("Error: function %s failed with error: '%s' (CUresult=%d).", #func, errstr, s_);   \
+            return -EPERM;                              \
+        }                                               \
+    } while (0)
+#endif
+
+#ifndef CUPTI_CALL
+#define CUPTI_CALL(func, ...)                            \
+    do {                                                \
+        CUptiResult s_ = (*func##_ptr)(__VA_ARGS__);    \
+        if (s_ != CUPTI_SUCCESS) {                        \
+            const char *errstr = NULL; \
+            cuptiGetResultString_ptr(s_, &errstr); \
+            ERROR_PRINT("Error: function %s failed with error: '%s' (CUptiResult=%d)", #func, errstr, s_);   \
+            return -EPERM;                              \
+        }                                               \
+    } while (0)
+#endif
+
+#define CUDA_CALL(func, ...)                            \
+    do {                                                \
+        cudaError_t s_ = (*func##_ptr)(__VA_ARGS__);    \
+        if (s_ != cudaSuccess) {                        \
+            ERROR_PRINT("Error: function %s failed with error: '%s' (cudaError_t=%d).", #func, cudaGetErrorString_ptr(s_), s_);   \
+            return -EPERM;                              \
+        }                                               \
     } while (0)
 
-#define CUPTI_CALL(call, handleerror)                                 \
-    do {                                                                \
-        CUptiResult _status = (call);                                   \
-        if (_status != CUPTI_SUCCESS) {                                 \
-            const char *errstr;                                         \
-            (*cuptiGetResultStringPtr)(_status, &errstr);               \
-            fprintf(stderr, "Error: function %s failed with error %s.\n", #call, errstr); \
-            handleerror;                                                \
-        }                                                               \
-    } while (0)
+#define DECLARECUFUNC(funcname, ...) CUresult __attribute__((weak)) funcname(__VA_ARGS__);  static CUresult (*funcname##_ptr)(__VA_ARGS__);
+DECLARECUFUNC(cuCtxGetCurrent, CUcontext *);
+DECLARECUFUNC(cuCtxSetCurrent, CUcontext);
+DECLARECUFUNC(cuCtxDestroy, CUcontext);
+DECLARECUFUNC(cuDeviceGet, CUdevice *, int);
+DECLARECUFUNC(cuDeviceGetCount, int *);
+DECLARECUFUNC(cuDeviceGetName, char *, int, CUdevice);
+DECLARECUFUNC(cuGetErrorString, CUresult, const char **);
+DECLARECUFUNC(cuInit, unsigned int);
+DECLARECUFUNC(cuCtxPopCurrent, CUcontext * pctx);
+DECLARECUFUNC(cuCtxPushCurrent, CUcontext pctx);
+DECLARECUFUNC(cuCtxSynchronize);
 
-#define CUDA_CALL( call, handleerror )                                \
-    do {                                                                \
-        cudaError_t _status = (call);                                   \
-        if (_status != cudaSuccess) {                                   \
-            fprintf(stderr, "Error: function %s failed with error %d.\n", #call, _status); \
-            handleerror;                                                \
-        }                                                               \
-    } while (0)
+#define DECLARECUDAFUNC(funcname, ...) cudaError_t __attribute__((weak)) funcname(__VA_ARGS__);  static cudaError_t (*funcname##_ptr)(__VA_ARGS__);
+DECLARECUDAFUNC(cudaGetDevice, int *);
+DECLARECUDAFUNC(cudaSetDevice, int);
+DECLARECUDAFUNC(cudaFree, void *);
+const char * __attribute__((weak)) cudaGetErrorString(cudaError_t);
+static const char *(*cudaGetErrorString_ptr)(cudaError_t);
 
-#ifndef CUAPIWEAK
-#define CUAPIWEAK __attribute__( ( weak ) )
-#endif
-#define DECLARECUFUNC(funcname, funcsig) CUresult CUAPIWEAK funcname funcsig;  CUresult( *funcname##Ptr ) funcsig;
-DECLARECUFUNC(cuCtxGetCurrent, (CUcontext *));
-DECLARECUFUNC(cuCtxSetCurrent, (CUcontext));
-DECLARECUFUNC(cuCtxDestroy, (CUcontext));
-DECLARECUFUNC(cuDeviceGet, (CUdevice *, int));
-DECLARECUFUNC(cuDeviceGetCount, (int *));
-DECLARECUFUNC(cuDeviceGetName, (char *, int, CUdevice));
-DECLARECUFUNC(cuInit, (unsigned int));
-DECLARECUFUNC(cuCtxPopCurrent, (CUcontext * pctx));
-DECLARECUFUNC(cuCtxPushCurrent, (CUcontext pctx));
-DECLARECUFUNC(cuCtxSynchronize, ());
-
-#ifndef CUDAAPIWEAK
-#define CUDAAPIWEAK __attribute__( ( weak ) )
-#endif
-#define DECLARECUDAFUNC(funcname, funcsig) cudaError_t CUDAAPIWEAK funcname funcsig;  cudaError_t( *funcname##Ptr ) funcsig;
-DECLARECUDAFUNC(cudaGetDevice, (int *));
-DECLARECUDAFUNC(cudaSetDevice, (int));
-DECLARECUDAFUNC(cudaFree, (void *));
-
-#ifndef CUPTIAPIWEAK
-#define CUPTIAPIWEAK __attribute__( ( weak ) )
-#endif
-#define DECLARECUPTIFUNC(funcname, funcsig) CUptiResult CUPTIAPIWEAK funcname funcsig;  CUptiResult( *funcname##Ptr ) funcsig;
-DECLARECUPTIFUNC(cuptiEventGroupGetAttribute, (CUpti_EventGroup eventGroup, CUpti_EventGroupAttribute attrib, size_t * valueSize, void *value));
-DECLARECUPTIFUNC(cuptiDeviceGetEventDomainAttribute, (CUdevice device, CUpti_EventDomainID eventDomain, CUpti_EventDomainAttribute attrib, size_t * valueSize, void *value));
-DECLARECUPTIFUNC(cuptiEventGroupReadEvent, (CUpti_EventGroup eventGroup, CUpti_ReadEventFlags flags, CUpti_EventID event, size_t * eventValueBufferSizeBytes, uint64_t *        eventValueBuffer));
-DECLARECUPTIFUNC(cuptiEventGroupSetAttribute, (CUpti_EventGroup eventGroup, CUpti_EventGroupAttribute attrib, size_t valueSize, void *value));
-DECLARECUPTIFUNC(cuptiEventGroupSetDisable, (CUpti_EventGroupSet * eventGroupSet));
-DECLARECUPTIFUNC(cuptiEventGroupSetEnable, (CUpti_EventGroupSet * eventGroupSet));
-DECLARECUPTIFUNC(cuptiEventGroupSetsCreate, (CUcontext context, size_t eventIdArraySizeBytes, CUpti_EventID * eventIdArray, CUpti_EventGroupSets ** eventGroupPasses));
-DECLARECUPTIFUNC(cuptiEventGroupSetsDestroy, (CUpti_EventGroupSets * eventGroupSets));
-DECLARECUPTIFUNC(cuptiGetTimestamp, (uint64_t * timestamp));
-DECLARECUPTIFUNC(cuptiSetEventCollectionMode, (CUcontext context, CUpti_EventCollectionMode mode));
-DECLARECUPTIFUNC(cuptiDeviceEnumEventDomains, (CUdevice, size_t *, CUpti_EventDomainID *));
-DECLARECUPTIFUNC(cuptiDeviceGetNumEventDomains, (CUdevice, uint32_t *));
-DECLARECUPTIFUNC(cuptiEventDomainEnumEvents, (CUpti_EventDomainID, size_t *, CUpti_EventID *));
-DECLARECUPTIFUNC(cuptiEventDomainGetNumEvents, (CUpti_EventDomainID, uint32_t *));
-DECLARECUPTIFUNC(cuptiEventGetAttribute, (CUpti_EventID, CUpti_EventAttribute, size_t *, void *));
-DECLARECUPTIFUNC(cuptiGetResultString, (CUptiResult result, const char **str));
+#define DECLARECUPTIFUNC(funcname, ...) CUptiResult __attribute__((weak)) funcname(__VA_ARGS__);  static CUptiResult (*funcname##_ptr)(__VA_ARGS__);
+DECLARECUPTIFUNC(cuptiEventGroupGetAttribute, CUpti_EventGroup eventGroup, CUpti_EventGroupAttribute attrib, size_t * valueSize, void *value);
+DECLARECUPTIFUNC(cuptiDeviceGetEventDomainAttribute, CUdevice device, CUpti_EventDomainID eventDomain, CUpti_EventDomainAttribute attrib, size_t * valueSize, void *value);
+DECLARECUPTIFUNC(cuptiEventGroupReadEvent, CUpti_EventGroup eventGroup, CUpti_ReadEventFlags flags, CUpti_EventID event, size_t * eventValueBufferSizeBytes, uint64_t *        eventValueBuffer);
+DECLARECUPTIFUNC(cuptiEventGroupSetAttribute, CUpti_EventGroup eventGroup, CUpti_EventGroupAttribute attrib, size_t valueSize, void *value);
+DECLARECUPTIFUNC(cuptiEventGroupSetDisable, CUpti_EventGroupSet * eventGroupSet);
+DECLARECUPTIFUNC(cuptiEventGroupSetEnable, CUpti_EventGroupSet * eventGroupSet);
+DECLARECUPTIFUNC(cuptiEventGroupSetsCreate, CUcontext context, size_t eventIdArraySizeBytes, CUpti_EventID * eventIdArray, CUpti_EventGroupSets ** eventGroupPasses);
+DECLARECUPTIFUNC(cuptiEventGroupSetsDestroy, CUpti_EventGroupSets * eventGroupSets);
+DECLARECUPTIFUNC(cuptiGetTimestamp, uint64_t * timestamp);
+DECLARECUPTIFUNC(cuptiSetEventCollectionMode, CUcontext context, CUpti_EventCollectionMode mode);
+DECLARECUPTIFUNC(cuptiDeviceEnumEventDomains, CUdevice, size_t *, CUpti_EventDomainID *);
+DECLARECUPTIFUNC(cuptiDeviceGetNumEventDomains, CUdevice, uint32_t *);
+DECLARECUPTIFUNC(cuptiEventDomainEnumEvents, CUpti_EventDomainID, size_t *, CUpti_EventID *);
+DECLARECUPTIFUNC(cuptiEventDomainGetNumEvents, CUpti_EventDomainID, uint32_t *);
+DECLARECUPTIFUNC(cuptiEventGetAttribute, CUpti_EventID, CUpti_EventAttribute, size_t *, void *);
+DECLARECUPTIFUNC(cuptiGetResultString, CUptiResult result, const char **str);
 
 
 static void *dl_libcuda = NULL;
@@ -136,16 +136,17 @@ link_cputi_libraries(void)
         fprintf(stderr, "CUDA library libcuda.so not found.");
         return -1;
     }
-    cuCtxGetCurrentPtr = DLSYM_AND_CHECK(dl_libcuda, "cuCtxGetCurrent");
-    cuCtxSetCurrentPtr = DLSYM_AND_CHECK(dl_libcuda, "cuCtxSetCurrent");
-    cuDeviceGetPtr = DLSYM_AND_CHECK(dl_libcuda, "cuDeviceGet");
-    cuDeviceGetCountPtr = DLSYM_AND_CHECK(dl_libcuda, "cuDeviceGetCount");
-    cuDeviceGetNamePtr = DLSYM_AND_CHECK(dl_libcuda, "cuDeviceGetName");
-    cuInitPtr = DLSYM_AND_CHECK(dl_libcuda, "cuInit");
-    cuCtxPopCurrentPtr = DLSYM_AND_CHECK(dl_libcuda, "cuCtxPopCurrent");
-    cuCtxPushCurrentPtr = DLSYM_AND_CHECK(dl_libcuda, "cuCtxPushCurrent");
-    cuCtxSynchronizePtr = DLSYM_AND_CHECK(dl_libcuda, "cuCtxSynchronize");
-    cuCtxDestroyPtr = DLSYM_AND_CHECK(dl_libcuda, "cuCtxDestroy");
+    cuCtxGetCurrent_ptr = DLSYM_AND_CHECK(dl_libcuda, "cuCtxGetCurrent");
+    cuCtxSetCurrent_ptr = DLSYM_AND_CHECK(dl_libcuda, "cuCtxSetCurrent");
+    cuDeviceGet_ptr = DLSYM_AND_CHECK(dl_libcuda, "cuDeviceGet");
+    cuDeviceGetCount_ptr = DLSYM_AND_CHECK(dl_libcuda, "cuDeviceGetCount");
+    cuDeviceGetName_ptr = DLSYM_AND_CHECK(dl_libcuda, "cuDeviceGetName");
+    cuGetErrorString_ptr = DLSYM_AND_CHECK(dl_libcuda, "cuGetErrorString");
+    cuInit_ptr = DLSYM_AND_CHECK(dl_libcuda, "cuInit");
+    cuCtxPopCurrent_ptr = DLSYM_AND_CHECK(dl_libcuda, "cuCtxPopCurrent");
+    cuCtxPushCurrent_ptr = DLSYM_AND_CHECK(dl_libcuda, "cuCtxPushCurrent");
+    cuCtxSynchronize_ptr = DLSYM_AND_CHECK(dl_libcuda, "cuCtxSynchronize");
+    cuCtxDestroy_ptr = DLSYM_AND_CHECK(dl_libcuda, "cuCtxDestroy");
 
     dl_libcudart = dlopen("libcudart.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
     if (!dl_libcudart)
@@ -153,9 +154,10 @@ link_cputi_libraries(void)
         fprintf(stderr, "CUDA runtime library libcudart.so not found.");
         return -1;
     }
-    cudaGetDevicePtr = DLSYM_AND_CHECK(dl_libcudart, "cudaGetDevice");
-    cudaSetDevicePtr = DLSYM_AND_CHECK(dl_libcudart, "cudaSetDevice");
-    cudaFreePtr = DLSYM_AND_CHECK(dl_libcudart, "cudaFree");
+    cudaGetDevice_ptr = DLSYM_AND_CHECK(dl_libcudart, "cudaGetDevice");
+    cudaSetDevice_ptr = DLSYM_AND_CHECK(dl_libcudart, "cudaSetDevice");
+    cudaFree_ptr = DLSYM_AND_CHECK(dl_libcudart, "cudaFree");
+    cudaGetErrorString_ptr = DLSYM_AND_CHECK(dl_libcudart, "cudaGetErrorString");
 
     dl_libcupti = dlopen("libcupti.so", RTLD_NOW | RTLD_GLOBAL);
     if (!dl_libcupti)
@@ -163,22 +165,22 @@ link_cputi_libraries(void)
         fprintf(stderr, "CUDA runtime library libcupti.so not found.");
         return -1;
     }
-    cuptiDeviceGetEventDomainAttributePtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiDeviceGetEventDomainAttribute");
-    cuptiEventGroupGetAttributePtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupGetAttribute");
-    cuptiEventGroupReadEventPtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupReadEvent");
-    cuptiEventGroupSetAttributePtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupSetAttribute");
-    cuptiEventGroupSetDisablePtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupSetDisable");
-    cuptiEventGroupSetEnablePtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupSetEnable");
-    cuptiEventGroupSetsCreatePtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupSetsCreate");
-    cuptiEventGroupSetsDestroyPtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupSetsDestroy");
-    cuptiGetTimestampPtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiGetTimestamp");
-    cuptiSetEventCollectionModePtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiSetEventCollectionMode");
-    cuptiDeviceEnumEventDomainsPtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiDeviceEnumEventDomains");
-    cuptiDeviceGetNumEventDomainsPtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiDeviceGetNumEventDomains");
-    cuptiEventDomainEnumEventsPtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventDomainEnumEvents");
-    cuptiEventDomainGetNumEventsPtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventDomainGetNumEvents");
-    cuptiEventGetAttributePtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGetAttribute");
-    cuptiGetResultStringPtr = DLSYM_AND_CHECK(dl_libcupti, "cuptiGetResultString");
+    cuptiDeviceGetEventDomainAttribute_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiDeviceGetEventDomainAttribute");
+    cuptiEventGroupGetAttribute_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupGetAttribute");
+    cuptiEventGroupReadEvent_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupReadEvent");
+    cuptiEventGroupSetAttribute_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupSetAttribute");
+    cuptiEventGroupSetDisable_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupSetDisable");
+    cuptiEventGroupSetEnable_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupSetEnable");
+    cuptiEventGroupSetsCreate_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupSetsCreate");
+    cuptiEventGroupSetsDestroy_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGroupSetsDestroy");
+    cuptiGetTimestamp_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiGetTimestamp");
+    cuptiSetEventCollectionMode_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiSetEventCollectionMode");
+    cuptiDeviceEnumEventDomains_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiDeviceEnumEventDomains");
+    cuptiDeviceGetNumEventDomains_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiDeviceGetNumEventDomains");
+    cuptiEventDomainEnumEvents_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventDomainEnumEvents");
+    cuptiEventDomainGetNumEvents_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventDomainGetNumEvents");
+    cuptiEventGetAttribute_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiEventGetAttribute");
+    cuptiGetResultString_ptr = DLSYM_AND_CHECK(dl_libcupti, "cuptiGetResultString");
     return 0;
 }
 
@@ -187,7 +189,7 @@ static int check_nv_context(NvmonDevice_t device, CUcontext currentContext)
 {
     int j = 0;
     int need_pop = 0;
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Current context %ld DevContext %ld", currentContext, device->context);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Current context %p DevContext %p", currentContext, device->context);
     if (!device->context)
     {
         int context_of_dev = -1;
@@ -203,79 +205,41 @@ static int check_nv_context(NvmonDevice_t device, CUcontext currentContext)
         if (context_of_dev < 0 && !device->context)
         {
             device->context = currentContext;
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Reuse context %ld for device %d", device->context, device->deviceId);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Reuse context %p for device %d", device->context, device->deviceId);
         }
         else
         {
-            CUDA_CALL((*cudaSetDevicePtr)(device->deviceId), return -EFAULT);
-            CUDA_CALL((*cudaFreePtr)(NULL), return -EFAULT);
-            CU_CALL((*cuCtxGetCurrentPtr)(&device->context), return -EFAULT);
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "New context %ld for device %d", device->context, device->deviceId);
+            CUDA_CALL(cudaSetDevice, device->deviceId);
+            CUDA_CALL(cudaFree, NULL);
+            CU_CALL(cuCtxGetCurrent, &device->context);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "New context %p for device %d", device->context, device->deviceId);
         }
     }
     else if (device->context != currentContext)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Use context %ld for device %d", device->context, device->deviceId);
-        CU_CALL((*cuCtxPushCurrentPtr)(device->context), return -EFAULT);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Use context %p for device %d", device->context, device->deviceId);
+        CU_CALL(cuCtxPushCurrent, device->context);
         need_pop = 1;
     }
     else
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Context %ld fits for device %d", device->context, device->deviceId);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Context %p fits for device %d", device->context, device->deviceId);
     }
     return need_pop;
 }
 
-static int
-init_cuda(void)
-{
-    CUresult cuErr = (*cuInitPtr)(0);
-    if (cuErr != CUDA_SUCCESS)
-    {
-        fprintf(stderr, "CUDA cannot be found and initialized (cuInit failed).\n");
-        return -ENODEV;
-    }
-    return 0;
-}
-
-static int
-get_numDevices(void)
-{
-    CUresult cuErr;
-    int count = 0;
-    cuErr = (*cuDeviceGetCountPtr)(&count);
-    if(cuErr == CUDA_ERROR_NOT_INITIALIZED)
-    {
-        int ret = init_cuda();
-        if (ret == 0)
-        {
-            cuErr = (*cuDeviceGetCountPtr)(&count);
-        }
-        else
-        {
-            return ret;
-        }
-    }
-    return count;
-}
-
 void nvmon_cupti_freeDevice(NvmonDevice_t dev)
 {
-    int j = 0;
-    GHashTableIter iter;
-    char* name = NULL;
-    uint32_t *id = NULL;
-    NvmonEvent_t event = NULL;
     if (dev)
     {
         if (dev->context)
         {
-            CU_CALL((*cuCtxDestroyPtr)(dev->context), j++);
+            cuCtxDestroy_ptr(dev->context);
             dev->context = NULL;
         }
         if (dev->cuEventSets)
         {
-            CUPTI_CALL((*cuptiEventGroupSetsDestroyPtr)(dev->cuEventSets), j++);
+            cuptiEventGroupSetsDestroy_ptr(dev->cuEventSets);
             dev->cuEventSets = NULL;
         }
 
@@ -290,7 +254,7 @@ void nvmon_cupti_freeDevice(NvmonDevice_t dev)
 
         if (dev->nvEventSets)
         {
-            for (j = 0; j < dev->numNvEventSets; j++)
+            for (int j = 0; j < dev->numNvEventSets; j++)
             {
                 free(dev->nvEventSets[j].results);
             }
@@ -300,7 +264,7 @@ void nvmon_cupti_freeDevice(NvmonDevice_t dev)
         }
         if (dev->allevents)
         {
-            for (j = 0; j < dev->numAllEvents; j++)
+            for (int j = 0; j < dev->numAllEvents; j++)
             {
                 if (dev->allevents[j])
                 {
@@ -319,7 +283,6 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
     int c = 0;
     unsigned numDomains = 0;
     CUpti_EventDomainID* eventDomainIds = NULL;
-    int eventIdx = 0;
     uint32_t totalEvents = 0;
 
 
@@ -341,17 +304,17 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
     }
 
     // Assign device ID and get cuDevice from CUDA
-    CU_CALL((*cuDeviceGetPtr)(&dev->cuDevice, id), return -1);
+    CU_CALL(cuDeviceGet, &dev->cuDevice, id);
 
     // Get the number of event domains of the device
-    CUPTI_CALL((*cuptiDeviceGetNumEventDomainsPtr)(dev->cuDevice, &numDomains), return -1);
+    CUPTI_CALL(cuptiDeviceGetNumEventDomains, dev->cuDevice, &numDomains);
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Nvmon: Dev %d Domains %d", id, numDomains);
 
     // Get the domain IDs for the device
     size_t domainarraysize = numDomains * sizeof(CUpti_EventDomainID);
     eventDomainIds = malloc(domainarraysize);
     if (!eventDomainIds) return -ENOMEM;
-    CUPTI_CALL((*cuptiDeviceEnumEventDomainsPtr)(dev->cuDevice, &domainarraysize, eventDomainIds), return -1);
+    CUPTI_CALL(cuptiDeviceEnumEventDomains, dev->cuDevice, &domainarraysize, eventDomainIds);
 
 
     // Count the events in all domains to allocate the event list
@@ -360,7 +323,7 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
     {
         uint32_t domainNumEvents = 0;
         CUpti_EventDomainID domainID = eventDomainIds[j];
-        CUPTI_CALL((*cuptiEventDomainGetNumEventsPtr)(domainID, &domainNumEvents), return -1);
+        CUPTI_CALL(cuptiEventDomainGetNumEvents, domainID, &domainNumEvents);
         GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Nvmon: Dev %d Domain %d Events %d", id, j, domainNumEvents);
         totalEvents += domainNumEvents;
     }
@@ -381,12 +344,12 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
         uint32_t domainNumEvents = 0;
         CUpti_EventDomainID domainID = eventDomainIds[j];
         // How many events are provided by the domain
-        CUPTI_CALL((*cuptiEventDomainGetNumEventsPtr)(domainID, &domainNumEvents), return -1);
+        CUPTI_CALL(cuptiEventDomainGetNumEvents, domainID, &domainNumEvents);
         size_t tmpSize = domainNumEvents * sizeof(CUpti_EventID);
         // Allocate space for all CUPTI event IDs in the domain
         CUpti_EventID* cuEventIds = malloc(tmpSize);
         // Get the CUPTI events
-        CUPTI_CALL((*cuptiEventDomainEnumEventsPtr)(domainID, &tmpSize, cuEventIds), return -1);
+        CUPTI_CALL(cuptiEventDomainEnumEvents, domainID, &tmpSize, cuEventIds);
         for (unsigned k = 0; k < domainNumEvents; k++)
         {
             CUpti_EventID eventId = cuEventIds[k];
@@ -404,8 +367,8 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
             }
 
             // Get event name and description
-            CUPTI_CALL((*cuptiEventGetAttributePtr)(eventId, CUPTI_EVENT_ATTR_NAME, &tmpSizeBytesName, event->name), return -1);
-            CUPTI_CALL((*cuptiEventGetAttributePtr)(eventId, CUPTI_EVENT_ATTR_LONG_DESCRIPTION, &tmpSizeBytesDesc, event->description), return -1);
+            CUPTI_CALL(cuptiEventGetAttribute, eventId, CUPTI_EVENT_ATTR_NAME, &tmpSizeBytesName, event->name);
+            CUPTI_CALL(cuptiEventGetAttribute, eventId, CUPTI_EVENT_ATTR_LONG_DESCRIPTION, &tmpSizeBytesDesc, event->description);
             event->name[tmpSizeBytesName/sizeof(char)] = '\0';
             event->description[tmpSizeBytesDesc/sizeof(char)] = '\0';
             // LIKWID events are all uppercase, so transform the event names
@@ -442,9 +405,9 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
         }
     }
 
-/*    CUDA_CALL((*cudaSetDevicePtr)(dev->deviceId), return -EFAULT);*/
-/*    CUDA_CALL((*cudaFreePtr)(NULL), return -EFAULT);*/
-/*    CU_CALL((*cuCtxGetCurrentPtr)(&dev->context), return -EFAULT);*/
+/*    CUDA_CALL(cudaSetDevice, dev->deviceId);*/
+/*    CUDA_CALL(cudaFree, NULL);*/
+/*    CU_CALL(cuCtxGetCurrent, &dev->context);*/
     return 0;
 }
 
@@ -512,7 +475,7 @@ int nvmon_cupti_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
     }
     else
     {
-        ERROR_PRINT("No such device %d, gpuId");
+        ERROR_PRINT("No such device %d", gpuId);
     }
     return 0;
 }
@@ -523,14 +486,13 @@ int
 nvmon_cupti_addEventSets(NvmonDevice_t device, const char* eventString)
 {
     int i = 0;
-    int err = 0;
     int curDeviceId = -1;
     CUcontext curContext;
     struct bstrList* eventtokens = NULL;
 
-    CUDA_CALL((*cudaGetDevicePtr)(&curDeviceId), return -EFAULT);
-    CUDA_CALL((*cudaFreePtr)(NULL), return -EFAULT);
-    CU_CALL((*cuCtxGetCurrentPtr)(&curContext), return -EFAULT);
+    CUDA_CALL(cudaGetDevice, &curDeviceId);
+    CUDA_CALL(cudaFree, NULL);
+    CU_CALL(cuCtxGetCurrent, &curContext);
 
     bstring eventBString = bfromcstr(eventString);
     eventtokens = bsplit(eventBString, ',');
@@ -538,10 +500,8 @@ nvmon_cupti_addEventSets(NvmonDevice_t device, const char* eventString)
 
     if (curDeviceId != device->deviceId)
     {
-        CUDA_CALL((*cudaSetDevicePtr)(device->deviceId), return -EFAULT);
+        CUDA_CALL(cudaSetDevice, device->deviceId);
     }
-
-    size_t sizeBytes = (eventtokens->qty) * sizeof(CUpti_EventID);
 
     int popContext = 0;
     CUpti_EventGroupSets * cuEventSets = NULL;
@@ -584,7 +544,7 @@ nvmon_cupti_addEventSets(NvmonDevice_t device, const char* eventString)
     popContext = check_nv_context(device, curContext);
 
 
-    CUPTI_CALL((*cuptiSetEventCollectionModePtr)(device->context, CUPTI_EVENT_COLLECTION_MODE_KERNEL), return -EFAULT);
+    CUPTI_CALL(cuptiSetEventCollectionMode, device->context, CUPTI_EVENT_COLLECTION_MODE_KERNEL);
 
     for (i = 0; i < eventtokens->qty; i++)
     {
@@ -610,7 +570,7 @@ nvmon_cupti_addEventSets(NvmonDevice_t device, const char* eventString)
             devEventSet->numberOfEvents++;
             size_t s = devEventSet->numberOfEvents*sizeof(CUpti_EventID);
 
-            CUPTI_CALL((*cuptiEventGroupSetsCreatePtr)(device->context, s, devEventSet->cuEventIDs, &cuEventSets), devEventSet->numberOfEvents--;);
+            CUPTI_CALL(cuptiEventGroupSetsCreate, device->context, s, devEventSet->cuEventIDs, &cuEventSets);
             if (cuEventSets->numSets > 1)
             {
                 ERROR_PRINT("Error adding event %s. Multiple measurement runs are required. skipping event ...", bdata(evset->entry[i]));
@@ -622,7 +582,7 @@ nvmon_cupti_addEventSets(NvmonDevice_t device, const char* eventString)
     // Create an eventset with the currently configured and current event
     if(popContext)
     {
-        CU_CALL((*cuCtxPopCurrentPtr)(&device->context), return -EFAULT);
+        CU_CALL(cuCtxPopCurrent, &device->context);
     }
     device->numNvEventSets++;
     return 0;
@@ -641,16 +601,16 @@ int nvmon_cupti_setupCounters(NvmonDevice_t device, NvmonEventSet* eventSet)
         return -EINVAL;
     }
     // Currently we are on which device?
-    CUDA_CALL((*cudaGetDevicePtr)(&oldDevId), return -EFAULT);
+    CUDA_CALL(cudaGetDevice, &oldDevId);
     // This is a workaround to (eventually create and) get the current context
-    CUDA_CALL((*cudaFreePtr)(NULL), return -EFAULT);
-    CU_CALL((*cuCtxGetCurrentPtr)(&curContext), return -EFAULT);
+    CUDA_CALL(cudaFree, NULL);
+    CU_CALL(cuCtxGetCurrent, &curContext);
 
     popContext = check_nv_context(device, curContext);
 
 
     size_t grpEventIdsSize = eventSet->numberOfEvents * sizeof(CUpti_EventID);
-    CUPTI_CALL((*cuptiEventGroupSetsCreatePtr)(device->context, grpEventIdsSize, eventSet->cuEventIDs, &cuEventSets), return -1;);
+    CUPTI_CALL(cuptiEventGroupSetsCreate, device->context, grpEventIdsSize, eventSet->cuEventIDs, &cuEventSets);
     // Allocate temporary array to hold the group event IDs
     CUpti_EventID *grpEventIds = malloc(grpEventIdsSize);
     if (!grpEventIds)
@@ -693,9 +653,6 @@ int nvmon_cupti_setupCounters(NvmonDevice_t device, NvmonEventSet* eventSet)
 
 
     // Run over eventset and store all information we need for start/stop/reads in NvmonActiveEvent_t
-    CUpti_EventGroup curGroup;
-    uint32_t curNumInstances = 0, curNumTotalInstances = 0;
-    CUpti_EventGroupSet *curEventGroupSet;
     for (unsigned j = 0; j < cuEventSets->numSets; j++)
     {
         size_t sizeofuint32t = sizeof(uint32_t);
@@ -707,13 +664,13 @@ int nvmon_cupti_setupCounters(NvmonDevice_t device, NvmonEventSet* eventSet)
             uint32_t one = 1;
             CUpti_EventGroup group = groupset->eventGroups[k];
             // Get the number of events in the group
-            CUPTI_CALL((*cuptiEventGroupGetAttributePtr)(group, CUPTI_EVENT_GROUP_ATTR_NUM_EVENTS, &sizeofuint32t, &numGEvents), return -EFAULT);
+            CUPTI_CALL(cuptiEventGroupGetAttribute, group, CUPTI_EVENT_GROUP_ATTR_NUM_EVENTS, &sizeofuint32t, &numGEvents);
             // Get the CUPTI event IDs in the group
-            CUPTI_CALL((*cuptiEventGroupGetAttributePtr)(group, CUPTI_EVENT_GROUP_ATTR_EVENTS, &grpEventIdsSize, grpEventIds), return -EFAULT);
+            CUPTI_CALL(cuptiEventGroupGetAttribute, group, CUPTI_EVENT_GROUP_ATTR_EVENTS, &grpEventIdsSize, grpEventIds);
             // If we don't set this, each event has only a single instance but we want to measure all instances
-            CUPTI_CALL((*cuptiEventGroupSetAttributePtr)(group, CUPTI_EVENT_GROUP_ATTR_PROFILE_ALL_DOMAIN_INSTANCES, sizeof(uint32_t), &one), return -EFAULT);
+            CUPTI_CALL(cuptiEventGroupSetAttribute, group, CUPTI_EVENT_GROUP_ATTR_PROFILE_ALL_DOMAIN_INSTANCES, sizeof(uint32_t), &one);
             // Get instance count for a group
-            CUPTI_CALL((*cuptiEventGroupGetAttributePtr)(group, CUPTI_EVENT_GROUP_ATTR_INSTANCE_COUNT, &sizeofuint32t, &numGInstances), return -EFAULT);
+            CUPTI_CALL(cuptiEventGroupGetAttribute, group, CUPTI_EVENT_GROUP_ATTR_INSTANCE_COUNT, &sizeofuint32t, &numGInstances);
 
             for (unsigned l = 0; l < numGEvents; l++)
             {
@@ -723,7 +680,7 @@ int nvmon_cupti_setupCounters(NvmonDevice_t device, NvmonEventSet* eventSet)
                     {
                         CUpti_EventDomainID did = eventSet->nvEvents[m]->cuDomainId;
                         // Get total instance count for a group
-                        CUPTI_CALL((*cuptiDeviceGetEventDomainAttributePtr)(device->cuDevice, did, CUPTI_EVENT_DOMAIN_ATTR_TOTAL_INSTANCE_COUNT, &sizeofuint32t, &numTotalGInstances), return -EFAULT);
+                        CUPTI_CALL(cuptiDeviceGetEventDomainAttribute, device->cuDevice, did, CUPTI_EVENT_DOMAIN_ATTR_TOTAL_INSTANCE_COUNT, &sizeofuint32t, &numTotalGInstances);
                         device->activeEvents[m].eventId = eventSet->nvEvents[m]->eventId;
                         device->activeEvents[m].idxInSet = m;
                         device->activeEvents[m].groupId = eventSet->id;
@@ -760,7 +717,7 @@ int nvmon_cupti_setupCounters(NvmonDevice_t device, NvmonEventSet* eventSet)
     free(grpEventIds);
     if(popContext)
     {
-        CU_CALL((*cuCtxPopCurrentPtr)(&device->context), return -EFAULT);
+        CU_CALL(cuCtxPopCurrent, &device->context);
     }
     return 0;
 }
@@ -770,17 +727,16 @@ int nvmon_cupti_startCounters(NvmonDevice_t device)
     int j = 0;
     CUcontext curContext;
     int popContext = 0;
-    uint32_t one = 1;
     uint64_t timestamp = 0;
     int oldDevId = -1;
 
     // Currently we are on which device?
-    CUDA_CALL((*cudaGetDevicePtr)(&oldDevId), return -EFAULT);
+    CUDA_CALL(cudaGetDevice, &oldDevId);
     // Take the timestamp, we assign it later for all devices
-    CUPTI_CALL((*cuptiGetTimestampPtr)(&timestamp), return -EFAULT);
+    CUPTI_CALL(cuptiGetTimestamp, &timestamp);
     // This is a workaround to (eventually create and) get the current context
-    CUDA_CALL((*cudaFreePtr)(NULL), return -EFAULT);
-    CU_CALL((*cuCtxGetCurrentPtr)(&curContext), return -EFAULT);
+    CUDA_CALL(cudaFree, NULL);
+    CU_CALL(cuCtxGetCurrent, &curContext);
 
 
     //NvmonDevice_t device = &nvGroupSet->gpus[i];
@@ -792,10 +748,10 @@ int nvmon_cupti_startCounters(NvmonDevice_t device)
     if (device->deviceId != oldDevId)
     {
         GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Change GPU device %d -> %d", oldDevId, device->deviceId);
-        CUDA_CALL((*cudaSetDevicePtr)(device->deviceId), return -EFAULT);
-        CUDA_CALL((*cudaGetDevicePtr)(&oldDevId), return -EFAULT);
+        CUDA_CALL(cudaSetDevice, device->deviceId);
+        CUDA_CALL(cudaGetDevice, &oldDevId);
     }
-    CU_CALL((*cuCtxGetCurrentPtr)(&curContext), return -EFAULT);
+    CU_CALL(cuCtxGetCurrent, &curContext);
     device->timeStart = timestamp;
     device->timeRead = timestamp;
 
@@ -815,15 +771,15 @@ int nvmon_cupti_startCounters(NvmonDevice_t device)
 
     for (j = 0; j < device->numActiveCuGroups; j++)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Enable group %ld on Dev %d", device->activeCuGroups[j], device->deviceId);
-        CUPTI_CALL((*cuptiEventGroupSetEnablePtr)(device->activeCuGroups[j]), return -EFAULT);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Enable group %p on Dev %d", device->activeCuGroups[j], device->deviceId);
+        CUPTI_CALL(cuptiEventGroupSetEnable, device->activeCuGroups[j]);
     }
 
     // If we added the device context to the stack, pop it again
     if (popContext)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %ld for device %d", device->context, device->deviceId);
-        CU_CALL((*cuCtxPopCurrentPtr)(&device->context), return -EFAULT);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %p for device %d", device->context, device->deviceId);
+        CU_CALL(cuCtxPopCurrent, &device->context);
     }
     return 0;
 }
@@ -837,25 +793,24 @@ int nvmon_cupti_stopCounters(NvmonDevice_t device)
     uint64_t timestamp = 0;
     CUcontext curContext;
 
-    CUDA_CALL((*cudaGetDevicePtr)(&oldDevId), return -EFAULT);
+    CUDA_CALL(cudaGetDevice, &oldDevId);
     // Take the timestamp, we assign it later for all devices
-    CUPTI_CALL((*cuptiGetTimestampPtr)(&timestamp), return -EFAULT);
+    CUPTI_CALL(cuptiGetTimestamp, &timestamp);
 
 
     for (int i = 0; i < nvGroupSet->numberOfGPUs; i++)
     {
         int popContext = 0;
-        uint32_t one = 1;
         unsigned maxTotalInstances = 0;
         size_t valuesSize = 0;
         NvmonDevice_t device = &nvGroupSet->gpus[i];
         if (device->deviceId != oldDevId)
         {
             GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Change GPU device %d -> %d", oldDevId, device->deviceId);
-            CUDA_CALL((*cudaSetDevicePtr)(device->deviceId), return -EFAULT);
-            CUDA_CALL((*cudaGetDevicePtr)(&oldDevId), return -EFAULT);
+            CUDA_CALL(cudaSetDevice, device->deviceId);
+            CUDA_CALL(cudaGetDevice, &oldDevId);
         }
-        CU_CALL((*cuCtxGetCurrentPtr)(&curContext), return -EFAULT);
+        CU_CALL(cuCtxGetCurrent, &curContext);
         NvmonEventSet* nvEventSet = &device->nvEventSets[nvGroupSet->activeGroup];
         if (device->numActiveCuGroups == 0)
         {
@@ -878,8 +833,13 @@ int nvmon_cupti_stopCounters(NvmonDevice_t device)
             NvmonActiveEvent_t event = &device->activeEvents[j];
             valuesSize = sizeof(uint64_t) * event->numTotalInstances;
             memset(tmpValues, 0, valuesSize);
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Read Grp %ld Ev %ld for device %d", event->cuGroup, event->cuEventId, device->deviceId);
-            CUPTI_CALL((*cuptiEventGroupReadEventPtr)(event->cuGroup, CUPTI_EVENT_READ_FLAG_NONE, event->cuEventId, &valuesSize, tmpValues), free(tmpValues); return -EFAULT);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Read Grp %p Ev %u for device %d", event->cuGroup, event->cuEventId, device->deviceId);
+            CUptiResult s = cuptiEventGroupReadEvent_ptr(event->cuGroup, CUPTI_EVENT_READ_FLAG_NONE, event->cuEventId, &valuesSize, tmpValues);
+            if (s != CUPTI_SUCCESS) {
+                ERROR_PRINT("cuptiEventGroupReadEvent failed: %d\n", s);
+                free(tmpValues);
+                return -EFAULT;
+            }
             uint64_t valuesum = 0;
             for (unsigned k = 0; k < event->numInstances; k++)
             {
@@ -894,14 +854,14 @@ int nvmon_cupti_stopCounters(NvmonDevice_t device)
         }
         for (int j = 0; j < device->numActiveCuGroups; j++)
         {
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Disable group %ld", device->activeCuGroups[j]);
-            CUPTI_CALL((*cuptiEventGroupSetDisablePtr)(device->activeCuGroups[j]), return -EFAULT);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Disable group %p", device->activeCuGroups[j]);
+            CUPTI_CALL(cuptiEventGroupSetDisable, device->activeCuGroups[j]);
         }
         // If we added the device context to the stack, pop it again
         if (popContext)
         {
-            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %ld for device %d", device->context, device->deviceId);
-            CU_CALL((*cuCtxPopCurrentPtr)(&device->context), return -EFAULT);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %p for device %d", device->context, device->deviceId);
+            CU_CALL(cuCtxPopCurrent, &device->context);
         }
     }
     return 0;
@@ -913,7 +873,6 @@ int nvmon_cupti_readCounters(NvmonDevice_t device)
     int oldDevId = -1;
     uint64_t timestamp = 0;
     CUcontext curContext;
-    size_t sizeofuint32num = sizeof(uint32_t);
     unsigned maxTotalInstances = 0;
 
 
@@ -933,12 +892,12 @@ int nvmon_cupti_readCounters(NvmonDevice_t device)
     }
 
     // Currently we are on which device?
-    CUDA_CALL((*cudaGetDevicePtr)(&oldDevId), return -EFAULT);
+    CUDA_CALL(cudaGetDevice, &oldDevId);
     // Take the timestamp, we assign it later for all devices
-    CUPTI_CALL((*cuptiGetTimestampPtr)(&timestamp), return -EFAULT);
+    CUPTI_CALL(cuptiGetTimestamp, &timestamp);
 /*    // This is a workaround to (eventually create and) get the current context*/
-/*    CUDA_CALL((*cudaFreePtr)(NULL), return -EFAULT);*/
-    CU_CALL((*cuCtxGetCurrentPtr)(&curContext), return -EFAULT);
+/*    CUDA_CALL(cudaFree, NULL);*/
+    CU_CALL(cuCtxGetCurrent, &curContext);
 
 
     int popContext = 0;
@@ -950,18 +909,18 @@ int nvmon_cupti_readCounters(NvmonDevice_t device)
     if (device->deviceId != oldDevId)
     {
         GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Change GPU device %d -> %d", oldDevId, device->deviceId);
-        CUDA_CALL((*cudaSetDevicePtr)(device->deviceId), return -EFAULT);
-        CUDA_CALL((*cudaGetDevicePtr)(&oldDevId), return -EFAULT);
+        CUDA_CALL(cudaSetDevice, device->deviceId);
+        CUDA_CALL(cudaGetDevice, &oldDevId);
     }
-    CUDA_CALL((*cudaFreePtr)(NULL), return -EFAULT);
-    CU_CALL((*cuCtxGetCurrentPtr)(&curContext), return -EFAULT);
+    CUDA_CALL(cudaFree, NULL);
+    CU_CALL(cuCtxGetCurrent, &curContext);
     device->timeRead = timestamp;
 
     // Are we in the proper context?
     popContext = check_nv_context(device, curContext);
     // Synchronize devices. I'm not sure whether this is required as each
     // device measures it's own events
-    CU_CALL((*cuCtxSynchronizePtr)(), return -EFAULT);
+    CU_CALL(cuCtxSynchronize);
     NvmonEventSet* nvEventSet = &device->nvEventSets[nvGroupSet->activeGroup];
 
     for (int j = 0; j < device->numActiveEvents; j++)
@@ -971,8 +930,8 @@ int nvmon_cupti_readCounters(NvmonDevice_t device)
         valuesSize = sizeof(uint64_t) * event->numTotalInstances;
         memset(tmpValues, 0, valuesSize);
         // Read all instance values
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Read Grp %ld Ev %ld for device %d", event->cuGroup, event->cuEventId, device->deviceId);
-        CUPTI_CALL((*cuptiEventGroupReadEventPtr)(event->cuGroup, CUPTI_EVENT_READ_FLAG_NONE, event->cuEventId, &valuesSize, tmpValues), return -EFAULT);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Read Grp %p Ev %u for device %d", event->cuGroup, event->cuEventId, device->deviceId);
+        CUPTI_CALL(cuptiEventGroupReadEvent, event->cuGroup, CUPTI_EVENT_READ_FLAG_NONE, event->cuEventId, &valuesSize, tmpValues);
         // Sum all instance values
         uint64_t valuesum = 0;
         for (unsigned k = 0; k < event->numInstances; k++)
@@ -988,8 +947,8 @@ int nvmon_cupti_readCounters(NvmonDevice_t device)
     }
     if (popContext)
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %ld for device %d", device->context, device->deviceId);
-        CU_CALL((*cuCtxPopCurrentPtr)(&device->context), return -EFAULT);
+        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %p for device %d", device->context, device->deviceId);
+        CU_CALL(cuCtxPopCurrent, &device->context);
     }
     free(tmpValues);
     return 0;

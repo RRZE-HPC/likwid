@@ -3179,6 +3179,8 @@ static int lua_likwid_getRocmTopology(lua_State *L) {
 }
 
 static int lua_likwid_putRocmTopology(lua_State *L) {
+  (void)L;
+
   if (rocmtopology_isInitialized) {
     topology_rocm_finalize();
   }
@@ -3360,7 +3362,7 @@ static int lua_likwid_getLongInfoOfGroup_rocm(lua_State *L) {
 static int lua_likwid_getRocmGroups(lua_State *L) {
   int i, ret;
   char **tmp, **infos, **longs;
-  int gpuId = lua_tonumber(L, 1);
+  //int gpuId = lua_tonumber(L, 1);
   if (!rocmtopology_isInitialized) {
     if (topology_rocm_init() == EXIT_SUCCESS) {
       rocmtopo = get_rocmTopology();
@@ -3452,6 +3454,7 @@ static int lua_likwid_markerFile_read_rocm(lua_State *L) {
 }
 
 static int lua_likwid_markerFile_destroy_rocm(lua_State *L) {
+  (void)L;
   rocmon_destroyMarkerResults();
   return 0;
 }
@@ -3565,7 +3568,7 @@ static int lua_likwid_addEventSet_rocm(lua_State *L) {
   luaL_argcheck(L, strlen(tmpString) > 0, n,
                 "Event string must be larger than 0");
 
-  int ret = rocmon_addEventSet((char *)tmpString, &groupId);
+  rocmon_addEventSet((char *)tmpString, &groupId);
   if (groupId >= 0) {
     lua_pushinteger(L, groupId + 1);
   } else {
@@ -3703,6 +3706,7 @@ static int lua_likwid_getTimeToLastReadOfGroup_rocm(lua_State *L) {
 }
 
 static int lua_likwid_finalize_rocm(lua_State *L) {
+  (void)L;
   if (rocmon_initialized)
     rocmon_finalize();
   return 0;
@@ -4271,6 +4275,32 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
                lua_likwid_markerRegionResult_rocm);
   lua_register(L, "likwid_markerRegionMetric_rocm",
                lua_likwid_markerRegionMetric_rocm);
+  lua_register(L, "likwid_getTimeToLastReadOfGroup_rocm",
+               lua_likwid_getTimeToLastReadOfGroup_rocm);
+  lua_register(L, "likwid_getLastTimeOfGroup_rocm",
+               lua_likwid_getLastTimeOfGroup_rocm);
+  lua_register(L, "likwid_getRuntimeOfGroup_rocm",
+               lua_likwid_getRuntimeOfGroup_rocm);
+  lua_register(L, "likwid_getIdOfActiveGroup_rocm",
+               lua_likwid_getIdOfActiveGroup_rocm);
+  lua_register(L, "likwid_getLastResult_rocm",
+               lua_likwid_getLastResult_rocm);
+  lua_register(L, "likwid_getResult_rocm",
+               lua_likwid_getResult_rocm);
+  lua_register(L, "likwid_switchGroup_rocm",
+               lua_likwid_switchGroup_rocm);
+  lua_register(L, "likwid_readCounters_rocm",
+               lua_likwid_readCounters_rocm);
+  lua_register(L, "likwid_stopCounters_rocm",
+               lua_likwid_stopCounters_rocm);
+  lua_register(L, "likwid_startCounters_rocm",
+               lua_likwid_startCounters_rocm);
+  lua_register(L, "likwid_setupCounters_rocm",
+               lua_likwid_setupCounters_rocm);
+  lua_register(L, "likwid_getLongInfoOfGroup_rocm",
+               lua_likwid_getLongInfoOfGroup_rocm);
+  lua_register(L, "likwid_getShortInfoOfGroup_rocm",
+               lua_likwid_getShortInfoOfGroup_rocm);
 #endif /* LIKWID_WITH_ROCMON */
     // sysFeatures functions (experimental)
     lua_register(L, "likwid_sysFeaturesSupported",lua_likwid_sysFeaturesSupported);

@@ -494,6 +494,7 @@ static int amd_hsmp_dimm_tester(uint32_t channel, bool dimm_0_1, bool sensor_0_1
     return dimm_found;
 }
 
+// clang-format off
 #define MAKE_DIMM_FUNC(channel, dimm, sensor)                               \
     static int amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_temp_getter(LikwidDevice_t dev, char **value) \
     {                                                                       \
@@ -515,6 +516,8 @@ static int amd_hsmp_dimm_tester(uint32_t channel, bool dimm_0_1, bool sensor_0_1
     {                                                                       \
         return amd_hsmp_dimm_tester(channel, dimm, sensor, false);          \
     }
+// clang-format on
+
 #define MAKE_DIMM_FUNC_SET(channel) \
     MAKE_DIMM_FUNC(channel, 0, 0)   \
     MAKE_DIMM_FUNC(channel, 0, 1)   \
@@ -537,6 +540,7 @@ MAKE_DIMM_FUNC_SET(0xD);
 MAKE_DIMM_FUNC_SET(0xE);
 MAKE_DIMM_FUNC_SET(0xF);
 
+// clang-format off
 #define MAKE_DIMM_FEATURE(channel, dimm, sensor)                    \
     {                                                               \
         "dimm" #channel "_" #dimm "_" #sensor "_temp", "hsmp", "DIMM temperature (channel " #channel ", module " #dimm ", sensor " #sensor ")",\
@@ -562,6 +566,8 @@ MAKE_DIMM_FUNC_SET(0xF);
         amd_hsmp_dimm##channel##_##dimm##_ts##sensor##_power_tester,\
         "W"                                                         \
     },
+// clang-format on
+
 #define MAKE_DIMM_FEATURES(channel)     \
     MAKE_DIMM_FEATURE(channel, 0, 0)    \
     MAKE_DIMM_FEATURE(channel, 0, 1)    \
@@ -723,6 +729,7 @@ MAKE_XGMI_FUNCS(g1);
 MAKE_XGMI_FUNCS(g2);
 MAKE_XGMI_FUNCS(g3);
 
+// clang-format off
 #define MAKE_XGMI_FEATURE(id)                       \
     {                                               \
         "pkg_xgmi_bw_" #id "_aggr", "hsmp", "Aggregated xGMI " #id " bandwidth",\
@@ -748,6 +755,7 @@ MAKE_XGMI_FUNCS(g3);
         amd_hsmp_test_ver5,                         \
         "GB/s"                                      \
     },
+// clang-format on
 
 static int amd_hsmp_gmi3_width_setter(LikwidDevice_t dev, const char *value)
 {
@@ -913,6 +921,7 @@ static int amd_hsmp_sock_energy_getter(LikwidDevice_t dev, char **value)
     return likwid_sysft_uint64_to_string((double)energy_real * rapl_domain_info.energyUnit, value);
 }
 
+// clang-format off
 static _SysFeature amd_hsmp_features[] = {
     {"smu_fw_ver", "hsmp", "SMU Firmware Version", amd_hsmp_smu_fw_getter, NULL, DEVICE_TYPE_SOCKET, NULL, NULL},
     {"proto_ver", "hsmp", "HSMP Protocol Version", amd_hsmp_proto_ver_getter, NULL, DEVICE_TYPE_SOCKET, NULL, NULL},
@@ -979,6 +988,7 @@ static _SysFeature amd_hsmp_features[] = {
     {"pkg_energy", "hsmp", "Socket energy consumed", amd_hsmp_sock_energy_getter, NULL, DEVICE_TYPE_SOCKET, amd_hsmp_test_fail, "J"},
     {"core_energy", "hsmp", "Core energy consumed", amd_hsmp_core_energy_getter, NULL, DEVICE_TYPE_CORE, amd_hsmp_test_fail, "J"},
 };
+// clang-format on
 
 static const _SysFeatureList amd_hsmp_featuer_list = {
     .num_features = ARRAY_COUNT(amd_hsmp_features),

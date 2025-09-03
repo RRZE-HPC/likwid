@@ -220,7 +220,13 @@ pthread_create(pthread_t* thread,
             }
             else
             {
-                fgets(buff, 512, fpipe);
+                if (fgets(buff, sizeof(buff), fpipe) == NULL) {
+                    // TODO, how should we handle this error correctly?
+                    fprintf(stderr, "Problems reading symbols for shepard thread detection\n");
+                    fclose(fpipe);
+                    return -1;
+                }
+
                 char* tmp = strstr(buff, "monitor");
                 if (tmp != NULL)
                 {

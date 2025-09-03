@@ -2120,8 +2120,7 @@ static int getBusFromSocketByNameDevid(const uint32_t socket, PciDevice* pcidev,
     struct dirent *pDirent, *pDirentInner;
     DIR *pDir, *pDirInner;
     FILE* fp = NULL;
-    int tmplen = 200;
-    char tmpPath[200], buff[200];
+    char tmpPath[512], buff[512];
     size_t ret = 0;
     int bus_id = -1;
     int numa_ctr = 0;
@@ -2137,12 +2136,10 @@ static int getBusFromSocketByNameDevid(const uint32_t socket, PciDevice* pcidev,
     {
         if (strncmp(pDirent->d_name, "pci0", 4) == 0)
         {
-            memset(tmpPath, '\0', tmplen*sizeof(char));
-            sprintf(tmpPath, "/sys/devices/%s", pDirent->d_name);
+            snprintf(tmpPath, sizeof(tmpPath), "/sys/devices/%s", pDirent->d_name);
 
             char bus[4];
-            strncpy(bus, &(pDirent->d_name[strlen(pDirent->d_name)-2]), 2);
-            bus[2] = '\0';
+            snprintf(bus, sizeof(bus), "%s", &pDirent->d_name[strlen(pDirent->d_name)-2]);
 
             pDirInner = opendir (tmpPath);
             if (pDir == NULL)
@@ -2156,8 +2153,7 @@ static int getBusFromSocketByNameDevid(const uint32_t socket, PciDevice* pcidev,
                 {
                     uint32_t dev_id = 0x0;
                     int numa_node = 0;
-                    memset(tmpPath, '\0', tmplen*sizeof(char));
-                    sprintf(tmpPath, "/sys/devices/%s/%s/device", pDirent->d_name, pDirentInner->d_name);
+                    snprintf(tmpPath, sizeof(tmpPath), "/sys/devices/%s/%s/device", pDirent->d_name, pDirentInner->d_name);
                     if (pcidev->path && strcmp(&(pDirentInner->d_name[strlen(pDirentInner->d_name)-4]), pcidev->path) != 0)
                     {
                         continue;
@@ -2165,24 +2161,25 @@ static int getBusFromSocketByNameDevid(const uint32_t socket, PciDevice* pcidev,
                     fp = fopen(tmpPath,"r");
                     if( fp != NULL )
                     {
-                        memset(buff, '\0', tmplen*sizeof(char));
-                        ret = fread(buff, sizeof(char), tmplen-1, fp);
+                        char *buffRead = fgets(buff, sizeof(buff), fp);
                         fclose(fp);
-                        if (ret > 0)
+                        if (buffRead)
                         {
                             dev_id = strtoul(buff, NULL, 16);
 
                             if (dev_id == pcidev->devid)
                             {
-                                memset(tmpPath, '\0', tmplen*sizeof(char));
-                                sprintf(tmpPath, "/sys/devices/%s/%s/numa_node", pDirent->d_name, pDirentInner->d_name);
+                                snprintf(tmpPath, sizeof(tmpPath), "/sys/devices/%s/%s/numa_node", pDirent->d_name, pDirentInner->d_name);
                                 fp = fopen(tmpPath,"r");
                                 if( fp != NULL )
                                 {
-                                    memset(buff, '\0', tmplen*sizeof(char));
-                                    ret = fread(buff, sizeof(char), tmplen-1, fp);
+                                    buffRead = fgets(buff, sizeof(buff), fp);
                                     fclose(fp);
-                                    numa_node = atoi(buff);
+                                    if (buffRead)
+                                        numa_node = atoi(buff);
+                                    else
+                                        numa_node = -1;
+
                                     if (numa_node < 0)
                                     {
                                         numa_node = numa_ctr;

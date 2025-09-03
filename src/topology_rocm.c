@@ -49,6 +49,14 @@
 #include <error.h>
 #include <likwid.h>
 
+#define DLSYM_AND_CHECK( dllib, name ) dlsym( dllib, name );\
+    do {\
+        const char *err = dlerror(); \
+        if (err != NULL) {\
+            ERROR_PRINT("Error: dlsym on symbol '%s' failed with error: %s", #name, err); \
+            return -1;\
+        } \
+    } while (0)
 
 // Variables
 static void *topo_dl_libhip = NULL;
@@ -57,10 +65,9 @@ static RocmTopology _rocmTopology = {0, NULL};
 
 
 // HIP function declarations
-#define HIPWEAK __attribute__( ( weak ) )
-#define DECLAREHIPFUNC(funcname, funcsig) hipError_t HIPWEAK funcname funcsig;  hipError_t ( *funcname##TopoPtr ) funcsig;
+#define DECLAREHIPFUNC(funcname, ...) hipError_t __attribute__((weak)) funcname(__VA_ARGS__);  static hipError_t (*funcname##_ptr)(__VA_ARGS__);
 
-DECLAREHIPFUNC(hipGetProcAddress, (const char *symbol, void **pfn, int hipVersion, uint64_t flags, hipDriverProcAddressQueryResult *symbolStatus))
+DECLAREHIPFUNC(hipGetProcAddress, const char *symbol, void **pfn, int hipVersion, uint64_t flags, hipDriverProcAddressQueryResult *symbolStatus)
 
 typedef hipError_t (*hipGetDeviceProperties_t)(hipDeviceProp_t *prop, int deviceId);
 hipGetDeviceProperties_t hipGetDevicePropertiesFunc;
@@ -71,7 +78,6 @@ hipGetDeviceCount_t hipGetDeviceCountFunc;
 static int
 topo_link_libraries(void)
 {
-#define DLSYM_AND_CHECK( dllib, name ) dlsym( dllib, name ); if ( dlerror() != NULL ) { return -1; }
 
     /* Need to link in the ROCm HIP libraries */
     topo_dl_libhip = dlopen("libamdhip64.so", RTLD_NOW | RTLD_GLOBAL);
@@ -82,7 +88,12 @@ topo_link_libraries(void)
     }
 
     // Link HIP functions
-    hipGetProcAddressTopoPtr = DLSYM_AND_CHECK(topo_dl_libhip, "hipGetProcAddress");
+    hipGetProcAddress_ptr = dlsym(topo_dl_libhip, "hipGetProcAddress");
+    const char *err = dlerror();
+    if (err) {
+        ERROR_PRINT("Error: unable to find 'hipGetProcAddress' in libamdhip64.so: %s", err);
+        return -1;
+    }
 
     hipError_t res;
     int hipVersion = HIP_VERSION; // Use the HIP version defined in hip_version.h
@@ -90,12 +101,12 @@ topo_link_libraries(void)
     hipDriverProcAddressQueryResult symbolStatus;
 
 
-    res = (*hipGetProcAddressTopoPtr)("hipGetDeviceProperties", (void**)&hipGetDevicePropertiesFunc, hipVersion, flags, &symbolStatus);
+    res = (*hipGetProcAddress_ptr)("hipGetDeviceProperties", (void**)&hipGetDevicePropertiesFunc, hipVersion, flags, &symbolStatus);
     if (res != hipSuccess) {
         ERROR_PRINT("Failed to obtaian hipGetDeviceProperties address");
         return EXIT_FAILURE;
     }
-    res = (*hipGetProcAddressTopoPtr)("hipGetDeviceCount", (void**)&hipGetDeviceCountFunc, hipVersion, flags, &symbolStatus);
+    res = (*hipGetProcAddress_ptr)("hipGetDeviceCount", (void**)&hipGetDeviceCountFunc, hipVersion, flags, &symbolStatus);
     if (res != hipSuccess) {
         ERROR_PRINT("Failed to obtaian hipGetDeviceCount address");
         return EXIT_FAILURE;
@@ -298,6 +309,7 @@ get_rocmTopology(void)
     {
         return &_rocmTopology;
     }
+    return NULL;
 }
 
 #endif /* LIKWID_WITH_ROCMON */

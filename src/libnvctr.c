@@ -56,11 +56,9 @@ static Map_t *cuda_maps = NULL;
 void nvmon_markerInit(void) {
   int i = 0;
   int setgpuinit = 0;
-  int gpuverbosity = 0;
   char *eventStr = getenv("LIKWID_NVMON_EVENTS");
   char *gpuStr = getenv("LIKWID_NVMON_GPUS");
   char *gpuFileStr = getenv("LIKWID_NVMON_FILEPATH");
-  char *verbosityStr = getenv("LIKWID_NVMON_VERBOSITY");
   char *debugStr = getenv("LIKWID_DEBUG");
   /*    char* cpu4gpuStr = getenv("LIKWID_CPU4GPUS");*/
   bstring bGpuStr;
@@ -86,7 +84,6 @@ void nvmon_markerInit(void) {
 
   if (debugStr != NULL) {
     nvmon_setVerbosity(ownatoi(debugStr));
-    gpuverbosity = perfmon_verbosity;
   }
   if (debugStr != NULL)
   {
@@ -220,7 +217,7 @@ void nvmon_markerClose(void) {
   file = fopen(markerfile, "w");
   if (file != NULL) {
     DEBUG_PRINT(DEBUGLEV_DEVELOP,
-                "Creating GPU Marker file % s with % d regions % d groups and "
+                "Creating GPU Marker file %s with %d regions %d groups and "
                     "%d GPUs",
                 markerfile, numberOfRegions, numberOfCudaGroups, numberOfGPUs);
     bstring thread_regs_grps =
@@ -368,6 +365,7 @@ int nvmon_markerRegisterRegion(const char *regionTag) {
     }
     add_smap(cuda_maps[i], bdata(res->label), res);
   }
+  return 0;
 }
 
 int nvmon_markerStartRegion(const char *regionTag) {
@@ -461,7 +459,7 @@ int nvmon_markerStopRegion(const char *regionTag) {
     results->count++;
     for (int j = 0; j < results->nevents; j++) {
       double end = nvmon_getResult(results->groupID, j, i);
-      NvmonDevice_t device = &nvGroupSet->gpus[i];
+      /*NvmonDevice_t device = &nvGroupSet->gpus[i];*/
       /*            if (device->backend == LIKWID_NVMON_CUPTI_BACKEND)*/
       /*                results->PMcounters[j] += end -
        * results->StartPMcounters[j];*/
@@ -552,6 +550,7 @@ int nvmon_markerResetRegion(const char *regionTag) {
     results->time = 0;
     timer_reset(&results->startTime);
   }
+  return 0;
 }
 
 void nvmon_markerNextGroup(void) {
