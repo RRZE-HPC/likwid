@@ -857,6 +857,7 @@ typedef enum {
     BBOX30, BBOX31, BBOX32, BBOX33, BBOX34, BBOX35, BBOX36, BBOX37, BBOX38, BBOX39,
     BBOX40, BBOX41, BBOX42, BBOX43, BBOX44, BBOX45, BBOX46, BBOX47, BBOX48, BBOX49,
     BBOX50, BBOX51, BBOX52, BBOX53, BBOX54, BBOX55, BBOX56, BBOX57, BBOX58, BBOX59,
+    BBOX60, BBOX61, BBOX62, BBOX63, BBOX64, BBOX65, BBOX66, BBOX67, BBOX68, BBOX69,
     RBOX0, RBOX1, RBOX2, RBOX3, RBOX4, RBOX5, RBOX6, RBOX7,
     WBOX0, WBOX1, WBOX2, WBOX3, WBOX4, WBOX5, WBOX6, WBOX7, 
     WBOX0FIX, WBOX1FIX, WBOX2FIX, WBOX3FIX,
@@ -990,9 +991,9 @@ extern const char *RegisterTypeNames[MAX_UNITS];
 #define MEASURE_UNCORE(eventset) \
         (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(PERF)|REG_TYPE_MASK(POWER)|REG_TYPE_MASK(METRICS)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4 || eventset->regTypeMask5 || eventset->regTypeMask6 || eventset->regTypeMask7 || eventset->regTypeMask8 || eventset->regTypeMask9)
 
-
+#define MAX_REGISTER_NAME_LENGTH 128
 typedef struct {
-    char*               key;
+    char                key[MAX_REGISTER_NAME_LENGTH];
     RegisterIndex       index;
     RegisterType        type;
     uint64_t            configRegister;

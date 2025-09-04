@@ -1,0 +1,37 @@
+SHORT Main memory write bandwidth in MBytes/s
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  CPU_CLOCKS_UNHALTED
+UMC0C0  CAS_CMD_WR
+UMC1C0  CAS_CMD_WR
+UMC2C0  CAS_CMD_WR
+UMC3C0  CAS_CMD_WR
+UMC4C0  CAS_CMD_WR
+UMC5C0  CAS_CMD_WR
+UMC6C0  CAS_CMD_WR
+UMC7C0  CAS_CMD_WR
+UMC8C0  CAS_CMD_WR
+UMC9C0  CAS_CMD_WR
+UMC10C0  CAS_CMD_WR
+UMC11C0  CAS_CMD_WR
+
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  PMC1/PMC0
+Memory write bandwidth [MBytes/s] 1.0E-06*(UMC0C0+UMC1C0+UMC2C0+UMC3C0+UMC4C0+UMC5C0+UMC6C0+UMC7C0+UMC8C0+UMC9C0+UMC10C0+UMC11C0)*64.0/time
+Memory write data volume [GBytes] 1.0E-09*(UMC0C0+UMC1C0+UMC2C0+UMC3C0+UMC4C0+UMC5C0+UMC6C0+UMC7C0+UMC8C0+UMC9C0+UMC10C0+UMC11C0)*64.0
+
+LONG
+Formulas:
+Memory write bandwidth [MBytes/s] = 1.0E-06*(SUM(CAS_CMD_WR))*64.0/time
+Memory write data volume [GBytes] = 1.0E-09*(SUM(CAS_CMD_WR))*64.0
+-
+Profiling group to measure write memory bandwidth drawn by all cores of a socket.
+Since this group is based on Uncore events it is only possible to measure on a
+per socket base.

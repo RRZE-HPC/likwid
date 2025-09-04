@@ -178,6 +178,7 @@ int perfmon_init_perfevent(int cpu_id)
     lock_acquire((int*) &sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &die_lock[affinity_thread2die_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &core_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
+    
     if (cpu_event_fds == NULL)
     {
         cpu_event_fds = lw_calloc(cpuid_topology.numHWThreads, sizeof(*cpu_event_fds));
@@ -198,6 +199,12 @@ int perfmon_init_perfevent(int cpu_id)
         perfEventOptionNames[EVENT_OPTION_TID] = "threadmask";
         perfEventOptionNames[EVENT_OPTION_CID] = "coreid";
         perfEventOptionNames[EVENT_OPTION_SLICE] = "sliceid";
+    } else if (cpuid_info.family == ZEN5_FAMILY && (cpuid_info.model == ZEN5_EPYC)) {
+        perfEventOptionNames[EVENT_OPTION_TID] = "threadmask";
+        perfEventOptionNames[EVENT_OPTION_CID] = "coreid";
+        perfEventOptionNames[EVENT_OPTION_SLICE] = "sliceid";
+        perfEventOptionNames[EVENT_OPTION_MASK0] = "rdwrmask";
+
     }
     perf_event_initialized = 1;
     return 0;
@@ -718,6 +725,9 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
         free(formats);
     }
 #endif
+    if (cpuid_info.family == ZEN5_FAMILY && cpuid_info.model == ZEN5_EPYC && event->eventId == 0xFFF) {
+        memset(attr, 0, sizeof(struct perf_event_attr));
+    }
     return 0;
 }
 
@@ -858,7 +868,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                 switch(formats[i].reg)
                 {
                     case CONFIG:
-                        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding 0x%lX to 0x%X", create_mask(umask, formats[i].start, formats[i].end), attr->config);
+                        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding 0x%lX to 0x%llX", create_mask(umask, formats[i].start, formats[i].end), attr->config);
                         attr->config |= create_mask(umask, formats[i].start, formats[i].end);
                         break;
                     case CONFIG1:
@@ -893,6 +903,8 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                 case EVENT_OPTION_IN_TRANS_ABORT:
                 case EVENT_OPTION_MATCH0:
                 case EVENT_OPTION_MATCH1:
+                case EVENT_OPTION_MASK0:
+                case EVENT_OPTION_MASK1:
                 case EVENT_OPTION_TID:
                 case EVENT_OPTION_CID:
                 case EVENT_OPTION_SLICE:
@@ -1031,7 +1043,7 @@ int perfmon_setupCountersThread_perfevent(
         is_uncore = 0;
         ret = 1;
         RegisterIndex index = eventSet->events[i].index;
-        if (cpu_event_fds[cpu_id][index] != -1)
+        if (((int)index > perfmon_numCounters) || (cpu_event_fds[cpu_id][index] != -1))
         {
             continue;
         }
@@ -1129,7 +1141,7 @@ int perfmon_setupCountersThread_perfevent(
                     VERBOSEPRINTREG(cpu_id, index, attr.config, "SETUP_POWER");
                     ret = perf_uncore_setup(&attr, type, event);
                 }
-                else if ((cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY))
+                else if ((cpuid_info.family == ZEN_FAMILY) || (cpuid_info.family == ZEN3_FAMILY) || (cpuid_info.family == ZEN5_FAMILY))
                 {
                     if (event->eventId == 0x01 && core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
                     {
@@ -1328,6 +1340,44 @@ int perfmon_setupCountersThread_perfevent(
             case BBOX29:
             case BBOX30:
             case BBOX31:
+            case BBOX32:
+            case BBOX33:
+            case BBOX34:
+            case BBOX35:
+            case BBOX36:
+            case BBOX37:
+            case BBOX38:
+            case BBOX39:
+            case BBOX40:
+            case BBOX41:
+            case BBOX42:
+            case BBOX43:
+            case BBOX44:
+            case BBOX45:
+            case BBOX46:
+            case BBOX47:
+            case BBOX48:
+            case BBOX49:
+            case BBOX50:
+            case BBOX51:
+            case BBOX52:
+            case BBOX53:
+            case BBOX54:
+            case BBOX55:
+            case BBOX56:
+            case BBOX57:
+            case BBOX58:
+            case BBOX59:
+            case BBOX60:
+            case BBOX61:
+            case BBOX62:
+            case BBOX63:
+            case BBOX64:
+            case BBOX65:
+            case BBOX66:
+            case BBOX67:
+            case BBOX68:
+            case BBOX69:
             case EDBOX0:
             case EDBOX1:
             case EDBOX2:
@@ -1415,7 +1465,7 @@ int perfmon_setupCountersThread_perfevent(
                         has_lock = 1;
                     }
                 }
-                else if ((cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY) && type == CBOX0)
+                else if ((cpuid_info.family == ZEN_FAMILY || cpuid_info.family == ZEN3_FAMILY || cpuid_info.family == ZEN5_FAMILY) && type == CBOX0)
                 {
                     if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id)
                     {
@@ -1444,6 +1494,11 @@ int perfmon_setupCountersThread_perfevent(
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating uncore type for socket %d on Nvidia Grace", affinity_thread2socket_lookup[cpu_id]);
                     type += affinity_thread2socket_lookup[cpu_id];
                 }
+                if ((cpuid_info.family == ZEN5_FAMILY) && (cpuid_info.model == ZEN5_EPYC) && (cpuid_topology.numSockets > 1))
+                {
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating UMC uncore type for socket %d on AMD Zen5", affinity_thread2socket_lookup[cpu_id]);
+                    type += (affinity_thread2socket_lookup[cpu_id] * AMD_K1A_UMC_MAX_UNITS);
+                }
                 if (has_lock)
                 {
                     ret = perf_uncore_setup(&attr, type, event);
@@ -1465,7 +1520,7 @@ int perfmon_setupCountersThread_perfevent(
 
             if (!is_uncore)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "perf_event_open: cpu_id=%d pid=%d flags=%d", cpu_id, curpid, allflags);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "perf_event_open: cpu_id=%d pid=%d flags=%ld", cpu_id, curpid, allflags);
                 cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, -1, allflags);
             }
             else if ((perf_disable_uncore == 0) && (has_lock))
@@ -1475,7 +1530,7 @@ int perfmon_setupCountersThread_perfevent(
                     DEBUG_PRINT(DEBUGLEV_INFO, "Cannot measure Uncore with perf_event_paranoid value = %d", perf_event_paranoid);
                     perf_disable_uncore = 1;
                 }
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "perf_event_open: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX", cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "perf_event_open: cpu_id=%d pid=%d flags=%ld type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX", cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
                 cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, -1, allflags);
             }
             else
@@ -1485,7 +1540,7 @@ int perfmon_setupCountersThread_perfevent(
             if (cpu_event_fds[cpu_id][index] < 0)
             {
                 ERROR_PRINT("Setup of event %s on CPU %d failed: %s", event->name, cpu_id, strerror(errno));
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "open error: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX", cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "open error: cpu_id=%d pid=%d flags=%ld type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config1=0x%llX config2=0x%llX", cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive, attr.config1, attr.config2);
             }
             if (group_fd < 0)
             {
@@ -1527,9 +1582,14 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
             c->counterData = 0x0ULL;
             if (eventSet->events[i].type == POWER)
             {
-                read(cpu_event_fds[cpu_id][index],
-                        &eventSet->events[i].threadCounter[thread_id].startData,
-                        sizeof(long long));
+                int ret = read(cpu_event_fds[cpu_id][index],
+                               &eventSet->events[i].threadCounter[thread_id].startData,
+                               sizeof(long long));
+                if (ret != sizeof(long long))
+                {
+                    ERROR_PRINT("Failed to read start data of RAPL counter\n");
+                    return -(thread_id+1);
+                }
             }
             VERBOSEPRINTREG(cpu_id, 0x0, c->startData, "START_COUNTER");
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_ENABLE, 0);
@@ -1664,6 +1724,7 @@ int perfmon_finalizeCountersThread_perfevent(int thread_id, PerfmonEventSet* eve
                 {
                     ioctl(cpu_event_fds[cpu_id][j], PERF_EVENT_IOC_DISABLE, 0);
                     ioctl(cpu_event_fds[cpu_id][j], PERF_EVENT_IOC_RESET, 0);
+                    VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][j], 0x0, "CLEAR_COUNTER");
                     close(cpu_event_fds[cpu_id][j]);
                     cpu_event_fds[cpu_id][j] = -1;
                     if (j < eventSet->numberOfEvents && eventSet->events[j].threadCounter[thread_id].init == TRUE)

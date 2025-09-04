@@ -241,6 +241,29 @@ power_init(int cpuId)
                     break;
             }
             break;
+        case ZEN5_FAMILY:
+            switch (cpuid_info.model)
+            {
+                case ZEN5_EPYC:
+                    cpuid_info.turbo = 0;
+                    power_info.hasRAPL = 1;
+                    numDomains = 2;
+                    unit_reg = MSR_AMD1A_RAPL_L3_POWER_UNIT;
+                    power_names[0] = "CORE";
+                    power_names[1] = "L3";
+                    power_regs[0] = MSR_AMD1A_RAPL_CORE_STATUS;
+                    power_regs[1] = MSR_AMD1A_RAPL_L3_STATUS;
+
+                    for (i = 0; i< NUM_POWER_DOMAINS; i++)
+                    {
+                        limit_regs[i] = 0x0;
+                        policy_regs[i] = 0x0;
+                        perf_regs[i] = 0x0;
+                        info_regs[i] = 0x0;
+                    }
+                    break;
+            }
+            break;
     }
 
     err = perfmon_init_maps();
