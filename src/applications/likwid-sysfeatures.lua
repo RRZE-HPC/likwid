@@ -355,19 +355,7 @@ if #setList > 0 and #devList > 0 then
     for _, f in pairs(setList) do
         local t = likwid.stringsplit(f, "=")
         if #t == 2 then
-            for _, l in pairs(ft_list) do
-                if t[1] == l.Name or t[1] == string.format("%s.%s", l.Category, l.Name) then
-                    table.insert(featList, {
-                        TypeID = l.TypeID,
-                        Type = l.Type,
-                        Name = l.Name,
-                        Category = l.Category,
-                        ReadOnly = l.ReadOnly,
-                        WriteOnly = l.WriteOnly,
-                        Value = t[2]
-                    })
-                end
-            end
+            featList[t[1]] = t[2]
         else
             print_stderr(string.format("Invalid format of '%s' in set list", f))
         end
@@ -375,14 +363,14 @@ if #setList > 0 and #devList > 0 then
 
     -- set all features in the new list
     for i, dev in pairs(devList) do
-        local tab = {}
-        for _,f in pairs(featList) do
+        for featureName, featureValue in pairs(featList) do
             if verbose > 0 then
-                print_stdout(string.format("Setting '%s.%s' to '%s' (Type %s, Resp %d)", f.Category, f.Name, f.Value, f.Type, c))
+                print_stdout(string.format("Setting '%s' to '%s'", featureName, featureValue))
             end
-            local v, err = likwid.sysFeatures_set(f.Name, dev, f.Value)
+            local v, err = likwid.sysFeatures_set(featureName, dev, featureValue)
             if not v then
-                print_stderr(string.format("Failed to set feature '%s.%s' to '%s' (Type %s, Resp %s)", f.Category, f.Name, f.Value, f.Type, err))
+                print_stderr(string.format("Failed to set feature '%s' to '%s'", featureName, featureValue))
+                err:printStderr()
             end
         end
     end
