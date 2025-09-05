@@ -43,88 +43,56 @@
 #include <sysFeatures_cpufreq.h>
 #include <sysFeatures_common.h>
 
+#include "error_ng.h"
+#include "debug.h"
 
-static int cpufreq_sysfs_getter(const LikwidDevice_t device, char** value, const char* sysfs_filename)
+static cerr_t cpufreq_sysfs_getter(const LikwidDevice_t device, char** value, const char* sysfs_filename)
 {
-    int err = 0;
-    if ((!device) || (!value) || (!sysfs_filename) || (device->type != DEVICE_TYPE_HWTHREAD))
-    {
-        return -EINVAL;
-    }
-    bstring filename = bformat("/sys/devices/system/cpu/cpu%d/cpufreq/%s", device->id.simple.id, sysfs_filename);
-    // bdata() conditionally returns NULL and gcc access doesn't like that with access()
-#pragma GCC diagnostic ignored "-Wnonnull"
-    if (!access(bdata(filename), R_OK))
-    {
-        bstring content = read_file(bdata(filename));
-        if (blength(content) > 0)
-        {
-            btrimws(content);
-            char* v = realloc(*value, (blength(content)+1) * sizeof(char));
-            if (v)
-            {
-                strncpy(v, bdata(content), blength(content));
-                v[blength(content)] = '\0';
-                *value = v;
-            }
-            else
-            {
-                err = -ENOMEM;
-            }
-            bdestroy(content);
-        }
-    }
-    else
-    {
-        err = errno;
-    }
-    bdestroy(filename);
-    return err;
+    assert(device->type == DEVICE_TYPE_HWTHREAD);
+
+    char filename[512];
+    snprintf(filename, sizeof(filename), "/sys/devices/system/cpu/cpu%d/cpufreq/%s", device->id.simple.id, sysfs_filename);
+
+    if (access(filename, R_OK) != 0)
+        return ERROR_SET_ERRNO("access(%s, R_OK) failed", filename);
+
+    bstring content = read_file(filename);
+    btrimws(content);
+    char *v = strdup(bdata(content));
+    bdestroy(content);
+
+    if (!v)
+        return ERROR_SET_ERRNO("strdup failed");
+
+    free(*value);
+    *value = v;
+
+    return NULL;
 }
 
-static int cpufreq_sysfs_setter(const LikwidDevice_t device, const char* value, const char* sysfs_filename)
+static cerr_t cpufreq_sysfs_setter(const LikwidDevice_t device, const char* value, const char* sysfs_filename)
 {
-    int err = 0;
-    if ((!device) || (!value) || (!sysfs_filename) || (device->type != DEVICE_TYPE_HWTHREAD))
-    {
-        return -EINVAL;
-    }
-    bstring filename = bformat("/sys/devices/system/cpu/cpu%d/cpufreq/%s", device->id.simple.id, sysfs_filename);
-    errno = 0;
-    if (!access(bdata(filename), W_OK))
-    {
-        FILE* fp = NULL;
-        errno = 0;
-        fp = fopen(bdata(filename), "w");
-        if (fp == NULL) {
-            err = -errno;
-            ERROR_PRINT("Failed to open file '%s' for writing: %s", bdata(filename), strerror(errno));
-        }
-        else
-        {
-            const size_t vallen = strlen(value);
-            const size_t ret = fwrite(value, sizeof(char), vallen, fp);
-            if (ret != (sizeof(char) * vallen))
-            {
-                ERROR_PRINT("Failed to open file '%s' for writing: %s", bdata(filename), strerror(errno));
-            }
-            fclose(fp);
-        }
-    }
-    else
-    {
-        err = -errno;
-    }
-    bdestroy(filename);
-    return err;
+    assert(device->type == DEVICE_TYPE_HWTHREAD);
+
+    char filename[512];
+    snprintf(filename, sizeof(filename), "/sys/devices/system/cpu/cpu%d/cpufreq/%s", device->id.simple.id, sysfs_filename);
+
+    FILE *fp = fopen(filename, "w");
+    if (!fp)
+        return ERROR_SET_ERRNO("fopen(%s, w) failed", filename);
+
+    const size_t vallen = strlen(value);
+    const size_t ret = fwrite(value, sizeof(char), vallen, fp);
+    fclose(fp);
+
+    if (ret != sizeof(*value) * vallen)
+        return ERROR_SET("fwrite failed to write all bytes");
+
+    return NULL;
 }
 
-
-static int cpufreq_driver_test(const char* testgovernor)
+static cerr_t cpufreq_driver_test(bool *ok, const char* testgovernor)
 {
-    int err = 0;
-    bstring btest = bfromcstr(testgovernor);
-    topology_init();
     CpuTopology_t topo = get_cpuTopology();
 
     for (unsigned i = 0; i < topo->numHWThreads; i++)
@@ -132,68 +100,72 @@ static int cpufreq_driver_test(const char* testgovernor)
         HWThread* t = &topo->threadPool[i];
         if (t->inCpuSet)
         {
-            bstring filename = bformat("/sys/devices/system/cpu/cpu%d/cpufreq/scaling_driver", t->apicId);
-            if (!access(bdata(filename), R_OK))
-            {
-                bstring content = read_file(bdata(filename));
-                btrimws(content);
-                err = (bstrncmp(content, btest, blength(btest)) == BSTR_OK);
-                bdestroy(content);
-            }
-            bdestroy(filename);
-            break;
+            char filename[512];
+            snprintf(filename, sizeof(filename), "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_driver", t->apicId);
+
+            if (access(filename, R_OK) != 0)
+                return ERROR_SET_ERRNO("access(%s, R_OK) failed", filename);
+
+            bstring content = read_file(filename);
+            btrimws(content);
+            *ok = strcmp(bdata(content), testgovernor) == 0;
+            bdestroy(content);
+            return NULL;
         }
     }
-    bdestroy(btest);
-    return err;
+
+    *ok = false;
+    return NULL;
 }
 
 /* ACPI CPUfreq driver */
 
-static int cpufreq_acpi_cur_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_acpi_cur_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_cur_freq");
 }
 
-static int cpufreq_acpi_min_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_acpi_min_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_min_freq");
 }
 
-static int cpufreq_acpi_max_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_acpi_max_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_max_freq");
 }
 
-static int cpufreq_acpi_avail_cpu_freqs_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_acpi_avail_cpu_freqs_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_available_frequencies");
 }
 
-static int cpufreq_acpi_governor_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_acpi_governor_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_governor");
 }
 
 // TODO I don't remember why we don't reference this anymore below.
 // Was there a problem with it?
-//static int cpufreq_acpi_governor_setter(const LikwidDevice_t device, const char* value)
+//static cerr_t cpufreq_acpi_governor_setter(const LikwidDevice_t device, const char* value)
 //{
 //    return cpufreq_sysfs_setter(device, value, "scaling_governor");
 //}
 
-static int cpufreq_acpi_avail_governors_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_acpi_avail_governors_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_available_governors");
 }
 
-static int cpufreq_acpi_test(void)
+static cerr_t cpufreq_acpi_test(bool *ok)
 {
-    int err = cpufreq_driver_test("acpi_cpufreq");
-    if (err != 0)
-        return err;
+    if (cpufreq_driver_test(ok, "acpi_cpufreq"))
+        return ERROR_APPEND("cpufreq_driver_test error");
+    if (*ok)
+        return NULL;
+
     /* On AMD Genoa the string appears to be with a dash '-'. */
-    return cpufreq_driver_test("acpi-cpufreq");
+    return cpufreq_driver_test(ok, "acpi-cpufreq");
 }
 
 static _SysFeature cpufreq_acpi_features[] = {
@@ -213,56 +185,56 @@ static const _SysFeatureList cpufreq_acpi_feature_list = {
 
 /* Intel Pstate driver */
 
-static int cpufreq_intel_pstate_base_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_intel_pstate_base_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
-    int err = cpufreq_sysfs_getter(device, value, "base_frequency");
-    if (err == 0) return 0;
+    if (cpufreq_sysfs_getter(device, value, "base_frequency") == NULL)
+        return NULL;
     return cpufreq_sysfs_getter(device, value, "bios_limit");
 }
 
-static int cpufreq_intel_pstate_cur_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_intel_pstate_cur_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_cur_freq");
 }
 
-static int cpufreq_intel_pstate_min_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_intel_pstate_min_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_min_freq");
 }
 
-static int cpufreq_intel_pstate_min_cpu_freq_setter(const LikwidDevice_t device, const char* value)
+static cerr_t cpufreq_intel_pstate_min_cpu_freq_setter(const LikwidDevice_t device, const char* value)
 {
     return cpufreq_sysfs_setter(device, value, "scaling_min_freq");
 }
 
-static int cpufreq_intel_pstate_max_cpu_freq_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_intel_pstate_max_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_max_freq");
 }
 
-static int cpufreq_intel_pstate_max_cpu_freq_setter(const LikwidDevice_t device, const char* value)
+static cerr_t cpufreq_intel_pstate_max_cpu_freq_setter(const LikwidDevice_t device, const char* value)
 {
     return cpufreq_sysfs_setter(device, value, "scaling_max_freq");
 }
 
-static int cpufreq_intel_pstate_governor_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_intel_pstate_governor_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_governor");
 }
 
-static int cpufreq_intel_pstate_governor_setter(const LikwidDevice_t device, const char* value)
+static cerr_t cpufreq_intel_pstate_governor_setter(const LikwidDevice_t device, const char* value)
 {
     return cpufreq_sysfs_setter(device, value, "scaling_governor");
 }
 
-static int cpufreq_intel_pstate_avail_governors_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_intel_pstate_avail_governors_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_available_governors");
 }
 
-static int cpufreq_intel_pstate_test(void)
+static cerr_t cpufreq_intel_pstate_test(bool *ok)
 {
-    return cpufreq_driver_test("intel_pstate");
+    return cpufreq_driver_test(ok, "intel_pstate");
 }
 
 static _SysFeature cpufreq_pstate_features[] = {
@@ -282,9 +254,9 @@ static const _SysFeatureList cpufreq_pstate_feature_list = {
 
 /* intel_cpufreq driver */
 
-static int cpufreq_intel_cpufreq_test(void)
+static cerr_t cpufreq_intel_cpufreq_test(bool *ok)
 {
-    return cpufreq_driver_test("intel_cpufreq");
+    return cpufreq_driver_test(ok, "intel_cpufreq");
 }
 
 /* INFO: Most sysfs entries are the same as for the intel_pstate driver,
@@ -305,19 +277,19 @@ static const _SysFeatureList cpufreq_intel_cpufreq_feature_list = {
 
 /* cppc driver */
 
-static int cpufreq_cppc_boost_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_cppc_boost_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "boost");
 }
 
-static int cpufreq_cppc_boost_setter(const LikwidDevice_t device, const char* value)
+static cerr_t cpufreq_cppc_boost_setter(const LikwidDevice_t device, const char* value)
 {
     return cpufreq_sysfs_setter(device, value, "boost");
 }
 
-static int cpufreq_cppc_test(void)
+static cerr_t cpufreq_cppc_test(bool *ok)
 {
-    return cpufreq_driver_test("cppc_cpufreq");
+    return cpufreq_driver_test(ok, "cppc_cpufreq");
 }
 
 static _SysFeature cpufreq_cppc_features[] = {
@@ -337,9 +309,9 @@ static const _SysFeatureList cpufreq_cppc_feature_list = {
 
 /* apple-cpufreq driver */
 
-static int cpufreq_apple_cpufreq_test(void)
+static cerr_t cpufreq_apple_cpufreq_test(bool *ok)
 {
-    return cpufreq_driver_test("apple-cpufreq");
+    return cpufreq_driver_test(ok, "apple-cpufreq");
 }
 
 static _SysFeature cpufreq_apple_cpufreq_features[] = {
@@ -360,22 +332,24 @@ static const _SysFeatureList cpufreq_apple_cpufreq_feature_list = {
 
 /* Energy Performance Preference */
 
-static int cpufreq_epp_test(void)
+static cerr_t cpufreq_epp_test(bool *ok)
 {
     if ((!access("/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference", R_OK)) &&
         (!access("/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_available_preferences", R_OK)))
     {
-        return 1;
+        *ok = true;
+    } else {
+        *ok = false;
     }
-    return 0;
+    return NULL;
 }
 
-static int cpufreq_intel_pstate_epp_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_intel_pstate_epp_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "energy_performance_preference");
 }
 
-static int cpufreq_intel_pstate_avail_epps_getter(const LikwidDevice_t device, char** value)
+static cerr_t cpufreq_intel_pstate_avail_epps_getter(const LikwidDevice_t device, char** value)
 {
     return cpufreq_sysfs_getter(device, value, "energy_performance_available_preferences");
 }
@@ -393,14 +367,15 @@ static const _SysFeatureList cpufreq_epp_feature_list = {
 
 /* Scaling Driver (common to all) */
 
-static int cpufreq_scaling_driver_getter(const LikwidDevice_t device, char **value)
+static cerr_t cpufreq_scaling_driver_getter(const LikwidDevice_t device, char **value)
 {
     return cpufreq_sysfs_getter(device, value, "scaling_driver");
 }
 
-static int cpufreq_scaling_driver_test(void)
+static cerr_t cpufreq_scaling_driver_test(bool *ok)
 {
-    return access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver", R_OK) == 0;
+    *ok = access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver", R_OK);
+    return NULL;
 }
 
 static _SysFeature cpufreq_scaling_driver_features[] = {
@@ -415,72 +390,70 @@ static const _SysFeatureList cpufreq_scaling_driver_feature_list = {
 
 /* Init function */
 
-int likwid_sysft_init_cpufreq(_SysFeatureList* out)
+cerr_t likwid_sysft_init_cpufreq(_SysFeatureList* out)
 {
-    int err = 0;
-    if (cpufreq_intel_pstate_test())
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Registering Intel Pstate knobs for cpufreq");
-        err = likwid_sysft_register_features(out, &cpufreq_pstate_feature_list);
-        if (err < 0)
-        {
-            return err;
-        }
-    }
-    else if (cpufreq_intel_cpufreq_test())
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Registering Intel Cpufreq knobs for cpufreq");
-        err = likwid_sysft_register_features(out, &cpufreq_intel_cpufreq_feature_list);
-        if (err < 0)
-        {
-            return err;
-        }
-    }
-    else if (cpufreq_acpi_test())
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Registering ACPI cpufreq knobs for cpufreq");
-        likwid_sysft_register_features(out, &cpufreq_acpi_feature_list);
-        if (err < 0)
-        {
-            return err;
-        }
-    }
-    else if (cpufreq_cppc_test())
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Registering CPPC cpufreq knobs for cpufreq");
-        likwid_sysft_register_features(out, &cpufreq_cppc_feature_list);
-        if (err < 0)
-        {
-            return err;
-        }
-    }
-    else if (cpufreq_apple_cpufreq_test())
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Registering Apple cpufreq knobs for cpufreq");
-        likwid_sysft_register_features(out, &cpufreq_apple_cpufreq_feature_list);
-        if (err < 0)
-        {
-            return err;
-        }
+    bool intel_pstate_avail;
+    bool intel_cpufreq_avail;
+    bool acpi_avail;
+    bool cppc_avail;
+    bool apple_avail;
+
+    if (cpufreq_intel_pstate_test(&intel_pstate_avail)) {
+        return ERROR_APPEND("cpufreq_intel_pstate_test error");
+    } else if (intel_pstate_avail) {
+        PRINT_INFO("Registering Intel Pstate knobs for cpufreq");
+
+        if (likwid_sysft_register_features(out, &cpufreq_pstate_feature_list))
+            return ERROR_APPEND("likwid_sysft_register_features failed");
+    } else if (cpufreq_intel_cpufreq_test(&intel_cpufreq_avail)) {
+        return ERROR_APPEND("cpufreq_intel_cpufreq_test error");
+    } else if (intel_cpufreq_avail) {
+        PRINT_INFO("Registering Intel Cpufreq knobs for cpufreq");
+
+        if (likwid_sysft_register_features(out, &cpufreq_intel_cpufreq_feature_list))
+            return ERROR_APPEND("likwid_sysft_register_features failed");
+    } else if (cpufreq_acpi_test(&acpi_avail)) {
+        return ERROR_APPEND("cpufreq_acpi_test error");
+    } else if (acpi_avail) {
+        PRINT_INFO("Registering ACPI cpufreq knobs for cpufreq");
+
+        if (likwid_sysft_register_features(out, &cpufreq_acpi_feature_list))
+            return ERROR_APPEND("likwid_sysft_register_features failed");
+    } else if (cpufreq_cppc_test(&cppc_avail)) {
+        return ERROR_APPEND("cpufreq_acpi_test error");
+    } else if (cppc_avail) {
+        PRINT_INFO("Registering CPPC cpufreq knobs for cpufreq");
+
+        if (likwid_sysft_register_features(out, &cpufreq_cppc_feature_list))
+            return ERROR_APPEND("likwid_sysft_register_features failed");
+    } else if (cpufreq_apple_cpufreq_test(&apple_avail)) {
+        return ERROR_APPEND("cpufreq_apple_cpufreq_test error");
+    } else if (apple_avail) {
+        PRINT_DEBUG("Registering Apple cpufreq knobs for cpufreq");
+
+        if (likwid_sysft_register_features(out, &cpufreq_apple_cpufreq_feature_list))
+            return ERROR_APPEND("likwid_sysft_register_features failed");
     }
 
-    if (cpufreq_epp_test())
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Registering Energy Performance Preference knobs for cpufreq");
-        err = likwid_sysft_register_features(out, &cpufreq_epp_feature_list);
-        if (err < 0)
-        {
-            return err;
-        }
+    bool epp_avail;
+    if (cpufreq_epp_test(&epp_avail))
+        return ERROR_APPEND("cpufreq_epp_test error");
+    
+    if (epp_avail) {
+        PRINT_DEBUG("Registering Energy Performance Preference knobs for cpufreq");
+        if (likwid_sysft_register_features(out, &cpufreq_epp_feature_list))
+            return ERROR_APPEND("likwid_sysft_register_features failed");
     }
-    if (cpufreq_scaling_driver_test())
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Registering Scaling Driver knobs for cpufreq");
-        err = likwid_sysft_register_features(out, &cpufreq_scaling_driver_feature_list);
-        if (err < 0)
-        {
-            return err;
-        }
+
+    bool scaling_driver_avail;
+    if (cpufreq_scaling_driver_test(&scaling_driver_avail))
+        return ERROR_APPEND("cpufreq_scaling_driver_test error");
+
+    if (scaling_driver_avail) {
+        PRINT_DEBUG("Registering Scaling Driver knobs for cpufreq");
+        if (likwid_sysft_register_features(out, &cpufreq_scaling_driver_feature_list))
+            return ERROR_APPEND("likwid_sysft_register_features failed");
     }
-    return 0;
+
+    return NULL;
 }

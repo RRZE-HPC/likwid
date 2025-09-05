@@ -33,29 +33,32 @@
 #define HWFEATURES_COMMON_H
 
 #include <stdbool.h>
-#include <sysFeatures.h>
 
-int likwid_sysft_register_features(_SysFeatureList *features, const _SysFeatureList* in);
-int likwid_sysft_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList *list);
+#include "likwid.h"
+#include "error_ng.h"
+#include "sysFeatures.h"
 
-int likwid_sysft_uint64_to_string(uint64_t value, char** str);
-int likwid_sysft_string_to_uint64(const char* str, uint64_t* value);
-int likwid_sysft_double_to_string(double value, char **str);
-int likwid_sysft_string_to_double(const char* str, double *value);
-int likwid_sysft_copystr(const char *str, char **value);
+cerr_t likwid_sysft_register_features(_SysFeatureList *features, const _SysFeatureList* in);
+cerr_t likwid_sysft_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList *list);
 
-typedef int (*likwid_sysft_msr_test_func)(uint64_t msrData, void *cbData);
+cerr_t likwid_sysft_uint64_to_string(uint64_t value, char** str);
+cerr_t likwid_sysft_string_to_uint64(const char* str, uint64_t* value);
+cerr_t likwid_sysft_double_to_string(double value, char **str);
+cerr_t likwid_sysft_string_to_double(const char* str, double *value);
+cerr_t likwid_sysft_copystr(const char *str, char **value);
 
-int likwid_sysft_foreach_hwt_testmsr(uint64_t reg);
-int likwid_sysft_foreach_hwt_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData);
-int likwid_sysft_foreach_core_testmsr(uint64_t reg);
-int likwid_sysft_foreach_core_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData);
-int likwid_sysft_foreach_socket_testmsr(uint64_t reg);
-int likwid_sysft_foreach_socket_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData);
-int likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData);
-int likwid_sysft_readmsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t *value);
-int likwid_sysft_readmsr_bit_to_string(const LikwidDevice_t device, uint64_t reg, int bitoffset, bool invert, char **value);
-int likwid_sysft_writemsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t value);
-int likwid_sysft_writemsr_bit_from_string(const LikwidDevice_t device, uint64_t reg, int bitoffset, bool invert, const char *value);
+typedef cerr_t (*likwid_sysft_msr_test_func)(bool *ok, uint64_t msrData, void *cbData);
+
+cerr_t likwid_sysft_foreach_hwt_testmsr(bool *ok, uint64_t reg);
+cerr_t likwid_sysft_foreach_hwt_testmsr_cb(bool *ok, uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData);
+cerr_t likwid_sysft_foreach_core_testmsr(bool *ok, uint64_t reg);
+cerr_t likwid_sysft_foreach_core_testmsr_cb(bool *ok, uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData);
+cerr_t likwid_sysft_foreach_socket_testmsr(bool *ok, uint64_t reg);
+cerr_t likwid_sysft_foreach_socket_testmsr_cb(bool *ok, uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData);
+cerr_t likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData);
+cerr_t likwid_sysft_readmsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t *value);
+cerr_t likwid_sysft_readmsr_bit_to_string(const LikwidDevice_t device, uint64_t reg, int bitoffset, bool invert, char **value);
+cerr_t likwid_sysft_writemsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t value);
+cerr_t likwid_sysft_writemsr_bit_from_string(const LikwidDevice_t device, uint64_t reg, int bitoffset, bool invert, const char *value);
 
 #endif

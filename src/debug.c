@@ -3,6 +3,8 @@
 #include <stdarg.h>
 #include <unistd.h>
 
+#include "error_ng.h"
+
 static const char * const LOG_LEVEL_PREFIX_NORMAL[DEBUG_LEV_COUNT] = {
     "ERROR",
     "WARN",
@@ -95,4 +97,21 @@ void debug_print(FILE *handle, const char *file, const char *func, int line, int
             tty_underline, func, tty_reset,
             tty_underline, line, tty_reset);
     // clang-format on
+}
+
+void debug_print_error(FILE *handle, int category, int level) {
+    /* Handle invalid category or level */
+    if (level < 0)
+        level = 0;
+    else if (level >= DEBUG_LEV_COUNT)
+        level = DEBUG_LEV_DEVELOP;
+
+    if (category < 0 || category >= DEBUG_CAT_COUNT)
+        category = 0;
+
+    /* Do not print errors if the level is not high enough. */
+    if (level > debug_levels[category])
+        return;
+
+    lw_error_print(handle);
 }

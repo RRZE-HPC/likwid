@@ -13,8 +13,8 @@
 // The OUT_OF_MEMORY instance error_scope doesn't contain any information itself,
 // but we use it to identify out of memory errors. For out of memory errors we
 // cannot allocate a new error_scope, so we use this global instance instead.
-static err_t OUT_OF_MEMORY;
-static err_t INIT_ERROR;
+static struct LwErrorScope OUT_OF_MEMORY;
+static struct LwErrorScope INIT_ERROR;
 
 static pthread_mutex_t init_mutex;
 static pthread_key_t tsd;
@@ -32,7 +32,7 @@ __attribute__((destructor)) static void error_lib_fini(void) {
     pthread_mutex_destroy(&init_mutex);
 }
 
-static cerr_t *error_init(void) {
+static cerr_t error_init(void) {
     if (tsd_init)
         return NULL;
 
@@ -40,7 +40,7 @@ static cerr_t *error_init(void) {
     int err = pthread_mutex_lock(&init_mutex);
     assert(err == 0);
 
-    cerr_t *retval = NULL;
+    cerr_t retval = NULL;
 
     if (!tsd_init) {
         if (pthread_key_create(&tsd, error_free_pthread) != 0) {
@@ -63,10 +63,10 @@ static cerr_t *error_init(void) {
     return retval;
 }
 
-static cerr_t *error_append_valist(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, va_list args);
+static cerr_t error_append_valist(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, va_list args);
 
-cerr_t *lw_error_set(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, ...) {
-    cerr_t *retval = error_init();
+cerr_t lw_error_set(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, ...) {
+    cerr_t retval = error_init();
     if (retval)
         return retval;
 
@@ -82,8 +82,8 @@ cerr_t *lw_error_set(const char *file, const char *func, int line, int error_val
     return retval;
 }
 
-cerr_t *lw_error_append(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, ...) {
-    cerr_t *retval = error_init();
+cerr_t lw_error_append(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, ...) {
+    cerr_t retval = error_init();
     if (retval)
         return retval;
 
@@ -97,8 +97,8 @@ cerr_t *lw_error_append(const char *file, const char *func, int line, int error_
     return retval;
 }
 
-cerr_t *lw_error_get(void) {
-    cerr_t *retval = error_init();
+cerr_t lw_error_get(void) {
+    cerr_t retval = error_init();
     if (retval)
         return retval;
 
@@ -113,12 +113,12 @@ void lw_error_clear(void) {
     pthread_setspecific(tsd, NULL);
 }
 
-static cerr_t *error_append_valist(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, va_list args) {
-    cerr_t *retval = error_init();
+static cerr_t error_append_valist(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, va_list args) {
+    cerr_t retval = error_init();
     if (retval)
         return retval;
 
-    err_t *new_scope = calloc(1, sizeof(*new_scope));
+    err_t new_scope = calloc(1, sizeof(*new_scope));
     if (!new_scope) {
         int err = pthread_setspecific(tsd, &OUT_OF_MEMORY);
         assert(err == 0);
@@ -154,15 +154,15 @@ static cerr_t *error_append_valist(const char *file, const char *func, int line,
     return new_scope;
 }
 
-err_t *lw_error_copy(void) {
+err_t lw_error_copy(void) {
     return lw_error_copy_scope(lw_error_get());
 }
 
-err_t *lw_error_copy_scope(cerr_t *scope) {
+err_t lw_error_copy_scope(cerr_t scope) {
     if (!scope)
         return NULL;
 
-    err_t *new_scope = calloc(1, sizeof(*new_scope));
+    err_t new_scope = calloc(1, sizeof(*new_scope));
     if (!new_scope)
         goto out_of_memory;
 
@@ -185,7 +185,7 @@ out_of_memory:
     return &OUT_OF_MEMORY;
 }
 
-void lw_error_free_scope(err_t *scope) {
+void lw_error_free_scope(err_t scope) {
     if (!scope || scope == &OUT_OF_MEMORY || scope == &INIT_ERROR)
         return;
 
@@ -200,7 +200,7 @@ static void error_free_pthread(void *scope) {
     lw_error_free_scope(scope);
 }
 
-static void error_print_scope_recurse(FILE *handle, cerr_t *scope, int depth);
+static void error_print_scope_recurse(FILE *handle, cerr_t scope, int depth);
 
 void lw_error_print(FILE *handle) {
     if (error_init()) {
@@ -218,19 +218,19 @@ void lw_error_print_stderr(void) {
     lw_error_print(stderr);
 }
 
-void lw_error_print_scope(FILE *handle, cerr_t *scope) {
+void lw_error_print_scope(FILE *handle, cerr_t scope) {
     error_print_scope_recurse(handle, scope, 0);
 }
 
-void lw_error_print_scope_stdout(cerr_t *scope) {
+void lw_error_print_scope_stdout(cerr_t scope) {
     lw_error_print_scope(stdout, scope);
 }
 
-void lw_error_print_scope_stderr(cerr_t *scope) {
+void lw_error_print_scope_stderr(cerr_t scope) {
     lw_error_print_scope(stderr, scope);
 }
 
-static void error_print_scope_recurse(FILE *handle, cerr_t *scope, int depth) {
+static void error_print_scope_recurse(FILE *handle, cerr_t scope, int depth) {
     if (!scope)
         return;
 

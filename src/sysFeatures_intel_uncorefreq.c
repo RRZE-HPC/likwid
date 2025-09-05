@@ -29,6 +29,9 @@
  * =======================================================================================
  */
 
+#include <sysFeatures_intel_uncorefreq.h>
+
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -37,69 +40,54 @@
 #include <likwid.h>
 #include <error.h>
 #include <sysFeatures_intel.h>
-#include <sysFeatures_intel_uncorefreq.h>
 #include <access.h>
 #include <sysFeatures_common.h>
 #include <registers.h>
 #include <bitUtil.h>
 
-static int intel_uncorefreq_test(void)
+#include "error_ng.h"
+
+static cerr_t intel_uncorefreq_test(bool *ok)
 {
-    const int retval1 = likwid_sysft_foreach_socket_testmsr(MSR_UNCORE_FREQ);
-    if (retval1 < 0)
-    {
-        return retval1;
-    }
-    const int retval2 = likwid_sysft_foreach_socket_testmsr(MSR_UNCORE_FREQ_READ);
-    if (retval2 < 0)
-    {
-        return retval2;
-    }
-    return retval1 && retval2;
+    if (likwid_sysft_foreach_socket_testmsr(ok, MSR_UNCORE_FREQ))
+        return ERROR_APPEND("likwid_sysft_foreach_socket_testmsr error");
+
+    if (!*ok)
+        return NULL;
+
+    if (likwid_sysft_foreach_socket_testmsr(ok, MSR_UNCORE_FREQ_READ))
+        return ERROR_APPEND("likwid_sysft_foreach_socket_testmsr error");
+
+    return NULL;
 }
 
-static int intel_uncore_cur_freq_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_uncore_cur_freq_getter(const LikwidDevice_t device, char** value)
 {
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t msrData;
-    int err = likwid_sysft_readmsr(device, MSR_UNCORE_FREQ_READ, &msrData);
-    if (err < 0)
-    {
-        return err;
-    }
+    if (likwid_sysft_readmsr(device, MSR_UNCORE_FREQ_READ, &msrData))
+        return ERROR_APPEND("likwid_sysft_readmsr failed");
     return likwid_sysft_uint64_to_string(field64(msrData, 0, 8) * 100, value);
 }
 
-static int intel_uncore_min_freq_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_uncore_min_freq_getter(const LikwidDevice_t device, char** value)
 {
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t msrData;
-    int err = likwid_sysft_readmsr(device, MSR_UNCORE_FREQ, &msrData);
-    if (err < 0)
-    {
-        return err;
-    }
+    if (likwid_sysft_readmsr(device, MSR_UNCORE_FREQ, &msrData))
+        return ERROR_APPEND("likwid_sysft_readmsr failed");
     return likwid_sysft_uint64_to_string(field64(msrData, 8, 8) * 100, value);
 }
 
-static int intel_uncore_max_freq_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_uncore_max_freq_getter(const LikwidDevice_t device, char** value)
 {
-    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
-    {
-        return -EINVAL;
-    }
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t msrData;
-    int err = likwid_sysft_readmsr(device, MSR_UNCORE_FREQ, &msrData);
-    if (err < 0)
-    {
-        return err;
-    }
+    if (likwid_sysft_readmsr(device, MSR_UNCORE_FREQ, &msrData))
+        return ERROR_APPEND("likwid_sysft_readmsr failed");
     return likwid_sysft_uint64_to_string(field64(msrData, 0, 8) * 100, value);
 }
 

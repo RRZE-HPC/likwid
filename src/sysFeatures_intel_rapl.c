@@ -47,6 +47,7 @@
 #include <topology.h>
 
 #include <sysFeatures_common_rapl.h>
+#include "debug.h"
 
 static RaplDomainInfo intel_rapl_pkg_info = {0, 0, 0};
 static RaplDomainInfo intel_rapl_dram_info = {0, 0, 0};
@@ -54,290 +55,252 @@ static RaplDomainInfo intel_rapl_psys_info = {0, 0, 0};
 static RaplDomainInfo intel_rapl_pp0_info = {0, 0, 0};
 static RaplDomainInfo intel_rapl_pp1_info = {0, 0, 0};
 
-static int intel_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t energy;
-    err = likwid_sysft_readmsr_field(device, reg, 0, 32, &energy);
-    if (err)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 0, 32, &energy))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     return likwid_sysft_double_to_string((double)energy * info->energyUnit, value);
 }
 
-static int intel_rapl_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    (void)info;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t enable;
-    err = likwid_sysft_readmsr_field(device, reg, 15, 1, &enable);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 15, 1, &enable))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     return likwid_sysft_uint64_to_string(enable, value);
 }
 
-static int intel_rapl_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    (void)info;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t enable;
-    err = likwid_sysft_string_to_uint64(value, &enable);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_string_to_uint64(value, &enable))
+        return ERROR_APPEND("likwid_sysft_string_to_uint64 failed");
     return likwid_sysft_writemsr_field(device, reg, 15, 1, enable);
 }
 
-static int intel_rapl_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    (void)info;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t clamp;
-    err = likwid_sysft_readmsr_field(device, reg, 16, 1, &clamp);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 16, 1, &clamp))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     return likwid_sysft_uint64_to_string(clamp, value);
 }
 
-static int intel_rapl_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    (void)info;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t clamp;
-    err = likwid_sysft_string_to_uint64(value, &clamp);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_string_to_uint64(value, &clamp))
+        return ERROR_APPEND("likwid_sysft_string_to_uint64 failed");
     return likwid_sysft_writemsr_field(device, reg, 16, 1, clamp);
 }
 
-static int intel_rapl_energy_limit_1_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_1_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t powerUnits;
-    err = likwid_sysft_readmsr_field(device, reg, 0, 15, &powerUnits);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 0, 15, &powerUnits))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     const double watts = (double)powerUnits * info->powerUnit;
     return likwid_sysft_double_to_string(watts, value);
 }
 
-static int intel_rapl_energy_limit_1_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_1_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_info_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     double watts;
-    err = likwid_sysft_string_to_double(value, &watts);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_string_to_double(value, &watts))
+        return ERROR_APPEND("likwid_sysft_string_to_double failed");
     const uint64_t powerUnits = MIN((uint64_t)round(watts / info->powerUnit), 0x7FFF);
     return likwid_sysft_writemsr_field(device, reg, 0, 15, powerUnits);
 }
 
-static int intel_rapl_energy_limit_1_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_1_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t timeWindow;
-    err = likwid_sysft_readmsr_field(device, reg, 17, 7, &timeWindow);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 17, 7, &timeWindow))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     const double seconds = timeWindow_to_seconds(info, timeWindow);
     return likwid_sysft_double_to_string(seconds, value);
 }
 
-static int intel_rapl_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     double seconds;
-    err = likwid_sysft_string_to_double(value, &seconds);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_string_to_double(value, &seconds))
+        return ERROR_APPEND("likwid_sysft_string_to_double failed");
     const uint64_t timeWindow = seconds_to_timeWindow(info, seconds);
     return likwid_sysft_writemsr_field(device, reg, 17, 7, timeWindow);
 }
 
-static int intel_rapl_energy_limit_2_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_2_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t powerUnits;
-    err = likwid_sysft_readmsr_field(device, reg, 32, 15, &powerUnits);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 32, 15, &powerUnits))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     const double watts = (double)powerUnits * info->powerUnit;
     return likwid_sysft_double_to_string(watts, value);
 }
 
-static int intel_rapl_energy_limit_2_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_2_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_info_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     double watts;
-    err = likwid_sysft_string_to_double(value, &watts);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_string_to_double(value, &watts))
+        return ERROR_APPEND("likwid_sysft_string_to_double failed");
     const uint64_t powerUnits = MIN((uint64_t)round(watts / info->powerUnit), 0x7FFF);
     return likwid_sysft_writemsr_field(device, reg, 32, 15, powerUnits);
 }
 
-static int intel_rapl_energy_limit_2_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_2_time_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t timeWindow;
-    err = likwid_sysft_readmsr_field(device, reg, 49, 7, &timeWindow);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 49, 7, &timeWindow))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     const double seconds = timeWindow_to_seconds(info, timeWindow);
     return likwid_sysft_double_to_string(seconds, value);
 }
 
-static int intel_rapl_energy_limit_2_time_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_2_time_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_info_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     double seconds;
-    err = likwid_sysft_string_to_double(value, &seconds);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_string_to_double(value, &seconds))
+        return ERROR_APPEND("likwid_sysft_string_to_double failed");
     const uint64_t timeWindow = seconds_to_timeWindow(info, seconds);
     return likwid_sysft_writemsr_field(device, reg, 49, 7, timeWindow);
 }
 
-static int intel_rapl_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    (void)info;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t enable;
-    err = likwid_sysft_readmsr_field(device, reg, 47, 1, &enable);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 47, 1, &enable))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     return likwid_sysft_uint64_to_string(enable, value);
 }
 
-static int intel_rapl_energy_limit_2_enable_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_2_enable_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    (void)info;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t enable;
-    err = likwid_sysft_string_to_uint64(value, &enable);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_string_to_uint64(value, &enable))
+        return ERROR_APPEND("likwid_sysft_string_to_uint64 failed");
     return likwid_sysft_writemsr_field(device, reg, 47, 1, enable);
 }
 
-static int intel_rapl_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    (void)info;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t clamp;
-    err = likwid_sysft_readmsr_field(device, reg, 48, 1, &clamp);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 48, 1, &clamp))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     return likwid_sysft_uint64_to_string(clamp, value);
 }
 
-static int intel_rapl_energy_limit_2_clamp_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
+static cerr_t intel_rapl_energy_limit_2_clamp_setter(const LikwidDevice_t device, const char* value, uint32_t reg, const RaplDomainInfo* info)
 {
-    int err = getset_unusedinfo_check(device, value, info, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    (void)info;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t clamp;
-    err = likwid_sysft_string_to_uint64(value, &clamp);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_string_to_uint64(value, &clamp))
+        return ERROR_APPEND("likwid_sysft_string_to_uint64 failed");
     return likwid_sysft_writemsr_field(device, reg, 48, 1, clamp);
 }
 
-static int intel_rapl_info_tdp(const LikwidDevice_t device, char** value, uint32_t reg)
+static cerr_t intel_rapl_info_tdp(const LikwidDevice_t device, char** value, uint32_t reg)
 {
-    int err = getset_check(device, value, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t powerUnits;
-    err = likwid_sysft_readmsr_field(device, reg, 0, 15, &powerUnits);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 0, 15, &powerUnits))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     return likwid_sysft_double_to_string((double)powerUnits * intel_rapl_pkg_info.powerUnit, value);
 }
 
-static int intel_rapl_info_min_power(const LikwidDevice_t device, char** value, uint32_t reg)
+static cerr_t intel_rapl_info_min_power(const LikwidDevice_t device, char** value, uint32_t reg)
 {
-    int err = getset_check(device, value, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t powerUnits;
-    err = likwid_sysft_readmsr_field(device, reg, 16, 15, &powerUnits);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 16, 15, &powerUnits))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     const double watts = (double)powerUnits * intel_rapl_pkg_info.powerUnit;
     return likwid_sysft_double_to_string(watts, value);
 }
 
-static int intel_rapl_info_max_power(const LikwidDevice_t device, char** value, uint32_t reg)
+static cerr_t intel_rapl_info_max_power(const LikwidDevice_t device, char** value, uint32_t reg)
 {
-    int err = getset_check(device, value, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t powerUnits;
-    err = likwid_sysft_readmsr_field(device, reg, 32, 15, &powerUnits);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 32, 15, &powerUnits))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     const double watts = (double)powerUnits * intel_rapl_pkg_info.powerUnit;
     return likwid_sysft_double_to_string(watts, value);
 }
 
-static int intel_rapl_info_max_time(const LikwidDevice_t device, char** value, uint32_t reg)
+static cerr_t intel_rapl_info_max_time(const LikwidDevice_t device, char** value, uint32_t reg)
 {
-    int err = getset_check(device, value, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t timeUnits;
-    err = likwid_sysft_readmsr_field(device, reg, 48, 7, &timeUnits);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 48, 7, &timeUnits))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     const double seconds = (double)timeUnits * intel_rapl_pkg_info.timeUnit;
     return likwid_sysft_double_to_string(seconds, value);
 }
 
-static int intel_rapl_policy_getter(const LikwidDevice_t device, char** value, uint32_t reg)
+static cerr_t intel_rapl_policy_getter(const LikwidDevice_t device, char** value, uint32_t reg)
 {
-    int err = getset_check(device, value, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t policy;
-    err = likwid_sysft_readmsr_field(device, reg, 0, 5, &policy);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr_field(device, reg, 0, 5, &policy))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     return likwid_sysft_uint64_to_string(policy, value);
 }
 
-static int intel_rapl_policy_setter(const LikwidDevice_t device, const char* value, uint32_t reg)
+static cerr_t intel_rapl_policy_setter(const LikwidDevice_t device, const char* value, uint32_t reg)
 {
-    int err = getset_check(device, value, DEVICE_TYPE_SOCKET);
-    if (err < 0)
-        return err;
+    assert(device->type == DEVICE_TYPE_SOCKET);
+
     uint64_t policy;
-    err = likwid_sysft_string_to_uint64(value, &policy);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_string_to_uint64(value, &policy))
+        return ERROR_APPEND("likwid_sysft_string_to_uint64 failed");
     return likwid_sysft_writemsr_field(device, reg, 0, 5, policy);
 }
 
@@ -345,7 +308,7 @@ static int intel_rapl_policy_setter(const LikwidDevice_t device, const char* val
 /*                          Intel RAPL (PKG domain)                                                                  */
 /*********************************************************************************************************************/
 
-static int pkg_test_testFunc(uint64_t msrData, void * value)
+static cerr_t pkg_test_testFunc(bool *ok, uint64_t msrData, void * value)
 {
     (void)value;
     if (intel_rapl_pkg_info.powerUnit == 0 && intel_rapl_pkg_info.energyUnit == 0 && intel_rapl_pkg_info.timeUnit == 0)
@@ -354,141 +317,143 @@ static int pkg_test_testFunc(uint64_t msrData, void * value)
         intel_rapl_pkg_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
         intel_rapl_pkg_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
     }
-    return 1;
+    *ok = true;
+    return NULL;
 }
 
-static int intel_rapl_pkg_test(void)
+static cerr_t intel_rapl_pkg_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(MSR_RAPL_POWER_UNIT, pkg_test_testFunc, NULL);
+    return likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_RAPL_POWER_UNIT, pkg_test_testFunc, NULL);
 }
 
-static int pkg_limit_test_lock_testFunc(uint64_t msrData, void * value)
+static cerr_t pkg_limit_test_lock_testFunc(bool *ok, uint64_t msrData, void * value)
 {
     (void)value;
-    return field64(msrData, 63, 1);
+    *ok = field64(msrData, 63, 1);
+    return NULL;
 }
 
-static int intel_rapl_pkg_limit_test_lock(void)
+static cerr_t intel_rapl_pkg_limit_test_lock(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(MSR_PKG_RAPL_POWER_LIMIT, pkg_limit_test_lock_testFunc, NULL);
+    return likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_PKG_RAPL_POWER_LIMIT, pkg_limit_test_lock_testFunc, NULL);
 }
 
-static int intel_pkg_energy_status_test(void)
+static cerr_t intel_pkg_energy_status_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_PKG_ENERGY_STATUS);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_PKG_ENERGY_STATUS);
 }
 
-static int intel_pkg_energy_status_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pkg_energy_status_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_status_getter(device, value, MSR_PKG_ENERGY_STATUS, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_test(void)
+static cerr_t intel_pkg_energy_limit_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_PKG_RAPL_POWER_LIMIT);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_PKG_RAPL_POWER_LIMIT);
 }
 
-static int intel_pkg_energy_limit_1_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pkg_energy_limit_1_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_1_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pkg_energy_limit_1_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_1_time_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pkg_energy_limit_1_time_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_time_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pkg_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_time_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pkg_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_enable_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pkg_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_enable_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pkg_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pkg_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_2_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pkg_energy_limit_2_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_2_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_2_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pkg_energy_limit_2_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_2_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_2_time_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pkg_energy_limit_2_time_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_2_time_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_2_time_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pkg_energy_limit_2_time_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_2_time_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pkg_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_2_enable_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_2_enable_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pkg_energy_limit_2_enable_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_2_enable_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pkg_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_2_clamp_getter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_energy_limit_2_clamp_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pkg_energy_limit_2_clamp_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_2_clamp_setter(device, value, MSR_PKG_RAPL_POWER_LIMIT, &intel_rapl_pkg_info);
 }
 
-static int intel_pkg_info_test(void)
+static cerr_t intel_pkg_info_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_PKG_POWER_INFO);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_PKG_POWER_INFO);
 }
 
-static int intel_pkg_info_tdp(const LikwidDevice_t device, char** value)
+static cerr_t intel_pkg_info_tdp(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_info_tdp(device, value, MSR_PKG_POWER_INFO);
 }
 
-static int intel_pkg_info_min_power(const LikwidDevice_t device, char** value)
+static cerr_t intel_pkg_info_min_power(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_info_min_power(device, value, MSR_PKG_POWER_INFO);
 }
 
-static int intel_pkg_info_max_power(const LikwidDevice_t device, char** value)
+static cerr_t intel_pkg_info_max_power(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_info_max_power(device, value, MSR_PKG_POWER_INFO);
 }
 
-static int intel_pkg_info_max_time(const LikwidDevice_t device, char** value)
+static cerr_t intel_pkg_info_max_time(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_info_max_time(device, value, MSR_PKG_POWER_INFO);
 }
@@ -519,7 +484,7 @@ static const _SysFeatureList intel_rapl_pkg_feature_list = {
 /*                          Intel RAPL (DRAM domain)                                                                 */
 /*********************************************************************************************************************/
 
-static int dram_test_testFunc(uint64_t msrData, void * value)
+static cerr_t dram_test_testFunc(bool *ok, uint64_t msrData, void * value)
 {
     (void)value;
     if (intel_rapl_dram_info.powerUnit == 0 && intel_rapl_dram_info.energyUnit == 0 && intel_rapl_dram_info.timeUnit == 0)
@@ -546,100 +511,103 @@ static int dram_test_testFunc(uint64_t msrData, void * value)
             intel_rapl_dram_info.energyUnit = 61e-6;
         }
     }
-    return 1;
+
+    *ok = true;
+    return NULL;
 }
 
-static int intel_rapl_dram_test(void)
+static cerr_t intel_rapl_dram_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(MSR_RAPL_POWER_UNIT, dram_test_testFunc, NULL);
+    return likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_RAPL_POWER_UNIT, dram_test_testFunc, NULL);
 }
 
-static int intel_dram_energy_status_test(void)
+static cerr_t intel_dram_energy_status_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_DRAM_ENERGY_STATUS);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_DRAM_ENERGY_STATUS);
 }
 
-static int intel_dram_energy_status_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_dram_energy_status_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_status_getter(device, value, MSR_DRAM_ENERGY_STATUS, &intel_rapl_dram_info);
 }
 
-static int intel_dram_energy_limit_test(void)
+static cerr_t intel_dram_energy_limit_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_DRAM_RAPL_POWER_LIMIT);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_DRAM_RAPL_POWER_LIMIT);
 }
 
-static int dram_limit_test_lock_testFunc(uint64_t msrData, void * value)
+static cerr_t dram_limit_test_lock_testFunc(bool *ok, uint64_t msrData, void * value)
 {
     (void)value;
-    return field64(msrData, 31, 1);
+    *ok = field64(msrData, 31, 1);
+    return NULL;
 }
-static int intel_rapl_dram_limit_test_lock(void)
+static cerr_t intel_rapl_dram_limit_test_lock(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(MSR_DRAM_RAPL_POWER_LIMIT, dram_limit_test_lock_testFunc, NULL);
+    return likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_DRAM_RAPL_POWER_LIMIT, dram_limit_test_lock_testFunc, NULL);
 }
 
-static int intel_dram_energy_limit_1_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_dram_energy_limit_1_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
 
-static int intel_dram_energy_limit_1_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_dram_energy_limit_1_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
 
-static int intel_dram_energy_limit_1_time_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_dram_energy_limit_1_time_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_time_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
 
-static int intel_dram_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_dram_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_time_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
 
-static int intel_dram_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_dram_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_enable_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
 
-static int intel_dram_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_dram_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_enable_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
 
-static int intel_dram_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_dram_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
 
-static int intel_dram_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_dram_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_DRAM_RAPL_POWER_LIMIT, &intel_rapl_dram_info);
 }
 
-static int intel_dram_info_test(void)
+static cerr_t intel_dram_info_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_DRAM_POWER_INFO);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_DRAM_POWER_INFO);
 }
 
-static int intel_dram_info_tdp(const LikwidDevice_t device, char** value)
+static cerr_t intel_dram_info_tdp(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_info_tdp(device, value, MSR_DRAM_POWER_INFO);
 }
 
-static int intel_dram_info_min_power(const LikwidDevice_t device, char** value)
+static cerr_t intel_dram_info_min_power(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_info_min_power(device, value, MSR_DRAM_POWER_INFO);
 }
 
-static int intel_dram_info_max_power(const LikwidDevice_t device, char** value)
+static cerr_t intel_dram_info_max_power(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_info_max_power(device, value, MSR_DRAM_POWER_INFO);
 }
 
-static int intel_dram_info_max_time(const LikwidDevice_t device, char** value)
+static cerr_t intel_dram_info_max_time(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_info_max_time(device, value, MSR_DRAM_POWER_INFO);
 }
@@ -666,7 +634,7 @@ static const _SysFeatureList intel_rapl_dram_feature_list = {
 /*                          Intel RAPL (PSYS or PLATFORM domain)                                                     */
 /*********************************************************************************************************************/
 
-static int psys_test_testFunc(uint64_t msrData, void * value)
+static cerr_t psys_test_testFunc(bool *ok, uint64_t msrData, void * value)
 {
     (void)value;
     if (intel_rapl_psys_info.powerUnit == 0 && intel_rapl_psys_info.energyUnit == 0 && intel_rapl_psys_info.timeUnit == 0)
@@ -680,116 +648,118 @@ static int psys_test_testFunc(uint64_t msrData, void * value)
         }
         intel_rapl_psys_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
     }
-    return 1;
+    *ok = true;
+    return NULL;
 }
 
-static int intel_rapl_psys_test(void)
+static cerr_t intel_rapl_psys_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(MSR_RAPL_POWER_UNIT, psys_test_testFunc, NULL);
+    return likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_RAPL_POWER_UNIT, psys_test_testFunc, NULL);
 }
 
-static int intel_psys_energy_status_test(void)
+static cerr_t intel_psys_energy_status_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_PLATFORM_ENERGY_STATUS);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_PLATFORM_ENERGY_STATUS);
 }
 
-static int intel_psys_energy_status_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_psys_energy_status_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_status_getter(device, value, MSR_PLATFORM_ENERGY_STATUS, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_test(void)
+static cerr_t intel_psys_energy_limit_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_PLATFORM_POWER_LIMIT);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_PLATFORM_POWER_LIMIT);
 }
 
-static int psys_limit_test_lock_testFunc(uint64_t msrData, void * value)
+static cerr_t psys_limit_test_lock_testFunc(bool *ok, uint64_t msrData, void * value)
 {
     (void)value;
-    return field64(msrData, 63, 1);
+    *ok = field64(msrData, 63, 1);
+    return NULL;
 }
 
-static int intel_rapl_psys_limit_test_lock(void)
+static cerr_t intel_rapl_psys_limit_test_lock(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(MSR_PLATFORM_POWER_LIMIT, psys_limit_test_lock_testFunc, NULL);
+    return likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_PLATFORM_POWER_LIMIT, psys_limit_test_lock_testFunc, NULL);
 }
 
-static int intel_psys_energy_limit_1_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_psys_energy_limit_1_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_1_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_psys_energy_limit_1_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_1_time_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_psys_energy_limit_1_time_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_time_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_psys_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_time_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_psys_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_enable_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_psys_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_enable_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_psys_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_psys_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_2_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_psys_energy_limit_2_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_2_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_2_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_psys_energy_limit_2_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_2_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_2_time_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_psys_energy_limit_2_time_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_2_time_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_2_time_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_psys_energy_limit_2_time_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_2_time_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_psys_energy_limit_2_enable_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_2_enable_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_2_enable_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_psys_energy_limit_2_enable_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_2_enable_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_psys_energy_limit_2_clamp_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_2_clamp_getter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
-static int intel_psys_energy_limit_2_clamp_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_psys_energy_limit_2_clamp_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_2_clamp_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
@@ -816,7 +786,7 @@ static const _SysFeatureList intel_rapl_psys_feature_list = {
 /*                          Intel RAPL (PP0 domain)                                                                  */
 /*********************************************************************************************************************/
 
-static int pp0_test_testFunc(uint64_t msrData, void * value)
+static cerr_t pp0_test_testFunc(bool *ok, uint64_t msrData, void * value)
 {
     (void)value;
     if (intel_rapl_pp0_info.powerUnit == 0 && intel_rapl_pp0_info.energyUnit == 0 && intel_rapl_pp0_info.timeUnit == 0)
@@ -825,91 +795,93 @@ static int pp0_test_testFunc(uint64_t msrData, void * value)
         intel_rapl_pp0_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
         intel_rapl_pp0_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
     }
-    return 1;
+    *ok = true;
+    return NULL;
 }
 
-static int intel_rapl_pp0_test(void)
+static cerr_t intel_rapl_pp0_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(MSR_RAPL_POWER_UNIT, pp0_test_testFunc, NULL);
+    return likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_RAPL_POWER_UNIT, pp0_test_testFunc, NULL);
 }
 
-static int intel_pp0_energy_status_test(void)
+static cerr_t intel_pp0_energy_status_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_PP0_ENERGY_STATUS);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_PP0_ENERGY_STATUS);
 }
 
-static int intel_pp0_energy_status_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pp0_energy_status_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_status_getter(device, value, MSR_PP0_ENERGY_STATUS, &intel_rapl_pp0_info);
 }
 
-static int intel_pp0_energy_limit_test(void)
+static cerr_t intel_pp0_energy_limit_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_PP0_RAPL_POWER_LIMIT);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_PP0_RAPL_POWER_LIMIT);
 }
 
-static int pp0_limit_test_lock_testFunc(uint64_t msrData, void * value)
+static cerr_t pp0_limit_test_lock_testFunc(bool *ok, uint64_t msrData, void * value)
 {
     (void)value;
-    return field64(msrData, 31, 1);
+    *ok = field64(msrData, 31, 1);
+    return NULL;
 }
 
-static int intel_rapl_pp0_limit_test_lock(void)
+static cerr_t intel_rapl_pp0_limit_test_lock(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(MSR_PP0_RAPL_POWER_LIMIT, pp0_limit_test_lock_testFunc, NULL);
+    return likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_PP0_RAPL_POWER_LIMIT, pp0_limit_test_lock_testFunc, NULL);
 }
 
-static int intel_pp0_energy_limit_1_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pp0_energy_limit_1_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_getter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
 
-static int intel_pp0_energy_limit_1_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pp0_energy_limit_1_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_setter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
 
-static int intel_pp0_energy_limit_1_time_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pp0_energy_limit_1_time_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_time_getter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
 
-static int intel_pp0_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pp0_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_time_setter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
 
-static int intel_pp0_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pp0_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_enable_getter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
 
-static int intel_pp0_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pp0_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_enable_setter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
 
-static int intel_pp0_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pp0_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
 
-static int intel_pp0_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pp0_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_PP0_RAPL_POWER_LIMIT, &intel_rapl_pp0_info);
 }
 
-static int intel_pp0_policy_test(void)
+static cerr_t intel_pp0_policy_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_PP0_ENERGY_POLICY);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_PP0_ENERGY_POLICY);
 }
 
-static int intel_pp0_policy_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pp0_policy_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_policy_getter(device, value, MSR_PP0_ENERGY_POLICY);
 }
 
-static int intel_pp0_policy_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pp0_policy_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_policy_setter(device, value, MSR_PP0_ENERGY_POLICY);
 }
@@ -933,7 +905,7 @@ static const _SysFeatureList intel_rapl_pp0_feature_list = {
 /*                          Intel RAPL (PP1 domain)                                                                  */
 /*********************************************************************************************************************/
 
-static int pp1_test_testFunc(uint64_t msrData, void * value)
+static cerr_t pp1_test_testFunc(bool *ok, uint64_t msrData, void * value)
 {
     (void)value;
     if (intel_rapl_pp1_info.powerUnit == 0 && intel_rapl_pp1_info.energyUnit == 0 && intel_rapl_pp1_info.timeUnit == 0)
@@ -942,91 +914,93 @@ static int pp1_test_testFunc(uint64_t msrData, void * value)
         intel_rapl_pp1_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
         intel_rapl_pp1_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
     }
-    return 1;
+    *ok = true;
+    return NULL;
 }
 
-static int intel_rapl_pp1_test(void)
+static cerr_t intel_rapl_pp1_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(MSR_RAPL_POWER_UNIT, pp1_test_testFunc, NULL);
+    return likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_RAPL_POWER_UNIT, pp1_test_testFunc, NULL);
 }
 
-static int intel_pp1_energy_status_test(void)
+static cerr_t intel_pp1_energy_status_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_PP1_ENERGY_STATUS);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_PP1_ENERGY_STATUS);
 }
 
-static int intel_pp1_energy_status_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pp1_energy_status_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_status_getter(device, value, MSR_PP1_ENERGY_STATUS, &intel_rapl_pp1_info);
 }
 
-static int intel_pp1_energy_limit_test(void)
+static cerr_t intel_pp1_energy_limit_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_PP1_RAPL_POWER_LIMIT);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_PP1_RAPL_POWER_LIMIT);
 }
 
-static int pp1_limit_test_lock(uint64_t msrData, void * value)
+static cerr_t pp1_limit_test_lock(bool *ok, uint64_t msrData, void * value)
 {
     (void)value;
-    return field64(msrData, 31, 1);
+    *ok = field64(msrData, 31, 1);
+    return NULL;
 }
 
-static int intel_rapl_pp1_limit_test_lock(void)
+static cerr_t intel_rapl_pp1_limit_test_lock(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(MSR_PP1_RAPL_POWER_LIMIT, pp1_limit_test_lock, NULL);
+    return likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_PP1_RAPL_POWER_LIMIT, pp1_limit_test_lock, NULL);
 }
 
-static int intel_pp1_energy_limit_1_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pp1_energy_limit_1_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_getter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
 
-static int intel_pp1_energy_limit_1_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pp1_energy_limit_1_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_setter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
 
-static int intel_pp1_energy_limit_1_time_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pp1_energy_limit_1_time_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_time_getter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
 
-static int intel_pp1_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pp1_energy_limit_1_time_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_time_setter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
 
-static int intel_pp1_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pp1_energy_limit_1_enable_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_enable_getter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
 
-static int intel_pp1_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pp1_energy_limit_1_enable_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_enable_setter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
 
-static int intel_pp1_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pp1_energy_limit_1_clamp_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_energy_limit_1_clamp_getter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
 
-static int intel_pp1_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pp1_energy_limit_1_clamp_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_energy_limit_1_clamp_setter(device, value, MSR_PP1_RAPL_POWER_LIMIT, &intel_rapl_pp1_info);
 }
 
-static int intel_pp1_policy_test(void)
+static cerr_t intel_pp1_policy_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(MSR_PP1_ENERGY_POLICY);
+    return likwid_sysft_foreach_socket_testmsr(ok, MSR_PP1_ENERGY_POLICY);
 }
 
-static int intel_pp1_policy_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_pp1_policy_getter(const LikwidDevice_t device, char** value)
 {
     return intel_rapl_policy_getter(device, value, MSR_PP1_ENERGY_POLICY);
 }
 
-static int intel_pp1_policy_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_pp1_policy_setter(const LikwidDevice_t device, const char* value)
 {
     return intel_rapl_policy_setter(device, value, MSR_PP1_ENERGY_POLICY);
 }
@@ -1048,127 +1022,129 @@ static const _SysFeatureList intel_rapl_pp1_feature_list = {
 
 /* Init function */
 
-int likwid_sysft_init_intel_rapl(_SysFeatureList* out)
+cerr_t likwid_sysft_init_intel_rapl(_SysFeatureList* out)
 {
-    int err = 0;
     Configuration_t config = NULL;
-    err = init_configuration();
+    int err = init_configuration();
     if (err < 0)
-    {
-        errno = -err;
-        ERROR_PRINT("Failed to initialize configuration");
-        return err;
-    }
+        return ERROR_SET_LWERR(err, "Failed to initialize configuration");
+
     config = get_configuration();
-    if (config->daemonMode == ACCESSMODE_PERF)
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "No Intel RAPL support with accessmode=perf_event");
-        return 0;
+    if (config->daemonMode == ACCESSMODE_PERF) {
+        PRINT_INFO("No Intel RAPL support with accessmode=perf_event");
+        return NULL;
     }
-    if (intel_rapl_pkg_test())
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Register Intel RAPL PKG domain");
-        if (intel_rapl_pkg_limit_test_lock() > 0)
-        {
-            DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL PKG domain locked");
+
+    bool pkg_avail;
+    if (intel_rapl_pkg_test(&pkg_avail))
+        return ERROR_APPEND("intel_rapl_pkg_test error");
+
+    if (pkg_avail) {
+        PRINT_INFO("Register Intel RAPL PKG domain");
+
+        bool pkg_locked;
+        if (intel_rapl_pkg_limit_test_lock(&pkg_locked))
+            return ERROR_APPEND("intel_rapl_pkg_limit_test_lock error");
+
+        if (pkg_locked) {
+            PRINT_INFO("Intel RAPL PKG domain locked");
             for (int i = 0; i < intel_rapl_pkg_feature_list.num_features; i++)
-            {
                 intel_rapl_pkg_feature_list.features[i].setter = NULL;
-            }
         }
-        err = likwid_sysft_register_features(out, &intel_rapl_pkg_feature_list);
-        if (err < 0)
-        {
-            DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL domain PKG not supported");
-        }
+
+        if (likwid_sysft_register_features(out, &intel_rapl_pkg_feature_list))
+            return ERROR_APPEND("likwid_sysft_register_features failed");
+    } else {
+        PRINT_INFO("Intel RAPL domain PKG not supported");
     }
-    else
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL domain PKG not supported");
-    }
-    if (intel_rapl_dram_test())
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Register Intel RAPL DRAM domain");
-        if (intel_rapl_dram_limit_test_lock() > 0)
-        {
-            DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL DRAM domain locked");
+
+    bool dram_avail;
+    if (intel_rapl_dram_test(&dram_avail))
+        return ERROR_APPEND("intel_rapl_dram_test error");
+
+    if (dram_avail) {
+        PRINT_INFO("Register Intel RAPL DRAM domain");
+
+        bool dram_locked;
+        if (intel_rapl_dram_limit_test_lock(&dram_locked))
+            return ERROR_APPEND("intel_rapl_dram_limit_test_lock error");
+
+        if (dram_locked) {
+            PRINT_INFO("Intel RAPL DRAM domain locked");
             for (int i = 0; i < intel_rapl_dram_feature_list.num_features; i++)
-            {
                 intel_rapl_dram_feature_list.features[i].setter = NULL;
-            }
         }
-        err = likwid_sysft_register_features(out, &intel_rapl_dram_feature_list);
-        if (err < 0)
-        {
-            DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL domain DRAM not supported");
-        }
+
+        if (likwid_sysft_register_features(out, &intel_rapl_dram_feature_list))
+            return ERROR_APPEND("likwid_sysft_register_features failed");
+    } else {
+        PRINT_INFO("Intel RAPL domain DRAM not supported");
     }
-    else
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL domain DRAM not supported");
-    }
-    if (intel_rapl_pp0_test())
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Register Intel RAPL PP0 domain");
-        if (intel_rapl_pp0_limit_test_lock() > 0)
-        {
-            DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL PP0 domain locked");
+
+    bool pp0_avail;
+    if (intel_rapl_pp0_test(&pp0_avail))
+        return ERROR_APPEND("intel_rapl_pp0_test error");
+
+    if (pp0_avail) {
+        PRINT_INFO("Register Intel RAPL PP0 domain");
+
+        bool pp0_locked;
+        if (intel_rapl_pp0_limit_test_lock(&pp0_locked))
+            return ERROR_APPEND("intel_rapl_pp0_limit_test_lock error");
+
+        if (pp0_locked) {
+            PRINT_INFO("Intel RAPL PP0 domain locked");
             for (int i = 0; i < intel_rapl_pp0_feature_list.num_features; i++)
-            {
                 intel_rapl_pp0_feature_list.features[i].setter = NULL;
-            }
         }
-        err = likwid_sysft_register_features(out, &intel_rapl_pp0_feature_list);
-        if (err < 0)
-        {
-            DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL domain PP0 not supported");
-        }
+
+        if (likwid_sysft_register_features(out, &intel_rapl_pp0_feature_list))
+            return ERROR_APPEND("likwid_sysft_register_features failed");
+    } else {
+        PRINT_INFO("Intel RAPL domain PP0 not supported");
     }
-    else
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL domain PP0 not supported");
-    }
-    if (intel_rapl_pp1_test())
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Register Intel RAPL PP1 domain");
-        if (intel_rapl_pp1_limit_test_lock() > 0)
-        {
-            DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL PP1 domain locked");
+
+    bool pp1_avail;
+    if (intel_rapl_pp1_test(&pp1_avail))
+        return ERROR_APPEND("intel_rapl_pp1_test error");
+
+    if (pp1_avail) {
+        PRINT_INFO("Register Intel RAPL PP1 domain");
+
+        bool pp1_locked;
+        if (intel_rapl_pp1_limit_test_lock(&pp1_locked)) {
+            PRINT_INFO("Intel RAPL PP1 domain locked");
             for (int i = 0; i < intel_rapl_pp1_feature_list.num_features; i++)
-            {
                 intel_rapl_pp1_feature_list.features[i].setter = NULL;
-            }
         }
-        err = likwid_sysft_register_features(out, &intel_rapl_pp1_feature_list);
-        if (err < 0)
-        {
-            DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL domain PP1 not supported");
-        }
+
+        if (likwid_sysft_register_features(out, &intel_rapl_pp1_feature_list))
+            return ERROR_APPEND("likwid_sysft_register_features failed");
+    } else {
+        PRINT_INFO("Intel RAPL domain PP1 not supported");
     }
-    else
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL domain PP1 not supported");
-    }
-    if (intel_rapl_psys_test())
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Register Intel RAPL PSYS domain");
-        if (intel_rapl_psys_limit_test_lock() > 0)
-        {
-            DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL PSYS domain locked");
+
+    bool psys_avail;
+    if (intel_rapl_psys_test(&psys_avail))
+        return ERROR_APPEND("intel_rapl_psys_test error");
+    
+    if (psys_avail) {
+        PRINT_INFO("Register Intel RAPL PSYS domain");
+
+        bool psys_locked;
+        if (intel_rapl_psys_limit_test_lock(&psys_locked))
+            return ERROR_APPEND("intel_rapl_psys_limit_test_lock error");
+        
+        if (psys_locked) {
+            PRINT_INFO("Intel RAPL PSYS domain locked");
             for (int i = 0; i < intel_rapl_psys_feature_list.num_features; i++)
-            {
                 intel_rapl_psys_feature_list.features[i].setter = NULL;
-            }
         }
-        err = likwid_sysft_register_features(out, &intel_rapl_psys_feature_list);
-        if (err < 0)
-        {
-            DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL domain PSYS not supported");
-        }
+
+        if (likwid_sysft_register_features(out, &intel_rapl_psys_feature_list))
+            return ERROR_APPEND("likwid_sysft_register_features failed");
+    } else {
+        PRINT_INFO("Intel RAPL domain PSYS not supported");
     }
-    else
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Intel RAPL domain PSYS not supported");
-    }
-    return 0;
+    return NULL;
 }

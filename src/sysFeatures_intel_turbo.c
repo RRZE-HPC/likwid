@@ -38,36 +38,31 @@
 #include <error.h>
 #include <registers.h>
 #include <sysFeatures_common.h>
+#include "error_ng.h"
+#include "debug.h"
 
-static int intel_cpu_turbo_test(void)
+static cerr_t intel_cpu_turbo_test(bool *ok)
 {
     uint32_t eax = 0x01, ebx, ecx = 0x0, edx;
     CPUID(eax, ebx, ecx, edx);
-    if (field32(ecx, 7, 1) == 0)
-    {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Intel SpeedStep not supported by architecture");
-        return 0;
+
+    if (field32(ecx, 7, 1) == 0) {
+        PRINT_INFO("Intel SpeedStep not supported by architecture");
+        *ok = false;
+        return NULL;
     }
 
-    return likwid_sysft_foreach_hwt_testmsr(MSR_IA32_MISC_ENABLE);
+    return likwid_sysft_foreach_hwt_testmsr(ok, MSR_IA32_MISC_ENABLE);
 }
 
-static int intel_cpu_turbo_getter(const LikwidDevice_t device, char** value)
+static cerr_t intel_cpu_turbo_getter(const LikwidDevice_t device, char** value)
 {
-    if (intel_cpu_turbo_test())
-    {
-        return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_MISC_ENABLE, 36, true, value);
-    }
-    return -ENOTSUP;
+    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_MISC_ENABLE, 36, true, value);
 }
 
-static int intel_cpu_turbo_setter(const LikwidDevice_t device, const char* value)
+static cerr_t intel_cpu_turbo_setter(const LikwidDevice_t device, const char* value)
 {
-    if (intel_cpu_turbo_test())
-    {
-        return likwid_sysft_writemsr_bit_from_string(device, MSR_IA32_MISC_ENABLE, 36, true, value);
-    }
-    return -ENOTSUP;
+    return likwid_sysft_writemsr_bit_from_string(device, MSR_IA32_MISC_ENABLE, 36, true, value);
 }
 
 static _SysFeature intel_cpu_turbo_features[] = {

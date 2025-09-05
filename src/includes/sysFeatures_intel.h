@@ -33,7 +33,8 @@
 #define HWFEATURES_X86_INTEL_H
 
 #include <sysFeatures_types.h>
+#include "error_ng.h"
 
-int likwid_sysft_init_x86_intel(_SysFeatureList* list);
+cerr_t likwid_sysft_init_x86_intel(_SysFeatureList* list);
 
 #endif

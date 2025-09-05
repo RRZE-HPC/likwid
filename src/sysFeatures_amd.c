@@ -28,7 +28,7 @@
  *
  * =======================================================================================
  */
-#include <sysFeatures_amd.h>
+#include "sysFeatures_amd.h"
 
 #include <stdbool.h>
 #include <errno.h>
@@ -43,112 +43,103 @@
 #include <topology.h>
 #include <registers.h>
 
+#include "error_ng.h"
+#include "debug.h"
+
 static const _HWArchFeatures amd_arch_features[];
 
-int likwid_sysft_init_x86_amd(_SysFeatureList* out)
+cerr_t likwid_sysft_init_x86_amd(_SysFeatureList* out)
 {
     int c = 0;
-    int err = likwid_sysft_init_generic(amd_arch_features, out);
-    if (err < 0)
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init general x86 HWFeatures");
-    }
+    if (likwid_sysft_init_generic(amd_arch_features, out))
+        PRINT_INFO_ERR("Failed to init general x86 HWFeatures");
     else
-    {
         c++;
-    }
-    err = likwid_sysft_init_amd_rapl(out);
-    if (err < 0)
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init AMD RAPL HWFeatures");
-    }
+
+    if (likwid_sysft_init_amd_rapl(out))
+        PRINT_INFO_ERR("Failed to init AMD RAPL HWFeatures");
     else
-    {
         c++;
-    }
-    err = likwid_sysft_init_amd_hsmp(out);
-    if (err < 0)
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init AMD HSMP HWFeatures");
-    }
+
+    if (likwid_sysft_init_amd_hsmp(out))
+        PRINT_INFO_ERR("Failed to init AMD HSMP HWFeatures");
     else
-    {
         c++;
-    }
-    return (c > 0 ? 0 : -ENOTSUP);
+
+    if (c == 0)
+        return ERROR_SET("No Sysfeature AMD module available");
+    return NULL;
 }
 
-static int amd_cpu_register_access_test()
+static cerr_t amd_cpu_register_access_test(bool *ok)
 {
-    int err = 0;
-    Configuration_t config = NULL;
-    err = init_configuration();
+    int err = init_configuration();
     if (err < 0)
-    {
-        errno = -err;
-        ERROR_PRINT("Failed to initialize configuration");
-        return err;
+        return ERROR_SET_LWERR(err, "Failed to initialize LIKWID configuration");
+
+    Configuration_t config = get_configuration();
+    if (config->daemonMode == ACCESSMODE_PERF) {
+        *ok = false;
+        return NULL;
     }
-    config = get_configuration();
-    if (config->daemonMode == ACCESSMODE_PERF)
-    {
-        return 0;
-    }
+
     err = HPMinit();
     if (err < 0)
-        return err;
+        return ERROR_SET_LWERR(err, "HPMinit failed");
     err = HPMaddThread(0);
     if (err < 0)
-        return err;
-    return 1;
+        return ERROR_SET_LWERR(err, "HPMaddThread failed");
+
+    *ok = true;
+    return NULL;
 }
 
-static int amd_cpu_l1_stream_getter(const LikwidDevice_t device, char** value)
+static cerr_t amd_cpu_l1_stream_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_PREFETCH_CONTROL, 0, true, value);
 }
 
-static int amd_cpu_l1_stream_setter(const LikwidDevice_t device, const char* value)
+static cerr_t amd_cpu_l1_stream_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_PREFETCH_CONTROL, 0, true, value);
 }
 
-static int amd_cpu_l1_stride_getter(const LikwidDevice_t device, char** value)
+static cerr_t amd_cpu_l1_stride_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_PREFETCH_CONTROL, 1, true, value);
 }
 
-static int amd_cpu_l1_stride_setter(const LikwidDevice_t device, const char* value)
+static cerr_t amd_cpu_l1_stride_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_PREFETCH_CONTROL, 1, true, value);
 }
 
-static int amd_cpu_l1_region_getter(const LikwidDevice_t device, char** value)
+static cerr_t amd_cpu_l1_region_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_PREFETCH_CONTROL, 2, true, value);
 }
 
-static int amd_cpu_l1_region_setter(const LikwidDevice_t device, const char* value)
+static cerr_t amd_cpu_l1_region_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_PREFETCH_CONTROL, 2, true, value);
 }
 
-static int amd_cpu_l2_stream_getter(const LikwidDevice_t device, char** value)
+static cerr_t amd_cpu_l2_stream_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_PREFETCH_CONTROL, 3, true, value);
 }
 
-static int amd_cpu_l2_stream_setter(const LikwidDevice_t device, const char* value)
+static cerr_t amd_cpu_l2_stream_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_PREFETCH_CONTROL, 3, true, value);
 }
 
-static int amd_cpu_up_down_getter(const LikwidDevice_t device, char** value)
+static cerr_t amd_cpu_up_down_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_PREFETCH_CONTROL, 5, true, value);
 }
 
-static int amd_cpu_up_down_setter(const LikwidDevice_t device, const char* value)
+static cerr_t amd_cpu_up_down_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_PREFETCH_CONTROL, 5, true, value);
 }
@@ -169,42 +160,42 @@ static const _SysFeatureList amd_k19_cpu_prefetch_feature_list = {
     .tester = amd_cpu_register_access_test,
 };
 
-static int amd_cpu_spec_ibrs_getter(const LikwidDevice_t device, char** value)
+static cerr_t amd_cpu_spec_ibrs_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_SPEC_CTRL, 0, false, value);
 }
 
-static int amd_cpu_spec_ibrs_setter(const LikwidDevice_t device, const char* value)
+static cerr_t amd_cpu_spec_ibrs_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_SPEC_CTRL, 0, false, value);
 }
 
-static int amd_cpu_spec_stibp_getter(const LikwidDevice_t device, char** value)
+static cerr_t amd_cpu_spec_stibp_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_SPEC_CTRL, 1, false, value);
 }
 
-static int amd_cpu_spec_stibp_setter(const LikwidDevice_t device, const char* value)
+static cerr_t amd_cpu_spec_stibp_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_SPEC_CTRL, 1, false, value);
 }
 
-static int amd_cpu_spec_ssbd_getter(const LikwidDevice_t device, char** value)
+static cerr_t amd_cpu_spec_ssbd_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_SPEC_CTRL, 2, true, value);
 }
 
-static int amd_cpu_spec_ssbd_setter(const LikwidDevice_t device, const char* value)
+static cerr_t amd_cpu_spec_ssbd_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_SPEC_CTRL, 2, true, value);
 }
 
-static int amd_cpu_spec_pfsd_getter(const LikwidDevice_t device, char** value)
+static cerr_t amd_cpu_spec_pfsd_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD19_SPEC_CTRL, 7, true, value);
 }
 
-static int amd_cpu_spec_pfsd_setter(const LikwidDevice_t device, const char* value)
+static cerr_t amd_cpu_spec_pfsd_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_SPEC_CTRL, 7, true, value);
 }
@@ -234,20 +225,21 @@ static const _SysFeatureList amd_k17_cpu_speculation_feature_list = {
     .tester = amd_cpu_register_access_test,
 };
 
-static int amd_cpu_flush_l1(const LikwidDevice_t device, const char* value)
+static cerr_t amd_cpu_flush_l1(const LikwidDevice_t device, const char* value)
 {
     uint64_t flush;
-    
-    int err = likwid_sysft_string_to_uint64(value, &flush);
+    if (likwid_sysft_string_to_uint64(value, &flush))
+        return ERROR_SET("error on string conversion");
+    int err = HPMinit();
     if (err < 0)
-        return err;
-    err = HPMinit();
-    if (err < 0)
-        return err;
+        return ERROR_SET_LWERR(err, "HPMinit failed");
     err = HPMaddThread(device->id.simple.id);
     if (err < 0)
-        return err;
-    return HPMwrite(device->id.simple.id, MSR_DEV, MSR_AMD19_L1D_FLUSH_REGISTER, flush & 0x1);
+        return ERROR_SET_LWERR(err, "HPMaddThread failed");
+    err = HPMwrite(device->id.simple.id, MSR_DEV, MSR_AMD19_L1D_FLUSH_REGISTER, flush & 0x1);
+    if (err < 0)
+        return ERROR_SET_LWERR(err, "HPMwrite failed");
+    return NULL;
 }
 
 static _SysFeature amd_k19_cpu_l1dflush_features[] = {
@@ -260,12 +252,12 @@ static const _SysFeatureList amd_k19_cpu_l1dflush_feature_list = {
     .tester = amd_cpu_register_access_test,
 };
 
-static int amd_cpu_hwconfig_cpddis_getter(const LikwidDevice_t device, char** value)
+static cerr_t amd_cpu_hwconfig_cpddis_getter(const LikwidDevice_t device, char** value)
 {
     return likwid_sysft_readmsr_bit_to_string(device, MSR_AMD17_HW_CONFIG, 25, true, value);
 }
 
-static int amd_cpu_hwconfig_cpddis_setter(const LikwidDevice_t device, const char* value)
+static cerr_t amd_cpu_hwconfig_cpddis_setter(const LikwidDevice_t device, const char* value)
 {
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD17_HW_CONFIG, 25, true, value);
 }

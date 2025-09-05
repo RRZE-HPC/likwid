@@ -50,30 +50,26 @@
 #include <sysFeatures_intel_thermal.h>
 #include <sysFeatures_x86_tsc.h>
 
+#include "debug.h"
+
 static const _HWArchFeatures intel_arch_features[];
 
-int likwid_sysft_init_x86_intel(_SysFeatureList* out)
+cerr_t likwid_sysft_init_x86_intel(_SysFeatureList* out)
 {
     int c = 0;
-    int err = likwid_sysft_init_generic(intel_arch_features, out);
-    if (err < 0)
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init general Intel HWFetures");
-    }
+    if (likwid_sysft_init_generic(intel_arch_features, out))
+        PRINT_INFO_ERR("Failed to init general Intel HWFetures");
     else
-    {
         c++;
-    }
-    err = likwid_sysft_init_intel_rapl(out);
-    if (err < 0)
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init Intel RAPL HWFetures");
-    }
+
+    if (likwid_sysft_init_intel_rapl(out))
+        PRINT_INFO_ERR("Failed to init Intel RAPL HWFetures");
     else
-    {
         c++;
-    }
-    return (c > 0 ? 0 : -ENOTSUP);
+
+    if (c <= 0)
+        return ERROR_SET("No sysfeature Intel module available");
+    return NULL;
 }
 
 static const _SysFeatureList* intel_arch_feature_inputs[] = {

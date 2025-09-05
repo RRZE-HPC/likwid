@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+struct LwErrorScope;
+
 enum debug_category {
     DEBUG_CAT_NORMAL,
     DEBUG_CAT_NVMON,
@@ -21,58 +23,64 @@ enum debug_level {
 };
 
 /* Common printing macros. */
-#define MANUAL_PRINT(cat, lev, fmt, ...) \
-    debug_print_inline(stderr, __FILE__, __func__, __LINE__, (cat), (level), (fmt), ##__VA_ARGS__)
-#define ERROR_PRINT(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_NORMAL, DEBUG_LEV_ERROR, fmt, ##__VA_ARGS__)
-#define WARN_PRINT(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_NORMAL, DEBUG_LEV_WARN, fmt, ##__VA_ARGS__)
-#define INFO_PRINT(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_NORMAL, DEBUG_LEV_INFO, fmt, ##__VA_ARGS__)
-#define DEBUG_PRINT(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_NORMAL, DEBUG_LEV_DEBUG, fmt, ##__VA_ARGS__)
-#define DEVELOP_PRINT(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_NORMAL, DEBUG_LEV_DEVELOP, fmt, ##__VA_ARGS__)
+#define PRINT_MANUAL(cat, lev, fmt, ...) \
+    debug_print_inline(stderr, __FILE__, __func__, __LINE__, (cat), (lev), (fmt), ##__VA_ARGS__)
+#define PRINT_ERROR(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_NORMAL, DEBUG_LEV_ERROR, fmt, ##__VA_ARGS__)
+#define PRINT_WARN(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_NORMAL, DEBUG_LEV_WARN, fmt, ##__VA_ARGS__)
+#define PRINT_INFO(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_NORMAL, DEBUG_LEV_INFO, fmt, ##__VA_ARGS__)
+#define PRINT_DEBUG(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_NORMAL, DEBUG_LEV_DEBUG, fmt, ##__VA_ARGS__)
+#define PRINT_DEVELOP(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_NORMAL, DEBUG_LEV_DEVELOP, fmt, ##__VA_ARGS__)
+
+#define PRINT_INFO_ERR(fmt, ...) \
+    do { \
+        PRINT_INFO(fmt, ##__VA_ARGS__); \
+        debug_print_error(stderr, DEBUG_CAT_NORMAL, DEBUG_LEV_INFO); \
+    } while (0)
 
 /* NVMON printing macros. */
-#define ERROR_PRINT_NVMON(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_NVMON, DEBUG_LEV_ERROR, (fmt), ##__VA_ARGS__)
-#define WARN_PRINT_NVMON(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_NVMON, DEBUG_LEV_WARN, (fmt), ##__VA_ARGS__)
-#define INFO_PRINT_NVMON(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_NVMON, DEBUG_LEV_INFO, (fmt), ##__VA_ARGS__)
-#define DEBUG_PRINT_NVMON(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_NVMON, DEBUG_LEV_DEBUG, (fmt), ##__VA_ARGS__)
-#define DEVELOP_PRINT_NVMON(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_NVMON, DEBUG_LEV_DEVELOP, (fmt), ##__VA_ARGS__)
+#define PRINT_ERROR_NVMON(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_NVMON, DEBUG_LEV_ERROR, (fmt), ##__VA_ARGS__)
+#define PRINT_WARN_NVMON(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_NVMON, DEBUG_LEV_WARN, (fmt), ##__VA_ARGS__)
+#define PRINT_INFO_NVMON(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_NVMON, DEBUG_LEV_INFO, (fmt), ##__VA_ARGS__)
+#define PRINT_DEBUG_NVMON(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_NVMON, DEBUG_LEV_DEBUG, (fmt), ##__VA_ARGS__)
+#define PRINT_DEVELOP_NVMON(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_NVMON, DEBUG_LEV_DEVELOP, (fmt), ##__VA_ARGS__)
 
 /* ROCMON printing macros. */
-#define ERROR_PRINT_ROCMON(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_ROCMON, DEBUG_LEV_ERROR, (fmt), ##__VA_ARGS__)
-#define WARN_PRINT_ROCMON(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_ROCMON, DEBUG_LEV_WARN, (fmt), ##__VA_ARGS__)
-#define INFO_PRINT_ROCMON(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_ROCMON, DEBUG_LEV_INFO, (fmt), ##__VA_ARGS__)
-#define DEBUG_PRINT_ROCMON(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_ROCMON, DEBUG_LEV_DEBUG, (fmt), ##__VA_ARGS__)
-#define DEVELOP_PRINT_ROCMON(fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_ROCMON, DEBUG_LEV_DEVELOP, (fmt), ##__VA_ARGS__)
+#define PRINT_ERROR_ROCMON(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_ROCMON, DEBUG_LEV_ERROR, (fmt), ##__VA_ARGS__)
+#define PRINT_WARN_ROCMON(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_ROCMON, DEBUG_LEV_WARN, (fmt), ##__VA_ARGS__)
+#define PRINT_INFO_ROCMON(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_ROCMON, DEBUG_LEV_INFO, (fmt), ##__VA_ARGS__)
+#define PRINT_DEBUG_ROCMON(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_ROCMON, DEBUG_LEV_DEBUG, (fmt), ##__VA_ARGS__)
+#define PRINT_DEVELOP_ROCMON(fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_ROCMON, DEBUG_LEV_DEVELOP, (fmt), ##__VA_ARGS__)
 
 /* Helper printing macros. */
 // formerly called CHECK_ERROR
-#define ERROR_PRINT_IF_FAIL(expr, fmt, ...) \
+#define PRINT_ERROR_IF_FAIL(expr, fmt, ...) \
     do { \
         if ((expr) < 0) \
-            MANUAL_PRINT(DEBUG_CAT_NORMAL, DBEUG_LEV_ERROR, (fmt), ##__VA_ARGS__); \
+            PRINT_MANUAL(DEBUG_CAT_NORMAL, DBEUG_LEV_ERROR, (fmt), ##__VA_ARGS__); \
     } while (0)
 
 // formerly called VERBOSEPRINTREG
-#define DEBUG_PRINT_REG(cpuid, reg, flags, fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_NORMAL, DEBUG_LEV_DEBUG, fmt " [%d] Register 0x%llX, Flags: 0x%llX", ##__VA_ARGS__, (cpuid), (unsigned long long)(reg), (unsigned long long)(flags))
+#define PRINT_DEBUG_REG(cpuid, reg, flags, fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_NORMAL, DEBUG_LEV_DEBUG, fmt " [%d] Register 0x%llX, Flags: 0x%llX", ##__VA_ARGS__, (cpuid), (unsigned long long)(reg), (unsigned long long)(flags))
 
 // formerly called VERBOSEPRINTPCIREG
-#define DEBUG_PRINT_PCIREG(cpuid, dev, reg, flags, fmt, ...) \
-    MANUAL_PRINT(DEBUG_CAT_NORMAL, DEBUG_LEV_DEBUG, fmt " [%d] Device %d Register 0x%llX, Flags: 0x%llX", ##__VA_ARGS__, (cpuid), (dev), (unsigned long long)(reg), (unsigned long long)(flags))
+#define PRINT_DEBUG_PCIREG(cpuid, dev, reg, flags, fmt, ...) \
+    PRINT_MANUAL(DEBUG_CAT_NORMAL, DEBUG_LEV_DEBUG, fmt " [%d] Device %d Register 0x%llX, Flags: 0x%llX", ##__VA_ARGS__, (cpuid), (dev), (unsigned long long)(reg), (unsigned long long)(flags))
 
 extern int debug_levels[DEBUG_CAT_COUNT];
 
@@ -90,7 +98,7 @@ static inline void debug_print_inline(FILE *handle, const char *file, const char
         category = 0;
 
     /* Do not print errors if the level is not high enough. */
-    if (level > debug_levels[category])
+    if (__builtin_expect(level > debug_levels[category], 1))
         return;
 
     va_list args;
@@ -100,5 +108,7 @@ static inline void debug_print_inline(FILE *handle, const char *file, const char
 
     va_end(args);
 }
+
+void debug_print_error(FILE *handle, int category, int level);
 
 #endif // DEBUG_H

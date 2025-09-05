@@ -11,6 +11,7 @@
 #include <error.h>
 #include <sysFeatures_common.h>
 #include <types.h>
+#include "debug.h"
 
 struct sysfs_ccd {
     /* e.g. /sys/bus/pci/drivers/k10temp/0000:12:3.4/hwmon/hwmon5/temp3_input */
@@ -107,7 +108,7 @@ static int socket_sort(const void *a, const void *b)
     return bstrcmp(sa->pci_path, sb->pci_path);
 }
 
-static int create_paths(void)
+static cerr_t create_paths(void)
 {
     if (info.init)
         return 0;
@@ -116,10 +117,7 @@ static int create_paths(void)
     const char *k10temp_base = "/sys/bus/pci/drivers/k10temp";
     DIR *k10temp_dir = opendir(k10temp_base);
     if (!k10temp_dir)
-    {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s not found. Not initializing k10temp", k10temp_base);
-        return -errno;
-    }
+        return ERROR_SET_ERRNO("%s not found. Not initializing k10temp", k10temp_base);
 
     struct dirent *pcidevice_file;
     while (errno = 0, (pcidevice_file = readdir(k10temp_dir)))
@@ -157,12 +155,12 @@ static int create_paths(void)
         }
     }
 
-    if (errno != 0)
-    {
+    if (errno != 0) {
         const int errno_save = errno;
         closedir(k10temp_dir);
         free_paths();
-        return -errno_save;
+        errno = errno_save;
+        return ERROR_SET_ERRNO("error in loop");
     }
 
     closedir(k10temp_dir);
@@ -187,9 +185,9 @@ static int create_paths(void)
         if (!hwmon_base_dir)
         {
             const int errno_save = errno;
-            DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "k10temp: Unable to read dir %s", hwmon_base);
             free_paths();
-            return -errno_save;
+            errno = errno_save;
+            return ERROR_SET_ERRNO("k10temp: Unable to read dir %s", hwmon_base);
         }
 
         struct dirent *hwmon_candidate_dir;
@@ -220,7 +218,8 @@ static int create_paths(void)
             const int errno_save = errno;
             closedir(hwmon_base_dir);
             free_paths();
-            return -errno_save;
+            errno = errno_save;
+            return ERROR_SET_ERRNO("error in loop");
         }
 
         closedir(hwmon_base_dir);
@@ -232,9 +231,9 @@ static int create_paths(void)
         if (!hwmon_dir)
         {
             const int errno_save = errno;
-            DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "k10temp: Unable to read dir %s", bdata(s->hwmon_path));
             free_paths();
-            return -errno_save;
+            errno = errno_save;
+            return ERROR_SET_ERRNO("k10temp: Unable to read dir %s", bdata(s->hwmon_path));
         }
 
         struct dirent *temp_dirent;
@@ -302,7 +301,7 @@ static int create_paths(void)
                 {
                     /* If s->label is alreay set, we have encountered more then one non-CCD temperature.
                      * We only support one sensors per socket, so issue a warning but continue regardless. */
-                    DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Found more than one non-Tccd. current=%s new=%s", bdata(s->label), label_string);
+                    PRINT_ERROR("Found more than one non-Tccd. current=%s new=%s", bdata(s->label), label_string);
                     bdestroy(s->label);
                     bdestroy(s->temp_path);
                 }
@@ -322,7 +321,8 @@ static int create_paths(void)
             const int errno_save = errno;
             closedir(hwmon_dir);
             free_paths();
-            return -errno_save;
+            errno = errno_save;
+            return ERROR_SET_ERRNO("error in loop");
         }
 
         closedir(hwmon_dir);
@@ -330,45 +330,40 @@ static int create_paths(void)
         /* Fail if no socket sensor has been found. CCD sensors are not mandatory, since
          * some CPUs do not have any. */
         if (!s->label)
-            return -ENODEV;
+            return ERROR_SET("Unable to find CCD temp sensor");
 
         /* Last, we have to sort each CCD entry according to their label. */
         qsort(s->ccds, s->count, sizeof(s->ccds[0]), ccd_sort);
     }
 
     info.init = true;
-    return 0;
+    return NULL;
 }
 
-static int temp_getter(const char *file, char **value)
+static cerr_t temp_getter(const char *file, char **value)
 {
     /* read temperature */
     char temp_data[64];
     int err = read_sysfs_file(file, temp_data, sizeof(temp_data));
     if (err < 0)
-        return err;
+        return ERROR_SET_ERRNO("read_sysfs_file failed");
 
     /* parse to value */
     char *endptr;
     errno = 0;
     long temp = strtol(temp_data, &endptr, 10);
     if (temp_data == endptr)
-        return -EIO;
+        return ERROR_SET("strtol failed, no characters to convert");
     if (errno != 0)
-        return -errno;
+        return ERROR_SET_ERRNO("strtol failed");
 
     return likwid_sysft_double_to_string((double)temp / 1000.0, value);
 }
 
-static int amd_thermal_temperature_ccd_getter(LikwidDevice_t device, char **value)
+static cerr_t amd_thermal_temperature_ccd_getter(LikwidDevice_t device, char **value)
 {
-    int err = create_paths();
-    if (err < 0)
-        return err;
-
-    err = topology_init();
-    if (err < 0)
-        return err;
+    if (create_paths())
+        return ERROR_APPEND("create_paths failed");
 
     /* determine CCD to read from */
     CpuTopology_t topo = get_cpuTopology();
@@ -377,34 +372,33 @@ static int amd_thermal_temperature_ccd_getter(LikwidDevice_t device, char **valu
     const uint32_t socket_id = device->id.simple.id / (topo->numDies / topo->numSockets);
 
     if (socket_id >= info.count)
-        return -EINVAL;
+        return ERROR_SET("Unable to read temperature for socket %u, only %u available", socket_id, info.count);
 
     if (local_die_id >= info.sockets[socket_id].count)
-        return -EINVAL;
+        return ERROR_SET("Unable to read temperature for ccd %u of socket %u, only %u ccds available", local_die_id, socket_id, info.count);
 
     return temp_getter(bdata(info.sockets[socket_id].ccds[local_die_id].temp_path), value);
 }
 
-static int amd_thermal_temperature_ctl_getter(LikwidDevice_t device, char **value)
+static cerr_t amd_thermal_temperature_ctl_getter(LikwidDevice_t device, char **value)
 {
-    int err = create_paths();
-    if (err < 0)
-        return err;
+    if (create_paths())
+        return ERROR_APPEND("create_paths failed");
 
     if ((size_t)device->id.simple.id >= info.count)
-        return -EINVAL;
+        return ERROR_SET("Unable to get CTL temperature %d, only %u available", device->id.simple.id, info.count);
 
     return temp_getter(bdata(info.sockets[device->id.simple.id].temp_path), value);
 }
 
-static int amd_thermal_tester(void)
+static cerr_t amd_thermal_tester(bool *ok)
 {
-    int err = create_paths();
-    if (err < 0)
-        return 0;
+    if (create_paths())
+        return ERROR_APPEND("create_paths failed");
 
     /* We need at least one socket in order to detect the thermal sensor as valid. */
-    return info.count > 0;
+    *ok = info.count > 0;
+    return NULL;
 }
 
 static _SysFeature amd_thermal_features[] = {

@@ -34,8 +34,11 @@
 #define HWFEATURES_TYPES_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <likwid.h>
 #include <likwid_device.h>
+
+#include "error_ng.h"
 
 typedef enum {
     HWFEATURES_TYPE_UINT64 = 0,
@@ -44,9 +47,9 @@ typedef enum {
 } HWFEATURES_VALUE_TYPES;
 
 
-typedef int (*hwfeature_getter_function)(const LikwidDevice_t device, char** value);
-typedef int (*hwfeature_setter_function)(const LikwidDevice_t device, const char* value);
-typedef int (*hwfeature_test_function)(void);
+typedef cerr_t (*hwfeature_getter_function)(const LikwidDevice_t device, char** value);
+typedef cerr_t (*hwfeature_setter_function)(const LikwidDevice_t device, const char* value);
+typedef cerr_t (*hwfeature_test_function)(bool *ok);
 
 typedef struct {
     const char* name;
@@ -71,8 +74,5 @@ typedef struct {
     const _SysFeatureList** features;
     //int max_stepping;
 } _HWArchFeatures;
-
-#define IS_VALID_DEVICE_TYPE(scope) (((scope) >= MIN_DEVICE_TYPE) && ((scope) < MAX_DEVICE_TYPE))
-
 
 #endif /* HWFEATURES_TYPES_H */

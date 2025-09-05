@@ -33,7 +33,8 @@
 #define HWFEATURES_X86_INTEL_RAPL_H
 
 #include <sysFeatures_types.h>
+#include "error_ng.h"
 
-int likwid_sysft_init_intel_rapl(_SysFeatureList* out);
+cerr_t likwid_sysft_init_intel_rapl(_SysFeatureList* out);
 
 #endif /* HWFEATURES_X86_INTEL_UNCOREFREQ_H */

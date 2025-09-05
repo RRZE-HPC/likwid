@@ -49,6 +49,7 @@
 
 #include <likwid.h>
 #include <tree.h>
+#include "error_ng.h"
 
 #include <access.h>
 #include <bstrlib.h>
@@ -89,6 +90,57 @@ PowerInfo_t power;
 Configuration_t configfile = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+
+static int lua_likwid_errorFreeScope(lua_State *L)
+{
+    err_t *errptr = luaL_checkudata(L, 1, "LwErrorScope");
+    lw_error_free_scope(*errptr);
+    return 0;
+}
+
+static int lua_likwid_errorPrintScopeStdout(lua_State *L)
+{
+    err_t *errptr = luaL_checkudata(L, 1, "LwErrorScope");
+    lw_error_print_scope_stdout(*errptr);
+    return 0;
+}
+
+static int lua_likwid_errorPrintScopeStderr(lua_State *L)
+{
+    err_t *errptr = luaL_checkudata(L, 1, "LwErrorScope");
+    lw_error_print_scope_stderr(*errptr);
+    return 0;
+}
+
+static void push_lwerrorscope(lua_State *L, cerr_t error_scope)
+{
+    err_t *errptr = lua_newuserdata(L, sizeof(errptr));
+
+    *errptr = lw_error_copy_scope(error_scope);
+
+    luaL_newmetatable(L, "LwErrorScope");
+
+    /* Create deleter */
+    lua_pushcfunction(L, lua_likwid_errorFreeScope);
+    lua_setfield(L, -2, "__gc");
+
+    /* Create index for members */
+    lua_newtable(L);
+
+    lua_pushstring(L, "printStdout");
+    lua_pushcfunction(L, lua_likwid_errorPrintScopeStdout);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "printStderr");
+    lua_pushcfunction(L, lua_likwid_errorPrintScopeStderr);
+    lua_settable(L, -3);
+
+    /* Set the created table as index for members. */
+    lua_setfield(L, -2, "__index"); 
+
+    /* Last, assign the metatable to the likwid error. */
+    lua_setmetatable(L, -2);
+}
 
 static int lua_likwid_getConfiguration(lua_State *L) {
   int ret = 0;
@@ -3728,11 +3780,10 @@ lua_likwid_initSysFeatures(lua_State *L)
     int err = 0;
     if (!sysfeatures_inititalized)
     {
-        err = likwid_sysft_init();
-        if (err == 0)
-        {
+        if (likwid_sysft_init())
+            lw_error_print_stderr();
+        else
             sysfeatures_inititalized = 1;
-        }
     }
     lua_pushnumber(L, err);
     return 1;
@@ -3801,11 +3852,9 @@ lua_likwid_getSysFeature(lua_State *L)
     const char *feature = luaL_checkstring(L, 1);
     const LikwidDevice_t dev = *(LikwidDevice_t *)luaL_checkudata(L, 2, "LikwidDevice_t");
     char *value = NULL;
-    int err = likwid_sysft_getByName(feature, dev, &value);
-    if (err < 0)
-    {
+    if (likwid_sysft_getByName(feature, dev, &value)) {
         lua_pushnil(L);
-        lua_pushfstring(L, "Unable to get sysfeature: %s", strerror(-err));
+        push_lwerrorscope(L, ERROR_APPEND("likwid_sysft_getByName failed"));
         return 2;
     }
 
@@ -3824,11 +3873,9 @@ lua_likwid_setSysFeature(lua_State *L)
     const char *feature = luaL_checkstring(L, 1);
     const LikwidDevice_t dev = *(LikwidDevice_t *)luaL_checkudata(L, 2, "LikwidDevice_t");
     const char *value = luaL_checkstring(L,3);
-    int err = likwid_sysft_modifyByName(feature, dev, value);
-    if (err < 0)
-    {
+    if (likwid_sysft_modifyByName(feature, dev, value)) {
         lua_pushboolean(L, false);
-        lua_pushfstring(L, "Unable to set sysfeature: %s", strerror(-err));
+        push_lwerrorscope(L, ERROR_APPEND("likwid_sysft_setByName failed"));
         return 2;
     }
 

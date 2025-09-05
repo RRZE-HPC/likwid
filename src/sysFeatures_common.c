@@ -43,56 +43,48 @@
 #include <likwid.h>
 #include <error.h>
 #include <sysFeatures_common.h>
+#include "debug.h"
 
-int likwid_sysft_register_features(_SysFeatureList *features, const _SysFeatureList* in)
+cerr_t likwid_sysft_register_features(_SysFeatureList *features, const _SysFeatureList* in)
 {
-    if (in->tester)
-    {
-        if (!in->tester())
-        {
-            return -ENOTSUP;
-        }
+    if (in->tester) {
+        bool avail;
+        if (in->tester(&avail))
+            return ERROR_APPEND("Sysfeaturelist %p raised an error while testing");
+        return ERROR_SET("Sysfeaturelist %p is not available", in);
     }
-    for (int i = 0; i < in->num_features; i++)
-    {
+
+    for (int i = 0; i < in->num_features; i++) {
         _SysFeature *f = &in->features[i];
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Registering feature %s.%s", f->category, f->name);
-        if (f->tester)
-        {
-            if (f->tester())
-            {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Running test for feature %s.%s", f->category, f->name);
-                int err = _add_to_feature_list(features, f);
-                if (err < 0)
-                {
-                    ERROR_PRINT("Failed to add HW feature %s.%s to feature list", f->category, f->name);
-                }
+        PRINT_DEBUG("Registering feature %s.%s", f->category, f->name);
+
+        if (f->tester) {
+            PRINT_DEBUG("Running test for feature %s.%s", f->category, f->name);
+
+            bool avail;
+            if (f->tester(&avail))
+                return ERROR_APPEND("Test for feature %s.%s raised an error", f->category, f->name);
+
+            if (avail) {
+                PRINT_DEBUG("Test for feature %s.%s ok", f->category, f->name);
+
+                if (_add_to_feature_list(features, f))
+                    return ERROR_APPEND("Failed to add HW feature %s.%s to feature list", f->category, f->name);
+            } else {
+                PRINT_DEBUG("Test for feature %s.%s failed", f->category, f->name);
             }
-            else
-            {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test function for feature %s.%s failed", f->category, f->name);
-            }
-        }
-        else
-        {
-            int err = _add_to_feature_list(features, f);
-            if (err < 0)
-            {
-                ERROR_PRINT("Failed to add HW feature %s.%s to feature list", f->category, f->name);
-            }
+        } else {
+            PRINT_DEBUG("No test available for feature %s.%s", f->category, f->name);
+
+            if (_add_to_feature_list(features, f))
+                return ERROR_APPEND("Failed to add HW feature %s.%s to feature list", f->category, f->name);
         }
     }
-    return 0;
+    return NULL;
 }
 
-int likwid_sysft_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList *list)
+cerr_t likwid_sysft_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList *list)
 {
-    int err = topology_init();
-    if (err < 0)
-    {
-        ERROR_PRINT("Failed to initialize topology module");
-        return err;
-    }
     CpuInfo_t cpuinfo = get_cpuInfo();
 
     const _SysFeatureList** feature_list = NULL;
@@ -100,131 +92,123 @@ int likwid_sysft_init_generic(const _HWArchFeatures* infeatures, _SysFeatureList
     {
         if ((unsigned)infeatures[c].family == cpuinfo->family && (unsigned)infeatures[c].model == cpuinfo->model)
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Using feature list for CPU family 0x%X and model 0x%X", cpuinfo->family, cpuinfo->model);
+            PRINT_DEBUG("Using feature list for CPU family 0x%X and model 0x%X", cpuinfo->family, cpuinfo->model);
             feature_list = infeatures[c].features;
             break;
         }
     }
+
     if (!feature_list)
-    {
-        errno = ENOTSUP;
-        DEBUG_PRINT(DEBUGLEV_INFO, "No architectural sysFeatures for family 0x%X and model 0x%X", cpuinfo->family, cpuinfo->model);
-        return -ENOTSUP;
+        return ERROR_SET("No architectural sysFeatures for family 0x%X and model 0x%X", cpuinfo->family, cpuinfo->model);
+
+    for (unsigned j = 0; feature_list[j] != NULL; j++) {
+        if (likwid_sysft_register_features(list, feature_list[j]))
+            return ERROR_APPEND("likwid_sysft_register_features failed");
     }
 
-    for (unsigned j = 0; feature_list[j] != NULL; j++)
-    {
-        likwid_sysft_register_features(list, feature_list[j]);
-    }
-    return 0;
+    return NULL;
 }
 
-int likwid_sysft_uint64_to_string(uint64_t value, char** str)
+cerr_t likwid_sysft_uint64_to_string(uint64_t value, char** str)
 {
     char s[HWFEATURES_MAX_STR_LENGTH];
-    const int len = snprintf(s, sizeof(s), "%lu", value);
-    if (len < 0)
-    {
-        ERROR_PRINT("Conversion of uint64_t %lu failed: %s", value, strerror(errno));
-        return -errno;
-    }
-    char *newstr = realloc(*str, len+1);
+
+    if (snprintf(s, sizeof(s), "%lu", value) < 0)
+        return ERROR_SET_ERRNO("Conversion of uint64_t %lu failed");
+
+    char *newstr = strdup(s);
     if (!newstr)
-    {
-        return -ENOMEM;
-    }
+        return ERROR_SET_ERRNO("strdup failed");
+
+    free(*str);
     *str = newstr;
-    strcpy(*str, s);
-    return 0;
+    return NULL;
 }
 
-int likwid_sysft_string_to_uint64(const char* str, uint64_t* value)
+cerr_t likwid_sysft_string_to_uint64(const char* str, uint64_t* value)
 {
-    char* ptr = NULL;
-    if ((strncmp(str, "true", 4) == 0) || (strncmp(str, "TRUE", 4) == 0))
-    {
-        *value = 0x1ULL;
-        return 0;
+    char *ptr = NULL;
+    if (strncmp(str, "true", 4) == 0 || strncmp(str, "TRUE", 4) == 0) {
+        *value = 1;
+        return NULL;
+    } else if (strncmp(str, "false", 5) == 0 || strncmp(str, "FALSE", 5) == 0) {
+        *value = 0;
+        return NULL;
     }
-    else if ((strncmp(str, "false", 5) == 0) || (strncmp(str, "FALSE", 5) == 0))
-    {
-        *value = 0x0ULL;
-        return 0;
-    }
+
     errno = 0;
     uint64_t v = strtoull(str, &ptr, 0);
     if (v == 0 && errno != 0)
-    {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Conversion of string '%s' to uint64_t failed: %s", str, strerror(errno));
-        return -errno;
-    }
+        return ERROR_SET_ERRNO("Conversion of string '%s' to uint64_t failed");
+
     *value = v;
-    return 0;
+    return NULL;
 }
 
-int likwid_sysft_double_to_string(double value, char **str)
+cerr_t likwid_sysft_double_to_string(double value, char **str)
 {
     char s[HWFEATURES_MAX_STR_LENGTH];
-    const int len = snprintf(s, sizeof(s), "%f", value);
-    if (len < 0)
-    {
-        ERROR_PRINT("Conversion of double %f failed: %s", value, strerror(errno));
-        return -errno;
-    }
-    char* newstr = realloc(*str, len+1);
+
+    if (snprintf(s, sizeof(s), "%f", value) < 0)
+        return ERROR_SET_ERRNO("Conversion of double %f failed", value);
+
+    char *newstr = strdup(s);
     if (!newstr)
-    {
-        return -ENOMEM;
-    }
+        return ERROR_SET_ERRNO("strdup failed");
+
+    free(*str);
     *str = newstr;
-    strcpy(*str, s);
-    return 0;
+    return NULL;
 }
 
-int likwid_sysft_string_to_double(const char* str, double *value)
+cerr_t likwid_sysft_string_to_double(const char* str, double *value)
 {
     errno = 0;
-    char* endptr = NULL;
+    char *endptr = NULL;
     const double result = strtod(str, &endptr);
     if (!endptr)
-    {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Conversion of string '%s' to double failed: %s", str, strerror(errno));
-        return -errno;
-    }
+        return ERROR_SET_ERRNO("Conversion of string '%s' to double failed", str);
+
     if (errno != 0)
-    {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Conversion of string '%s' to double failed: %s", str, strerror(errno));
-        return -errno;
-    }
+        return ERROR_SET_ERRNO("Conversion of string '%s' to double failed", str);
+
     *value = result;
-    return 0;
+    return NULL;
 }
 
-int likwid_sysft_copystr(const char *str, char **value)
+cerr_t likwid_sysft_copystr(const char *str, char **value)
 {
+    if (!str)
+        return ERROR_SET("cannot NULL string");
+
     char *newstr = strdup(str);
     if (!newstr)
-        return -ENOMEM;
+        return ERROR_SET_ERRNO("strdup failed");
+
     free(*value);
     *value = newstr;
     return 0;
 }
 
-int likwid_sysft_foreach_core_testmsr(uint64_t reg)
+cerr_t likwid_sysft_foreach_core_testmsr(bool *ok, uint64_t reg)
 {
-    return likwid_sysft_foreach_core_testmsr_cb(reg, NULL, NULL);
+    return likwid_sysft_foreach_core_testmsr_cb(ok, reg, NULL, NULL);
 }
 
-int likwid_sysft_foreach_core_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData)
+cerr_t likwid_sysft_foreach_core_testmsr_cb(bool *ok, uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData)
 {
-    int err = topology_init();
-    if (err < 0)
-        return err;
-    err = HPMinit();
-    if (err < 0)
-        return err;
+    int err = HPMinit();
+    if (err < 0) {
+        PRINT_WARN("HPMinit failed, MSRs (thus MSR %#lx) not available", reg);
+        // If MSRs are generally not available, this particular MSR is also not available,
+        // which we do not handle as error.
+        *ok = false;
+        return NULL;
+    }
+
     CpuTopology_t topo = get_cpuTopology();
     const unsigned numCores = topo->numSockets * topo->numCoresPerSocket;
+
     unsigned valid = 0;
     for (unsigned i = 0; i < numCores; i++)
     {
@@ -242,10 +226,10 @@ int likwid_sysft_foreach_core_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_fun
                 continue;
             if (testFunc)
             {
-                err = testFunc(msrData, cbData);
-                if (err < 0)
-                    return err;
-                if (err > 0)
+                bool msrOk;
+                if (testFunc(&msrOk, msrData, cbData))
+                    return ERROR_APPEND("testFunc error");
+                if (msrOk)
                     valid += 1;
             }
             else
@@ -255,23 +239,27 @@ int likwid_sysft_foreach_core_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_fun
             break;
         }
     }
-    return valid == numCores;
+
+    *ok = (valid == numCores);
+    return NULL;
 }
 
-int likwid_sysft_foreach_hwt_testmsr(uint64_t reg)
+cerr_t likwid_sysft_foreach_hwt_testmsr(bool *ok, uint64_t reg)
 {
-    return likwid_sysft_foreach_hwt_testmsr_cb(reg, NULL, NULL);
+    return likwid_sysft_foreach_hwt_testmsr_cb(ok, reg, NULL, NULL);
 }
 
-int likwid_sysft_foreach_hwt_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData)
+cerr_t likwid_sysft_foreach_hwt_testmsr_cb(bool *ok, uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData)
 {
-    int err = topology_init();
-    if (err < 0)
-        return err;
-    err = HPMinit();
-    if (err < 0)
-        return err;
+    int err = HPMinit();
+    if (err < 0) {
+        PRINT_WARN("HPMinit failed, MSRs (thus MSR %#lx) not available", reg);
+        *ok = false;
+        return NULL;
+    }
+
     CpuTopology_t topo = get_cpuTopology();
+
     unsigned valid = 0;
     for (unsigned j = 0; j < topo->numHWThreads; j++)
     {
@@ -285,10 +273,10 @@ int likwid_sysft_foreach_hwt_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_func
             continue;
         if (testFunc)
         {
-            err = testFunc(msrData, cbData);
-            if (err < 0)
-                return err;
-            if (err > 0)
+            bool msrOk;
+            if (testFunc(&msrOk, msrData, cbData))
+                return ERROR_APPEND("testFunc error");
+            if (msrOk)
                 valid += 1;
         }
         else
@@ -296,24 +284,27 @@ int likwid_sysft_foreach_hwt_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_func
             valid += 1;
         }
     }
-    return valid == topo->numHWThreads;
+
+    *ok = (valid == topo->numHWThreads);
+    return NULL;
 }
 
-int likwid_sysft_foreach_socket_testmsr(uint64_t reg)
+cerr_t likwid_sysft_foreach_socket_testmsr(bool *ok, uint64_t reg)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(reg, NULL, NULL);
+    return likwid_sysft_foreach_socket_testmsr_cb(ok, reg, NULL, NULL);
 }
 
-int likwid_sysft_foreach_socket_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData)
+cerr_t likwid_sysft_foreach_socket_testmsr_cb(bool *ok, uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData)
 {
-    int err = topology_init();
-    if (err < 0)
-        return err;
+    int err = HPMinit();
+    if (err < 0) {
+        PRINT_WARN("HPMinit failed, MSRs (thus MSR %#lx) not available", reg);
+        *ok = false;
+        return NULL;
+    }
 
-    err = HPMinit();
-    if (err < 0)
-        return err;
     CpuTopology_t topo = get_cpuTopology();
+
     unsigned valid = 0;
     for (unsigned i = 0; i < topo->numSockets; i++)
     {
@@ -331,10 +322,10 @@ int likwid_sysft_foreach_socket_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_f
                 continue;
             if (testFunc)
             {
-                err = testFunc(msrData, cbData);
-                if (err < 0)
-                    return err;
-                if (err > 0)
+                bool msrOk;
+                if (testFunc(&msrOk, msrData, cbData))
+                    return ERROR_APPEND("testFunc error");
+                if (msrOk)
                     valid += 1;
             }
             else
@@ -344,17 +335,16 @@ int likwid_sysft_foreach_socket_testmsr_cb(uint64_t reg, likwid_sysft_msr_test_f
             break;
         }
     }
-    return valid == topo->numSockets;
+
+    *ok = (valid == topo->numSockets);
+    return NULL;
 }
 
-static int readmsr_socket(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
+static cerr_t readmsr_socket(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
 {
+    int err = 0;
     assert(device->type == DEVICE_TYPE_SOCKET);
-    int err = topology_init();
-    if (err < 0)
-    {
-        return err;
-    }
+
     CpuTopology_t topo = get_cpuTopology();
     for (unsigned i = 0; i < topo->numHWThreads; i++)
     {
@@ -367,23 +357,20 @@ static int readmsr_socket(const LikwidDevice_t device, uint64_t reg, uint64_t *m
             err = HPMread(t->apicId, MSR_DEV, reg, msrData);
             if (err < 0)
                 continue;
-            return 0;
+            return NULL;
         }
     }
 
     if (err < 0)
-        return err;
-    return -ENODEV;
+        return ERROR_SET_LWERR(err, "HPMaddThread or HPMread failed");
+    return ERROR_SET("Cannot read MSR for socket %d, for which no HWThread is available", device->id.simple.id);
 }
 
-static int writemsr_socket(const LikwidDevice_t device, uint64_t reg, uint64_t msrData)
+static cerr_t writemsr_socket(const LikwidDevice_t device, uint64_t reg, uint64_t msrData)
 {
+    int err = 0;
     assert(device->type == DEVICE_TYPE_SOCKET);
-    int err = topology_init();
-    if (err < 0)
-    {
-        return err;
-    }
+
     CpuTopology_t topo = get_cpuTopology();
     for (unsigned i = 0; i < topo->numHWThreads; i++)
     {
@@ -401,17 +388,14 @@ static int writemsr_socket(const LikwidDevice_t device, uint64_t reg, uint64_t m
     }
 
     if (err < 0)
-        return err;
-    return -ENODEV;
+        return ERROR_SET_LWERR(err, "HPMaddThread or HPMwrite failed");
+    return ERROR_SET("Cannot write MSR for socket %d, for which no HWThread is available", device->id.simple.id);
 }
 
-static int readmsr_core(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
+static cerr_t readmsr_core(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
 {
+    int err = 0;
     assert(device->type == DEVICE_TYPE_CORE);
-
-    int err = topology_init();
-    if (err < 0)
-        return err;
 
     CpuTopology_t topo = get_cpuTopology();
     for (unsigned i = 0; i < topo->numHWThreads; i++)
@@ -430,17 +414,14 @@ static int readmsr_core(const LikwidDevice_t device, uint64_t reg, uint64_t *msr
     }
 
     if (err < 0)
-        return err;
-    return -ENODEV;
+        return ERROR_SET_LWERR(err, "HPMaddThread or HPMread failed");
+    return ERROR_SET("Cannot read MSR for core %d, for which no HWThread is available", device->id.simple.id);
 }
 
-static int writemsr_core(const LikwidDevice_t device, uint64_t reg, uint64_t msrData)
+static cerr_t writemsr_core(const LikwidDevice_t device, uint64_t reg, uint64_t msrData)
 {
+    int err = 0;
     assert(device->type == DEVICE_TYPE_CORE);
-
-    int err = topology_init();
-    if (err < 0)
-        return err;
 
     CpuTopology_t topo = get_cpuTopology();
     for (unsigned i = 0; i < topo->numHWThreads; i++)
@@ -459,78 +440,86 @@ static int writemsr_core(const LikwidDevice_t device, uint64_t reg, uint64_t msr
     }
 
     if (err < 0)
-        return err;
-    return -ENODEV;
+        return ERROR_SET_LWERR(err, "HPMaddThread or HPMwrite failed");
+    return ERROR_SET("Cannot write MSR for core %d, for which no HWThread is available", device->id.simple.id);
 }
 
-static int readmsr_hwthread(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
+static cerr_t readmsr_hwthread(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
 {
     assert(device->type == DEVICE_TYPE_HWTHREAD);
     int err = HPMaddThread(device->id.simple.id);
     if (err < 0)
-        return err;
-    return HPMread(device->id.simple.id, MSR_DEV, reg, msrData);
+        return ERROR_SET_LWERR(err, "HPMaddThread failed");
+    err = HPMread(device->id.simple.id, MSR_DEV, reg, msrData);
+    if (err < 0)
+        return ERROR_SET_LWERR(err, "HPMread failed");
+    return NULL;
 }
 
-static int writemsr_hwthread(const LikwidDevice_t device, uint64_t reg, uint64_t msrData)
+static cerr_t writemsr_hwthread(const LikwidDevice_t device, uint64_t reg, uint64_t msrData)
 {
     assert(device->type == DEVICE_TYPE_HWTHREAD);
     int err = HPMaddThread(device->id.simple.id);
     if (err < 0)
-        return err;
-    return HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
+        return ERROR_SET_LWERR(err, "HPMaddThread failed");
+    err = HPMwrite(device->id.simple.id, MSR_DEV, reg, msrData);
+    if (err < 0)
+        return ERROR_SET_LWERR(err, "HPMwrite failed");
+    return NULL;
 }
 
-int likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
+cerr_t likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t *msrData)
 {
     int err = HPMinit();
     if (err < 0)
-        return err;
+        return ERROR_SET_LWERR(err, "HPMinit failed");
 
     switch (device->type)
     {
     case DEVICE_TYPE_SOCKET:
-        err = readmsr_socket(device, reg, msrData);
+        if (readmsr_socket(device, reg, msrData))
+            return ERROR_APPEND("readmsr_socket failed");
         break;
     case DEVICE_TYPE_CORE:
-        err = readmsr_core(device, reg, msrData);
+        if (readmsr_core(device, reg, msrData))
+            return ERROR_APPEND("readmsr_core failed");
         break;
     case DEVICE_TYPE_HWTHREAD:
-        err = readmsr_hwthread(device, reg, msrData);
+        if (readmsr_hwthread(device, reg, msrData))
+            return ERROR_APPEND("readmsr_hwthread failed");
         break;
     default:
-        fprintf(stderr, "likwid_sysft_readmsr: Unimplemented device type: %d\n", device->type);
-        abort();
+        return ERROR_SET("Unimplemented device type: %d", device->type);
     }
-    return err;
+    return NULL;
 }
 
-int likwid_sysft_readmsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t *value)
+cerr_t likwid_sysft_readmsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t *value)
 {
     uint64_t msrData;
-    int err = likwid_sysft_readmsr(device, reg, &msrData);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_readmsr(device, reg, &msrData))
+        return ERROR_APPEND("likwid_sysft_readmsr failed");
     *value = field64(msrData, bitoffset, width);
-    return 0;
+    return NULL;
 }
 
-int likwid_sysft_readmsr_bit_to_string(const LikwidDevice_t device, uint64_t reg, int bitoffset, bool invert, char **value)
+cerr_t likwid_sysft_readmsr_bit_to_string(const LikwidDevice_t device, uint64_t reg, int bitoffset, bool invert, char **value)
 {
-    uint64_t field;
-    int err = likwid_sysft_readmsr_field(device, reg, bitoffset, 1, &field);
-    if (err < 0)
-        return err;
+    uint64_t field = false;
+    if (likwid_sysft_readmsr_field(device, reg, bitoffset, 1, &field))
+        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
     if (invert)
         field = !field;
-    return likwid_sysft_uint64_to_string(field, value);
+    if (likwid_sysft_uint64_to_string(field, value))
+        return ERROR_APPEND("likwid_sysft_uint64_to_string failed");
+    return NULL;
 }
 
-int likwid_sysft_writemsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t value)
+cerr_t likwid_sysft_writemsr_field(const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, uint64_t value)
 {
     int err = HPMinit();
     if (err < 0)
-        return err;
+        return ERROR_SET_LWERR(err, "HPMinit failed");
 
     uint64_t msrData;
     switch (device->type)
@@ -538,51 +527,52 @@ int likwid_sysft_writemsr_field(const LikwidDevice_t device, uint64_t reg, int b
     case DEVICE_TYPE_SOCKET:
         /* If we write the entire register, there is no need to fetch the old value first. */
         if (bitoffset != 0 || width != 64) {
-            err = readmsr_socket(device, reg, &msrData);
-            if (err < 0)
-                return err;
+            if (readmsr_socket(device, reg, &msrData))
+                return ERROR_APPEND("readmsr_socket failed");
         } else {
             msrData = 0;
         }
         field64set(&msrData, bitoffset, width, value);
-        err = writemsr_socket(device, reg, msrData);
+        if (writemsr_socket(device, reg, msrData))
+            return ERROR_APPEND("writemsr_socket failed");
         break;
     case DEVICE_TYPE_CORE:
         if (bitoffset != 0 || width != 64) {
-            err = readmsr_core(device, reg, &msrData);
-            if (err < 0)
-                return err;
+            if (readmsr_core(device, reg, &msrData))
+                return ERROR_APPEND("readmsr_core failed");
         } else {
             msrData = 0;
         }
         field64set(&msrData, bitoffset, width, value);
-        err = writemsr_core(device, reg, msrData);
+        if (writemsr_core(device, reg, msrData))
+            return ERROR_APPEND("writemsr_core failed");
         break;
     case DEVICE_TYPE_HWTHREAD:
         if (bitoffset != 0 || width != 64) {
-            err = readmsr_hwthread(device, reg, &msrData);
-            if (err < 0)
-                return err;
+            if (readmsr_hwthread(device, reg, &msrData))
+                return ERROR_APPEND("readmsr_hwthread failed");
         } else {
             msrData = 0;
         }
         field64set(&msrData, bitoffset, width, value);
-        err = writemsr_hwthread(device, reg, msrData);
+        if (writemsr_hwthread(device, reg, msrData))
+            return ERROR_APPEND("writemsr_hwthread failed");
         break;
     default:
-        fprintf(stderr, "likwid_sysft_readmsr: Unimplemented device type: %d\n", device->type);
-        abort();
+        return ERROR_SET("Unimplemented device type: %d", device->type);
     }
-    return err;
+
+    return NULL;
 }
 
-int likwid_sysft_writemsr_bit_from_string(const LikwidDevice_t device, uint64_t reg, int bitoffset, bool invert, const char *value)
+cerr_t likwid_sysft_writemsr_bit_from_string(const LikwidDevice_t device, uint64_t reg, int bitoffset, bool invert, const char *value)
 {
     uint64_t field;
-    int err = likwid_sysft_string_to_uint64(value, &field);
-    if (err < 0)
-        return err;
+    if (likwid_sysft_string_to_uint64(value, &field))
+        return ERROR_APPEND("likwid_sysft_string_to_uint64 failed");
     if (invert)
         field = !field;
-    return likwid_sysft_writemsr_field(device, reg, bitoffset, 1, field);
+    if (likwid_sysft_writemsr_field(device, reg, bitoffset, 1, field))
+        return ERROR_APPEND("likwid_sysft_writemsr_field failed");
+    return NULL;
 }

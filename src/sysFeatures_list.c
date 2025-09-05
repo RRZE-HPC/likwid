@@ -29,6 +29,7 @@
  * =======================================================================================
  */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -37,40 +38,32 @@
 #include <likwid.h>
 #include <error.h>
 
-int likwid_sysft_add_to_feature_list(LikwidSysFeatureList *list, const LikwidSysFeature* feature)
+cerr_t likwid_sysft_add_to_feature_list(LikwidSysFeatureList *list, const LikwidSysFeature* feature)
 {
-    if ((!list) || (!feature))
-    {
-        ERROR_PRINT("Invalid arguments for add_to_feature_list");
-        return -EINVAL;
-    }
+    assert(list);
+    assert(feature);
 
     LikwidSysFeature* flist = realloc(list->features, (list->num_features + 1) * sizeof(LikwidSysFeature));
     if (!flist)
-    {
-        ERROR_PRINT("Cannot allocate space for extended feature list");
-        return -ENOMEM;
-    }
+        return ERROR_SET_ERRNO("realloc failed");
+
     list->features = flist;
 
-    LikwidSysFeature* iof = &list->features[list->num_features];
+    LikwidSysFeature *iof = &list->features[list->num_features];
+    memset(iof, 0, sizeof(*iof));
+
+    cerr_t err;
+
     iof->name = strndup(feature->name, HWFEATURES_MAX_STR_LENGTH - 1);
-    if (!iof->name)
-    {
-        return -ENOMEM;
+    if (!iof->name) {
+        err = ERROR_SET_ERRNO("strndup failed");
+        goto error;
     }
+
     iof->category = strndup(feature->category, HWFEATURES_MAX_STR_LENGTH - 1);
-    if (!iof->category)
-    {
-        free(iof->name);
-        return -ENOMEM;
-    }
-    iof->description = strndup(feature->category, HWFEATURES_MAX_STR_LENGTH - 1);
-    if (!iof->description)
-    {
-        free(iof->name);
-        free(iof->category);
-        return -ENOMEM;
+    if (!iof->category) {
+        err = ERROR_SET_ERRNO("strndup failed");
+        goto error;
     }
 
     iof->readonly = feature->readonly;
@@ -78,34 +71,12 @@ int likwid_sysft_add_to_feature_list(LikwidSysFeatureList *list, const LikwidSys
     iof->writeonly = feature->writeonly;
     list->num_features++;
 
-    return 0;
-}
+    return NULL;
 
-
-int likwid_sysft_merge_feature_lists(LikwidSysFeatureList *inout, const LikwidSysFeatureList *in)
-{
-    if ((!inout) || (!in))
-    {
-        ERROR_PRINT("Invalid arguments for merge_feature_lists");
-        return -EINVAL;
-    }
-
-    LikwidSysFeature *flist = realloc(inout->features, (inout->num_features + in->num_features) * sizeof(LikwidSysFeature));
-    if (!flist)
-    {
-        ERROR_PRINT("Cannot allocate space for extended feature list");
-        return -ENOMEM;
-    }
-    inout->features = flist;
-
-    for (int i = 0; i < in->num_features; i++)
-    {
-        LikwidSysFeature* ifeat = &in->features[i];
-        likwid_sysft_add_to_feature_list(inout, ifeat);
-    }
-
-
-    return 0;
+error:
+    free(iof->name);
+    free(iof->category);
+    return err;
 }
 
 void likwid_sysft_free_feature_list(LikwidSysFeatureList *list)
@@ -125,20 +96,15 @@ void likwid_sysft_free_feature_list(LikwidSysFeatureList *list)
     }
 }
 
-int _add_to_feature_list(_SysFeatureList *list, const _SysFeature* feature)
+cerr_t _add_to_feature_list(_SysFeatureList *list, const _SysFeature* feature)
 {
-    if ((!list) || (!feature))
-    {
-        ERROR_PRINT("Invalid arguments for _add_to_feature_list");
-        return -EINVAL;
-    }
+    assert(list);
+    assert(feature);
 
-    _SysFeature* flist = realloc(list->features, (list->num_features + 1) * sizeof(_SysFeature));
+    _SysFeature *flist = realloc(list->features, (list->num_features + 1) * sizeof(_SysFeature));
     if (!flist)
-    {
-        ERROR_PRINT("Cannot allocate space for extended feature list");
-        return -ENOMEM;
-    }
+        return ERROR_SET_ERRNO("realloc failed");
+
     list->features = flist;
 
     _SysFeature* iof = &list->features[list->num_features];
@@ -153,41 +119,7 @@ int _add_to_feature_list(_SysFeatureList *list, const _SysFeature* feature)
 
     list->num_features++;
 
-    return 0;
-}
-
-int _merge_feature_lists(_SysFeatureList *inout, const _SysFeatureList *in)
-{
-    if ((!inout) || (!in))
-    {
-        ERROR_PRINT("Invalid arguments for _merge_feature_lists");
-        return -EINVAL;
-    }
-
-    _SysFeature* flist = realloc(inout->features, (inout->num_features + in->num_features) * sizeof(_SysFeature));
-    if (!flist)
-    {
-        ERROR_PRINT("Cannot allocate space for extended feature list");
-        return -ENOMEM;
-    }
-    inout->features = flist;
-
-    for (int i = 0; i < in->num_features; i++)
-    {
-        _SysFeature* ifeat = &in->features[i];
-        _SysFeature* iof = &inout->features[inout->num_features + i];
-        
-        iof->name = ifeat->name;
-        iof->category = ifeat->category;
-        iof->description = ifeat->description;
-        iof->type = ifeat->type;
-        iof->getter = ifeat->getter;
-        iof->setter = ifeat->setter;
-        iof->tester = ifeat->tester;
-    }
-    inout->num_features += in->num_features;
-
-    return 0;
+    return NULL;
 }
 
 void _free_feature_list(_SysFeatureList *list)
@@ -201,21 +133,17 @@ void _free_feature_list(_SysFeatureList *list)
     }
 }
 
-int likwid_sysft_internal_to_external_feature_list(const _SysFeatureList *inlist, LikwidSysFeatureList* outlist)
+cerr_t likwid_sysft_internal_to_external_feature_list(const _SysFeatureList *inlist, LikwidSysFeatureList* outlist)
 {
-    if ((!inlist) || (!outlist))
-    {
-        ERROR_PRINT("Invalid arguments for internal_to_external_feature_list");
-        return -EINVAL;
-    }
-    outlist->num_features = 0;
-    outlist->features = NULL;
+    assert(inlist);
+    assert(outlist);
 
-    outlist->features = malloc(inlist->num_features * sizeof(LikwidSysFeature));
+    outlist->features = calloc(inlist->num_features, sizeof(*outlist->features));
     if (!outlist->features)
-    {
-        return -ENOMEM;
-    }
+        return ERROR_SET_ERRNO("malloc failed");
+    outlist->num_features = inlist->num_features;
+
+    cerr_t err;
 
     for (int i = 0; i < inlist->num_features; i++)
     {
@@ -223,64 +151,46 @@ int likwid_sysft_internal_to_external_feature_list(const _SysFeatureList *inlist
         const _SysFeature* in = &inlist->features[i];
 
         out->name = strndup(in->name, HWFEATURES_MAX_STR_LENGTH - 1);
-        if (!out->name)
-        {
-            for (int j = 0; j < i; j++)
-            {
-                LikwidSysFeature* c = &outlist->features[j];
-                free(c->name);
-                free(c->category);
-                free(c->description);
-            }
-            free(outlist->features);
-            outlist->features = NULL;
-            return -ENOMEM;
+        if (!out->name) {
+            err = ERROR_SET_ERRNO("strdnup failed");
+            goto error;
         }
+
         out->category = strndup(in->category, HWFEATURES_MAX_STR_LENGTH - 1);
-        if (!out->category)
-        {
-            free(out->name);
-            for (int j = 0; j < i; j++)
-            {
-                LikwidSysFeature* c = &outlist->features[j];
-                free(c->name);
-                free(c->category);
-                free(c->description);
-            }
-            free(outlist->features);
-            outlist->features = NULL;
-            return -ENOMEM;
+        if (!out->category) {
+            err = ERROR_SET_ERRNO("strdnup failed");
+            goto error;
         }
+
         out->description = strndup(in->description, HWFEATURES_MAX_STR_LENGTH - 1);
-        if (!out->description)
-        {
-            free(out->name);
-            free(out->category);
-            for (int j = 0; j < i; j++)
-            {
-                LikwidSysFeature* c = &outlist->features[j];
-                free(c->name);
-                free(c->category);
-                free(c->description);
-            }
-            free(outlist->features);
-            outlist->features = NULL;
-            return -ENOMEM;
+        if (!out->description) {
+            err = ERROR_SET_ERRNO("strdnup failed");
+            goto error;
         }
+
         out->type = in->type;
         out->readonly = 0;
         out->writeonly = 0;
+
         if (in->getter != NULL && in->setter == NULL)
-        {
             out->readonly = 1;
-        }
         else if (in->getter == NULL && in->setter != NULL)
-        {
             out->writeonly = 1;
-        }
-        outlist->num_features++;
     }
-    return 0;
+
+    return NULL;
+
+error:
+    for (int i = 0; i < outlist->num_features; i++) {
+        LikwidSysFeature *f = &outlist->features[i];
+        free(f->name);
+        free(f->category);
+        free(f->description);
+    }
+    free(outlist->features);
+    outlist->features = NULL;
+    outlist->num_features = 0;
+    return err;
 }
 
 void likwid_sysft_printlistint(const _SysFeatureList *list)
