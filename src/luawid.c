@@ -2744,6 +2744,7 @@ static int lua_likwid_getCudaTopology(lua_State *L) {
 }
 
 static int lua_likwid_putCudaTopology(lua_State *L) {
+  (void)L;
   if (cudatopology_isInitialized) {
     topology_cuda_finalize();
   }
@@ -2928,6 +2929,7 @@ static int lua_likwid_nvMarkerFile_read(lua_State *L) {
 }
 
 static int lua_likwid_nvMarkerFile_destroy(lua_State *L) {
+  (void)L;
   nvmon_destroyMarkerResults();
   return 0;
 }
@@ -3086,6 +3088,7 @@ static int lua_likwid_nvAddEventSet(lua_State *L) {
 }
 
 static int lua_likwid_nvFinalize(lua_State *L) {
+  (void)L;
   if (nvmon_initialized)
     nvmon_finalize();
   return 0;
