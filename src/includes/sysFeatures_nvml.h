@@ -32,7 +32,8 @@
 #define SYSFEATURES_NVML_H
 
 #include <sysFeatures_types.h>
+#include "error_ng.h"
 
-int likwid_sysft_init_nvml(_SysFeatureList *list);
+cerr_t likwid_sysft_init_nvml(_SysFeatureList *list);
 
 #endif // SYSFEATURES_NVML_H
