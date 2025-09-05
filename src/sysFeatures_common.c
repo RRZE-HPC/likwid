@@ -51,7 +51,8 @@ cerr_t likwid_sysft_register_features(_SysFeatureList *features, const _SysFeatu
         bool avail;
         if (in->tester(&avail))
             return ERROR_APPEND("Sysfeaturelist %p raised an error while testing");
-        return ERROR_SET("Sysfeaturelist %p is not available", in);
+        if (!avail)
+            return ERROR_SET("Sysfeaturelist %p is not available", in);
     }
 
     for (int i = 0; i < in->num_features; i++) {
