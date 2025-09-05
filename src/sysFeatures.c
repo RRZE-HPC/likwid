@@ -282,7 +282,7 @@ cerr_t likwid_sysft_modify(const LikwidSysFeature* feature, const LikwidDevice_t
     const size_t len = strlen(feature->name) + strlen(feature->category) + 2;
     char real[len];
     snprintf(real, len, "%s.%s", feature->category, feature->name);
-    if (likwid_sysft_modifyByName(feature->name, device, value))
+    if (likwid_sysft_modifyByName(real, device, value))
         return ERROR_APPEND("likwid_sysft_modifyByName failed");
     return NULL;
 }
