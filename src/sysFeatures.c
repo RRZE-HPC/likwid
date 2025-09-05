@@ -213,7 +213,7 @@ static cerr_t get_feature_index(size_t *index, const char* name)
         }
     }
 
-    return ERROR_SET("SysFeatures modules does not provide a feature called %s", name);
+    return ERROR_SET("SysFeatures modules does not provide a feature called '%s'", name);
 }
 
 cerr_t likwid_sysft_getByName(const char* name, const LikwidDevice_t device, char** value)
