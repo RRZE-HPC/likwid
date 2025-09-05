@@ -67,14 +67,14 @@ void debug_print(FILE *handle, const char *file, const char *func, int line, int
         return;
 
     /* Init text coloring (if TTY) */
-    const char *tty_boldtur = "";
+    const char *tty_boldyel = "";
     const char *tty_reset = "";
     const char *tty_underline = "";
     const char *category_str = LOG_CAT_PREFIX_NORMAL[category];
     const char *level_str = LOG_LEVEL_PREFIX_NORMAL[level];
 
     if (isatty(fileno(handle))) {
-        tty_boldtur = "\e[1;36m";
+        tty_boldyel = "\e[1;36m";
         tty_reset = "\e[0m";
         tty_underline = "\e[33;4m";
         category_str = LOG_CAT_PREFIX_COLOR[category];
@@ -85,9 +85,9 @@ void debug_print(FILE *handle, const char *file, const char *func, int line, int
      * The format looks like this:
      * WARN: MSG [file: FILE, function: FUNCTION, line: LINE] */
 
-    fprintf(handle, "%s/%s: ", category_str, level_str);
+    fprintf(handle, "[%s/%s] ", category_str, level_str);
 
-    fprintf(handle, "%s", tty_boldtur);
+    fprintf(handle, "%s", tty_boldyel);
     vfprintf(handle, fmt, args);
     fprintf(handle, "%s", tty_reset);
 

@@ -114,10 +114,6 @@ void lw_error_clear(void) {
 }
 
 static cerr_t error_append_valist(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, va_list args) {
-    cerr_t retval = error_init();
-    if (retval)
-        return retval;
-
     err_t new_scope = calloc(1, sizeof(*new_scope));
     if (!new_scope) {
         int err = pthread_setspecific(tsd, &OUT_OF_MEMORY);
@@ -279,11 +275,11 @@ static void error_print_scope_recurse(FILE *handle, cerr_t scope, int depth) {
     if (depth <= 0) {
         /* If this is the only error we print, do not print the depth as number. */
         if (scope->prev)
-            fprintf(handle, "%sError%s 1: ", tty_boldred, tty_reset);
+            fprintf(handle, "[%sError%s 1] ", tty_boldred, tty_reset);
         else
-            fprintf(handle, "%sError%s: ", tty_boldred, tty_reset);
+            fprintf(handle, "[%sError%s] ", tty_boldred, tty_reset);
     } else {
-        fprintf(handle, "%7d: ", depth + 1);
+        fprintf(handle, "[%7d] ", depth + 1);
     }
 
     fprintf(handle, "%s%s%s [", tty_boldtur, msg, tty_reset);
