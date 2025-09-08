@@ -148,9 +148,12 @@ extern int likwid_getMaxSupportedSockets(void) __attribute__ ((visibility ("defa
 /*! \brief A error_val_to_str_t function converts an error code to a string.
 
 A LwErrorScope may hold an error number, which can be automatically converted to
-a string when printed via lw_error_print. This is mostly relevant for LIKWID developers,
-but if you extend LwErrorScope yourself via lw_error_append, you can use a function
+a string when printed via lw_error_print(). This is mostly relevant for LIKWID developers,
+but if you extend LwErrorScope yourself via lw_error_append(), you can use a function
 of this signature to automatically convert it to string when printing.
+For an error value obtained via errno, this would be strerror.
+For other error value types you may have to write your own wrapper function with
+a matching signature.
 */
 typedef const char *(*lw_error_val_to_str_t)(int error_val);
 
@@ -158,8 +161,8 @@ typedef const char *(*lw_error_val_to_str_t)(int error_val);
 
 When an error is raised in LIKWID, usually a pointer to LwErrorScope is returned.
 This structure holds information about various details regarding the error cause.
-These errors may be chained together using lw_error_append, which form an error trace.
-The leaf error scope is the innermost error. When an error extended via lw_error_append,
+These errors may be chained together using lw_error_append(), which form an error trace.
+The leaf error scope is the innermost error. When an error extended via lw_error_append(),
 it is added as a parent struct to the current error.
 
 LIKWID manages its errors in threadlocal storage. You must not free errors returned via
@@ -185,7 +188,7 @@ struct LwErrorScope {
 
 Use this function to set the error for the current thread. This function is safe to be
 used outside of LIKWID code. This will overwrite and free any error previously set via
-lw_error_set or lw_error_append. However, calling any function from the LIKWID
+lw_error_set() or lw_error_append(). However, calling any function from the LIKWID
 library may change the current error.
 
 If you use this function in LIKWID internally, please use the helper macros like
@@ -219,10 +222,9 @@ ERROR_APPEND instead.
 */
 const struct LwErrorScope *lw_error_append(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, ...) __attribute__((visibility("default"), warn_unused_result, cold));
 
-/*! \brief Get the error of the current thread.
+/*! \brief Get the last raised error from lw_error_set() or lw_error_append().
 
-Get the last raised error from LIKWID. Do not free the returned pointer or call
-lw_error_free_scope on it.
+Do not free the returned pointer or call lw_error_free_scope() on it.
 @return Pointer to the error.
 */
 const struct LwErrorScope *lw_error_get(void) __attribute__((visibility("default"), warn_unused_result));
@@ -236,16 +238,16 @@ void lw_error_clear(void) __attribute__((visibility("default")));
 
 /*! \brief Create a copy of the current threads's error
 
-If you want to store an error created by LIKWID without destorying it by further LIKWID
-function calls, use lw_error_copy to create a copy. The pointer to this copy is not stored
-in thread local storage, so you must manually free it via lw_error_free_scope.
+If you want to store an LwErrorScope created by LIKWID without destroying it by further LIKWID
+function calls, use lw_error_copy() to create a copy. The pointer to this copy is not stored
+in thread local storage, so you must manually free it via lw_error_free_scope().
 @return Pointer to the new copy
 */
 struct LwErrorScope *lw_error_copy(void) __attribute__((visibility("default"), warn_unused_result));
 
-/*! \brief Create a copy of a LIKWID error
+/*! \brief Create a copy of a LwErrorScope
 
-Does the same as lw_error_copy, but the user may specify which error to copy.
+Does the same as lw_error_copy(), but the user may specify which error to copy.
 @param [in] scope Error scope to copy
 @return Pointer to the new copy
 */
@@ -253,8 +255,8 @@ struct LwErrorScope *lw_error_copy_scope(const struct LwErrorScope *scope) __att
 
 /*! \brief Free a manually created error copy
 
-Use this function to free an error scope, which was copied via lw_error_copy
-or lw_error_copy_scope. All error scopes, which are attached to this error scope
+Use this function to free an error scope, which was copied via lw_error_copy()
+or lw_error_copy_scope(). All error scopes, which were appended to this error scope
 will be freed.
 @param [in] scope Error scope to free
 */
@@ -271,20 +273,20 @@ void lw_error_print(FILE *file) __attribute__((visibility("default")));
 
 /*! \brief Print the current thread's error to stdout.
 
-Same as lw_error_print but with stdout as file.
+Same as lw_error_print() but with stdout as file.
 */
 void lw_error_print_stdout(void) __attribute__((visibility("default")));
 
 /*! \brief Print the current thread's error to stdout.
 
-Same as lw_error_print but with stderr as file.
+Same as lw_error_print() but with stderr as file.
 */
 void lw_error_print_stderr(void) __attribute__((visibility("default")));
 
 
-/*! \brief Print the current thread's error to stdout.
+/*! \brief Print an LwErrorScope to a FILE.
 
-Same as lw_error_print but with a manual pointer to an error scope.
+Same as lw_error_print() but with a manual pointer to LwErrorScope.
 @param [in] file FILE pointer to print to
 @param [in] scope Error scope to print
 */
@@ -292,14 +294,14 @@ void lw_error_print_scope(FILE *file, const struct LwErrorScope *scope) __attrib
 
 /*! \brief Print an error with stdout as file.
 
-Same as lw_error_print_scope but with stdout as file.
+Same as lw_error_print_scope() but with stdout as file.
 @param [in] scope Error scope to print
 */
 void lw_error_print_scope_stdout(const struct LwErrorScope *scope) __attribute__((visibility("default")));
 
 /*! \brief Print an error with stderr as file.
 
-Same as lw_error_print_scope but with stderr as file.
+Same as lw_error_print_scope() but with stderr as file.
 @param [in] scope Error scope to print
 */
 void lw_error_print_scope_stderr(const struct LwErrorScope *scope) __attribute__((visibility("default")));

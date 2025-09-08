@@ -40,6 +40,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 
 \section Library LIKWID Library
 \subsection C_Interface C/C++ Interface
+- \ref Error
 - \ref MarkerAPI
 - \ref Access
 - \ref Config
