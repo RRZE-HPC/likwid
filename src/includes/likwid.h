@@ -142,6 +142,36 @@ extern int likwid_getMaxSupportedSockets(void) __attribute__ ((visibility ("defa
 ################################################################################
 */
 /** \addtogroup Error Error Handling
+ *  The Error API in LIKWID is used to provide a more sophisticated mechanism
+ *  over simple return value based error signaling.
+ *
+ *  We try to solve the following two problems:
+ *  First, simple integer return values often poorly describe the actual errors.
+ *  Second, return values do not give any insight to where an error occured.
+ *  While it is possible to use an error code for every single error in the program,
+ *  such a solution would be a maintenance burden. Additionally, return codes do
+ *  not give any insight about the call chain. This is a problem with functions,
+ *  which are called in many places in the program. Even if we know the inner
+ *  function raising the error, often the outer functions are a relevant insight
+ *  for error cause.
+ *
+ *  The LIKWID error API tries to solve it by capturing a set of the following
+ *  for each error:
+ *
+ *  - Error message (formatted via familiar printf syntax)
+ *  - Error code (to save e.g. errno from C functions)
+ *  - Error location (file, function, line)
+ *
+ *  In addition a new error can be appended to an existing error.
+ *  This allows the creation of an error trace, to allow insight into a call trace
+ *  of where the error occured. Because C does not have builtin stracktrace support,
+ *  the error API relies in the programmer manually appending the error, each time
+ *  the error is returned further. With helper macros, which wrap lw_error_set() and
+ *  lw_error_append(), this is easy to read and written code is very compact.
+ *
+ *  By default, errors are stored in thread local memory, which the API manages in a
+ *  manner to avoid memory leaks. The programmer does not need to free any errors,
+ *  since the API will always free the old error if a new one is set.
  *  @{
  */
 
@@ -162,24 +192,24 @@ typedef const char *(*lw_error_val_to_str_t)(int error_val);
 When an error is raised in LIKWID, usually a pointer to LwErrorScope is returned.
 This structure holds information about various details regarding the error cause.
 These errors may be chained together using lw_error_append(), which form an error trace.
-The leaf error scope is the innermost error. When an error extended via lw_error_append(),
-it is added as a parent struct to the current error.
+The root error scope is the innermost error. When an error extended via lw_error_append(),
+it is added as a child to the current error.
 
 LIKWID manages its errors in threadlocal storage. You must not free errors returned via
-lw_error_get. However, if you copy an error via lw_error_copy, you must explicitly
-free it via lw_error_free_scope.
+lw_error_get. However, if you copy an error via lw_error_copy(), you must explicitly
+free it via lw_error_free_scope().
 */
 struct LwErrorScope {
     char *message; /*!< \brief Message explaining the cause of the error*/
-    const char *file; /*!< \brief Source file which raised the error*/
-    const char *func; /*!< \brief Function which raised the error*/
-    int line; /*!< \brief Line which raised the error*/
+    const char *file; /*!< \brief Source file in which the error was raised*/
+    const char *func; /*!< \brief Function in which the error was raised*/
+    int line; /*!< \brief Line in which the error was raised*/
     int error_val; /*!< \brief Error value associated with this error. This may be
                      an errno val or any other type of error value. If not applicable
-                     this is set to 0.*/
+                     set to 0.*/
     lw_error_val_to_str_t error_val_to_str; /*!< \brief Use this function to convert
                                            error_val to a string. If not applicable
-                                           this may be set to NULL.*/
+                                           set to NULL.*/
     struct LwErrorScope *prev; /*!< \brief Child error, which was generated before this
                                  error. NULL if there are no further errors.*/
 };
