@@ -116,6 +116,7 @@ void lw_error_clear(void) {
 static cerr_t error_append_valist(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, va_list args) {
     err_t new_scope = calloc(1, sizeof(*new_scope));
     if (!new_scope) {
+        lw_error_clear();
         int err = pthread_setspecific(tsd, &OUT_OF_MEMORY);
         assert(err == 0);
         return &OUT_OF_MEMORY;
@@ -132,6 +133,9 @@ static cerr_t error_append_valist(const char *file, const char *func, int line, 
     char *message = calloc(message_buf_len, sizeof(*message));
     if (!message) {
         free(new_scope);
+        lw_error_clear();
+        int err = pthread_setspecific(tsd, &OUT_OF_MEMORY);
+        assert(err == 0);
         return &OUT_OF_MEMORY;
     }
 
