@@ -49,6 +49,9 @@ static cerr_t error_init(void) {
         } else if (atexit(lw_error_clear)) {
             // The deleter function of pthread_key_create only affects launched threads, not the main thread.
             // Use atexit to delete the error from the main thread.
+            // TODO: ^This is possibly unsafe. If the library is unloaded before the main thread terminates,
+            // this will cause a segmentation fault, since the deleter code is no longer there.
+            // How should we solve this?
             fprintf(stderr, "atexit: Unable to register error cleanup function");
             retval = &INIT_ERROR;
         } else {
