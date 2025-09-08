@@ -274,8 +274,8 @@ static void error_print_scope_recurse(FILE *handle, cerr_t scope, int depth) {
 
     /* Print actual error.
      * The format looks like this:
-     * Err 1: MSG1 [ERRVAL: ERRSTR, file: FILE, function: FUNCTION, line: LINE].
-     *     2: MSG2 [ERRVAL: ERRSTR, file: FILE, function: FUNCTION, line: LINE].
+     * [Error 1] MSG1 [ERRVAL: ERRSTR, file: FILE, function: FUNCTION, line: LINE].
+     * [      2] MSG2 [ERRVAL: ERRSTR, file: FILE, function: FUNCTION, line: LINE].
      *     .....
      *
      * We conditionally add colors/formatting if a TTY is available. */
