@@ -21,7 +21,7 @@ typedef struct LwErrorScope *err_t;
 
 #define ERROR_WRAP_MSG(fmt, ...) lw_error_wrap(__FILE__, __func__, __LINE__, 0, NULL, (fmt), ##__VA_ARGS__)
 #define ERROR_WRAP() lw_error_wrap(__FILE__, __func__, __LINE__, 0, NULL, "<no description>")
-#define ERROR_WRAP_MSG_CALL(scope, fmt, ...) ((scope) ? ERROR_WRAP_MSG((fmt), ##__VA_ARGS__) : NULL)
+#define ERROR_WRAP_CALL_MSG(scope, fmt, ...) ((scope) ? ERROR_WRAP_MSG((fmt), ##__VA_ARGS__) : NULL)
 #define ERROR_WRAP_CALL(scope) ((scope) ? ERROR_WRAP() : NULL)
 
 #endif // ERROR_NG_H
