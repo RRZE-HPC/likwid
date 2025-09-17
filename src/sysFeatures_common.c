@@ -50,7 +50,7 @@ cerr_t likwid_sysft_register_features(_SysFeatureList *features, const _SysFeatu
     if (in->tester) {
         bool avail;
         if (in->tester(&avail))
-            return ERROR_APPEND("Sysfeaturelist %p raised an error while testing");
+            return ERROR_WRAP_MSG("Sysfeaturelist %p raised an error while testing");
         if (!avail)
             return ERROR_SET("Sysfeaturelist %p is not available", in);
     }
@@ -64,13 +64,13 @@ cerr_t likwid_sysft_register_features(_SysFeatureList *features, const _SysFeatu
 
             bool avail;
             if (f->tester(&avail))
-                return ERROR_APPEND("Test for feature %s.%s raised an error", f->category, f->name);
+                return ERROR_WRAP_MSG("Test for feature %s.%s raised an error", f->category, f->name);
 
             if (avail) {
                 PRINT_DEBUG("Test for feature %s.%s ok", f->category, f->name);
 
                 if (_add_to_feature_list(features, f))
-                    return ERROR_APPEND("Failed to add HW feature %s.%s to feature list", f->category, f->name);
+                    return ERROR_WRAP_MSG("Failed to add HW feature %s.%s to feature list", f->category, f->name);
             } else {
                 PRINT_DEBUG("Test for feature %s.%s failed", f->category, f->name);
             }
@@ -78,7 +78,7 @@ cerr_t likwid_sysft_register_features(_SysFeatureList *features, const _SysFeatu
             PRINT_DEBUG("No test available for feature %s.%s", f->category, f->name);
 
             if (_add_to_feature_list(features, f))
-                return ERROR_APPEND("Failed to add HW feature %s.%s to feature list", f->category, f->name);
+                return ERROR_WRAP_MSG("Failed to add HW feature %s.%s to feature list", f->category, f->name);
         }
     }
     return NULL;
@@ -104,7 +104,7 @@ cerr_t likwid_sysft_init_generic(const _HWArchFeatures* infeatures, _SysFeatureL
 
     for (unsigned j = 0; feature_list[j] != NULL; j++) {
         if (likwid_sysft_register_features(list, feature_list[j]))
-            return ERROR_APPEND("likwid_sysft_register_features failed");
+            return ERROR_WRAP();
     }
 
     return NULL;
@@ -193,7 +193,7 @@ cerr_t likwid_sysft_copystr(const char *str, char **value)
 
 cerr_t likwid_sysft_foreach_core_testmsr(bool *ok, uint64_t reg)
 {
-    return likwid_sysft_foreach_core_testmsr_cb(ok, reg, NULL, NULL);
+    return ERROR_WRAP_CALL(likwid_sysft_foreach_core_testmsr_cb(ok, reg, NULL, NULL));
 }
 
 cerr_t likwid_sysft_foreach_core_testmsr_cb(bool *ok, uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData)
@@ -229,7 +229,7 @@ cerr_t likwid_sysft_foreach_core_testmsr_cb(bool *ok, uint64_t reg, likwid_sysft
             {
                 bool msrOk;
                 if (testFunc(&msrOk, msrData, cbData))
-                    return ERROR_APPEND("testFunc error");
+                    return ERROR_WRAP_MSG("testFunc error");
                 if (msrOk)
                     valid += 1;
             }
@@ -247,7 +247,7 @@ cerr_t likwid_sysft_foreach_core_testmsr_cb(bool *ok, uint64_t reg, likwid_sysft
 
 cerr_t likwid_sysft_foreach_hwt_testmsr(bool *ok, uint64_t reg)
 {
-    return likwid_sysft_foreach_hwt_testmsr_cb(ok, reg, NULL, NULL);
+    return ERROR_WRAP_CALL(likwid_sysft_foreach_hwt_testmsr_cb(ok, reg, NULL, NULL));
 }
 
 cerr_t likwid_sysft_foreach_hwt_testmsr_cb(bool *ok, uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData)
@@ -276,7 +276,7 @@ cerr_t likwid_sysft_foreach_hwt_testmsr_cb(bool *ok, uint64_t reg, likwid_sysft_
         {
             bool msrOk;
             if (testFunc(&msrOk, msrData, cbData))
-                return ERROR_APPEND("testFunc error");
+                return ERROR_WRAP_MSG("testFunc error");
             if (msrOk)
                 valid += 1;
         }
@@ -292,7 +292,7 @@ cerr_t likwid_sysft_foreach_hwt_testmsr_cb(bool *ok, uint64_t reg, likwid_sysft_
 
 cerr_t likwid_sysft_foreach_socket_testmsr(bool *ok, uint64_t reg)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(ok, reg, NULL, NULL);
+    return ERROR_WRAP_CALL(likwid_sysft_foreach_socket_testmsr_cb(ok, reg, NULL, NULL));
 }
 
 cerr_t likwid_sysft_foreach_socket_testmsr_cb(bool *ok, uint64_t reg, likwid_sysft_msr_test_func testFunc, void *cbData)
@@ -325,7 +325,7 @@ cerr_t likwid_sysft_foreach_socket_testmsr_cb(bool *ok, uint64_t reg, likwid_sys
             {
                 bool msrOk;
                 if (testFunc(&msrOk, msrData, cbData))
-                    return ERROR_APPEND("testFunc error");
+                    return ERROR_WRAP_MSG("testFunc error");
                 if (msrOk)
                     valid += 1;
             }
@@ -479,15 +479,15 @@ cerr_t likwid_sysft_readmsr(const LikwidDevice_t device, uint64_t reg, uint64_t 
     {
     case DEVICE_TYPE_SOCKET:
         if (readmsr_socket(device, reg, msrData))
-            return ERROR_APPEND("readmsr_socket failed");
+            return ERROR_WRAP();
         break;
     case DEVICE_TYPE_CORE:
         if (readmsr_core(device, reg, msrData))
-            return ERROR_APPEND("readmsr_core failed");
+            return ERROR_WRAP();
         break;
     case DEVICE_TYPE_HWTHREAD:
         if (readmsr_hwthread(device, reg, msrData))
-            return ERROR_APPEND("readmsr_hwthread failed");
+            return ERROR_WRAP();
         break;
     default:
         return ERROR_SET("Unimplemented device type: %d", device->type);
@@ -499,7 +499,7 @@ cerr_t likwid_sysft_readmsr_field(const LikwidDevice_t device, uint64_t reg, int
 {
     uint64_t msrData;
     if (likwid_sysft_readmsr(device, reg, &msrData))
-        return ERROR_APPEND("likwid_sysft_readmsr failed");
+        return ERROR_WRAP();
     *value = field64(msrData, bitoffset, width);
     return NULL;
 }
@@ -508,11 +508,11 @@ cerr_t likwid_sysft_readmsr_bit_to_string(const LikwidDevice_t device, uint64_t 
 {
     uint64_t field = false;
     if (likwid_sysft_readmsr_field(device, reg, bitoffset, 1, &field))
-        return ERROR_APPEND("likwid_sysft_readmsr_field failed");
+        return ERROR_WRAP();
     if (invert)
         field = !field;
     if (likwid_sysft_uint64_to_string(field, value))
-        return ERROR_APPEND("likwid_sysft_uint64_to_string failed");
+        return ERROR_WRAP();
     return NULL;
 }
 
@@ -529,35 +529,35 @@ cerr_t likwid_sysft_writemsr_field(const LikwidDevice_t device, uint64_t reg, in
         /* If we write the entire register, there is no need to fetch the old value first. */
         if (bitoffset != 0 || width != 64) {
             if (readmsr_socket(device, reg, &msrData))
-                return ERROR_APPEND("readmsr_socket failed");
+                return ERROR_WRAP();
         } else {
             msrData = 0;
         }
         field64set(&msrData, bitoffset, width, value);
         if (writemsr_socket(device, reg, msrData))
-            return ERROR_APPEND("writemsr_socket failed");
+            return ERROR_WRAP();
         break;
     case DEVICE_TYPE_CORE:
         if (bitoffset != 0 || width != 64) {
             if (readmsr_core(device, reg, &msrData))
-                return ERROR_APPEND("readmsr_core failed");
+                return ERROR_WRAP();
         } else {
             msrData = 0;
         }
         field64set(&msrData, bitoffset, width, value);
         if (writemsr_core(device, reg, msrData))
-            return ERROR_APPEND("writemsr_core failed");
+            return ERROR_WRAP();
         break;
     case DEVICE_TYPE_HWTHREAD:
         if (bitoffset != 0 || width != 64) {
             if (readmsr_hwthread(device, reg, &msrData))
-                return ERROR_APPEND("readmsr_hwthread failed");
+                return ERROR_WRAP();
         } else {
             msrData = 0;
         }
         field64set(&msrData, bitoffset, width, value);
         if (writemsr_hwthread(device, reg, msrData))
-            return ERROR_APPEND("writemsr_hwthread failed");
+            return ERROR_WRAP();
         break;
     default:
         return ERROR_SET("Unimplemented device type: %d", device->type);
@@ -570,10 +570,10 @@ cerr_t likwid_sysft_writemsr_bit_from_string(const LikwidDevice_t device, uint64
 {
     uint64_t field;
     if (likwid_sysft_string_to_uint64(value, &field))
-        return ERROR_APPEND("likwid_sysft_string_to_uint64 failed");
+        return ERROR_WRAP();
     if (invert)
         field = !field;
     if (likwid_sysft_writemsr_field(device, reg, bitoffset, 1, field))
-        return ERROR_APPEND("likwid_sysft_writemsr_field failed");
+        return ERROR_WRAP();
     return NULL;
 }

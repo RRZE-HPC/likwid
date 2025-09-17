@@ -357,13 +357,13 @@ static cerr_t temp_getter(const char *file, char **value)
     if (errno != 0)
         return ERROR_SET_ERRNO("strtol failed");
 
-    return likwid_sysft_double_to_string((double)temp / 1000.0, value);
+    return ERROR_WRAP_CALL(likwid_sysft_double_to_string((double)temp / 1000.0, value));
 }
 
 static cerr_t amd_thermal_temperature_ccd_getter(LikwidDevice_t device, char **value)
 {
     if (create_paths())
-        return ERROR_APPEND("create_paths failed");
+        return ERROR_WRAP();
 
     /* determine CCD to read from */
     CpuTopology_t topo = get_cpuTopology();
@@ -377,24 +377,24 @@ static cerr_t amd_thermal_temperature_ccd_getter(LikwidDevice_t device, char **v
     if (local_die_id >= info.sockets[socket_id].count)
         return ERROR_SET("Unable to read temperature for ccd %u of socket %u, only %u ccds available", local_die_id, socket_id, info.count);
 
-    return temp_getter(bdata(info.sockets[socket_id].ccds[local_die_id].temp_path), value);
+    return ERROR_WRAP_CALL(temp_getter(bdata(info.sockets[socket_id].ccds[local_die_id].temp_path), value));
 }
 
 static cerr_t amd_thermal_temperature_ctl_getter(LikwidDevice_t device, char **value)
 {
     if (create_paths())
-        return ERROR_APPEND("create_paths failed");
+        return ERROR_WRAP();
 
     if ((size_t)device->id.simple.id >= info.count)
         return ERROR_SET("Unable to get CTL temperature %d, only %u available", device->id.simple.id, info.count);
 
-    return temp_getter(bdata(info.sockets[device->id.simple.id].temp_path), value);
+    return ERROR_WRAP_CALL(temp_getter(bdata(info.sockets[device->id.simple.id].temp_path), value));
 }
 
 static cerr_t amd_thermal_tester(bool *ok)
 {
     if (create_paths())
-        return ERROR_APPEND("create_paths failed");
+        return ERROR_WRAP();
 
     /* We need at least one socket in order to detect the thermal sensor as valid. */
     *ok = info.count > 0;

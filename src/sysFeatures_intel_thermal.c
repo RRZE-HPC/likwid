@@ -15,20 +15,20 @@ static cerr_t intel_thermal_temperature_getter(const LikwidDevice_t device, char
 
     uint64_t therm_status_raw;
     if (likwid_sysft_readmsr(device, reg, &therm_status_raw))
-        return ERROR_APPEND("likwid_sysft_readmsr failed");
+        return ERROR_WRAP();
 
     const int readout = (int)field64(therm_status_raw, 16, 7);
 
     uint64_t temp_target_raw;
     if (likwid_sysft_readmsr(device, MSR_TEMPERATURE_TARGET, &temp_target_raw))
-        return ERROR_APPEND("likwid_sysft_readmsr failed");
+        return ERROR_WRAP();
 
     const int temp_target = (int)field64(temp_target_raw, 16, 8);
     const int temp_offset = (int)field64(temp_target_raw, 24, 6);
 
     const int final_temp = temp_target - temp_offset - readout;
 
-    return likwid_sysft_uint64_to_string(final_temp, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(final_temp, value));
 }
 
 static cerr_t intel_thermal_tester(bool *ok)

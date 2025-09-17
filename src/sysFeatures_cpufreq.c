@@ -122,50 +122,50 @@ static cerr_t cpufreq_driver_test(bool *ok, const char* testgovernor)
 
 static cerr_t cpufreq_acpi_cur_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "scaling_cur_freq");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "scaling_cur_freq"));
 }
 
 static cerr_t cpufreq_acpi_min_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "scaling_min_freq");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "scaling_min_freq"));
 }
 
 static cerr_t cpufreq_acpi_max_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "scaling_max_freq");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "scaling_max_freq"));
 }
 
 static cerr_t cpufreq_acpi_avail_cpu_freqs_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "scaling_available_frequencies");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "scaling_available_frequencies"));
 }
 
 static cerr_t cpufreq_acpi_governor_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "scaling_governor");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "scaling_governor"));
 }
 
 // TODO I don't remember why we don't reference this anymore below.
 // Was there a problem with it?
 //static cerr_t cpufreq_acpi_governor_setter(const LikwidDevice_t device, const char* value)
 //{
-//    return cpufreq_sysfs_setter(device, value, "scaling_governor");
+//    return ERROR_WRAP_CALL(cpufreq_sysfs_setter(device, value, "scaling_governor"));
 //}
 
 static cerr_t cpufreq_acpi_avail_governors_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "scaling_available_governors");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "scaling_available_governors"));
 }
 
 static cerr_t cpufreq_acpi_test(bool *ok)
 {
     if (cpufreq_driver_test(ok, "acpi_cpufreq"))
-        return ERROR_APPEND("cpufreq_driver_test error");
+        return ERROR_WRAP();
     if (*ok)
         return NULL;
 
     /* On AMD Genoa the string appears to be with a dash '-'. */
-    return cpufreq_driver_test(ok, "acpi-cpufreq");
+    return ERROR_WRAP_CALL(cpufreq_driver_test(ok, "acpi-cpufreq"));
 }
 
 static _SysFeature cpufreq_acpi_features[] = {
@@ -189,52 +189,53 @@ static cerr_t cpufreq_intel_pstate_base_cpu_freq_getter(const LikwidDevice_t dev
 {
     if (cpufreq_sysfs_getter(device, value, "base_frequency") == NULL)
         return NULL;
-    return cpufreq_sysfs_getter(device, value, "bios_limit");
+    PRINT_INFO("Unable to get 'base_frequency', trying 'bios_limit' instead");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "bios_limit"));
 }
 
 static cerr_t cpufreq_intel_pstate_cur_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "scaling_cur_freq");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "scaling_cur_freq"));
 }
 
 static cerr_t cpufreq_intel_pstate_min_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "scaling_min_freq");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "scaling_min_freq"));
 }
 
 static cerr_t cpufreq_intel_pstate_min_cpu_freq_setter(const LikwidDevice_t device, const char* value)
 {
-    return cpufreq_sysfs_setter(device, value, "scaling_min_freq");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_setter(device, value, "scaling_min_freq"));
 }
 
 static cerr_t cpufreq_intel_pstate_max_cpu_freq_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "scaling_max_freq");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "scaling_max_freq"));
 }
 
 static cerr_t cpufreq_intel_pstate_max_cpu_freq_setter(const LikwidDevice_t device, const char* value)
 {
-    return cpufreq_sysfs_setter(device, value, "scaling_max_freq");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_setter(device, value, "scaling_max_freq"));
 }
 
 static cerr_t cpufreq_intel_pstate_governor_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "scaling_governor");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "scaling_governor"));
 }
 
 static cerr_t cpufreq_intel_pstate_governor_setter(const LikwidDevice_t device, const char* value)
 {
-    return cpufreq_sysfs_setter(device, value, "scaling_governor");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_setter(device, value, "scaling_governor"));
 }
 
 static cerr_t cpufreq_intel_pstate_avail_governors_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "scaling_available_governors");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "scaling_available_governors"));
 }
 
 static cerr_t cpufreq_intel_pstate_test(bool *ok)
 {
-    return cpufreq_driver_test(ok, "intel_pstate");
+    return ERROR_WRAP_CALL(cpufreq_driver_test(ok, "intel_pstate"));
 }
 
 static _SysFeature cpufreq_pstate_features[] = {
@@ -256,7 +257,7 @@ static const _SysFeatureList cpufreq_pstate_feature_list = {
 
 static cerr_t cpufreq_intel_cpufreq_test(bool *ok)
 {
-    return cpufreq_driver_test(ok, "intel_cpufreq");
+    return ERROR_WRAP_CALL(cpufreq_driver_test(ok, "intel_cpufreq"));
 }
 
 /* INFO: Most sysfs entries are the same as for the intel_pstate driver,
@@ -279,17 +280,17 @@ static const _SysFeatureList cpufreq_intel_cpufreq_feature_list = {
 
 static cerr_t cpufreq_cppc_boost_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "boost");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "boost"));
 }
 
 static cerr_t cpufreq_cppc_boost_setter(const LikwidDevice_t device, const char* value)
 {
-    return cpufreq_sysfs_setter(device, value, "boost");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_setter(device, value, "boost"));
 }
 
 static cerr_t cpufreq_cppc_test(bool *ok)
 {
-    return cpufreq_driver_test(ok, "cppc_cpufreq");
+    return ERROR_WRAP_CALL(cpufreq_driver_test(ok, "cppc_cpufreq"));
 }
 
 static _SysFeature cpufreq_cppc_features[] = {
@@ -311,7 +312,7 @@ static const _SysFeatureList cpufreq_cppc_feature_list = {
 
 static cerr_t cpufreq_apple_cpufreq_test(bool *ok)
 {
-    return cpufreq_driver_test(ok, "apple-cpufreq");
+    return ERROR_WRAP_CALL(cpufreq_driver_test(ok, "apple-cpufreq"));
 }
 
 static _SysFeature cpufreq_apple_cpufreq_features[] = {
@@ -346,12 +347,12 @@ static cerr_t cpufreq_epp_test(bool *ok)
 
 static cerr_t cpufreq_intel_pstate_epp_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "energy_performance_preference");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "energy_performance_preference"));
 }
 
 static cerr_t cpufreq_intel_pstate_avail_epps_getter(const LikwidDevice_t device, char** value)
 {
-    return cpufreq_sysfs_getter(device, value, "energy_performance_available_preferences");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "energy_performance_available_preferences"));
 }
 
 static _SysFeature cpufreq_epp_features[] = {
@@ -369,7 +370,7 @@ static const _SysFeatureList cpufreq_epp_feature_list = {
 
 static cerr_t cpufreq_scaling_driver_getter(const LikwidDevice_t device, char **value)
 {
-    return cpufreq_sysfs_getter(device, value, "scaling_driver");
+    return ERROR_WRAP_CALL(cpufreq_sysfs_getter(device, value, "scaling_driver"));
 }
 
 static cerr_t cpufreq_scaling_driver_test(bool *ok)
@@ -399,60 +400,60 @@ cerr_t likwid_sysft_init_cpufreq(_SysFeatureList* out)
     bool apple_avail;
 
     if (cpufreq_intel_pstate_test(&intel_pstate_avail)) {
-        return ERROR_APPEND("cpufreq_intel_pstate_test error");
+        return ERROR_WRAP();
     } else if (intel_pstate_avail) {
         PRINT_INFO("Registering Intel Pstate knobs for cpufreq");
 
         if (likwid_sysft_register_features(out, &cpufreq_pstate_feature_list))
-            return ERROR_APPEND("likwid_sysft_register_features failed");
+            return ERROR_WRAP();
     } else if (cpufreq_intel_cpufreq_test(&intel_cpufreq_avail)) {
-        return ERROR_APPEND("cpufreq_intel_cpufreq_test error");
+        return ERROR_WRAP();
     } else if (intel_cpufreq_avail) {
         PRINT_INFO("Registering Intel Cpufreq knobs for cpufreq");
 
         if (likwid_sysft_register_features(out, &cpufreq_intel_cpufreq_feature_list))
-            return ERROR_APPEND("likwid_sysft_register_features failed");
+            return ERROR_WRAP();
     } else if (cpufreq_acpi_test(&acpi_avail)) {
-        return ERROR_APPEND("cpufreq_acpi_test error");
+        return ERROR_WRAP();
     } else if (acpi_avail) {
         PRINT_INFO("Registering ACPI cpufreq knobs for cpufreq");
 
         if (likwid_sysft_register_features(out, &cpufreq_acpi_feature_list))
-            return ERROR_APPEND("likwid_sysft_register_features failed");
+            return ERROR_WRAP();
     } else if (cpufreq_cppc_test(&cppc_avail)) {
-        return ERROR_APPEND("cpufreq_acpi_test error");
+        return ERROR_WRAP();
     } else if (cppc_avail) {
         PRINT_INFO("Registering CPPC cpufreq knobs for cpufreq");
 
         if (likwid_sysft_register_features(out, &cpufreq_cppc_feature_list))
-            return ERROR_APPEND("likwid_sysft_register_features failed");
+            return ERROR_WRAP();
     } else if (cpufreq_apple_cpufreq_test(&apple_avail)) {
-        return ERROR_APPEND("cpufreq_apple_cpufreq_test error");
+        return ERROR_WRAP();
     } else if (apple_avail) {
         PRINT_DEBUG("Registering Apple cpufreq knobs for cpufreq");
 
         if (likwid_sysft_register_features(out, &cpufreq_apple_cpufreq_feature_list))
-            return ERROR_APPEND("likwid_sysft_register_features failed");
+            return ERROR_WRAP();
     }
 
     bool epp_avail;
     if (cpufreq_epp_test(&epp_avail))
-        return ERROR_APPEND("cpufreq_epp_test error");
+        return ERROR_WRAP();
     
     if (epp_avail) {
         PRINT_DEBUG("Registering Energy Performance Preference knobs for cpufreq");
         if (likwid_sysft_register_features(out, &cpufreq_epp_feature_list))
-            return ERROR_APPEND("likwid_sysft_register_features failed");
+            return ERROR_WRAP();
     }
 
     bool scaling_driver_avail;
     if (cpufreq_scaling_driver_test(&scaling_driver_avail))
-        return ERROR_APPEND("cpufreq_scaling_driver_test error");
+        return ERROR_WRAP();
 
     if (scaling_driver_avail) {
         PRINT_DEBUG("Registering Scaling Driver knobs for cpufreq");
         if (likwid_sysft_register_features(out, &cpufreq_scaling_driver_feature_list))
-            return ERROR_APPEND("likwid_sysft_register_features failed");
+            return ERROR_WRAP();
     }
 
     return NULL;

@@ -50,13 +50,13 @@
 static cerr_t intel_uncorefreq_test(bool *ok)
 {
     if (likwid_sysft_foreach_socket_testmsr(ok, MSR_UNCORE_FREQ))
-        return ERROR_APPEND("likwid_sysft_foreach_socket_testmsr error");
+        return ERROR_WRAP();
 
     if (!*ok)
         return NULL;
 
     if (likwid_sysft_foreach_socket_testmsr(ok, MSR_UNCORE_FREQ_READ))
-        return ERROR_APPEND("likwid_sysft_foreach_socket_testmsr error");
+        return ERROR_WRAP();
 
     return NULL;
 }
@@ -67,8 +67,8 @@ static cerr_t intel_uncore_cur_freq_getter(const LikwidDevice_t device, char** v
 
     uint64_t msrData;
     if (likwid_sysft_readmsr(device, MSR_UNCORE_FREQ_READ, &msrData))
-        return ERROR_APPEND("likwid_sysft_readmsr failed");
-    return likwid_sysft_uint64_to_string(field64(msrData, 0, 8) * 100, value);
+        return ERROR_WRAP();
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(field64(msrData, 0, 8) * 100, value));
 }
 
 static cerr_t intel_uncore_min_freq_getter(const LikwidDevice_t device, char** value)
@@ -77,8 +77,8 @@ static cerr_t intel_uncore_min_freq_getter(const LikwidDevice_t device, char** v
 
     uint64_t msrData;
     if (likwid_sysft_readmsr(device, MSR_UNCORE_FREQ, &msrData))
-        return ERROR_APPEND("likwid_sysft_readmsr failed");
-    return likwid_sysft_uint64_to_string(field64(msrData, 8, 8) * 100, value);
+        return ERROR_WRAP();
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(field64(msrData, 8, 8) * 100, value));
 }
 
 static cerr_t intel_uncore_max_freq_getter(const LikwidDevice_t device, char** value)
@@ -87,8 +87,8 @@ static cerr_t intel_uncore_max_freq_getter(const LikwidDevice_t device, char** v
 
     uint64_t msrData;
     if (likwid_sysft_readmsr(device, MSR_UNCORE_FREQ, &msrData))
-        return ERROR_APPEND("likwid_sysft_readmsr failed");
-    return likwid_sysft_uint64_to_string(field64(msrData, 0, 8) * 100, value);
+        return ERROR_WRAP();
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(field64(msrData, 0, 8) * 100, value));
 }
 
 static _SysFeature intel_uncorefreq_features[] = {

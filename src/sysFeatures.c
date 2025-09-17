@@ -152,18 +152,18 @@ cerr_t likwid_sysft_init(void)
 
     if (cpuinfo->isIntel) {
         if (likwid_sysft_init_x86_intel(&_feature_list))
-            return ERROR_APPEND("Failed to initialize SysFeatures for Intel architecture");
+            return ERROR_WRAP_MSG("Failed to initialize SysFeatures for Intel architecture");
     } else {
         if (likwid_sysft_init_x86_amd(&_feature_list))
-            return ERROR_APPEND("Failed to initialize SysFeatures for AMD architecture");
+            return ERROR_WRAP_MSG("Failed to initialize SysFeatures for AMD architecture");
     }
 #endif
 
     if (likwid_sysft_init_cpufreq(&_feature_list))
-        return ERROR_APPEND("Failed to initialize SysFeatures cpufreq module");
+        return ERROR_WRAP_MSG("Failed to initialize SysFeatures cpufreq module");
 
     if (likwid_sysft_init_linux_numa_balancing(&_feature_list))
-        return ERROR_APPEND("Failed to initialize SysFeatures numa_balancing module");
+        return ERROR_WRAP_MSG("Failed to initialize SysFeatures numa_balancing module");
 
 #ifdef LIKWID_WITH_NVMON
     if (likwid_sysft_init_nvml(&_feature_list))
@@ -226,7 +226,7 @@ cerr_t likwid_sysft_getByName(const char* name, const LikwidDevice_t device, cha
 
     size_t idx;
     if (get_feature_index(&idx, name))
-        return ERROR_APPEND("Failed to get index for %s", name);
+        return ERROR_WRAP_MSG("Failed to get index for %s", name);
 
     _SysFeature *f = &_feature_list.features[idx];
     if (!f || !f->getter)
@@ -236,10 +236,11 @@ cerr_t likwid_sysft_getByName(const char* name, const LikwidDevice_t device, cha
         return ERROR_SET("Feature %s has a different type than device", name);
 
     if (get_device_access(device))
-        return ERROR_APPEND("Failed to get access to device");
+        return ERROR_WRAP();
 
     if (f->getter(device, value))
-        return ERROR_APPEND("Failed to run sysfeature getter");
+        return ERROR_WRAP_MSG("Getter '%s' for device (type=%s id=%u) failed",
+                name, likwid_device_type_name(device->type), device->id.simple.id);
     return NULL;
 }
 
@@ -248,7 +249,7 @@ cerr_t likwid_sysft_get(const LikwidSysFeature* feature, const LikwidDevice_t de
     const size_t len = strlen(feature->name) + strlen(feature->category) + 2;
     char real[len];
     snprintf(real, len, "%s.%s", feature->category, feature->name);
-    return likwid_sysft_getByName(real, device, value);
+    return ERROR_WRAP_CALL(likwid_sysft_getByName(real, device, value));
 }
 
 cerr_t likwid_sysft_modifyByName(const char* name, const LikwidDevice_t device, const char* value)
@@ -261,7 +262,7 @@ cerr_t likwid_sysft_modifyByName(const char* name, const LikwidDevice_t device, 
 
     size_t idx;
     if (get_feature_index(&idx, name))
-        return ERROR_APPEND("get_feature_index failed");
+        return ERROR_WRAP();
 
     _SysFeature *f = &_feature_list.features[idx];
     if (!f->setter)
@@ -271,9 +272,10 @@ cerr_t likwid_sysft_modifyByName(const char* name, const LikwidDevice_t device, 
         return ERROR_SET("Cannot modify '%s' of type '%d', which is different to requested type '%d'", name, f->type, device->type);
 
     if (get_device_access(device))
-        return ERROR_APPEND("get_device_access failed");
+        return ERROR_WRAP();
     if (f->setter(device, value))
-        return ERROR_APPEND("setter for '%s' failed", name);
+        return ERROR_WRAP_MSG("Setting '%s' to '%s' for device (type=%s id=%u) failed",
+                name, value, likwid_device_type_name(device->type), device->type);
     return NULL;
 }
 
@@ -282,9 +284,7 @@ cerr_t likwid_sysft_modify(const LikwidSysFeature* feature, const LikwidDevice_t
     const size_t len = strlen(feature->name) + strlen(feature->category) + 2;
     char real[len];
     snprintf(real, len, "%s.%s", feature->category, feature->name);
-    if (likwid_sysft_modifyByName(real, device, value))
-        return ERROR_APPEND("likwid_sysft_modifyByName failed");
-    return NULL;
+    return ERROR_WRAP_CALL(likwid_sysft_modifyByName(real, device, value));
 }
 
 void likwid_sysft_finalize(void)

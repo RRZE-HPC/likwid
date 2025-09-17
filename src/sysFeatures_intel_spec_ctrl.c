@@ -54,7 +54,7 @@ static cerr_t intel_cpu_spec_ibrs_tester(bool *ok)
 
 static cerr_t intel_cpu_spec_ibrs_getter(const LikwidDevice_t device, char** value)
 {
-    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 0, false, value);
+    return ERROR_WRAP_CALL(likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 0, false, value));
 }
 
 static cerr_t intel_cpu_spec_stibp_tester(bool *ok)
@@ -67,7 +67,7 @@ static cerr_t intel_cpu_spec_stibp_tester(bool *ok)
 
 static cerr_t intel_cpu_spec_stibp_getter(const LikwidDevice_t device, char** value)
 {
-    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 1, false, value);
+    return ERROR_WRAP_CALL(likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 1, false, value));
 }
 
 static cerr_t intel_cpu_spec_ssbd_tester(bool *ok)
@@ -80,7 +80,7 @@ static cerr_t intel_cpu_spec_ssbd_tester(bool *ok)
 
 static cerr_t intel_cpu_spec_ssbd_getter(const LikwidDevice_t device, char** value)
 {
-    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 2, true, value);
+    return ERROR_WRAP_CALL(likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 2, true, value));
 }
 
 static cerr_t intel_cpu_spec_ipred_dis_tester(bool *ok)
@@ -93,7 +93,7 @@ static cerr_t intel_cpu_spec_ipred_dis_tester(bool *ok)
 
 static cerr_t intel_cpu_spec_ipred_dis_getter(const LikwidDevice_t device, char** value)
 {
-    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 3, false, value);
+    return ERROR_WRAP_CALL(likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 3, false, value));
 }
 
 static cerr_t intel_cpu_spec_rrsba_dis_tester(bool *ok)
@@ -106,7 +106,7 @@ static cerr_t intel_cpu_spec_rrsba_dis_tester(bool *ok)
 
 static cerr_t intel_cpu_spec_rrsba_dis_getter(const LikwidDevice_t device, char** value)
 {
-    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 5, true, value);
+    return ERROR_WRAP_CALL(likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 5, true, value));
 }
 
 static cerr_t intel_cpu_spec_psfd_tester(bool *ok)
@@ -119,7 +119,7 @@ static cerr_t intel_cpu_spec_psfd_tester(bool *ok)
 
 static cerr_t intel_cpu_spec_psfd_getter(const LikwidDevice_t device, char** value)
 {
-    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 7, true, value);
+    return ERROR_WRAP_CALL(likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 7, true, value));
 }
 
 static cerr_t intel_cpu_spec_ddpd_tester(bool *ok)
@@ -132,7 +132,7 @@ static cerr_t intel_cpu_spec_ddpd_tester(bool *ok)
 
 static cerr_t intel_cpu_spec_ddpd_getter(const LikwidDevice_t device, char** value)
 {
-    return likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 8, true, value);
+    return ERROR_WRAP_CALL(likwid_sysft_readmsr_bit_to_string(device, MSR_IA32_SPEC_CTRL, 8, true, value));
 }
 
 static cerr_t intel_cpu_spec_ctrl(bool *ok)
@@ -151,7 +151,7 @@ static cerr_t intel_cpu_spec_ctrl(bool *ok)
     for (size_t i = 0; i < ARRAY_COUNT(funcs); i++) {
         bool spec_ok;
         if (funcs[i](&spec_ok))
-            return ERROR_APPEND("error in speculation tester function");
+            return ERROR_WRAP();
         if (spec_ok)
             valid++;
     }

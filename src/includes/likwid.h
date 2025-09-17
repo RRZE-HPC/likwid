@@ -162,12 +162,12 @@ extern int likwid_getMaxSupportedSockets(void) __attribute__ ((visibility ("defa
  *  - Error code (to save e.g. errno from C functions)
  *  - Error location (file, function, line)
  *
- *  In addition a new error can be appended to an existing error.
+ *  In addition a new error can be wrapped around an existing error.
  *  This allows the creation of an error trace, to allow insight into a call trace
  *  of where the error occured. Because C does not have builtin stracktrace support,
- *  the error API relies in the programmer manually appending the error, each time
- *  the error is returned further. With helper macros, which wrap lw_error_set() and
- *  lw_error_append(), this is easy to read and written code is very compact.
+ *  the error API relies in the programmer manually wrapping the error, each time
+ *  the error is returned further. With helper macros, which use lw_error_set() and
+ *  lw_error_wrap(), this is easy to read and the resulting code is very compact.
  *
  *  By default, errors are stored in thread local memory, which the API manages in a
  *  manner to avoid memory leaks. The programmer does not need to free any errors,
@@ -179,7 +179,7 @@ extern int likwid_getMaxSupportedSockets(void) __attribute__ ((visibility ("defa
 
 A LwErrorScope may hold an error number, which can be automatically converted to
 a string when printed via lw_error_print(). This is mostly relevant for LIKWID developers,
-but if you extend LwErrorScope yourself via lw_error_append(), you can use a function
+but if you extend LwErrorScope yourself via lw_error_wrap(), you can use a function
 of this signature to automatically convert it to string when printing.
 For an error value obtained via errno, this would be strerror.
 For other error value types you may have to write your own wrapper function with
@@ -191,8 +191,8 @@ typedef const char *(*lw_error_val_to_str_t)(int error_val);
 
 When an error is raised in LIKWID, usually a pointer to LwErrorScope is returned.
 This structure holds information about various details regarding the error cause.
-These errors may be chained together using lw_error_append(), which form an error trace.
-The root error scope is the innermost error. When an error extended via lw_error_append(),
+These errors may be chained together using lw_error_wrap(), which form an error trace.
+The root error scope is the innermost error. When an error extended via lw_error_wrap(),
 it is added as a child to the current error.
 
 LIKWID manages its errors in threadlocal storage. You must not free errors returned via
@@ -218,7 +218,7 @@ struct LwErrorScope {
 
 Use this function to set the error for the current thread. This function is safe to be
 used outside of LIKWID code. This will overwrite and free any error previously set via
-lw_error_set() or lw_error_append(). However, calling any function from the LIKWID
+lw_error_set() or lw_error_wrap(). However, calling any function from the LIKWID
 library may change the current error.
 
 If you use this function in LIKWID internally, please use the helper macros like
@@ -233,15 +233,15 @@ ERROR_SET instead.
 */
 const struct LwErrorScope *lw_error_set(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, ...) __attribute__((visibility("default"), warn_unused_result, cold));
 
-/*! \brief Append error to the error from the current thread.
+/*! \brief Wrap error around the error from the current thread.
 
-Use this function to append/extend an error from the current threads's context.
-Appending multiple errors together is useful for creating an error trace.
-The same rules apply as for lw_error_set, except the previous error isn't deleted
-but chained together.
+Use this function to wrap/extend an error from the current threads's context.
+Wrapping multiple errors is useful for creating an error trace.
+The same parameter rules apply as for lw_error_set, except the previous error
+isn't deleted but "chained" together.
 
 If you use this function in LIKWID internally, please use the helper macros like
-ERROR_APPEND instead.
+ERROR_WRAP or ERROR_WRAP_MSG instead.
 @param [in] file see LwErrorScope
 @param [in] func see LwErrorScope
 @param [in] line see LwErrorScope
@@ -250,9 +250,9 @@ ERROR_APPEND instead.
 @param [in] fmt Format string, which generates 'message' from LwErrorString.
 @return Pointer to the error.
 */
-const struct LwErrorScope *lw_error_append(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, ...) __attribute__((visibility("default"), warn_unused_result, cold));
+const struct LwErrorScope *lw_error_wrap(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, ...) __attribute__((visibility("default"), warn_unused_result, cold));
 
-/*! \brief Get the last raised error from lw_error_set() or lw_error_append().
+/*! \brief Get the last raised error from lw_error_set() or lw_error_wrap().
 
 Do not free the returned pointer or call lw_error_free_scope() on it.
 @return Pointer to the error.
@@ -286,7 +286,7 @@ struct LwErrorScope *lw_error_copy_scope(const struct LwErrorScope *scope) __att
 /*! \brief Free a manually created error copy
 
 Use this function to free an error scope, which was copied via lw_error_copy()
-or lw_error_copy_scope(). All error scopes, which were appended to this error scope
+or lw_error_copy_scope(). All error scopes, which were wrapped in this error scope
 will be freed.
 @param [in] scope Error scope to free
 */

@@ -3857,7 +3857,7 @@ lua_likwid_getSysFeature(lua_State *L)
     char *value = NULL;
     if (likwid_sysft_getByName(feature, dev, &value)) {
         lua_pushnil(L);
-        push_lwerrorscope(L, ERROR_APPEND("likwid_sysft_getByName failed"));
+        push_lwerrorscope(L, ERROR_WRAP());
         return 2;
     }
 
@@ -3878,7 +3878,7 @@ lua_likwid_setSysFeature(lua_State *L)
     const char *value = luaL_checkstring(L,3);
     if (likwid_sysft_modifyByName(feature, dev, value)) {
         lua_pushboolean(L, false);
-        push_lwerrorscope(L, ERROR_APPEND("likwid_sysft_setByName failed"));
+        push_lwerrorscope(L, ERROR_WRAP());
         return 2;
     }
 

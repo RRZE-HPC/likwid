@@ -54,9 +54,7 @@ static RaplDomainInfo rapl_domain_info;
 
 cerr_t likwid_sysft_init_amd_hsmp(_SysFeatureList *out)
 {
-    if (likwid_sysft_register_features(out, &amd_hsmp_featuer_list))
-        return ERROR_APPEND("likwid_sysft_register_features failed");
-    return NULL;
+    return ERROR_WRAP_CALL(likwid_sysft_register_features(out, &amd_hsmp_featuer_list));
 }
 
 static cerr_t hsmp_raw(uint32_t socket, uint32_t msg_id, const uint32_t *args, uint16_t argCount, uint32_t *result, uint16_t resultCount)
@@ -97,38 +95,38 @@ static cerr_t hsmp_arg0_res1_as_u32(LikwidDevice_t dev, uint32_t msg_id, char **
 {
     uint32_t result;
     if (hsmp_raw(dev->id.simple.id, msg_id, NULL, 0, &result, 1))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
 
-    return likwid_sysft_uint64_to_string(result, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(result, value));
 }
 
 static cerr_t hsmp_arg1_res0_from_u32(LikwidDevice_t dev, int32_t msg_id, const char *value)
 {
     uint64_t arg0;
     if (likwid_sysft_string_to_uint64(value, &arg0))
-        return ERROR_APPEND("likwid_sysft_string_to_uint64 failed");
+        return ERROR_WRAP();
 
     uint32_t arg0_32 = (uint32_t)arg0;
-    return hsmp_raw(dev->id.simple.id, msg_id, &arg0_32, 1, NULL, 0);
+    return ERROR_WRAP_CALL(hsmp_raw(dev->id.simple.id, msg_id, &arg0_32, 1, NULL, 0));
 }
 
 static cerr_t hsmp_arg0_res1_as_double(LikwidDevice_t dev, uint32_t msg_id, double scale, char **value)
 {
     uint32_t result;
     if (hsmp_raw(dev->id.simple.id, msg_id, NULL, 0, &result, 1))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
 
-    return likwid_sysft_double_to_string(result * scale, value);
+    return ERROR_WRAP_CALL(likwid_sysft_double_to_string(result * scale, value));
 }
 
 static cerr_t hsmp_arg1_res0_from_double(LikwidDevice_t dev, uint32_t msg_id, double scale, const char *value)
 {
     double arg;
     if (likwid_sysft_string_to_double(value, &arg))
-        return ERROR_APPEND("likwid_sysft_string_to_double failed");
+        return ERROR_WRAP();
 
     uint32_t actualArg = (uint32_t)(arg * scale);
-    return hsmp_raw(dev->id.simple.id, msg_id, &actualArg, 1, NULL, 0);
+    return ERROR_WRAP_CALL(hsmp_raw(dev->id.simple.id, msg_id, &actualArg, 1, NULL, 0));
 }
 
 static cerr_t amd_hsmp_tester(bool *ok)
@@ -167,27 +165,27 @@ static cerr_t amd_hsmp_test_fail(bool *ok) { *ok = false; return NULL; } // HSMP
 
 static cerr_t amd_hsmp_smu_fw_getter(LikwidDevice_t dev, char **value)
 {
-    return hsmp_arg0_res1_as_u32(dev, HSMP_GET_SMU_VER, value);
+    return ERROR_WRAP_CALL(hsmp_arg0_res1_as_u32(dev, HSMP_GET_SMU_VER, value));
 }
 
 static cerr_t amd_hsmp_proto_ver_getter(LikwidDevice_t dev, char **value)
 {
-    return hsmp_arg0_res1_as_u32(dev, HSMP_GET_PROTO_VER, value);
+    return ERROR_WRAP_CALL(hsmp_arg0_res1_as_u32(dev, HSMP_GET_PROTO_VER, value));
 }
 
 static cerr_t amd_hsmp_sock_power_getter(LikwidDevice_t dev, char **value)
 {
-    return hsmp_arg0_res1_as_double(dev, HSMP_GET_SOCKET_POWER, 1e-3, value);
+    return ERROR_WRAP_CALL(hsmp_arg0_res1_as_double(dev, HSMP_GET_SOCKET_POWER, 1e-3, value));
 }
 
 static cerr_t amd_hsmp_sock_power_limit_cur_getter(LikwidDevice_t dev, char **value)
 {
-    return hsmp_arg0_res1_as_double(dev, HSMP_GET_SOCKET_POWER_LIMIT, 1e-3, value);
+    return ERROR_WRAP_CALL(hsmp_arg0_res1_as_double(dev, HSMP_GET_SOCKET_POWER_LIMIT, 1e-3, value));
 }
 
 static cerr_t amd_hsmp_sock_power_limit_cur_setter(LikwidDevice_t dev, const char *value)
 {
-    return hsmp_arg1_res0_from_double(dev, HSMP_SET_SOCKET_POWER_LIMIT, 1e3, value);
+    return ERROR_WRAP_CALL(hsmp_arg1_res0_from_double(dev, HSMP_SET_SOCKET_POWER_LIMIT, 1e3, value));
 }
 
 static cerr_t amd_hsmp_sock_power_limit_max_getter(LikwidDevice_t dev, char **value)
@@ -266,12 +264,12 @@ static cerr_t amd_hsmp_core_boost_limit_getter(LikwidDevice_t dev, char **value)
 
     uint32_t real_apic_id;
     if (get_real_apic_id(&real_apic_id, hwt))
-        return ERROR_APPEND("get_real_apic_id(%u) failed", hwt->apicId);
+        return ERROR_WRAP_MSG("get_real_apic_id(%u) failed", hwt->apicId);
 
     uint32_t boost_limit;
     if (hsmp_raw(hwt->packageId, HSMP_GET_BOOST_LIMIT, &real_apic_id, 1, &boost_limit, 1))
-        return ERROR_APPEND("hsmp_raw failed");
-    return likwid_sysft_uint64_to_string(boost_limit, value);
+        return ERROR_WRAP();
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(boost_limit, value));
 }
 
 static cerr_t amd_hsmp_core_boost_limit_setter(LikwidDevice_t dev, const char *value)
@@ -282,117 +280,117 @@ static cerr_t amd_hsmp_core_boost_limit_setter(LikwidDevice_t dev, const char *v
 
     uint32_t real_apic_id;
     if (get_real_apic_id(&real_apic_id, hwt))
-        return ERROR_APPEND("get_real_apic_id failed");
+        return ERROR_WRAP_MSG("get_real_apic_id(%u) failed", hwt->apicId);
 
     uint64_t boost_limit;
     if (likwid_sysft_string_to_uint64(value, &boost_limit))
-        return ERROR_APPEND("likwid_sysft_string_to_uint64 failed");
+        return ERROR_WRAP();
 
     uint32_t arg0 = 0;
     field32set(&arg0, 0, 16, boost_limit);
     field32set(&arg0, 16, 16, real_apic_id);
-    return hsmp_raw(hwt->packageId, HSMP_SET_BOOST_LIMIT, &arg0, 1, NULL, 0);
+    return ERROR_WRAP_CALL(hsmp_raw(hwt->packageId, HSMP_SET_BOOST_LIMIT, &arg0, 1, NULL, 0));
 }
 
 static cerr_t amd_hsmp_sock_boost_limit_setter(LikwidDevice_t dev, const char *value)
 {
-    return hsmp_arg1_res0_from_u32(dev, HSMP_SET_BOOST_LIMIT_SOCKET, value);
+    return ERROR_WRAP_CALL(hsmp_arg1_res0_from_u32(dev, HSMP_SET_BOOST_LIMIT_SOCKET, value));
 }
 
 static cerr_t amd_hsmp_sock_proc_hot_getter(LikwidDevice_t dev, char **value)
 {
-    return hsmp_arg0_res1_as_u32(dev, HSMP_GET_PROC_HOT, value);
+    return ERROR_WRAP_CALL(hsmp_arg0_res1_as_u32(dev, HSMP_GET_PROC_HOT, value));
 }
 
 static cerr_t amd_hsmp_sock_fclk_mclk_getter(LikwidDevice_t dev, bool fclk, char **value)
 {
     uint32_t results[2];
     if (hsmp_raw(dev->id.simple.id, HSMP_GET_FCLK_MCLK, NULL, 0, results, ARRAY_COUNT(results)))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
 
     if (fclk)
-        return likwid_sysft_uint64_to_string(results[0], value);
-    return likwid_sysft_uint64_to_string(results[1], value);
+        return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(results[0], value));
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(results[1], value));
 }
 
 static cerr_t amd_hsmp_sock_fclk_getter(LikwidDevice_t dev, char **value)
 {
-    return amd_hsmp_sock_fclk_mclk_getter(dev, true, value);
+    return ERROR_WRAP_CALL(amd_hsmp_sock_fclk_mclk_getter(dev, true, value));
 }
 
 static cerr_t amd_hsmp_sock_mclk_getter(LikwidDevice_t dev, char **value)
 {
-    return amd_hsmp_sock_fclk_mclk_getter(dev, false, value);
+    return ERROR_WRAP_CALL(amd_hsmp_sock_fclk_mclk_getter(dev, false, value));
 }
 
 static cerr_t amd_hsmp_xgmi_link_width_setter(LikwidDevice_t dev, const char *value)
 {
-    return hsmp_arg1_res0_from_u32(dev, HSMP_SET_XGMI_LINK_WIDTH, value);
+    return ERROR_WRAP_CALL(hsmp_arg1_res0_from_u32(dev, HSMP_SET_XGMI_LINK_WIDTH, value));
 }
 
 static cerr_t amd_hsmp_df_pstate_setter(LikwidDevice_t dev, const char *value)
 {
-    return hsmp_arg1_res0_from_u32(dev, HSMP_SET_DF_PSTATE, value);
+    return ERROR_WRAP_CALL(hsmp_arg1_res0_from_u32(dev, HSMP_SET_DF_PSTATE, value));
 }
 
 static cerr_t amd_hsmp_auto_df_pstate_setter(LikwidDevice_t dev, const char *value)
 {
     uint64_t intval;
     if (likwid_sysft_string_to_uint64(value, &intval))
-        return ERROR_APPEND("likwid_sysft_string_to_uint64 failed");
+        return ERROR_WRAP();
     if (intval != 1)
         return ERROR_SET("pstate must be set to 1");
-    return hsmp_raw(dev->id.simple.id, HSMP_SET_AUTO_DF_PSTATE, NULL, 0, NULL, 0);
+    return ERROR_WRAP_CALL(hsmp_raw(dev->id.simple.id, HSMP_SET_AUTO_DF_PSTATE, NULL, 0, NULL, 0));
 }
 
 static cerr_t amd_hsmp_sock_cclk_thrtl_limit_getter(LikwidDevice_t dev, char **value)
 {
-    return hsmp_arg0_res1_as_u32(dev, HSMP_GET_CCLK_THROTTLE_LIMIT, value);
+    return ERROR_WRAP_CALL(hsmp_arg0_res1_as_u32(dev, HSMP_GET_CCLK_THROTTLE_LIMIT, value));
 }
 
 static cerr_t amd_hsmp_sock_c0_percent_getter(LikwidDevice_t dev, char **value)
 {
-    return hsmp_arg0_res1_as_u32(dev, HSMP_GET_C0_PERCENT, value);
+    return ERROR_WRAP_CALL(hsmp_arg0_res1_as_u32(dev, HSMP_GET_C0_PERCENT, value));
 }
 
 static cerr_t amd_hsmp_sock_lclk_dpm_setter(LikwidDevice_t dev, const char *value)
 {
-    return hsmp_arg1_res0_from_u32(dev, HSMP_SET_NBIO_DPM_LEVEL, value);
+    return ERROR_WRAP_CALL(hsmp_arg1_res0_from_u32(dev, HSMP_SET_NBIO_DPM_LEVEL, value));
 }
 
 static cerr_t amd_hsmp_dram_bw_getter(LikwidDevice_t dev, bool max, bool percent, char **value)
 {
     uint32_t result;
     if (hsmp_raw(dev->id.simple.id, HSMP_GET_DDR_BANDWIDTH, NULL, 0, &result, 1))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
     if (max)
-        return likwid_sysft_double_to_string(field32(result, 20, 12) / 8.0, value);
+        return ERROR_WRAP_CALL(likwid_sysft_double_to_string(field32(result, 20, 12) / 8.0, value));
     if (percent)
-        return likwid_sysft_uint64_to_string(field32(result, 0, 8), value);
-    return likwid_sysft_double_to_string(field32(result, 8, 12) / 8.0, value);
+        return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(field32(result, 0, 8), value));
+    return ERROR_WRAP_CALL(likwid_sysft_double_to_string(field32(result, 8, 12) / 8.0, value));
 }
 
 static cerr_t amd_hsmp_dram_bw_max_getter(LikwidDevice_t dev, char **value)
 {
-    return amd_hsmp_dram_bw_getter(dev, true, false, value);
+    return ERROR_WRAP_CALL(amd_hsmp_dram_bw_getter(dev, true, false, value));
 }
 
 static cerr_t amd_hsmp_dram_bw_avg_getter(LikwidDevice_t dev, char **value)
 {
-    return amd_hsmp_dram_bw_getter(dev, false, false, value);
+    return ERROR_WRAP_CALL(amd_hsmp_dram_bw_getter(dev, false, false, value));
 }
 
 static cerr_t amd_hsmp_dram_bw_perc_getter(LikwidDevice_t dev, char **value)
 {
-    return amd_hsmp_dram_bw_getter(dev, false, true, value);
+    return ERROR_WRAP_CALL(amd_hsmp_dram_bw_getter(dev, false, true, value));
 }
 
 static cerr_t amd_hsmp_temp_getter(LikwidDevice_t dev, char **value)
 {
     uint32_t temp;
     if (hsmp_raw(dev->id.simple.id, HSMP_GET_TEMP_MONITOR, NULL, 0, &temp, 1))
-        return ERROR_APPEND("hsmp_raw failed");
-    return likwid_sysft_double_to_string(field32(temp, 5, 11) / 8.0, value);
+        return ERROR_WRAP();
+    return ERROR_WRAP_CALL(likwid_sysft_double_to_string(field32(temp, 5, 11) / 8.0, value));
 }
 
 static uint32_t make_dimm_addr(uint32_t channel, bool dimm_0_1, bool sensor_0_1)
@@ -414,7 +412,7 @@ static cerr_t amd_hsmp_dimm_temp_getter(LikwidDevice_t dev, uint32_t channel, bo
 
     uint32_t range_raw;
     if (hsmp_raw(dev->id.simple.id, HSMP_GET_DIMM_TEMP_RANGE, &dimm_addr, 1, &range_raw, 1))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
 
     /* See same document as above, Table 154 function Id 16h */
     const double refresh_pre_scale = field32(range_raw, 3, 1) ? 2.0 : 1.0;
@@ -425,18 +423,18 @@ static cerr_t amd_hsmp_dimm_temp_getter(LikwidDevice_t dev, uint32_t channel, bo
 
     uint32_t temp_raw;
     if (hsmp_raw(dev->id.simple.id, HSMP_GET_DIMM_THERMAL, &dimm_addr, 1, &temp_raw, 1))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
 
     if (test)
         return NULL;
 
     if (rate) {
         const double last_update = refresh_pre_scale * field32(temp_raw, 8, 9) / 1000.0;
-        return likwid_sysft_double_to_string(last_update, value);
+        return ERROR_WRAP_CALL(likwid_sysft_double_to_string(last_update, value));
     } else {
         /* Do not use field32(temp_raw, 21, 11) in order to get sign extension from the >> for free. */
         const double temp = temp_pre_scale * (temp_raw >> 21) * 0.25;
-        return likwid_sysft_double_to_string(temp, value);
+        return ERROR_WRAP_CALL(likwid_sysft_double_to_string(temp, value));
     }
 }
 
@@ -450,13 +448,13 @@ static cerr_t amd_hsmp_dimm_power_getter(LikwidDevice_t dev, uint32_t channel, b
         return ERROR_SET("hsmp_raw failed");
     if (test)
         return NULL;
-    return likwid_sysft_double_to_string(power / 1000.0, value);
+    return ERROR_WRAP_CALL(likwid_sysft_double_to_string(power / 1000.0, value));
 }
 
 static cerr_t amd_hsmp_dimm_tester(bool *ok, uint32_t channel, bool dimm_0_1, bool sensor_0_1, bool temp)
 {
     if (amd_hsmp_test_ver5(ok))
-        return ERROR_APPEND("amd_hsmp_test_ver5 error");
+        return ERROR_WRAP();
 
     if (!*ok)
         return NULL;
@@ -575,10 +573,10 @@ static cerr_t amd_hsmp_sock_freq_limit_getter(LikwidDevice_t dev, bool show_reas
 {
     uint32_t freq;
     if (hsmp_raw(dev->id.simple.id, HSMP_GET_SOCKET_FREQ_LIMIT, NULL, 0, &freq, 1))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
 
     if (!show_reason)
-        return likwid_sysft_uint64_to_string(field32(freq, 16, 16), value);
+        return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(field32(freq, 16, 16), value));
 
     static const struct flag_freq_reason_mapping map[] = {
         { 0x01, "cHTC-Active" },    // ???
@@ -612,7 +610,7 @@ static cerr_t amd_hsmp_sock_freq_limit_getter(LikwidDevice_t dev, bool show_reas
     if (reason)
         cerr = ERROR_SET("Found unexpected bits in HSMP Freq Limit string: %04x", reason);
     else
-        cerr = likwid_sysft_copystr(bdata(reasons), value);
+        cerr = ERROR_WRAP_CALL(likwid_sysft_copystr(bdata(reasons), value));
 
     bdestroy(reasons);
     return cerr;
@@ -620,12 +618,12 @@ static cerr_t amd_hsmp_sock_freq_limit_getter(LikwidDevice_t dev, bool show_reas
 
 static cerr_t amd_hsmp_sock_freq_limit_freq_getter(LikwidDevice_t dev, char **value)
 {
-    return amd_hsmp_sock_freq_limit_getter(dev, false, value);
+    return ERROR_WRAP_CALL(amd_hsmp_sock_freq_limit_getter(dev, false, value));
 }
 
 static cerr_t amd_hsmp_sock_freq_limit_reason_getter(LikwidDevice_t dev, char **value)
 {
-    return amd_hsmp_sock_freq_limit_getter(dev, true, value);
+    return ERROR_WRAP_CALL(amd_hsmp_sock_freq_limit_getter(dev, true, value));
 }
 
 static cerr_t amd_hsmp_core_cclk_limit_getter(LikwidDevice_t dev, char **value)
@@ -636,38 +634,38 @@ static cerr_t amd_hsmp_core_cclk_limit_getter(LikwidDevice_t dev, char **value)
 
     uint32_t real_apic_id;
     if (get_real_apic_id(&real_apic_id, hwt))
-        return ERROR_APPEND("get_real_apic_id(%u) failed", hwt->apicId);
+        return ERROR_WRAP_MSG("get_real_apic_id(%u) failed", hwt->apicId);
 
     uint32_t freq;
     if (hsmp_raw(hwt->packageId, HSMP_GET_CCLK_CORE_LIMIT, &real_apic_id, 1, &freq, 1))
-        return ERROR_APPEND("hsmp_raw failed");
-    return likwid_sysft_uint64_to_string(freq, value);
+        return ERROR_WRAP();
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(freq, value));
 }
 
 static cerr_t amd_hsmp_sock_rails_svi_getter(LikwidDevice_t dev, char **value)
 {
-    return hsmp_arg0_res1_as_double(dev, HSMP_GET_RAILS_SVI, 1e-3, value);
+    return ERROR_WRAP_CALL(hsmp_arg0_res1_as_double(dev, HSMP_GET_RAILS_SVI, 1e-3, value));
 }
 
 static cerr_t amd_hsmp_sock_fmax_fmin_getter(LikwidDevice_t dev, bool get_fmax, char **value)
 {
     uint32_t result;
     if (hsmp_raw(dev->id.simple.id, HSMP_GET_SOCKET_FMAX_FMIN, NULL, 0, &result, 1))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
 
     if (get_fmax)
-        return likwid_sysft_uint64_to_string(field32(result, 16, 16), value);
-    return likwid_sysft_uint64_to_string(field32(result, 0, 16), value);
+        return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(field32(result, 16, 16), value));
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(field32(result, 0, 16), value));
 }
 
 static cerr_t amd_hsmp_sock_fmax_getter(LikwidDevice_t dev, char **value)
 {
-    return amd_hsmp_sock_fmax_fmin_getter(dev, true, value);
+    return ERROR_WRAP_CALL(amd_hsmp_sock_fmax_fmin_getter(dev, true, value));
 }
 
 static cerr_t amd_hsmp_sock_fmin_getter(LikwidDevice_t dev, char **value)
 {
-    return amd_hsmp_sock_fmax_fmin_getter(dev, false, value);
+    return ERROR_WRAP_CALL(amd_hsmp_sock_fmax_fmin_getter(dev, false, value));
 }
 
 typedef enum {
@@ -695,15 +693,15 @@ static cerr_t amd_hsmp_sock_xgmi_bw_getter(LikwidDevice_t dev, XGMILinkId id, XG
 
     uint32_t bw_result; // i guess even AMD makes typos in their constants (BANDWITH)
     if (hsmp_raw(dev->id.simple.id, HSMP_GET_XGMI_BANDWITH, &arg0, 1, &bw_result, 1))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
 
-    return likwid_sysft_uint64_to_string(bw_result, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(bw_result, value));
 }
 
 #define MAKE_XGMI_FUNC(id, bw) \
     static cerr_t amd_hsmp_sock_xgmi_bw_##id##_##bw##_getter(LikwidDevice_t dev, char **value)\
     {                                                                       \
-        return amd_hsmp_sock_xgmi_bw_getter(dev, XGMI_##id, BW_##bw, value);\
+        return ERROR_WRAP_CALL(amd_hsmp_sock_xgmi_bw_getter(dev, XGMI_##id, BW_##bw, value));\
     }
 #define MAKE_XGMI_FUNCS(bw)     \
     MAKE_XGMI_FUNC(bw, aggr)    \
@@ -748,12 +746,12 @@ MAKE_XGMI_FUNCS(g3);
 
 static cerr_t amd_hsmp_gmi3_width_setter(LikwidDevice_t dev, const char *value)
 {
-    return hsmp_arg1_res0_from_u32(dev, HSMP_SET_GMI3_WIDTH, value);
+    return ERROR_WRAP_CALL(hsmp_arg1_res0_from_u32(dev, HSMP_SET_GMI3_WIDTH, value));
 }
 
 static cerr_t amd_hsmp_pci_gen_limit_setter(LikwidDevice_t dev, const char *value)
 {
-    return hsmp_arg1_res0_from_u32(dev, HSMP_SET_PCI_RATE, value);
+    return ERROR_WRAP_CALL(hsmp_arg1_res0_from_u32(dev, HSMP_SET_PCI_RATE, value));
 }
 
 struct power_mode_mapping
@@ -774,16 +772,16 @@ static cerr_t amd_hsmp_power_mode_getter(LikwidDevice_t dev, char **value)
     const uint32_t arg0 = 0x80000000;
     uint32_t result;
     if (hsmp_raw(dev->id.simple.id, HSMP_SET_POWER_MODE, &arg0, 1, &result, 1))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
 
     for (size_t i = 0; i < ARRAY_COUNT(power_mode_map); i++) {
         if (field32(result, 0, 3) == power_mode_map[i].val)
-            return likwid_sysft_copystr(power_mode_map[i].name, value);
+            return ERROR_WRAP_CALL(likwid_sysft_copystr(power_mode_map[i].name, value));
     }
 
     char invalid_buf[64];
     snprintf(invalid_buf, sizeof(invalid_buf), "invalid (%u)", field32(result, 0, 3));
-    return likwid_sysft_copystr(invalid_buf, value);
+    return ERROR_WRAP_CALL(likwid_sysft_copystr(invalid_buf, value));
 }
 
 static cerr_t amd_hsmp_power_mode_setter(LikwidDevice_t dev, const char *value)
@@ -803,30 +801,30 @@ static cerr_t amd_hsmp_power_mode_setter(LikwidDevice_t dev, const char *value)
 
     uint32_t arg0 = 0;
     field32set(&arg0, 0, 3, mapped_val);
-    return hsmp_raw(dev->id.simple.id, HSMP_SET_POWER_MODE, &arg0, 1, NULL, 0);
+    return ERROR_WRAP_CALL(hsmp_raw(dev->id.simple.id, HSMP_SET_POWER_MODE, &arg0, 1, NULL, 0));
 }
 
 static cerr_t amd_hsmp_pstate_min_max_setter(LikwidDevice_t dev, const char *value)
 {
-    return hsmp_arg1_res0_from_u32(dev, HSMP_SET_PSTATE_MAX_MIN, value);
+    return ERROR_WRAP_CALL(hsmp_arg1_res0_from_u32(dev, HSMP_SET_PSTATE_MAX_MIN, value));
 }
 
 static cerr_t amd_hsmp_metric_table_ver_getter(LikwidDevice_t dev, char **value)
 {
-    return hsmp_arg0_res1_as_u32(dev, HSMP_GET_METRIC_TABLE_VER, value);
+    return ERROR_WRAP_CALL(hsmp_arg0_res1_as_u32(dev, HSMP_GET_METRIC_TABLE_VER, value));
 }
 
 static cerr_t amd_hsmp_metric_table_addr_getter(LikwidDevice_t dev, char **value)
 {
     uint32_t addr[2];
     if (hsmp_raw(dev->id.simple.id, HSMP_GET_METRIC_TABLE_DRAM_ADDR, NULL, 0, addr, ARRAY_COUNT(addr)))
-        return ERROR_APPEND("hsmp_raw failed");
-    return likwid_sysft_uint64_to_string(addr[0] | ((uint64_t)addr[1] << 32), value);
+        return ERROR_WRAP();
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(addr[0] | ((uint64_t)addr[1] << 32), value));
 }
 
 static cerr_t amd_hsmp_xgmi_pstate_min_max_setter(LikwidDevice_t dev, const char *value)
 {
-    return hsmp_arg1_res0_from_u32(dev, HSMP_SET_XGMI_PSTATE_RANGE, value);
+    return ERROR_WRAP_CALL(hsmp_arg1_res0_from_u32(dev, HSMP_SET_XGMI_PSTATE_RANGE, value));
 }
 
 static cerr_t amd_hsmp_cpu_rail_iso_freq_policy_getter(LikwidDevice_t dev, char **value)
@@ -834,15 +832,15 @@ static cerr_t amd_hsmp_cpu_rail_iso_freq_policy_getter(LikwidDevice_t dev, char 
     const uint32_t arg0 = 0x80000000;
     uint32_t result;
     if (hsmp_raw(dev->id.simple.id, HSMP_CPU_RAIL_ISO_FREQ_POLICY, &arg0, 1, &result, 1))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
     if (field32(result, 0, 1))
-        return likwid_sysft_copystr("true", value);
-    return likwid_sysft_copystr("false", value);
+        return ERROR_WRAP_CALL(likwid_sysft_copystr("true", value));
+    return ERROR_WRAP_CALL(likwid_sysft_copystr("false", value));
 }
 
 static cerr_t amd_hsmp_cpu_rail_iso_freq_policy_setter(LikwidDevice_t dev, const char *value)
 {
-    return hsmp_arg1_res0_from_u32(dev, HSMP_CPU_RAIL_ISO_FREQ_POLICY, value);
+    return ERROR_WRAP_CALL(hsmp_arg1_res0_from_u32(dev, HSMP_CPU_RAIL_ISO_FREQ_POLICY, value));
 }
 
 static cerr_t amd_hsmp_dfc_enable_getter(LikwidDevice_t dev, char **value)
@@ -850,15 +848,15 @@ static cerr_t amd_hsmp_dfc_enable_getter(LikwidDevice_t dev, char **value)
     const uint32_t arg0 = 0x80000000;
     uint32_t result;
     if (hsmp_raw(dev->id.simple.id, HSMP_DFC_ENABLE_CTRL, &arg0, 1, &result, 1))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
     if (field32(result, 0, 1))
-        return likwid_sysft_copystr("true", value);
-    return likwid_sysft_copystr("false", value);
+        return ERROR_WRAP_CALL(likwid_sysft_copystr("true", value));
+    return ERROR_WRAP_CALL(likwid_sysft_copystr("false", value));
 }
 
 static cerr_t amd_hsmp_dfc_enable_setter(LikwidDevice_t dev, const char *value)
 {
-    return hsmp_arg1_res0_from_u32(dev, HSMP_DFC_ENABLE_CTRL, value);
+    return ERROR_WRAP_CALL(hsmp_arg1_res0_from_u32(dev, HSMP_DFC_ENABLE_CTRL, value));
 }
 
 static cerr_t amd_hsmp_rapl_init(LikwidDevice_t dev)
@@ -867,7 +865,7 @@ static cerr_t amd_hsmp_rapl_init(LikwidDevice_t dev)
         return NULL;
     uint32_t units;
     if (hsmp_raw(dev->id.simple.id, HSMP_GET_RAPL_UNITS, NULL, 0, &units, 1))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
     rapl_domain_info.energyUnit = 1.0 / (1 << field32(units, 8, 5));
     rapl_domain_info.timeUnit = 1.0 / (1 << field32(units, 16, 4));
     return NULL;
@@ -876,32 +874,32 @@ static cerr_t amd_hsmp_rapl_init(LikwidDevice_t dev)
 static cerr_t amd_hsmp_core_energy_getter(LikwidDevice_t dev, char **value)
 {
     if (amd_hsmp_rapl_init(dev))
-        return ERROR_APPEND("amd_hsmp_rapl_init failed");
+        return ERROR_WRAP();
     HWThread *hwt = get_hwt_by_core(dev);
     if (!hwt)
         return ERROR_SET("get_hwt_by_core: Unable to find core: %d", dev->id.simple.id);
 
     uint32_t real_apic_id;
     if (get_real_apic_id(&real_apic_id, hwt))
-        return ERROR_APPEND("get_real_apic_id failed");
+        return ERROR_WRAP();
 
     uint32_t energy_raw[2];
     if (hsmp_raw(hwt->packageId, HSMP_GET_RAPL_CORE_COUNTER, &real_apic_id, 1, energy_raw, 2))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
     const uint64_t energy_real = energy_raw[0] | ((uint64_t)energy_raw[1] << 32);
-    return likwid_sysft_uint64_to_string((double)energy_real * rapl_domain_info.energyUnit, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string((double)energy_real * rapl_domain_info.energyUnit, value));
 }
 
 static cerr_t amd_hsmp_sock_energy_getter(LikwidDevice_t dev, char **value)
 {
     if (amd_hsmp_rapl_init(dev))
-        return ERROR_APPEND("amd_hsmp_rapl_init failed");
+        return ERROR_WRAP();
 
     uint32_t energy_raw[2];
     if (hsmp_raw(dev->id.simple.id, HSMP_GET_RAPL_PACKAGE_COUNTER, NULL, 0, energy_raw, 2))
-        return ERROR_APPEND("hsmp_raw failed");
+        return ERROR_WRAP();
     const uint64_t energy_real = energy_raw[0] | ((uint64_t)energy_raw[1] << 32);
-    return likwid_sysft_uint64_to_string((double)energy_real * rapl_domain_info.energyUnit, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string((double)energy_real * rapl_domain_info.energyUnit, value));
 }
 
 // clang-format off

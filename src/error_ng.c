@@ -66,7 +66,7 @@ static cerr_t error_init(void) {
     return retval;
 }
 
-static cerr_t error_append_valist(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, va_list args);
+static cerr_t error_wrap_valist(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, va_list args);
 
 cerr_t lw_error_set(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, ...) {
     cerr_t retval = error_init();
@@ -78,14 +78,14 @@ cerr_t lw_error_set(const char *file, const char *func, int line, int error_val,
     va_list args;
     va_start(args, fmt);
 
-    retval = error_append_valist(file, func, line, error_val, error_val_to_str, fmt, args);
+    retval = error_wrap_valist(file, func, line, error_val, error_val_to_str, fmt, args);
 
     va_end(args);
 
     return retval;
 }
 
-cerr_t lw_error_append(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, ...) {
+cerr_t lw_error_wrap(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, ...) {
     cerr_t retval = error_init();
     if (retval)
         return retval;
@@ -93,7 +93,7 @@ cerr_t lw_error_append(const char *file, const char *func, int line, int error_v
     va_list args;
     va_start(args, fmt);
 
-    retval = error_append_valist(file, func, line, error_val, error_val_to_str, fmt, args);
+    retval = error_wrap_valist(file, func, line, error_val, error_val_to_str, fmt, args);
 
     va_end(args);
 
@@ -116,7 +116,7 @@ void lw_error_clear(void) {
     pthread_setspecific(tsd, NULL);
 }
 
-static cerr_t error_append_valist(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, va_list args) {
+static cerr_t error_wrap_valist(const char *file, const char *func, int line, int error_val, lw_error_val_to_str_t error_val_to_str, const char *fmt, va_list args) {
     err_t new_scope = calloc(1, sizeof(*new_scope));
     if (!new_scope) {
         lw_error_clear();

@@ -48,7 +48,7 @@
 /* Perhaps we should deduplicate these dynamically loaded functions at some point,
  * but we try to be as compatible as best by only loading the functions we actually need. */
 
-#define ERROR_SET_NVML(err, fmt, ...) lw_error_set(__FILE__, __func__, __LINE__, (err), (lw_error_val_to_str_t)nvmlErrorString_ptr, (fmt), ##__VA_ARGS__)
+#define ERROR_SET_NVML(err, fmt, ...) ERROR_SET_MANUAL((err), (lw_error_val_to_str_t)nvmlErrorString_ptr, (fmt), ##__VA_ARGS__)
 
 #define DLSYM_AND_CHECK(dllib, name) name##_ptr = dlsym(dllib, #name);  \
     do {                                                                \
@@ -71,7 +71,7 @@
 #define LWD_TO_NVMLD(lwd, nvmlDevice) nvmlDevice_t nvmlDevice;  \
     do {                                                        \
         if (lw_device_to_nvml_device(lwd, &nvmlDevice)) {       \
-            return ERROR_APPEND("lw_device_to_nvml_device failed"); \
+            return ERROR_WRAP(); \
         };   \
     } while (0)
 
@@ -223,7 +223,7 @@ cerr_t likwid_sysft_init_nvml(_SysFeatureList *list)
 
     nvml_initialized = true;
 
-    return likwid_sysft_register_features(list, &nvidia_gpu_feature_list);
+    return ERROR_WRAP_CALL(likwid_sysft_register_features(list, &nvidia_gpu_feature_list));
 }
 
 static cerr_t nvidia_gpu_device_count_getter(const LikwidDevice_t device, char **value)
@@ -232,7 +232,7 @@ static cerr_t nvidia_gpu_device_count_getter(const LikwidDevice_t device, char *
 
     unsigned int deviceCount;
     NVML_CALL(nvmlDeviceGetCount_v2, &deviceCount);
-    return likwid_sysft_uint64_to_string(deviceCount, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(deviceCount, value));
 }
 
 static cerr_t lw_device_to_nvml_device(const LikwidDevice_t lwDevice, nvmlDevice_t *nvmlDevice)
@@ -257,7 +257,7 @@ static cerr_t nvidia_gpu_devices_available_getter(const LikwidDevice_t device, c
     NVML_CALL(nvmlDeviceGetCount_v2, &deviceCount);
 
     if (deviceCount == 0)
-        return likwid_sysft_copystr("", value);
+        return ERROR_WRAP_CALL(likwid_sysft_copystr("", value));
 
     bstring resultstr = bfromcstr("");
     for (unsigned i = 0; i < deviceCount; i++)
@@ -278,7 +278,7 @@ static cerr_t nvidia_gpu_devices_available_getter(const LikwidDevice_t device, c
     cerr_t err;
     const char *s = bdata(resultstr);
     if (s)
-        err = likwid_sysft_copystr(s, value);
+        err = ERROR_WRAP_CALL(likwid_sysft_copystr(s, value));
     else
         err = ERROR_SET("Error during device listing");
     bdestroy(resultstr);
@@ -290,87 +290,87 @@ static cerr_t nvidia_gpu_clock_info_getter(const LikwidDevice_t device, nvmlCloc
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned clockMHz;
     NVML_CALL(nvmlDeviceGetClock, nvmlDevice, clockType, clockId, &clockMHz);
-    return likwid_sysft_uint64_to_string(clockMHz, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(clockMHz, value));
 }
 
 static cerr_t nvidia_gpu_gfx_clock_cur_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_CURRENT, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_CURRENT, value));
 }
 
 static cerr_t nvidia_gpu_gfx_clock_app_target_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_APP_CLOCK_TARGET, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_APP_CLOCK_TARGET, value));
 }
 
 static cerr_t nvidia_gpu_gfx_clock_app_default_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value));
 }
 
 static cerr_t nvidia_gpu_gfx_clock_boost_max_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, value));
 }
 
 static cerr_t nvidia_gpu_sm_clock_cur_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, value));
 }
 
 static cerr_t nvidia_gpu_sm_clock_app_target_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_TARGET, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_TARGET, value));
 }
 
 static cerr_t nvidia_gpu_sm_clock_app_default_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value));
 }
 
 static cerr_t nvidia_gpu_sm_clock_boost_max_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, value));
 }
 
 static cerr_t nvidia_gpu_dram_clock_cur_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_CURRENT, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_CURRENT, value));
 }
 
 static cerr_t nvidia_gpu_dram_clock_app_target_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_TARGET, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_TARGET, value));
 }
 
 static cerr_t nvidia_gpu_dram_clock_app_default_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value));
 }
 
 static cerr_t nvidia_gpu_dram_clock_boost_max_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, value));
 }
 
 static cerr_t nvidia_gpu_video_clock_cur_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_VIDEO, NVML_CLOCK_ID_CURRENT, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_VIDEO, NVML_CLOCK_ID_CURRENT, value));
 }
 
 static cerr_t nvidia_gpu_video_clock_app_target_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_VIDEO, NVML_CLOCK_ID_APP_CLOCK_TARGET, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_VIDEO, NVML_CLOCK_ID_APP_CLOCK_TARGET, value));
 }
 
 static cerr_t nvidia_gpu_video_clock_app_default_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_VIDEO, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_VIDEO, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value));
 }
 
 static cerr_t nvidia_gpu_video_clock_boost_max_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_VIDEO, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_clock_info_getter(device, NVML_CLOCK_VIDEO, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, value));
 }
 
 static cerr_t nvidia_gpu_bar1_getter(const LikwidDevice_t device, int entry, char **value)
@@ -379,25 +379,25 @@ static cerr_t nvidia_gpu_bar1_getter(const LikwidDevice_t device, int entry, cha
     nvmlBAR1Memory_t bar1Memory;
     NVML_CALL(nvmlDeviceGetBAR1MemoryInfo, nvmlDevice, &bar1Memory);
     if (entry == 0)
-        return likwid_sysft_uint64_to_string(bar1Memory.bar1Free, value);
+        return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(bar1Memory.bar1Free, value));
     if (entry == 1)
-        return likwid_sysft_uint64_to_string(bar1Memory.bar1Used, value);
-    return likwid_sysft_uint64_to_string(bar1Memory.bar1Total, value);
+        return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(bar1Memory.bar1Used, value));
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(bar1Memory.bar1Total, value));
 }
 
 static cerr_t nvidia_gpu_bar1_free_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_bar1_getter(device, 0, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_bar1_getter(device, 0, value));
 }
 
 static cerr_t nvidia_gpu_bar1_used_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_bar1_getter(device, 1, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_bar1_getter(device, 1, value));
 }
 
 static cerr_t nvidia_gpu_bar1_total_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_bar1_getter(device, 2, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_bar1_getter(device, 2, value));
 }
 
 static cerr_t nvidia_gpu_bus_type_getter(const LikwidDevice_t device, char **value)
@@ -412,7 +412,7 @@ static cerr_t nvidia_gpu_bus_type_getter(const LikwidDevice_t device, char **val
     };
     if (type >= ARRAY_COUNT(types))
         type = 0;
-    return likwid_sysft_copystr(types[type], value);
+    return ERROR_WRAP_CALL(likwid_sysft_copystr(types[type], value));
 }
 
 static cerr_t nvidia_gpu_pcie_gen_cur_getter(const LikwidDevice_t device, char **value)
@@ -420,7 +420,7 @@ static cerr_t nvidia_gpu_pcie_gen_cur_getter(const LikwidDevice_t device, char *
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int gen;
     NVML_CALL(nvmlDeviceGetCurrPcieLinkGeneration, nvmlDevice, &gen);
-    return likwid_sysft_uint64_to_string(gen, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(gen, value));
 }
 
 static cerr_t nvidia_gpu_pcie_gen_gpu_max_getter(const LikwidDevice_t device, char **value)
@@ -428,7 +428,7 @@ static cerr_t nvidia_gpu_pcie_gen_gpu_max_getter(const LikwidDevice_t device, ch
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int gen;
     NVML_CALL(nvmlDeviceGetGpuMaxPcieLinkGeneration, nvmlDevice, &gen);
-    return likwid_sysft_uint64_to_string(gen, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(gen, value));
 }
 
 static cerr_t nvidia_gpu_pcie_gen_sys_max_getter(const LikwidDevice_t device, char **value)
@@ -436,7 +436,7 @@ static cerr_t nvidia_gpu_pcie_gen_sys_max_getter(const LikwidDevice_t device, ch
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int gen;
     NVML_CALL(nvmlDeviceGetMaxPcieLinkGeneration, nvmlDevice, &gen);
-    return likwid_sysft_uint64_to_string(gen, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(gen, value));
 }
 
 static cerr_t nvidia_gpu_pcie_width_cur_getter(const LikwidDevice_t device, char **value)
@@ -444,7 +444,7 @@ static cerr_t nvidia_gpu_pcie_width_cur_getter(const LikwidDevice_t device, char
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int width;
     NVML_CALL(nvmlDeviceGetCurrPcieLinkWidth, nvmlDevice, &width);
-    return likwid_sysft_uint64_to_string(width, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(width, value));
 }
 
 static cerr_t nvidia_gpu_pcie_width_sys_max_getter(const LikwidDevice_t device, char **value)
@@ -452,7 +452,7 @@ static cerr_t nvidia_gpu_pcie_width_sys_max_getter(const LikwidDevice_t device, 
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int width;
     NVML_CALL(nvmlDeviceGetMaxPcieLinkWidth, nvmlDevice, &width);
-    return likwid_sysft_uint64_to_string(width, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(width, value));
 }
 
 static cerr_t nvidia_gpu_pcie_speed_value(unsigned int pcieSpeed, char **value)
@@ -462,7 +462,7 @@ static cerr_t nvidia_gpu_pcie_speed_value(unsigned int pcieSpeed, char **value)
     };
     if (pcieSpeed >= ARRAY_COUNT(speeds))
         pcieSpeed = 0;
-    return likwid_sysft_copystr(speeds[pcieSpeed], value);
+    return ERROR_WRAP_CALL(likwid_sysft_copystr(speeds[pcieSpeed], value));
 }
 
 static cerr_t nvidia_gpu_pcie_speed_max_getter(const LikwidDevice_t device, char **value)
@@ -470,7 +470,7 @@ static cerr_t nvidia_gpu_pcie_speed_max_getter(const LikwidDevice_t device, char
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int maxSpeed;
     NVML_CALL(nvmlDeviceGetPcieLinkMaxSpeed, nvmlDevice, &maxSpeed);
-    return nvidia_gpu_pcie_speed_value(maxSpeed, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_pcie_speed_value(maxSpeed, value));
 }
 
 static cerr_t nvidia_gpu_pcie_speed_cur_getter(const LikwidDevice_t device, char **value)
@@ -478,7 +478,7 @@ static cerr_t nvidia_gpu_pcie_speed_cur_getter(const LikwidDevice_t device, char
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int speed;
     NVML_CALL(nvmlDeviceGetPcieSpeed, nvmlDevice, &speed);
-    return nvidia_gpu_pcie_speed_value(speed, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_pcie_speed_value(speed, value));
 }
 
 static cerr_t nvidia_gpu_pcie_replay_counter_getter(const LikwidDevice_t device, char **value)
@@ -486,7 +486,7 @@ static cerr_t nvidia_gpu_pcie_replay_counter_getter(const LikwidDevice_t device,
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int replayCounter;
     NVML_CALL(nvmlDeviceGetPcieReplayCounter, nvmlDevice, &replayCounter);
-    return likwid_sysft_uint64_to_string(replayCounter, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(replayCounter, value));
 }
 
 static cerr_t nvidia_gpu_pcie_throughput_getter(const LikwidDevice_t device, nvmlPcieUtilCounter_t counter, char **value)
@@ -495,17 +495,17 @@ static cerr_t nvidia_gpu_pcie_throughput_getter(const LikwidDevice_t device, nvm
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int throughput;
     NVML_CALL(nvmlDeviceGetPcieThroughput, nvmlDevice, counter, &throughput);
-    return likwid_sysft_uint64_to_string(throughput, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(throughput, value));
 }
 
 static cerr_t nvidia_gpu_pcie_throughput_tx_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_pcie_throughput_getter(device, NVML_PCIE_UTIL_TX_BYTES, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_pcie_throughput_getter(device, NVML_PCIE_UTIL_TX_BYTES, value));
 }
 
 static cerr_t nvidia_gpu_pcie_throughput_rx_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_pcie_throughput_getter(device, NVML_PCIE_UTIL_RX_BYTES, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_pcie_throughput_getter(device, NVML_PCIE_UTIL_RX_BYTES, value));
 }
 
 static cerr_t nvidia_gpu_decoder_util_getter(const LikwidDevice_t device, char **value)
@@ -513,7 +513,7 @@ static cerr_t nvidia_gpu_decoder_util_getter(const LikwidDevice_t device, char *
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int utilization, dummy;
     NVML_CALL(nvmlDeviceGetDecoderUtilization, nvmlDevice, &utilization, &dummy);
-    return likwid_sysft_uint64_to_string(utilization, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(utilization, value));
 }
 
 static cerr_t nvidia_gpu_ecc_default_enabled_getter(const LikwidDevice_t device, char **value)
@@ -521,7 +521,7 @@ static cerr_t nvidia_gpu_ecc_default_enabled_getter(const LikwidDevice_t device,
     LWD_TO_NVMLD(device, nvmlDevice);
     nvmlEnableState_t enabled;
     NVML_CALL(nvmlDeviceGetDefaultEccMode, nvmlDevice, &enabled);
-    return likwid_sysft_uint64_to_string(enabled == NVML_FEATURE_ENABLED, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(enabled == NVML_FEATURE_ENABLED, value));
 }
 
 static cerr_t nvidia_gpu_ecc_enabled_getter(const LikwidDevice_t device, bool getPending, char **value)
@@ -530,15 +530,15 @@ static cerr_t nvidia_gpu_ecc_enabled_getter(const LikwidDevice_t device, bool ge
     nvmlEnableState_t current, pending;
     NVML_CALL(nvmlDeviceGetEccMode, nvmlDevice, &current, &pending);
     if (getPending)
-        return likwid_sysft_uint64_to_string(pending == NVML_FEATURE_ENABLED, value);
-    return likwid_sysft_uint64_to_string(current == NVML_FEATURE_ENABLED, value);
+        return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(pending == NVML_FEATURE_ENABLED, value));
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(current == NVML_FEATURE_ENABLED, value));
 }
 
 static cerr_t nvidia_gpu_ecc_enabled_setter(const LikwidDevice_t device, const char *value)
 {
     uint64_t enabled;
     if (likwid_sysft_string_to_uint64(value, &enabled))
-        return ERROR_APPEND("likwid_sysft_string_to_uint64 failed");
+        return ERROR_WRAP();
     LWD_TO_NVMLD(device, nvmlDevice);
     NVML_CALL(nvmlDeviceSetEccMode, nvmlDevice, (enabled == 0) ? NVML_FEATURE_DISABLED : NVML_FEATURE_ENABLED);
     return NULL;
@@ -546,12 +546,12 @@ static cerr_t nvidia_gpu_ecc_enabled_setter(const LikwidDevice_t device, const c
 
 static cerr_t nvidia_gpu_ecc_enabled_cur_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_enabled_getter(device, false, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_enabled_getter(device, false, value));
 }
 
 static cerr_t nvidia_gpu_ecc_enabled_pend_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_enabled_getter(device, true, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_enabled_getter(device, true, value));
 }
 
 typedef enum
@@ -583,92 +583,92 @@ static cerr_t nvidia_gpu_ecc_error_getter(const LikwidDevice_t device, EccErrTyp
     else
         NVML_CALL(nvmlDeviceGetDetailedEccErrors, nvmlDevice, NVML_MEMORY_ERROR_TYPE_UNCORRECTED, NVML_AGGREGATE_ECC, &ecc);
     if (mem == ECC_MEM_DRAM)
-        return likwid_sysft_uint64_to_string(ecc.deviceMemory, value);
+        return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(ecc.deviceMemory, value));
     if (mem == ECC_MEM_L1)
-        return likwid_sysft_uint64_to_string(ecc.l1Cache, value);
+        return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(ecc.l1Cache, value));
     if (mem == ECC_MEM_L2)
-        return likwid_sysft_uint64_to_string(ecc.l2Cache, value);
-    return likwid_sysft_uint64_to_string(ecc.registerFile, value);
+        return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(ecc.l2Cache, value));
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(ecc.registerFile, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_dram_vol_corr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_CORR_VOL, ECC_MEM_DRAM, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_CORR_VOL, ECC_MEM_DRAM, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_dram_vol_uncorr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_VOL, ECC_MEM_DRAM, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_VOL, ECC_MEM_DRAM, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_dram_agg_corr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_CORR_AGG, ECC_MEM_DRAM, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_CORR_AGG, ECC_MEM_DRAM, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_dram_agg_uncorr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_AGG, ECC_MEM_DRAM, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_AGG, ECC_MEM_DRAM, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_l1_vol_corr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_CORR_VOL, ECC_MEM_L1, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_CORR_VOL, ECC_MEM_L1, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_l1_vol_uncorr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_VOL, ECC_MEM_L1, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_VOL, ECC_MEM_L1, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_l1_agg_corr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_CORR_AGG, ECC_MEM_L1, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_CORR_AGG, ECC_MEM_L1, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_l1_agg_uncorr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_AGG, ECC_MEM_L1, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_AGG, ECC_MEM_L1, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_l2_vol_corr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_CORR_VOL, ECC_MEM_L2, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_CORR_VOL, ECC_MEM_L2, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_l2_vol_uncorr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_VOL, ECC_MEM_L2, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_VOL, ECC_MEM_L2, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_l2_agg_corr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_CORR_AGG, ECC_MEM_L2, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_CORR_AGG, ECC_MEM_L2, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_l2_agg_uncorr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_AGG, ECC_MEM_L2, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_AGG, ECC_MEM_L2, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_reg_vol_corr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_CORR_VOL, ECC_MEM_REG, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_CORR_VOL, ECC_MEM_REG, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_reg_vol_uncorr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_VOL, ECC_MEM_REG, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_VOL, ECC_MEM_REG, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_reg_agg_corr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_CORR_AGG, ECC_MEM_REG, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_CORR_AGG, ECC_MEM_REG, value));
 }
 
 static cerr_t nvidia_gpu_ecc_error_reg_agg_uncorr_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_AGG, ECC_MEM_REG, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_AGG, ECC_MEM_REG, value));
 }
 
 static cerr_t nvidia_gpu_fan_speed_getter(const LikwidDevice_t device, char **value)
@@ -676,7 +676,7 @@ static cerr_t nvidia_gpu_fan_speed_getter(const LikwidDevice_t device, char **va
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int fanSpeed;
     NVML_CALL(nvmlDeviceGetFanSpeed, nvmlDevice, &fanSpeed);
-    return likwid_sysft_uint64_to_string(fanSpeed, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(fanSpeed, value));
 }
 
 static cerr_t nvidia_gpu_pstate_getter(const LikwidDevice_t device, char **value)
@@ -684,7 +684,7 @@ static cerr_t nvidia_gpu_pstate_getter(const LikwidDevice_t device, char **value
     LWD_TO_NVMLD(device, nvmlDevice);
     nvmlPstates_t pstate;
     NVML_CALL(nvmlDeviceGetPerformanceState, nvmlDevice, &pstate);
-    return likwid_sysft_uint64_to_string(pstate, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(pstate, value));
 }
 
 static cerr_t nvidia_gpu_power_limit_default_getter(const LikwidDevice_t device, char **value)
@@ -692,7 +692,7 @@ static cerr_t nvidia_gpu_power_limit_default_getter(const LikwidDevice_t device,
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int milliwatts;
     NVML_CALL(nvmlDeviceGetPowerManagementDefaultLimit, nvmlDevice, &milliwatts);
-    return likwid_sysft_double_to_string(milliwatts / 1000.0, value);
+    return ERROR_WRAP_CALL(likwid_sysft_double_to_string(milliwatts / 1000.0, value));
 }
 
 static cerr_t nvidia_gpu_power_limit_cur_getter(const LikwidDevice_t device, char **value)
@@ -700,7 +700,7 @@ static cerr_t nvidia_gpu_power_limit_cur_getter(const LikwidDevice_t device, cha
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int milliwatts;
     NVML_CALL(nvmlDeviceGetPowerManagementLimit, nvmlDevice, &milliwatts);
-    return likwid_sysft_double_to_string(milliwatts / 1000.0, value);
+    return ERROR_WRAP_CALL(likwid_sysft_double_to_string(milliwatts / 1000.0, value));
 }
 
 static cerr_t nvidia_gpu_power_limit_cur_setter(const LikwidDevice_t device, const char *value)
@@ -719,17 +719,17 @@ static cerr_t nvidia_gpu_power_limit_minmax_getter(const LikwidDevice_t device, 
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int milliwattsMin, milliwattsMax;
     NVML_CALL(nvmlDeviceGetPowerManagementLimitConstraints, nvmlDevice, &milliwattsMin, &milliwattsMax);
-    return likwid_sysft_double_to_string((max ? milliwattsMax : milliwattsMin) / 1000.0, value);
+    return ERROR_WRAP_CALL(likwid_sysft_double_to_string((max ? milliwattsMax : milliwattsMin) / 1000.0, value));
 }
 
 static cerr_t nvidia_gpu_power_limit_min_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_power_limit_minmax_getter(device, false, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_power_limit_minmax_getter(device, false, value));
 }
 
 static cerr_t nvidia_gpu_power_limit_max_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_power_limit_minmax_getter(device, true, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_power_limit_minmax_getter(device, true, value));
 }
 
 static cerr_t nvidia_gpu_power_limit_enf_getter(const LikwidDevice_t device, char **value)
@@ -737,7 +737,7 @@ static cerr_t nvidia_gpu_power_limit_enf_getter(const LikwidDevice_t device, cha
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int milliwatts;
     NVML_CALL(nvmlDeviceGetEnforcedPowerLimit, nvmlDevice, &milliwatts);
-    return likwid_sysft_double_to_string(milliwatts / 1000.0, value);
+    return ERROR_WRAP_CALL(likwid_sysft_double_to_string(milliwatts / 1000.0, value));
 }
 
 static cerr_t nvidia_gpu_power_cur_getter(const LikwidDevice_t device, char **value)
@@ -745,7 +745,7 @@ static cerr_t nvidia_gpu_power_cur_getter(const LikwidDevice_t device, char **va
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int milliwatts;
     NVML_CALL(nvmlDeviceGetPowerUsage, nvmlDevice, &milliwatts);
-    return likwid_sysft_double_to_string(milliwatts / 1000.0, value);
+    return ERROR_WRAP_CALL(likwid_sysft_double_to_string(milliwatts / 1000.0, value));
 }
 
 static cerr_t nvidia_gpu_encoder_capacity_getter(const LikwidDevice_t device, nvmlEncoderType_t type, char **value)
@@ -753,23 +753,23 @@ static cerr_t nvidia_gpu_encoder_capacity_getter(const LikwidDevice_t device, nv
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int capacity;
     NVML_CALL(nvmlDeviceGetEncoderCapacity, nvmlDevice, type, &capacity);
-    return likwid_sysft_uint64_to_string(capacity, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(capacity, value));
 }
 
 static cerr_t nvidia_gpu_encoder_capacity_h264_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_encoder_capacity_getter(device, NVML_ENCODER_QUERY_H264, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_encoder_capacity_getter(device, NVML_ENCODER_QUERY_H264, value));
 }
 
 static cerr_t nvidia_gpu_encoder_capacity_hevc_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_encoder_capacity_getter(device, NVML_ENCODER_QUERY_HEVC, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_encoder_capacity_getter(device, NVML_ENCODER_QUERY_HEVC, value));
 }
 
 #if defined(CUDART_VERSION) && CUDART_VERSION >= 12030
 static cerr_t nvidia_gpu_encoder_capacity_av1_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_encoder_capacity_getter(device, NVML_ENCODER_QUERY_AV1, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_encoder_capacity_getter(device, NVML_ENCODER_QUERY_AV1, value));
 }
 #endif
 
@@ -778,7 +778,7 @@ static cerr_t nvidia_gpu_encoder_usage_getter(const LikwidDevice_t device, char 
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int utilization, periodUs;
     NVML_CALL(nvmlDeviceGetEncoderUtilization, nvmlDevice, &utilization, &periodUs);
-    return likwid_sysft_uint64_to_string(utilization, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(utilization, value));
 }
 
 static const char *goms[] = {
@@ -793,7 +793,7 @@ static cerr_t nvidia_gpu_gom_getter(const LikwidDevice_t device, bool usePending
     nvmlGpuOperationMode_t gom = usePending ? pending : current;
     if (gom >= ARRAY_COUNT(goms))
         gom = 0;
-    return likwid_sysft_copystr(goms[gom], value);
+    return ERROR_WRAP_CALL(likwid_sysft_copystr(goms[gom], value));
 }
 
 static cerr_t nvidia_gpu_gom_setter(const LikwidDevice_t device, const char *value)
@@ -812,12 +812,12 @@ static cerr_t nvidia_gpu_gom_setter(const LikwidDevice_t device, const char *val
 
 static cerr_t nvidia_gpu_gom_cur_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_gom_getter(device, false, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_gom_getter(device, false, value));
 }
 
 static cerr_t nvidia_gpu_gom_pend_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_gom_getter(device, true, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_gom_getter(device, true, value));
 }
 
 static cerr_t nvidia_gpu_jpg_usage_getter(const LikwidDevice_t device, char **value)
@@ -825,7 +825,7 @@ static cerr_t nvidia_gpu_jpg_usage_getter(const LikwidDevice_t device, char **va
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int utilization, periodUs;
     NVML_CALL(nvmlDeviceGetJpgUtilization, nvmlDevice, &utilization, &periodUs);
-    return likwid_sysft_uint64_to_string(utilization, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(utilization, value));
 }
 
 static cerr_t nvidia_gpu_dram_bus_width_getter(const LikwidDevice_t device, char **value)
@@ -833,7 +833,7 @@ static cerr_t nvidia_gpu_dram_bus_width_getter(const LikwidDevice_t device, char
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int busWidth;
     NVML_CALL(nvmlDeviceGetMemoryBusWidth, nvmlDevice, &busWidth);
-    return likwid_sysft_uint64_to_string(busWidth, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(busWidth, value));
 }
 
 static cerr_t nvidia_gpu_multi_gpu_getter(const LikwidDevice_t device, char **value)
@@ -841,7 +841,7 @@ static cerr_t nvidia_gpu_multi_gpu_getter(const LikwidDevice_t device, char **va
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int multiGpuBool;
     NVML_CALL(nvmlDeviceGetMultiGpuBoard, nvmlDevice, &multiGpuBool);
-    return likwid_sysft_uint64_to_string(multiGpuBool, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(multiGpuBool, value));
 }
 
 static cerr_t nvidia_gpu_temp_getter(const LikwidDevice_t device, char **value)
@@ -849,7 +849,7 @@ static cerr_t nvidia_gpu_temp_getter(const LikwidDevice_t device, char **value)
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int temp;
     NVML_CALL(nvmlDeviceGetTemperature, nvmlDevice, NVML_TEMPERATURE_GPU, &temp);
-    return likwid_sysft_uint64_to_string(temp, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(temp, value));
 }
 
 static cerr_t nvidia_gpu_temp_thresh_getter(const LikwidDevice_t device, nvmlTemperatureThresholds_t t, char **value)
@@ -857,50 +857,50 @@ static cerr_t nvidia_gpu_temp_thresh_getter(const LikwidDevice_t device, nvmlTem
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int temp;
     NVML_CALL(nvmlDeviceGetTemperatureThreshold, nvmlDevice, t, &temp);
-    return likwid_sysft_uint64_to_string(temp, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(temp, value));
 }
 
 static cerr_t nvidia_gpu_temp_thresh_shut_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_SHUTDOWN, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_SHUTDOWN, value));
 }
 
 static cerr_t nvidia_gpu_temp_thresh_slow_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_SLOWDOWN, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_SLOWDOWN, value));
 }
 
 static cerr_t nvidia_gpu_temp_thresh_mem_max_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_MEM_MAX, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_MEM_MAX, value));
 }
 
 static cerr_t nvidia_gpu_temp_thresh_gpu_max_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_GPU_MAX, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_GPU_MAX, value));
 }
 
 #if defined(CUDART_VERSION) && CUDART_VERSION >= 11020
 static cerr_t nvidia_gpu_temp_thresh_acou_min_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MIN, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MIN, value));
 }
 
 static cerr_t nvidia_gpu_temp_thresh_acou_cur_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_CURR, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_CURR, value));
 }
 
 static cerr_t nvidia_gpu_temp_thresh_acou_max_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MAX, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MAX, value));
 }
 #endif
 
 #if defined(CUDART_VERSION) && CUDART_VERSION >= 12060
 static cerr_t nvidia_gpu_temp_thresh_gps_cur_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_GPS_CURR, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_getter(device, NVML_TEMPERATURE_THRESHOLD_GPS_CURR, value));
 }
 #endif
 
@@ -919,45 +919,45 @@ static cerr_t nvidia_gpu_temp_thresh_setter(const LikwidDevice_t device, nvmlTem
 
 static cerr_t nvidia_gpu_temp_thresh_shut_setter(const LikwidDevice_t device, const char *value)
 {
-    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_SHUTDOWN, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_SHUTDOWN, value));
 }
 
 static cerr_t nvidia_gpu_temp_thresh_slow_setter(const LikwidDevice_t device, const char *value)
 {
-    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_SLOWDOWN, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_SLOWDOWN, value));
 }
 
 static cerr_t nvidia_gpu_temp_thresh_mem_max_setter(const LikwidDevice_t device, const char *value)
 {
-    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_MEM_MAX, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_MEM_MAX, value));
 }
 
 static cerr_t nvidia_gpu_temp_thresh_gpu_max_setter(const LikwidDevice_t device, const char *value)
 {
-    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_GPU_MAX, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_GPU_MAX, value));
 }
 
 #if defined(CUDART_VERSION) && CUDART_VERSION >= 11020
 static cerr_t nvidia_gpu_temp_thresh_acou_min_setter(const LikwidDevice_t device, const char *value)
 {
-    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MIN, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MIN, value));
 }
 
 static cerr_t nvidia_gpu_temp_thresh_acou_cur_setter(const LikwidDevice_t device, const char *value)
 {
-    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_CURR, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_CURR, value));
 }
 
 static cerr_t nvidia_gpu_temp_thresh_acou_max_setter(const LikwidDevice_t device, const char *value)
 {
-    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MAX, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_ACOUSTIC_MAX, value));
 }
 #endif
 
 #if defined(CUDART_VERSION) && CUDART_VERSION >= 12060
 static cerr_t nvidia_gpu_temp_thresh_gps_cur_setter(const LikwidDevice_t device, const char *value)
 {
-    return nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_GPS_CURR, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_temp_thresh_setter(device, NVML_TEMPERATURE_THRESHOLD_GPS_CURR, value));
 }
 #endif
 
@@ -966,7 +966,7 @@ static cerr_t nvidia_gpu_ofa_usage_getter(const LikwidDevice_t device, char **va
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned int usage, samplingPeriodUs;
     NVML_CALL(nvmlDeviceGetOfaUtilization, nvmlDevice, &usage, &samplingPeriodUs);
-    return likwid_sysft_uint64_to_string(usage, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(usage, value));
 }
 
 static cerr_t nvidia_gpu_energy_getter(const LikwidDevice_t device, char **value)
@@ -974,7 +974,7 @@ static cerr_t nvidia_gpu_energy_getter(const LikwidDevice_t device, char **value
     LWD_TO_NVMLD(device, nvmlDevice);
     unsigned long long energy;
     NVML_CALL(nvmlDeviceGetTotalEnergyConsumption, nvmlDevice, &energy);
-    return likwid_sysft_double_to_string((double)energy / 1000.0, value);
+    return ERROR_WRAP_CALL(likwid_sysft_double_to_string((double)energy / 1000.0, value));
 }
 
 static cerr_t nvidia_gpu_gpumem_usage_getter(const LikwidDevice_t device, bool gpu, char **value)
@@ -982,17 +982,17 @@ static cerr_t nvidia_gpu_gpumem_usage_getter(const LikwidDevice_t device, bool g
     LWD_TO_NVMLD(device, nvmlDevice);
     nvmlUtilization_t util;
     NVML_CALL(nvmlDeviceGetUtilizationRates, nvmlDevice, &util);
-    return likwid_sysft_uint64_to_string(gpu ? util.gpu : util.memory, value);
+    return ERROR_WRAP_CALL(likwid_sysft_uint64_to_string(gpu ? util.gpu : util.memory, value));
 }
 
 static cerr_t nvidia_gpu_gpu_usage_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_gpumem_usage_getter(device, true, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_gpumem_usage_getter(device, true, value));
 }
 
 static cerr_t nvidia_gpu_dram_usage_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_gpumem_usage_getter(device, false, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_gpumem_usage_getter(device, false, value));
 }
 
 static cerr_t nvidia_gpu_policy_time_getter(const LikwidDevice_t device, nvmlPerfPolicyType_t type, char **value)
@@ -1002,47 +1002,47 @@ static cerr_t nvidia_gpu_policy_time_getter(const LikwidDevice_t device, nvmlPer
     NVML_CALL(nvmlDeviceGetViolationStatus, nvmlDevice, type, &vt);
     char timeBuf[64];
     snprintf(timeBuf, sizeof(timeBuf), "%llu:%llu", vt.referenceTime, vt.violationTime);
-    return likwid_sysft_copystr(timeBuf, value);
+    return ERROR_WRAP_CALL(likwid_sysft_copystr(timeBuf, value));
 }
 
 static cerr_t nvidia_gpu_policy_time_power_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_POWER, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_POWER, value));
 }
 
 static cerr_t nvidia_gpu_policy_time_therm_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_THERMAL, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_THERMAL, value));
 }
 
 static cerr_t nvidia_gpu_policy_time_sync_boost_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_SYNC_BOOST, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_SYNC_BOOST, value));
 }
 
 static cerr_t nvidia_gpu_policy_time_board_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_BOARD_LIMIT, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_BOARD_LIMIT, value));
 }
 
 static cerr_t nvidia_gpu_policy_time_lowutil_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_LOW_UTILIZATION, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_LOW_UTILIZATION, value));
 }
 
 static cerr_t nvidia_gpu_policy_time_rel_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_RELIABILITY, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_RELIABILITY, value));
 }
 
 static cerr_t nvidia_gpu_policy_time_total_app_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_TOTAL_APP_CLOCKS, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_TOTAL_APP_CLOCKS, value));
 }
 
 static cerr_t nvidia_gpu_policy_time_total_base_getter(const LikwidDevice_t device, char **value)
 {
-    return nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_TOTAL_BASE_CLOCKS, value);
+    return ERROR_WRAP_CALL(nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_TOTAL_BASE_CLOCKS, value));
 }
 
 static _SysFeature nvidia_gpu_features[] = {

@@ -61,7 +61,7 @@ static cerr_t amd_rapl_energy_status_getter(const LikwidDevice_t device, char** 
         return ERROR_SET_LWERR(err, "HPMread failed");
 
     const uint64_t energy = field64(msrData, 0, 32);
-    return likwid_sysft_double_to_string((double)energy * info->energyUnit, value);
+    return ERROR_WRAP_CALL(likwid_sysft_double_to_string((double)energy * info->energyUnit, value));
 }
 
 /*********************************************************************************************************************/
@@ -83,17 +83,17 @@ static cerr_t pkg_test_testFunc(bool *ok, uint64_t msrData, void * value)
 
 static cerr_t amd_rapl_pkg_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_AMD17_RAPL_POWER_UNIT, pkg_test_testFunc, NULL);
+    return ERROR_WRAP_CALL(likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_AMD17_RAPL_POWER_UNIT, pkg_test_testFunc, NULL));
 }
 
 static cerr_t amd_pkg_energy_status_test(bool *ok)
 {
-    return likwid_sysft_foreach_socket_testmsr(ok, MSR_AMD17_RAPL_PKG_STATUS);
+    return ERROR_WRAP_CALL(likwid_sysft_foreach_socket_testmsr(ok, MSR_AMD17_RAPL_PKG_STATUS));
 }
 
 static cerr_t amd_pkg_energy_status_getter(const LikwidDevice_t device, char** value)
 {
-    return amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_PKG_STATUS, &amd_rapl_pkg_info, DEVICE_TYPE_SOCKET);
+    return ERROR_WRAP_CALL(amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_PKG_STATUS, &amd_rapl_pkg_info, DEVICE_TYPE_SOCKET));
 }
 
 static _SysFeature amd_rapl_pkg_features[] = {
@@ -125,17 +125,17 @@ static cerr_t core_test_testFunc(bool *ok, uint64_t msrData, void * value)
 
 static cerr_t amd_rapl_core_test(bool *ok)
 {
-    return likwid_sysft_foreach_core_testmsr_cb(ok, MSR_AMD17_RAPL_POWER_UNIT, core_test_testFunc, NULL);
+    return ERROR_WRAP_CALL(likwid_sysft_foreach_core_testmsr_cb(ok, MSR_AMD17_RAPL_POWER_UNIT, core_test_testFunc, NULL));
 }
 
 static cerr_t amd_core_energy_status_test(bool *ok)
 {
-    return likwid_sysft_foreach_core_testmsr(ok, MSR_AMD17_RAPL_CORE_STATUS);
+    return ERROR_WRAP_CALL(likwid_sysft_foreach_core_testmsr(ok, MSR_AMD17_RAPL_CORE_STATUS));
 }
 
 static cerr_t amd_core_energy_status_getter(const LikwidDevice_t device, char** value)
 {
-    return amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_CORE_STATUS, &amd_rapl_core_info, DEVICE_TYPE_CORE);
+    return ERROR_WRAP_CALL(amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_CORE_STATUS, &amd_rapl_core_info, DEVICE_TYPE_CORE));
 }
 
 static _SysFeature amd_rapl_core_features[] = {
@@ -179,17 +179,17 @@ static cerr_t amd_rapl_l3_test(bool *ok)
         && info->model != ZEN4_RYZEN3 )
         return NULL;
 
-    return likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_AMD19_RAPL_L3_UNIT, l3_test_testFunc, NULL);
+    return ERROR_WRAP_CALL(likwid_sysft_foreach_socket_testmsr_cb(ok, MSR_AMD19_RAPL_L3_UNIT, l3_test_testFunc, NULL));
 }
 
 static cerr_t amd_l3_energy_status_test(bool *ok)
 {
-    return likwid_sysft_foreach_core_testmsr(ok, MSR_AMD19_RAPL_L3_STATUS);
+    return ERROR_WRAP_CALL(likwid_sysft_foreach_core_testmsr(ok, MSR_AMD19_RAPL_L3_STATUS));
 }
 
 static cerr_t amd_l3_energy_status_getter(const LikwidDevice_t device, char** value)
 {
-    return amd_rapl_energy_status_getter(device, value, MSR_AMD19_RAPL_L3_STATUS, &amd_rapl_l3_info, DEVICE_TYPE_SOCKET);
+    return ERROR_WRAP_CALL(amd_rapl_energy_status_getter(device, value, MSR_AMD19_RAPL_L3_STATUS, &amd_rapl_l3_info, DEVICE_TYPE_SOCKET));
 }
 
 static _SysFeature amd_rapl_l3_features[] = {
@@ -218,36 +218,36 @@ cerr_t likwid_sysft_init_amd_rapl(_SysFeatureList* out)
 
     bool pkg_avail;
     if (amd_rapl_pkg_test(&pkg_avail))
-        return ERROR_APPEND("amd_rapl_pkg_test error");
+        return ERROR_WRAP();
 
     if (pkg_avail) {
         PRINT_INFO("Register AMD RAPL PKG domain");
         if (likwid_sysft_register_features(out, &amd_rapl_pkg_feature_list))
-            return ERROR_APPEND("likwid_sysft_register_features failed");
+            return ERROR_WRAP();
     } else {
         PRINT_INFO("AMD RAPL domain PKG not supported");
     }
 
     bool core_avail;
     if (amd_rapl_core_test(&core_avail))
-        return ERROR_APPEND("amd_rapl_core_test error");
+        return ERROR_WRAP();
 
     if (core_avail) {
         PRINT_INFO("Register AMD RAPL CORE domain");
         if (likwid_sysft_register_features(out, &amd_rapl_core_feature_list))
-            return ERROR_APPEND("likwid_sysft_register_features failed");
+            return ERROR_WRAP();
     } else {
         DEBUG_PRINT(DEBUGLEV_INFO, "AMD RAPL domain CORE not supported");
     }
 
     bool l3_avail;
     if (amd_rapl_l3_test(&l3_avail))
-        return ERROR_APPEND("amd_rapl_l3_test error");
+        return ERROR_WRAP();
 
     if (l3_avail) {
         PRINT_INFO("Register AMD RAPL L3 domain");
         if (likwid_sysft_register_features(out, &amd_rapl_l3_feature_list))
-            return ERROR_APPEND("likwid_sysft_register_features failed");
+            return ERROR_WRAP();
     } else {
         DEBUG_PRINT(DEBUGLEV_INFO, "AMD RAPL domain L3 not supported");
     }

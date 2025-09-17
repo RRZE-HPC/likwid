@@ -97,57 +97,57 @@ static cerr_t numa_balancing_test(bool *ok)
 
 static cerr_t numa_balancing_state_getter(const LikwidDevice_t device, char** value)
 {
-    return numa_balancing_procfs_getter(device, value, "numa_balancing");
+    return ERROR_WRAP_CALL(numa_balancing_procfs_getter(device, value, "numa_balancing"));
 }
 
 static cerr_t numa_balancing_scan_delay_test(bool *ok)
 {
-    return numa_balancing_procfs_tester(ok, "numa_balancing_scan_delay_ms");
+    return ERROR_WRAP_CALL(numa_balancing_procfs_tester(ok, "numa_balancing_scan_delay_ms"));
 }
 
 static cerr_t numa_balancing_scan_delay_getter(const LikwidDevice_t device, char** value)
 {
-    return numa_balancing_procfs_getter(device, value, "numa_balancing_scan_delay_ms");
+    return ERROR_WRAP_CALL(numa_balancing_procfs_getter(device, value, "numa_balancing_scan_delay_ms"));
 }
 
 static cerr_t numa_balancing_scan_period_min_test(bool *ok)
 {
-    return numa_balancing_procfs_tester(ok, "numa_balancing_scan_period_min_ms");
+    return ERROR_WRAP_CALL(numa_balancing_procfs_tester(ok, "numa_balancing_scan_period_min_ms"));
 }
 
 static cerr_t numa_balancing_scan_period_min_getter(const LikwidDevice_t device, char** value)
 {
-    return numa_balancing_procfs_getter(device, value, "numa_balancing_scan_period_min_ms");
+    return ERROR_WRAP_CALL(numa_balancing_procfs_getter(device, value, "numa_balancing_scan_period_min_ms"));
 }
 
 static cerr_t numa_balancing_scan_period_max_test(bool *ok)
 {
-    return numa_balancing_procfs_tester(ok, "numa_balancing_scan_period_max_ms");
+    return ERROR_WRAP_CALL(numa_balancing_procfs_tester(ok, "numa_balancing_scan_period_max_ms"));
 }
 
 static cerr_t numa_balancing_scan_period_max_getter(const LikwidDevice_t device, char** value)
 {
-    return numa_balancing_procfs_getter(device, value, "numa_balancing_scan_period_max_ms");
+    return ERROR_WRAP_CALL(numa_balancing_procfs_getter(device, value, "numa_balancing_scan_period_max_ms"));
 }
 
 static cerr_t numa_balancing_scan_size_test(bool *ok)
 {
-    return numa_balancing_procfs_tester(ok, "numa_balancing_scan_size_mb");
+    return ERROR_WRAP_CALL(numa_balancing_procfs_tester(ok, "numa_balancing_scan_size_mb"));
 }
 
 static cerr_t numa_balancing_scan_size_getter(const LikwidDevice_t device, char** value)
 {
-    return numa_balancing_procfs_getter(device, value, "numa_balancing_scan_size_mb");
+    return ERROR_WRAP_CALL(numa_balancing_procfs_getter(device, value, "numa_balancing_scan_size_mb"));
 }
 
 static cerr_t numa_balancing_rate_limit_test(bool *ok)
 {
-    return numa_balancing_procfs_tester(ok, "numa_balancing_promote_rate_limit_MBps");
+    return ERROR_WRAP_CALL(numa_balancing_procfs_tester(ok, "numa_balancing_promote_rate_limit_MBps"));
 }
 
 static cerr_t numa_balancing_rate_limit_getter(const LikwidDevice_t device, char** value)
 {
-    return numa_balancing_procfs_getter(device, value, "numa_balancing_promote_rate_limit_MBps");
+    return ERROR_WRAP_CALL(numa_balancing_procfs_getter(device, value, "numa_balancing_promote_rate_limit_MBps"));
 }
 
 static _SysFeature numa_balancing_features[] = {
@@ -169,11 +169,11 @@ cerr_t likwid_sysft_init_linux_numa_balancing(_SysFeatureList* out)
 {
     bool numa_avail;
     if (numa_balancing_test(&numa_avail))
-        return ERROR_APPEND("numa_balancing_test failed");
+        return ERROR_WRAP();
 
     if (!numa_avail)
         return NULL;
 
     PRINT_INFO("Register OS NUMA balancing");
-    return likwid_sysft_register_features(out, &numa_balancing_feature_list);
+    return ERROR_WRAP_CALL(likwid_sysft_register_features(out, &numa_balancing_feature_list));
 }
