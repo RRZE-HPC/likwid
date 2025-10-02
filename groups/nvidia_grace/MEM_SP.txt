@@ -19,7 +19,7 @@ SVE FP rate [MFLOP/s]    1.0E-06*(PMC3)/time
 Scalar/NEON FP rate [MFLOP/s]    1.0E-06*(PMC2)/time
 SVE ratio    100*(PMC3)/(PMC2+PMC3)
 Flops per SP instr    PMC3/PMC4
-Arithmetic ratio SVE    100*(PMC4)/(PMC5)
+Arithmetic ratio SVE    100*(PMC4)/(PMC5+1)
 Memory read bandwidth [MBytes/s]    1.0E-06*(SCF0)*32.0/time
 Memory read data volume [GBytes]    1.0E-09*(SCF0)*32.0
 Memory write bandwidth [MBytes/s]    1.0E-06*(SCF1)/time
