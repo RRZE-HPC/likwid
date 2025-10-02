@@ -51,6 +51,8 @@ int zen5_init_counter_map(int num_in_counters, RegisterMap * in_counters, int* n
             return -ENOMEM;
         }
         memcpy(out, in_counters, num_in_counters * sizeof(RegisterMap));
+        *num_out_counters = num_in_counters;
+        *out_counters = out;
     } else {
         int umc_pmcs = umc_count/umc_units;
         int outcount = 0;
@@ -77,9 +79,9 @@ int zen5_init_counter_map(int num_in_counters, RegisterMap * in_counters, int* n
                 umcoff++;
             }
         }
+        *num_out_counters = num_in_counters + umcoff;
+        *out_counters = out;
     }
-    *num_out_counters = num_in_counters + umcoff;
-    *out_counters = out;
 
     return 0;
 }
