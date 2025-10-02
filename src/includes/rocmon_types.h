@@ -35,10 +35,9 @@
 
 #include <likwid.h>
 // #include <hsa.h>
-#ifndef ROCPROFILER_VERSION_MAJOR
-#include <rocprofiler.h>
-#endif
+#include <rocprofiler-sdk/rocprofiler.h>
 #include <map.h>
+#include <bstrlib.h>
 
 typedef struct {
     double lastValue;
@@ -81,17 +80,17 @@ typedef struct {
     int deviceId; // LIKWID device id
 
     hsa_agent_t hsa_agent;  // HSA agent handle for this device
-    rocprofiler_t* context; // Rocprofiler context (has activeEvents configured)
+    //XYZrocprofiler_t* context; // Rocprofiler context (has activeEvents configured)
 
     // Available rocprofiler metrics
-    rocprofiler_info_data_t* rocMetrics;
+    //XYZrocprofiler_info_data_t* rocMetrics;
     int numRocMetrics;
 
     // Available ROCm SMI events
     Map_t smiMetrics;
 
     // Currently configured rocprofiler events (bound to context)
-    rocprofiler_feature_t* activeRocEvents;
+    //XYZrocprofiler_feature_t* activeRocEvents;
     int numActiveRocEvents;
 
     // Currently configured ROCm SMI events
