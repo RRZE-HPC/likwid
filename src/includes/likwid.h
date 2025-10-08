@@ -33,6 +33,7 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <string.h>
 
 #define DEBUGLEV_ONLY_ERROR 0
@@ -2821,21 +2822,20 @@ RocmTopology_t get_rocmTopology(void)
 It holds the name, the description and the limitation string for one event.
 */
 typedef struct {
-  char *name;        /*!< \brief Name of the event */
-  int instances;     /*!< \brief Description of the event */
-  char *description; /*!< \brief Limitation string of the event, commonly 'GPU' */
-} Event_rocm_t;
+  char *name; /*!< \brief Name of the event */
+  char *desc; /*!< \brief Limitation string of the event, commonly 'GPU' */
+} RocmonEventListEntry;
 
 /*! \brief Output list from rocmon_getEventsOfGpu with all supported events
 
 Output list from rocmon_getEventsOfGpu with all supported events
 */
 typedef struct {
-  Event_rocm_t *events; /*!< \brief List of events */
-  int numEvents; /*!< \brief Number of events */
-} EventList_rocm;
+  RocmonEventListEntry *events; /*!< \brief List of events */
+  size_t numEvents; /*!< \brief Number of events */
+} RocmonEventList;
 /*! \brief Pointer to Rocmon event list */
-typedef EventList_rocm *EventList_rocm_t;
+typedef RocmonEventList *RocmonEventList_t;
 
 /*! \brief Set verbosity level of ROCMON interface */
 void rocmon_setVerbosity(int level) __attribute__((visibility("default")));
@@ -2934,14 +2934,14 @@ double rocmon_getLastResult(int gpuIdx, int groupId, int eventId)
 @param [out] list List of events
 @return Number of supported events or -errno
 */
-int rocmon_getEventsOfGpu(int gpuIdx, EventList_rocm_t *list)
+int rocmon_getEventsOfGpu(int gpuIdx, RocmonEventList_t *list)
     __attribute__((visibility("default")));
 /*! \brief Free the allocated list of events of a GPU (rocmon)
 
 @param [in] list List of events to free
 @return Number of supported events or -errno
 */
-void rocmon_freeEventsOfGpu(EventList_rocm_t list)
+void rocmon_freeEventsOfGpu(RocmonEventList_t list)
     __attribute__((visibility("default")));
 
 /*! \brief Get the number of configured event groups (rocmon)
