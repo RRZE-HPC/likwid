@@ -154,7 +154,7 @@ int init_smap(Map_t* map)
     return init_map(map, MAP_KEY_TYPE_STR, 0, NULL);
 }
 
-int add_smap(Map_t map, char* key, void* val)
+int add_smap(Map_t map, const char* key, void* val)
 {
 #ifndef WITH_BSTRING
     gpointer gval = g_hash_table_lookup(map->ghash, key);
@@ -212,7 +212,7 @@ int add_smap(Map_t map, char* key, void* val)
     return -1;
 }
 
-int get_smap_by_key(Map_t map, char* key, void** val)
+int get_smap_by_key(Map_t map, const char* key, void** val)
 {
 #ifndef WITH_BSTRING
     gpointer gval = g_hash_table_lookup(map->ghash, key);

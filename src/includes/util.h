@@ -2,6 +2,7 @@
 #define INCLUDE_UTIL_H
 
 #include <pthread.h>
+#include <stdarg.h>
 
 #define DECLARE_STATIC_PTMUTEX(mutex_name) \
     static pthread_mutex_t mutex_name; \
@@ -11,5 +12,8 @@
     __attribute__((destructor)) static void name##_destructor(void) { \
         pthread_mutex_destroy(&mutex_name); \
     }
+
+char *xvasprintf(const char *__restrict__ fmt, va_list ap);
+char *xasprintf(const char *__restrict__ fmt, ...);
 
 #endif // INCLUDE_UTIL_H

@@ -3266,79 +3266,76 @@ static int lua_likwid_gpustr_to_gpulist_rocm(lua_State *L) {
 }
 
 static int lua_likwid_getRocmEventsAndCounters(lua_State *L) {
-  int *glist = NULL;
-  if (!rocmtopology_isInitialized) {
-    if (topology_rocm_init() == EXIT_SUCCESS) {
-      rocmtopo = get_rocmTopology();
-      rocmtopology_isInitialized = 1;
-    } else {
-      lua_pushnil(L);
-      return 1;
-    }
-  }
-  if (!rocmon_initialized) {
-    glist = malloc(rocmtopo->numDevices * sizeof(int));
-    if (!glist) {
-      lua_pushnil(L);
-      return 1;
-    }
-    for (int i = 0; i < rocmtopo->numDevices; i++) {
-      RocmDevice *gpu = &rocmtopo->devices[i];
-      glist[i] = gpu->devid;
-    }
-    int ret = rocmon_init(rocmtopo->numDevices, glist);
-    if (ret != 0) {
-      lua_pushnil(L);
-      return 1;
-    }
-  }
-  lua_newtable(L);
-  lua_pushstring(L, "numDevices");
-  lua_pushinteger(L, (lua_Integer)(rocmtopo->numDevices));
-  lua_settable(L, -3);
-
-  lua_pushstring(L, "devices");
-  lua_newtable(L);
-  for (int i = 0; i < rocmtopo->numDevices; i++) {
-    EventList_rocm_t l = NULL;
-    RocmDevice *gpu = &rocmtopo->devices[i];
-    lua_pushinteger(L, gpu->devid);
-    lua_newtable(L);
-
-    int ret = rocmon_getEventsOfGpu(gpu->devid, &l);
-    printf("GPU Events: %d\n", ret);
-    if (ret == 0) {
-      for (int j = 0; j < l->numEvents; j++) {
-        lua_pushinteger(L, j + 1);
-        lua_newtable(L);
-        lua_pushstring(L, "Name");
-        lua_pushstring(L, l->events[j].name);
-        lua_settable(L, -3);
-        if (l->events[j].description) {
-          lua_pushstring(L, "Description");
-          lua_pushstring(L, l->events[j].description);
-          lua_settable(L, -3);
+    // TODO fix this initialization
+    if (!rocmtopology_isInitialized) {
+        if (topology_rocm_init() == EXIT_SUCCESS) {
+            rocmtopo = get_rocmTopology();
+            rocmtopology_isInitialized = 1;
+        } else {
+            lua_pushnil(L);
+            return 1;
         }
-        lua_pushstring(L, "Limit");
-        lua_pushstring(L, "ROCM");
-        lua_settable(L, -3);
-        lua_pushstring(L, "Instances");
-        lua_pushinteger(L, l->events[j].instances);
-
-        lua_settable(L, -3);
-        lua_settable(L, -3);
-      }
-      lua_settable(L, -3);
-      if (l) {
-        rocmon_freeEventsOfGpu(l);
-      }
     }
-  }
-  lua_settable(L, -3);
-  if (glist) {
-    free(glist);
-  }
-  return 1;
+
+    if (!rocmon_initialized) {
+        int *gpuList = calloc(rocmtopo->numDevices, sizeof(*gpuList));
+        if (!gpuList)
+            return luaL_error(L, "calloc failed: %s", strerror(errno));
+
+        for (int i = 0; i < rocmtopo->numDevices; i++)
+            gpuList[i] = rocmtopo->devices[i].devid;
+
+        int err = rocmon_init(rocmtopo->numDevices, gpuList);
+        free(gpuList);
+        if (err < 0)
+            return luaL_error(L, "Unable to initialize rocmon: %s", strerror(-err));
+    }
+
+    lua_newtable(L); // TABLE retval
+
+    lua_pushstring(L, "numDevices");
+    lua_pushinteger(L, (lua_Integer)(rocmtopo->numDevices));
+    lua_settable(L, -3); // TABLE -> retval
+
+    lua_pushstring(L, "devices");
+    lua_newtable(L); // TABLE devices
+    for (int i = 0; i < rocmtopo->numDevices; i++) {
+        RocmonEventList_t l = NULL;
+        RocmDevice *gpu = &rocmtopo->devices[i];
+        lua_pushinteger(L, gpu->devid);
+        lua_newtable(L); // TABLE [devid]
+
+        int err = rocmon_getEventsOfGpu(gpu->devid, &l);
+        if (err < 0)
+            return luaL_error(L, "rocmon_getEventsOfGpu(%d) failed: %s", gpu->devid, strerror(-err));
+
+        for (size_t j = 0; j < l->numEvents; j++) {
+            lua_pushinteger(L, (lua_Integer)(j + 1));
+            lua_newtable(L); // TABLE [eventidx]
+
+            lua_pushstring(L, "Name");
+            lua_pushstring(L, l->events[j].name);
+            lua_settable(L, -3); // TABLE -> [eventidx]
+
+            if (l->events[j].desc) {
+                lua_pushstring(L, "Description");
+                lua_pushstring(L, l->events[j].desc);
+                lua_settable(L, -3); // TABLE -> [eventidx]
+            }
+
+            lua_pushstring(L, "Limit");
+            lua_pushstring(L, "ROCM");
+            lua_settable(L, -3); // TABLE -> [eventidx]
+
+            lua_settable(L, -3); // TABLE -> [devid]
+        }
+
+        lua_settable(L, -3); // TABLE -> devices
+
+        rocmon_freeEventsOfGpu(l);
+    }
+    lua_settable(L, -3); // TABLE -> retval
+    return 1;
 }
 
 static int lua_likwid_getShortInfoOfGroup_rocm(lua_State *L) {

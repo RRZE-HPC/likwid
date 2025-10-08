@@ -36,8 +36,10 @@
 #include <likwid.h>
 // #include <hsa.h>
 #include <rocprofiler-sdk/rocprofiler.h>
+#include <rocprofiler-sdk/context.h>
 #include <map.h>
 #include <bstrlib.h>
+#include <stddef.h>
 
 typedef struct {
     double lastValue;
@@ -46,7 +48,7 @@ typedef struct {
 
 typedef struct {
     RocmonEventResult* results; // First rocprofiler results, then SMI results
-    int numResults;
+    size_t numResults;
 } RocmonEventResultList;
 
 
@@ -62,44 +64,51 @@ typedef enum {
 } RocmonSmiEventType;
 
 typedef struct RocmonSmiEvent_struct {
-    char name[40];
+    char name[64];
     uint64_t variant;
     uint64_t subvariant;
     uint64_t extra;
-    int instances;
     RocmonSmiEventType type;
     RocmonSmiMeasureFunc measureFunc;
 } RocmonSmiEvent;
 
 typedef struct {
     RocmonSmiEvent* entries;
-    int numEntries;
+    size_t numEntries;
 } RocmonSmiEventList;
 
 typedef struct {
-    int deviceId; // LIKWID device id
+    rocprofiler_counter_info_v1_t counterInfo;
+    // TODO, do we need anything else here?
+} RocmonRprEvent;
 
-    hsa_agent_t hsa_agent;  // HSA agent handle for this device
-    //XYZrocprofiler_t* context; // Rocprofiler context (has activeEvents configured)
+typedef struct {
+    int hipDeviceIdx; // HIP device id
 
-    // Available rocprofiler metrics
-    //XYZrocprofiler_info_data_t* rocMetrics;
-    int numRocMetrics;
+    uint32_t rsmiDeviceId;
+    const rocprofiler_agent_v0_t *rocprofAgent;
+    hipDeviceProp_t hipProps;
 
-    // Available ROCm SMI events
-    Map_t smiMetrics;
+    rocprofiler_context_id_t rocprof_ctx;
+
+    // Available rocprofiler events
+    Map_t availableRocprofEvents;
+
+    // ROCm SMI events (available on hardware)
+    // event_name (const char *) -> event (RocmonSmiEvent *)
+    Map_t availableSmiEvents;
 
     // Currently configured rocprofiler events (bound to context)
     //XYZrocprofiler_feature_t* activeRocEvents;
-    int numActiveRocEvents;
+    size_t numActiveRocEvents;
 
-    // Currently configured ROCm SMI events
+    // ROCm SMI events (currently enabled)
     RocmonSmiEvent* activeSmiEvents;
-    int numActiveSmiEvents;
+    size_t numActiveSmiEvents;
 
     // Results for all events in all event sets
     RocmonEventResultList* groupResults;
-    int numGroupResults;
+    size_t numGroupResults;
 
     // Timestamps in ns
     struct {
@@ -117,14 +126,16 @@ typedef struct {
     int         activeGroup;     // Currently active group
 
     // Devices (HSA agents)
-    RocmonDevice    *devices;
-    int             numDevices;
+    rocprofiler_context_id_t rocprof_ctx;
+    RocmonDevice             *devices;
+    size_t                   numDevices;
 
     // System information
     long double hsa_timestamp_factor; // hsa_timestamp * hsa_timestamp_factor = timestamp_in_ns
 
-    // ROCm SMI events
-    Map_t smiEvents;
+    // ROCm SMI events (implemented by LIKWID)
+    // label_name (const char *) -> event_list (RocmonSmiEventList *)
+    Map_t implementedSmiEvents;
 } RocmonContext;
 
 extern RocmonContext *rocmon_context;
