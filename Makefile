@@ -210,7 +210,7 @@ OBJ := $(filter-out $(BUILD_DIR)/likwid_device.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/devstring.o,$(OBJ))
 endif
 
-CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
+CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) -Iext/cwisstable
 
 .PHONY: all
 ifeq ($(BUILDDAEMON),false)

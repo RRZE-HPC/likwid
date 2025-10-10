@@ -54,4 +54,7 @@ extern int getCounterTypeOffset(int index);
 extern uint64_t perfmon_getMaxCounterValue(RegisterType type);
 extern char** getArchRegisterTypeNames();
 
+extern LikwidResults* markerResults;
+extern int markerRegions;
+
 #endif /*PERFMON_H*/

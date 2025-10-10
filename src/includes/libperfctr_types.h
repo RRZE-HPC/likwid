@@ -32,7 +32,6 @@
 
 #include <bstrlib.h>
 #include <likwid.h>
-#include <map.h>
 #include <registers_types.h>
 
 typedef enum LikwidThreadStates {
@@ -55,24 +54,6 @@ typedef struct LikwidThreadResults{
     LikwidThreadStates state;
 } LikwidThreadResults;
 
-typedef struct {
-    int thread_id;
-    int cpu_id;
-    uint64_t last;
-    LikwidThreadResults* last_res;
-    Map_t regions;
-    uint64_t _padding[4];
-} GroupThreadsMap;
-
-typedef struct {
-    int numberOfThreads;
-    GroupThreadsMap *threads;
-} GroupThreads;
-
-typedef struct {
-    int numberOfGroups;
-    GroupThreads *groups;
-} MarkerGroups;
 
 typedef struct {
     bstring  tag;
