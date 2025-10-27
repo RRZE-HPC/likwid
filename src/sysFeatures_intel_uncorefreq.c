@@ -88,6 +88,21 @@ static int intel_uncore_min_freq_getter(const LikwidDevice_t device, char** valu
     return likwid_sysft_uint64_to_string(field64(msrData, 8, 8) * 100, value);
 }
 
+static int intel_uncore_min_freq_setter(const LikwidDevice_t device, const char* value)
+{
+    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
+    {
+        return -EINVAL;
+    }
+    uint64_t freq = 0x0;
+    int err = likwid_sysft_string_to_uint64(value, &freq);
+    if (err < 0)
+    {
+        return err;
+    }
+    return likwid_sysft_writemsr_field(device, MSR_UNCORE_FREQ, 8, 8, freq / 100);
+}
+
 static int intel_uncore_max_freq_getter(const LikwidDevice_t device, char** value)
 {
     if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
@@ -103,10 +118,25 @@ static int intel_uncore_max_freq_getter(const LikwidDevice_t device, char** valu
     return likwid_sysft_uint64_to_string(field64(msrData, 0, 8) * 100, value);
 }
 
+static int intel_uncore_max_freq_setter(const LikwidDevice_t device, const char* value)
+{
+    if ((!device) || (!value) || (device->type != DEVICE_TYPE_SOCKET))
+    {
+        return -EINVAL;
+    }
+    uint64_t freq = 0x0;
+    int err = likwid_sysft_string_to_uint64(value, &freq);
+    if (err < 0)
+    {
+        return err;
+    }
+    return likwid_sysft_writemsr_field(device, MSR_UNCORE_FREQ, 0, 8, freq / 100);
+}
+
 static _SysFeature intel_uncorefreq_features[] = {
     {"cur_uncore_freq", "uncore_freq", "Current Uncore frequency", intel_uncore_cur_freq_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "MHz"},
-    {"min_uncore_freq", "uncore_freq", "Minimum Uncore frequency", intel_uncore_min_freq_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "MHz"},
-    {"max_uncore_freq", "uncore_freq", "Maximal Uncore frequency", intel_uncore_max_freq_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "MHz"},
+    {"min_uncore_freq", "uncore_freq", "Minimum Uncore frequency", intel_uncore_min_freq_getter, intel_uncore_min_freq_setter, DEVICE_TYPE_SOCKET, NULL, "MHz"},
+    {"max_uncore_freq", "uncore_freq", "Maximal Uncore frequency", intel_uncore_max_freq_getter, intel_uncore_max_freq_setter, DEVICE_TYPE_SOCKET, NULL, "MHz"},
 };
 
 const _SysFeatureList likwid_sysft_intel_uncorefreq_feature_list = {
