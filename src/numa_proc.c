@@ -154,6 +154,7 @@ get_numaNodes(int* array, int maxlen)
             i++;
         }
     }
+    closedir(dir);
     return count;
 }
 
@@ -364,6 +365,7 @@ int proc_numa_init(void)
     numa_info.nodes = (NumaNode*) malloc(numa_info.numberOfNodes * sizeof(NumaNode));
     if (!numa_info.nodes)
     {
+        free(nodes);
         return -ENOMEM;
     }
 
@@ -399,6 +401,7 @@ int proc_numa_init(void)
     }
     if (err == 0)
         numaInitialized = 1;
+    free(nodes);
     return err;
 }
 
