@@ -254,7 +254,7 @@ calculateMarkerResult(RegisterIndex index, uint64_t start, uint64_t stop, int ov
 
 int libperfctr_get_thread(uint64_t id, LikwidMarkerThread** thread) {
     pthread_mutex_lock(&_libperfctr_lock);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, "GET Query for thread %d in group %d", thread->process_id, thread->active_group);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "GET Query for thread %ld", id);
     if (!libperfctr_thread_map_contains(&_libperfctr_thread_map, &id)) {
         LikwidMarkerThread t = {
             .id = id,
