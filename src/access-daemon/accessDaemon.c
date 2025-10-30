@@ -2134,7 +2134,7 @@ static int getBusFromSocketByNameDevid(const uint32_t socket, PciDevice* pcidev,
     struct dirent *pDirent, *pDirentInner;
     DIR *pDir, *pDirInner;
     FILE* fp = NULL;
-    char tmpPath[512], buff[512];
+    char tmpPath[1024], buff[512];
     size_t ret = 0;
     int bus_id = -1;
     int numa_ctr = 0;
