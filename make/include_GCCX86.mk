@@ -1,10 +1,11 @@
 CC  = gcc
 AS  = as
 AR  = ar
-PAS = ./perl/AsmGen.pl 
+PAS = ./perl/AsmGen.pl
 GEN_PAS = ./perl/generatePas.pl 
-GEN_GROUPS = ./perl/generateGroups.pl 
-GEN_PMHEADER = ./perl/gen_events.pl 
+GEN_TEST = ./perl/generateTestcases.pl
+GEN_GROUPS = ./perl/generateGroups.pl
+GEN_PMHEADER = ./perl/gen_events.pl
 
 ANSI_CFLAGS   = -std=c99
 #ANSI_CFLAGS += -pedantic

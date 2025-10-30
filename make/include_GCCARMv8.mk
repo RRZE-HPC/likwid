@@ -6,6 +6,7 @@ PAS = ./perl/AsmGen.pl
 GEN_PAS = ./perl/generatePas.pl
 GEN_GROUPS = ./perl/generateGroups.pl
 GEN_PMHEADER = ./perl/gen_events.pl
+GEN_TEST = ./perl/generateTestcases.pl
 
 ANSI_CFLAGS   =
 #ANSI_CFLAGS += -pedantic
