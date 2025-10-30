@@ -814,5 +814,6 @@ int main(int argc, char** argv)
 
     bdestroy(HLINE);
     bdestroy(asmFile);
+    bdestroy(testcase);
     return EXIT_SUCCESS;
 }
