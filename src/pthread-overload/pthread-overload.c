@@ -152,7 +152,7 @@ pthread_create(pthread_t* thread,
     static int overflow = 0;
     static int overflowed = 0;
     static long online_cpus = 0;
-    static int shepard = 0;
+    static int shepherd = 0;
     online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
     pthread_mutex_lock(&mutex);
 
@@ -208,39 +208,36 @@ pthread_create(pthread_t* thread,
 
         buff[0] = '\0';
         snprintf(file, sizeof(file), "/tmp/likwidpin.%ld", gettid());
-        snprintf(cmd, sizeof(cmd), "rm -f %s; nm %s 2>/dev/null | grep %x > %s",
-                 file, info.dli_fname, ptr, file);
+        if (info.dli_fname[0] != '/') {
+            snprintf(cmd, sizeof(cmd), "rm -f %s; nm $(which %s) 2>/dev/null | grep %x > %s",
+                     file, info.dli_fname, ptr, file);
+        } else {
+            snprintf(cmd, sizeof(cmd), "rm -f %s; nm %s 2>/dev/null | grep %x > %s",
+                     file, info.dli_fname, ptr, file);
+        }
         ret = system(cmd);
-        if (!access(file, R_OK))
+        fpipe = fopen(file, "r");
+        if (!fpipe)
         {
-            fpipe = fopen(file, "r");
-            if (!fpipe)
-            {
-                fprintf(stderr, "Problems reading symbols for shepard thread detection\n");
-            }
-            else
-            {
-                if (fgets(buff, sizeof(buff), fpipe) == NULL) {
-                    // TODO, how should we handle this error correctly?
-                    fprintf(stderr, "Problems reading symbols for shepard thread detection\n");
-                    fclose(fpipe);
-                    return -1;
-                }
-
+            fprintf(stderr, "Problems reading symbols for shepherd thread detection: %s\n", strerror(errno));
+        }
+        else
+        {
+            if (fgets(buff, sizeof(buff), fpipe) == NULL) {
+                // TODO, how should we handle this error correctly?
+                fprintf(stderr, "Problems reading symbols for shepherd thread detection: %s\n", strerror(errno));
+                fclose(fpipe);
+            } else {
                 char* tmp = strstr(buff, "monitor");
                 if (tmp != NULL)
                 {
-                    shepard = 1;
+                    shepherd = 1;
                     skipMask |= 1ULL<<(ncalled);
                 }
                 fclose(fpipe);
                 snprintf(cmd, 511, "rm -f %s 2>/dev/null", file);
                 ret = system(cmd);
             }
-        }
-        else
-        {
-            fprintf(stderr, "Problems reading symbols for shepard thread detection\n");
         }
     }
 
@@ -292,11 +289,11 @@ pthread_create(pthread_t* thread,
             pthread_setaffinity_np(*thread, sizeof(cpu_set_t), &cpuset);
             if (!silent)
             {
-                if (shepard)
+                if (shepherd)
                     color_print("\tthreadid %lu -> SKIP SHEPHERD\n", *thread);
                 else
                     color_print("\tthreadid %lu -> SKIP \n", *thread);
-                shepard = 0;
+                shepherd = 0;
             }
         }
         else
