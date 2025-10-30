@@ -1,3 +1,19 @@
+# Changelog 5.5.0
+- Add support for AMD Zen5
+- Change hashtable to cwisstable
+- New internals for error handling and memory management
+- Topdown metrics for Intel SPR, ENR and GNR
+- Update for Nvidia GPU support
+- Less startup overhead by using optimized Uncore discovery for Intel
+- A lot of warnings got fixed
+- Wider data types for power readings
+- Measure energy consumption for Nvidia GPUs
+- Better messages when connection to access daemon fails
+- Fix for SPR UPI and M3UPI units
+- More peakflops benchmarks in likwid-bench
+- Fixes for sysfeatures
+- Update to buildsystem to allow parallel builds
+
 # Changelog 5.4.2
 - Added support for Intel Emerald Rapids
 
