@@ -181,9 +181,9 @@ static inline void libperfctr_thread_dtor(void* val) {
 }
 
 static inline size_t libperfctr_thread_hash(const void* val) {
-    const uint64_t* e = (const uint64_t*)val;
+    const uint64_t e = *(const uint64_t*)val;
     CWISS_FxHash_State state = 0;
-    CWISS_FxHash_Write(&state, e, sizeof(uint64_t));
+    CWISS_FxHash_Write(&state, &e, sizeof(const uint64_t));
     return state;
 }
 
@@ -200,6 +200,7 @@ CWISS_DECLARE_NODE_MAP_POLICY(libperfctr_thread_policy, uint64_t, LikwidMarkerTh
                               (key_eq, libperfctr_thread_eq));
 
 CWISS_DECLARE_HASHMAP_WITH(libperfctr_thread_map, uint64_t, LikwidMarkerThread*, libperfctr_thread_policy);
+
 
 static libperfctr_thread_map _libperfctr_thread_map;
 static int _libperfctr_num_hwthreads = 0;
@@ -253,6 +254,7 @@ calculateMarkerResult(RegisterIndex index, uint64_t start, uint64_t stop, int ov
 
 int libperfctr_get_thread(uint64_t id, LikwidMarkerThread** thread) {
     pthread_mutex_lock(&_libperfctr_lock);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "GET Query for thread %d in group %d", thread->process_id, thread->active_group);
     if (!libperfctr_thread_map_contains(&_libperfctr_thread_map, &id)) {
         LikwidMarkerThread t = {
             .id = id,
@@ -263,21 +265,31 @@ int libperfctr_get_thread(uint64_t id, LikwidMarkerThread** thread) {
             .regions = libperfctr_result_map_new(10),
             .active_group = 0,
         };
+        for (int i = 0; i < _libperfctr_num_hwthreads; i++) {
+            if (_libperfctr_thread_2_hwthread[i] == t.hwthread_id) {
+                t.thread_id = i;
+                break;
+            }
+        }
         libperfctr_thread_map_Entry entry = {
             .key = id,
             .val = &t,
         };
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding thread %ld to threadmap", id);
         libperfctr_thread_map_Insert ins = libperfctr_thread_map_insert(&_libperfctr_thread_map, &entry);
         if (!ins.inserted) {
             ERROR_PRINT("ERROR: Failed to insert thread %ld\n", id);
         }
+        libperfctr_result_map_destroy(&t.regions);
     }
     if (thread) {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Getting thread %ld from threadmap", id);
         libperfctr_thread_map_Iter iter = libperfctr_thread_map_find(&_libperfctr_thread_map, &id);
         libperfctr_thread_map_Entry *entry = NULL;
         do {
             entry = libperfctr_thread_map_Iter_get(&iter);
-            if (entry) {
+            if (entry->key == id) {
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Found thread %ld in threadmap", id);
                 *thread = entry->val;
                 break;
             }
@@ -317,6 +329,7 @@ int libperfctr_add_region(LikwidMarkerThread* thread, const char* regionTag, Lik
         } else {
             DEBUG_PRINT(DEBUGLEV_DEVELOP, "Inserted region %s for thread %d", regionTag, thread->process_id);
         }
+        bdestroy(res.label);
     }
     if (results) {
         int found = 0;
@@ -339,14 +352,6 @@ int libperfctr_add_region(LikwidMarkerThread* thread, const char* regionTag, Lik
 
 int libperfctr_get_region(LikwidMarkerThread* thread, const char* regionTag, LikwidThreadResults** results) {
     DEBUG_PRINT(DEBUGLEV_DEVELOP, "GET Searching for region %s for thread %d", regionTag, thread->process_id);
-/*    libperfctr_result_map_Iter iter = libperfctr_result_map_iter(&thread->regions);*/
-/*    for (libperfctr_result_map_Entry *re = libperfctr_result_map_Iter_get(&iter); re != NULL; re = libperfctr_result_map_Iter_next(&iter)) {*/
-/*        if (strcmp(re->key->region, regionTag) == 0 && re->key->group == thread->active_group) {*/
-/*            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Found region %s for thread %d", regionTag, thread->process_id);*/
-/*            *results = re->val;*/
-/*            return 0;*/
-/*        }*/
-/*    }*/
     LikwidThreadKey key = {
         .region = (char*)regionTag,
         .group = thread->active_group,
@@ -525,7 +530,7 @@ void likwid_markerInit(void) {
     topology_init();
     numa_init();
     affinity_init();
-    _libperfctr_thread_map = libperfctr_thread_map_new(2);
+    _libperfctr_thread_map = libperfctr_thread_map_new(_libperfctr_num_hwthreads);
 
 #ifndef LIKWID_USE_PERFEVENT
     HPMmode(atoi(modeStr));
@@ -564,8 +569,8 @@ void likwid_markerInit(void) {
         }
     }
 
-    LikwidMarkerThread* thread = NULL;
-    libperfctr_get_thread(gettid(), &thread);
+/*    LikwidMarkerThread* thread = NULL;*/
+/*    libperfctr_get_thread(gettid(), &thread);*/
 
     groupSet->activeGroup = 0;
 
@@ -1022,7 +1027,6 @@ void likwid_markerClose(void) {
         res[i].cpulist = lw_malloc(numberOfThreads * sizeof(int));
         memset(res[i].cpulist, 0, numberOfThreads * sizeof(int));
         res[i].counters = lw_malloc(numberOfThreads * sizeof(double*));
-        //memset(res[i].counters, 0, numberOfThreads * sizeof(double*));
         for (int j = 0; j < numberOfThreads; j++) {
             res[i].counters[j] = lw_malloc(NUM_PMC * sizeof(double));
             memset(res[i].counters[j], 0, NUM_PMC * sizeof(double));
@@ -1038,9 +1042,11 @@ void likwid_markerClose(void) {
             int ridx = -1;
             for (int k = 0; k < num_res; k++) {
                 LikwidResults * rres = &res[k];
-                if (bstrcmp(rres->tag, tdata->label) == BSTR_OK && rres->groupID == tdata->groupID) {
+                bstring teststr = bformat("%s-%d", bdata(tdata->label), tdata->groupID);
+                if (bstrcmp(rres->tag, teststr) == BSTR_OK) {
                     ridx = k;
                 }
+                bdestroy(teststr);
             }
             if (ridx < 0) {
                 // new region result
@@ -1068,5 +1074,9 @@ void likwid_markerClose(void) {
     likwid_markerWriteFile(markerFilePath);
 
     libperfctr_thread_map_destroy(&_libperfctr_thread_map);
+
+    numa_finalize();
+    affinity_finalize();
+
     return;
 }
