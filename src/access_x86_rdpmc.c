@@ -212,6 +212,10 @@ access_x86_rdpmc_init(uint32_t cpu_id)
                     rdpmc_works_llc = test_rdpmc(cpu_id, 0xA, 0);
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for L3 counters returned %d", rdpmc_works_llc);
                     break;
+                case ZEN5_FAMILY:
+                    rdpmc_works_llc = test_rdpmc(cpu_id, 0xA, 0);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for L3 counters returned %d", rdpmc_works_llc);
+                    break;
                 default:
                     break;
             }
@@ -227,6 +231,10 @@ access_x86_rdpmc_init(uint32_t cpu_id)
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for DataFabric counters returned %d", rdpmc_works_mem);
                 break;
             case ZEN3_FAMILY:
+                rdpmc_works_mem = test_rdpmc(cpu_id, 0x6, 0);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for DataFabric counters returned %d", rdpmc_works_mem);
+                break;
+            case ZEN5_FAMILY:
                 rdpmc_works_mem = test_rdpmc(cpu_id, 0x6, 0);
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, "Test for RDPMC for DataFabric counters returned %d", rdpmc_works_mem);
                 break;
@@ -258,6 +266,8 @@ int
 access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
 {
     int ret = -EAGAIN;
+    int rdpmc_start_offset = 0x0ULL;
+    int rdpmc_reg_offset = 0x0ULL;
 
     switch(reg)
     {
@@ -271,8 +281,9 @@ access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
         case MSR_PMC7:
             if (rdpmc_works_pmc == 1)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read PMC counter with RDPMC instruction with index 0x%X", reg - MSR_PMC0);
-                ret = __rdpmc(cpu_id, reg - MSR_PMC0, data);
+                rdpmc_reg_offset = reg - MSR_PMC0;
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read PMC counter with RDPMC instruction with index 0x%X", rdpmc_reg_offset);
+                ret = __rdpmc(cpu_id, rdpmc_reg_offset, data);
                 if (ret)
                 {
                     rdpmc_works_pmc = 0;
@@ -284,11 +295,13 @@ access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
         case MSR_AMD17_PMC1:
         case MSR_AMD17_PMC2:
         case MSR_AMD17_PMC3:
+        case MSR_AMD17_2_PERFEVTSEL4:
+        case MSR_AMD17_2_PERFEVTSEL5:
             if (rdpmc_works_pmc == 1 && !cpuid_info.isIntel)
             {
-                int index = (reg - MSR_AMD17_PMC0)/2;
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read PMC counter with RDPMC instruction with index 0x%X", index);
-                ret = __rdpmc(cpu_id, index, data);
+                rdpmc_reg_offset = (reg - MSR_AMD17_PMC0)/2;
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read PMC counter with RDPMC instruction with index 0x%X", rdpmc_reg_offset);
+                ret = __rdpmc(cpu_id, rdpmc_reg_offset, data);
                 if (ret)
                 {
                     rdpmc_works_pmc = 0;
@@ -302,9 +315,9 @@ access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
         case MSR_AMD16_PMC3:
             if (rdpmc_works_pmc == 1 && !cpuid_info.isIntel)
             {
-                int index = (reg - MSR_AMD16_PMC0)/2;
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read PMC counter with RDPMC instruction with index 0x%X", index);
-                ret = __rdpmc(cpu_id, index, data);
+                rdpmc_reg_offset = (reg - MSR_AMD16_PMC0)/2;
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read PMC counter with RDPMC instruction with index 0x%X", rdpmc_reg_offset);
+                ret = __rdpmc(cpu_id, rdpmc_reg_offset, data);
                 if (ret)
                 {
                     rdpmc_works_pmc = 0;
@@ -315,8 +328,10 @@ access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
         case MSR_PERF_FIXED_CTR0:
             if (rdpmc_works_fixed_inst == 1)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read FIXED instruction counter with RDPMC instruction with index 0x%X", (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
-                ret = __rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data);
+                rdpmc_reg_offset = (reg - MSR_PERF_FIXED_CTR0);
+                rdpmc_start_offset = (1ULL<<30);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read FIXED instruction counter with RDPMC instruction with index 0x%X", rdpmc_start_offset + rdpmc_reg_offset);
+                ret = __rdpmc(cpu_id, rdpmc_start_offset + rdpmc_reg_offset, data);
                 if (ret)
                 {
                     rdpmc_works_fixed_inst = 0;
@@ -327,8 +342,10 @@ access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
         case MSR_PERF_FIXED_CTR1:
             if (rdpmc_works_fixed_cyc == 1)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read FIXED core cycle counter with RDPMC instruction with index 0x%X", (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
-                ret = __rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data);
+                rdpmc_reg_offset = (reg - MSR_PERF_FIXED_CTR0);
+                rdpmc_start_offset = (1ULL<<30);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read FIXED core cycle counter with RDPMC instruction with index 0x%X", rdpmc_start_offset + rdpmc_reg_offset);
+                ret = __rdpmc(cpu_id, rdpmc_start_offset + rdpmc_reg_offset, data);
                 if (ret)
                 {
                     rdpmc_works_fixed_cyc = 0;
@@ -339,11 +356,13 @@ access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
         case MSR_PERF_FIXED_CTR2:
             if (rdpmc_works_fixed_ref == 1)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read FIXED reference cycle counter with RDPMC instruction with index 0x%X", (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
-                ret = __rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data);
+                rdpmc_reg_offset = (reg - MSR_PERF_FIXED_CTR0);
+                rdpmc_start_offset = (1ULL<<30);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read FIXED reference cycle counter with RDPMC instruction with index 0x%X", rdpmc_start_offset + rdpmc_reg_offset);
+                ret = __rdpmc(cpu_id, rdpmc_start_offset + rdpmc_reg_offset, data);
                 if (ret)
                 {
-                    rdpmc_works_fixed_ref = 0;
+                    rdpmc_works_fixed_cyc = 0;
                     ret = -EAGAIN;
                 }
             }
@@ -351,11 +370,13 @@ access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
         case MSR_PERF_FIXED_CTR3: //Fixed-purpose counter for TOPDOWN_SLOTS is not readable with RDPMC
             if (rdpmc_works_fixed_slots == 1)
             {
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read FIXED slots counter with RDPMC instruction with index 0x%X", (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
-                ret = __rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data);
+                rdpmc_reg_offset = (reg - MSR_PERF_FIXED_CTR0);
+                rdpmc_start_offset = (1ULL<<30);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read FIXED topdown slots counter with RDPMC instruction with index 0x%X", rdpmc_start_offset + rdpmc_reg_offset);
+                ret = __rdpmc(cpu_id, rdpmc_start_offset + rdpmc_reg_offset, data);
                 if (ret)
                 {
-                    rdpmc_works_fixed_slots = 0;
+                    rdpmc_works_fixed_cyc = 0;
                     ret = -EAGAIN;
                 }
             }
@@ -368,10 +389,10 @@ access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
         case MSR_AMD17_L3_PMC5:
             if (rdpmc_works_llc == 1)
             {
-                int index = (reg - MSR_AMD17_L3_PMC0)/2;
-
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read AMD L3 counter with RDPMC instruction with index 0x%X", 0xA + index);
-                ret = __rdpmc(cpu_id, 0xA + index, data);
+                rdpmc_reg_offset = (reg - MSR_AMD17_L3_PMC0)/2;
+                rdpmc_start_offset = 0xA;
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read AMD L3 counter with RDPMC instruction with index 0x%X", rdpmc_start_offset + rdpmc_reg_offset);
+                ret = __rdpmc(cpu_id, rdpmc_start_offset + rdpmc_reg_offset, data);
                 if (ret)
                 {
                     rdpmc_works_llc = 0;
@@ -385,10 +406,45 @@ access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
         case MSR_AMD17_2_DF_PMC3:
             if (rdpmc_works_mem == 1)
             {
-                int index = (reg - MSR_AMD17_2_DF_PMC0)/2;
-
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read AMD DF counter with RDPMC instruction with index 0x%X", 0x6 + index);
-                ret = __rdpmc(cpu_id, 0x6 + index, data);
+                rdpmc_reg_offset = (reg - MSR_AMD17_2_DF_PMC0)/2;
+                rdpmc_start_offset = 0x6;
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read AMD DF counter with RDPMC instruction with index 0x%X", rdpmc_start_offset + rdpmc_reg_offset);
+                ret = __rdpmc(cpu_id, rdpmc_start_offset + rdpmc_reg_offset, data);
+                if (ret)
+                {
+                    rdpmc_works_mem = 0;
+                    ret = -EAGAIN;
+                }
+            }
+            break;
+        case MSR_AMD19_DF_PERFEVTSEL0:
+        case MSR_AMD19_DF_PERFEVTSEL1:
+        case MSR_AMD19_DF_PERFEVTSEL2:
+        case MSR_AMD19_DF_PERFEVTSEL3:
+            rdpmc_start_offset = 0x6;
+            rdpmc_reg_offset = (reg - MSR_AMD19_DF_PERFEVTSEL0)/2;
+            // fall through
+        case MSR_AMD19_DF_PERFEVTSEL4:
+        case MSR_AMD19_DF_PERFEVTSEL5:
+        case MSR_AMD19_DF_PERFEVTSEL6:
+        case MSR_AMD19_DF_PERFEVTSEL7:
+        case MSR_AMD19_DF_PERFEVTSEL8:
+        case MSR_AMD19_DF_PERFEVTSEL9:
+        case MSR_AMD19_DF_PERFEVTSEL10:
+        case MSR_AMD19_DF_PERFEVTSEL11:
+        case MSR_AMD19_DF_PERFEVTSEL12:
+        case MSR_AMD19_DF_PERFEVTSEL13:
+        case MSR_AMD19_DF_PERFEVTSEL14:
+        case MSR_AMD19_DF_PERFEVTSEL15:
+            if (rdpmc_works_mem == 1)
+            {
+                if (reg >= MSR_AMD19_DF_PERFEVTSEL4)
+                {
+                    rdpmc_reg_offset = (reg - MSR_AMD19_DF_PERFEVTSEL4)/2;
+                    rdpmc_start_offset = 0x10;
+                }
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read AMD DF counter with RDPMC instruction with index 0x%X", rdpmc_start_offset + rdpmc_reg_offset);
+                ret = __rdpmc(cpu_id, rdpmc_start_offset + rdpmc_reg_offset, data);
                 if (ret)
                 {
                     rdpmc_works_mem = 0;

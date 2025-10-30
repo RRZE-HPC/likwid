@@ -1,0 +1,27 @@
+SHORT Bfloat16 MFLOP/s
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  CPU_CLOCKS_UNHALTED
+PMC3  MERGE
+PMC2  RETIRED_SSE_AVX_FLOPS_ALL_BF16
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s]   FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI   PMC1/PMC0
+BF16 [MFLOP/s]   1.0E-06*(PMC2)/time
+
+LONG
+Formulas:
+CPI = CPU_CLOCKS_UNHALTED/RETIRED_INSTRUCTIONS
+BF16 [MFLOP/s] = 1.0E-06*(RETIRED_SSE_AVX_FLOPS_ALL_BF16)/time
+-
+Profiling group to measure the FLOP rate of bfloat16 operations.
+The event might have a higher per-cycle increment than 15, so the MERGE event
+is required.
+
+

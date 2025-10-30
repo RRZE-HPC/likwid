@@ -26,10 +26,11 @@ Power L3 [W] PWR2/time
 LONG
 Formulas:
 Power Core [W] = RAPL_CORE_ENERGY/time
+Power PKG [W] = RAPL_PKG_ENERGY/time
 Power L3 [W] = RAPL_L3_ENERGY/time
 -
-Ryzen implements the RAPL interface previously introduced by Intel.
 This interface enables to monitor the consumed energy on the core and L3
-domain. It is not documented by AMD which parts of the CPU are in which domain.
-When using the perf_event backend, only PWR1 (RAPL_PKG_ENERGY) is provided. With
-the other backends, only PWR0 and PWR2 are supported.
+domain (PWR0 and PWR2) when using ACCESSMODE=accessdaemon or ACCESSMODE=direct.
+In contrast, with ACCESSMODE=perf_event, the interface provides only the
+consumed energy at a socket level (PWR1).
+
