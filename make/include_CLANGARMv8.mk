@@ -4,6 +4,7 @@ AS  = llvm-as
 AR  = llvm-ar
 PAS = ./perl/AsmGen.pl
 GEN_PAS = ./perl/generatePas.pl
+GEN_TEST = ./perl/generateTestcases.pl
 GEN_GROUPS = ./perl/generateGroups.pl
 GEN_PMHEADER = ./perl/gen_events.pl
 
