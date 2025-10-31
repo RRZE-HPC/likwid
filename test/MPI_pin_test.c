@@ -141,7 +141,7 @@ thread_start(void *arg)
 #endif
 
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int i = 0;
     int rank = 0, size = 1;
