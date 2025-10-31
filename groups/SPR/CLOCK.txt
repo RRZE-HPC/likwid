@@ -5,6 +5,7 @@ FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
 FIXC3 TOPDOWN_SLOTS
+M2MC0 M2M_CLOCKTICKS
 PWR0  PWR_PKG_ENERGY
 
 METRICS
@@ -12,13 +13,18 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
+Uncore Clock [MHz] 1.E-06*M2MC0/time
 Energy [J]  PWR0
 Power [W] PWR0/time
 
 LONG
 Formulas:
 Power =  PWR_PKG_ENERGY / time
+Uncore Clock [MHz] = 1E-6 * M2M_CLOCKTICKS / time
 -
 Sapphire Rapids implements the RAPL interface. This interface enables to
 monitor the consumed energy on the package (socket) level.
+Compared to other Intel architectures, the SPR does not provide a
+general Uncore box (UBOX) which is often used to get the Uncore clock
+cycles. After contact with Intel, we use M2M_CLOCKTICKS instead.
 
