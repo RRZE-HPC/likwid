@@ -36,6 +36,7 @@
 #include <bstrlib.h>
 #include <inttypes.h>
 #include <perfgroup.h>
+#include <ghash.h>
 
 #include <cupti.h>
 
