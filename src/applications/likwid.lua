@@ -225,29 +225,18 @@ likwid.rocmSupported = likwid_rocmSupported
 likwid.getRocmTopology = likwid_getRocmTopology
 likwid.putRocmTopology = likwid_putRocmTopology
 likwid.getRocmEventsAndCounters = likwid_getRocmEventsAndCounters
-likwid.getRocmGroups = likwid_getRocmGroupss
-likwid.gpustr_to_gpulist_rocm = likwid_gpustr_to_gpulist_rocm
-likwid.init_rocm = likwid_init_rocm
-likwid.addEventSet_rocm = likwid_addEventSet_rocm
-likwid.finalize_rocm = likwid_finalize_rocm
+likwid.getShortInfoOfGroup_rocm = likwid_getShortInfoOfGroup_rocm
+likwid.getLongInfoOfGroup_rocm = likwid_getLongInfoOfGroup_rocm
+likwid.getRocmGroups = likwid_getRocmGroups
 likwid.getNameOfEventRocm = likwid_getNameOfEvent_rocm
 likwid.getNameOfCounterRocm = likwid_getNameOfCounter_rocm
-likwid.getNameOfGroupRocm = likwid_getNameOfGroup_rocm
 likwid.getNameOfMetricRocm = likwid_getNameOfMetric_rocm
-likwid.readMarkerFileRocm = likwid_readMarkerFile_rocm
-likwid.destroyMarkerFileRocm = likwid_markerFile_destroy_rocm
-likwid.markerNumRegionsRocm = likwid_markerNumRegions_rocm
-likwid.markerRegionGroupRocm = likwid_markerRegionGroup_rocm
-likwid.markerRegionTagRocm = likwid_markerRegionTag_rocm
-likwid.markerRegionEventsRocm = likwid_markerRegionEvents_rocm
-likwid.markerRegionMetricsRocm = likwid_markerRegionMetrics_rocm
-likwid.markerRegionGpulistRocm = likwid_markerRegionGpulist_rocm
-likwid.markerRegionGpusRocm = likwid_markerRegionGpus_rocm
-likwid.markerRegionTimeRocm = likwid_markerRegionTime_rocm
-likwid.markerRegionCountRocm = likwid_markerRegionCount_rocm
-likwid.markerRegionResultRocm = likwid_markerRegionResult_rocm
-likwid.markerRegionMetricRocm = likwid_markerRegionMetric_rocm
-
+likwid.getFormulaOfMetricRocm = likwid_getFormulaOfMetric_rocm
+likwid.getNameOfGroupRocm = likwid_getNameOfGroup_rocm
+likwid.markerInitResultsFromFileRocm = likwid_markerInitResultsFromFile_rocm
+likwid.gpustr_to_gpulist_rocm = likwid_gpustr_to_gpulist_rocm
+likwid.init_rocm = likwid_init_rocm
+likwid.finalize_rocm = likwid_finalize_rocm
 
 likwid.cpuFeatures = { [0]="HW_PREFETCHER", [1]="CL_PREFETCHER", [2]="DCU_PREFETCHER", [3]="IP_PREFETCHER",
                         [4]="FAST_STRINGS", [5]="THERMAL_CONTROL", [6]="PERF_MON", [7]="FERR_MULTIPLEX",
@@ -1628,6 +1617,100 @@ local function getMarkerResultsRocm(filename, gpulist, nan2value)
 end
 
 likwid.getMarkerResultsRocm = getMarkerResultsRocm
+
+local function printOutputRocm(markerResults, filename, nan2value)
+    local gpuIds = markerResults:getGpuIds()
+    local groupIds = markerResults:getGroupIds()
+    local regionTags = markerResults:getRegionTags()
+
+    for _, regionTag in pairs(regionTags) do
+        local regionTagName = regionTag.tag
+        local regionGroupId = regionTag.groupId
+
+        local regionStats = markerResults:getRegionStats(regionTagName, regionGroupId)
+
+        -- Generate table, which contains info about a particular region
+        -- Compared to perform, none of this info is available device specific, so
+        -- we just provide a summary for all.
+        local regionInfoTable = {
+            {
+                "Region Info",
+                "Runtime [s]",
+                "call count"
+            },
+            {
+                string.format("%s-%d", regionTagName, regionGroupId),
+                tostring(regionStats.execTime),
+                tostring(regionStats.execCount),
+            },
+        }
+
+        -- Generate tables, which contains event/counter values for each device and
+        -- metrics for each device
+        local eventTable = {}
+        local metricTable = {}
+
+        local groupInfo = markerResults:getGroupInfo(regionGroupId)
+
+        -- 1. create event name column
+        local col = {"Event"}
+        for _, eventName in pairs(groupInfo.events) do
+            table.insert(col, eventName)
+        end
+        table.insert(eventTable, col)
+
+        -- 2. create metric name column
+        col = {"Metric"}
+        for _, metric in pairs(groupInfo.metrics) do
+            table.insert(col, metric.name)
+        end
+        table.insert(metricTable, col)
+
+        -- 3. add event/metric columns
+        for _, gpuId in pairs(gpuIds) do
+            local regionCounters = markerResults:getRegionCounters(regionTagName, regionGroupId, gpuId)
+
+            -- 3.1 add event column
+            col = {string.format("GPU %d", gpuId)}
+            for _, counterValue in pairs(regionCounters.counters) do
+                table.insert(col, tostring(counterValue))
+            end
+
+            table.insert(eventTable, col)
+
+            -- 3.2 add metric column
+            col = {string.format("GPU %d", gpuId)}
+            for _, metricValue in pairs(regionCounters.metrics) do
+                table.insert(col, tostring(metricValue))
+            end
+
+            table.insert(metricTable, col)
+        end
+
+        -- Generate table, which contains a sum/min/max/avg row for each event/metric
+        local eventHistogramTable = tableMinMaxAvgSum(eventTable, 1, 1)
+        local metricHistogramTable = tableMinMaxAvgSum(metricTable, 1, 1)
+        
+        -- Print results
+        if use_csv then
+            likwid.printcsv(regionInfoTable)
+            likwid.printcsv(eventTable)
+            likwid.printcsv(eventHistogramTable)
+            likwid.printcsv(metricTable)
+            likwid.printcsv(metricHistogramTable)
+        else
+            likwid.printtable(regionInfoTable)
+            likwid.printtable(eventTable)
+            if #gpuIds > 1 or stats then
+                likwid.printtable(eventHistogramTable)
+            end
+            likwid.printtable(metricTable)
+            if #gpuIds > 1 or stats then
+                likwid.printtable(metricHistogramTable)
+            end
+        end
+    end
+end
 
 local function printOutputRocm(results, metrics, gpulist, region, stats)
     local maxLineFields = 0
