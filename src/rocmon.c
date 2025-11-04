@@ -25,10 +25,14 @@ enum ROCMON_SMI_ECC_EXTRA_ {
     ROCMON_SMI_ECC_EXTRA_UNCORR,
 };
 
-static const char *ROCPROFILER_EVENT_PREFIX = "ROCP";
-static const char *ROCM_SMI_EVENT_PREFIX = "RSMI";
+static const char *RPR_EVENT_PREFIX = "ROCP";
+static const char *RSMI_EVENT_PREFIX = "RSMI";
 
-// TODO perhaps rename event to metric?
+// unify naming of 'event', 'counter'
+
+// TODO clang format
+
+// TODO rename things to camelCase
 
 // TODO clean this up and sort the variables
 __attribute__((visibility("default")))
@@ -108,17 +112,21 @@ DECLAREFUNC_SMI(rsmi_num_monitor_devices, uint32_t *num_devices);
 DECLAREFUNC_SMI(rsmi_dev_pci_id_get, uint32_t dv_ind, uint64_t *bdfid);
 
 DECLAREFUNC_RPR(rocprofiler_create_counter_config, rocprofiler_agent_id_t, rocprofiler_counter_id_t *, size_t, rocprofiler_counter_config_id_t *);
+DECLAREFUNC_RPR(rocprofiler_destroy_counter_config, rocprofiler_counter_config_id_t);
 DECLAREFUNC_RPR(rocprofiler_query_record_counter_id, rocprofiler_counter_instance_id_t, rocprofiler_counter_id_t *);
 DECLAREFUNC_RPR(rocprofiler_query_counter_info, rocprofiler_counter_id_t, rocprofiler_counter_info_version_id_t, void *);
 DECLAREFUNC_RPR(rocprofiler_create_context, rocprofiler_context_id_t *);
 DECLAREFUNC_RPR(rocprofiler_query_available_agents, rocprofiler_agent_version_t, rocprofiler_query_available_agents_cb_t, size_t, void *);
 DECLAREFUNC_RPR(rocprofiler_iterate_agent_supported_counters, rocprofiler_agent_id_t, rocprofiler_available_counters_cb_t, void *);
 DECLAREFUNC_RPR(rocprofiler_create_buffer, rocprofiler_context_id_t, size_t, size_t, rocprofiler_buffer_policy_t, rocprofiler_buffer_tracing_cb_t, void *, rocprofiler_buffer_id_t *);
+DECLAREFUNC_RPR(rocprofiler_destroy_buffer, rocprofiler_buffer_id_t);
+DECLAREFUNC_RPR(rocprofiler_flush_buffer, rocprofiler_buffer_id_t);
 DECLAREFUNC_RPR(rocprofiler_create_callback_thread, rocprofiler_callback_thread_t *);
 DECLAREFUNC_RPR(rocprofiler_assign_callback_thread, rocprofiler_buffer_id_t, rocprofiler_callback_thread_t);
 DECLAREFUNC_RPR(rocprofiler_configure_buffer_dispatch_counting_service, rocprofiler_context_id_t, rocprofiler_buffer_id_t, rocprofiler_dispatch_counting_service_cb_t, void *);
 DECLAREFUNC_RPR(rocprofiler_configure_device_counting_service, rocprofiler_context_id_t, rocprofiler_buffer_id_t, rocprofiler_agent_id_t, rocprofiler_device_counting_service_cb_t, void *);
 DECLAREFUNC_RPR(rocprofiler_start_context, rocprofiler_context_id_t);
+DECLAREFUNC_RPR(rocprofiler_stop_context, rocprofiler_context_id_t);
 DECLAREFUNC_RPR(rocprofiler_force_configure, rocprofiler_configure_func_t);
 static const char *(*rocprofiler_get_status_string_ptr)(rocprofiler_status_t);
 
@@ -126,10 +134,23 @@ DECLAREFUNC_HIP(hipGetDeviceProperties, hipDeviceProp_t *, int);
 DECLAREFUNC_HIP(hipGetDeviceCount, int *);
 static const char *(*hipGetErrorName_ptr)(hipError_t);
 
+static const int *initGpuIds; // <-- only valid during the scope of 'rocmon_init' and 'tool_init'
+
+static int rocmon_device_init(size_t ctx_dev_idx, int hip_dev_idx);
+
 static int tool_init(rocprofiler_client_finalize_t, void *) {
     assert(rocmon_ctx != NULL);
 
-    RPR_CALL(return -EIO, rocprofiler_create_context, &rocmon_ctx->rocprof_ctx);
+    RPR_CALL(return -EIO, rocprofiler_create_context, &rocmon_ctx->rocprofCtx);
+
+    for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
+        int err = rocmon_device_init(i, initGpuIds ? initGpuIds[i] : (int)i);
+        if (err < 0) {
+            ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon initalization done");
+            // The doc doesn't say anthing about what to return here. Let's just return a negative value?
+            return -1;
+        }
+    }
 
     return 0;
 }
@@ -138,7 +159,7 @@ static void tool_fini(void *)
 {
 }
 
-static RocmonDevice *rocmon_device_get(int gpuIdx) {
+static RocmonDevice *device_get(int gpuIdx) {
     assert(rocmon_ctx != NULL);
 
     for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
@@ -236,17 +257,21 @@ static int rocmon_libraries_init(void) {
     }
 
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_create_counter_config);
+    DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_destroy_counter_config);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_query_record_counter_id);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_query_counter_info);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_create_context);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_query_available_agents);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_iterate_agent_supported_counters);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_create_buffer);
+    DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_destroy_buffer);
+    DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_flush_buffer);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_create_callback_thread);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_assign_callback_thread);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_configure_buffer_dispatch_counting_service);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_configure_device_counting_service);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_start_context);
+    DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_stop_context);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_force_configure);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_get_status_string);
 
@@ -353,7 +378,7 @@ static void format_smi_event_label(char *buf, size_t size, RocmonSmiEventType ty
     }
 }
 
-static int metrics_smi_event_add_impl(const char *name, RocmonSmiEventType type, const char *function, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonSmiMeasureFunc measureFunc) {
+static int smi_event_add_impl(const char *name, RocmonSmiEventType type, const char *function, uint64_t variant, uint64_t subvariant, uint64_t extra, RocmonSmiMeasureFunc measureFunc) {
     /* In this function we add events, which are supported by LIKWID.
      * This does not guarantee that they are actually available on the hardware.
      * Therefore this is added to rocmon_ctx instead of per device.
@@ -397,7 +422,7 @@ static int metrics_smi_event_add_impl(const char *name, RocmonSmiEventType type,
     return 0;
 }
 
-static int metrics_smi_event_add_avail(RocmonDevice *device, RocmonSmiEventType type, const char *function, uint64_t variant, uint64_t subvariant) {
+static int smi_events_add_avail(RocmonDevice *device, RocmonSmiEventType type, const char *function, uint64_t variant, uint64_t subvariant) {
     char label[256];
     format_smi_event_label(label, sizeof(label), type, function, variant, subvariant);
 
@@ -441,14 +466,14 @@ static int metrics_smi_event_add_avail(RocmonDevice *device, RocmonSmiEventType 
     return 0;
 }
 
-static int metrics_smi_init_subvariant(RocmonDevice *device, rsmi_func_id_iter_handle_t variant_iter_handle, const char *function, uint64_t variant) {
+static int smi_init_events_subvariant(RocmonDevice *device, rsmi_func_id_iter_handle_t variant_iter_handle, const char *function, uint64_t variant) {
     // Iterate over all sub variants begin
     rsmi_func_id_iter_handle_t subvariant_iter_handle;
     rsmi_status_t rerr = rsmi_dev_supported_variant_iterator_open_ptr(variant_iter_handle, &subvariant_iter_handle);
 
     if (rerr == RSMI_STATUS_NO_DATA) {
         // No subvariants for given function
-        return metrics_smi_event_add_avail(device, ROCMON_SMI_EVENT_TYPE_VARIANT, function, variant, 0);
+        return smi_events_add_avail(device, ROCMON_SMI_EVENT_TYPE_VARIANT, function, variant, 0);
     } else if (rerr != RSMI_STATUS_SUCCESS) {
         const char *errstr = NULL;
         rsmi_status_string_ptr(rerr, &errstr);
@@ -470,7 +495,7 @@ static int metrics_smi_init_subvariant(RocmonDevice *device, rsmi_func_id_iter_h
 
         RocmonSmiEventType type = (variant == RSMI_DEFAULT_VARIANT) ?
             ROCMON_SMI_EVENT_TYPE_INSTANCES : ROCMON_SMI_EVENT_TYPE_SUBVARIANT;
-        int err = metrics_smi_event_add_avail(device, type, function, variant, subvariant_value.id);
+        int err = smi_events_add_avail(device, type, function, variant, subvariant_value.id);
         if (err < 0)
             return err;
 
@@ -483,14 +508,14 @@ static int metrics_smi_init_subvariant(RocmonDevice *device, rsmi_func_id_iter_h
     return err;
 }
 
-static int metrics_smi_init_variant(RocmonDevice *device, rsmi_func_id_iter_handle_t function_iter_handle, const char *function) {
+static int smi_init_events_variant(RocmonDevice *device, rsmi_func_id_iter_handle_t function_iter_handle, const char *function) {
     // Iterate over all variants begin
     rsmi_func_id_iter_handle_t variant_iter_handle;
     rsmi_status_t rerr = rsmi_dev_supported_variant_iterator_open_ptr(function_iter_handle, &variant_iter_handle);
 
     if (rerr == RSMI_STATUS_NO_DATA) {
         // No variants for given function
-        return metrics_smi_event_add_avail(device, ROCMON_SMI_EVENT_TYPE_NORMAL, function, 0, 0);
+        return smi_events_add_avail(device, ROCMON_SMI_EVENT_TYPE_NORMAL, function, 0, 0);
     } else if (rerr != RSMI_STATUS_SUCCESS) {
         const char *errstr = NULL;
         rsmi_status_string_ptr(rerr, &errstr);
@@ -517,7 +542,7 @@ static int metrics_smi_init_variant(RocmonDevice *device, rsmi_func_id_iter_hand
                 &variant_value
         );
 
-        err = metrics_smi_init_subvariant(device, variant_iter_handle, function, variant_value.id);
+        err = smi_init_events_subvariant(device, variant_iter_handle, function, variant_value.id);
         if (err < 0)
             break;
 
@@ -530,7 +555,7 @@ static int metrics_smi_init_variant(RocmonDevice *device, rsmi_func_id_iter_hand
     return err;
 }
 
-static int metrics_smi_init_normal(RocmonDevice *device) {
+static int smi_init_events_normal(RocmonDevice *device) {
     int err = init_map(&device->availableSmiEvents, MAP_KEY_TYPE_STR, 0, free);
     if (err < 0)
         return err;
@@ -553,7 +578,7 @@ static int metrics_smi_init_normal(RocmonDevice *device) {
                 &function_value
         );
 
-        err = metrics_smi_init_variant(device, function_iter_handle, function_value.name);
+        err = smi_init_events_variant(device, function_iter_handle, function_value.name);
         if (err < 0)
             break;
 
@@ -567,7 +592,7 @@ static int metrics_smi_init_normal(RocmonDevice *device) {
         return err;
 
     // Add additional device independent functions
-    return metrics_smi_event_add_avail(device, ROCMON_SMI_EVENT_TYPE_NORMAL, "rsmi_compute_process_info_get", 0, 0);
+    return smi_events_add_avail(device, ROCMON_SMI_EVENT_TYPE_NORMAL, "rsmi_compute_process_info_get", 0, 0);
 }
 
 static rocprofiler_status_t counter_iterate_cb(
@@ -590,20 +615,22 @@ static rocprofiler_status_t counter_iterate_cb(
                 &availEvent->counterInfo
         );
 
-        if (add_smap(device->availableRocprofEvents, availEvent->counterInfo.name, availEvent) < 0)
+        if (add_smap(device->availableRprEvents, availEvent->counterInfo.name, availEvent) < 0) {
+            free(availEvent);
             return ROCPROFILER_STATUS_ERROR;
+        }
     }
 
     return ROCPROFILER_STATUS_SUCCESS;
 }
 
-static int metrics_rpr_init(RocmonDevice *device) {
-    int err = init_map(&device->availableRocprofEvents, MAP_KEY_TYPE_STR, 0, free);
+static int rpr_init_events(RocmonDevice *device) {
+    int err = init_map(&device->availableRprEvents, MAP_KEY_TYPE_STR, 0, free);
     if (err < 0)
         return err;
 
-    // rocprof_ctx must already be initialized from 'tool_init' at this point.
-    assert(rocmon_ctx->rocprof_ctx.handle != 0);
+    // rocprofCtx must already be initialized from 'tool_init' at this point.
+    assert(rocmon_ctx->rocprofCtx.handle != 0);
 
     RPR_CALL(
             return -EIO,
@@ -612,6 +639,7 @@ static int metrics_rpr_init(RocmonDevice *device) {
             counter_iterate_cb,
             device
     );
+    return 0;
 }
 
 static int parse_hex(char c) {
@@ -673,7 +701,86 @@ static rocprofiler_status_t find_agent_for_hip_device(
     return ROCPROFILER_STATUS_SUCCESS;
 }
 
-int rpr_agent_init(RocmonDevice *device) {
+static void set_counter_callback(
+        rocprofiler_context_id_t context_id,
+        rocprofiler_agent_id_t agent_id,
+        rocprofiler_device_counting_agent_cb_t set_config,
+        void *userdata) {
+    const RocmonDevice *device = userdata;
+
+    assert(context_id.handle == rocmon_ctx->rocprofCtx.handle);
+    assert(agent_id.handle == device->rocprofAgent->id.handle);
+
+    rocprofiler_counter_config_id_t counter_config;
+
+    RPR_CALL(
+            return,
+            rocprofiler_create_counter_config,
+            agent_id,
+            device->activeRprEvents,
+            device->numActiveRprEvents,
+            &counter_config
+    );
+
+    set_config(context_id, counter_config);
+
+    RPR_CALL(
+            return,
+            rocprofiler_destroy_counter_config,
+            counter_config
+    );
+}
+
+static void buffered_callback(
+        rocprofiler_context_id_t,
+        rocprofiler_buffer_id_t,
+        rocprofiler_record_header_t **headers,
+        size_t num_headers,
+        void *userdata,
+        uint64_t /* drop_count */) {
+    RocmonDevice *device = userdata;
+
+    pthread_mutex_lock(&device->callbackRprMutex);
+
+    for (size_t i = 0; i < num_headers; i++) {
+        rocprofiler_record_header_t *header = headers[i];
+
+        if (header->category != ROCPROFILER_BUFFER_CATEGORY_COUNTERS ||
+                header->kind != ROCPROFILER_COUNTER_RECORD_VALUE)
+            continue;
+
+        rocprofiler_counter_id_t cid;
+        rocprofiler_counter_record_t *record = header->payload;
+        RPR_CALL(continue, rocprofiler_query_record_counter_id, record->id, &cid);
+
+        char key[32];
+        snprintf(key, sizeof(key), "%" PRIu64, cid.handle);
+
+        double *value;
+        int err = get_smap_by_key(device->callbackRprResults, key, (void **)value);
+        if (err == -ENOENT) {
+            value = malloc(sizeof(*value));
+            if (!value) {
+                ERROR_PRINT("Unable to allocate memory to store rocprofiler result");
+                continue;
+            }
+            *value = record->counter_value;
+            err = add_smap(device->callbackRprResults, key, value);
+            if (err < 0) {
+                ERROR_PRINT("Unable to save rocprofiler result to map: %s", strerror(-err));
+                free(value);
+                continue;
+            }
+        } else if (err < 0) {
+            ERROR_PRINT("Error while getting value from result map: %s", strerror(-err));
+            continue;
+        }
+    }
+
+    pthread_mutex_unlock(&device->callbackRprMutex);
+}
+
+static int rpr_device_init(RocmonDevice *device) {
     // First we have to find which rocprofiler agent belongs to which hip device ID.
     HIP_CALL(return -EIO, hipGetDeviceProperties, &device->hipProps, device->hipDeviceIdx);
 
@@ -693,10 +800,53 @@ int rpr_agent_init(RocmonDevice *device) {
     if (!device->rocprofAgent)
         return -ENODEV;
 
+    RPR_CALL(
+            return -EIO,
+            rocprofiler_create_buffer,
+            rocmon_ctx->rocprofCtx,
+            4096, // TODO ??? how do we choose a proper value?
+            2048, // TODO ???
+            ROCPROFILER_BUFFER_POLICY_LOSSLESS,
+            buffered_callback,
+            device,
+            &device->rocprofBuf
+    );
+
+    RPR_CALL(
+            return -EIO,
+            rocprofiler_create_callback_thread,
+            &device->rocprofThrd
+    );
+
+    RPR_CALL(
+            return -EIO,
+            rocprofiler_assign_callback_thread,
+            device->rocprofBuf,
+            device->rocprofThrd
+    );
+
+    // The set_counter_callback is not called here. It will be called later
+    // during rocprofiler_start_context.
+    RPR_CALL(
+            return -EIO,
+            rocprofiler_configure_device_counting_service,
+            rocmon_ctx->rocprofCtx,
+            device->rocprofBuf,
+            device->rocprofAgent->id,
+            set_counter_callback,
+            device
+    );
+
+    int err = init_map(&device->callbackRprResults, MAP_KEY_TYPE_STR, 0, free);
+    if (err < 0)
+        return err;
+
+    pthread_mutex_init(&device->callbackRprMutex, NULL);
+
     return 0;
 }
 
-int smi_device_init(RocmonDevice *device) {
+static int smi_device_init(RocmonDevice *device) {
     /* I can't find specifications whether rocm_smi device IDs are the same as HIP device IDs.
      * So instead we look through all of them and find the one with matching PCI IDs.
      * Unfortunately rocm_smi doesn't expose the UUID, so we can't use that.
@@ -740,15 +890,15 @@ int smi_device_init(RocmonDevice *device) {
     return 0;
 }
 
-int rocmon_init_device(int ctx_dev_idx, int hip_dev_idx) {
-    if (ctx_dev_idx < 0 || (size_t)ctx_dev_idx >= rocmon_ctx->numDevices)
+static int rocmon_device_init(size_t ctx_dev_idx, int hip_dev_idx) {
+    if (ctx_dev_idx >= rocmon_ctx->numDevices)
         return -EINVAL;
 
     RocmonDevice *device = &rocmon_ctx->devices[ctx_dev_idx];
 
     device->hipDeviceIdx = hip_dev_idx;
 
-    int err = rpr_agent_init(device);
+    int err = rpr_device_init(device);
     if (err < 0)
         return err;
 
@@ -756,18 +906,49 @@ int rocmon_init_device(int ctx_dev_idx, int hip_dev_idx) {
     if (err < 0)
         return err;
 
-    // Init SMI metrics events
-    err = metrics_smi_init_normal(device);
+    // Init SMI events
+    err = smi_init_events_normal(device);
     if (err < 0)
         return err;
 
     // Init rocprofiler-sdk events
-    err = metrics_rpr_init(device);
+    err = rpr_init_events(device);
     if (err < 0)
         return err;
 
-    // TODO do we need to do anything else?
     return 0;
+}
+
+static void rocmon_device_fini(RocmonDevice *device) {
+    // TODO, doesn't the flush buffer have to occur after stopping the context?
+    RPR_CALL(abort(), rocprofiler_flush_buffer, device->rocprofBuf);
+    RPR_CALL(abort(), rocprofiler_stop_context, rocmon_ctx->rocprofCtx);
+    RPR_CALL(abort(), rocprofiler_destroy_buffer, device->rocprofBuf);
+
+    destroy_smap(device->availableSmiEvents);
+    device->availableSmiEvents = NULL;
+    destroy_smap(device->availableRprEvents);
+    device->availableRprEvents = NULL;
+
+    free(device->activeSmiEvents);
+    device->activeSmiEvents = NULL;
+
+    if (device->callbackRprResults) {
+        destroy_smap(device->callbackRprResults);
+        pthread_mutex_destroy(&device->callbackRprMutex);
+        device->callbackRprResults = NULL;
+    }
+
+    if (device->groupResults) {
+        for (size_t i = 0; i < device->numGroupResults; i++) {
+            RocmonEventResultList *groupResult = &device->groupResults[i];
+
+            free(groupResult->eventResults);
+        }
+
+        free(device->groupResults);
+        device->groupResults = NULL;
+    }
 }
 
 static void rocmon_ctx_free(void) {
@@ -775,19 +956,8 @@ static void rocmon_ctx_free(void) {
         return;
 
     if (rocmon_ctx->devices) {
-        for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
-            RocmonDevice *device = &rocmon_ctx->devices[i];
-
-            destroy_smap(device->availableSmiEvents);
-            destroy_smap(device->availableRocprofEvents);
-
-            free(device->activeSmiEvents);
-
-            if (device->groupResults) {
-                free(device->groupResults->results);
-                free(device->groupResults);
-            }
-        }
+        for (size_t i = 0; i < rocmon_ctx->numDevices; i++)
+            rocmon_device_fini(&rocmon_ctx->devices[i]);
 
         free(rocmon_ctx->devices);
     }
@@ -798,12 +968,12 @@ static void rocmon_ctx_free(void) {
     rocmon_ctx = NULL;
 }
 
-static int rsmi_measurefunc_pci_throughput_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_pci_throughput_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "rsmi_measurefunc_pci_throughput_get(%d, %lu)", deviceId, event->extra);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "rsmi_measurefunc_pci_throughput_get(%d, %lu)", rsmiDevId, event->extra);
 
     uint64_t sent, received, max_pkt_sz;
-    RSMI_CALL(return -EIO, rsmi_dev_pci_throughput_get, deviceId, &sent, &received, &max_pkt_sz);
+    RSMI_CALL(return -EIO, rsmi_dev_pci_throughput_get, rsmiDevId, &sent, &received, &max_pkt_sz);
 
     uint64_t value;
     if (event->extra == ROCMON_SMI_PCI_EXTRA_SENT)
@@ -822,12 +992,12 @@ static int rsmi_measurefunc_pci_throughput_get(int deviceId, RocmonSmiEvent* eve
 }
 
 
-static int rsmi_measurefunc_pci_replay_counter_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_pci_replay_counter_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     (void)event;
 
     uint64_t counter;
-    RSMI_CALL(return -EIO, rsmi_dev_pci_replay_counter_get, deviceId, &counter);
+    RSMI_CALL(return -EIO, rsmi_dev_pci_replay_counter_get, rsmiDevId, &counter);
     result->fullValue += counter;
     result->lastValue = counter;
 
@@ -835,10 +1005,10 @@ static int rsmi_measurefunc_pci_replay_counter_get(int deviceId, RocmonSmiEvent*
 }
 
 
-static int rsmi_measurefunc_power_ave_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_power_ave_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t power;
-    RSMI_CALL(return -EIO, rsmi_dev_power_ave_get, deviceId, event->subvariant, &power);
+    RSMI_CALL(return -EIO, rsmi_dev_power_ave_get, rsmiDevId, event->subvariant, &power);
     result->fullValue += power;
     result->lastValue = power;
 
@@ -846,10 +1016,10 @@ static int rsmi_measurefunc_power_ave_get(int deviceId, RocmonSmiEvent* event, R
 }
 
 
-static int rsmi_measurefunc_memory_total_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_memory_total_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t total;
-    RSMI_CALL(return -EIO, rsmi_dev_memory_total_get, deviceId, event->variant, &total);
+    RSMI_CALL(return -EIO, rsmi_dev_memory_total_get, rsmiDevId, event->variant, &total);
     result->fullValue += total;
     result->lastValue = total;
 
@@ -857,10 +1027,10 @@ static int rsmi_measurefunc_memory_total_get(int deviceId, RocmonSmiEvent* event
 }
 
 
-static int rsmi_measurefunc_memory_usage_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_memory_usage_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t used;
-    RSMI_CALL(return -EIO, rsmi_dev_memory_usage_get, deviceId, event->variant, &used);
+    RSMI_CALL(return -EIO, rsmi_dev_memory_usage_get, rsmiDevId, event->variant, &used);
     result->fullValue += used;
     result->lastValue = used;
 
@@ -868,12 +1038,12 @@ static int rsmi_measurefunc_memory_usage_get(int deviceId, RocmonSmiEvent* event
 }
 
 
-static int rsmi_measurefunc_memory_busy_percent_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_memory_busy_percent_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     (void)event;
 
     uint32_t percent;
-    RSMI_CALL(return -EIO, rsmi_dev_memory_busy_percent_get, deviceId, &percent);
+    RSMI_CALL(return -EIO, rsmi_dev_memory_busy_percent_get, rsmiDevId, &percent);
     result->fullValue += percent;
     result->lastValue = percent;
 
@@ -881,12 +1051,12 @@ static int rsmi_measurefunc_memory_busy_percent_get(int deviceId, RocmonSmiEvent
 }
 
 
-static int rsmi_measurefunc_memory_reserved_pages_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_memory_reserved_pages_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     (void)event;
 
     uint32_t num_pages;
-    RSMI_CALL(return -EIO, rsmi_dev_memory_reserved_pages_get, deviceId, &num_pages, NULL);
+    RSMI_CALL(return -EIO, rsmi_dev_memory_reserved_pages_get, rsmiDevId, &num_pages, NULL);
     result->fullValue += num_pages;
     result->lastValue = num_pages;
 
@@ -894,10 +1064,10 @@ static int rsmi_measurefunc_memory_reserved_pages_get(int deviceId, RocmonSmiEve
 }
 
 
-static int rsmi_measurefunc_fan_rpms_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_fan_rpms_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t speed;
-    RSMI_CALL(return -EIO, rsmi_dev_fan_rpms_get, deviceId, event->subvariant, &speed);
+    RSMI_CALL(return -EIO, rsmi_dev_fan_rpms_get, rsmiDevId, event->subvariant, &speed);
     result->fullValue += speed;
     result->lastValue = speed;
 
@@ -905,30 +1075,30 @@ static int rsmi_measurefunc_fan_rpms_get(int deviceId, RocmonSmiEvent* event, Ro
 }
 
 
-static int rsmi_measurefunc_fan_speed_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_fan_speed_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t speed;
-    RSMI_CALL(return -EIO, rsmi_dev_fan_speed_get, deviceId, event->subvariant, &speed);
+    RSMI_CALL(return -EIO, rsmi_dev_fan_speed_get, rsmiDevId, event->subvariant, &speed);
     result->fullValue += speed;
     result->lastValue = speed;
 
     return 0;
 }
 
-static int rsmi_measurefunc_fan_speed_max_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_fan_speed_max_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     uint64_t max_speed;
-    RSMI_CALL(return -EIO, rsmi_dev_fan_speed_max_get, deviceId, event->subvariant, &max_speed);
+    RSMI_CALL(return -EIO, rsmi_dev_fan_speed_max_get, rsmiDevId, event->subvariant, &max_speed);
     result->fullValue += max_speed;
     result->lastValue = max_speed;
 
     return 0;
 }
 
-static int rsmi_measurefunc_temp_metric_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_temp_metric_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t temperature;
-    RSMI_CALL(return -EIO, rsmi_dev_temp_metric_get, deviceId, event->subvariant, event->variant, &temperature);
+    RSMI_CALL(return -EIO, rsmi_dev_temp_metric_get, rsmiDevId, event->subvariant, event->variant, &temperature);
     result->fullValue += temperature;
     result->lastValue = temperature;
 
@@ -936,32 +1106,32 @@ static int rsmi_measurefunc_temp_metric_get(int deviceId, RocmonSmiEvent* event,
 }
 
 
-static int rsmi_measurefunc_volt_metric_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_volt_metric_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     int64_t voltage;
-    RSMI_CALL(return -EIO, rsmi_dev_volt_metric_get, deviceId, event->subvariant, event->variant, &voltage);
+    RSMI_CALL(return -EIO, rsmi_dev_volt_metric_get, rsmiDevId, event->subvariant, event->variant, &voltage);
     result->fullValue += voltage;
     result->lastValue = voltage;
 
     return 0;
 }
 
-static int rsmi_measurefunc_overdrive_level_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_overdrive_level_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     (void)event;
 
     uint32_t overdrive;
-    RSMI_CALL(return -EIO, rsmi_dev_overdrive_level_get, deviceId, &overdrive);
+    RSMI_CALL(return -EIO, rsmi_dev_overdrive_level_get, rsmiDevId, &overdrive);
     result->fullValue += overdrive;
     result->lastValue = overdrive;
 
     return 0;
 }
 
-static int rsmi_measurefunc_ecc_count_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_ecc_count_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
     rsmi_error_count_t error_count;
-    RSMI_CALL(return -EIO, rsmi_dev_ecc_count_get, deviceId, event->variant, &error_count);
+    RSMI_CALL(return -EIO, rsmi_dev_ecc_count_get, rsmiDevId, event->variant, &error_count);
 
     if (event->extra == ROCMON_SMI_ECC_EXTRA_CORR) {
         result->lastValue = error_count.correctable_err - result->fullValue;
@@ -976,9 +1146,9 @@ static int rsmi_measurefunc_ecc_count_get(int deviceId, RocmonSmiEvent* event, R
     return 0;
 }
 
-static int rsmi_measurefunc_compute_process_info_get(int deviceId, RocmonSmiEvent* event, RocmonEventResult* result)
+static int rsmi_measurefunc_compute_process_info_get(uint32_t rsmiDevId, RocmonSmiEvent* event, RocmonEventResult* result)
 {
-    (void)deviceId;
+    (void)rsmiDevId;
     (void)event;
 
     uint32_t num_items;
@@ -991,7 +1161,7 @@ static int rsmi_measurefunc_compute_process_info_get(int deviceId, RocmonSmiEven
 
 #define ADD_SMI_EVENT(name, type, smifunc, variant, subvariant, extra, measurefunc)\
     do {\
-        int err_ = metrics_smi_event_add_impl(name, type, smifunc, variant, subvariant, extra, measurefunc);\
+        int err_ = smi_event_add_impl(name, type, smifunc, variant, subvariant, extra, measurefunc);\
         if (err_ < 0) \
             return err;\
     } while (0)
@@ -1062,21 +1232,36 @@ static int rocmon_smi_init_implemented(void) {
     ADD_SMI_EVENT_V("ECC_COUNT_LAST_CORRECTABLE",           "rsmi_dev_ecc_count_get", RSMI_GPU_BLOCK_LAST, ROCMON_SMI_ECC_EXTRA_CORR,           &rsmi_measurefunc_ecc_count_get             );
     ADD_SMI_EVENT_V("ECC_COUNT_LAST_UNCORRECTABLE",         "rsmi_dev_ecc_count_get", RSMI_GPU_BLOCK_LAST, ROCMON_SMI_ECC_EXTRA_UNCORR,         &rsmi_measurefunc_ecc_count_get             );
     ADD_SMI_EVENT_N("PROCS_USING_GPU",                      "rsmi_compute_process_info_get", 0,                                                 &rsmi_measurefunc_compute_process_info_get  );
+    return 0;
 }
 
-int rocmon_init(int numGpus, const int *gpuIds) {
-    if (numGpus < 0 || !gpuIds)
-        return -EINVAL;
-
+int rocmon_init(size_t numGpuIds, const int *gpuIds) {
     pthread_mutex_lock(&rocmon_init_mutex);
 
-    if (rocmon_ctx_ref_count++ > 0)
+    int err = 0;
+    if (rocmon_ctx_ref_count++ > 0) {
+        // If rocmon is already initialized, check if the gpu id lists match.
+        // We cannot allow initialization with different GPU ids, as rocmon
+        // can only operate with one at a time.
+        if (gpuIds) {
+            if (numGpuIds != rocmon_ctx->numDevices) {
+                err = -EINVAL;
+                goto unlock_err_already_initialized;
+            }
+            for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
+                if (gpuIds[i] != rocmon_ctx->devices[i].hipDeviceIdx) {
+                    err = -EINVAL;
+                    goto unlock_err_already_initialized;
+                }
+            }
+        }
         goto unlock_ok;
+    }
 
     bool rsmi_initialized = false;
     bool libs_initialized = false;
 
-    int err = rocmon_libraries_init();
+    err = rocmon_libraries_init();
     if (err < 0)
         goto unlock_err;
 
@@ -1088,28 +1273,29 @@ int rocmon_init(int numGpus, const int *gpuIds) {
         goto unlock_err;
     }
 
-    rocmon_ctx->devices = calloc(numGpus, sizeof(*rocmon_ctx->devices));
-    if (!rocmon_ctx->devices) {
-        err = -errno;
-        goto unlock_err;
-    }
-
-    rocmon_ctx->numDevices = numGpus;
-
     RSMI_CALL(err = -EIO; goto unlock_err, rsmi_init, 0);
     rsmi_initialized = true;
-
-    RPR_CALL(err = -EIO; goto unlock_err, rocprofiler_force_configure, rocprofiler_configure_private);
 
     // I don't know exactly why, but some initialization of the HIP runtime is required
     // before we can do anything meaningful with rocprofiler-sdk. Otherwise we get
     // an error ROCPROFILER_STATUS_ERROR_HSA_NOT_LOADED. Frankly, hsa_init and hsa_shut_down
     // don't appear to do the trick. So it is important that this comes before any other
     // rocprofiler calls.
-    int deviceCount;
-    HIP_CALL(err = -EIO; goto unlock_err, hipGetDeviceCount, &deviceCount);
+    int availDeviceCount;
+    HIP_CALL(err = -EIO; goto unlock_err, hipGetDeviceCount, &availDeviceCount);
 
-    if (deviceCount > numGpus) {
+    if (gpuIds == NULL && numGpuIds == 0)
+        numGpuIds = availDeviceCount;
+
+    rocmon_ctx->devices = calloc(numGpuIds, sizeof(*rocmon_ctx->devices));
+    if (!rocmon_ctx->devices) {
+        err = -errno;
+        goto unlock_err;
+    }
+
+    rocmon_ctx->numDevices = numGpuIds;
+
+    if (numGpuIds > (size_t)availDeviceCount) {
         err = -EINVAL;
         goto unlock_err;
     }
@@ -1118,17 +1304,21 @@ int rocmon_init(int numGpus, const int *gpuIds) {
     if (err < 0)
         goto unlock_err;
 
-    for (int i = 0; i < deviceCount; i++) {
-        err = rocmon_init_device(i, gpuIds[i]);
-        if (err < 0)
-            goto unlock_err;
-    }
+    // Init rocprofiler context and associated data structures
+    initGpuIds = gpuIds;
+    RPR_CALL(err = -EIO; goto unlock_err, rocprofiler_force_configure, rocprofiler_configure_private);
+    initGpuIds = NULL;
 
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "rocmon initalization done");
 
 unlock_ok:
     pthread_mutex_unlock(&rocmon_init_mutex);
     return 0;
+
+unlock_err_already_initialized:
+    rocmon_ctx_ref_count--;
+    pthread_mutex_unlock(&rocmon_init_mutex);
+    return err;
 
 unlock_err:
     if (rsmi_initialized)
@@ -1160,32 +1350,395 @@ unlock_ret:
     pthread_mutex_unlock(&rocmon_init_mutex);
 }
 
-int rocmon_addEventSet(const char *eventString, int *gid) {
+int rocmon_addEventSet(const char *eventString) {
+    if (!eventString)
+        return -EINVAL;
+
+    if (!rocmon_ctx)
+        return -EFAULT;
+
+    // TODO do we care about thread safety anywhere here?
+    const size_t newNumGroups = rocmon_ctx->numGroups + 1;
+    RocmonGroupInfo *newGroups = realloc(rocmon_ctx->groups, newNumGroups * sizeof(*rocmon_ctx->groups));
+    if (!newGroups)
+        return -errno;
+
+    RocmonGroupInfo *newGroup = &newGroups[rocmon_ctx->numGroups];
+    memset(newGroup, 0, sizeof(*newGroup));
+
+    const int retval = (int)rocmon_ctx->numGroups;
+
+    rocmon_ctx->groups = newGroups;
+    rocmon_ctx->numGroups = newNumGroups;
+
+    if (strchr(eventString, ':')) {
+        // If this looks like a regular performance group, create it from the string
+        int err = perfgroup_customGroup(eventString, &newGroup->groupInfo);
+        if (err < 0)
+            return err;
+    } else {
+        // Otherwise, load it from a file instead
+        int err = perfgroup_readGroup(get_configuration()->groupPath, "amd_gpu", eventString, &newGroup->groupInfo);
+        if (err < 0)
+            return err;
+    }
+
+    for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
+        RocmonDevice *device = &rocmon_ctx->devices[i];
+
+        size_t newNumGroupResults = device->numGroupResults + 1;
+        RocmonEventResultList *newGroupResults = realloc(device->groupResults, newNumGroupResults * sizeof(*newGroupResults));
+        if (!newGroupResults)
+            return -errno;
+
+        RocmonEventResultList *newGroupResult = &newGroupResults[device->numGroupResults];
+        memset(newGroupResult, 0, sizeof(*newGroupResult));
+
+        device->groupResults = newGroupResults;
+        device->numGroupResults = newNumGroupResults;
+
+        newGroupResult->eventResults = calloc(newGroup->groupInfo.nevents, sizeof(*newGroupResults->eventResults));
+        if (!newGroupResult->eventResults)
+            return -errno;
+    }
+
+    return retval;
 }
 
 int rocmon_switchActiveGroup(int newGroupId) {
+    int err = rocmon_stopCounters();
+    if (err < 0)
+        return err;
+
+    err = rocmon_setupCounters(newGroupId);
+    if (err < 0)
+        return err;
+
+    return rocmon_startCounters();
+}
+
+int setup_counters_rpr(RocmonDevice *device, const GroupInfo *group) {
+    size_t num_matching_events = 0;
+
+    for (int i = 0; i < group->nevents; i++) {
+        if (strncmp(group->events[i], RPR_EVENT_PREFIX, strlen(RPR_EVENT_PREFIX)) == 0)
+            num_matching_events++;
+    }
+
+    rocprofiler_counter_id_t *newActiveRprEvents = calloc(num_matching_events, sizeof(*newActiveRprEvents));
+    if (!newActiveRprEvents)
+        return -errno;
+
+    int err = 0;
+    rocprofiler_counter_id_t *newActiveRprEvent = newActiveRprEvents;
+
+    for (int i = 0; i < group->nevents; i++) {
+        char *event_name = group->events[i];
+        if (strncmp(event_name, RPR_EVENT_PREFIX, strlen(RPR_EVENT_PREFIX)) != 0)
+            continue;
+
+        // skip 'ROCP_' prefix
+        event_name += strlen(RPR_EVENT_PREFIX);
+
+        RocmonRprEvent *event;
+        err = get_smap_by_key(device->availableRprEvents, event_name, (void **)&event);
+        if (err < 0)
+            goto cleanup;
+
+        *newActiveRprEvent++ = event->counterInfo.id;
+    }
+
+    free(device->activeRprEvents);
+    device->activeRprEvents = newActiveRprEvents;
+    device->numActiveRprEvents = num_matching_events;
+    return 0;
+
+cleanup:
+    free(newActiveRprEvents);
+    return err;
+}
+
+// TODO:
+// This function is kind of expensive, so once we actually understood how that works, let's make it a bit more efficient.
+// Primarily, we should avoid deep copying the events, which is kind of unnecessary.
+int setup_counters_smi(RocmonDevice *device, const GroupInfo *group) {
+    size_t num_matching_events = 0;
+
+    for (int i = 0; i < group->nevents; i++) {
+        if (strncmp(group->events[i], RSMI_EVENT_PREFIX, strlen(RSMI_EVENT_PREFIX)) == 0)
+            num_matching_events++;
+    }
+
+    RocmonSmiEvent *newActiveSmiEvents = calloc(num_matching_events, sizeof(*newActiveSmiEvents));
+    if (!newActiveSmiEvents)
+        return -errno;
+
+    int err = 0;
+    RocmonSmiEvent *newActiveSmiEvent = newActiveSmiEvents;
+
+    for (int i = 0; i < group->nevents; i++) {
+        char *event_name = group->events[i];
+        if (strncmp(event_name, RSMI_EVENT_PREFIX, strlen(RSMI_EVENT_PREFIX)) != 0)
+            continue;
+
+        // skip 'RSMI_' prefix
+        event_name += strlen(RSMI_EVENT_PREFIX);
+
+        RocmonSmiEvent *event;
+        err = get_smap_by_key(device->availableSmiEvents, event_name, (void **)&event);
+        if (err < 0)
+            goto cleanup;
+
+        memcpy(newActiveSmiEvent, event, sizeof(*newActiveSmiEvent));
+
+        newActiveSmiEvent++;
+    }
+
+    free(device->activeSmiEvents);
+    device->activeSmiEvents = newActiveSmiEvents;
+    device->numActiveSmiEvents = num_matching_events;
+    return 0;
+
+cleanup:
+    free(newActiveSmiEvents);
+    return err;
 }
 
 int rocmon_setupCounters(int gid) {
+    if (!rocmon_ctx)
+        return -EFAULT;
+
+    if (gid < 0 || (size_t)gid >= rocmon_ctx->numGroups)
+        return -EINVAL;
+
+    const RocmonGroupInfo *group = &rocmon_ctx->groups[gid];
+
+    for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
+        RocmonDevice *device = &rocmon_ctx->devices[i];
+
+        // Setup rocprofiler counters.
+        // Please keep in mind the actual counter configuration for rocprofiler
+        // will be set when the context is started. It is not possible to do it
+        // here in advance.
+        int err = setup_counters_rpr(device, &group->groupInfo);
+        if (err < 0)
+            return err;
+
+        err = setup_counters_smi(device, &group->groupInfo);
+        if (err < 0)
+            return err;
+    }
+
+    return 0;
+}
+
+static int time_ns_get(uint64_t *timestamp) {
+    struct timespec ts;
+    int err = clock_gettime(CLOCK_MONOTONIC, &ts);
+    if (err < 0)
+        return -errno;
+    *timestamp = ts.tv_sec * 1000000000ull + ts.tv_nsec;
+    return 0;
+}
+
+static int counters_smi_start(RocmonDevice *device) {
+    RocmonEventResultList *groupResult = &device->groupResults[rocmon_ctx->activeGroupIdx];
+
+    for (size_t i = 0; i < device->numActiveSmiEvents; i++) {
+        RocmonSmiEvent *event = &device->activeSmiEvents[i];
+
+        // I know, it's a bit ugly, but the results of rocprofiler and rocm_smi
+        // are stored in the same array, so don't start at a zero, but start at
+        // 'device->numActiveRocEvents' instead.
+        RocmonEventResult* result = &groupResult->eventResults[device->numActiveRprEvents+i];
+
+        if (event->measureFunc) {
+            int err = event->measureFunc(device->rsmiDeviceId, event, result);
+            if (err < 0)
+                return err;
+        }
+
+        result->fullValue = 0.0;
+    }
+
+    return 0;
+}
+
+static int counters_rpr_start(RocmonDevice *device) {
+    RocmonEventResultList *groupResult = &device->groupResults[rocmon_ctx->activeGroupIdx];
+
+    for (size_t i = 0; i < device->numActiveRprEvents; i++) {
+        RocmonEventResult *result = &groupResult->eventResults[i];
+        result->lastValue = 0;
+        result->fullValue = 0;
+    }
+
+    // The actual measurement is started once for all devices,
+    // so nothing else is done here.
+    return 0;
 }
 
 int rocmon_startCounters(void) {
+    if (!rocmon_ctx)
+        return -EFAULT;
+
+    uint64_t timestamp;
+    int err = time_ns_get(&timestamp);
+    if (err < 0)
+        return err;
+
+    rocmon_ctx->groups[rocmon_ctx->activeGroupIdx].time.start = timestamp;
+    rocmon_ctx->groups[rocmon_ctx->activeGroupIdx].time.read = timestamp;
+
+    for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
+        RocmonDevice *device = &rocmon_ctx->devices[i];
+
+        err = counters_smi_start(device);
+        if (err < 0)
+            return err;
+
+        err = counters_rpr_start(device);
+        if (err < 0)
+            return err;
+    }
+
+    RPR_CALL(return -EIO, rocprofiler_start_context, rocmon_ctx->rocprofCtx);
+
+    return 0;
 }
 
+static int readCounters_impl(bool stop);
+
 int rocmon_stopCounters(void) {
+    if (!rocmon_ctx)
+        return -EFAULT;
+
+    RPR_CALL(return -EIO, rocprofiler_stop_context, rocmon_ctx->rocprofCtx);
+
+    return readCounters_impl(true);
+}
+
+int counters_read_smi(RocmonDevice *device) {
+    RocmonEventResultList *groupResult = &device->groupResults[rocmon_ctx->activeGroupIdx];
+
+    for (size_t i = 0; i < device->numActiveSmiEvents; i++) {
+        RocmonSmiEvent *event = &device->activeSmiEvents[i];
+        RocmonEventResult *result = &groupResult->eventResults[device->numActiveRprEvents+i];
+
+        if (event->measureFunc) {
+            int err = event->measureFunc(device->rsmiDeviceId, event, result);
+            if (err < 0)
+                return err;
+        }
+    }
+
+    return 0;
+}
+
+int counters_read_rpr(RocmonDevice *device) {
+    RocmonEventResultList *groupResult = &device->groupResults[rocmon_ctx->activeGroupIdx];
+
+    RPR_CALL(return -EIO, rocprofiler_flush_buffer, device->rocprofBuf);
+
+    pthread_mutex_lock(&device->callbackRprMutex);
+
+    for (size_t j = 0; j < device->numActiveRprEvents; j++) {
+        rocprofiler_counter_id_t cid = device->activeRprEvents[j];
+
+        char key[32];
+        snprintf(key, sizeof(key), "%" PRIu64, cid.handle);
+
+        double *value = NULL;
+        int err = get_smap_by_key(device->callbackRprResults, key, (void **)value);
+        if (err < 0)
+            return err;
+
+        groupResult->eventResults[j].fullValue += *value;
+        groupResult->eventResults[j].lastValue = *value;
+    }
+
+    pthread_mutex_unlock(&device->callbackRprMutex);
+
+    return 0;
+}
+
+static int readCounters_impl(bool stop) {
+    uint64_t timestamp;
+    int err = time_ns_get(&timestamp);
+    if (err < 0)
+        return err;
+
+    RocmonGroupInfo *info = &rocmon_ctx->groups[rocmon_ctx->activeGroupIdx];
+
+    if (stop)
+        info->time.stop = timestamp;
+    else
+        info->time.read = timestamp;
+
+    for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
+        RocmonDevice *device = &rocmon_ctx->devices[i];
+
+        assert(device->numActiveSmiEvents + device->numActiveRprEvents ==
+                device->groupResults[rocmon_ctx->activeGroupIdx].numEventResults);
+
+        err = counters_read_smi(device);
+        if (err < 0)
+            return err;
+
+        err = counters_read_rpr(device);
+        if (err < 0)
+            return err;
+    }
+
+    return 0;
 }
 
 int rocmon_readCounters(void) {
+    if (!rocmon_ctx)
+        return -EFAULT;
+    
+    return readCounters_impl(false);
+}
+
+static int getEventResult(int gpuIdx, int groupId, int eventId, RocmonEventResult **result) {
+    if (!rocmon_ctx)
+        return -EFAULT;
+
+    RocmonDevice *device = device_get(gpuIdx);
+    if (!device)
+        return -EINVAL;
+
+    if (groupId < 0 || (size_t)groupId >= device->numGroupResults)
+        return -EINVAL;
+
+    RocmonEventResultList *groupResult = &device->groupResults[groupId];
+    if (eventId < 0 || (size_t)eventId >= groupResult->numEventResults)
+        return -EINVAL;
+
+    *result = &groupResult->eventResults[eventId];
+    return 0;
 }
 
 double rocmon_getResult(int gpuIdx, int groupId, int eventId) {
+    RocmonEventResult *result;
+    int err = getEventResult(gpuIdx, groupId, eventId, &result);
+    if (err < 0)
+        return err;
+
+    return result->fullValue;
 }
 
 double rocmon_getLastResult(int gpuIdx, int groupId, int eventId) {
+    RocmonEventResult *result;
+    int err = getEventResult(gpuIdx, groupId, eventId, &result);
+    if (err < 0)
+        return err;
+
+    return result->lastValue;
 }
 
 int rocmon_getEventsOfGpu(int gpuIdx, RocmonEventList_t *list) {
-    RocmonDevice *device = rocmon_device_get(gpuIdx);
+    RocmonDevice *device = device_get(gpuIdx);
     if (!device)
         return -EINVAL;
 
@@ -1197,7 +1750,7 @@ int rocmon_getEventsOfGpu(int gpuIdx, RocmonEventList_t *list) {
     int numEventsSmi = get_map_size(device->availableSmiEvents);
     assert(numEventsSmi >= 0);
 
-    int numEventsRocprof = get_map_size(device->availableRocprofEvents);
+    int numEventsRocprof = get_map_size(device->availableRprEvents);
     assert(numEventsRocprof >= 0);
 
     int err = 0;
@@ -1206,7 +1759,7 @@ int rocmon_getEventsOfGpu(int gpuIdx, RocmonEventList_t *list) {
     newList->events = calloc(newNumEvents, sizeof(*newList->events));
     if (!newList->events) {
         err = -errno;
-        goto reterr;
+        goto cleanup;
     }
 
     newList->numEvents = newNumEvents;
@@ -1218,18 +1771,18 @@ int rocmon_getEventsOfGpu(int gpuIdx, RocmonEventList_t *list) {
         RocmonSmiEvent *event;
         err = get_smap_by_idx(device->availableSmiEvents, i, (void **)&event);
         if (err < 0)
-            goto reterr;
+            goto cleanup;
 
         // e.g. RSMI + FAN_SPEED -> RSMI_FAN_SPEED
-        newEntry->name = xasprintf("%s_%s", ROCM_SMI_EVENT_PREFIX, event->name);
+        newEntry->name = xasprintf("%s_%s", RSMI_EVENT_PREFIX, event->name);
         if (!newEntry->name) {
             err = -errno;
-            goto reterr;
+            goto cleanup;
         }
         newEntry->desc = strdup("ROCM SMI event: <no description>");
         if (!newEntry->desc) {
             err = -errno;
-            goto reterr;
+            goto cleanup;
         }
 
         newEntry++;
@@ -1238,20 +1791,20 @@ int rocmon_getEventsOfGpu(int gpuIdx, RocmonEventList_t *list) {
     // Create ROCPROFILER-SDK event entries
     for (int i = 0; i < numEventsRocprof; i++) {
         RocmonRprEvent *event;
-        err = get_smap_by_idx(device->availableRocprofEvents, i, (void **)&event);
+        err = get_smap_by_idx(device->availableRprEvents, i, (void **)&event);
         if (err < 0)
-            goto reterr;
+            goto cleanup;
 
         // e.g. ROCP + GPU_UTIL -> ROCP_GPU_UTIL
-        newEntry->name = xasprintf("%s_%s", ROCPROFILER_EVENT_PREFIX, event->counterInfo.name);
+        newEntry->name = xasprintf("%s_%s", RPR_EVENT_PREFIX, event->counterInfo.name);
         if (!newEntry->name) {
             err = -errno;
-            goto reterr;
+            goto cleanup;
         }
         newEntry->desc = xasprintf("ROCPROFILER-SDK event: %s", event->counterInfo.description);
         if (!newEntry->desc) {
             err = -errno;
-            goto reterr;
+            goto cleanup;
         }
 
         newEntry++;
@@ -1260,7 +1813,7 @@ int rocmon_getEventsOfGpu(int gpuIdx, RocmonEventList_t *list) {
     *list = newList;
     return 0;
 
-reterr:
+cleanup:
     rocmon_freeEventsOfGpu(newList);
 
     return err;
@@ -1280,112 +1833,211 @@ void rocmon_freeEventsOfGpu(RocmonEventList_t list) {
 }
 
 int rocmon_getNumberOfGroups(void) {
+    if (!rocmon_ctx)
+        return -EFAULT;
+
+    return rocmon_ctx->numGroups;
 }
 
 int rocmon_getIdOfActiveGroup(void) {
+    if (!rocmon_ctx)
+        return -EFAULT;
+
+    return rocmon_ctx->activeGroupIdx;
 }
 
 int rocmon_getNumberOfGPUs(void) {
+    if (!rocmon_ctx)
+        return -EFAULT;
+
+    return (int)rocmon_ctx->numDevices;
+}
+
+int rocmon_getIdOfGPU(size_t idx) {
+    if (!rocmon_ctx)
+        return -EFAULT;
+
+    if (idx >= rocmon_ctx->numDevices)
+        return -EINVAL;
+
+    return rocmon_ctx->devices[idx].hipDeviceIdx;
+}
+
+static int getGroupInfo(int groupId, RocmonGroupInfo **rocmonGroupInfo) {
+    if (!rocmon_ctx)
+        return -EFAULT;
+
+    if (groupId < 0 || (size_t)groupId >= rocmon_ctx->numGroups)
+        return -EINVAL;
+
+    *rocmonGroupInfo = &rocmon_ctx->groups[groupId];
+    return 0;
 }
 
 int rocmon_getNumberOfEvents(int groupId) {
+    RocmonGroupInfo *info;
+
+    int err = getGroupInfo(groupId, &info);
+    if (err < 0)
+        return err;
+
+    return (int)info->groupInfo.nevents;
 }
 
 int rocmon_getNumberOfMetrics(int groupId) {
+    RocmonGroupInfo *info;
+
+    int err = getGroupInfo(groupId, &info);
+    if (err < 0)
+        return err;
+
+    return (int)info->groupInfo.nmetrics;
 }
 
-char *rocmon_getEventName(int groupId, int eventId) {
+int rocmon_getEventName(int groupId, int eventId, const char **eventName) {
+    RocmonGroupInfo *info;
+
+    int err = getGroupInfo(groupId, &info);
+    if (err < 0)
+        return err;
+
+    if (eventId < 0 || eventId >= info->groupInfo.nevents)
+        return -EINVAL;
+
+    *eventName = info->groupInfo.events[eventId];
+    return 0;
 }
 
-char *rocmon_getCounterName(int groupId, int eventId) {
+int rocmon_getCounterName(int groupId, int eventId, const char **counterName) {
+    RocmonGroupInfo *info;
+
+    int err = getGroupInfo(groupId, &info);
+    if (err < 0)
+        return err;
+
+    if (eventId < 0 || eventId >= info->groupInfo.nevents)
+        return -EINVAL;
+
+    *counterName = info->groupInfo.counters[eventId];
+    return 0;
 }
 
-char *rocmon_getMetricName(int groupId, int metricId) {
+int rocmon_getMetricName(int groupId, int metricId, const char **metricName) {
+    RocmonGroupInfo *info;
+
+    int err = getGroupInfo(groupId, &info);
+    if (err < 0)
+        return err;
+
+    if (metricId < 0 || metricId >= info->groupInfo.nmetrics)
+        return -EINVAL;
+
+    *metricName = info->groupInfo.metricnames[metricId];
+    return 0;
+}
+
+int rocmon_getMetricFormula(int groupId, int metricId, const char **formula) {
+    RocmonGroupInfo *info;
+
+    int err = getGroupInfo(groupId, &info);
+    if (err < 0)
+        return err;
+
+    if (metricId < 0 || metricId >= info->groupInfo.nmetrics)
+        return -EINVAL;
+
+    *formula = info->groupInfo.metricnames[metricId];
+    return 0;
 }
 
 double rocmon_getTimeOfGroup(int groupId) {
+    RocmonGroupInfo *info;
+
+    int err = getGroupInfo(groupId, &info);
+    if (err < 0)
+        return err;
+
+    return (double)(info->time.stop - info->time.start);
 }
 
 double rocmon_getLastTimeOfGroup(int groupId) {
+    RocmonGroupInfo *info;
+
+    int err = getGroupInfo(groupId, &info);
+    if (err < 0)
+        return err;
+
+    return (double)(info->time.stop - info->time.read);
 }
 
 double rocmon_getTimeToLastReadOfGroup(int groupId) {
+    RocmonGroupInfo *info;
+
+    int err = getGroupInfo(groupId, &info);
+    if (err < 0)
+        return err;
+
+    return (double)(info->time.read - info->time.start);
 }
 
-char *rocmon_getGroupName(int groupId) {
+int rocmon_getTimestampOfLastReadOfGroup(int groupId, uint64_t *timestamp) {
+    RocmonGroupInfo *info;
+
+    int err = getGroupInfo(groupId, &info);
+    if (err < 0)
+        return err;
+
+    *timestamp = info->time.read;
+    return 0;
 }
 
-char *rocmon_getGroupInfoShort(int groupId) {
+int rocmon_getGroupName(int groupId, const char **groupName) {
+    RocmonGroupInfo *info;
+
+    int err = getGroupInfo(groupId, &info);
+    if (err < 0)
+        return err;
+
+    *groupName = info->groupInfo.groupname;
+    return 0;
 }
 
-char *rocmon_getGroupInfoLong(int groupId) {
+int rocmon_getGroupInfoShort(int groupId, const char **groupInfoShort) {
+    RocmonGroupInfo *info;
+
+    int err = getGroupInfo(groupId, &info);
+    if (err < 0)
+        return err;
+
+    *groupInfoShort = info->groupInfo.shortinfo;
+    return 0;
 }
 
-int rocmon_getGroups(char ***groups, char ***shortinfos, char ***longinfos) {
+int rocmon_getGroupInfoLong(int groupId, const char **groupInfoLong) {
+    RocmonGroupInfo *info;
+
+    int err = getGroupInfo(groupId, &info);
+    if (err < 0)
+        return err;
+
+    *groupInfoLong = info->groupInfo.longinfo;
+    return 0;
 }
 
-int rocmon_returnGroups(int nrgroups, char **groups, char **shortinfos, char **longinfos) {
+int rocmon_getGroups(size_t *numGroups, char ***groups, char ***shortinfos, char ***longinfos) {
+    int err = init_configuration();
+    if (err < 0)
+        return err;
+
+    
+    err = perfgroup_getGroups(get_configuration()->groupPath, "amd_gpu", groups, shortinfos, longinfos);
+    if (err < 0)
+        return err;
+
+    *numGroups = (size_t)err;
+    return 0;
 }
 
-void rocmon_markerInit(void) {
-}
-
-void rocmon_markerClose(void) {
-}
-
-int rocmon_markerRegisterRegion(const char *regionTag) {
-}
-
-int rocmon_markerStartRegion(const char *regionTag) {
-}
-
-int rocmon_markerStopRegion(const char *regionTag) {
-}
-
-int rocmon_markerResetRegion(const char *regionTag) {
-}
-
-int rocmon_markerWriteFile(const char *markerfile) {
-}
-
-void rocmon_markerNextGroup(void) {
-}
-
-int rocmon_readMarkerFile(const char *filename) {
-}
-
-void rocmon_destroyMarkerResults(void) {
-}
-
-int rocmon_getCountOfRegion(int region, int gpu) {
-}
-
-double rocmon_getTimeOfRegion(int region, int gpu) {
-}
-
-int rocmon_getGpulistOfRegion(int region, int count, int *gpulist) {
-}
-
-int rocmon_getGpusOfRegion(int region) {
-}
-
-int rocmon_getMetricsOfRegion(int region) {
-}
-
-int rocmon_getNumberOfRegions(void) {
-}
-
-int rocmon_getGroupOfRegion(int region) {
-}
-
-char *rocmon_getTagOfRegion(int region) {
-}
-
-int rocmon_getEventsOfRegion(int region) {
-}
-
-double rocmon_getResultOfRegionGpu(int region, int eventId, int gpuId) {
-}
-
-double rocmon_getMetricOfRegionGpu(int region, int metricId, int gpuId) {
+void rocmon_returnGroups(size_t numGroups, char **groupNames, char **shortInfos, char **longInfos) {
+    perfgroup_returnGroups((int)numGroups, groupNames, shortInfos, longInfos);
 }

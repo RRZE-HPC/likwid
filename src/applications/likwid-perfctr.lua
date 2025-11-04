@@ -226,7 +226,6 @@ if nvSupported then
 end
 ---------------------------
 rocmSupported = likwid.rocmSupported()
-num_rocm_gpus = 0
 gpulist_rocm = {}
 rocm_event_string_list = {}
 rocmMarkerFile = string.format("%s/likwid_rocm_%d.txt", markerFolder, likwid.getpid())
@@ -256,7 +255,6 @@ local function perfctr_exit(exitcode)
             rocmInitialized = false
             rocmgroups = {}
             rocm_event_string_list = {}
-            num_rocm_gpus = 0
             gpulist_rocm = {}
         end
         if likwid.access(rocmMarkerFile, "e") == 0 then
@@ -450,7 +448,7 @@ for opt, arg in likwid.getopt(arg, cliopts) do
         ---------------------------
     elseif rocmSupported and (opt == "I") then
         if arg ~= nil then
-            num_rocm_gpus, gpulist_rocm = likwid.gpustr_to_gpulist_rocm(arg)
+            gpulist_rocm = likwid.gpustr_to_gpulist_rocm(arg)
         else
             print_stderr("Option requires an argument")
             perfctr_exit(1)
@@ -550,7 +548,6 @@ if nvSupported and
 end
 ---------------------------
 if rocmSupported and
-    num_rocm_gpus == 0 and
     not gotRocmG and
     rocmtopo and
     not print_events and
@@ -560,7 +557,6 @@ if rocmSupported and
     not print_info then
     newrocmlist = {}
     for g = 1, rocmtopo["numDevices"] do
-        num_rocm_gpus = num_rocm_gpus + 1
         table.insert(newrocmlist, rocmtopo["devices"][g]["devid"])
     end
     gpulist_rocm = newrocmlist
@@ -590,7 +586,7 @@ if nvSupported and cudatopo and num_cuda_gpus > 0 then
     end
 end
 ---------------------------
-if rocmSupported and rocmtopo and num_rocm_gpus > 0 then
+if rocmSupported and rocmtopo and #gpulist_rocm > 0 then
     for i, gpu1 in pairs(gpulist_rocm) do
         for j, gpu2 in pairs(gpulist_rocm) do
             if i ~= j and gpu1 == gpu2 then
@@ -682,22 +678,16 @@ if print_events == true then
             print_stdout(os.getenv("LD_LIBRARY_PATH"))
             --likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so")
             likwid.setenv("HSA_TOOLS_LIB", "librocprof-tool.so")
-            
-            likwid.setenv("ROCP_METRICS", metrics_xml)
         end
+        likwid.init_rocm({})
         tab = likwid.getRocmEventsAndCounters()
-        if tab ~= nil then
-            for d = 0, tab["numDevices"], 1 do
-                if tab["devices"][d] then
-                    print_stdout("\n\n")
-                    print_stdout(string.format("The ROCM GPU %d provides %d events.", d, #tab["devices"][d]))
-                    print_stdout("You can use as many ROCMx counters until you get an error.")
-                    print_stdout("Event tags (tag, counters)")
-                    for _, e in pairs(tab["devices"][d]) do
-                        outstr = string.format("%s, %s", e["Name"], e["Limit"])
-                        print_stdout(outstr)
-                    end
-                end
+        for _, device in pairs(tab.devices) do
+            print_stdout("\n\n")
+            print_stdout(string.format("The ROCM GPU '%d' provides %d events.", device.gpuId, #device.events))
+            print_stdout("You can use as many ROCMx counters until you get an error.")
+            print_stdout("Event names")
+            for _, event in pairs(device.events) do
+                print_stdout(event.name)
             end
         end
     end
@@ -779,7 +769,6 @@ if print_event ~= nil then
             end
             likwid.setenv("LD_LIBRARY_PATH", hiplib .. ":" .. hsalib .. ":" .. rocproflib .. ":" .. ldpath)
             likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so")
-            likwid.setenv("ROCP_METRICS", metrics_xml)
         end
         if rocmhome then
             tab = likwid.getGpuEventsAndCounters_rocm()
@@ -1131,6 +1120,9 @@ if use_marker == true then
     end
     if rocmSupported and #gpulist_rocm > 0 and #rocm_event_string_list > 0 then
         likwid.setenv("LIKWID_ROCMON_FILEPATH", rocmMarkerFile)
+        if verbose > 0 then
+            likwid.setenv("LIKWID_ROCMON_VERBOSITY", tostring(verbose))
+        end
     end
 end
 
@@ -1220,10 +1212,8 @@ if nvSupported and #cuda_event_string_list > 0 then
 end
 ---------------------------
 if rocmSupported and #rocm_event_string_list > 0 then
-    if likwid.init_rocm(num_rocm_gpus, gpulist_rocm) < 0 then
-        rocmInitialized = true
-        perfctr_exit(1)
-    end
+    likwid.init_rocm(num_rocm_gpus, gpulist_rocm)
+    rocmInitialized = true
     local preload = os.getenv("LD_PRELOAD")
     if preload == nil then
         likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
@@ -1282,7 +1272,6 @@ if rocmSupported then
         likwid.setenv("LD_LIBRARY_PATH", hiplib .. ":" .. hsalib .. ":" .. rocproflib .. ":" .. likwidlib .. ":" ..
         ldpath)
         likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so")
-        likwid.setenv("ROCP_METRICS", metrics_xml)
     end
 end
 ---------------------------

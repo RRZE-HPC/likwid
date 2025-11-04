@@ -431,7 +431,7 @@ static int appdaemon_setup_rocmon(char* gpuStr, char* eventStr)
     // Add event sets
     for (int i = 0; i < rocmon_eventlist->qty; i++)
     {
-        ret = rocmon_addEventSet(bdata(rocmon_eventlist->entry[i]), &rocmon_gids[rocmon_numgids++]);
+        ret = rocmon_addEventSet(bdata(rocmon_eventlist->entry[i]));
         if (ret < 0)
         {
             ERROR_PRINT("Failed to add rocmon group: %s", bdata(rocmon_eventlist->entry[i]));
@@ -485,6 +485,35 @@ appdaemon_setup_rocmon_cleanup:
     return ret;
 }
 
+static void appdaemon_print_results_rocmon(void)
+{
+    // Print results
+    for (int g = 0; g < rocmon_numgids; g++)
+    {
+        int gid = rocmon_gids[g];
+        for (int i = 0; i < rocmon_getNumberOfEvents(gid); i++)
+        {
+            for (int j = 0; j < rocmon_numgpus; j++)
+            {
+                const char *eventName;
+                int ret = rocmon_getEventName(gid, i, &eventName);
+                if (ret < 0) {
+                    ERROR_PRINT("rocmon_getEventName failed: %s", strerror(-ret));
+                    abort();
+                }
+
+                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n",
+                        rocmon_gpulist[j],
+                        rocmon_getTimeOfGroup(rocmon_gpulist[j]),
+                        eventName,
+                        rocmon_getResult(j, gid, i),
+                        rocmon_getLastResult(j, gid, i)
+                );
+            }
+        }
+    }
+}
+
 static void appdaemon_close_rocmon(void)
 {
     // Stop counters
@@ -494,20 +523,8 @@ static void appdaemon_close_rocmon(void)
         ERROR_PRINT("Failed to stop rocmon");
     }
 
-    if (getenv("LIKWID_ROCMON_MARKER_FORMAT") == NULL)
-    {
-        // Print results
-        for (int g = 0; g < rocmon_numgids; g++)
-        {
-            int gid = rocmon_gids[g];
-            for (int i = 0; i < rocmon_getNumberOfEvents(gid); i++)
-            {
-                for (int j = 0; j < rocmon_numgpus; j++)
-                {
-                    fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(j, gid, i), rocmon_getLastResult(j, gid, i));
-                }
-            }
-        }
+    if (getenv("LIKWID_ROCMON_MARKER_FORMAT") == NULL) {
+        appdaemon_print_results_rocmon();
     } else {
         appdaemon_output_data data = {
             .numDevices = rocmon_numgpus,
@@ -546,26 +563,14 @@ static void appdaemon_close_rocmon(void)
 
 static void appdaemon_read_rocmon(void)
 {
-    // Read counters
     int ret = rocmon_readCounters();
     if (ret < 0)
     {
-        fprintf(stderr, "Failed to read Rocmon counters\n");
+        fprintf(stderr, "rocmon_readCounters failed: %s\n", strerror(-ret));
         return;
     }
 
-    // Print results
-    for (int g = 0; g < rocmon_numgids; g++)
-    {
-        int gid = rocmon_gids[g];
-        for (int i = 0; i < rocmon_getNumberOfEvents(gid); i++)
-        {
-            for (int j = 0; j < rocmon_numgpus; j++)
-            {
-                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeToLastReadOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(j, gid, i), rocmon_getLastResult(j, gid, i));
-            }
-        }
-    }
+    appdaemon_print_results_rocmon();
 }
 #endif
 

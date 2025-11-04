@@ -1031,56 +1031,93 @@ gpustr_to_gpulist_cuda(const char* gpustr, int* gpulist, int length)
 
 #ifdef LIKWID_WITH_ROCMON
 
-static int valid_gpu_rocm(RocmTopology_t topo, int id)
+static bool valid_gpu_rocm(int id)
 {
+    topology_rocm_init();
+    RocmTopology_t topo = get_rocmTopology();
+
     for (int i = 0; i < topo->numDevices; i++)
     {
         if (topo->devices[i].devid == id)
-        {
-            return 1;
-        }
+            return true;
     }
-    return 0;
+
+    return false;
 }
 
 int
-gpustr_to_gpulist_rocm(const char* gpustr, int* gpulist, int length)
+gpustr_to_gpulist_rocm(const char *gpustr, int **gpuIds, size_t *numGpus)
 {
-    int insert = 0;
-    topology_rocm_init();
-    RocmTopology_t gpu_topology = get_rocmTopology();
     bstring bgpustr = bfromcstr(gpustr);
-    struct bstrList* commalist = bsplit(bgpustr, ',');
+    struct bstrList *commalist = bsplit(bgpustr, ',');
+    bdestroy(bgpustr);
+
+    int err = 0;
+
+    int *newGpuIds = NULL;
+    size_t newNumGpus = 0;
+
     for (int i = 0; i < commalist->qty; i++)
     {
+        int start, end;
         if (bstrchrp(commalist->entry[i], '-', 0) != BSTR_ERR)
         {
-            struct bstrList* indexlist = bsplit(commalist->entry[i], '-');
-            int start = check_and_atoi(bdata(indexlist->entry[0]));
-            int end = check_and_atoi(bdata(indexlist->entry[1]));
-            if (start <= end)
-            {
-                for (int k = start; k <= end; k++)
-                {
-                    if (valid_gpu_rocm(gpu_topology, k) && insert < length)
-                    {
-                        gpulist[insert] = k;
-                        insert++;
-                    }
-                }
+            struct bstrList *rangelist = bsplit(commalist->entry[i], '-');
+            if (!rangelist) {
+                err = -errno;
+                goto cleanup;
+            }
+
+            if (rangelist->qty == 2) {
+                start = atoi(bdata(rangelist->entry[0]));
+                end = atoi(bdata(rangelist->entry[1]));
+            } else {
+                err = -EINVAL;
+            }
+            bstrListDestroy(rangelist);
+        } else {
+            const int gpuId = atoi(bdata(commalist->entry[i]));
+            if (valid_gpu_rocm(gpuId)) {
+                start = gpuId;
+                end = gpuId;
+            } else {
+                err = -EINVAL;
             }
         }
-        else
-        {
-            int id = check_and_atoi(bdata(commalist->entry[i]));
-            if (valid_gpu_rocm(gpu_topology, id) && insert < length)
-            {
-                gpulist[insert] = id;
-                insert++;
+
+        if (err < 0)
+            goto cleanup;
+
+        for (int j = start; j <= end; j++) {
+            if (!valid_gpu_rocm(j)) {
+                err = -EINVAL;
+                goto cleanup;
             }
+
+            size_t numTmp = newNumGpus + 1;
+            int *tmp = realloc(newGpuIds, numTmp * sizeof(*tmp));
+            if (!tmp) {
+                err = -errno;
+                goto cleanup;
+            }
+
+            tmp[newNumGpus] = j;
+
+            newGpuIds = tmp;
+            newNumGpus = numTmp;
         }
     }
-    return insert;
+
+    if (err == 0) {
+        *gpuIds = newGpuIds;
+        *numGpus = newNumGpus;
+    } else {
+        free(newGpuIds);
+    }
+
+cleanup:
+    bstrListDestroy(commalist);
+    return err;
 }
 
 #endif /* LIKWID_WITH_ROCMON */
