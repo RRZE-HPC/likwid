@@ -473,7 +473,6 @@ DECLARE_CUFUNC(cuCtxPopCurrent, CUcontext * pctx);
 DECLARE_CUFUNC(cuCtxPushCurrent, CUcontext pctx);
 DECLARE_CUFUNC(cuCtxSynchronize);
 DECLARE_CUFUNC(cuDeviceGetAttribute, int *, CUdevice_attribute, CUdevice);
-DECLARE_CUFUNC(cuCtxCreate, CUcontext *, unsigned int, CUdevice);
 DECLARE_CUFUNC(cuDevicePrimaryCtxRetain, CUcontext *, CUdevice);
 
 #ifndef DECLARE_CUDAFUNC
@@ -673,7 +672,6 @@ static int link_perfworks_libraries(void) {
     cuCtxDestroy_ptr = DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuCtxDestroy");
     cuDeviceGetAttribute_ptr =
         DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuDeviceGetAttribute");
-    cuCtxCreate_ptr = DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuCtxCreate");
     cuDevicePrimaryCtxRetain_ptr =
         DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuDevicePrimaryCtxRetain");
 
@@ -1137,7 +1135,11 @@ static int nvmon_perfworks_appendEventList(NvmonDevice *dev, const char * const 
         /* Create event name string. */
         bstring t = bfromcstr(metricNames[i]);
         prepare_metric_name(t);
-        snprintf(e->name, sizeof(e->name), "%s", bdata(t));
+        if (t != NULL) {
+            char* s = NULL;
+            if (bdata(t) != NULL) s = bdata(t);
+            snprintf(e->name, sizeof(e->name), "%s", s);
+        }
         static const struct tagbstring sumtype = bsStatic(".sum");
         static const struct tagbstring mintype = bsStatic(".min");
         static const struct tagbstring maxtype = bsStatic(".max");
