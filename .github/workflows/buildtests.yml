@@ -30,4 +30,6 @@ jobs:
         arch: aarch64
         distro: ubuntu_latest
         githubToken: ${{ github.token }}
-        run: make COMPILER=GCCARM ACCESSMODE=perf_event
+        run: |
+          apt install -y build-essential
+          make COMPILER=GCCARM ACCESSMODE=perf_event
