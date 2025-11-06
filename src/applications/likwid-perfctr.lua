@@ -680,6 +680,7 @@ if print_events == true then
             likwid.setenv("HSA_TOOLS_LIB", "librocprof-tool.so")
         end
         likwid.init_rocm({})
+        rocmInitialized = true
         tab = likwid.getRocmEventsAndCounters()
         for _, device in pairs(tab.devices) do
             print_stdout("\n\n")
@@ -857,17 +858,17 @@ if print_groups == true then
     end
     ---------------------------
     if rocmSupported and rocmtopo then
-        avail_groups = likwid.likwid_getRocmGroups(0)
-        if avail_groups then
+        avail_groups = likwid.getRocmGroups()
+        if #avail_groups > 0 then
             local max_len = 0
             for i, g in pairs(avail_groups) do
-                if g["Name"]:len() > max_len then max_len = g["Name"]:len() end
+                max_len = math.max(max_len, g.name:len())
             end
             local s = string.format("%%%ds\t%%s", max_len)
             print_stdout(string.format(s, "\nRocMon group name", "Description"))
             print_stdout(likwid.hline)
             for i, g in pairs(avail_groups) do
-                print_stdout(string.format(s, g["Name"], g["Info"]))
+                print_stdout(string.format(s, g.name, g.shortInfo))
             end
         else
             print_stdout(string.format("No groups defined for %s", rocmtopo["devices"][1]["name"]))
@@ -1212,7 +1213,7 @@ if nvSupported and #cuda_event_string_list > 0 then
 end
 ---------------------------
 if rocmSupported and #rocm_event_string_list > 0 then
-    likwid.init_rocm(num_rocm_gpus, gpulist_rocm)
+    likwid.init_rocm(gpulist_rocm)
     rocmInitialized = true
     local preload = os.getenv("LD_PRELOAD")
     if preload == nil then
@@ -1333,20 +1334,10 @@ if nvSupported and use_timeline == false then
     end
 end
 ---------------------------
-if rocmSupported and use_timeline == false then
-    for i, event_string in pairs(rocm_event_string_list) do
-        if event_string:len() > 0 then
-            local gid = likwid.addEventSet_rocm(event_string)
-            if gid < 0 then
-                likwid.finalize_rocm()
-                perfctr_exit(1)
-            end
-            table.insert(rocmgroups, gid)
-        end
-    end
-end
+-- ROCM no longer requires adding of event sets, since they are
+-- not used at all in the parent process.
 ---------------------------
-if #group_ids == 0 and #cudagroups == 0 and #rocmgroups == 0 and use_timeline == false then
+if #group_ids == 0 and #cudagroups == 0 and #rocm_event_string_list == 0 and use_timeline == false then
     print_stderr("ERROR: No valid eventset given on commandline. Exiting...")
     likwid.finalize()
     perfctr_exit(1)
@@ -1372,7 +1363,7 @@ if nvSupported and #cuda_event_string_list > 0 then
 end
 ---------------------------
 if rocmSupported and #rocm_event_string_list > 0 then
-    activeRocmGroup = rocmgroups[1]
+    -- What is this print useful for?
     if outfile == nil then
         print_stdout(likwid.hline)
     end
