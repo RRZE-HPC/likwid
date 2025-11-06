@@ -181,22 +181,29 @@ static int amd_cpu_master_setter(const LikwidDevice_t device, const char* value)
 
 static int amd_cpu_aggr_profile_getter(const LikwidDevice_t device, char** value)
 {
-    return likwid_sysft_readmsr_field(device, MSR_AMD19_PREFETCH_CONTROL, 7, 3, value);
+    uint64_t data = 0x0;
+    int ret = likwid_sysft_readmsr_field(device, MSR_AMD19_PREFETCH_CONTROL, 7, 3, &data);
+    if (ret == 0) {
+        return likwid_sysft_uint64_to_string(data, value);
+    }
+    return ret;
 }
 
 static int amd_cpu_aggr_profile_setter(const LikwidDevice_t device, const char* value)
 {
-    value = (value & 0x7);
-    if (value >= 0x4 && value <= 0x7)
+    uint64_t data = 0x0;
+    likwid_sysft_string_to_uint64(value, &data);
+    data= (data & 0x7);
+    if (data >= 0x4 && data <= 0x7)
     {
         return -EINVAL;
     }
-    return likwid_sysft_writemsr_field(device, MSR_AMD19_PREFETCH_CONTROL, 7, 3, value);
+    return likwid_sysft_writemsr_field(device, MSR_AMD19_PREFETCH_CONTROL, 7, 3, data);
 }
 
 static int amd_cpu_aggr_profile_test_cb(uint64_t msrData, void * value)
 {
-    if (value == 0x7) return 0;
+    if (msrData == 0x7) return 0;
     return 1;
 }
 
