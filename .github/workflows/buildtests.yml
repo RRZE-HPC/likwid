@@ -31,5 +31,7 @@ jobs:
         distro: ubuntu_latest
         githubToken: ${{ github.token }}
         run: |
+          apt update
+          apt upgrade -y
           apt install -y build-essential
           make COMPILER=GCCARM ACCESSMODE=perf_event
