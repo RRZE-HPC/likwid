@@ -203,8 +203,7 @@ static int amd_cpu_aggr_profile_setter(const LikwidDevice_t device, const char* 
 
 static int amd_cpu_aggr_profile_test_cb(uint64_t msrData, void * value)
 {
-    char* avoid_warn = (void*)value;
-    avoid_warn++;
+    (void)value;
     if (msrData == 0x7) return 0;
     return 1;
 }
