@@ -25,8 +25,8 @@ enum ROCMON_SMI_ECC_EXTRA_ {
     ROCMON_SMI_ECC_EXTRA_UNCORR,
 };
 
-static const char *RPR_EVENT_PREFIX = "ROCP";
-static const char *RSMI_EVENT_PREFIX = "RSMI";
+static const char *RPR_EVENT_PREFIX = "ROCP_";
+static const char *RSMI_EVENT_PREFIX = "RSMI_";
 
 // unify naming of 'event', 'counter'
 
@@ -1773,8 +1773,8 @@ int rocmon_getEventsOfGpu(int gpuIdx, RocmonEventList_t *list) {
         if (err < 0)
             goto cleanup;
 
-        // e.g. RSMI + FAN_SPEED -> RSMI_FAN_SPEED
-        newEntry->name = xasprintf("%s_%s", RSMI_EVENT_PREFIX, event->name);
+        // e.g. RSMI_ + FAN_SPEED -> RSMI_FAN_SPEED
+        newEntry->name = xasprintf("%s%s", RSMI_EVENT_PREFIX, event->name);
         if (!newEntry->name) {
             err = -errno;
             goto cleanup;
@@ -1795,8 +1795,8 @@ int rocmon_getEventsOfGpu(int gpuIdx, RocmonEventList_t *list) {
         if (err < 0)
             goto cleanup;
 
-        // e.g. ROCP + GPU_UTIL -> ROCP_GPU_UTIL
-        newEntry->name = xasprintf("%s_%s", RPR_EVENT_PREFIX, event->counterInfo.name);
+        // e.g. ROCP_ + GPU_UTIL -> ROCP_GPU_UTIL
+        newEntry->name = xasprintf("%s%s", RPR_EVENT_PREFIX, event->counterInfo.name);
         if (!newEntry->name) {
             err = -errno;
             goto cleanup;
