@@ -435,7 +435,9 @@ static int appdaemon_setup_rocmon(char* gpuStr, char* eventStr)
         if (ret < 0)
         {
             ERROR_PRINT("Failed to add rocmon group: %s", bdata(rocmon_eventlist->entry[i]));
+            goto appdaemon_setup_rocmon_cleanup;
         }
+        rocmon_gids[rocmon_numgids++] = ret;
     }
     if (rocmon_numgids == 0)
     {
