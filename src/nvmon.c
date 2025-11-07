@@ -68,7 +68,8 @@
 
 static int nvmon_initialized = 0;
 NvmonGroupSet* nvGroupSet = NULL;
-int likwid_nvmon_verbosity = DEBUGLEV_ONLY_ERROR;
+
+__attribute__((visibility("default"))) int likwid_nvmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
 #include <nvmon_cupti.h>
 #include <nvmon_nvml.h>
