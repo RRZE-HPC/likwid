@@ -127,6 +127,8 @@ DECLAREFUNC_RPR(rocprofiler_configure_buffer_dispatch_counting_service, rocprofi
 DECLAREFUNC_RPR(rocprofiler_configure_device_counting_service, rocprofiler_context_id_t, rocprofiler_buffer_id_t, rocprofiler_agent_id_t, rocprofiler_device_counting_service_cb_t, void *);
 DECLAREFUNC_RPR(rocprofiler_start_context, rocprofiler_context_id_t);
 DECLAREFUNC_RPR(rocprofiler_stop_context, rocprofiler_context_id_t);
+DECLAREFUNC_RPR(rocprofiler_context_is_active, rocprofiler_context_id_t, int *);
+DECLAREFUNC_RPR(rocprofiler_context_is_valid, rocprofiler_context_id_t, int *);
 DECLAREFUNC_RPR(rocprofiler_force_configure, rocprofiler_configure_func_t);
 static const char *(*rocprofiler_get_status_string_ptr)(rocprofiler_status_t);
 
@@ -272,6 +274,8 @@ static int rocmon_libraries_init(void) {
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_configure_device_counting_service);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_start_context);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_stop_context);
+    DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_context_is_active);
+    DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_context_is_valid);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_force_configure);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_get_status_string);
 
@@ -922,7 +926,6 @@ static int rocmon_device_init(size_t ctx_dev_idx, int hip_dev_idx) {
 static void rocmon_device_fini(RocmonDevice *device) {
     // TODO, doesn't the flush buffer have to occur after stopping the context?
     RPR_CALL(abort(), rocprofiler_flush_buffer, device->rocprofBuf);
-    RPR_CALL(abort(), rocprofiler_stop_context, rocmon_ctx->rocprofCtx);
     RPR_CALL(abort(), rocprofiler_destroy_buffer, device->rocprofBuf);
 
     destroy_smap(device->availableSmiEvents);
@@ -954,6 +957,11 @@ static void rocmon_device_fini(RocmonDevice *device) {
 static void rocmon_ctx_free(void) {
     if (!rocmon_ctx)
         return;
+
+    int isActive;
+    RPR_CALL(abort(), rocprofiler_context_is_active, rocmon_ctx->rocprofCtx, &isActive);
+    if (isActive)
+        RPR_CALL(abort(), rocprofiler_stop_context, rocmon_ctx->rocprofCtx);
 
     if (rocmon_ctx->devices) {
         for (size_t i = 0; i < rocmon_ctx->numDevices; i++)
