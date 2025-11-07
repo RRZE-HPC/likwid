@@ -64,46 +64,27 @@ static int appdaemon_register_exit(appdaemon_exit_func f)
     }
 }
 
-static void after_main()
-{
-    // Stop timeline thread (if running)
-    pthread_mutex_lock(&stopMutex);
-    stopIssued = 1;
-    pthread_mutex_unlock(&stopMutex);
-
-    for (int i = 0; i < appdaemon_num_exit_funcs; i++)
-    {
-        appdaemon_exit_funcs[i]();
-    }
-
-    if (output_file)
-    {
-        fclose(output_file);
-    }
-}
-
 static void prepare_ldpreload()
 {
-    int (*mysetenv)(const char *name, const char *value, int overwrite) = setenv;
-    char* ldpreload = getenv("LD_PRELOAD");
-    if (ldpreload)
+    char *ldpreload = getenv("LD_PRELOAD");
+    if (!ldpreload)
+        return;
+
+    bstring bldpre = bfromcstr(ldpreload);
+    bstring new_bldpre = bfromcstr("");
+    struct bstrList *liblist = bsplit(bldpre, ':');
+    for (int i = 0; i < liblist->qty; i++)
     {
-        bstring bldpre = bfromcstr(ldpreload);
-        bstring new_bldpre = bfromcstr("");
-        struct bstrList *liblist = bsplit(bldpre, ':');
-        for (int i = 0; i < liblist->qty; i++)
+        if (binstr(liblist->entry[i], 0, &daemon_name) == BSTR_ERR)
         {
-            if (binstr(liblist->entry[i], 0, &daemon_name) == BSTR_ERR)
-            {
-                bconcat(new_bldpre, liblist->entry[i]);
-                bconchar(new_bldpre, ':');
-            }
+            bconcat(new_bldpre, liblist->entry[i]);
+            bconchar(new_bldpre, ':');
         }
-        mysetenv("LD_PRELOAD", bdata(new_bldpre), 1);
-        bstrListDestroy(liblist);
-        bdestroy(new_bldpre);
-        bdestroy(bldpre);
     }
+    setenv("LD_PRELOAD", bdata(new_bldpre), 1);
+    bstrListDestroy(liblist);
+    bdestroy(new_bldpre);
+    bdestroy(bldpre);
 }
 
 static int parse_gpustr(char* gpuStr, int* numGpus, int** gpuIds)
@@ -204,7 +185,6 @@ static int* nvmon_gpulist = NULL;
 static int  nvmon_numgpus = 0;
 static int* nvmon_gids = NULL;
 static int  nvmon_numgids = 0;
-int likwid_nvmon_verbosity = 0;
 
 static int appdaemon_setup_nvmon(char* gpuStr, char* eventStr)
 {
@@ -583,7 +563,6 @@ Timeline mode
 */
 static void* appdaemon_timeline_main(void* arg)
 {
-    int ret = 0;
     int stop = 0;
     int target_delay_ms = *((int*)arg);
 
@@ -594,16 +573,18 @@ static void* appdaemon_timeline_main(void* arg)
     {
         char *nvVerbosity = getenv("LIKWID_NVMON_VERBOSITY");
         if (nvVerbosity) {
-            likwid_nvmon_verbosity = atoi(nvVerbosity);
+            int likwid_nvmon_verbosity = atoi(nvVerbosity);
             nvmon_setVerbosity(likwid_nvmon_verbosity);
             GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Setting verbosity to %d", likwid_nvmon_verbosity);
         }
-        ret = appdaemon_setup_nvmon(nvGpuStr, nvEventStr);
-        if (!ret)
+        int ret = appdaemon_setup_nvmon(nvGpuStr, nvEventStr);
+        if (ret < 0)
+        {
+            fprintf(stderr, "Failed to setup NVMON: %d\n", ret);
+        }
+        else
         {
             appdaemon_register_exit(appdaemon_close_nvmon);
-        } else {
-            fprintf(stderr, "Failed to setup NVMON: %d\n", ret);
         }
     }
     printf("NVMON initialized\n");
@@ -615,8 +596,12 @@ static void* appdaemon_timeline_main(void* arg)
     char* rocmonGpuStr = getenv("LIKWID_ROCMON_GPUS");
     if (rocmonEventStr && rocmonGpuStr)
     {
-        ret = appdaemon_setup_rocmon(rocmonGpuStr, rocmonEventStr);
-        if (!ret)
+        int ret = appdaemon_setup_rocmon(rocmonGpuStr, rocmonEventStr);
+        if (ret < 0)
+        {
+            fprintf(stderr, "Failed to setup ROCMON: %d\n", ret);
+        }
+        else
         {
             appdaemon_register_exit(appdaemon_close_rocmon);
         }
@@ -654,32 +639,16 @@ static void* appdaemon_timeline_main(void* arg)
 /*
 Main
 */
-__attribute__((visibility("default")))
-int __libc_start_main(int (*main) (int,char **,char **),
-              int argc,char **ubp_av,
-              void (*init) (void),
-              void (*fini)(void),
-              void (*rtld_fini)(void),
-              void (*stack_end)) {
-    int ret = 0;
-    int (*original__libc_start_main)(int (*main) (int,char **,char **),
-                    int argc,char **ubp_av,
-                    void (*init) (void),
-                    void (*fini)(void),
-                    void (*rtld_fini)(void),
-                    void (*stack_end));
-
+static void main_wrapper_prolog()
+{
+    // Why do we lock and unlock the memory?
     mlockall(MCL_CURRENT);
     munlockall();
-    atexit(after_main);
-
-
-    original__libc_start_main = dlsym(RTLD_NEXT, "__libc_start_main");
 
     prepare_ldpreload();
 
     // Get timeline mode info
-    char* timelineStr = getenv("LIKWID_INTERVAL");
+    char *timelineStr = getenv("LIKWID_INTERVAL");
     int timelineInterval = -1; // in ms
     int gotTimelineInterval = 0;
     if (timelineStr != NULL)
@@ -689,41 +658,38 @@ int __libc_start_main(int (*main) (int,char **,char **),
     }
     if (gotTimelineInterval && timelineInterval <= 0)
     {
-        fprintf(stderr, "Invalid timeline interval\n");
-        return -1;
+        fprintf(stderr, "Timeline interval (LIKWID_INTERVAL) must be non-zero\n");
+        return;
     }
 
     // Open output file
-    char* outputFilename = getenv("LIKWID_OUTPUTFILE");
-    if (outputFilename == NULL)
-    {
+    char *outputFilename = getenv("LIKWID_OUTPUTFILE");
+    if (!outputFilename)
         output_file = stderr;
-    } else {
+    else
         output_file = fopen(outputFilename,"w");
-    }
 
     if (output_file == NULL)
     {
-        fprintf(stderr, "Cannot open file %s\n", outputFilename);
-        fprintf(stderr, "%s", strerror(errno));
-        return -1;
+        fprintf(stderr, "Cannot open file (LIWKID_OUTPUTFILE) %s\n", outputFilename);
+        perror("fopen");
+        return;
     }
-    if ((getenv("LIKWID_NVMON_MARKER_FORMAT") == NULL) && (getenv("LIKWID_ROCMON_MARKER_FORMAT") == NULL)) {
+    if ((getenv("LIKWID_NVMON_MARKER_FORMAT") == NULL) && (getenv("LIKWID_ROCMON_MARKER_FORMAT") == NULL))
+    {
         fprintf(output_file, "Backend, GPU, Time, Event, Full Value, Last Value\n");
     }
-
-
 
     // Start timeline thread
     if (timelineInterval > 0)
     {
         //printf("Start thread with interval %d\n", timelineInterval);
+        // TODO we should either detach the timeline thread or join it in the end
         pthread_t tid;
-        ret = pthread_create(&tid, NULL, &appdaemon_timeline_main, &timelineInterval);
-        if (ret < 0)
+        int ret = pthread_create(&tid, NULL, &appdaemon_timeline_main, &timelineInterval);
+        if (ret != 0)
         {
-            fprintf(stderr, "Failed to create timeline thread\n");
-            return -1;
+            fprintf(stderr, "Failed to create timeline thread: %s\n", strerror(ret));
         }
     } else {
 #ifdef LIKWID_NVMON
@@ -732,13 +698,14 @@ int __libc_start_main(int (*main) (int,char **,char **),
         if (nvEventStr && nvGpuStr)
         {
             char *nvVerbosity = getenv("LIKWID_NVMON_VERBOSITY");
-            if (nvVerbosity) {
-                likwid_nvmon_verbosity = atoi(nvVerbosity);
+            if (nvVerbosity)
+            {
+                int likwid_nvmon_verbosity = atoi(nvVerbosity);
                 nvmon_setVerbosity(likwid_nvmon_verbosity);
                 GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Setting verbosity to %d", likwid_nvmon_verbosity);
             }
-            ret = appdaemon_setup_nvmon(nvGpuStr, nvEventStr);
-            if (!ret)
+            int ret = appdaemon_setup_nvmon(nvGpuStr, nvEventStr);
+            if (ret == 0)
             {
                 appdaemon_register_exit(appdaemon_close_nvmon);
             }
@@ -751,19 +718,75 @@ int __libc_start_main(int (*main) (int,char **,char **),
         if (rocmonEventStr && rocmonGpuStr)
         {
             char *rocmomVerbosity = getenv("LIKWID_ROCMON_VERBOSITY");
-            if (rocmomVerbosity) {
+            if (rocmomVerbosity)
+            {
                 rocmon_setVerbosity(atoi(rocmomVerbosity));
             }
-            ret = appdaemon_setup_rocmon(rocmonGpuStr, rocmonEventStr);
-            if (!ret)
+            int ret = appdaemon_setup_rocmon(rocmonGpuStr, rocmonEventStr);
+            if (ret == 0)
             {
                 appdaemon_register_exit(appdaemon_close_rocmon);
             }
         }
 #endif
     }
+}
 
-    return original__libc_start_main(main,argc,ubp_av,
-                     init,fini,rtld_fini,stack_end);
+static void main_wrapper_epilog()
+{
+    // Stop timeline thread (if running)
+    pthread_mutex_lock(&stopMutex);
+    stopIssued = 1;
+    pthread_mutex_unlock(&stopMutex);
+
+    for (int i = 0; i < appdaemon_num_exit_funcs; i++)
+        appdaemon_exit_funcs[i]();
+
+    if (output_file && output_file != stderr)
+        fclose(output_file);
+}
+
+static int (*main_original)(int, char **, char **);
+
+static int main_wrapper(int argc, char **argv, char **envp)
+{
+    main_wrapper_prolog();
+
+    if (!main_original)
+    {
+        fprintf(stderr, "Unable to find original main function");
+        abort();
+    }
+
+    const int main_return = main_original(argc, argv, envp);
+
+    main_wrapper_epilog();
+
+    return main_return;
+}
+
+__attribute__((visibility("default")))
+int __libc_start_main(int (*main) (int,char **,char **),
+              int argc,char **ubp_av,
+              void (*init) (void),
+              void (*fini)(void),
+              void (*rtld_fini)(void),
+              void (*stack_end))
+{
+    int (*original__libc_start_main)(int (*main) (int,char **,char **),
+                    int argc,char **ubp_av,
+                    void (*init) (void),
+                    void (*fini)(void),
+                    void (*rtld_fini)(void),
+                    void (*stack_end));
+
+    // Save program's original main function, so we can call it later.
+    main_original = main;
+
+    original__libc_start_main = dlsym(RTLD_NEXT, "__libc_start_main");
+
+    // Execute original __libc_start_main with our main_wrapper instead.
+    return original__libc_start_main(main_wrapper, argc, ubp_av,
+                     init, fini, rtld_fini, stack_end);
 }
 

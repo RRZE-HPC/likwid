@@ -35,8 +35,7 @@ static const char *RSMI_EVENT_PREFIX = "RSMI_";
 // TODO rename things to camelCase
 
 // TODO clean this up and sort the variables
-__attribute__((visibility("default")))
-int likwid_rocmon_verbosity = DEBUGLEV_ONLY_ERROR;
+__attribute__((visibility("default"))) int likwid_rocmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
 DECLARE_STATIC_PTMUTEX(rocmon_init_mutex);
 static RocmonContext *rocmon_ctx;
