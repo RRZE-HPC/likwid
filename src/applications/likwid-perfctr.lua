@@ -667,13 +667,6 @@ if print_events == true then
             table.insert(libpathlist, string.format("%s/rocprofiler/lib", rocmhome))
             table.insert(libpathlist, string.format("%s/lib", rocmhome))
             table.insert(libpathlist, ldpath)
-            local metrics_xml = ""
-            if file_exists(string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)) then
-                metrics_xml = string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)
-            else
-                -- fall back to old location for backwards compatibility
-                metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
-            end
             likwid.setenv("LD_LIBRARY_PATH", table.concat(libpathlist, ":"))
             print_stdout(os.getenv("LD_LIBRARY_PATH"))
             --likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so")
@@ -761,13 +754,6 @@ if print_event ~= nil then
             local hiplib = string.format("%s/hip/lib", rocmhome)
             local hsalib = string.format("%s/hsa/lib", rocmhome)
             local rocproflib = string.format("%s/lib/rocprofiler", rocmhome)
-            local metrics_xml = ""
-            if file_exists(string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)) then
-                metrics_xml = string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)
-            else
-                -- fall back to old location for backwards compatibility
-                metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
-            end
             likwid.setenv("LD_LIBRARY_PATH", hiplib .. ":" .. hsalib .. ":" .. rocproflib .. ":" .. ldpath)
             likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so")
         end
@@ -1262,13 +1248,6 @@ if rocmSupported then
         local hiplib = string.format("%s/hip/lib", rocmhome)
         local hsalib = string.format("%s/hsa/lib", rocmhome)
         local rocproflib = string.format("%s/lib/rocprofiler", rocmhome)
-        local metrics_xml = ""
-        if file_exists(string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)) then
-            metrics_xml = string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)
-        else
-            -- fall back to old location for backwards compatibility
-            metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
-        end
         local likwidlib = "<INSTALLED_LIBPREFIX>"
         likwid.setenv("LD_LIBRARY_PATH", hiplib .. ":" .. hsalib .. ":" .. rocproflib .. ":" .. likwidlib .. ":" ..
         ldpath)
