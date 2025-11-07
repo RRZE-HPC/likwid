@@ -1265,6 +1265,10 @@ int rocmon_init(size_t numGpuIds, const int *gpuIds) {
         goto unlock_ok;
     }
 
+    err = init_configuration();
+    if (err < 0)
+        goto unlock_err;
+
     bool rsmi_initialized = false;
     bool libs_initialized = false;
 
