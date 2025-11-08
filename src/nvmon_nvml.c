@@ -806,7 +806,7 @@ _nvml_getFeaturesOfDevice(NvmlDevice* device)
     if ((*nvmlDeviceGetPowerUsage_ptr)(device->nvmlDevice, &value) == NVML_SUCCESS)
     {
         device->features |= FEATURE_POWER;
-        device->numAllEvents += 1;
+        device->numAllEvents += 2;
     }
 
     // Check FEATURE_TEMP
