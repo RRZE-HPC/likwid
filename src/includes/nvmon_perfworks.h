@@ -474,6 +474,7 @@ DECLARE_CUFUNC(cuCtxPushCurrent, CUcontext pctx);
 DECLARE_CUFUNC(cuCtxSynchronize);
 DECLARE_CUFUNC(cuDeviceGetAttribute, int *, CUdevice_attribute, CUdevice);
 DECLARE_CUFUNC(cuDevicePrimaryCtxRetain, CUcontext *, CUdevice);
+DECLARE_CUFUNC(cuGetErrorString, CUresult, const char**);
 
 #ifndef DECLARE_CUDAFUNC
 #define DECLARE_CUDAFUNC(funcname, ...) cudaError_t __attribute__((weak)) funcname(__VA_ARGS__);  static cudaError_t (*funcname##_ptr)(__VA_ARGS__);
@@ -674,6 +675,8 @@ static int link_perfworks_libraries(void) {
         DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuDeviceGetAttribute");
     cuDevicePrimaryCtxRetain_ptr =
         DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuDevicePrimaryCtxRetain");
+    cuGetErrorString_ptr =
+        DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuGetErrorString");
 
     dl_perfworks_libcudart =
         dlopen(libcudartpath, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
