@@ -131,6 +131,7 @@ cuda_topo_link_libraries(void)
     cuDeviceGetAttribute_ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGetAttribute");
     cuDeviceGetProperties_ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGetProperties");
     cuDeviceTotalMem_ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceTotalMem");
+    cuGetErrorString_ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuGetErrorString");
     
     cudaDriverGetVersion_ptr = DLSYM_AND_CHECK(topo_dl_libcudart, "cudaDriverGetVersion");
     cudaRuntimeGetVersion_ptr = DLSYM_AND_CHECK(topo_dl_libcudart, "cudaRuntimeGetVersion");
@@ -149,7 +150,9 @@ cuda_topo_init(void)
     CUresult cuErr = cuInit_ptr(0);
     if (cuErr != CUDA_SUCCESS)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, "CUDA cannot be found and initialized (cuInit failed): %d", cuErr);
+        const char *cuErrString;
+        cuGetErrorString_ptr(cuErr, &cuErrString);
+        DEBUG_PRINT(DEBUGLEV_INFO, "CUDA cannot be found and initialized (cuInit failed): %d (%s)", cuErr, cuErrString);
         return -ENODEV;
     }
     return 0;
