@@ -1082,6 +1082,35 @@ if pin_cpus then
     end
 end
 
+if nvSupported and #gpulist_cuda > 0 and #cuda_event_string_list > 0 then
+    likwid.setenv("LIKWID_NVMON_GPUS", table.concat(gpulist_cuda, ","))
+    str = table.concat(cuda_event_string_list, "|")
+    likwid.setenv("LIKWID_NVMON_EVENTS", str)
+    if verbose > 0 then
+        likwid.setenv("LIKWID_NVMON_VERBOSITY", tostring(verbose))
+    end
+end
+
+if rocmSupported and #gpulist_rocm > 0 and #rocm_event_string_list > 0 then
+    likwid.setenv("LIKWID_ROCMON_GPUS", table.concat(gpulist_rocm, ","))
+    str = table.concat(rocm_event_string_list, "|")
+    likwid.setenv("LIKWID_ROCMON_EVENTS", str)
+    local rocmhome = os.getenv("ROCM_HOME")
+    if rocmhome then
+        local metrics_xml = ""
+        if file_exists(string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)) then
+            metrics_xml = string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)
+        else
+            -- fall back to old location for backwards compatibility
+            metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
+        end
+        likwid.setenv("ROCP_METRICS", metrics_xml)
+    end
+    if verbose > 0 then
+        likwid.setenv("LIKWID_ROCMON_VERBOSITY", tostring(verbose))
+    end
+end
+
 if use_marker == true then
     likwid.setenv("LIKWID_FILEPATH", markerFile)
     likwid.setenv("LIKWID_MODE", tostring(access_mode))
@@ -1092,54 +1121,43 @@ if use_marker == true then
     likwid.setenv("LIKWID_FORCE", "-1")
     likwid.setenv("KMP_INIT_AT_FORK", "FALSE")
     if nvSupported and #gpulist_cuda > 0 and #cuda_event_string_list > 0 then
-        likwid.setenv("LIKWID_NVMON_GPUS", table.concat(gpulist_cuda, ","))
-        str = table.concat(cuda_event_string_list, "|")
-        likwid.setenv("LIKWID_NVMON_EVENTS", str)
         likwid.setenv("LIKWID_NVMON_FILEPATH", nvMarkerFile)
-        if verbose > 0 then
-            likwid.setenv("LIKWID_NVMON_VERBOSITY", tostring(verbose))
-        end
     end
     if rocmSupported and #gpulist_rocm > 0 and #rocm_event_string_list > 0 then
-        likwid.setenv("LIKWID_ROCMON_GPUS", table.concat(gpulist_rocm, ","))
-        str = table.concat(rocm_event_string_list, "|")
-        likwid.setenv("LIKWID_ROCMON_EVENTS", str)
         likwid.setenv("LIKWID_ROCMON_FILEPATH", rocmMarkerFile)
-        local rocmhome = os.getenv("ROCM_HOME")
-        if rocmhome then
-            local metrics_xml = ""
-            if file_exists(string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)) then
-                metrics_xml = string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)
-            else
-                -- fall back to old location for backwards compatibility
-                metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
-            end
-            likwid.setenv("ROCP_METRICS", metrics_xml)
-        end
-        if verbose > 0 then
-            likwid.setenv("LIKWID_ROCMON_VERBOSITY", tostring(verbose))
-        end
     end
 end
 
-if use_timeline == true then
+if use_timeline == true or use_wrapper == true then
     if nvSupported and #gpulist_cuda > 0 and #cuda_event_string_list > 0 then
         if outfile then
             likwid.setenv("LIKWID_OUTPUTFILE", outfile)
+            likwid.setenv("LIKWID_NVMON_OUTPUTFILE", outfile)
         end
-        likwid.setenv("LIKWID_INTERVAL", duration / 1000)
-        likwid.setenv("LIKWID_NVMON_GPUS", table.concat(gpulist_cuda, ","))
-        str = table.concat(cuda_event_string_list, "|")
-        likwid.setenv("LIKWID_NVMON_EVENTS", str)
+        if use_timeline == true then
+            --likwid.setenv("LIKWID_INTERVAL", duration / 1000)
+            --likwid.setenv("LIKWID_NVMON_INTERVAL", duration / 1000)
+            print_stderr("ERROR: Timeline mode for Nvidia GPUs not supported")
+            perfctr_exit(1)
+        else
+            likwid.setenv("LIKWID_NVMON_MARKER_FORMAT", 1)
+            likwid.setenv("LIKWID_NVMON_OUTPUTFILE", nvMarkerFile)
+        end
     end
     if rocmSupported and #gpulist_rocm > 0 and #rocm_event_string_list > 0 then
         if outfile then
             likwid.setenv("LIKWID_OUTPUTFILE", outfile)
+            likwid.setenv("LIKWID_ROCMON_OUTPUTFILE", outfile)
         end
-        likwid.setenv("LIKWID_INTERVAL", duration / 1000)
-        likwid.setenv("LIKWID_ROCMON_GPUS", table.concat(gpulist_rocm, ","))
-        str = table.concat(rocm_event_string_list, "|")
-        likwid.setenv("LIKWID_ROCMON_EVENTS", str)
+        if use_timeline == true then
+            --likwid.setenv("LIKWID_INTERVAL", duration / 1000)
+            --likwid.setenv("LIKWID_ROCMON_INTERVAL", duration / 1000)
+            print_stderr("ERROR: Timeline mode for AMD GPUs not supported")
+            perfctr_exit(1)
+        else
+            likwid.setenv("LIKWID_ROCMON_MARKER_FORMAT", 1)
+            likwid.setenv("LIKWID_ROCMON_OUTPUTFILE", rocmMarkerFile)
+        end
     end
 end
 
@@ -1175,33 +1193,42 @@ if #event_string_list > 0 then
 end
 ---------------------------
 if nvSupported and #cuda_event_string_list > 0 then
-    if not use_timeline then
-        if likwid.nvInit(num_cuda_gpus, gpulist_cuda) < 0 then
-            perfctr_exit(1)
-        end
+    if likwid.nvInit(num_cuda_gpus, gpulist_cuda) < 0 then
+        perfctr_exit(1)
+    end
+    local preload = os.getenv("LD_PRELOAD")
+    if preload == nil then
+        likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
     else
-        local preload = os.getenv("LD_PRELOAD")
-        if preload == nil then
-            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
-        else
-            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so" .. ":" .. preload)
-        end
+        likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so" .. ":" .. preload)
+    end
+    if verbose > 0 then
+        print_stdout("LD_PRELOAD=" .. os.getenv("LD_PRELOAD"))
+    end
+    local devices = os.getenv("CUDA_VISIBLE_DEVICES")
+    if devices == nil then
+        likwid.setenv("CUDA_VISIBLE_DEVICES", table.concat(gpulist_cuda, ","))
+    else
+        print_stderr(string.format("ERROR: Cannot restrict CUDA devices to '%s', CUDA_VISIBLE_DEVICES already set", table.concat(gpulist_cuda, ",")))
     end
 end
 ---------------------------
 if rocmSupported and #rocm_event_string_list > 0 then
-    if not use_timeline then
-        if likwid.init_rocm(num_rocm_gpus, gpulist_rocm) < 0 then
-            rocmInitialized = true
-            perfctr_exit(1)
-        end
+    if likwid.init_rocm(num_rocm_gpus, gpulist_rocm) < 0 then
+        rocmInitialized = true
+        perfctr_exit(1)
+    end
+    local preload = os.getenv("LD_PRELOAD")
+    if preload == nil then
+        likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
     else
-        local preload = os.getenv("LD_PRELOAD")
-        if preload == nil then
-            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
-        else
-            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so" .. ":" .. preload)
-        end
+        likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so" .. ":" .. preload)
+    end
+    local devices = os.getenv("ROCR_VISIBLE_DEVICES")
+    if devices == nil then
+        likwid.setenv("ROCR_VISIBLE_DEVICES", table.concat(gpulist_rocm, ","))
+    else
+        print_stderr(string.format("ERROR: Cannot restrict ROCm devices to '%s', ROCR_VISIBLE_DEVICES already set", table.concat(gpulist_rocm, ",")))
     end
 end
 ---------------------------
@@ -1602,6 +1629,44 @@ elseif use_timeline == false then
         results = likwid.getResults(nan2value)
         metrics = likwid.getMetrics(nan2value)
         likwid.printOutput(results, metrics, cpulist, nil, print_stats)
+    end
+    if nvSupported and #cuda_event_string_list > 0 then
+        if likwid.access(nvMarkerFile, "e") >= 0 then
+            results, metrics = likwid.getMarkerResultsCuda(nvMarkerFile, gpulist_cuda, nan2value)
+            if not results then
+                print_stderr("Failure reading appdaemon result file.")
+            elseif #results == 0 then
+                print_stderr("No regions could be found in appdaemon result file.")
+            else
+                for r = 1, #results do
+                    likwid.printOutputCuda(results[r], metrics[r], gpulist_cuda, r, print_stats)
+                end
+            end
+            likwid.destroyNvMarkerFile()
+            os.remove(nvMarkerFile)
+        else
+            print_stderr(
+            "Appdaemon result file does not exist. This may happen if the application segfault and the exit handlers weren't executed.")
+        end
+    end
+    if rocmSupported and #rocm_event_string_list > 0 then
+        if likwid.access(rocmMarkerFile, "e") >= 0 then
+            results, metrics = likwid.getMarkerResultsRocm(rocmMarkerFile, gpulist_rocm, nan2value)
+            if not results then
+                print_stderr("Failure reading appdaemon result file.")
+            elseif #results == 0 then
+                print_stderr("No regions could be found in appdaemon result file.")
+            else
+                for r = 1, #results do
+                    likwid.printOutputRocm(results[r], metrics[r], gpulist_rocm, r, print_stats)
+                end
+            end
+            likwid.destroyMarkerFileRocm()
+            os.remove(rocmMarkerFile)
+        else
+            print_stderr(
+            "Appdaemon result file does not exist. This may happen if the application segfault and the exit handlers weren't executed.")
+        end
     end
 end
 
