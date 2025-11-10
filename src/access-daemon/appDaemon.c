@@ -53,7 +53,7 @@ static FILE* output_file = NULL;
 
 // Timeline mode
 static int stopIssued = 0;
-static pthread_mutex_t stopMutex;
+static pthread_mutex_t stopMutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int appdaemon_register_exit(appdaemon_exit_func f)
 {
@@ -88,7 +88,6 @@ static void prepare_ldpreload()
     char* ldpreload = getenv("LD_PRELOAD");
     if (ldpreload)
     {
-        printf("Old LD_PRELOAD=%s\n", ldpreload);
         bstring bldpre = bfromcstr(ldpreload);
         bstring new_bldpre = bfromcstr("");
         struct bstrList *liblist = bsplit(bldpre, ':');
@@ -100,7 +99,6 @@ static void prepare_ldpreload()
                 bconchar(new_bldpre, ':');
             }
         }
-        printf("New LD_PRELOAD=%s\n", bdata(new_bldpre));
         mysetenv("LD_PRELOAD", bdata(new_bldpre), 1);
         bstrListDestroy(liblist);
         bdestroy(new_bldpre);
@@ -144,6 +142,59 @@ static int parse_gpustr(char* gpuStr, int* numGpus, int** gpuIds)
     return 0;
 }
 
+typedef struct {
+    int numDevices;
+    int *devices;
+    int numGroups;
+    int *groups;
+    double (*getTime)(int group);
+    int (*numEvents)(int group);
+    double (*getResult)(int gpu, int group, int event);
+} appdaemon_output_data;
+
+static int appdaemon_write_output_file(const char* markerfile, appdaemon_output_data* data) {
+
+    /* MarkerAPI File format
+     * 1 numberOfGPUs numberOfRegions numberOfGpuGroups
+     * 2 regionID:regionTag0
+     * 3 regionID:regionTag1
+     * 4 regionID groupID gpuID callCount timeActive numEvents countersvalues(space separated)
+     * 5 regionID groupID gpuID callCount timeActive numEvents countersvalues(space separated)
+    */
+    /* Here we use it to hand over the results to likwid-perfctr */
+
+    // Open file in write mode
+    FILE* file = fopen(markerfile,"w");
+    if (file == NULL)
+    {
+        int ret = errno;
+        fprintf(stderr, "Cannot open file %s\n", markerfile);
+        fprintf(stderr, "%s", strerror(errno));
+        return -ret;
+    }
+    fprintf(file,"%d 1 %d\n", data->numDevices, data->numGroups);
+    int regionId = 0;
+    for (int i = 0; i < data->numGroups; i++) {
+        fprintf(file, "%d:appdaemon-%d\n", regionId, data->groups[i]);
+    }
+    for (int i = 0; i < data->numGroups; i++) {
+        int groupId = data->groups[i];
+        int numEvents = data->numEvents(groupId);
+        double time = data->getTime(groupId);
+        for (int j = 0; j < data->numDevices; j++) {
+            fprintf(file, "%d %d %d %u %e %d ", regionId, groupId, data->devices[j], 1, time, numEvents);
+            for (int k = 0; k < numEvents; k++) {
+                fprintf(file, "%e ", data->getResult(groupId, k, j));
+            }
+            fprintf(file, "\n");
+        }
+    }
+    fflush(file);
+    fclose(file);
+    return 0;
+}
+
+
 /*
 Nvmon
 */
@@ -153,12 +204,13 @@ static int* nvmon_gpulist = NULL;
 static int  nvmon_numgpus = 0;
 static int* nvmon_gids = NULL;
 static int  nvmon_numgids = 0;
+int likwid_nvmon_verbosity = 0;
 
 static int appdaemon_setup_nvmon(char* gpuStr, char* eventStr)
 {
     int ret = 0;
-    printf("Nvmon GPU string: %s\n", gpuStr);
-    printf("Nvmon Event string: %s\n", eventStr);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Nvmon GPU string: %s", gpuStr);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Nvmon Event string: %s", eventStr);
 
     // Parse gpu string
     ret = parse_gpustr(gpuStr, &nvmon_numgpus, &nvmon_gpulist);
@@ -257,18 +309,35 @@ static void appdaemon_close_nvmon(void)
     }
 
     // Print results
-    for (int g = 0; g < nvmon_numgids; g++)
+    if (getenv("LIKWID_NVMON_MARKER_FORMAT") == NULL)
     {
-        int gid = nvmon_gids[g];
-        for (int i = 0; i < nvmon_getNumberOfEvents(gid); i++)
+        for (int g = 0; g < nvmon_numgids; g++)
         {
-            for (int j = 0; j < nvmon_numgpus; j++)
+            int gid = nvmon_gids[g];
+            for (int i = 0; i < nvmon_getNumberOfEvents(gid); i++)
             {
-                fprintf(output_file, "Nvmon, %d, %f, %s, %f, %f\n", nvmon_gpulist[j], nvmon_getTimeOfGroup(nvmon_gpulist[j]), nvmon_getEventName(gid, i), nvmon_getResult(gid, i, j), nvmon_getLastResult(gid, i, j));
+                for (int j = 0; j < nvmon_numgpus; j++)
+                {
+                    fprintf(output_file, "Nvmon, %d, %f, %s, %f, %f\n", nvmon_gpulist[j], nvmon_getTimeOfGroup(gid), nvmon_getEventName(gid, i), nvmon_getResult(gid, i, j), nvmon_getLastResult(gid, i, j));
+                }
             }
         }
+        fflush(output_file);
+    } else {
+        appdaemon_output_data data = {
+            .numDevices = nvmon_numgpus,
+            .devices = nvmon_gpulist,
+            .numGroups = nvmon_numgids,
+            .groups = nvmon_gids,
+            .getTime = nvmon_getTimeOfGroup,
+            .getResult = nvmon_getResult,
+            .numEvents = nvmon_getNumberOfEvents,
+        };
+        ret = appdaemon_write_output_file(getenv("LIKWID_NVMON_OUTPUTFILE"), &data);
+        if (ret < 0) {
+            ERROR_PRINT("Failed to write appdaemon data to %s", getenv("LIKWID_NVMON_OUTPUTFILE"));
+        }
     }
-    fflush(output_file);
 
     // Cleanup
     if (nvmon_initialized)
@@ -308,7 +377,7 @@ static void appdaemon_read_nvmon(void)
         {
             for (int j = 0; j < nvmon_numgpus; j++)
             {
-                fprintf(output_file, "Nvmon, %d, %f, %s, %f, %f\n", nvmon_gpulist[j], nvmon_getTimeToLastReadOfGroup(nvmon_gpulist[j]), nvmon_getEventName(gid, i), nvmon_getResult(gid, i, j), nvmon_getLastResult(gid, i, j));
+                fprintf(output_file, "Nvmon, %d, %f, %s, %f, %f\n", nvmon_gpulist[j], nvmon_getTimeToLastReadOfGroup(gid), nvmon_getEventName(gid, i), nvmon_getResult(gid, i, j), nvmon_getLastResult(gid, i, j));
             }
         }
     }
@@ -328,8 +397,8 @@ static int  rocmon_numgids = 0;
 static int appdaemon_setup_rocmon(char* gpuStr, char* eventStr)
 {
     int ret = 0;
-    printf("Rocmon GPU string: %s\n", gpuStr);
-    printf("Rocmon Event string: %s\n", eventStr);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Rocmon GPU string: %s\n", gpuStr);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Rocmon Event string: %s\n", eventStr);
 
     // Parse gpu string
     ret = parse_gpustr(gpuStr, &rocmon_numgpus, &rocmon_gpulist);
@@ -425,16 +494,33 @@ static void appdaemon_close_rocmon(void)
         ERROR_PRINT("Failed to stop rocmon");
     }
 
-    // Print results
-    for (int g = 0; g < rocmon_numgids; g++)
+    if (getenv("LIKWID_ROCMON_MARKER_FORMAT") == NULL)
     {
-        int gid = rocmon_gids[g];
-        for (int i = 0; i < rocmon_getNumberOfEvents(gid); i++)
+        // Print results
+        for (int g = 0; g < rocmon_numgids; g++)
         {
-            for (int j = 0; j < rocmon_numgpus; j++)
+            int gid = rocmon_gids[g];
+            for (int i = 0; i < rocmon_getNumberOfEvents(gid); i++)
             {
-                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(j, gid, i), rocmon_getLastResult(j, gid, i));
+                for (int j = 0; j < rocmon_numgpus; j++)
+                {
+                    fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(j, gid, i), rocmon_getLastResult(j, gid, i));
+                }
             }
+        }
+    } else {
+        appdaemon_output_data data = {
+            .numDevices = rocmon_numgpus,
+            .devices = rocmon_gpulist,
+            .numGroups = rocmon_numgids,
+            .groups = rocmon_gids,
+            .getTime = rocmon_getTimeOfGroup,
+            .getResult = rocmon_getResult,
+            .numEvents = rocmon_getNumberOfEvents,
+        };
+        ret = appdaemon_write_output_file(getenv("LIKWID_ROCMON_OUTPUTFILE"), &data);
+        if (ret < 0) {
+            ERROR_PRINT("Failed to write appdaemon data to %s", getenv("LIKWID_ROCMON_OUTPUTFILE"));
         }
     }
 
@@ -484,25 +570,63 @@ static void appdaemon_read_rocmon(void)
 #endif
 
 
+
 /*
 Timeline mode
 */
 static void* appdaemon_timeline_main(void* arg)
 {
+    int ret = 0;
     int stop = 0;
     int target_delay_ms = *((int*)arg);
-    ;
 
-    while (1)
+#ifdef LIKWID_NVMON
+    char* nvEventStr = getenv("LIKWID_NVMON_EVENTS");
+    char* nvGpuStr = getenv("LIKWID_NVMON_GPUS");
+    if (nvEventStr && nvGpuStr)
     {
-        usleep(target_delay_ms * 1E3);
+        char *nvVerbosity = getenv("LIKWID_NVMON_VERBOSITY");
+        if (nvVerbosity) {
+            likwid_nvmon_verbosity = atoi(nvVerbosity);
+            nvmon_setVerbosity(likwid_nvmon_verbosity);
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Setting verbosity to %d", likwid_nvmon_verbosity);
+        }
+        ret = appdaemon_setup_nvmon(nvGpuStr, nvEventStr);
+        if (!ret)
+        {
+            appdaemon_register_exit(appdaemon_close_nvmon);
+        } else {
+            fprintf(stderr, "Failed to setup NVMON: %d\n", ret);
+        }
+    }
+    printf("NVMON initialized\n");
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "NVMON initialized");
+#endif
+
+#ifdef LIKWID_ROCMON
+    char* rocmonEventStr = getenv("LIKWID_ROCMON_EVENTS");
+    char* rocmonGpuStr = getenv("LIKWID_ROCMON_GPUS");
+    if (rocmonEventStr && rocmonGpuStr)
+    {
+        ret = appdaemon_setup_rocmon(rocmonGpuStr, rocmonEventStr);
+        if (!ret)
+        {
+            appdaemon_register_exit(appdaemon_close_rocmon);
+        }
+    }
+#endif
+
+    while (stop == 0)
+    {
+        printf("Thread sleeps for %d ms\n", target_delay_ms);
+        usleep(target_delay_ms / 1000);
 
         // Check stop status
         pthread_mutex_lock(&stopMutex);
         stop = stopIssued;
         pthread_mutex_unlock(&stopMutex);
         if (stop > 0) break;
-        
+        printf("Thread Reads\n");
 #ifdef LIKWID_NVMON
         appdaemon_read_nvmon();
 #endif
@@ -510,6 +634,13 @@ static void* appdaemon_timeline_main(void* arg)
         appdaemon_read_rocmon();
 #endif
     }
+
+#ifdef LIKWID_NVMON
+    appdaemon_close_nvmon();
+#endif
+#ifdef LIKWID_ROCMON
+    appdaemon_close_rocmon();
+#endif
 }
 
 
@@ -543,11 +674,13 @@ int __libc_start_main(int (*main) (int,char **,char **),
     // Get timeline mode info
     char* timelineStr = getenv("LIKWID_INTERVAL");
     int timelineInterval = -1; // in ms
+    int gotTimelineInterval = 0;
     if (timelineStr != NULL)
     {
         timelineInterval = atoi(timelineStr);
+        gotTimelineInterval = 1;
     }
-    if (timelineInterval == 0)
+    if (gotTimelineInterval && timelineInterval <= 0)
     {
         fprintf(stderr, "Invalid timeline interval\n");
         return -1;
@@ -568,37 +701,16 @@ int __libc_start_main(int (*main) (int,char **,char **),
         fprintf(stderr, "%s", strerror(errno));
         return -1;
     }
-    fprintf(output_file, "Backend, GPU, Time, Event, Full Value, Last Value\n");
-
-#ifdef LIKWID_NVMON
-    char* nvEventStr = getenv("LIKWID_NVMON_EVENTS");
-    char* nvGpuStr = getenv("LIKWID_NVMON_GPUS");
-    if (nvEventStr && nvGpuStr)
-    {
-        ret = appdaemon_setup_nvmon(nvGpuStr, nvEventStr);
-        if (!ret)
-        {
-            appdaemon_register_exit(appdaemon_close_nvmon);
-        }
+    if ((getenv("LIKWID_NVMON_MARKER_FORMAT") == NULL) && (getenv("LIKWID_ROCMON_MARKER_FORMAT") == NULL)) {
+        fprintf(output_file, "Backend, GPU, Time, Event, Full Value, Last Value\n");
     }
-#endif
 
-#ifdef LIKWID_ROCMON
-    char* rocmonEventStr = getenv("LIKWID_ROCMON_EVENTS");
-    char* rocmonGpuStr = getenv("LIKWID_ROCMON_GPUS");
-    if (rocmonEventStr && rocmonGpuStr)
-    {
-        ret = appdaemon_setup_rocmon(rocmonGpuStr, rocmonEventStr);
-        if (!ret)
-        {
-            appdaemon_register_exit(appdaemon_close_rocmon);
-        }
-    }
-#endif
+
 
     // Start timeline thread
-    if (timelineInterval >= 0)
+    if (timelineInterval > 0)
     {
+        //printf("Start thread with interval %d\n", timelineInterval);
         pthread_t tid;
         ret = pthread_create(&tid, NULL, &appdaemon_timeline_main, &timelineInterval);
         if (ret < 0)
@@ -606,6 +718,42 @@ int __libc_start_main(int (*main) (int,char **,char **),
             fprintf(stderr, "Failed to create timeline thread\n");
             return -1;
         }
+    } else {
+#ifdef LIKWID_NVMON
+        char* nvEventStr = getenv("LIKWID_NVMON_EVENTS");
+        char* nvGpuStr = getenv("LIKWID_NVMON_GPUS");
+        if (nvEventStr && nvGpuStr)
+        {
+            char *nvVerbosity = getenv("LIKWID_NVMON_VERBOSITY");
+            if (nvVerbosity) {
+                likwid_nvmon_verbosity = atoi(nvVerbosity);
+                nvmon_setVerbosity(likwid_nvmon_verbosity);
+                GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Setting verbosity to %d", likwid_nvmon_verbosity);
+            }
+            ret = appdaemon_setup_nvmon(nvGpuStr, nvEventStr);
+            if (!ret)
+            {
+                appdaemon_register_exit(appdaemon_close_nvmon);
+            }
+        }
+#endif
+
+#ifdef LIKWID_ROCMON
+        char* rocmonEventStr = getenv("LIKWID_ROCMON_EVENTS");
+        char* rocmonGpuStr = getenv("LIKWID_ROCMON_GPUS");
+        if (rocmonEventStr && rocmonGpuStr)
+        {
+            char *rocmomVerbosity = getenv("LIKWID_ROCMON_VERBOSITY");
+            if (rocmomVerbosity) {
+                rocmon_setVerbosity(atoi(rocmomVerbosity));
+            }
+            ret = appdaemon_setup_rocmon(rocmonGpuStr, rocmonEventStr);
+            if (!ret)
+            {
+                appdaemon_register_exit(appdaemon_close_rocmon);
+            }
+        }
+#endif
     }
 
     return original__libc_start_main(main,argc,ubp_av,
