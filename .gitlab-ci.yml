@@ -166,6 +166,29 @@ cuda-pipeline:
   variables:
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
+
+rocm-gen:
+  stage: build
+  tags:
+    - testcluster
+  variables:
+    SLURM_NODELIST: milan1
+  script: 
+   - test/gitlab-ci/generate_rocm_jobs.sh > rocm-pipeline.yml
+  artifacts:
+    paths:
+      - rocm-pipeline.yml
+
+rocm-pipeline:
+  stage: test
+  trigger:
+    include:
+      - artifact: rocm-pipeline.yml
+        job: rocm-gen
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
 notify-github-success:
   stage: .post
   tags:
