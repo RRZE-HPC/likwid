@@ -556,8 +556,8 @@ if rocmSupported and
     not print_group_help and
     not print_info then
     newrocmlist = {}
-    for g = 1, rocmtopo["numDevices"] do
-        table.insert(newrocmlist, rocmtopo["devices"][g]["devid"])
+    for _, device in pairs(rocmtopo.devices) do
+        table.insert(newrocmlist, device.id)
     end
     gpulist_rocm = newrocmlist
 end

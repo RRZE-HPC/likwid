@@ -133,6 +133,7 @@ static const char *(*rocprofiler_get_status_string_ptr)(rocprofiler_status_t);
 
 DECLAREFUNC_HIP(hipGetDeviceProperties, hipDeviceProp_t *, int);
 DECLAREFUNC_HIP(hipGetDeviceCount, int *);
+DECLAREFUNC_HIP(hipFree, void *);
 static const char *(*hipGetErrorName_ptr)(hipError_t);
 
 static const int *initGpuIds; // <-- only valid during the scope of 'rocmon_init' and 'tool_init'
@@ -319,6 +320,7 @@ static int rocmon_libraries_init(void) {
 
     DLSYM_CHK2(lib_amdhip, hipGetDeviceProperties, hipGetDevicePropertiesR0600);
     DLSYM_CHK(lib_amdhip, hipGetDeviceCount);
+    DLSYM_CHK(lib_amdhip, hipFree);
     DLSYM_CHK(lib_amdhip, hipGetErrorName);
 
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Linking AMD ROCMm libraries done");
