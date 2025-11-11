@@ -630,7 +630,6 @@ int likwid_markerRegisterRegion(const char *regionTag) {
     LikwidMarkerThread *thread = NULL;
     LikwidThreadResults* results = NULL;
     if (!_libperfctr_init) {
-        ERROR_PRINT("MarkerAPI not initialized\n");
         return -EFAULT;
     }
     uint64_t tid = gettid();
@@ -665,7 +664,6 @@ int likwid_markerStartRegion(const char *regionTag) {
     LikwidMarkerThread *thread = NULL;
     LikwidThreadResults* results = NULL;
     if (!_libperfctr_init) {
-        ERROR_PRINT("MarkerAPI not initialized\n");
         return -EFAULT;
     }
     uint64_t tid = gettid();
@@ -728,7 +726,6 @@ int likwid_markerStopRegion(const char *regionTag) {
     LikwidMarkerThread *thread = NULL;
     LikwidThreadResults* results = NULL;
     if (!_libperfctr_init) {
-        ERROR_PRINT("MarkerAPI not initialized\n");
         return -EFAULT;
     }
     TimerData timestamp;
@@ -800,7 +797,6 @@ int likwid_markerResetRegion(const char *regionTag) {
     LikwidMarkerThread *thread = NULL;
     LikwidThreadResults* results = NULL;
     if (!_libperfctr_init) {
-        ERROR_PRINT("MarkerAPI not initialized\n");
         return -EFAULT;
     }
     uint64_t tid = gettid();
@@ -837,7 +833,6 @@ void likwid_markerGetRegion(const char *regionTag, int *nr_events,
     LikwidMarkerThread *thread = NULL;
     LikwidThreadResults* results = NULL;
     if (!_libperfctr_init) {
-        ERROR_PRINT("MarkerAPI not initialized\n");
         return;
     }
     uint64_t tid = gettid();
@@ -874,7 +869,6 @@ int
 likwid_markerWriteFile(const char* markerfile)
 {
     if (markerfile == NULL) {
-        fprintf(stderr, "File can not be NULL.\n");
         return -EFAULT;
     }
 
@@ -997,7 +991,6 @@ likwid_markerWriteFile(const char* markerfile)
 
 void likwid_markerClose(void) {
     if (!_libperfctr_init) {
-        ERROR_PRINT("MarkerAPI not initialized\n");
         return;
     }
 
