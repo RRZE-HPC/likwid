@@ -1615,7 +1615,18 @@ int rocmon_startCounters(void) {
             return err;
     }
 
-    RPR_CALL(return -EIO, rocprofiler_start_context, rocmon_ctx->rocprofCtx);
+    rocprofiler_status_t s = rocprofiler_start_context_ptr(rocmon_ctx->rocprofCtx);
+    if (s == ROCPROFILER_STATUS_ERROR_HSA_NOT_LOADED) {
+        // If we get this error, we can apparently just try to call it a second time.
+        // No idea why this is necessary. But hey: For the meantime it works at least.
+        s = rocprofiler_start_context_ptr(rocmon_ctx->rocprofCtx);
+    }
+
+    if (s != ROCPROFILER_STATUS_SUCCESS) {
+        const char *errstr = rocprofiler_get_status_string_ptr(s); \
+        ERROR_PRINT("Error: rocprofiler_get_status_string failed: '%s' (rocprofiler_status_t=%d)", errstr, s);\
+        return -EIO;
+    }
 
     return 0;
 }
