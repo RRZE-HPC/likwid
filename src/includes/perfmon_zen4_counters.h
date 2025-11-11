@@ -53,8 +53,16 @@
 #define AMD_K19_L3_ALL_SLICES_BIT 46
 #define AMD_K19_L3_ALL_CORES_BIT 47
 
+#define AMD_K19_UMC_EVSEL_MASK 0xFF
+#define AMD_K19_UMC_EVSEL_SHIFT 0x0
+#define AMD_K19_UMC_RWMASK_MASK 0x3
+#define AMD_K19_UMC_RWMASK_SHIFT 0x8
+#define AMD_K19_UMC_ENABLE_BIT 31
+#define AMD_K19_UMC_MAX_UNITS 12
+
 #define ZEN4_VALID_OPTIONS_PMC EVENT_OPTION_EDGE_MASK|EVENT_OPTION_COUNT_KERNEL_MASK|EVENT_OPTION_INVERT_MASK|EVENT_OPTION_THRESHOLD_MASK
 #define ZEN4_VALID_OPTIONS_L3 EVENT_OPTION_TID_MASK|EVENT_OPTION_CID_MASK|EVENT_OPTION_SLICE_MASK
+#define ZEN4_VALID_OPTIONS_UMC EVENT_OPTION_MASK0_MASK
 
 static RegisterMap zen4_counter_map[NUM_COUNTERS_ZEN4] = {
     /* Fixed counters */
@@ -99,6 +107,7 @@ static RegisterMap zen4_counter_map[NUM_COUNTERS_ZEN4] = {
     {"PWR0", PMC31, POWER, 0, MSR_AMD17_RAPL_CORE_STATUS, 0, 0, EVENT_OPTION_NONE_MASK},
     {"PWR2", PMC32, POWER, 0, MSR_AMD19_RAPL_L3_STATUS, 0, 0, EVENT_OPTION_NONE_MASK},
 #endif
+    /* UMC Performance counters are added at runtime depending on values from CPUID */
 };
 
 static BoxMap zen4_box_map[NUM_UNITS] = {
@@ -107,6 +116,7 @@ static BoxMap zen4_box_map[NUM_UNITS] = {
     [CBOX0] = {0, 0, 0, 0, 0, 0, 48, 0, 0},
     [MBOX0] = {0, 0, 0, 0, 0, 0, 48, 0, 0},
     [POWER] = {0, 0, 0, 0, 0, 0, 64, 0, 0},
+    [BBOX0 ... BBOX23] = {0, 0, 0, 0, 0, 0, 48, 0, 0},
 };
 
 static char* zen4_translate_types[NUM_UNITS] = {
@@ -115,6 +125,40 @@ static char* zen4_translate_types[NUM_UNITS] = {
     [POWER] = "/sys/bus/event_source/devices/power",
     [CBOX0] = "/sys/bus/event_source/devices/amd_l3",
     [MBOX0] = "/sys/bus/event_source/devices/amd_df",
+    /* UMC Performance counters for socket 0 */
+    [BBOX0] = "/sys/bus/event_source/devices/amd_umc_0",
+    [BBOX1] = "/sys/bus/event_source/devices/amd_umc_1",
+    [BBOX2] = "/sys/bus/event_source/devices/amd_umc_2",
+    [BBOX3] = "/sys/bus/event_source/devices/amd_umc_3",
+    [BBOX4] = "/sys/bus/event_source/devices/amd_umc_4",
+    [BBOX5] = "/sys/bus/event_source/devices/amd_umc_5",
+    [BBOX6] = "/sys/bus/event_source/devices/amd_umc_6",
+    [BBOX7] = "/sys/bus/event_source/devices/amd_umc_7",
+    [BBOX8] = "/sys/bus/event_source/devices/amd_umc_8",
+    [BBOX9] = "/sys/bus/event_source/devices/amd_umc_9",
+    [BBOX10] = "/sys/bus/event_source/devices/amd_umc_10",
+    [BBOX11] = "/sys/bus/event_source/devices/amd_umc_11",
+    /* UMC Performance counters for socket 1 */
+    /* The selection is done at runtime in perfmon_perfevent.h */
+    [BBOX12] = "/sys/bus/event_source/devices/amd_umc_12",
+    [BBOX13] = "/sys/bus/event_source/devices/amd_umc_13",
+    [BBOX14] = "/sys/bus/event_source/devices/amd_umc_14",
+    [BBOX15] = "/sys/bus/event_source/devices/amd_umc_15",
+    [BBOX16] = "/sys/bus/event_source/devices/amd_umc_16",
+    [BBOX17] = "/sys/bus/event_source/devices/amd_umc_17",
+    [BBOX18] = "/sys/bus/event_source/devices/amd_umc_18",
+    [BBOX19] = "/sys/bus/event_source/devices/amd_umc_19",
+    [BBOX20] = "/sys/bus/event_source/devices/amd_umc_20",
+    [BBOX21] = "/sys/bus/event_source/devices/amd_umc_21",
+    [BBOX22] = "/sys/bus/event_source/devices/amd_umc_22",
+    [BBOX23] = "/sys/bus/event_source/devices/amd_umc_23",
+};
+
+static char* registerTypeNamesZen4[MAX_UNITS] = {
+    [POWER] = "AMD RAPL",
+    [CBOX0] = "L3 Cache",
+    [MBOX0] = "Data Fabric",
+    [BBOX0 ... BBOX23] = "Unified Memory Controller",
 };
 
 typedef struct {
@@ -130,5 +174,6 @@ static PerfEventUnit zen4_perf_event_units[NUM_UNITS] = {
                          }},
                          
 };
+
 
 #endif //PERFMON_ZEN4_COUNTERS_H

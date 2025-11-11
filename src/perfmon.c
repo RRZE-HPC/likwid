@@ -1391,6 +1391,8 @@ perfmon_init_maps(void)
                     box_map = zen4_box_map;
                     perfmon_numCounters = perfmon_numCountersZen4;
                     translate_types = zen4_translate_types;
+                    post_counter_func = zen4_init_counter_map;
+                    archRegisterTypeNames = registerTypeNamesZen4;
                     break;
                 case ZEN4_EPYC_BERGAMO:
                     eventHash = zen4c_arch_events;
@@ -1399,6 +1401,8 @@ perfmon_init_maps(void)
                     box_map = zen4c_box_map;
                     perfmon_numCounters = perfmon_numCountersZen4c;
                     translate_types = zen4c_translate_types;
+                    post_counter_func = zen4c_init_counter_map;
+                    archRegisterTypeNames = registerTypeNamesZen4c;
                     break;
                 default:
                     ERROR_PRINT("Unsupported AMD Zen Processor");
