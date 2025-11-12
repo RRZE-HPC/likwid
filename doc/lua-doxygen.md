@@ -1,4 +1,4 @@
-/*! \page lua_Info Information about LIKWID's Lua API
+/*!\page lua_Info Information about LIKWID's Lua API
 <H1>How to include Lua API into own Lua applications</H1>
 <CODE>
 package.path = package.path .. ';/usr/local/share/lua/?.lua'<BR>
@@ -45,9 +45,9 @@ or<BR>
   <TD>Horizontal line with 80 '=' characters</TD>
 </TR>
 </TABLE>
-*/
 
-/*! \page lua_Config Config file module
+
+\page lua_Config Config file module
 <H1>Data type definition for Lua config file module in the Lua API</H1>
 \anchor lua_config
 <H2>Config file read</H2>
@@ -170,9 +170,78 @@ or<BR>
 </TR>
 </TABLE>
 
-*/
 
-/*! \page lua_Access Access client module
+
+\page lua_LibInfo Library information module
+<H1>Data type definition for the library information module in the Lua API</H1>
+\anchor lua_libinfo
+<H2>LibInfo</H2>
+<P>This structure is returned by \ref getLibInfo function</P>
+<TABLE>
+<TR>
+  <TH>Membername</TH>
+  <TH>Comment</TH>
+</TR>
+<TR>
+  <TD>\a majorVersion</TD>
+  <TD>Major version number of LIKWID library</TD>
+</TR>
+<TR>
+  <TD>\a minorVersion</TD>
+  <TD>Minor version number of LIKWID library</TD>
+</TR>
+<TR>
+  <TD>\a bugfixVersion</TD>
+  <TD>Bugfix version number of LIKWID library</TD>
+</TR>
+<TR>
+  <TD>\a nvidiaSupport</TD>
+  <TD>Boolean whether library was built with Nvidia CUDA/CUPTI support</TD>
+</TR>
+<TR>
+  <TD>\a rocmSupport</TD>
+  <TD>Boolean whether library was built with AMD ROCm support</TD>
+</TR>
+<TR>
+  <TD>\a sysfeaturesSupport</TD>
+  <TD>Boolean whether library was built with sysFeatures enabled</TD>
+</TR>
+<TR>
+  <TD>\a maxNumThreads</TD>
+  <TD>Maximal number of hardware threads the library can handle</TD>
+</TR>
+<TR>
+  <TD>\a maxNumSockets</TD>
+  <TD>Maximal number of CPU sockets the library can handle</TD>
+</TR>
+<TR>
+  <TD>\a turbo</TD>
+  <TD>Flag if the system supports the Turbo mode</TD>
+</TR>
+</TABLE>
+
+<H1>Function definitions for the library information module in the Lua API</H1>
+\anchor getLibInfo
+<H2>getLibInfo()</H2>
+<P>Returns library information like build configuration and supported modules.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>List with various library information, see \ref lua_libinfo</TD>
+</TR>
+</TABLE>
+
+
+
+\page lua_Access Access client module
 <H1>Data type definition for Lua access client module in the Lua API</H1>
 <H1>Function definitions for Lua access client module in the Lua API</H1>
 \anchor setAccessMode
@@ -198,9 +267,9 @@ or<BR>
 </TR>
 </TABLE>
 
-*/
 
-/*! \page lua_CPUTopology CPU information module
+
+\page lua_CPUTopology CPU information module
 <H1>Data type definition for CPU information module in the Lua API</H1>
 \anchor lua_cpuinfo
 <H2>Cpu Info</H2>
@@ -545,10 +614,9 @@ or<BR>
 </TR>
 </TABLE>
 
-*/
 
 
-/*! \page lua_NumaInfo NUMA memory topology module
+\page lua_NumaInfo NUMA memory topology module
 
 <H1>Data type definition for Lua NUMA topology module in the Lua API</H1>
 \anchor lua_numainfo
@@ -727,9 +795,9 @@ or<BR>
 </TR>
 </TABLE>
 
-*/
 
-/*! \page lua_AffinityInfo Thread affinity module
+
+\page lua_AffinityInfo Thread affinity module
 
 <H1>Data type definition for Lua thread affinity module in the Lua API</H1>
 \anchor lua_affinityinfo
@@ -854,10 +922,9 @@ or<BR>
   <TD>None</TD>
 </TR>
 </TABLE>
-*/
 
 
-/*! \page lua_Perfmon Performance monitoring module
+\page lua_Perfmon Performance monitoring module
 <H1>Data type definition for Lua performance monitoring module in the Lua API</H1>
 \anchor lua_counterinfo
 <H2>Event and Counter Info</H2>
@@ -2020,9 +2087,9 @@ or<BR>
 </TR>
 </TABLE>
 
-*/
 
-/*! \page lua_PowerInfo Power and Energy monitoring module
+
+\page lua_PowerInfo Power and Energy monitoring module
 <H1>Data type definition for Lua power and energy monitoring module in the Lua API</H1>
 \anchor lua_powerinfo
 <H2>Power Information</H2>
@@ -2361,9 +2428,9 @@ or<BR>
   <TD>State, 0 for off, 1 for on</TD>
 </TR>
 </TABLE>
-*/
 
-/*! \page lua_ThermalInfo Thermal monitoring module
+
+\page lua_ThermalInfo Thermal monitoring module
 <H1>Data type definition for Lua thermal monitoring module in the Lua API</H1>
 <H1>Function definitions for Lua thermal monitoring module in the Lua API</H1>
 \anchor initTemp
@@ -2411,9 +2478,9 @@ or<BR>
   <TD>Temperature</TD>
 </TR>
 </TABLE>
-*/
 
-/*! \page lua_Timer Time measurement module
+
+\page lua_Timer Time measurement module
 <H1>Data type definition for Lua time measurement module in the Lua API</H1>
 <H1>Function definitions for Lua time measurement module in the Lua API</H1>
 \anchor getCpuClock
@@ -2566,9 +2633,9 @@ or<BR>
 </TABLE>
 
 
-*/
 
-/*! \page lua_MemSweep Memory sweeping module
+
+\page lua_MemSweep Memory sweeping module
 <H1>Data type definition for Lua memory sweeping module in the Lua API</H1>
 <H1>Function definitions for Lua memory sweeping module in the Lua API</H1>
 \anchor memSweep
@@ -2620,9 +2687,9 @@ or<BR>
   <TD>None</TD>
 </TR>
 </TABLE>
-*/
 
-/*! \page lua_Misc Miscellaneous functions module
+
+\page lua_Misc Miscellaneous functions module
 <H1>Data type definition for Lua miscellaneous functions module in the Lua API</H1>
 <H1>Function definitions for Lua miscellaneous functions module in the Lua API</H1>
 \anchor startProgram
@@ -2918,9 +2985,9 @@ or<BR>
 
 
 
-*/
 
-/*! \page lua_cpuFeatures Module to read and manipulate CPU features
+
+\page lua_cpuFeatures Module to read and manipulate CPU features
 <H1>Data type definition for Lua output functions module in the Lua API</H1>
 <H1>Function definitions for Lua output functions module in the Lua API</H1>
 \anchor cpuFeaturesInit
@@ -3022,7 +3089,7 @@ or<BR>
 </TR>
 </TABLE>
 
-/*! \page lua_CpuFreq CPU frequency manipulation module
+/*!\page lua_CpuFreq CPU frequency manipulation module
 <H1>Data type definition for Lua CPU frequency manipulation module in the Lua API</H1>
 <H1>Function definitions for Lua CPU frequency manipulation module in the Lua API</H1>
 \anchor getCpuClockCurrent
@@ -3245,9 +3312,9 @@ or<BR>
 </TR>
 </TABLE>
 
-*/
 
-/*! \page lua_InputOutput Input and output functions module
+
+\page lua_InputOutput Input and output functions module
 <H1>Data type definition for Lua output functions module in the Lua API</H1>
 <H1>Function definitions for Lua output functions module in the Lua API</H1>
 \anchor getopt
@@ -3619,13 +3686,13 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
   <TD>None</TD>
 </TR>
 </TABLE>
-*/
 
-/*! \page lua_GPUTopology GPU Topology module
-<H1>Data type definition for GPU topology module in the Lua API</H1>
-\anchor lua_gputopology
-<H2>GPU Topology</H2>
-<P>This structure is returned by \ref getGpuTopology function<BR>It is similar to the C struct GpuTopology</P>
+
+\page lua_NvidiaGPUTopology Nvidia GPU topology module
+<H1>Data type definition for Nvidia GPU topology module in the Lua API</H1>
+\anchor lua_nvidiagputopology
+<H2>Nvidia GPU Topology</H2>
+<P>This structure is returned by \ref getCudaTopology function<BR>It is similar to the C struct CudaTopology_t</P>
 <TABLE>
 <TR>
   <TH>Membername</TH>
@@ -3633,7 +3700,7 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TR>
 <TR>
   <TD>\a numDevices</TD>
-  <TD>Number of GPU devices</TD>
+  <TD>Number of Nvidia GPU devices</TD>
 </TR>
 <TR>
   <TD>\a devices<BR>(List with<BR>\a numDevices entries)</TD>
@@ -3761,7 +3828,7 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
     </TR>
     <TR>
       <TD>\a integrated</TD>
-      <TD>1 if the device is an integrated (motherboard) GPU and 0 if it is a discrete (card) component/TD>
+      <TD>1 if the device is an integrated (motherboard) GPU and 0 if it is a discrete (card) component</TD>
     </TR>
     <TR>
       <TD>\a maxThreadsDim[3]</TD>
@@ -3776,9 +3843,10 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TR>
 </TABLE>
 
-\anchor gpuSupported
-<H2>gpuSupported()</H2>
-<P>Returns true if LIKWID was build with GPU support. </P>
+<H1>Function definitions for the Nvidia GPU topology module in the Lua API</H1>
+\anchor getCudaTopology
+<H2>getCudaTopology()</H2>
+<P>Get the topology information about the Nvidia GPUs in the system</P>
 <TABLE>
 <TR>
   <TH>Direction</TH>
@@ -3790,32 +3858,13 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TR>
 <TR>
   <TD>Return</TD>
-  <TD>true/false</TD>
+  <TD>Nvidia Gpu Topology \ref lua_nvidiagputopology</TD>
 </TR>
 </TABLE>
 
-
-\anchor getGpuTopology
-<H2>getGpuTopology()</H2>
-<P>Get the topology information about the GPUs in the system</P>
-<TABLE>
-<TR>
-  <TH>Direction</TH>
-  <TH>Data type(s)</TH>
-</TR>
-<TR>
-  <TD>Input Parameter</TD>
-  <TD>None</TD>
-</TR>
-<TR>
-  <TD>Return</TD>
-  <TD>Gpu Topology \ref lua_gputopology</TD>
-</TR>
-</TABLE>
-
-\anchor putGpuTopology
-<H2>putGpuTopology()</H2>
-<P>Return the topology information about the GPUs in the system</P>
+\anchor putCudaTopology
+<H2>putCudaTopology()</H2>
+<P>Return the topology information about the Nvidia GPUs in the system</P>
 <TABLE>
 <TR>
   <TH>Direction</TH>
@@ -3831,9 +3880,9 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TR>
 </TABLE>
 
-\anchor gpustr_to_gpulist
-<H2>gpustr_to_gpulist()</H2>
-<P>Read GPU selection string and resolve to available GPUs numbers</P>
+\anchor gpustr_to_gpulist_cuda
+<H2>gpustr_to_gpulist_cuda()</H2>
+<P>Read GPU selection string and resolve to available Nvidia GPUs numbers</P>
 <TABLE>
 <TR>
   <TH>Direction</TH>
@@ -3850,14 +3899,14 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TR>
 <TR>
   <TD>Return</TD>
-  <TD>List with GPU identifier</TD>
+  <TD>List with Nvidia GPU identifier</TD>
 </TR>
-</TABLE>getGpuEventsAndCounters
+</TABLE>
 
 
-\anchor getGpuEventsAndCounters
-<H2>getGpuEventsAndCounters()</H2>
-<P>Return the events and counters povided by the available GPUs</P>
+\anchor getCudaEventsAndCounters
+<H2>getCudaEventsAndCounters()</H2>
+<P>Return the events and counters provided by the available Nvidia GPUs</P>
 <TABLE>
 <TR>
   <TH>Direction</TH>
@@ -3873,9 +3922,9 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TR>
 </TABLE>
 
-\anchor getGpuGroups
-<H2>getGpuGroups()</H2>
-<P>Returns a list of all performance groups in \a groupfolder for GPUs</P>
+\anchor getCudaGroups
+<H2>getCudaGroups()</H2>
+<P>Returns a list of all performance groups in \a groupfolder for Nvidia GPUs</P>
 <TABLE>
 <TR>
   <TH>Direction</TH>
@@ -3890,4 +3939,1524 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
   <TD>List of performance groups, see \ref lua_groupinfo for structure</TD>
 </TR>
 </TABLE>
-*/
+
+\page lua_NvidiaGPUAPI Nvidia GPU monitoring module
+<H1>Data type definition for the Nvidia GPU monitoring module in the Lua API</H1>
+<H1>Function definitions for the Nvidia GPU monitoring module in the Lua API</H1>
+
+\anchor nvInit
+<H2>nvInit()</H2>
+<P>Initialize the monitoring module for Nvidia GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a numGPUs</TD>
+      <TD>The amount of Nvidia GPUs to monitor</TD>
+    </TR>
+    <TR>
+      <TD>\a gpuList</TD>
+      <TD>List of integer GPU IDs</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>0 in case of success and -errno otherwise</TD>
+</TR>
+</TABLE>
+
+\anchor nvAddEventSet
+<H2>nvAddEventSet()</H2>
+<P>Add a performance group or event set for Nvidia GPU monitoring module</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a events_or_performance_group</TD>
+      <TD>Comma-separated list of event:counter pairs or the name of a performance group</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Group identifier required to access the result data</TD>
+</TR>
+</TABLE>
+
+\anchor nvFinalize
+<H2>nvFinalize()</H2>
+<P>Shut down the monitoring module for Nvidia GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>nothing</TD>
+</TR>
+</TABLE>
+
+
+\anchor nvGetNameOfGroup
+<H2>nvGetNameOfGroup()</H2>
+<P>Returns the name of a performance group for Nvidia GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>The groupID returned by \ref nvAddEventSet</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The group name as string</TD>
+</TR>
+</TABLE>
+
+\anchor nvGetNameOfEvent
+<H2>nvGetNameOfEvent()</H2>
+<P>Returns the name of a event for Nvidia GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>The groupID returned by \ref nvAddEventSet</TD>
+    </TR>
+    <TR>
+      <TD>\a eventID</TD>
+      <TD>The eventID ID, the offset in the list of event:counter pairs inside the performance group.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The event name as string</TD>
+</TR>
+</TABLE>
+
+\anchor nvGetNameOfCounter
+<H2>nvGetNameOfCounter()</H2>
+<P>Returns the name of a counter for Nvidia GPUs. For GPUs, this is commonly GPU0, GPU1, ...</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>The groupID returned by \ref nvAddEventSet</TD>
+    </TR>
+    <TR>
+      <TD>\a counterID</TD>
+      <TD>The counterID ID, the offset in the list of event:counter pairs inside the performance group.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The counter name as string</TD>
+</TR>
+</TABLE>
+
+\anchor nvGetNameOfMetric
+<H2>nvGetNameOfMetric()</H2>
+<P>Returns the name of a performance group metric for Nvidia GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>The groupID returned by \ref nvAddEventSet</TD>
+    </TR>
+    <TR>
+      <TD>\a metricID</TD>
+      <TD>The metric ID, the offset in the list of metrics inside the performance group.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The metric name as string</TD>
+</TR>
+</TABLE>
+
+\anchor readNvMarkerFile
+<H2>readNvMarkerFile()</H2>
+<P>Read a Nvmon MarkerAPI into the system for result retrieval.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a markerAPIfilename</TD>
+      <TD>Filename of the MarkerAPI file</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>0 in case of success and -errno otherwise</TD>
+</TR>
+</TABLE>
+
+\anchor destroyNvMarkerFile
+<H2>destroyNvMarkerFile()</H2>
+<P>Destroy internal data structures for handling results of the Nvmon MarkerAPI.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Nothing</TD>
+</TR>
+</TABLE>
+
+
+\anchor nvMarkerNumRegions
+<H2>nvMarkerNumRegions()</H2>
+<P>Get the amount of regions defined in a Nvmon MarkerAPI file after reading it in.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The amount of regions</TD>
+</TR>
+</TABLE>
+
+\anchor nvMarkerRegionGroup
+<H2>nvMarkerRegionGroup()</H2>
+<P>Get the groupID for a given regionID.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The groupID for the region</TD>
+</TR>
+</TABLE>
+
+\anchor nvMarkerRegionTag
+<H2>nvMarkerRegionTag()</H2>
+<P>Get the name for a given regionID.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The name for the region as defined in the application.</TD>
+</TR>
+</TABLE>
+
+\anchor nvMarkerRegionEvents
+<H2>nvMarkerRegionEvents()</H2>
+<P>Get amount of events measured for a given regionID.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The amount of events</TD>
+</TR>
+</TABLE>
+
+\anchor nvMarkerRegionMetrics
+<H2>nvMarkerRegionMetrics()</H2>
+<P>Get amount of metrics derivable for a given regionID.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The amount of metrics</TD>
+</TR>
+</TABLE>
+
+\anchor nvMarkerRegionGpus
+<H2>nvMarkerRegionGpus()</H2>
+<P>Get amount of measured Nvidia GPUs for a given regionID.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The amount of GPU devices</TD>
+</TR>
+</TABLE>
+
+
+\anchor nvMarkerRegionGpulist
+<H2>nvMarkerRegionGpulist()</H2>
+<P>Get list of IDs of measured Nvidia GPUs for a given regionID.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>List of GPU devices (IDs)</TD>
+</TR>
+</TABLE>
+
+
+\anchor nvMarkerRegionTime
+<H2>nvMarkerRegionTime()</H2>
+<P>Get the runtime of a region on a specific GPU device.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+    <TR>
+      <TD>\a gpuOffset</TD>
+      <TD>The offset to the GPU ID in the gpulist</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Runtime of GPU in region</TD>
+</TR>
+</TABLE>
+
+\anchor nvMarkerRegionCount
+<H2>nvMarkerRegionCount()</H2>
+<P>Get the call count of a region on a specific GPU device.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+    <TR>
+      <TD>\a gpuOffset</TD>
+      <TD>The offset to the GPU ID in the gpulist</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Call count of the region on a GPU device</TD>
+</TR>
+</TABLE>
+
+\anchor nvMarkerRegionResult
+<H2>nvMarkerRegionResult()</H2>
+<P>Get the measured result of a region on a specific GPU device.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+    <TR>
+      <TD>\a gpuOffset</TD>
+      <TD>The offset to the GPU ID in the gpulist</TD>
+    </TR>
+    <TR>
+      <TD>\a eventOffset</TD>
+      <TD>The offset to the event in the eventset</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Result as number</TD>
+</TR>
+</TABLE>
+
+\anchor nvMarkerRegionMetric
+<H2>nvMarkerRegionMetric()</H2>
+<P>Get the derived metric of a region on a specific GPU device.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+    <TR>
+      <TD>\a gpuOffset</TD>
+      <TD>The offset to the GPU ID in the gpulist</TD>
+    </TR>
+    <TR>
+      <TD>\a metricOffset</TD>
+      <TD>The offset to the metric in the eventset</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Metric as number</TD>
+</TR>
+</TABLE>
+
+
+
+\page lua_AMDGPUTopology AMD GPU topology module
+<H1>Data type definition for AMD GPU topology module in the Lua API</H1>
+\anchor lua_amdgputopology
+<H2>AMD GPU Topology</H2>
+<P>This structure is returned by \ref getRocmTopology function<BR>It is similar to the C struct RocmTopology_t</P>
+<TABLE>
+<TR>
+  <TH>Membername</TH>
+  <TH>Comment</TH>
+</TR>
+<TR>
+  <TD>\a numDevices</TD>
+  <TD>Number of AMD GPU devices</TD>
+</TR>
+<TR>
+  <TD>\a devices<BR>(List with<BR>\a numDevices entries)</TD>
+    <TD>
+    <TABLE>
+    <TR>
+      <TH>Membername</TH>
+      <TH>Comment</TH>
+    </TR>
+    <TR>
+      <TD>\a id</TD>
+      <TD>GPU ID</TD>
+    </TR>
+    <TR>
+      <TD>\a name</TD>
+      <TD>Name of the device</TD>
+    </TR>
+    <TR>
+      <TD>\a short</TD>
+      <TD>Short name of the device used internally to select performance groups</TD>
+    </TR>
+    <TR>
+      <TD>\a numaNode</TD>
+      <TD>Closest NUMA node</TD>
+    </TR>
+    <TR>
+      <TD>\a memory</TD>
+      <TD>Total memory of the device</TD>
+    </TR>
+    <TR>
+      <TD>\a ccapMajor</TD>
+      <TD>Major number of device's compute capability</TD>
+    </TR>
+    <TR>
+      <TD>\a ccapMinor</TD>
+      <TD>Minor number of device's compute capability</TD>
+    </TR>
+    <TR>
+      <TD>\a l2Size</TD>
+      <TD>L2 cache in bytes. 0 if the device doesn't have L2 cache</TD>
+    </TR>
+    <TR>
+      <TD>\a maxThreadsPerBlock</TD>
+      <TD>Maximam number of thread per block</TD>
+    </TR>
+    <TR>
+      <TD>\a sharedMemPerBlock</TD>
+      <TD>Total amount of shared memory available per block</TD>
+    </TR>
+    <TR>
+      <TD>\a totalConstantMemory</TD>
+      <TD>Total amount of constant memory available on the device</TD>
+    </TR>
+    <TR>
+      <TD>\a memPitch</TD>
+      <TD>Maximum pitch allowed by the memory copy functions that involve memory regions allocated through cuMemAllocPitch()</TD>
+    </TR>
+    <TR>
+      <TD>\a regsPerBlock</TD>
+      <TD>Total number of registers available per block</TD>
+    </TR>
+    <TR>
+      <TD>\a clockRatekHz</TD>
+      <TD>Clock frequency in kilohertz</TD>
+    </TR>
+    <TR>
+      <TD>\a textureAlign</TD>
+      <TD>Alignment requirement</TD>
+    </TR>
+    <TR>
+      <TD>\a memClockRatekHz</TD>
+      <TD>Peak memory clock frequency in kilohertz</TD>
+    </TR>
+    <TR>
+      <TD>\a pciBus</TD>
+      <TD>PCI bus identifier of the device</TD>
+    </TR>
+    <TR>
+      <TD>\a pciDev</TD>
+      <TD>PCI device (also known as slot) identifier of the device</TD>
+    </TR>
+    <TR>
+      <TD>\a pciDom</TD>
+      <TD>PCI domain identifier of the device</TD>
+    </TR>
+    <TR>
+      <TD>\a pciFunc</TD>
+      <TD>PCI function identifier of the device</TD>
+    </TR>
+    <TR>
+      <TD>\a numMultiProcs</TD>
+      <TD>Number of multiprocessors on the device</TD>
+    </TR>
+    <TR>
+      <TD>\a maxThreadPerMultiProc</TD>
+      <TD>Maximum resident threads per multiprocessor</TD>
+    </TR>
+    <TR>
+      <TD>\a memBusWidth</TD>
+      <TD>Global memory bus width in bits</TD>
+    </TR>
+    <TR>
+      <TD>\a ecc</TD>
+      <TD>1 if error correction is enabled on the device, 0 if error correction is disabled or not supported by the device</TD>
+    </TR>
+    <TR>
+      <TD>\a mapHostMem</TD>
+      <TD>1 if the device can map host memory into the CUDA address space</TD>
+    </TR>
+    <TR>
+      <TD>\a integrated</TD>
+      <TD>1 if the device is an integrated (motherboard) GPU and 0 if it is a discrete (card) component/TD>
+    </TR>
+    <TR>
+      <TD>\a maxThreadsDim[3]</TD>
+      <TD>Maximum sizes of each dimension of a block</TD>
+    </TR>
+     <TR>
+      <TD>\a maxGridSize[3]</TD>
+      <TD>Maximum sizes of each dimension of a grid</TD>
+    </TR>
+    </TABLE>
+    </TD>
+</TR>
+</TABLE>
+
+
+\anchor getRocmTopology
+<H2>getRocmTopology()</H2>
+<P>Get the topology information about the AMD GPUs in the system</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Return</TD>
+  <TD>AMD GPU Topology \ref lua_amdgputopology</TD>
+</TR>
+</TABLE>
+
+\anchor putRocmTopology
+<H2>putRocmTopology()</H2>
+<P>Return the topology information about the AMD GPUs in the system</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Return</TD>
+  <TD>None</TD>
+</TR>
+</TABLE>
+
+\anchor gpustr_to_gpulist_rocm
+<H2>gpustr_to_gpulist_rocm()</H2>
+<P>Read GPU selection string and resolve to available AMD GPUs numbers</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a gpustr</TD>
+      <TD>GPU identifier string</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Return</TD>
+  <TD>List with AMD GPU identifier</TD>
+</TR>
+</TABLE>
+
+
+\anchor getRocmEventsAndCounters
+<H2>getRocmEventsAndCounters()</H2>
+<P>Return the events and counters provided by the available AMD GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Return</TD>
+  <TD>Table with keys \a numDevices and \a devices. \a devices is a table where each entry has \a Name, \a Description and \a Limit.</TD>
+</TR>
+</TABLE>
+
+\anchor getRocmGroups
+<H2>getRocmGroups()</H2>
+<P>Returns a list of all performance groups in \a groupfolder for AMD GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>List of performance groups, see \ref lua_groupinfo for structure</TD>
+</TR>
+</TABLE>
+
+\page lua_AMDGPUAPI AMD GPU monitoring module
+<H1>Data type definition for the AMD GPU monitoring module in the Lua API</H1>
+<H1>Function definitions for the AMD GPU monitoring module in the Lua API</H1>
+
+\anchor init_rocm
+<H2>init_rocm()</H2>
+<P>Initialize the monitoring module for AMD GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a numGPUs</TD>
+      <TD>The amount of AMD GPUs to monitor</TD>
+    </TR>
+    <TR>
+      <TD>\a gpuList</TD>
+      <TD>List of integer GPU IDs</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>0 in case of success and -errno otherwise</TD>
+</TR>
+</TABLE>
+
+\anchor addEventSet_rocm
+<H2>addEventSet_rocm()</H2>
+<P>Add a performance group or event set for AMD GPU monitoring module</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a events_or_performance_group</TD>
+      <TD>Comma-separated list of event:counter pairs or the name of a performance group</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Group identifier required to access the result data</TD>
+</TR>
+</TABLE>
+
+\anchor finalize_rocm
+<H2>finalize_rocm()</H2>
+<P>Shut down the monitoring module for AMD GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>nothing</TD>
+</TR>
+</TABLE>
+
+
+\anchor getNameOfGroupRocm
+<H2>getNameOfGroupRocm()</H2>
+<P>Returns the name of a performance group for AMD GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>The groupID returned by \ref addEventSet_rocm</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The group name as string</TD>
+</TR>
+</TABLE>
+
+\anchor getNameOfEventRocm
+<H2>getNameOfEventRocm()</H2>
+<P>Returns the name of a event for AMD GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>The groupID returned by \ref addEventSet_rocm</TD>
+    </TR>
+    <TR>
+      <TD>\a eventID</TD>
+      <TD>The eventID ID, the offset in the list of event:counter pairs inside the performance group.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The event name as string</TD>
+</TR>
+</TABLE>
+
+\anchor getNameOfCounterRocm
+<H2>getNameOfCounterRocm()</H2>
+<P>Returns the name of a counter for AMD GPUs. For GPUs, this is commonly GPU0, GPU1, ...</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>The groupID returned by \ref addEventSet_rocm</TD>
+    </TR>
+    <TR>
+      <TD>\a counterID</TD>
+      <TD>The counterID ID, the offset in the list of event:counter pairs inside the performance group.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The counter name as string</TD>
+</TR>
+</TABLE>
+
+\anchor getNameOfMetricRocm
+<H2>getNameOfMetricRocm()</H2>
+<P>Returns the name of a performance group metric for AMD GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>The groupID returned by \ref addEventSet_rocm</TD>
+    </TR>
+    <TR>
+      <TD>\a metricID</TD>
+      <TD>The metric ID, the offset in the list of metrics inside the performance group.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The metric name as string</TD>
+</TR>
+</TABLE>
+
+\anchor readMarkerFileRocm
+<H2>readMarkerFileRocm()</H2>
+<P>Read a Rocmon MarkerAPI into the system for result retrieval.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a markerAPIfilename</TD>
+      <TD>Filename of the MarkerAPI file</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>0 in case of success and -errno otherwise</TD>
+</TR>
+</TABLE>
+
+\anchor destroyMarkerFileRocm
+<H2>destroyMarkerFileRocm()</H2>
+<P>Destroy internal data structures for handling results of the Rocmon MarkerAPI.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Nothing</TD>
+</TR>
+</TABLE>
+
+
+\anchor markerNumRegionsRocm
+<H2>markerNumRegionsRocm()</H2>
+<P>Get the amount of regions defined in a Rocmon MarkerAPI file after reading it in.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The amount of regions</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionGroupRocm
+<H2>markerRegionGroupRocm()</H2>
+<P>Get the groupID for a given regionID.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The groupID for the region</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionTagRocm
+<H2>markerRegionTagRocm()</H2>
+<P>Get the name for a given regionID.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The name for the region as defined in the application.</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionEventsRocm
+<H2>markerRegionEventsRocm()</H2>
+<P>Get amount of events measured for a given regionID.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The amount of events</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionMetricsRocm
+<H2>markerRegionMetricsRocm()</H2>
+<P>Get amount of metrics derivable for a given regionID.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The amount of metrics</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionGpusRocm
+<H2>markerRegionGpusRocm()</H2>
+<P>Get amount of measured AMD GPUs for a given regionID.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>The amount of GPU devices</TD>
+</TR>
+</TABLE>
+
+
+\anchor markerRegionGpulistRocm
+<H2>markerRegionGpulistRocm()</H2>
+<P>Get list of IDs of measured AMD GPUs for a given regionID.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>List of GPU devices (IDs)</TD>
+</TR>
+</TABLE>
+
+
+\anchor markerRegionTimeRocm
+<H2>markerRegionTimeRocm()</H2>
+<P>Get the runtime of a region on a specific GPU device.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+    <TR>
+      <TD>\a gpuOffset</TD>
+      <TD>The offset to the GPU ID in the gpulist</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Runtime of GPU in region</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionCountRocm
+<H2>markerRegionCountRocm()</H2>
+<P>Get the call count of a region on a specific GPU device.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+    <TR>
+      <TD>\a gpuOffset</TD>
+      <TD>The offset to the GPU ID in the gpulist</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Call count of the region on a GPU device</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionResultRocm
+<H2>markerRegionResultRocm()</H2>
+<P>Get the measured result of a region on a specific GPU device.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+    <TR>
+      <TD>\a gpuOffset</TD>
+      <TD>The offset to the GPU ID in the gpulist</TD>
+    </TR>
+    <TR>
+      <TD>\a eventOffset</TD>
+      <TD>The offset to the event in the eventset</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Result as number</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionMetricRocm
+<H2>markerRegionMetricRocm()</H2>
+<P>Get the derived metric of a region on a specific GPU device.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>The region identifier</TD>
+    </TR>
+    <TR>
+      <TD>\a gpuOffset</TD>
+      <TD>The offset to the GPU ID in the gpulist</TD>
+    </TR>
+    <TR>
+      <TD>\a metricOffset</TD>
+      <TD>The offset to the metric in the eventset</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Metric as number</TD>
+</TR>
+</TABLE>
+
+
+
+\page lua_likwid_device LIKWID device module
+<H1>Data type definition for the LIKWID device module in the Lua API</H1>
+
+\anchor lua_likwiddevice
+<H2>LIKWID device</H2>
+<P>This structure is returned by \ref createDevice, \ref createDevicesFromString and \ref getAllDevices functions<BR>
+It is the C struct LikwidDevice_t encapsulated in a Lua userdata type.</P>
+<TABLE>
+<TR>
+  <TH>Membername</TH>
+  <TH>Comment</TH>
+</TR>
+<TR>
+  <TD>\a typeId</TD>
+  <TD>Type ID for the device</TD>
+</TR>
+<TR>
+  <TD>\a typeName</TD>
+  <TD>Type name for the device</TD>
+</TR>
+<TR>
+  <TD>\a id</TD>
+  <TD>ID for the device</TD>
+</TR>
+<TR>
+  <TD>\a internalId</TD>
+  <TD>Internally used ID for the device</TD>
+</TR>
+</TABLE>
+
+<H1>Function definitions for the LIKWID device module in the Lua API</H1>
+
+\anchor createDevice
+<H2>createDevice()</H2>
+<P>Create a LIKWID device from the given type and ID.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a device_type</TD>
+      <TD>Device type</TD>
+    </TR>
+    <TR>
+      <TD>\a id</TD>
+      <TD>ID of the device</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>LIKWID device as defined in \ref lua_likwiddevice .</TD>
+</TR>
+</TABLE>
+
+\anchor createDevicesFromString
+<H2>createDevicesFromString()</H2>
+<P>Create a LIKWID device from the given string like S:0 for socket 0, T:1 for HWthread with ID 1, etc.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a device_string</TD>
+      <TD>String combining type and ID</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>LIKWID device as defined in \ref lua_likwiddevice .</TD>
+</TR>
+</TABLE>
+
+\anchor getAvailableDevices
+<H2>getAvailableDevices()</H2>
+<P>Get all available LIKWID devices in the system available for usage.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>List of available LIKWID devices (\ref lua_likwiddevice).</TD>
+</TR>
+</TABLE>
+
+\anchor getAllDevices
+<H2>getAllDevices()</H2>
+<P>Get all LIKWID devices in the system without filtering them.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>List of LIKWID devices (\ref lua_likwiddevice).</TD>
+</TR>
+</TABLE>
+
+
+\page lua_sysfeatures sysFeatures module
+<H1>Data type definition for the sysFeatures module in the Lua API</H1>
+
+\anchor lua_sysfeature
+<H2>Sysfeature</H2>
+<P>A list of this structure is returned by the \ref sysFeatures_list function<BR>
+It contains all information about a sysFeature.</P>
+<TABLE>
+<TR>
+  <TH>Membername</TH>
+  <TH>Comment</TH>
+</TR>
+<TR>
+  <TD>\a Name</TD>
+  <TD>Name of the feature</TD>
+</TR>
+<TR>
+  <TD>\a Category</TD>
+  <TD>Category of the feature</TD>
+</TR>
+<TR>
+  <TD>\a Description</TD>
+  <TD>Description of the feature</TD>
+</TR>
+<TR>
+  <TD>\a ReadOnly</TD>
+  <TD>Boolean telling whether the Sysfeature can only be read.</TD>
+</TR>
+<TR>
+  <TD>\a WriteOnly</TD>
+  <TD>Boolean telling whether the Sysfeature can only be modified.</TD>
+</TR>
+<TR>
+  <TD>\a Type</TD>
+  <TD>LIKWID device type that supports this feature. See \ref lua_likwid_device for LIKWID device handling.</TD>
+</TR>
+<TR>
+  <TD>\a TypeID</TD>
+  <TD>LIKWID device type ID that supports this feature. See \ref lua_likwid_device for LIKWID device handling.</TD>
+</TR>
+</TABLE>
+
+<H1>Function definitions for the sysFeatures module in the Lua API</H1>
+
+
+\anchor initSysFeatures
+<H2>initSysFeatures()</H2>
+<P>Initialize the sysFeatures module.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>0 in case of success and -errno otherwise</TD>
+</TR>
+</TABLE>
+
+
+\anchor sysFeatures_list
+<H2>sysFeatures_list()</H2>
+<P>List all available sysFeatures in the system.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>List of available sysFeatures, see \ref lua_sysfeature for structure.</TD>
+</TR>
+</TABLE>
+
+\anchor sysFeatures_get
+<H2>sysFeatures_get()</H2>
+<P>Get the current state of a sysFeatures in the system (if not write-only).</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a sysfeature</TD>
+      <TD>Category.Name or only Name (if unique) of sysFeature. See \ref lua_sysfeature </TD>
+    </TR>
+    <TR>
+      <TD>\a likwid_device</TD>
+      <TD>The device to get the state of. See \ref lua_likwid_device for LIKWID device handling.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a state</TD>
+      <TD>Current state of sysFeature</TD>
+    </TR>
+    <TR>
+      <TD>\a errorstring</TD>
+      <TD>Error string or nil</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+</TABLE>
+
+\anchor sysFeatures_set
+<H2>sysFeatures_set()</H2>
+<P>Modify the state of a sysFeatures in the system (if not read-only).</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a sysfeature</TD>
+      <TD>Category.Name or only Name (if unique) of sysFeature. See \ref lua_sysfeature </TD>
+    </TR>
+    <TR>
+      <TD>\a likwid_device</TD>
+      <TD>The device to set the state for. See \ref lua_likwid_device for LIKWID device handling.</TD>
+    </TR>
+    <TR>
+      <TD>\a value</TD>
+      <TD>New value for the sysFeature as string</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a modification_successful</TD>
+      <TD>Boolean signaling the success or failure of the operation</TD>
+    </TR>
+    <TR>
+      <TD>\a errorstring</TD>
+      <TD>Error string or nil</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+</TABLE>
+
+\anchor finalizeSysFeatures
+<H2>finalizeSysFeatures()</H2>
+<P>Shut down the sysFeatures module.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Nothing</TD>
+</TR>
+</TABLE>

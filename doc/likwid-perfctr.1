@@ -29,17 +29,17 @@ or
 .RB [ \-E
 .IR search_str ]
 .RB [ \-G
-.IR gpu_list (*) ]
+.IR nvidia_gpu_list (*) ]
 .RB [ \-W
-.IR gpu_performance_group
+.IR nvidia_gpu_performance_group
 or
-.IR gpu_performance_event_string (*) ]
+.IR nvidia_gpu_performance_event_string (*) ]
 .RB [ \-I
-.IR gpu_list (**) ]
+.IR amd_gpu_list (**) ]
 .RB [ \-R
-.IR gpu_performance_group
+.IR amd_gpu_performance_group
 or
-.IR gpu_performance_event_string (**) ]
+.IR amd_gpu_performance_event_string (**) ]
 .RB [ \-\-stats ]
 .SH DESCRIPTION
 .B likwid-perfctr
@@ -105,7 +105,7 @@ Also a custom event set can be specified by a comma separated list of events. Ea
 eventId:register with the the register being one of a architecture supported performance counter registers.
 .TP
 .B \-\^t <frequency of measurements>
-timeline mode for time resolved measurements. The time unit must be given on command line, e.g. 4s, 500ms or 900us.
+timeline mode for time resolved measurements. The time unit must be given on command line, e.g. 4s, 500ms or 900us. Not supported for Nvidia and AMD GPUs.
 .TP
 .B \-\^S <waittime between measurements>
 End-to-end measurement using likwid-perfctr but sleep instead of executing an application. The time unit must be given on command line, e.g. 4s, 500ms or 900us.
@@ -122,21 +122,21 @@ Force writing of registers even if they are in use.
 .B \-\^E <search_str>
 Print only events and corresponding counters matching <search_str>
 .TP
-.B \-\^G <gpu_list>
+.B \-\^G <nvidia_gpu_list>
 specify a numerical list of Nvidia GPU IDs. The list may contain multiple
 items, separated by comma, and ranges. For example 0,3,9-11.
 .TP
-.B \-\^W, \-\-\^cudagroup <gpu performance group> or <gpu performance event set string>
+.B \-\^W, \-\-\^cudagroup <nvidia_gpu_performance_group> or <nvidia_gpu_performance_event_string>
 specify which performance group to measure on the specified Nvidia GPUs.
 This can be one of the tags output with the -a flag in the GPU section.
 Also a custom event set can be specified by a comma separated list of events. Each event has the format
 eventId:GPUx (x=0,1,2,...). You can add as many events to the string until you hit an error.
 .TP
-.B \-\^I <gpu_list>
+.B \-\^I <amd_gpu_list>
 specify a numerical list of AMD GPU IDs. The list may contain multiple
 items, separated by comma, and ranges. For example 0,3,9-11.
 .TP
-.B \-\^R, \-\-\^rocmgroup <gpu performance group> or <gpu performance event set string>
+.B \-\^R, \-\-\^rocmgroup <amd_gpu_performance_group> or <amd_gpu_performance_event_string>
 specify which performance group to measure on the specified AMD GPUs.
 This can be one of the tags output with the -a flag in the GPU section.
 Also a custom event set can be specified by a comma separated list of events. Each event has the format
@@ -294,11 +294,11 @@ for this event means all <invalid> and <modified> cachelines. Which options are 
 For more code examples have a look at the likwid WIKI pages and LIKWID's html documentation.
 
 .IP 7. 5
-Using likwid with GPU events and NvMarkerAPI. The CUDA library and CUPTI library must be reachable (path in LD_LIBRARY_PATH).
+Using likwid with GPU events and Nvmon MarkerAPI for Nvidia GPUs. The CUDA library and CUPTI library must be reachable (library path in LD_LIBRARY_PATH).
 .TP
-.B likwid-perfctr -G 0,1 -W FLOPS_DP -m ./cudaApp
+.B likwid-perfctr -G 0,1 -W FLOPS_SP -m ./cudaApp
 .PP
-This runs the application in NvMarkerAPI mode on GPUs 0 and 1 and measures the single-precision flops. The NvMarkerAPI is similar to the CPU MarkerAPI (compile -DLIKWID_NVMON):
+This runs the application in Nvmon MarkerAPI mode on GPUs 0 and 1 and measures the single-precision flops. The Nvmon MarkerAPI is similar to the CPU MarkerAPI (compile -DLIKWID_NVMON):
 
 #include <likwid-marker.h>
 
@@ -352,6 +352,81 @@ NVMON_MARKER_RESET("name");
 /* Finally */
 NVMON_MARKER_CLOSE;
 .fi
+
+.IP 7. 6
+Using likwid with GPU events in wrapper mode, measuring given events from the start to the end of the given application. The CUDA library and CUPTI library must be reachable (path in LD_LIBRARY_PATH).
+.TP
+.B likwid-perfctr -G 0,1 -W FLOPS_DP ./cudaApp
+.PP
+The execution is limited to Nvidia GPUs 0 and 1. It counts the double-precision floating point operations (FLOPS_DP) for the application cudaApp.
+
+
+.IP 7. 7
+Using likwid with GPU events and Rocmon MarkerAPI for AMD GPUs. The ROCM library must be reachable (library path in LD_LIBRARY_PATH) and ROCM_HOME should be defined in the environment pointing to the base directory of the ROCm installation.
+.TP
+.B likwid-perfctr -I 0,1 -R FLOPS_SP -m ./rocmApp
+.PP
+This runs the application in Rocmon MarkerAPI mode on GPUs 0 and 1 and measures the single-precision flops. The Rocmon MarkerAPI is similar to the CPU MarkerAPI (compile -DLIKWID_ROCMON):
+
+#include <likwid-marker.h>
+
+/* Initialize the library and add configured eventset */
+ROCMON_MARKER_INIT;
+
+/* If you run the code region only once, register
+ * the region tag previously to reduce the overhead
+ * of START and STOP calls. Call it before calling START() for
+ * the region the first time.
+ *
+ * Place it around your AMD GPU kernel call.
+ *
+ * Note: No whitespace characters are allowed in the region tags
+ * This call is optional but RECOMMENDED, START will do the same operations.
+ */
+ROCMON_MARKER_REGISTER("name");
+
+/* Start measurement on AMD GPUs
+ * Note: No whitespace characters are allowed in the region tags
+ */
+ROCMON_MARKER_START("name");
+/*
+ * Your code to be measured is here
+ * You can also nest named regions
+ */
+
+/* Stop measurment on AMD GPUs
+ * No whitespaces are allowed in the region names!
+ */
+ROCMON_MARKER_STOP("name");
+
+/* If you want to measure multiple groups/event sets
+ * Switches through groups in round-robin fashion.
+ */
+ROCMON_MARKER_SWITCH;
+
+/* If you want to get the data of a region inside your application
+ * nevents in an (int*) and used as input length of the events array. After the
+ * call, nevents contains the actual amount of events. Same for ngpus.
+ * events is an array of doubles (double*), time is a pointer to double to
+ * retrieve the measured runtime of the region and count is a pointer to int
+ * and is filled with the call count of the region.
+ */
+ROCMON_MARKER_GET("name", ngpus, nevents, events, time, count);
+
+/* If you want to reset the counts for a region
+ */
+ROCMON_MARKER_RESET("name");
+
+/* Finally */
+ROCMON_MARKER_CLOSE;
+.fi
+
+.IP 7. 6
+Using likwid with GPU events using the Rocmon for AMD GPUs, measuring given events from the start to the end of the given application. The ROCM library must be reachable (path in LD_LIBRARY_PATH) and ROCM_HOME should be defined in the environment pointing to the base directory of the ROCm installation.
+.TP
+.B likwid-perfctr -I 0,1 -R FLOPS_DP ./rocmApp
+.PP
+The execution is limited to AMD GPUs 0 and 1. It counts the double-precision floating point operations (FLOPS_DP) for the application cudaApp.
 
 
 .SH AUTHOR

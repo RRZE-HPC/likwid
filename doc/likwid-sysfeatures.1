@@ -25,7 +25,9 @@ and operating system features. It is a common interface for various features
 like CPU frequencies, CPU prefetchers and OS-based NUMA balancing. These features
 commonly have a topological scope which means that they cover a specific topological
 entity. Some exist only once per node. In order to retrieve or manipulate
-feature values, all devices have to be specified in the device list.
+feature values, all devices have to be specified in the device list. When LIKWID
+was built with Nvidia GPU support, likwid-sysfeatures provides access to Nvidia
+NVML features.
 
 .SH OPTIONS
 .TP

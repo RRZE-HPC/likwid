@@ -74,7 +74,7 @@
 
 \anchor GNR_METRICS
 <H2>Performance metric counters</H2>
-<P>With the Intel&reg; Granite Rapids microarchitecture a new class of core-local counters was introduced, the so-called perf-metrics. The reflect the first level of the <A HREF="https://software.intel.com/content/www/us/en/develop/documentation/vtune-cookbook/top/methodologies/top-down-microarchitecture-analysis-method.html">Top-down Microarchitecture Analysis</A> tree. The events return the fraction of slots used by the event.</P>
+<P>With the Intel&reg; Granite Rapids microarchitecture a new class of core-local counters was introduced, the so-called perf-metrics. The reflect the first level of the <A HREF="https://software.intel.com/content/www/us/en/develop/documentation/vtune-cookbook/top/methodologies/top-down-microarchitecture-analysis-method.html">Top-down Microarchitecture Analysis</A> tree. The events return the fraction of slots used by the event. With Intel SapphireRapids, four additional events have been added that partly reflect the second level of the TMA tree. The metrics are only supported when built with <code>ACCESSMODE=accessdaemon</code> or <code>ACCESSMODE=direct</code>.</P>
 <H3>Counter and events</H3>
 
 <TABLE>
@@ -97,6 +97,22 @@
 <TR>
   <TD>TMA3</TD>
   <TD>BACKEND_BOUND</TD>
+</TR>
+<TR>
+  <TD>TMA4</TD>
+  <TD>HEAVY_OPS</TD>
+</TR>
+<TR>
+  <TD>TMA5</TD>
+  <TD>BR_MIEMREDICT</TD>
+</TR>
+<TR>
+  <TD>TMA6</TD>
+  <TD>FETCH_LATENCY</TD>
+</TR>
+<TR>
+  <TD>TMA7</TD>
+  <TD>MEM_BOUND</TD>
 </TR>
 </TABLE> 
 

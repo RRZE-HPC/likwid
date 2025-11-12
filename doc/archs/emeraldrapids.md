@@ -1,37 +1,37 @@
-\page EmeraldRapids Intel&reg; EmeraldRapids
+\page emeraldrapids Intel&reg; EmeraldRapids
 
 <P>This page is valid for EmeraldRapids.</P>
 
 <H1>Available performance monitors for the Intel&reg; EmeraldRapids microarchitecture</H1>
 <UL>
-<LI>\ref SPR_FIXED "Fixed-purpose counters"</LI>
-<LI>\ref SPR_METRICS "Performance metric counters"</LI>
-<LI>\ref SPR_PMC "General-purpose counters"</LI>
-<LI>\ref SPR_THERMAL "Thermal counters"</LI>
-<LI>\ref SPR_VOLTAGE "Core voltage counters"</LI>
-<LI>\ref SPR_POWER "Power measurement counters"</LI>
-<LI>\ref SPR_UBOX "Uncore global counters"</LI>
-<LI>\ref SPR_CBOX "Last level cache counters"</LI>
-<LI>\ref SPR_MBOX "Memory channel counters"</LI>
-<LI>\ref SPR_WBOX "Power control unit counters"</LI>
-<LI>\ref SPR_QBOX "UPI interface counters"</LI>
-<LI>\ref SPR_SBOX "Mesh-to-UPI counters (M3UPI)"</LI>
-<LI>\ref SPR_IBOX "IIO box counters"</LI>
-<LI>\ref SPR_BBOX "Mesh2Memory counters"</LI>
-<!--<LI>\ref SPR_PBOX "Mesh2PCIe counters"</LI>-->
-<LI>\ref SPR_HBM "High bandwidth memory counters"</LI>
+<LI>\ref EMR_FIXED "Fixed-purpose counters"</LI>
+<LI>\ref EMR_METRICS "Performance metric counters"</LI>
+<LI>\ref EMR_PMC "General-purpose counters"</LI>
+<LI>\ref EMR_THERMAL "Thermal counters"</LI>
+<LI>\ref EMR_VOLTAGE "Core voltage counters"</LI>
+<LI>\ref EMR_POWER "Power measurement counters"</LI>
+<LI>\ref EMR_UBOX "Uncore global counters"</LI>
+<LI>\ref EMR_CBOX "Last level cache counters"</LI>
+<LI>\ref EMR_MBOX "Memory channel counters"</LI>
+<LI>\ref EMR_WBOX "Power control unit counters"</LI>
+<LI>\ref EMR_QBOX "UPI interface counters"</LI>
+<LI>\ref EMR_SBOX "Mesh-to-UPI counters (M3UPI)"</LI>
+<LI>\ref EMR_IBOX "IIO box counters"</LI>
+<LI>\ref EMR_BBOX "Mesh2Memory counters"</LI>
+<!--<LI>\ref EMR_PBOX "Mesh2PCIe counters"</LI>-->
+<LI>\ref EMR_HBM "High bandwidth memory counters"</LI>
 </UL>
 
 <H2>Some units are currently not supported</H2>
 <UL>
 <LI>free-running IIO counters</LI>
-<LI>fixed-purpose counters in \ref SPR_WBOX</LI>
+<LI>fixed-purpose counters in \ref EMR_WBOX</LI>
 <LI>free-running memory controller counters</LI>
 <LI>M2HBM unit</LI>
 </UL>
 
 <H1>Counters available for each hardware thread</H1>
-\anchor SPR_FIXED
+\anchor EMR_FIXED
 <H2>Fixed-purpose counters</H2>
 <P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event. The Intel&reg; EmeraldRapids architecture adds a fourth fixed-purpose counter for the event TOPDOWN_SLOTS.</P>
 <H3>Counter and events</H3>
@@ -79,9 +79,9 @@
 </TR>
 </TABLE>
 
-\anchor SPR_METRICS
+\anchor EMR_METRICS
 <H2>Performance metric counters</H2>
-<P>With the Intel&reg; Icelake SP microarchitecture a new class of core-local counters was introduced, the so-called perf-metrics. The reflect the first level of the <A HREF="https://software.intel.com/content/www/us/en/develop/documentation/vtune-cookbook/top/methodologies/top-down-microarchitecture-analysis-method.html">Top-down Microarchitecture Analysis</A> tree. The events return the fraction of slots used by the event.</P>
+<P>With the Intel&reg; Icelake SP microarchitecture a new class of core-local counters was introduced, the so-called perf-metrics. The reflect the first level of the <A HREF="https://software.intel.com/content/www/us/en/develop/documentation/vtune-cookbook/top/methodologies/top-down-microarchitecture-analysis-method.html">Top-down Microarchitecture Analysis</A> tree. The events return the fraction of slots used by the event. With Intel SapphireRapids, four additional events have been added that partly reflect the second level of the TMA tree. The metrics are only supported when built with <code>ACCESSMODE=accessdaemon</code> or <code>ACCESSMODE=direct</code>.</P>
 <H3>Counter and events</H3>
 
 <TABLE>
@@ -105,9 +105,25 @@
   <TD>TMA3</TD>
   <TD>BACKEND_BOUND</TD>
 </TR>
+<TR>
+  <TD>TMA4</TD>
+  <TD>HEAVY_OPS</TD>
+</TR>
+<TR>
+  <TD>TMA5</TD>
+  <TD>BR_MIEMREDICT</TD>
+</TR>
+<TR>
+  <TD>TMA6</TD>
+  <TD>FETCH_LATENCY</TD>
+</TR>
+<TR>
+  <TD>TMA7</TD>
+  <TD>MEM_BOUND</TD>
+</TR>
 </TABLE> 
 
-\anchor SPR_PMC
+\anchor EMR_PMC
 <H2>General-purpose counters</H2>
 <P>Commonly the Intel&reg; EmeraldRapids microarchitecture provides 4 general-purpose counters consisting of a config and a counter register.</P>
 <H3>Counter and events</H3>
@@ -188,7 +204,7 @@
 <P>If HyperThreading is disabled, each core can use 8 general-purpose counters named &lt;4-7&gt;.
 
 
-\anchor SPR_THERMAL
+\anchor EMR_THERMAL
 <H2>Thermal counters</H2>
 <P>The Intel&reg; EmeraldRapids microarchitecture provides one register for the current core temperature.</P>
 <H3>Counter and events</H3>
@@ -203,7 +219,7 @@
 </TR>
 </TABLE>
 
-\anchor SPR_VOLTAGE
+\anchor EMR_VOLTAGE
 <H2>Core voltage counters</H2>
 <P>The Intel&reg; EmeraldRapids microarchitecture provides one register for the current core voltage.</P>
 <H3>Counter and events</H3>
@@ -219,7 +235,7 @@
 </TABLE>
 
 <H1>Counters available for one hardware thread per socket</H1>
-\anchor SPR_POWER
+\anchor EMR_POWER
 <H2>Power counter</H2>
 <P>The Intel&reg; Icelake SP microarchitecture provides measurements of the current power consumption through the RAPL interface.</P>
 <H3>Counter and events</H3>
@@ -250,7 +266,7 @@
 </TR>
 </TABLE>
 
-\anchor SPR_UBOX
+\anchor EMR_UBOX
 <H2>Uncore global counters</H2>
 <P>The Intel&reg; EmeraldRapids microarchitecture provides measurements for the global uncore.</P>
 <H3>Counter and events</H3>
@@ -301,7 +317,7 @@
 </TR>
 </TABLE>
 
-\anchor SPR_CBOX
+\anchor EMR_CBOX
 <H2>Last level cache counters</H2>
 <P>The Intel&reg; EmeraldRapids microarchitecture provides measurements for the last level cache segments.</P>
 <H3>Counter and events</H3>
@@ -432,7 +448,7 @@ Does not include evict cleans or invalidates</TD>
 <P>The event LLC_VICTIMS uses the MATCH0 option to differentiate between 'local only' and 'remote only' victims. If nothing is set, 'all' are counted. There are only two settings: MATCH0=0x20 for 'local only' and MATCH0=0x80 for 'remote only'.</P>
 -->
 
-\anchor SPR_MBOX
+\anchor EMR_MBOX
 <H2>Memory channel counters</H2>
 <P>The Intel&reg; EmeraldRapids microarchitecture provides measurements of the memory channels of each integrated Memory Controllers (iMC) in the Uncore.<BR>
 The integrated Memory Controllers performance counters are exposed to the operating system through MMIO interfaces. There may be 8 memory controllers in the system. Each controller provides four memory channels. Each channel has 4 different general-purpose counters and one fixed counter for the DRAM clock. The channels of the first memory controller are MBOX0-3, the two channels of the second memory controller are named MBOX3-7, and so on. The name MBOX originates from the Nehalem EX Uncore monitoring where those functional units are called MBOX.
@@ -493,7 +509,7 @@ The integrated Memory Controllers performance counters are exposed to the operat
 </TR>
 </TABLE>
 
-\anchor SPR_WBOX
+\anchor EMR_WBOX
 <H2>Power control unit counters</H2>
 <P>The Intel&reg; EmeraldRapids microarchitecture provides measurements of the power control unit (PCU) in the Uncore.
 <BR>
@@ -584,7 +600,7 @@ The PCU performance counters are exposed to the operating system through the MSR
 </TABLE>
 
 
-\anchor SPR_QBOX
+\anchor EMR_QBOX
 <H2>UPI interface counters</H2>
 <P>The Intel&reg; EmeraldRapids microarchitecture provides measurements of the Ultra Path Interconnect Link layer (UPI LL) in the Uncore.<BR>
 The UPI hardware performance counters are exposed to the operating system through PCI interfaces. There are four of those interfaces/units/slots for the UPI. The actual amount of UPI units depend on the CPU core count of one socket. If your system has not all interfaces but interface 0 does not work, try the other ones. The QBOX was introduced for the Skylake microarchitecture.</P>
@@ -641,7 +657,7 @@ The UPI hardware performance counters are exposed to the operating system throug
 </TR>
 </TABLE>
 
-\anchor SPR_SBOX
+\anchor EMR_SBOX
 <H2>Mesh-to-UPI counters (M3UPI)</H2>
 <P>The Intel&reg; EmeraldRapids microarchitecture provides measurements of the Mesh-to-UPI (M3UPI) interface in the Uncore.<BR>
 The Mesh-to-UPI performance counters are exposed to the operating system through PCI interfaces. Since the RBOXes manage the traffic from the LLC-connecting mesh interface on the socket with the UPI interfaces (QBOXes), the amount is similar to the amount of QBOXes (4). See at UPI units how many are available for which system configuration.
@@ -699,7 +715,7 @@ The Mesh-to-UPI performance counters are exposed to the operating system through
 </TABLE>
 
 
-\anchor SPR_IBOX
+\anchor EMR_IBOX
 <H2>IIO box counters</H2>
 <P>The Intel&reg; EmeraldRapids microarchitecture provides measurements of the IIO box in the Uncore.<BR>
 The IIO box counters are exposed to the operating system through the MSR interface.
@@ -802,7 +818,7 @@ The IIO box counters are exposed to the operating system through the MSR interfa
 </TABLE>
 
 
-\anchor SPR_BBOX
+\anchor EMR_BBOX
 <H2>Mesh2Memory counters</H2>
 <P>The Intel&reg; EmeraldRapids microarchitecture provides measurements of the mesh (M2M) which connects the cores with the Uncore devices.<br>
 The M2M devices is first introduced in the Intel&reg; Skylake SP microarchitecture. There was no suitable unit name for this, so LIKWID calls them simply M2M.
@@ -861,7 +877,7 @@ The M2M devices is first introduced in the Intel&reg; Skylake SP microarchitectu
 </TABLE>
 
 <!--
-\anchor SPR_PBOX
+\anchor EMR_PBOX
 <H2>Mesh2PCIe counters</H2>
 <P>The Intel&reg; Icelake SP microarchitecture provides measurements of the mesh to the IIO devices. The description from Intel&reg;:<br>
 <I>M2PCIe blocks manage the interface between the Mesh and each IIO stack.</I><br>
@@ -920,9 +936,9 @@ The M2M devices is first introduced in the Intel&reg; Skylake SP microarchitectu
 </TABLE>
 -->
 
-\anchor SPR_HBM
+\anchor EMR_HBM
 <H2>High-Bandwidth Memory (HBM) counters</H2>
-Some EmeraldRapids systems provide on-chip HBM. If it is available, there are also corresponding perfmon units. The available events are almost similar to \ref SPR_MBOX.
+Some EmeraldRapids systems provide on-chip HBM. If it is available, there are also corresponding perfmon units. The available events are almost similar to \ref EMR_MBOX.
 </P>
 
 <H3>Counter and events</H3>

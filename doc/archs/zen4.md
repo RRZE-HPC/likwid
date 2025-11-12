@@ -8,6 +8,7 @@
 <LI>\ref ZEN4_CPMC "L3 cache general-purpose counters"</LI>
 <LI>\ref ZEN4_POWER_SOCKET "Socket energy counters"</LI>
 <LI> \ref ZEN4_DATA_FABRIC "Data Fabric counters"</LI>
+<LI> \ref ZEN4_UMC "Unified memory controller counters"</LI>
 </UL>
 
 \anchor ZEN4_FIXED
@@ -281,6 +282,38 @@ P0 frequency while the core is in C0).</P>
 </TR>
 <TR>
   <TD>DFC15</TD>
+  <TD>*</TD>
+</TR>
+</TABLE>
+
+\anchor ZEN4_UMC
+<H2>Unified memory controller counters</H2>
+<P>The AMD&reg; Zen4 microarchitecture provides additional Uncore counters at the unified memory controllers (UMC). There are up to 12 memory controllers with up to 5 counters each as the system provides 64 registers in total for all. The exact configuration is system dependent and read at runtime.</P>
+
+<H3>Counter and events</H3>
+<TABLE>
+<TR>
+  <TH>Counter name</TH>
+  <TH>Event name</TH>
+</TR>
+<TR>
+  <TD>UMC&lt;0-11&gt;C0</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>UMC&lt;0-11&gt;C1</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>UMC&lt;0-11&gt;C2</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>UMC&lt;0-11&gt;C3</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>UMC&lt;0-11&gt;C4</TD>
   <TD>*</TD>
 </TR>
 </TABLE>

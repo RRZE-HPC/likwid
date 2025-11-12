@@ -60,11 +60,13 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \ref Nvmon
 - \ref RocMarkerAPI
 - \ref Rocmon
+- \ref LibInfo
 
 \subsection Lua_Interface Lua Interface
 - \ref lua_Info
 - \ref lua_InputOutput
 - \ref lua_Config
+- \ref lua_LibInfo
 - \ref lua_Access
 - \ref lua_CPUTopology
 - \ref lua_NumaInfo
@@ -76,7 +78,12 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \ref lua_MemSweep
 - \ref lua_cpuFeatures
 - \ref lua_CpuFreq
-- \ref lua_GPUTopology
+- \ref lua_NvidiaGPUTopology
+- \ref lua_NvidiaGPUAPI
+- \ref lua_AMDGPUTopology
+- \ref lua_AMDGPUAPI
+- \ref lua_likwid_device
+- \ref lua_sysfeatures
 - \ref lua_Misc (Some functionality not provided by Lua natively)
 
 \subsection Fortran90_Interface Fortran90 Interface
@@ -131,6 +138,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage zen3
 - \subpage zen4
 - \subpage zen4c
+- \subpage zen5
 
 \subsection Architectures_ARM ARM architectures
 - \subpage armA15
@@ -141,6 +149,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage neoverseV1
 - \subpage applem1
 - \subpage hisilicontsv110
+- \subpage armGrace
 
 
 \subsection Architectures_POWER POWER architectures
@@ -149,7 +158,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 
 \subsection Architectures_NVIDIA Nvidia GPU architectures
 - For compute capability < 7.0: support based on CUPTI Events API
-- For compute capability >= 7.0: support based on CUpti Profiling API
+- For compute capability >= 7.0: support based on CUpti Profiling API and PerfWorks
 
 \subsection Architectures_AMD AMD GPU architectures
 - ROCm 5.0 and higher capable GPUs
@@ -169,7 +178,8 @@ Using the NvMarker API (for Nvidia GPUs):
 If you have problems with LIKWID:<BR>
 GitHub: <A HREF="https://github.com/RRZE-HPC/likwid">https://github.com/RRZE-HPC/likwid</A><BR>
 Bugs: <A HREF="https://github.com/RRZE-HPC/likwid/issues">https://github.com/RRZE-HPC/likwid/issues</A><BR>
-Mailinglist: <A HREF="http://groups.google.com/group/likwid-users">http://groups.google.com/group/likwid-users</A><BR>
+Wiki: <A HREF="https://github.com/RRZE-HPC/likwid/wiki">https://github.com/RRZE-HPC/likwid/wiki</A><BR>
+Mailinglist: <A HREF="http://groups.google.com/group/likwid-users">http://groups.google.com/group/likwid-users (discontinued by Google)</A><BR>
 Matrix Chats:<BR>
 <UL>
 <LI>General: <A HREF="https://app.element.io/#/room/#likwid:matrix.org">https://app.element.io/#/room/#likwid:matrix.org</A></LI>
@@ -179,7 +189,7 @@ Matrix Chats:<BR>
 
 \page build Build and install instructions
 \section allg Introduction
-Likwid is build using GNU make and Perl. Besides the Linux kernel and the standard C library, all required dependencies are shipped with the archive (<A HREF="http://www.lua.org/">Lua</A>, <A HREF="http://www.open-mpi.org/projects/hwloc/">hwloc</A> and <A HREF="https://github.com/LLNL/GOTCHA">GOTCHA</A>).
+Likwid is build using GNU make and Perl. Besides the Linux kernel and the standard C library, all required dependencies are shipped with the archive (<A HREF="http://www.lua.org/">Lua</A>, <A HREF="http://www.open-mpi.org/projects/hwloc/">hwloc</A>, <A HREF="https://github.com/LLNL/GOTCHA">GOTCHA</A> and <A HREF="https://github.com/google/cwisstable">cwisstable</A>).
 It should build on any Linux distribution with a recent GCC compiler or CLANG compiler and 2.6 or newer kernel without any changes.
 
 There is one generic top level <CODE>Makefile</CODE>, the main <CODE>config.mk</CODE> configuration file and <CODE>make/include_&lt;COMPILER&gt;.mk</CODE>for each
@@ -194,6 +204,10 @@ For POWER8 systems, you can use <CODE>GCCPOWER</CODE> or <CODE>XLC</CODE>.
 In order to build with Nvidia GPU support, set <CODE>NVIDIA_INTERFACE=true</CODE>. Further configuration options like include paths, can be found also in the file.
 
 For AMD ROCm GPUs, set <CODE>ROCM_INTERFACE=true</CODE>. Further configuration options like include paths, can be found also in the file.
+
+For the experimental sysfeatures and LIKWID device interface, set <CODE>SYSFEATURES_SUPPORT=true</CODE>.
+
+When you plan to use LIKWID inside of container, set <CODE>CONTAINER_HELPER=true</CODE>.
 
 \subsection directory Directory structure
 All source files are in the src/ directory. All header files are located in
@@ -241,6 +255,10 @@ If you want to use the Marker API in Fortran programs LIKWID offers a native For
 
 By setting the variables <CODE>LUA_INCLUDE_DIR</CODE>, <CODE>LUA_LIB_DIR</CODE>, <CODE>LUA_LIB_NAME</CODE> (Lua interpreter has to use the same name, e.g. lua5.1) and <CODE>LUA_BIN</CODE> (directory of the Lua interpreter) in config.mk, the internal Lua library and interpreter are deactivated. The LIKWID library is linked against the provided Lua library and the Shebang of all Lua scripts is changed to the system Lua interpreter. LIKWID's Lua interface was patched to support Lua 5.1, 5.2 and 5.3. It is still recommended to use the internal Lua and only basic tests are done before a release.
 
+\subsubsection system_hwloc Use system hwloc instead of internal hwloc
+
+This can be changed by setting <CODE>HWLOC_INCLUDE_DIR</CODE> and <CODE>HWLOC_LIB_DIR</CODE> in config.mk. If the system hwloc library is not called libhwloc, adjust the library name in <CODE>HWLOC_LIB_NAME</CODE>.
+
 \subsection targets Build targets
 You have to edit config.mk to configure your build and install path.
 
@@ -265,7 +283,7 @@ can be used without installation.
 
  - <B>make install</B> - Installs the executables, libraries, man pages and headers to the path you configured in config.mk (<CODE>PREFIX</CODE>).
  - <B>make uninstall</B> - Delete all installed files under <CODE>PREFIX</CODE>.
-  - <B>make move</B> - Copy the executables, libraries, man pages and headers from <CODE>PREFIX</CODE> in config.mk to <CODE>INSTALLED_PREFIX</CODE>.
+ - <B>make move</B> - Copy the executables, libraries, man pages and headers from <CODE>PREFIX</CODE> in config.mk to <CODE>INSTALLED_PREFIX</CODE>.
  - <B>make uninstall_moved</B> - Delete all installed files under <CODE>INSTALLED_PREFIX</CODE>.
 
 \subsection accessD Setting up access for hardware performance monitoring on x86 processors
@@ -275,9 +293,9 @@ Per default only root has read/write access to these msr device files. In order 
 
 likwid-perfctr, likwid-powermeter and likwid-features require the Linux <CODE>msr</CODE> kernel module. This module is part of most standard distro kernels. You have to be root to do the initial setup.
 
-    - Check if the <CODE>msr</CODE> module is loaded with <CODE>lsmod | grep msr</CODE>. There should be an output.
-    - It the module is not loaded, load it with <CODE>modprobe msr</CODE>. For automatic loading at startup consult your distros documentation how to do so.
-    - Adopt access rights on the MSR device files for normal user. To grant access to anyone, you can use <CODE>chmod o+rw /dev/cpu/*/msr</CODE>. This is only recommended on single user desktop systems.
+ - Check if the <CODE>msr</CODE> module is loaded with <CODE>lsmod | grep msr</CODE>. There should be an output.
+ - It the module is not loaded, load it with <CODE>modprobe msr</CODE>. For automatic loading at startup consult your distros documentation how to do so.
+ - Adopt access rights on the MSR device files for normal user. To grant access to anyone, you can use <CODE>chmod o+rw /dev/cpu/*/msr</CODE>. This is only recommended on single user desktop systems.
 
 As in general access to MSRs is not desired on security sensitive systems, you can either implement a more sophisticated access rights settings with e.g. setgid. A common solution used on many other device files, e.g. for audio, is to introduce a group and make a <CODE>chown</CODE> on the msr device files to that group. Now if you execute likwid-perfctr with setgid on that group, the executing user can use the tool but cannot directly write or read the MSR device files.
 
@@ -296,35 +314,42 @@ ARM support was added in January. The main switch is the <CODE>COMPILER</CODE> s
 For POWER systems, the main switch is the <CODE>COMPILER</CODE> setting in config.mk. The change to <CODE>GCCPOWER</CODE> configures the build to work on POWER and switch to the proper <CODE>ACCESSMODE</CODE>.
 
 \subsubsection secureboot LIKWID and SecureBoot
+
 LIKWID in direct or accessdaemon mode uses the common MSR and PCI interfaces from the Linux kernel. Unfortunately, some recent operating systems (e.g. Ubuntu 18.04) patches the Linux kernel so that these interfaces (at least MSR) are not allowed to use anymore. You probably just get read/write errors because LIKWID currently has no check of the SecureBoot state. <B>If you want to use LIKWID, you have to disable SecureBoot</B>.
+
+\subsubsection msr_writes_enable Security restrictions on MSR kernel module with Linux 5.9+
+
+With Linux 5.9 and newer, the MSR kernel module applies another security check to disable or at least warn about writes to MSR registers through the driver. While most distributions only warn, it might be deactivated completely. The warnings look like this:<BR>
+<CODE>
+[  894.899410] msr: Write to unrecognized MSR <register_address> by <application>
+</CODE><BR>
+In order to deactivate these warnings, set <CODE>msr.allow_writes=on</CODE> on the Linux boot line (e.g. in grub boot loader configuration).
 
 \subsubsection depends Dependencies
 Although we tried to minimize the external dependencies of LIKWID, some advanced tools or only specific tool options require external packages.<BR>
 \ref likwid-perfscope uses the Perl script <A HREF="https://github.com/dkogan/feedgnuplot">feedGnuplot</A> to forward the real-time data to gnuplot. <A HREF="https://github.com/dkogan/feedgnuplot">feedGnuplot</A> is included into LIKWID, but <A HREF="http://www.gnuplot.info/">gnuplot</A> itself is not.<BR>
 In order to create the HTML documentation of LIKWID, the tool <A HREF="www.doxygen.org">Doxygen</A> is required.
-*/
 
-/*! \page C-markerAPI-code Marker API in a C/C++ application
+\page C-markerAPI-code Marker API in a C/C++ application
 \include C-markerAPI.c
-*/
 
-/*! \page F-markerAPI-code Marker API in a Fortran90 application
+
+\page F-markerAPI-code Marker API in a Fortran90 application
 \include F-markerAPI.F90
-*/
 
-/*! \page C-likwidAPI-code LIKWID API in a C/C++ application
+\page C-likwidAPI-code LIKWID API in a C/C++ application
 \include C-likwidAPI.c
-*/
-/*! \page Lua-likwidAPI-code LIKWID API in a Lua application
+
+\page Lua-likwidAPI-code LIKWID API in a Lua application
 \include Lua-likwidAPI.lua
-*/
 
-/*! \page C-nvMarkerAPI-code NvMarker API in a C/C++ application (Nvidia GPU monitoring)
+
+\page C-nvMarkerAPI-code NvMarker API in a C/C++ application (Nvidia GPU monitoring)
 \include C-nvMarkerAPI.c
-*/
 
 
-/*! \page faq FAQ
+
+\page faq FAQ
 \section faq1 Which architectures are supported?
 LIKWID supports a range of x86 CPU architectures but likely not all. We concentrated the development effort on Intel and AMD machines. Almost all architecture code is tested. With LIKWID 5.0 the ARM and POWER architectures are supported as well. For a list of architectures see section \ref Architectures or call <CODE>likwid-perfctr -i</CODE>.
 
@@ -369,4 +394,4 @@ Some time ago, Intel release a document Intel PMU sharing guide which lists some
 
 \section faq15 I want to help, were do I start?
 The best way is to talk to us at the <A HREF="http://groups.google.com/group/likwid-users">mailing list</A>. There are a bunch of small work packages on our ToDo list that can be used as a good starting point for learning how LIKWID works. If you are not a programmer but you have a good idea, let us know and we will discuss it.
-*/
+
