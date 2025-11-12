@@ -34,6 +34,7 @@
 #include <perfmon_zen4c_counters.h>
 #include <error.h>
 #include <affinity.h>
+#include <cpuid.h>
 
 static int perfmon_numCountersZen4c = NUM_COUNTERS_ZEN4C;
 static int perfmon_numArchEventsZen4c = NUM_ARCH_EVENTS_ZEN4C;
