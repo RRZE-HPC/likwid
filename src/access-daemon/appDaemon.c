@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <bstrlib.h>
+#include <stdbool.h>
 
 #include <likwid.h>
 #include <error.h>
@@ -52,8 +53,9 @@ static struct tagbstring daemon_name = bsStatic("likwid-appDaemon.so");
 static FILE* output_file = NULL;
 
 // Timeline mode
-static int stopIssued = 0;
-static pthread_mutex_t stopMutex = PTHREAD_MUTEX_INITIALIZER;
+static bool timelineStop = false;
+static bool timelineRunning = false;
+static pthread_t timelineTid;
 
 static int appdaemon_register_exit(appdaemon_exit_func f)
 {
@@ -613,11 +615,9 @@ static void* appdaemon_timeline_main(void* arg)
         printf("Thread sleeps for %d ms\n", target_delay_ms);
         usleep(target_delay_ms / 1000);
 
-        // Check stop status
-        pthread_mutex_lock(&stopMutex);
-        stop = stopIssued;
-        pthread_mutex_unlock(&stopMutex);
-        if (stop > 0) break;
+        if (__atomic_load_n(&timelineStop, __ATOMIC_ACQUIRE))
+            break;
+
         printf("Thread Reads\n");
 #ifdef LIKWID_NVMON
         appdaemon_read_nvmon();
@@ -684,13 +684,11 @@ static void main_wrapper_prolog()
     if (timelineInterval > 0)
     {
         //printf("Start thread with interval %d\n", timelineInterval);
-        // TODO we should either detach the timeline thread or join it in the end
-        pthread_t tid;
-        int ret = pthread_create(&tid, NULL, &appdaemon_timeline_main, &timelineInterval);
+        int ret = pthread_create(&timelineTid, NULL, &appdaemon_timeline_main, &timelineInterval);
         if (ret != 0)
-        {
             fprintf(stderr, "Failed to create timeline thread: %s\n", strerror(ret));
-        }
+        else
+            timelineRunning = true;
     } else {
 #ifdef LIKWID_NVMON
         char* nvEventStr = getenv("LIKWID_NVMON_EVENTS");
@@ -735,9 +733,11 @@ static void main_wrapper_prolog()
 static void main_wrapper_epilog()
 {
     // Stop timeline thread (if running)
-    pthread_mutex_lock(&stopMutex);
-    stopIssued = 1;
-    pthread_mutex_unlock(&stopMutex);
+    if (timelineRunning)
+    {
+        __atomic_store_n(&timelineStop, true, __ATOMIC_RELEASE);
+        pthread_join(timelineTid, NULL);
+    }
 
     for (int i = 0; i < appdaemon_num_exit_funcs; i++)
         appdaemon_exit_funcs[i]();
