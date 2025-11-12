@@ -35,6 +35,7 @@
 #include <string.h>
 
 #include <likwid.h>
+#include <lw_alloc.h>
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
