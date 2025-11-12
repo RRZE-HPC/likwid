@@ -263,7 +263,7 @@ $(L_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$(L_APPS)))
 	fi
 	@if [ "$(ACCESSMODE)" = "direct" ]; then sed -i -e s#"access_mode = 0"#"access_mode = 1"#g $(SRC_DIR)/applications/$@.lua;fi
 
-$(L_HELPER):
+$(L_HELPER): $(addprefix $(SRC_DIR)/applications/,$(L_HELPER))
 	@echo "===>  ADJUSTING  $@"
 	@sed -e s#'<PREFIX>'#$(subst /,\\/,$(PREFIX))#g \
 		-e s#'<INSTALLED_LIBPREFIX>'#$(subst /,\\/,$(INSTALLED_LIBPREFIX))#g \
