@@ -124,6 +124,7 @@ DECLAREFUNC_RPR(rocprofiler_create_callback_thread, rocprofiler_callback_thread_
 DECLAREFUNC_RPR(rocprofiler_assign_callback_thread, rocprofiler_buffer_id_t, rocprofiler_callback_thread_t);
 DECLAREFUNC_RPR(rocprofiler_configure_buffer_dispatch_counting_service, rocprofiler_context_id_t, rocprofiler_buffer_id_t, rocprofiler_dispatch_counting_service_cb_t, void *);
 DECLAREFUNC_RPR(rocprofiler_configure_device_counting_service, rocprofiler_context_id_t, rocprofiler_buffer_id_t, rocprofiler_agent_id_t, rocprofiler_device_counting_service_cb_t, void *);
+DECLAREFUNC_RPR(rocprofiler_sample_device_counting_service, rocprofiler_context_id_t, rocprofiler_user_data_t, rocprofiler_counter_flag_t, rocprofiler_counter_record_t *, size_t *);
 DECLAREFUNC_RPR(rocprofiler_start_context, rocprofiler_context_id_t);
 DECLAREFUNC_RPR(rocprofiler_stop_context, rocprofiler_context_id_t);
 DECLAREFUNC_RPR(rocprofiler_context_is_active, rocprofiler_context_id_t, int *);
@@ -272,6 +273,7 @@ static int rocmon_libraries_init(void) {
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_assign_callback_thread);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_configure_buffer_dispatch_counting_service);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_configure_device_counting_service);
+    DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_sample_device_counting_service);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_start_context);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_stop_context);
     DLSYM_CHK(lib_rocprofiler_sdk, rocprofiler_context_is_active);
@@ -761,7 +763,7 @@ static void buffered_callback(
         char key[32];
         snprintf(key, sizeof(key), "%" PRIu64, cid.handle);
 
-        double *value;
+        double *value = NULL;
         int err = get_smap_by_key(device->callbackRprResults, key, (void **)value);
         if (err == -ENOENT) {
             value = malloc(sizeof(*value));
@@ -769,7 +771,7 @@ static void buffered_callback(
                 ERROR_PRINT("Unable to allocate memory to store rocprofiler result");
                 continue;
             }
-            *value = record->counter_value;
+
             err = add_smap(device->callbackRprResults, key, value);
             if (err < 0) {
                 ERROR_PRINT("Unable to save rocprofiler result to map: %s", strerror(-err));
@@ -780,6 +782,8 @@ static void buffered_callback(
             ERROR_PRINT("Error while getting value from result map: %s", strerror(-err));
             continue;
         }
+
+        *value = record->counter_value;
     }
 
     pthread_mutex_unlock(&device->callbackRprMutex);
@@ -1267,12 +1271,12 @@ int rocmon_init(size_t numGpuIds, const int *gpuIds) {
         goto unlock_ok;
     }
 
+    bool rsmi_initialized = false;
+    bool libs_initialized = false;
+
     err = init_configuration();
     if (err < 0)
         goto unlock_err;
-
-    bool rsmi_initialized = false;
-    bool libs_initialized = false;
 
     err = rocmon_libraries_init();
     if (err < 0)
@@ -1413,6 +1417,8 @@ int rocmon_addEventSet(const char *eventString) {
         newGroupResult->eventResults = calloc(newGroup->groupInfo.nevents, sizeof(*newGroupResults->eventResults));
         if (!newGroupResult->eventResults)
             return -errno;
+
+        newGroupResult->numEventResults = newGroup->groupInfo.nevents;
     }
 
     return retval;
@@ -1595,7 +1601,7 @@ int rocmon_startCounters(void) {
     if (!rocmon_ctx)
         return -EFAULT;
 
-    uint64_t timestamp;
+    uint64_t timestamp = 0;
     int err = time_ns_get(&timestamp);
     if (err < 0)
         return err;
@@ -1662,6 +1668,14 @@ int counters_read_smi(RocmonDevice *device) {
 int counters_read_rpr(RocmonDevice *device) {
     RocmonEventResultList *groupResult = &device->groupResults[rocmon_ctx->activeGroupIdx];
 
+    rocprofiler_user_data_t dummy_userdata;
+    RPR_CALL(return -EIO,
+            rocprofiler_sample_device_counting_service,
+            rocmon_ctx->rocprofCtx,
+            dummy_userdata,
+            ROCPROFILER_COUNTER_FLAG_NONE,
+            NULL,
+            NULL);
     RPR_CALL(return -EIO, rocprofiler_flush_buffer, device->rocprofBuf);
 
     pthread_mutex_lock(&device->callbackRprMutex);
@@ -1687,7 +1701,7 @@ int counters_read_rpr(RocmonDevice *device) {
 }
 
 static int readCounters_impl(bool stop) {
-    uint64_t timestamp;
+    uint64_t timestamp = 0;
     int err = time_ns_get(&timestamp);
     if (err < 0)
         return err;
