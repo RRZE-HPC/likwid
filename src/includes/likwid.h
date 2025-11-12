@@ -3367,9 +3367,9 @@ the device type prefix (i.e. "N:", "C:", etc.).
 A device is considered available if it belongs to the current CPUset.
 In order to get a list of all devices, use 'likwid_device_get_all' instead.
 
-@params [in] type Likwid device type
-@params [out] string list of all available devices for the type specified
-@params [out] number of list entries.
+@param [in] type Likwid device type
+@param [out] id_list string list of all available devices for the type specified
+@param [out] id_list_count number of list entries.
 @return error code (<0 on failure)
 */
 int likwid_device_get_available(LikwidDeviceType type, char ***id_list, size_t *id_list_count) __attribute__((visibility ("default") ));
@@ -3381,9 +3381,9 @@ This functions returns all devices regardless of the current CPUset.
 In order to get a list of only available devices, use 'likwid_device_get_all'
 instead.
 
-@params [in] type Likwid device type
-@params [out] string list of all available devices for the type specified
-@params [out] number of list entries.
+@param [in] type Likwid device type
+@param [out] id_list string list of all available devices for the type specified
+@param [out] id_list_count number of list entries.
 @return error code (<0 on failure)
 */
 int likwid_device_get_all(LikwidDeviceType type, char ***id_list, size_t *id_list_count) __attribute__((visibility ("default") ));
