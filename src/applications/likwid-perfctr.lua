@@ -1199,8 +1199,8 @@ if nvSupported and #cuda_event_string_list > 0 then
 end
 ---------------------------
 if rocmSupported and #rocm_event_string_list > 0 then
-    likwid.init_rocm(gpulist_rocm)
-    rocmInitialized = true
+    --likwid.init_rocm(gpulist_rocm)
+    --rocmInitialized = true
     local preload = os.getenv("LD_PRELOAD")
     if preload == nil then
         likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
@@ -1616,16 +1616,8 @@ elseif use_timeline == false then
     end
     if rocmSupported and #rocm_event_string_list > 0 then
         if likwid.access(rocmMarkerFile, "e") >= 0 then
-            results, metrics = likwid.getMarkerResultsRocm(rocmMarkerFile, gpulist_rocm, nan2value)
-            if not results then
-                print_stderr("Failure reading appdaemon result file.")
-            elseif #results == 0 then
-                print_stderr("No regions could be found in appdaemon result file.")
-            else
-                for r = 1, #results do
-                    likwid.printOutputRocm(results[r], metrics[r], gpulist_rocm, r, print_stats)
-                end
-            end
+            results = likwid.markerInitResultsFromFileRocm(rocmMarkerFile)
+            likwid.printOutputRocm(results, nan2value)
             likwid.destroyMarkerFileRocm()
             os.remove(rocmMarkerFile)
         else

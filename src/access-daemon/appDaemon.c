@@ -504,7 +504,7 @@ static void appdaemon_close_rocmon(void)
     int ret = rocmon_stopCounters();
     if (ret < 0)
     {
-        ERROR_PRINT("Failed to stop rocmon");
+        ERROR_PRINT("Failed to stop rocmon: %s", strerror(-ret));
     }
 
     if (getenv("LIKWID_ROCMON_MARKER_FORMAT") == NULL) {
