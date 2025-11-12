@@ -1,5 +1,5 @@
 CC  = gcc
-FC  = ifort
+FC  = ifx
 AS  = as
 AR  = ar
 PAS = ./perl/AsmGen.pl
