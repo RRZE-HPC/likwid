@@ -109,6 +109,12 @@ if #arg == 0 then
     os.exit(0)
 end
 
+libinfo = likwid.getLibInfo()
+if not libinfo["sysfeaturesSupport"] then
+    print_stderr("LIKWID built without sysFeatures support.")
+    os.exit(0)
+end
+
 -- main variables with defaults
 local listFeatures = false
 local allFeatures = false
@@ -213,10 +219,10 @@ device_types[likwid.numa] = "NUMA (M)"
 device_types[likwid.die] = "Die (D)"
 device_types[likwid.socket] = "Socket (S)"
 device_types[likwid.node] = "Node (N)"
-if likwid.nvSupported() then
+if libinfo["nvidiaSupport"] then
     device_types[likwid.nvidia_gpu] = "Nvidia GPU (GN)"
 end
-if likwid.rocmSupported() then
+if libinfo["rocmSupport"] then
     device_types[likwid.amd_gpu] = "AMD GPU (GA)"
 end
 

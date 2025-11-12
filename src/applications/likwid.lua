@@ -47,7 +47,7 @@ likwid.hline =  string.rep("-",80)
 likwid.sline = string.rep("*",80)
 
 
-
+likwid.getLibInfo = likwid_getLibInfo
 likwid.getConfiguration = likwid_getConfiguration
 likwid.setGroupPath = likwid_setGroupPath
 likwid.putConfiguration = likwid_putConfiguration
@@ -203,7 +203,6 @@ likwid.nvGetNameOfMetric = likwid_nvGetNameOfMetric
 likwid.nvGetNameOfEvent = likwid_nvGetNameOfEvent
 likwid.nvGetNameOfCounter = likwid_nvGetNameOfCounter
 
-likwid.nvSupported = likwid_nvSupported
 likwid.readNvMarkerFile = likwid_readNvMarkerFile
 likwid.destroyNvMarkerFile = likwid_destroyNvMarkerFile
 likwid.nvMarkerNumRegions = likwid_nvMarkerNumRegions
@@ -221,7 +220,6 @@ likwid.nvInit = likwid_nvInit
 likwid.nvAddEventSet = likwid_nvAddEventSet
 likwid.nvFinalize = likwid_nvFinalize
 
-likwid.rocmSupported = likwid_rocmSupported
 likwid.getRocmTopology = likwid_getRocmTopology
 likwid.putRocmTopology = likwid_putRocmTopology
 likwid.getRocmEventsAndCounters = likwid_getRocmEventsAndCounters

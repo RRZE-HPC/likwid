@@ -40,9 +40,12 @@ print_stderr = function(...)
     io.stderr:flush()
 end
 
+libinfo = likwid.getLibInfo()
+
 local function version()
-    print_stdout(string.format("likwid-perfctr -- Version %d.%d.%d (commit: %s)", likwid.version, likwid.release,
-        likwid.minor, likwid.commit))
+    print_stdout(string.format("likwid-perfctr -- Version %d.%d.%d (commit: %s)",
+        libinfo["majorVersion"], libinfo["minorVersion"],
+        libinfo["bugfixVersion"], likwid.commit))
 end
 
 local function examples()
@@ -55,13 +58,13 @@ local function examples()
     io.stdout:write("likwid-perfctr -E L2\n")
     io.stdout:write("Run command on CPU 2 and measure performance group CLOCK:\n")
     io.stdout:write("likwid-perfctr -C 2 -g CLOCK ./a.out\n")
-    if likwid.nvSupported() then
+    if libinfo["nvidiaSupport"] then
         io.stdout:write("Run command and measure on GPU 1 the performance group FLOPS_DP (Only with NVMarkerAPI):\n")
         io.stdout:write("likwid-perfctr -G 1 -W FLOPS_DP -m ./a.out\n")
         io.stdout:write("It is possible to combine CPU and GPU measurements (with MarkerAPI and NVMarkerAPI):\n")
         io.stdout:write("likwid-perfctr -C 2 -g CLOCK -G 1 -W FLOPS_DP -m ./a.out\n")
     end
-    if likwid.rocmSupported() then
+    if libinfo["rocmSupport"] then
         io.stdout:write("Run command and measure on GPU 1 the performance group PCI (Only with ROCmMarkerAPI):\n")
         io.stdout:write("likwid-perfctr -I 1 -R PCI -m ./a.out\n")
         io.stdout:write("It is possible to combine CPU and GPU measurements (with MarkerAPI and ROCmMarkerAPI):\n")
@@ -79,17 +82,17 @@ local function usage(config)
     io.stdout:write("-c <list>\t\t Processor ids to measure (required), e.g. 1,2-4,8\n")
     io.stdout:write("-C <list>\t\t Processor ids to pin threads and measure, e.g. 1,2-4,8\n")
     io.stdout:write("\t\t\t For information about the <list> syntax, see likwid-pin\n")
-    if likwid.nvSupported() then
+    if libinfo["nvidiaSupport"] then
         io.stdout:write("-G, --gpus <list>\t List of CUDA GPUs to monitor\n")
     end
-    if likwid.rocmSupported() then
+    if libinfo["rocmSupport"] then
         io.stdout:write("-I <list>\t\t List of ROCm GPUs to monitor\n")
     end
     io.stdout:write("-g, --group <string>\t Performance group or custom event set string for CPU monitoring\n")
-    if likwid.nvSupported() then
+    if libinfo["nvidiaSupport"] then
         io.stdout:write("-W, --cudagroup <string>\t Performance group or custom event set string for GPU monitoring\n")
     end
-    if likwid.rocmSupported() then
+    if libinfo["rocmSupport"] then
         io.stdout:write("-R, --rocmgroup <string>\t\t Performance group or custom event set string for ROCm GPU monitoring\n")
     end
     io.stdout:write("-H\t\t\t Get group help (together with -g switch)\n")
@@ -203,9 +206,8 @@ cliopts = { "a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O
     "T:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats",
     "execpid", "perfflags:", "perfpid:", "Z", "outprefix:" }
 
-
 ---------------------------
-nvSupported = likwid.nvSupported()
+nvSupported = libinfo["nvidiaSupport"]
 num_cuda_gpus = 0
 gpulist_cuda = {}
 cuda_event_string_list = {}
@@ -219,7 +221,7 @@ if nvSupported then
     table.insert(cliopts, "cudagroup:")
 end
 ---------------------------
-rocmSupported = likwid.rocmSupported()
+rocmSupported = libinfo["rocmSupport"]
 num_rocm_gpus = 0
 gpulist_rocm = {}
 rocm_event_string_list = {}

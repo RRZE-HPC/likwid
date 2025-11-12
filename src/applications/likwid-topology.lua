@@ -37,8 +37,12 @@ local likwid = require("likwid")
 print_stdout = print
 print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
 
+libinfo = likwid.getLibInfo()
+
 function version()
-    io.stdout:write(string.format("likwid-topology -- Version %d.%d.%d (commit: %s)\n",likwid.version,likwid.release,likwid.minor,likwid.commit))
+    io.stdout:write(string.format("likwid-topology -- Version %d.%d.%d (commit: %s)\n",
+                libinfo["majorVersion"], libinfo["minorVersion"],
+                libinfo["bugfixVersion"], likwid.commit))
 end
 
 function usage()
@@ -50,7 +54,9 @@ function usage()
     io.stdout:write("-V, --verbose <level>\t Set verbosity\n")
     io.stdout:write("-c, --caches\t\t List cache information\n")
     io.stdout:write("-C, --clock\t\t Measure processor clock\n")
-    io.stdout:write("-G, --gpus\t\t List GPU information\n")
+    if libinfo["nvidiaSupport"] or libinfo["rocmSupport"] then
+        io.stdout:write("-G, --gpus\t\t List detailed GPU information\n")
+    end
     io.stdout:write("-O\t\t\t CSV output\n")
     io.stdout:write("-o, --output <file>\t Store output to file. (Optional: Apply text filter)\n")
     io.stdout:write("-g\t\t\t Graphical output\n")
@@ -276,7 +282,7 @@ else
     end
 end
 
-if likwid.nvSupported() then
+if libinfo["nvidiaSupport"] then
     local cudatopo = likwid.getCudaTopology()
     if cudatopo then
         table.insert(output_csv, likwid.sline)
@@ -338,7 +344,7 @@ if likwid.nvSupported() then
     likwid.putCudaTopology()
 end
 
-if likwid.rocmSupported() then
+if libinfo["rocmSupport"] then
     local rocmtopo = likwid.getRocmTopology()
     if rocmtopo then
         table.insert(output_csv, likwid.sline)

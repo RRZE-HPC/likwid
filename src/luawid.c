@@ -3041,12 +3041,6 @@ static int lua_likwid_nvFinalize(lua_State *L) {
 
 #endif /* LIKWID_WITH_NVMON */
 
-static int
-lua_likwid_nvSupported(lua_State *L)
-{
-    lua_pushboolean(L, likwid_getNvidiaSupport());
-    return 1;
-}
 
 
 #ifdef LIKWID_WITH_ROCMON
@@ -3714,11 +3708,6 @@ static int lua_likwid_finalize_rocm(lua_State *L) {
 
 #endif /* LIKWID_WITH_ROCMON */
 
-static int lua_likwid_rocmSupported(lua_State *L) {
-  lua_pushboolean(L, likwid_getRocmSupport());
-  return 1;
-}
-
 
 #ifdef LIKWID_WITH_SYSFEATURES
 static int sysfeatures_inititalized = 0;
@@ -4030,16 +4019,51 @@ lua_likwid_createDevice(lua_State *L)
 }
 #endif /* LIKWID_WITH_SYSFEATURES */
 
+
 static int
-lua_likwid_sysFeaturesSupported(lua_State *L)
-{
-    lua_pushnumber(L, likwid_getSysFeaturesSupport());
+lua_likwid_getLibInfo(lua_State *L) {
+    lua_newtable(L);
+
+    lua_pushstring(L, "majorVersion");
+    lua_pushinteger(L, likwid_getMajorVersion());
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "minorVersion");
+    lua_pushinteger(L, likwid_getMinorVersion());
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "bugfixVersion");
+    lua_pushinteger(L, likwid_getBugfixVersion());
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "nvidiaSupport");
+    lua_pushboolean(L, likwid_getNvidiaSupport());
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "rocmSupport");
+    lua_pushboolean(L, likwid_getRocmSupport());
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "sysfeaturesSupport");
+    lua_pushboolean(L, likwid_getSysFeaturesSupport());
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "maxNumThreads");
+    lua_pushinteger(L, likwid_getMaxSupportedThreads());
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "maxNumSockets");
+    lua_pushinteger(L, likwid_getMaxSupportedSockets());
+    lua_settable(L, -3);
+
     return 1;
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
+  // LibInfo functions
+  lua_register(L, "likwid_getLibInfo", lua_likwid_getLibInfo);
   // Configuration functions
   lua_register(L, "likwid_getConfiguration", lua_likwid_getConfiguration);
   lua_register(L, "likwid_setGroupPath", lua_likwid_setGroupPath);
@@ -4195,7 +4219,6 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
   lua_register(L, "likwid_setresuid", lua_likwid_setresuid);
   lua_register(L, "likwid_setresuser", lua_likwid_setresuser);
   // Nvidia GPU functions
-  lua_register(L, "likwid_nvSupported", lua_likwid_nvSupported);
 #ifdef LIKWID_WITH_NVMON
   lua_register(L, "likwid_getCudaTopology", lua_likwid_getCudaTopology);
   lua_register(L, "likwid_putCudaTopology", lua_likwid_putCudaTopology);
@@ -4231,7 +4254,6 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
   lua_register(L, "likwid_nvGetNameOfGroup", lua_likwid_nvGetNameOfGroup);
 #endif /* LIKWID_WITH_NVMON */
   // ROCm GPU functions
-  lua_register(L, "likwid_rocmSupported", lua_likwid_rocmSupported);
 #ifdef LIKWID_WITH_ROCMON
   lua_register(L, "likwid_getRocmTopology", lua_likwid_getRocmTopology);
   lua_register(L, "likwid_putRocmTopology", lua_likwid_putRocmTopology);
@@ -4303,7 +4325,6 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
                lua_likwid_getShortInfoOfGroup_rocm);
 #endif /* LIKWID_WITH_ROCMON */
     // sysFeatures functions (experimental)
-    lua_register(L, "likwid_sysFeaturesSupported",lua_likwid_sysFeaturesSupported);
 #ifdef LIKWID_WITH_SYSFEATURES
     lua_register(L, "likwid_initSysFeatures", lua_likwid_initSysFeatures);
     lua_register(L, "likwid_finalizeSysFeatures", lua_likwid_finalizeSysFeatures);
