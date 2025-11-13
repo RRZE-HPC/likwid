@@ -134,7 +134,6 @@ static int device_create_simple(LikwidDeviceType type, int id, LikwidDevice_t* d
 #if defined(LIKWID_WITH_NVMON) || defined(LIKWID_WITH_ROCMON)
 static int device_create_pci(LikwidDeviceType type, int id, uint16_t domain, uint8_t bus, uint8_t dev, uint8_t func, LikwidDevice_t *device)
 {
-    int err = 0;
     LikwidDevice_t lw_dev = malloc(sizeof(_LikwidDevice));
     if (!lw_dev)
         return -ENOMEM;
@@ -284,7 +283,7 @@ static int device_create_amdgpu_by_index(int id, LikwidDevice_t *device)
             continue;
 
         // TODO we do not have the function ID, but it should usually be 0
-        return device_create_pci(DEVICE_TYPE_AMD_GPU, topo->devices[i].pciDom, topo->devices[i].pciBus, topo->devices[i].pciDev, 0, device);
+        return device_create_pci(DEVICE_TYPE_AMD_GPU, topo->devices[i].devid, topo->devices[i].pciDom, topo->devices[i].pciBus, topo->devices[i].pciDev, 0, device);
     }
 
     return -ENODEV;
@@ -296,14 +295,14 @@ static int device_create_amdgpu_by_pciaddr(uint16_t dom, uint8_t bus, uint8_t de
 
     for (int i = 0; i < topo->numDevices; i++)
     {
-        if (topo->devices[i].pciDom != domain)
+        if (topo->devices[i].pciDom != dom)
             continue;
         if (topo->devices[i].pciBus != bus)
             continue;
         if (topo->devices[i].pciDev != dev)
             continue;
 
-        return device_create_pci(DEVICE_TYPE_AMD_GPU, domain, bus, dev, func, device);
+        return device_create_pci(DEVICE_TYPE_AMD_GPU, topo->devices[i].devid, dom, bus, dev, func, device);
     }
 
     return -ENODEV;
@@ -437,7 +436,7 @@ int likwid_device_create_from_string(LikwidDeviceType type, const char *id, Likw
                 break;
 #endif
 #ifdef LIKWID_WITH_ROCMON
-            case DEVICE_TYPE_NVIDIA_GPU:
+            case DEVICE_TYPE_AMD_GPU:
                 err = device_create_amdgpu_by_pciaddr(dom, bus, dev, func, device);
                 break;
 #endif
@@ -477,7 +476,7 @@ int likwid_device_create_from_string(LikwidDeviceType type, const char *id, Likw
 #endif
 #ifdef LIKWID_WITH_ROCMON
             case DEVICE_TYPE_AMD_GPU:
-                err = device_create_amdgpu_by_index(id, device);
+                err = device_create_amdgpu_by_index(int_id, device);
                 break;
 #endif
             default:

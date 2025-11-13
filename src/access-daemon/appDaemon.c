@@ -397,8 +397,8 @@ static int  rocmon_numgids = 0;
 static int appdaemon_setup_rocmon(char* gpuStr, char* eventStr)
 {
     int ret = 0;
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Rocmon GPU string: %s\n", gpuStr);
-    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Rocmon Event string: %s\n", eventStr);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Rocmon GPU string: %s\n", gpuStr);
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Rocmon Event string: %s\n", eventStr);
 
     // Parse gpu string
     ret = parse_gpustr(gpuStr, &rocmon_numgpus, &rocmon_gpulist);
