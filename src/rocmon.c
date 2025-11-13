@@ -64,6 +64,8 @@ static void *dl_rsmi_lib = NULL;
 
 RocmonContext *rocmon_context = NULL;
 static bool rocmon_initialized = FALSE;
+
+__attribute__((visibility("default")))
 int likwid_rocmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
 // Macros
