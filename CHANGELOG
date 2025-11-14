@@ -13,6 +13,9 @@
 - More peakflops benchmarks in likwid-bench
 - Fixes for sysfeatures
 - Update to buildsystem to allow parallel builds
+- Wrapper mode for GPU monitoring
+- Memory controllers (UMC) for AMD Zen4
+- Minor fixes for Intel SierraForrest and Coffeelake
 
 # Changelog 5.4.2
 - Added support for Intel Emerald Rapids
