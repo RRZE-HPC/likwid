@@ -122,6 +122,7 @@ static const char* amd_zen3_str = "AMD K19 (Zen3) architecture";
 static const char* amd_zen4_str = "AMD K19 (Zen4) architecture";
 static const char* amd_zen4c_str = "AMD K19 (Zen4c) architecture";
 static const char* amd_zen5_str = "AMD K1A (Zen5) architecture";
+static const char* amd_zen5c_str = "AMD K1A (Zen5c) architecture";
 static const char* armv7l_str = "ARM 7l architecture";
 //static const char* armv8_str = "ARM 8 architecture";
 static const char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
@@ -1271,6 +1272,11 @@ topology_setName(void)
             {
                 case ZEN5_EPYC:
                     cpuid_info.name = amd_zen5_str;
+                    cpuid_info.short_name = short_zen5;
+                    cpuid_info.supportUncore = 1;
+                    break;
+                case ZEN5C_EPYC:
+                    cpuid_info.name = amd_zen5c_str;
                     cpuid_info.short_name = short_zen5;
                     cpuid_info.supportUncore = 1;
                     break;

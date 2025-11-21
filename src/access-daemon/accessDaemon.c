@@ -3826,6 +3826,7 @@ int main(void)
                 switch (model)
                 {
                     case ZEN5_EPYC:
+                    case ZEN5C_EPYC:
                         allowed = allowed_amd1a_zen5;
                         break;
                     default:
