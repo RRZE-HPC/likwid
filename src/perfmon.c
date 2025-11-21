@@ -1410,6 +1410,7 @@ perfmon_init_maps(void)
             switch ( cpuid_info.model )
             {
                 case ZEN5_EPYC:
+                case ZEN5C_EPYC:
                     eventHash = zen5_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen5;
                     counter_map = zen5_counter_map;
@@ -1418,7 +1419,6 @@ perfmon_init_maps(void)
                     translate_types = zen5_translate_types;
                     archRegisterTypeNames = registerTypeNamesZen5;
                     post_counter_func = zen5_init_counter_map;
-
                     break;
                 default:
                     ERROR_PRINT("Unsupported AMD Zen Processor");
@@ -2166,6 +2166,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             switch ( cpuid_info.model )
             {
                 case ZEN5_EPYC:
+                case ZEN5C_EPYC:
                     initThreadArch = perfmon_init_zen3;
                     initialize_power = TRUE;
                     perfmon_startCountersThread = perfmon_startCountersThread_zen5;

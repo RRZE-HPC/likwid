@@ -163,6 +163,7 @@ struct topology_functions {
 #define ZEN4_EPYC       0x11
 #define ZEN4_EPYC_BERGAMO 0xA0
 #define ZEN5_EPYC       0x02
+#define ZEN5C_EPYC       0x11
 
 /* ARM */
 #define  ARM7L          0x3U
