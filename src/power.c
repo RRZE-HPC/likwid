@@ -245,6 +245,7 @@ power_init(int cpuId)
             switch (cpuid_info.model)
             {
                 case ZEN5_EPYC:
+                case ZEN5C_EPYC:
                     cpuid_info.turbo = 0;
                     power_info.hasRAPL = 1;
                     numDomains = 2;
