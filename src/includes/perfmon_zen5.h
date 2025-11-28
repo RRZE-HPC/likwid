@@ -92,6 +92,7 @@ int perfmon_init_zen5(int cpu_id)
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &core_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]], cpu_id);
+    printf("CPU %d uses %d\n", cpu_id, sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]]);
     lock_acquire((int*) &numa_lock[affinity_thread2numa_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &die_lock[affinity_thread2die_lookup[cpu_id]], cpu_id);
     return 0;
@@ -350,14 +351,15 @@ int perfmon_startCountersThread_zen5(int thread_id, PerfmonEventSet* eventSet)
             }
             else if (type == POWER)
             {
-                if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock))
+                PerfmonEvent *event = &(eventSet->events[i].event);
+                if (counter == MSR_AMD1A_RAPL_L3_STATUS && (!haveL3Lock) && event->eventId == 0x03)
                     continue;
-                if (counter == MSR_AMD17_RAPL_CORE_STATUS && (!haveCLock))
+                else if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock) && event->eventId == 0x02)
                     continue;
-                if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock))
+                else if (counter == MSR_AMD1A_RAPL_CORE_STATUS && (!haveCLock) && event->eventId == 0x01)
                     continue;
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &flags));
-                eventSet->events[i].threadCounter[thread_id].startData = flags;
+                eventSet->events[i].threadCounter[thread_id].startData = field64(flags, 0, box_map[type].regWidth);
                 VERBOSEPRINTREG(cpu_id, counter, LLU_CAST flags, "START_POWER");
             }
             else if (type == FIXED)
@@ -435,13 +437,15 @@ int perfmon_stopCountersThread_zen5(int thread_id, PerfmonEventSet* eventSet)
             }
             else if (type == POWER)
             {
-                if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock))
+                PerfmonEvent *event = &(eventSet->events[i].event);
+                if (counter == MSR_AMD1A_RAPL_L3_STATUS && (!haveL3Lock) && event->eventId == 0x03)
                     continue;
-                if (counter == MSR_AMD17_RAPL_CORE_STATUS && (!haveCLock))
+                else if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock) && event->eventId == 0x02)
                     continue;
-                if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock))
+                else if (counter == MSR_AMD1A_RAPL_CORE_STATUS && (!haveCLock) && event->eventId == 0x01)
                     continue;
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
+                counter_result = field64(counter_result, 0, box_map[type].regWidth);
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
@@ -530,13 +534,15 @@ int perfmon_readCountersThread_zen5(int thread_id, PerfmonEventSet* eventSet)
             }
             else if (type == POWER)
             {
-                if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock))
+                PerfmonEvent *event = &(eventSet->events[i].event);
+                if (counter == MSR_AMD1A_RAPL_L3_STATUS && (!haveL3Lock) && event->eventId == 0x03)
                     continue;
-                if (counter == MSR_AMD17_RAPL_CORE_STATUS && (!haveCLock))
+                else if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock) && event->eventId == 0x02)
                     continue;
-                if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock))
+                else if (counter == MSR_AMD1A_RAPL_CORE_STATUS && (!haveCLock) && event->eventId == 0x01)
                     continue;
-                CHECK_POWER_READ_ERROR(power_read(cpu_id, counter, (uint64_t*)&counter_result));
+                CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
+                counter_result = field64(counter_result, 0, box_map[type].regWidth);
                 VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, "READ_POWER");
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {

@@ -2167,7 +2167,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             {
                 case ZEN5_EPYC:
                 case ZEN5C_EPYC:
-                    initThreadArch = perfmon_init_zen3;
+                    initThreadArch = perfmon_init_zen5;
                     initialize_power = TRUE;
                     perfmon_startCountersThread = perfmon_startCountersThread_zen5;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_zen5;
