@@ -579,7 +579,7 @@ static int affinity_addSocketDomain(int socket, AffinityDomain* domain, int* hel
         tmp = MIN(tmp, domain->numberOfProcessors);
         domain->numberOfProcessors = tmp;
         domain->numberOfCores = affinity_countSocketCores(domain->numberOfProcessors, domain->processorList, help);
-        snprintf(domain->tag, 9, "S%d", socket);
+        snprintf(domain->tag, 10, "S%d", socket);
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Affinity domain S%d: %d HW threads on %d cores", socket, domain->numberOfProcessors, domain->numberOfCores);
         return 0;
     }
@@ -745,7 +745,7 @@ static int affinity_addCudaDomain(int nodeId, AffinityDomain* domain, int offset
                 err = _affinity_addMemoryDomain(cudadev->numaNode, domain, help);
                 if (err == 0)
                 {
-                    snprintf(domain->tag, 9, "G%d", nodeId+offset);
+                    snprintf(domain->tag, 12, "G%d", nodeId+offset);
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Affinity domain %s: %d HW threads on %d cores", domain->tag, domain->numberOfProcessors, domain->numberOfCores);
                     return 0;
                 }
@@ -778,8 +778,7 @@ static int affinity_addRocmDomain(int nodeId, AffinityDomain* domain, int offset
                 err = _affinity_addMemoryDomain(rocmdev->numaNode, domain, help);
                 if (err == 0)
                 {
-                    // TODO where does 9 come from? Please replace this with a meaningful constant
-                    snprintf(domain->tag, 9, "G%d", nodeId+offset);
+                    snprintf(domain->tag, 12, "G%d", nodeId+offset);
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Affinity domain %s: %d HW threads on %d cores", domain->tag, domain->numberOfProcessors, domain->numberOfCores);
                     return 0;
                 }
