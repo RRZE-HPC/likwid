@@ -30,6 +30,7 @@
 
 #include <sysFeatures_nvml.h>
 
+#include <assert.h>
 #include <math.h>
 #include <dlfcn.h>
 #include <nvml.h>
@@ -57,6 +58,7 @@
 
 #define NVML_CALL(func, ...)                            \
     do {                                                \
+        assert(func##_ptr != NULL);                     \
         nvmlReturn_t s_ = (*func##_ptr)(__VA_ARGS__);    \
         if (s_ != NVML_SUCCESS) {                        \
             ERROR_PRINT("Error: function %s failed with error: '%s' (nvmlReturn=%d).", #func, nvmlErrorString_ptr(s_), s_);   \
@@ -73,9 +75,11 @@
             return err;                                         \
     } while (0)
 
+DECLAREFUNC_NVML(nvmlDeviceClearEccErrorCounts, nvmlDevice_t device, nvmlEccCounterType_t counterType);
 DECLAREFUNC_NVML(nvmlDeviceGetBAR1MemoryInfo, nvmlDevice_t device, nvmlBAR1Memory_t* bar1Memory);
 DECLAREFUNC_NVML(nvmlDeviceGetClock, nvmlDevice_t device, nvmlClockType_t clockType, nvmlClockId_t clockId, unsigned int* clockMHz);
 DECLAREFUNC_NVML(nvmlDeviceGetClockInfo, nvmlDevice_t device, nvmlClockType_t type, unsigned int* clock);
+DECLAREFUNC_NVML(nvmlDeviceGetCurrentClockFreqs, nvmlDevice_t device, nvmlDeviceCurrentClockFreqs_t *currentClockFreqs);
 DECLAREFUNC_NVML(nvmlDeviceGetCurrPcieLinkGeneration, nvmlDevice_t device, unsigned int *currLinkGen);
 DECLAREFUNC_NVML(nvmlDeviceGetCurrPcieLinkWidth, nvmlDevice_t device, unsigned int *currLinkGen);
 DECLAREFUNC_NVML(nvmlDeviceGetCount_v2, unsigned int *deviceCount);
@@ -115,8 +119,11 @@ DECLAREFUNC_NVML(nvmlDeviceGetTotalEccErrors, nvmlDevice_t device, nvmlMemoryErr
 DECLAREFUNC_NVML(nvmlDeviceGetTotalEnergyConsumption, nvmlDevice_t device, unsigned long long *energy);
 DECLAREFUNC_NVML(nvmlDeviceGetUtilizationRates, nvmlDevice_t device, nvmlUtilization_t* utilization);
 DECLAREFUNC_NVML(nvmlDeviceGetViolationStatus, nvmlDevice_t device, nvmlPerfPolicyType_t perfPolicyType, nvmlViolationTime_t* violTime);
+DECLAREFUNC_NVML(nvmlDeviceSetApplicationsClocks, nvmlDevice_t device, unsigned int memClockMHz, unsigned int graphicsClockMHz);
 DECLAREFUNC_NVML(nvmlDeviceSetEccMode, nvmlDevice_t device, nvmlEnableState_t ecc);
+DECLAREFUNC_NVML(nvmlDeviceSetGpuLockedClocks, nvmlDevice_t device, unsigned int minMemClockMHz, unsigned int maxMemClockMHz);
 DECLAREFUNC_NVML(nvmlDeviceSetGpuOperationMode, nvmlDevice_t device, nvmlGpuOperationMode_t mode);
+DECLAREFUNC_NVML(nvmlDeviceSetMemoryLockedClocks, nvmlDevice_t device, unsigned int minMemClockMHz, unsigned int maxMemClockMHz);
 DECLAREFUNC_NVML(nvmlDeviceSetPowerManagementLimit, nvmlDevice_t device, unsigned int limit);
 DECLAREFUNC_NVML(nvmlDeviceSetTemperatureThreshold, nvmlDevice_t device, nvmlTemperatureThresholds_t thresholdType, int *temp);
 __attribute__((weak)) const char *nvmlErrorString(nvmlReturn_t result);
@@ -160,12 +167,14 @@ int likwid_sysft_init_nvml(_SysFeatureList *list)
         return -ELIBACC;
     }
 
+    DLSYM_AND_CHECK(dl_nvml, nvmlDeviceClearEccErrorCounts);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetBAR1MemoryInfo);
 #if defined(CUDART_VERSION) && CUDART_VERSION >= 11060
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetBusType);
 #endif
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetClock);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetClockInfo);
+    DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetCurrentClockFreqs);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetCurrPcieLinkGeneration);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetCurrPcieLinkWidth);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetCount_v2);
@@ -205,8 +214,11 @@ int likwid_sysft_init_nvml(_SysFeatureList *list)
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetTemperatureThreshold);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetUtilizationRates);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetViolationStatus);
+    DLSYM_AND_CHECK(dl_nvml, nvmlDeviceSetApplicationsClocks);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceSetEccMode);
+    DLSYM_AND_CHECK(dl_nvml, nvmlDeviceSetGpuLockedClocks);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceSetGpuOperationMode);
+    DLSYM_AND_CHECK(dl_nvml, nvmlDeviceSetMemoryLockedClocks);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceSetPowerManagementLimit);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceSetTemperatureThreshold);
     DLSYM_AND_CHECK(dl_nvml, nvmlErrorString);
@@ -305,6 +317,21 @@ static int nvidia_gpu_gfx_clock_app_target_getter(const LikwidDevice_t device, c
     return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_APP_CLOCK_TARGET, value);
 }
 
+static int nvidia_gpu_gfx_clock_app_target_setter(const LikwidDevice_t device, const char *value)
+{
+    LWD_TO_NVMLD(device, nvmlDevice);
+    unsigned memClockMHz;
+    NVML_CALL(nvmlDeviceGetClock, nvmlDevice, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_TARGET, &memClockMHz);
+
+    uint64_t gpuClockMHz;
+    int err = likwid_sysft_string_to_uint64(value, &gpuClockMHz);
+    if (err < 0)
+        return err;
+
+    NVML_CALL(nvmlDeviceSetApplicationsClocks, nvmlDevice, memClockMHz, (unsigned int)gpuClockMHz);
+    return 0;
+}
+
 static int nvidia_gpu_gfx_clock_app_default_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value);
@@ -325,6 +352,12 @@ static int nvidia_gpu_sm_clock_app_target_getter(const LikwidDevice_t device, ch
     return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_TARGET, value);
 }
 
+static int nvidia_gpu_sm_clock_app_target_setter(const LikwidDevice_t device, const char *value)
+{
+    // This intentionally runs the setter for the gfx clock, since they will both be affected by either one.
+    return nvidia_gpu_gfx_clock_app_target_setter(device, value);
+}
+
 static int nvidia_gpu_sm_clock_app_default_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, value);
@@ -343,6 +376,21 @@ static int nvidia_gpu_dram_clock_cur_getter(const LikwidDevice_t device, char **
 static int nvidia_gpu_dram_clock_app_target_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_TARGET, value);
+}
+
+static int nvidia_gpu_dram_clock_app_target_setter(const LikwidDevice_t device, const char *value)
+{
+    LWD_TO_NVMLD(device, nvmlDevice);
+    unsigned gpuClockMHz;
+    NVML_CALL(nvmlDeviceGetClock, nvmlDevice, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_APP_CLOCK_TARGET, &gpuClockMHz);
+
+    uint64_t memClockMHz;
+    int err = likwid_sysft_string_to_uint64(value, &memClockMHz);
+    if (err < 0)
+        return err;
+
+    NVML_CALL(nvmlDeviceSetApplicationsClocks, nvmlDevice, (unsigned int)memClockMHz, gpuClockMHz);
+    return 0;
 }
 
 static int nvidia_gpu_dram_clock_app_default_getter(const LikwidDevice_t device, char **value)
@@ -373,6 +421,174 @@ static int nvidia_gpu_video_clock_app_default_getter(const LikwidDevice_t device
 static int nvidia_gpu_video_clock_boost_max_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_clock_info_getter(device, NVML_CLOCK_VIDEO, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX, value);
+}
+
+static int nvidia_gpu_clock_getter(const LikwidDevice_t device, char **value, const char *nvmlVal)
+{
+    LWD_TO_NVMLD(device, nvmlDevice);
+
+    nvmlDeviceCurrentClockFreqs_v1_t currentClockFreqs = {
+        .version = nvmlDeviceCurrentClockFreqs_v1,
+    };
+    NVML_CALL(nvmlDeviceGetCurrentClockFreqs, nvmlDevice, &currentClockFreqs);
+
+    // Split list first by ",", then by "="
+    // Example:
+    // nvclock=324, nvclockmin=324, nvclockmax=324, nvclockeditable=0, memclock=324, memclockmin=324, memclockmax=324, memclockeditable=0, memtransferrate=648, memtransferratemin=648, memtransferratemax=648, memtransferrateeditable=0
+
+    char *saveptr = NULL;
+    for (char *token = strtok_r(currentClockFreqs.str, ",", &saveptr); token; token = strtok_r(NULL, ",", &saveptr)) {
+        char *saveptr2 = NULL;
+        char *key = strtok_r(token, "=", &saveptr2);
+        char *v = strtok_r(NULL, "", &saveptr2);
+
+        // skip initial whitespace
+        while (*key != '\0' && *key == ' ')
+            key++;
+
+        // If either of those are NULL either 'we' or 'nvml' is wrong.
+        assert(key && value);
+        if (strcmp(key, nvmlVal) == 0) {
+            char *retval = strdup(v);
+            if (!retval)
+                return -errno;
+            free(*value);
+            *value = retval;
+            return 0;
+        }
+    }
+
+    return -EINVAL;
+}
+
+static int nvidia_gpu_clock_minmax_setter(const LikwidDevice_t device, const char *valueStr, hwfeature_getter_function otherGetter, bool setMin, bool setGpu)
+{
+    /* We can only set the clocks in min/max pairs. Because the sysfeatures interface
+     * only allows us to set one at a time, we always have to retrieve the other one
+     * first. This is done with the otherGetter function and the 'setMin' determines, whether
+     * min should be set (true) or max should be set (false). */
+
+    char *otherStr = NULL;
+    int err = otherGetter(device, &otherStr);
+    if (err < 0)
+        return err;
+
+    uint64_t valueInt;
+    err = likwid_sysft_string_to_uint64(otherStr, &valueInt);
+    if (err < 0)
+        goto cleanup;
+
+    uint64_t otherInt;
+    err = likwid_sysft_string_to_uint64(valueStr, &otherInt);
+    if (err < 0)
+        goto cleanup;
+
+    free(otherStr);
+
+    unsigned int min, max;
+    if (setMin) {
+        min = (unsigned int)valueInt;
+        max = (unsigned int)otherInt;
+    } else {
+        min = (unsigned int)otherInt;
+        max = (unsigned int)valueInt;
+    }
+
+    LWD_TO_NVMLD(device, nvmlDevice);
+    if (setGpu)
+        NVML_CALL(nvmlDeviceSetGpuLockedClocks, nvmlDevice, min, max);
+    else
+        NVML_CALL(nvmlDeviceSetMemoryLockedClocks, nvmlDevice, min, max);
+    return 0;
+
+cleanup:
+    free(otherStr);
+    return err;
+}
+
+static int nvidia_gpu_perf_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_getter(device, value, "perf");
+}
+
+static int nvidia_gpu_nvclock_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_getter(device, value, "nvclock");
+}
+
+static int nvidia_gpu_nvclockmin_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_getter(device, value, "nvclockmin");
+}
+
+static int nvidia_gpu_nvclockmax_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_getter(device, value, "nvclockmax");
+}
+
+static int nvidia_gpu_nvclockmin_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_clock_minmax_setter(device, value, nvidia_gpu_nvclockmax_getter, true, true);
+}
+
+static int nvidia_gpu_nvclockmax_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_clock_minmax_setter(device, value, nvidia_gpu_nvclockmin_getter, false, true);
+}
+
+static int nvidia_gpu_nvclockeditable_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_getter(device, value, "nvclockeditable");
+}
+
+static int nvidia_gpu_memclock_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_getter(device, value, "memclock");
+}
+
+static int nvidia_gpu_memclockmin_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_getter(device, value, "memclockmin");
+}
+
+static int nvidia_gpu_memclockmin_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_clock_minmax_setter(device, value, nvidia_gpu_nvclockmax_getter, true, false);
+}
+
+static int nvidia_gpu_memclockmax_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_getter(device, value, "memclockmax");
+}
+
+static int nvidia_gpu_memclockmax_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_clock_minmax_setter(device, value, nvidia_gpu_nvclockmin_getter, false, false);
+}
+
+static int nvidia_gpu_memclockeditable_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_getter(device, value, "memclockeditable");
+}
+
+static int nvidia_gpu_memtransferrate_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_getter(device, value, "memtransferrate");
+}
+
+static int nvidia_gpu_memtransferratemin_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_getter(device, value, "memtransferratemin");
+}
+
+static int nvidia_gpu_memtransferratemax_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_getter(device, value, "memtransferratemax");
+}
+
+static int nvidia_gpu_memtransferrateeditable_getter(const LikwidDevice_t device, char **value)
+{
+    return nvidia_gpu_clock_getter(device, value, "memtransferrateeditable");
 }
 
 static int nvidia_gpu_bar1_getter(const LikwidDevice_t device, int entry, char **value)
@@ -672,6 +888,34 @@ static int nvidia_gpu_ecc_error_reg_agg_corr_getter(const LikwidDevice_t device,
 static int nvidia_gpu_ecc_error_reg_agg_uncorr_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_ecc_error_getter(device, ECC_UNCORR_AGG, ECC_MEM_REG, value);
+}
+
+static int nvidia_gpu_ecc_error_clear_setter(const LikwidDevice_t device, const char *value, nvmlEccCounterType_t eccCounterType)
+{
+    LWD_TO_NVMLD(device, nvmlDevice);
+    uint64_t perform_clear;
+    int err = likwid_sysft_string_to_uint64(value, &perform_clear);
+    if (err < 0)
+        return err;
+
+    if (!perform_clear)
+        return 0;
+
+    if (perform_clear != 1)
+        return -EINVAL;
+
+    NVML_CALL(nvmlDeviceClearEccErrorCounts, nvmlDevice, eccCounterType);
+    return 0;
+}
+
+static int nvidia_gpu_ecc_error_vol_clear_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_ecc_error_clear_setter(device, value, NVML_VOLATILE_ECC);
+}
+
+static int nvidia_gpu_ecc_error_agg_clear_setter(const LikwidDevice_t device, const char *value)
+{
+    return nvidia_gpu_ecc_error_clear_setter(device, value, NVML_AGGREGATE_ECC);
 }
 
 static int nvidia_gpu_fan_speed_getter(const LikwidDevice_t device, char **value)
@@ -1054,21 +1298,34 @@ static _SysFeature nvidia_gpu_features[] = {
     {"device_count", "nvml", "Number of GPUs on node. Not all GPUs may be accessible.", nvidia_gpu_device_count_getter, NULL, DEVICE_TYPE_NODE, NULL, NULL},
     {"devices_available", "nvml", "Available GPUs (PCI addresses)", nvidia_gpu_devices_available_getter, NULL, DEVICE_TYPE_NODE, NULL, NULL},
     {"gfx_clock_cur", "nvml", "Current clock speed (graphics domain)", nvidia_gpu_gfx_clock_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
-    {"gfx_clock_app_target", "nvml", "Application target clock speed (graphics domain)", nvidia_gpu_gfx_clock_app_target_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"gfx_clock_app_target", "nvml", "Application target clock speed (graphics domain)", nvidia_gpu_gfx_clock_app_target_getter, nvidia_gpu_gfx_clock_app_target_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
     {"gfx_clock_app_default", "nvml", "Application default clock speed (graphics domain)", nvidia_gpu_gfx_clock_app_default_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
     {"gfx_clock_boost_max", "nvml", "Application default clock speed (graphics domain)", nvidia_gpu_gfx_clock_boost_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
     {"sm_clock_cur", "nvml", "Current clock speed (SM domain)", nvidia_gpu_sm_clock_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
-    {"sm_clock_app_target", "nvml", "Application target clock speed (SM domain)", nvidia_gpu_sm_clock_app_target_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"sm_clock_app_target", "nvml", "Application target clock speed (SM domain)", nvidia_gpu_sm_clock_app_target_getter, nvidia_gpu_sm_clock_app_target_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
     {"sm_clock_app_default", "nvml", "Application default clock speed (SM domain)", nvidia_gpu_sm_clock_app_default_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
     {"sm_clock_boost_max", "nvml", "Application default clock speed (SM domain)", nvidia_gpu_sm_clock_boost_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
     {"dram_clock_cur", "nvml", "Current clock speed (memory domain)", nvidia_gpu_dram_clock_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
-    {"dram_clock_app_target", "nvml", "Application target clock speed (memory domain)", nvidia_gpu_dram_clock_app_target_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"dram_clock_app_target", "nvml", "Application target clock speed (memory domain)", nvidia_gpu_dram_clock_app_target_getter, nvidia_gpu_dram_clock_app_target_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
     {"dram_clock_app_default", "nvml", "Application default clock speed (memory domain)", nvidia_gpu_dram_clock_app_default_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
     {"dram_clock_boost_max", "nvml", "Application default clock speed (memory domain)", nvidia_gpu_dram_clock_boost_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
     {"video_clock_cur", "nvml", "Current clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_cur_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
     {"video_clock_app_target", "nvml", "Application target clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_app_target_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
     {"video_clock_app_default", "nvml", "Application default clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_app_default_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
     {"video_clock_boost_max", "nvml", "Application default clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_boost_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"perf_state", "nvml", "Performance level", nvidia_gpu_perf_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
+    {"nvclock", "nvml", "Current GPU clock", nvidia_gpu_nvclock_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"nvclockmin", "nvml", "Minimum GPU clock", nvidia_gpu_nvclockmin_getter, nvidia_gpu_nvclockmin_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"nvclockmax", "nvml", "Maximum GPU clock", nvidia_gpu_nvclockmax_getter, nvidia_gpu_nvclockmax_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"nvclockeditable", "nvml", "GPU clock editable", nvidia_gpu_nvclockeditable_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
+    {"memclock", "nvml", "Current memory clock", nvidia_gpu_memclock_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"memclockmin", "nvml", "Minimum memory clock", nvidia_gpu_memclockmin_getter, nvidia_gpu_memclockmin_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"memclockmax", "nvml", "Maximum memory clock", nvidia_gpu_memclockmax_getter, nvidia_gpu_memclockmax_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"memclockeditable", "nvml", "Memory clock editable", nvidia_gpu_memclockeditable_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
+    {"memtransferrate", "nvml", "Current memory transfer rate", nvidia_gpu_memtransferrate_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"memtransferratemin", "nvml", "Minimum memory transfer rate", nvidia_gpu_memtransferratemin_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"memtransferratemax", "nvml", "Maximum memory transfer rate", nvidia_gpu_memtransferratemax_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
+    {"memtransferrateeditable", "nvml", "Memory memory transfer rate editable", nvidia_gpu_memtransferrateeditable_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
     {"pci_bar1_free", "nvml", "Unallocated BAR1 memory", nvidia_gpu_bar1_free_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "Byte"},
     {"pci_bar1_used", "nvml", "Allocated BAR1 memory", nvidia_gpu_bar1_used_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "Byte"},
     {"pci_bar1_total", "nvml", "Total BAR1 memory", nvidia_gpu_bar1_total_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "Byte"},
@@ -1103,6 +1360,8 @@ static _SysFeature nvidia_gpu_features[] = {
     {"ecc_reg_volatile_uncorr_err_count", "nvml", "REG ECC corrected errors (since reboot)", nvidia_gpu_ecc_error_reg_vol_uncorr_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
     {"ecc_reg_aggregate_corr_err_count", "nvml", "REG ECC corrected errors (GPU lifetime aggregate)", nvidia_gpu_ecc_error_reg_agg_corr_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
     {"ecc_reg_aggregate_uncorr_err_count", "nvml", "REG ECC corrected errors (since reboot)", nvidia_gpu_ecc_error_reg_agg_uncorr_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
+    {"ecc_all_volatile_count_clear", "nvml", "Clear ECC corrected errors (since reboot)", NULL, nvidia_gpu_ecc_error_vol_clear_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
+    {"ecc_all_aggregate_count_clear", "nvml", "Clear ECC corrected errors (GPU lifetime aggregate)", NULL, nvidia_gpu_ecc_error_agg_clear_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
     {"fan_speed", "nvml", "Fan speed", nvidia_gpu_fan_speed_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "%"},
     {"pstate_cur", "nvml", "Current performance state", nvidia_gpu_pstate_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
     {"power_limit_default", "nvml", "Default power limit", nvidia_gpu_power_limit_default_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "W"},
