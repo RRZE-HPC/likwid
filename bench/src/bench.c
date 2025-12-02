@@ -849,7 +849,7 @@ getIterSingle(void* arg)
     }
     data->data.iter = iterations;
 #ifdef DEBUG_LIKWID
-    printf(" %d iterations per thread\n", iterations);
+    printf(" %zu iterations per thread\n", iterations);
     if (iterations < MIN_ITERATIONS)
         printf("Sanitizing iterations count per thread to %d\n",MIN_ITERATIONS);
 #endif
