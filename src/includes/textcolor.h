@@ -55,20 +55,24 @@ static void color_reset(void);
 static void
 color_on(int attr, int fg)
 {
-    char command[13];
+    // https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
+    if (attr < 0)
+        attr = 0;
+    else if (attr > 107)
+        attr = 107;
 
-    sprintf(command, "%c[%d;%dm", 0x1B, attr, fg + 30);
-    printf("%s", command);
+    if (fg < 0)
+        fg = 0;
+    else if (fg > 7)
+        fg = 7;
+
+    printf("\e[%d;%dm", attr, fg + 30);
 }
 
 static void
 color_reset()
 {
-    char command[13];
-
-    sprintf(command, "%c[%dm", 0x1B, 0);
-    printf("%s", command);
-
+    printf("\e[0m");
 }
 
 #endif /*TEXTCOLOR_H*/
