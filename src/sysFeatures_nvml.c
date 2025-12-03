@@ -613,9 +613,43 @@ cleanup:
     return err;
 }
 
+static int nvidia_gpu_clock_tester(const char *nvmlValue)
+{
+    unsigned int deviceCount;
+    NVML_CALL(nvmlDeviceGetCount_v2, &deviceCount);
+
+    for (unsigned int i = 0; i < deviceCount; i++) {
+        LikwidDevice_t device;
+        int err = likwid_device_create(DEVICE_TYPE_NVIDIA_GPU, (int)i, &device);
+        if (err < 0)
+            return err;
+
+        LWD_TO_NVMLD(device, nvmlDevice);
+
+        char *resultVal = NULL;
+        err = nvidia_gpu_clock_getter(device, &resultVal, nvmlValue);
+
+        free(resultVal);
+        likwid_device_destroy(device);
+
+        if (err == 0)
+            return 1;
+
+        if (err != -EINVAL)
+            return err;
+    }
+
+    return 0;
+}
+
 static int nvidia_gpu_perf_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_clock_getter(device, value, "perf");
+}
+
+static int nvidia_gpu_perf_tester(void)
+{
+    return nvidia_gpu_clock_tester("perf");
 }
 
 static int nvidia_gpu_nvclock_getter(const LikwidDevice_t device, char **value)
@@ -623,14 +657,29 @@ static int nvidia_gpu_nvclock_getter(const LikwidDevice_t device, char **value)
     return nvidia_gpu_clock_getter(device, value, "nvclock");
 }
 
+static int nvidia_gpu_nvclock_tester(void)
+{
+    return nvidia_gpu_clock_tester("nvclock");
+}
+
 static int nvidia_gpu_nvclockmin_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_clock_getter(device, value, "nvclockmin");
 }
 
+static int nvidia_gpu_nvclockmin_tester(void)
+{
+    return nvidia_gpu_clock_tester("nvclockmin");
+}
+
 static int nvidia_gpu_nvclockmax_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_clock_getter(device, value, "nvclockmax");
+}
+
+static int nvidia_gpu_nvclockmax_tester(void)
+{
+    return nvidia_gpu_clock_tester("nvclockmax");
 }
 
 static int nvidia_gpu_nvclockmin_setter(const LikwidDevice_t device, const char *value)
@@ -648,14 +697,29 @@ static int nvidia_gpu_nvclockeditable_getter(const LikwidDevice_t device, char *
     return nvidia_gpu_clock_getter(device, value, "nvclockeditable");
 }
 
+static int nvidia_gpu_nvclockeditable_tester(void)
+{
+    return nvidia_gpu_clock_tester("nvclockeditable");
+}
+
 static int nvidia_gpu_memclock_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_clock_getter(device, value, "memclock");
 }
 
+static int nvidia_gpu_memclock_tester(void)
+{
+    return nvidia_gpu_clock_tester("memclock");
+}
+
 static int nvidia_gpu_memclockmin_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_clock_getter(device, value, "memclockmin");
+}
+
+static int nvidia_gpu_memclockmin_tester(void)
+{
+    return nvidia_gpu_clock_tester("memclockmin");
 }
 
 static int nvidia_gpu_memclockmin_setter(const LikwidDevice_t device, const char *value)
@@ -673,9 +737,19 @@ static int nvidia_gpu_memclockmax_setter(const LikwidDevice_t device, const char
     return nvidia_gpu_clock_minmax_setter(device, value, nvidia_gpu_nvclockmin_getter, false, false);
 }
 
+static int nvidia_gpu_memclockmax_tester(void)
+{
+    return nvidia_gpu_clock_tester("memclockmax");
+}
+
 static int nvidia_gpu_memclockeditable_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_clock_getter(device, value, "memclockeditable");
+}
+
+static int nvidia_gpu_memclockeditable_tester(void)
+{
+    return nvidia_gpu_clock_tester("memclockeditable");
 }
 
 static int nvidia_gpu_memtransferrate_getter(const LikwidDevice_t device, char **value)
@@ -683,9 +757,19 @@ static int nvidia_gpu_memtransferrate_getter(const LikwidDevice_t device, char *
     return nvidia_gpu_clock_getter(device, value, "memtransferrate");
 }
 
+static int nvidia_gpu_memtransferrate_tester(void)
+{
+    return nvidia_gpu_clock_tester("memtransferrate");
+}
+
 static int nvidia_gpu_memtransferratemin_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_clock_getter(device, value, "memtransferratemin");
+}
+
+static int nvidia_gpu_memtransferratemin_tester(void)
+{
+    return nvidia_gpu_clock_tester("memtransferratemin");
 }
 
 static int nvidia_gpu_memtransferratemax_getter(const LikwidDevice_t device, char **value)
@@ -693,9 +777,19 @@ static int nvidia_gpu_memtransferratemax_getter(const LikwidDevice_t device, cha
     return nvidia_gpu_clock_getter(device, value, "memtransferratemax");
 }
 
+static int nvidia_gpu_memtransferratemax_tester(void)
+{
+    return nvidia_gpu_clock_tester("memtransferratemax");
+}
+
 static int nvidia_gpu_memtransferrateeditable_getter(const LikwidDevice_t device, char **value)
 {
     return nvidia_gpu_clock_getter(device, value, "memtransferrateeditable");
+}
+
+static int nvidia_gpu_memtransferrateeditable_tester(void)
+{
+    return nvidia_gpu_clock_tester("memtransferrateeditable");
 }
 
 static int nvidia_gpu_bar1_getter(const LikwidDevice_t device, int entry, char **value)
@@ -1420,19 +1514,19 @@ static _SysFeature nvidia_gpu_features[] = {
     {"video_clock_app_target", "nvml", "Application target clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_app_target_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_video_clock_app_target_tester, "MHz"},
     {"video_clock_app_default", "nvml", "Application default clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_app_default_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_video_clock_app_default_tester, "MHz"},
     {"video_clock_boost_max", "nvml", "Application default clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_boost_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_video_clock_boost_max_tester, "MHz"},
-    {"perf_state", "nvml", "Performance level", nvidia_gpu_perf_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
-    {"nvclock", "nvml", "Current GPU clock", nvidia_gpu_nvclock_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
-    {"nvclockmin", "nvml", "Minimum GPU clock", nvidia_gpu_nvclockmin_getter, nvidia_gpu_nvclockmin_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
-    {"nvclockmax", "nvml", "Maximum GPU clock", nvidia_gpu_nvclockmax_getter, nvidia_gpu_nvclockmax_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
-    {"nvclockeditable", "nvml", "GPU clock editable", nvidia_gpu_nvclockeditable_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
-    {"memclock", "nvml", "Current memory clock", nvidia_gpu_memclock_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
-    {"memclockmin", "nvml", "Minimum memory clock", nvidia_gpu_memclockmin_getter, nvidia_gpu_memclockmin_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
-    {"memclockmax", "nvml", "Maximum memory clock", nvidia_gpu_memclockmax_getter, nvidia_gpu_memclockmax_setter, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
-    {"memclockeditable", "nvml", "Memory clock editable", nvidia_gpu_memclockeditable_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
-    {"memtransferrate", "nvml", "Current memory transfer rate", nvidia_gpu_memtransferrate_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
-    {"memtransferratemin", "nvml", "Minimum memory transfer rate", nvidia_gpu_memtransferratemin_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
-    {"memtransferratemax", "nvml", "Maximum memory transfer rate", nvidia_gpu_memtransferratemax_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "MHz"},
-    {"memtransferrateeditable", "nvml", "Memory memory transfer rate editable", nvidia_gpu_memtransferrateeditable_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, NULL},
+    {"perf_state", "nvml", "Performance level", nvidia_gpu_perf_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_perf_tester, NULL},
+    {"nvclock", "nvml", "Current GPU clock", nvidia_gpu_nvclock_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_nvclock_tester, "MHz"},
+    {"nvclockmin", "nvml", "Minimum GPU clock", nvidia_gpu_nvclockmin_getter, nvidia_gpu_nvclockmin_setter, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_nvclockmin_tester, "MHz"},
+    {"nvclockmax", "nvml", "Maximum GPU clock", nvidia_gpu_nvclockmax_getter, nvidia_gpu_nvclockmax_setter, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_nvclockmax_tester, "MHz"},
+    {"nvclockeditable", "nvml", "GPU clock editable", nvidia_gpu_nvclockeditable_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_nvclockeditable_tester, NULL},
+    {"memclock", "nvml", "Current memory clock", nvidia_gpu_memclock_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_memclock_tester, "MHz"},
+    {"memclockmin", "nvml", "Minimum memory clock", nvidia_gpu_memclockmin_getter, nvidia_gpu_memclockmin_setter, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_memclockmin_tester, "MHz"},
+    {"memclockmax", "nvml", "Maximum memory clock", nvidia_gpu_memclockmax_getter, nvidia_gpu_memclockmax_setter, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_memclockmax_tester, "MHz"},
+    {"memclockeditable", "nvml", "Memory clock editable", nvidia_gpu_memclockeditable_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_memclockeditable_tester, NULL},
+    {"memtransferrate", "nvml", "Current memory transfer rate", nvidia_gpu_memtransferrate_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_memtransferrate_tester, "MHz"},
+    {"memtransferratemin", "nvml", "Minimum memory transfer rate", nvidia_gpu_memtransferratemin_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_memtransferratemin_tester, "MHz"},
+    {"memtransferratemax", "nvml", "Maximum memory transfer rate", nvidia_gpu_memtransferratemax_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_memtransferratemax_tester, "MHz"},
+    {"memtransferrateeditable", "nvml", "Memory memory transfer rate editable", nvidia_gpu_memtransferrateeditable_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_memtransferrateeditable_tester, NULL},
     {"pci_bar1_free", "nvml", "Unallocated BAR1 memory", nvidia_gpu_bar1_free_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "Byte"},
     {"pci_bar1_used", "nvml", "Allocated BAR1 memory", nvidia_gpu_bar1_used_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "Byte"},
     {"pci_bar1_total", "nvml", "Total BAR1 memory", nvidia_gpu_bar1_total_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "Byte"},
