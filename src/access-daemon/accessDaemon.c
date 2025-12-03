@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1860,7 +1861,7 @@ servermem_write(AccessDataRecord *dRecord)
     if (servermem_addrs && servermem_addrs[socketId] && servermem_addrs[socketId][offset])
     {
 #ifdef DEBUG_LIKWID
-        syslog(LOG_INFO, "ServerMem: Write S %d Box %d Reg 0x%x Data 0x%x\n", socketId, offset, reg, dRecord->data);
+        syslog(LOG_INFO, "ServerMem: Write S %d Box %d Reg 0x%x Data 0x%" PRIu64 "\n", socketId, offset, reg, dRecord->data);
 #endif
         switch(reg)
         {
@@ -1934,7 +1935,7 @@ servermem_freerun_write(AccessDataRecord *dRecord)
     if (servermem_freerun_addrs && servermem_freerun_addrs[socketId] && servermem_freerun_addrs[socketId][offset])
     {
 #ifdef DEBUG_LIKWID
-        syslog(LOG_INFO, "ServerMem: Write S %d Box %d Reg 0x%x Data 0x%x\n", socketId, offset, reg, dRecord->data);
+        syslog(LOG_INFO, "ServerMem: Write S %d Box %d Reg 0x%x Data 0x%" PRIu64 "\n", socketId, offset, reg, dRecord->data);
 #endif
         switch(reg)
         {
