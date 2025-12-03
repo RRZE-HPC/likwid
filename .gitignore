@@ -13,6 +13,7 @@ PGI
 
 # libraries
 *.so*
+*.mod*
 
 # executables
 bench/likwid-bench
