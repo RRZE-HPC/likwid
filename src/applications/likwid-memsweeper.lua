@@ -40,23 +40,26 @@ end
 
 local function examples()
     print_stdout("Examples:")
-    print_stdout("To clean specific domain:")
-    print_stdout("likwid-memsweeper -c 2")
-    print_stdout("To clean a range of domains:")
-    print_stdout("likwid-memsweeper -c 1-2")
-    print_stdout("To clean specific domains:")
-    print_stdout("likwid-memsweeper -c 0,1-2")
+    print_stdout("  To clean specific domain:")
+    print_stdout("    $ likwid-memsweeper -c 2")
+    print_stdout()
+    print_stdout("  To clean a range of domains:")
+    print_stdout("    $ likwid-memsweeper -c 1-2")
+    print_stdout("  To clean specific domains:")
+    print_stdout("    $ likwid-memsweeper -c 0,1-2")
 
 end
 
 local function usage()
     version()
-    print_stdout("A tool clean up NUMA memory domains.\n")
+    print_stdout()
+    print_stdout("A tool clean up NUMA memory domains.")
+    print_stdout()
     print_stdout("Options:")
-    print_stdout("-h\t\t Help message")
-    print_stdout("-v\t\t Version information")
-    print_stdout("-c <list>\t Specify NUMA domain ID to clean up")
-    print_stdout("")
+    print_stdout("  -h        Help message")
+    print_stdout("  -v        Version information")
+    print_stdout("  -c <list> Specify NUMA domain ID to clean up")
+    print_stdout()
     examples()
 end
 
