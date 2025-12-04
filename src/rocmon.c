@@ -37,7 +37,7 @@ static const char *RSMI_EVENT_PREFIX = "RSMI_";
 // TODO clean this up and sort the variables
 __attribute__((visibility("default"))) int likwid_rocmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
-DECLARE_STATIC_PTMUTEX(rocmon_init_mutex);
+static pthread_mutex_t rocmon_init_mutex = PTHREAD_MUTEX_INITIALIZER;
 static RocmonContext *rocmon_ctx;
 static size_t rocmon_ctx_ref_count = 0;
 
@@ -135,6 +135,7 @@ static const char *(*rocprofiler_get_status_string_ptr)(rocprofiler_status_t);
 DECLAREFUNC_HIP(hipGetDeviceProperties, hipDeviceProp_t *, int);
 DECLAREFUNC_HIP(hipGetDeviceCount, int *);
 DECLAREFUNC_HIP(hipFree, void *);
+DECLAREFUNC_HIP(hipInit, unsigned int);
 static const char *(*hipGetErrorName_ptr)(hipError_t);
 
 static const int *initGpuIds; // <-- only valid during the scope of 'rocmon_init' and 'tool_init'
@@ -320,10 +321,11 @@ static int rocmon_libraries_init(void) {
         goto ret_err;
     }
 
-    DLSYM_CHK2(lib_amdhip, hipGetDeviceProperties, hipGetDevicePropertiesR0600);
     DLSYM_CHK(lib_amdhip, hipGetDeviceCount);
+    DLSYM_CHK2(lib_amdhip, hipGetDeviceProperties, hipGetDevicePropertiesR0600);
     DLSYM_CHK(lib_amdhip, hipFree);
     DLSYM_CHK(lib_amdhip, hipGetErrorName);
+    DLSYM_CHK(lib_amdhip, hipInit);
 
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Linking AMD ROCMm libraries done");
 
@@ -1621,18 +1623,20 @@ int rocmon_startCounters(void) {
             return err;
     }
 
-    rocprofiler_status_t s = rocprofiler_start_context_ptr(rocmon_ctx->rocprofCtx);
-    if (s == ROCPROFILER_STATUS_ERROR_HSA_NOT_LOADED) {
-        // If we get this error, we can apparently just try to call it a second time.
-        // No idea why this is necessary. But hey: For the meantime it works at least.
-        s = rocprofiler_start_context_ptr(rocmon_ctx->rocprofCtx);
-    }
+    //rocprofiler_status_t s = rocprofiler_start_context_ptr(rocmon_ctx->rocprofCtx);
+    //if (s == ROCPROFILER_STATUS_ERROR_HSA_NOT_LOADED) {
+    //    // If we get this error, we can apparently just try to call it a second time.
+    //    // No idea why this is necessary. But hey: For the meantime it works at least.
+    //    s = rocprofiler_start_context_ptr(rocmon_ctx->rocprofCtx);
+    //}
 
-    if (s != ROCPROFILER_STATUS_SUCCESS) {
-        const char *errstr = rocprofiler_get_status_string_ptr(s); \
-        ERROR_PRINT("Error: rocprofiler_get_status_string failed: '%s' (rocprofiler_status_t=%d)", errstr, s);\
-        return -EIO;
-    }
+    //if (s != ROCPROFILER_STATUS_SUCCESS) {
+    //    const char *errstr = rocprofiler_get_status_string_ptr(s);
+    //    ERROR_PRINT("Error: rocprofiler_get_status_string failed: '%s' (rocprofiler_status_t=%d)", errstr, s);
+    //    return -EIO;
+    //}
+    HIP_CALL(return -EIO, hipInit, 0);
+    RPR_CALL(return -EIO, rocprofiler_start_context, rocmon_ctx->rocprofCtx);
 
     return 0;
 }

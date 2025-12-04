@@ -1,5 +1,6 @@
 #include <likwid.h>
 
+#include <pthread.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <sys/syscall.h>
@@ -35,7 +36,7 @@
 // a string combining both group ID and region ID
 #define LABEL_MAX_SIZE 256
 
-DECLARE_STATIC_PTMUTEX(rocmarker_init_mutex);
+static pthread_mutex_t rocmarker_init_mutex = PTHREAD_MUTEX_INITIALIZER;
 static RocmarkerContext *rocmarker_ctx;
 
 static int get_gpu_idx(int hipDeviceId, size_t *idx) {
