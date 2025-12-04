@@ -571,7 +571,7 @@ uninstall_container_helper_moved:
 endif
 
 .PHONY: install
-install: install_daemon install_freq install_appdaemon install_container_helper
+install: all install_daemon install_freq install_appdaemon install_container_helper
 	@echo "===> INSTALL applications to $(BINPREFIX)"
 	@mkdir -p $(BINPREFIX)
 	@chmod 755 $(BINPREFIX)
