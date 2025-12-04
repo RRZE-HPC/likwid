@@ -47,19 +47,21 @@ end
 
 function usage()
     version()
-    io.stdout:write("A tool to print the thread and cache topology on CPUs and GPUs.\n\n")
-    io.stdout:write("Options:\n")
-    io.stdout:write("-h, --help\t\t Help message\n")
-    io.stdout:write("-v, --version\t\t Version information\n")
-    io.stdout:write("-V, --verbose <level>\t Set verbosity\n")
-    io.stdout:write("-c, --caches\t\t List cache information\n")
-    io.stdout:write("-C, --clock\t\t Measure processor clock\n")
+    print()
+    print("A tool to print the thread and cache topology on CPUs and GPUs.")
+    print()
+    print("Options:")
+    print("  -h, --help            Help message")
+    print("  -v, --version         Version information")
+    print("  -V, --verbose <level> Set verbosity")
+    print("  -c, --caches          List cache information")
+    print("  -C, --clock           Measure processor clock")
     if libinfo["nvidiaSupport"] or libinfo["rocmSupport"] then
-        io.stdout:write("-G, --gpus\t\t List detailed GPU information\n")
+        print("  -G, --gpus            List GPU information")
     end
-    io.stdout:write("-O\t\t\t CSV output\n")
-    io.stdout:write("-o, --output <file>\t Store output to file. (Optional: Apply text filter)\n")
-    io.stdout:write("-g\t\t\t Graphical output\n")
+    print("  -O                    CSV output")
+    print("  -o, --output <file>   Store output to file. (Optional: Apply text filter)")
+    print("  -g                    Graphical output")
 end
 
 print_caches = false
