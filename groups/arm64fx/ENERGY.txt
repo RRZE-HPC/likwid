@@ -6,7 +6,7 @@ PMC1  EA_L2
 PMC2  EA_MEMORY
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 Energy Core [J] 1E-09*PMC0
 Power Core [W] 1E-09*PMC0/time
 Energy L2 [J] 1E-09*PMC1

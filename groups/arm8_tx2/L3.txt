@@ -9,7 +9,7 @@ PMC4  L2D_CACHE_ALLOCATE
 
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 Clock [MHz] 1.E-06*PMC1/time
 CPI  PMC1/PMC0
 L3 load bandwidth [MBytes/s]  1.0E-06*(PMC2-PMC4)*64.0/time

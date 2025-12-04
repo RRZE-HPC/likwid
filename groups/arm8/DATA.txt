@@ -7,7 +7,7 @@ PMC2  LD_RETIRED
 PMC3  ST_RETIRED
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 CPI  PMC1/PMC0
 Load to store ratio PMC2/PMC3
 Load ratio PMC2/PMC0

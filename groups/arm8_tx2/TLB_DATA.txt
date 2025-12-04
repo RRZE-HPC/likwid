@@ -7,7 +7,7 @@ PMC2  L1D_TLB_REFILL_RD
 PMC3  L1D_TLB_REFILL_WR
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 Clock [MHz] 1.E-06*PMC1/time
 CPI  PMC1/PMC0
 L1 DTLB load misses     PMC2

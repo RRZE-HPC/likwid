@@ -7,7 +7,7 @@ PMC2  VFP_SPEC
 PMC3  ASE_SPEC
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 Clock [MHz] 1.E-06*PMC1/time
 CPI  PMC1/PMC0
 DP [MFLOP/s]  1.0E-06*(PMC3*2.0+PMC2)/time

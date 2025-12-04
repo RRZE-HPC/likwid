@@ -9,7 +9,7 @@ PMC4  L1I_CACHE_REFILL
 
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 CPI  PMC1/PMC0
 L2D load bandwidth [MBytes/s]  1.0E-06*PMC2*64.0/time
 L2D load data volume [GBytes]  1.0E-09*PMC2*64.0

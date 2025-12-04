@@ -7,7 +7,7 @@ PMC3  FP_FIXED_OPS_SPEC
 PMC4  FP_SCALE_OPS_SPEC
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 Clock [MHz] 1.E-06*PMC1/time
 CPI  PMC1/PMC0
 FP rate [MFLOP/s] 1E-06*(PMC3+PMC4)/time

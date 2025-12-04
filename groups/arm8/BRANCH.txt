@@ -9,7 +9,7 @@ PMC4  INST_SPEC
 
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 CPI  PMC1/PMC0
 Branch rate   PMC2/PMC0
 Branch misprediction rate  PMC3/PMC0

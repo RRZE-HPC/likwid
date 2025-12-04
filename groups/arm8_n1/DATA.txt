@@ -7,7 +7,7 @@ PMC2  LD_SPEC
 PMC3  ST_SPEC
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 CPI  PMC1/PMC0
 Load to store ratio PMC2/PMC3
 Load ratio PMC2/PMC0

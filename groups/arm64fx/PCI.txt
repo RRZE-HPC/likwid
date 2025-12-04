@@ -8,7 +8,7 @@ PMC3  BUS_WRITE_TOTAL_PCI
 
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 CPI  PMC1/PMC0
 PCI read bandwidth [MBytes/s] 1.0E-06*(PMC2)*256.0/time
 PCI read data volume [GBytes] 1.0E-09*(PMC2)*256.0

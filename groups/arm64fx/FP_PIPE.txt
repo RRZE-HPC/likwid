@@ -9,7 +9,7 @@ PMC4  FLB_VAL
 PMC5  FLB_VAL_PRD_CNT
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 CPI  PMC1/PMC0
 FP operation pipeline A busy rate [%] (PMC2/PMC1)*100.0
 FP pipeline A active element rate [%] (PMC3/(PMC2*16))*100.0

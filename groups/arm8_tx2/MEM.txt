@@ -9,7 +9,7 @@ MBOX1C0  MEMORY_READS
 MBOX1C1  MEMORY_WRITES
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 Clock [MHz] 1.E-06*PMC1/time
 CPI  PMC1/PMC0
 Memory read bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0)*64.0/time

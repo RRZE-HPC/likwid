@@ -8,7 +8,7 @@ PMC3  L2D_CACHE_WB
 
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 CPI  PMC1/PMC0
 L2D<-L3 load bandwidth [MBytes/s]  1.0E-06*(PMC2)*64.0/time
 L2D<-L3 load data volume [GBytes]  1.0E-09*(PMC2)*64.0
