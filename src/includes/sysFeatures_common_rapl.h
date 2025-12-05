@@ -40,6 +40,7 @@ typedef struct {
     double powerUnit;   // unit W
     double energyUnit;  // unit J
     double timeUnit;    // unit s
+    int regWidth;       // width of energy status register
 } RaplDomainInfo;
 
 static inline double timeWindow_to_seconds(const RaplDomainInfo *info, uint64_t timeWindow)

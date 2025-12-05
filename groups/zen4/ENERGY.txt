@@ -7,7 +7,6 @@ PMC0  RETIRED_INSTRUCTIONS
 PMC1  CPU_CLOCKS_UNHALTED
 PWR0  RAPL_CORE_ENERGY
 PWR1  RAPL_PKG_ENERGY
-PWR2  RAPL_L3_ENERGY
 
 
 
@@ -20,16 +19,12 @@ Energy Core [J]  PWR0
 Power Core [W] PWR0/time
 Energy PKG [J]  PWR1
 Power PKG [W] PWR1/time
-Energy L3 [J]  PWR2
-Power L3 [W] PWR2/time
 
 LONG
 Formulas:
 Power Core [W] = RAPL_CORE_ENERGY/time
-Power L3 [W] = RAPL_L3_ENERGY/time
+Power PKG [W] = RAPL_PKG_ENERGY/time
 -
-Ryzen implements the RAPL interface previously introduced by Intel.
-This interface enables to monitor the consumed energy on the core and L3
+AMD implements the RAPL interface previously introduced by Intel.
+This interface enables to monitor the consumed energy on the core and PKG
 domain. It is not documented by AMD which parts of the CPU are in which domain.
-When using the perf_event backend, only PWR1 (RAPL_PKG_ENERGY) is provided. With
-the other backends, only PWR0 and PWR2 are supported.

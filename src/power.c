@@ -1,4 +1,4 @@
-/*
+ /*
  * =======================================================================================
  *
  *      Filename:  power.c
@@ -227,7 +227,7 @@ power_init(int cpuId)
                     numDomains = 2;
                     unit_reg = MSR_AMD17_RAPL_POWER_UNIT;
                     power_names[0] = "CORE";
-                    power_names[1] = "L3";
+                    power_names[1] = "PKG";
                     power_regs[0] = MSR_AMD17_RAPL_CORE_STATUS;
                     power_regs[1] = MSR_AMD19_RAPL_L3_STATUS;
 
@@ -248,10 +248,11 @@ power_init(int cpuId)
                 case ZEN5C_EPYC:
                     cpuid_info.turbo = 0;
                     power_info.hasRAPL = 1;
+                    power_info.statusRegWidth= 64;
                     numDomains = 2;
                     unit_reg = MSR_AMD1A_RAPL_L3_POWER_UNIT;
                     power_names[0] = "CORE";
-                    power_names[1] = "L3";
+                    power_names[1] = "PKG";
                     power_regs[0] = MSR_AMD1A_RAPL_CORE_STATUS;
                     power_regs[1] = MSR_AMD1A_RAPL_L3_STATUS;
 
@@ -405,15 +406,19 @@ power_init(int cpuId)
         if (err == 0)
         {
             double energyUnit;
-            power_info.powerUnit = 1000000 / (1<<(flags & 0xF));
-            power_info.timeUnit = 1000000 / (1 << ((flags>>16) & 0xF));
+            if (cpuid_info.isIntel) {
+                power_info.powerUnit = 1000000.0 / (1<<(flags & 0xF));
+            } else {
+                power_info.powerUnit = 1.0 / (1UL<<(flags & 0xF));
+            }
+            power_info.timeUnit = 1000000 / (1UL << ((flags>>16) & 0xF));
             if (cpuid_info.model != ATOM_SILVERMONT_E)
             {
-                energyUnit = 1.0 / (1 << ((flags >> 8) & 0x1F));
+                energyUnit = 1.0 / (1UL << ((flags >> 8) & 0x1F));
             }
             else
             {
-                energyUnit = 1.0 * (1 << ((flags >> 8) & 0x1F)) / 1000000;
+                energyUnit = 1.0 * (1UL << ((flags >> 8) & 0x1F)) / 1000000;
             }
             for (i = 0; i < numDomains; i++)
             {

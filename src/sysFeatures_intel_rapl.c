@@ -48,11 +48,11 @@
 
 #include <sysFeatures_common_rapl.h>
 
-static RaplDomainInfo intel_rapl_pkg_info = {0, 0, 0};
-static RaplDomainInfo intel_rapl_dram_info = {0, 0, 0};
-static RaplDomainInfo intel_rapl_psys_info = {0, 0, 0};
-static RaplDomainInfo intel_rapl_pp0_info = {0, 0, 0};
-static RaplDomainInfo intel_rapl_pp1_info = {0, 0, 0};
+static RaplDomainInfo intel_rapl_pkg_info = {0, 0, 0, 32};
+static RaplDomainInfo intel_rapl_dram_info = {0, 0, 0, 32};
+static RaplDomainInfo intel_rapl_psys_info = {0, 0, 0, 32};
+static RaplDomainInfo intel_rapl_pp0_info = {0, 0, 0, 32};
+static RaplDomainInfo intel_rapl_pp1_info = {0, 0, 0, 32};
 
 static int intel_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info)
 {
@@ -60,7 +60,7 @@ static int intel_rapl_energy_status_getter(const LikwidDevice_t device, char** v
     if (err < 0)
         return err;
     uint64_t energy;
-    err = likwid_sysft_readmsr_field(device, reg, 0, 32, &energy);
+    err = likwid_sysft_readmsr_field(device, reg, 0, info->regWidth, &energy);
     if (err)
         return err;
     return likwid_sysft_double_to_string((double)energy * info->energyUnit, value);
