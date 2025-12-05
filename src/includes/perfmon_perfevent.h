@@ -948,7 +948,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
         }
     }
 
-    if (type != POWER && cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_RYZEN3))
+    if (type == CBOX0 && cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_RYZEN3 || cpuid_info.model == ZEN4_EPYC_BERGAMO || cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5C_EPYC))
     {
         int got_cid = 0;
         int got_slices = 0;

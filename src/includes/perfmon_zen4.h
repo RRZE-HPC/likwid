@@ -293,9 +293,7 @@ int perfmon_startCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
             else if (type == POWER)
             {
                 PerfmonEvent *event = &(eventSet->events[i].event);
-                if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock) && event->eventId == 0x03)
-                    continue;
-                else if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock) && event->eventId == 0x02)
+                if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock) && event->eventId == 0x02)
                     continue;
                 else if (counter == MSR_AMD17_RAPL_CORE_STATUS && (!haveCLock) && event->eventId == 0x01)
                     continue;
@@ -370,9 +368,7 @@ int perfmon_stopCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
             else if (type == POWER)
             {
                 PerfmonEvent *event = &(eventSet->events[i].event);
-                if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock) && event->eventId == 0x03)
-                    continue;
-                else if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock) && event->eventId == 0x02)
+                if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock) && event->eventId == 0x02)
                     continue;
                 else if (counter == MSR_AMD17_RAPL_CORE_STATUS && (!haveCLock) && event->eventId == 0x01)
                     continue;
@@ -453,9 +449,7 @@ int perfmon_readCountersThread_zen4(int thread_id, PerfmonEventSet* eventSet)
             else if (type == POWER)
             {
                 PerfmonEvent *event = &(eventSet->events[i].event);
-                if (counter == MSR_AMD19_RAPL_L3_STATUS && (!haveL3Lock) && event->eventId == 0x03)
-                    continue;
-                else if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock) && event->eventId == 0x02)
+                if (counter == MSR_AMD17_RAPL_PKG_STATUS && (!haveSLock) && event->eventId == 0x02)
                     continue;
                 else if (counter == MSR_AMD17_RAPL_CORE_STATUS && (!haveCLock) && event->eventId == 0x01)
                     continue;
