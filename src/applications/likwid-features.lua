@@ -169,7 +169,7 @@ if listFeatures and #cpulist > 0 then
             print_stdout(str)
         end
     end
-    os.exit(1)
+    os.exit(0)
 elseif #cpulist == 0 then
     print_stderr("Need HWThread to list current feature state")
     os.exit(1)
