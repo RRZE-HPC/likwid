@@ -21,18 +21,8 @@ jobs:
     - name: make perf_event
       run: make ACCESSMODE=perf_event BUILD_SYSFEATURES=true -j
   build-aarch64-perfevent:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
     - uses: actions/checkout@v2
-    - uses: uraimo/run-on-arch-action@v3
-      name: make perf_event
-      with:
-        arch: aarch64
-        distro: ubuntu_latest
-        githubToken: ${{ github.token }}
-        install: |
-          apt update
-          apt upgrade -y
-          apt install -y build-essential
-        run: |
-          make COMPILER=GCCARM ACCESSMODE=perf_event BUILD_SYSFEATURES=true -j
+    - name: make perf_event
+      run: make COMPILER=GCCARM ACCESSMODE=perf_event BUILD_SYSFEATURES=true -j
