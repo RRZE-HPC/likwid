@@ -11,7 +11,7 @@ build-x86-daemon:
     variables:
       LIKWID_COMPILER: "GCC"
       LIKWID_ACCESSMODE: "accessdaemon"
-      LIKWID_MODULE: "likwid/5.2-dev"
+      LIKWID_MODULE: "likwid/5.5.0rc2"
     script:
       - mkdir /tmp/$CI_JOB_NAME
       - module load "$LIKWID_MODULE"
