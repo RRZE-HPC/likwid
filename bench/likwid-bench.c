@@ -60,46 +60,6 @@
 extern void* runTest(void* arg);
 extern void* getIterSingle(void* arg);
 
-/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-
-#define HELP_MSG printf("Threaded Memory Hierarchy Benchmark -- Version %d.%d.%d \n\n",VERSION,RELEASE,MINORVERSION); \
-    printf("\n"); \
-    printf("Supported Options:\n"); \
-    printf("-h/--help\t\t Help message\n"); \
-    printf("-v/--version\t\t Version\n"); \
-    printf("-a/--all\t\t List available benchmarks \n"); \
-    printf("-d/--delim\t\t Delimiter used for physical hwthread list (default ,) \n"); \
-    printf("-p/--printdomains\t List available thread domains\n"); \
-    printf("\t\t\t\t or the physical ids of the hwthreads selected by the -c expression \n"); \
-    printf("-s/--runtime <TIME>\t Seconds to run the test minimally (default 1)\n");\
-    printf("\t\t\t\t If resulting iteration count is below 10, it is normalized to 10.\n");\
-    printf("-i/--iters <ITERS>\t Specify the number of iterations per thread manually. \n"); \
-    printf("-l/--list <TEST>\t list properties of benchmark \n"); \
-    printf("-t/--test <TEST>\t type of test \n"); \
-    printf("-w/--workgroup\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>]\n"); \
-    printf("-W/--Workgroup\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]]\n"); \
-    printf("\t\t\t\t <size> in B, kB, MB, GB, kiB, MiB or GiB (mandatory)\n"); \
-    printf("For dynamically loaded benchmarks\n"); \
-    printf("-f/--tempdir <PATH>\t Specify a folder for the temporary files. default: /tmp\n"); \
-    printf("-o/--asmout <FILE>\t Save generated assembly to file\n"); \
-    printf("\n"); \
-    printf("Difference between -w and -W :\n"); \
-    printf("-w allocates the streams in the thread_domain with one thread and support placement of streams\n"); \
-    printf("-W allocates the streams chunk-wise by each thread in the thread_domain\n"); \
-    printf("\n"); \
-    printf("Usage: \n"); \
-    printf("# Run the store benchmark on all CPUs of the system with a vector size of 1 GB\n"); \
-    printf("likwid-bench -t store -w S0:1GB\n"); \
-    printf("# Run the copy benchmark on one CPU at CPU socket 0 with a vector size of 100kB\n"); \
-    printf("likwid-bench -t copy -w S0:100kB:1\n"); \
-    printf("# Run the copy benchmark on one CPU at CPU socket 0 with a vector size of 100MB but place one stream on CPU socket 1\n"); \
-    printf("likwid-bench -t copy -w S0:100MB:1-0:S0,1:S1\n"); \
-/*    printf("-c <COMP_LIST>\t Specify a list of compilers that should be searched for. default: gcc,icc,pgcc\n"); \*/
-/*    printf("-f <COMP_FLAGS>\t Specify compiler flags. Use \". default: \"-shared -fPIC\"\n"); \*/
-
-#define VERSION_MSG \
-    printf("likwid-bench -- Version %d.%d.%d\n",VERSION,RELEASE,MINORVERSION); \
-    
 static struct option bench_cli_options[] =
 {
     {"help", no_argument, NULL, 'h'},
@@ -120,8 +80,58 @@ static struct option bench_cli_options[] =
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE  ############ */
 
-    void
-copyThreadData(ThreadUserData* src,ThreadUserData* dst)
+static void print_version(void)
+{
+    printf("likwid-bench -- Version %d.%d.%d\n", VERSION, RELEASE, MINORVERSION);
+}
+
+static void print_usage(void)
+{
+    print_version();
+    static const char *usage =
+        "\n"
+        "Micro benchmarking platform for CPU architectures\n"
+        "\n"
+        "Options:\n"
+        "  -h, --help           Show help\n"
+        "  -v, --version        Show version\n"
+        "  -a, --all            List available benchmarks\n"
+        "  -d, --delim <DELIM>  Delimiter used for physical hwthread list (default: ,)\n"
+        "  -p, --printdomains   List available thread domains\n"
+        // "                       or the physical IDs of the hwthreads selected by the -c expression\n"
+        "  -s, --runtime <TIME> Seconds to run the test minimally (default: 1)\n"
+        "                       If resulting iteration count is below 10, it is normalized to 10.\n"
+        "  -i, --iters <ITERS>  Specify the number of iterations per thread manually\n"
+        "  -l, --list <TEST>    List properties of benchmark\n"
+        "  -t, --test <TEST>    Type of test\n"
+        "  -w, --workgroup      <thread_domain>:<size>[:<num_threads>[:<chunk_size>:<stride>]-<stream_id>:<domain_id>[:<offset>]\n"
+        "  -W, --Workgroup      <thread_domain>:<size>[:<num_threads>[:<chunk_size>:<stride>]]\n"
+        "                       where <size> is in B, KB, MB, GB, KiB, MiB or GiB (mandatory)\n"
+        "\n"
+        "Options for dynamically loaded benchmarks:\n"
+        "  -f, --tempdir <PATH> Specify a folder for the temporary files (default: /tmp)\n"
+        "  -o, --asmout <FILE>  Save generated assembly to file\n"
+        // "  -c <COMP_LIST>       Specify a list of compilers that should be searched for (default: gcc,icc,pgcc)\n"
+        // "  -f <COMP_FLAGS>      Specify compiler flags. Use quotes. (default: \"-shared -fPIC\")\n"
+        "\n"
+        "Difference between -w and -W:\n"
+        "  -w allocates streams in the <thread_domain> with one thread and support placement of streams\n"
+        "  -W allocates streams chunk-wise by each thread in the <thread_domain>\n"
+        "\n"
+        "Examples:\n"
+        "  # Run the store benchmark on all CPUs of the system with a vector size of 1 GB\n"
+        "  $ likwid-bench -t store -w S0:1GB\n"
+        "\n"
+        "  # Run the copy benchmark on one CPU at CPU socket 0 with a vector size of 100kB\n"
+        "  $ likwid-bench -t copy -w S0:100kB:1\n"
+        "\n"
+        "  # Run the copy benchmark on one CPU at CPU socket 0 with a vector size of 100MB but place one stream on CPU socket 1\n"
+        "  $ likwid-bench -t copy -w S0:100MB:1-0:S0,1:S1\n"
+        "\n";
+    printf("%s", usage);
+}
+
+void copyThreadData(ThreadUserData* src,ThreadUserData* dst)
 {
     uint32_t i;
 
@@ -150,7 +160,6 @@ void illhandler(int signum, siginfo_t *info, void *ptr)
     fprintf(stderr, "This happens if you want to run a kernel that uses instructions not available on your system.\n");
     exit(EXIT_FAILURE);
 }
-
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -199,7 +208,7 @@ int main(int argc, char** argv)
     /* Handling of command line options */
     if (argc ==  1)
     {
-        HELP_MSG;
+        print_usage();
         exit(EXIT_SUCCESS);
     }
 
@@ -228,10 +237,10 @@ int main(int argc, char** argv)
         switch (c)
         {
             case 'h':
-                HELP_MSG;
+                print_usage();
                 exit (EXIT_SUCCESS);
             case 'v':
-                VERSION_MSG;
+                print_version();
                 exit (EXIT_SUCCESS);
             case 'a':
                 ownprintf(TESTS"\n");
@@ -426,7 +435,7 @@ int main(int argc, char** argv)
                             optopt);
                 return EXIT_FAILURE;
             default:
-                HELP_MSG;
+                print_usage();
         }
     }
     if ((numberOfWorkgroups == 0) && (!optPrintDomains))
