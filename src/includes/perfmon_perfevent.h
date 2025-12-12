@@ -1494,9 +1494,15 @@ int perfmon_setupCountersThread_perfevent(
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating uncore type for socket %d on Nvidia Grace", affinity_thread2socket_lookup[cpu_id]);
                     type += affinity_thread2socket_lookup[cpu_id];
                 }
-                if ((cpuid_info.family == ZEN5_FAMILY) && (cpuid_info.model == ZEN5_EPYC) && (cpuid_topology.numSockets > 1))
+                if ((type >= BBOX0 && type <= BBOX11) && (cpuid_info.family == ZEN5_FAMILY) && (cpuid_topology.numSockets > 1) && (cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5C_EPYC))
                 {
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating UMC uncore type for socket %d on AMD Zen5", affinity_thread2socket_lookup[cpu_id]);
+                    type += (affinity_thread2socket_lookup[cpu_id] * AMD_K1A_UMC_MAX_UNITS);
+                }
+                if (   (type >= BBOX0 && type <= BBOX11) && (cpuid_info.family == ZEN3_FAMILY) && (cpuid_topology.numSockets > 1)
+                    && (cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_EPYC_BERGAMO || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_RYZEN3))
+                {
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating UMC uncore type for socket %d on AMD Zen4", affinity_thread2socket_lookup[cpu_id]);
                     type += (affinity_thread2socket_lookup[cpu_id] * AMD_K1A_UMC_MAX_UNITS);
                 }
                 if (has_lock)
