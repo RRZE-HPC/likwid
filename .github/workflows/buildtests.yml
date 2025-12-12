@@ -12,11 +12,17 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: make accessdaemon
-      run: make ACCESSMODE=accessdaemon
+      run: make ACCESSMODE=accessdaemon BUILD_SYSFEATURES=true -j
 
   build-x86-perfevent:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - name: make perf_event
-      run: make ACCESSMODE=perf_event
+      run: make ACCESSMODE=perf_event BUILD_SYSFEATURES=true -j
+  build-aarch64-perfevent:
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - uses: actions/checkout@v2
+    - name: make perf_event
+      run: make COMPILER=GCCARM ACCESSMODE=perf_event BUILD_SYSFEATURES=true -j
