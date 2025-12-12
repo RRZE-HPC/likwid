@@ -1,3 +1,8 @@
+# Changelog 5.5.1
+- Fixes for AMD RAPL units
+- Fixes for AMD Zen4/4c/5/5c memory controllers
+- Updated help text formats
+
 # Changelog 5.5.0
 - Add support for AMD Zen5
 - Change hashtable to cwisstable
