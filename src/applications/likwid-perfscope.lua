@@ -126,14 +126,14 @@ end
 
 local function examples()
     print_stdout("Examples:")
-    print_stdout("  Run command on CPU 2 and measure performance group TEST:")
-    print_stdout("    $ likwid-perfscope -C 2 -g TEST -f 1s ./a.out")
+    print_stdout("  # Run command on CPU 2 and measure performance group TEST")
+    print_stdout("  $ likwid-perfscope -C 2 -g TEST -f 1s ./a.out")
 end
 
 local function usage()
     version()
     print_stdout()
-    print_stdout("A tool to generate pictures on-the-fly from likwid-perfctr measurements")
+    print_stdout("A tool to generate pictures on-the-fly from likwid-perfctr measurements.")
     print_stdout()
     print_stdout("Options:")
     print_stdout("  -h, --help            Help message")

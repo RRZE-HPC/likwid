@@ -39,12 +39,11 @@ print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(tostring
 sys_base_path = "/sys/devices/system/cpu"
 set_command = "<INSTALLED_PREFIX>/sbin/likwid-setFreq"
 
-
-function version()
+local function version()
     print_stdout(string.format("likwid-setFrequencies -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
-function usage()
+local function usage()
     version()
     print_stdout()
     print_stdout("A tool to adjust frequencies and governors on x86 CPUs.")

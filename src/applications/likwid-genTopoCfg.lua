@@ -39,21 +39,23 @@ print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n
 
 local filename = "<INSTALLED_PREFIX>/etc/likwid_topo.cfg"
 
-function version()
+local function version()
     print_stdout(string.format("likwid-genTopoCfg -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
-function usage()
+local function usage()
     version()
+    print_stdout()
     print_stdout("A tool to store the system's architecture to a config file for LIKWID.\n")
+    print_stdout()
     print_stdout("Options:")
-    print_stdout("-h, --help\t\t Help message")
-    print_stdout("-v, --version\t\t Version information")
-    print_stdout("-o, --output <file>\t Use <file> instead of default "..filename)
-    print_stdout("\t\t\t Likwid searches at startup per default:")
-    print_stdout("\t\t\t /etc/likwid_topo.cfg and <INSTALLED_PREFIX>/etc/likwid_topo.cfg")
-    print_stdout("\t\t\t Another location can be configured in the configuration file /etc/likwid.cfg,")
-    print_stdout("\t\t\t <INSTALLED_PREFIX>/etc/likwid.cfg or the path defined at the build process of Likwid.")
+    print_stdout("  -h, --help          Help message")
+    print_stdout("  -v, --version       Version information")
+    print_stdout("  -o, --output <file> Use <file> instead of default " .. filename)
+    print_stdout("                      Likwid searches at startup per default:")
+    print_stdout("                      /etc/likwid_topo.cfg and <INSTALLED_PREFIX>/etc/likwid_topo.cfg")
+    print_stdout("                      Another location can be configured in the configuration file /etc/likwid.cfg,")
+    print_stdout("                      <INSTALLED_PREFIX>/etc/likwid.cfg or the path defined at the build process of Likwid.")
 end
 
 for opt,arg in likwid.getopt(arg, {"h","v","help","version", "o:", "output:"}) do
