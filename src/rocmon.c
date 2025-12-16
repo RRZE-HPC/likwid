@@ -49,6 +49,7 @@ static void *lib_rocprofiler_sdk;
 #define RPR_CALL(handleerror, func, ...) \
     do { \
         assert(func##_ptr != NULL); \
+        printf("### %s\n", #func); \
         rocprofiler_status_t s_ = func##_ptr(__VA_ARGS__);\
         if (s_ != ROCPROFILER_STATUS_SUCCESS) {           \
             const char *errstr_ = rocprofiler_get_status_string_ptr(s_); \
@@ -72,6 +73,7 @@ static void *lib_rocprofiler_sdk;
 #define HIP_CALL(handlerror, func, ...) \
     do {\
         assert(func##_ptr != NULL); \
+        printf("### %s\n", #func); \
         hipError_t s_ = func##_ptr(__VA_ARGS__);\
         if (s_ != hipSuccess) {\
             const char *errstr_ = hipGetErrorName_ptr(s_);\
@@ -138,9 +140,7 @@ DECLAREFUNC_HIP(hipFree, void *);
 DECLAREFUNC_HIP(hipInit, unsigned int);
 static const char *(*hipGetErrorName_ptr)(hipError_t);
 
-static const int *initGpuIds; // <-- only valid during the scope of 'rocmon_init' and 'tool_init'
-
-static int rocmon_device_init(size_t ctx_dev_idx, int hip_dev_idx);
+static int rocmon_device_init(size_t ctxDeviceIdx);
 
 static int tool_init(rocprofiler_client_finalize_t, void *) {
     assert(rocmon_ctx != NULL);
@@ -148,28 +148,34 @@ static int tool_init(rocprofiler_client_finalize_t, void *) {
     RPR_CALL(return -EIO, rocprofiler_create_context, &rocmon_ctx->rocprofCtx);
 
     for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
-        int err = rocmon_device_init(i, initGpuIds ? initGpuIds[i] : (int)i);
+        int err = rocmon_device_init(i);
         if (err < 0) {
-            ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon initalization done");
+            ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon device init failed");
             // The doc doesn't say anthing about what to return here. Let's just return a negative value?
             return -1;
         }
     }
+
+    printf("tool_init done!\n");
 
     return 0;
 }
 
 static void tool_fini(void *)
 {
+    printf("tool_fini done!\n");
 }
 
-static RocmonDevice *device_get(int gpuIdx) {
+static RocmonDevice *device_get(int hipDeviceId) {
     assert(rocmon_ctx != NULL);
 
     for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
         RocmonDevice *deviceCandidate = &rocmon_ctx->devices[i];
 
-        if (deviceCandidate->hipDeviceIdx == gpuIdx)
+        if (!deviceCandidate->enabled)
+            continue;
+
+        if (deviceCandidate->hipDeviceId == hipDeviceId)
             return deviceCandidate;
     }
 
@@ -651,36 +657,7 @@ static int rpr_init_events(RocmonDevice *device) {
     return 0;
 }
 
-static int parse_hex(char c) {
-    if (c >= '0' && c <= '9')
-        return (uint8_t)(c - '0');
-    if (c >= 'a' && c <= 'f')
-        return (uint8_t)(c - 'a' + 10);
-    if (c >= 'A' && c <= 'F')
-        return (uint8_t)(c - 'A' + 10);
-    return 0;
-}
-
-static bool hip_uuid_equal_rocprof_uuid(const hipUUID *hip_uuid, const rocprofiler_uuid_t *rocp_uuid) {
-    assert(sizeof(hip_uuid->bytes) == 16);
-    assert(sizeof(rocp_uuid->bytes) == 16);
-
-    // For some reason hipUUID is stored in ASCII, while rocprofiler_uuid_t is stored in binary.
-    for (size_t h_i = 0, r_i = 7; h_i < sizeof(*hip_uuid); h_i += 2, r_i--) {
-        const char h_a = (char)hip_uuid->bytes[h_i];
-        const char h_b = (char)hip_uuid->bytes[h_i+1];
-        const int h_digit = 
-            (parse_hex(h_a) << 4) |
-            parse_hex(h_b);
-        const uint8_t r_digit = rocp_uuid->bytes[r_i];
-
-        if (h_digit != r_digit)
-            return false;
-    }
-    return true;
-}
-
-static rocprofiler_status_t find_agent_for_hip_device(
+static rocprofiler_status_t find_agent_for_rocmon_device(
         rocprofiler_agent_version_t agents_ver,
         const void **agents_arr_raw,
         size_t num_agents,
@@ -701,7 +678,7 @@ static rocprofiler_status_t find_agent_for_hip_device(
         if (agent_candidate->type != ROCPROFILER_AGENT_TYPE_GPU)
             continue;
 
-        if (hip_uuid_equal_rocprof_uuid(&device->hipProps.uuid, &agent_candidate->uuid)) {
+        if (agent_candidate->domain == device->pciDomain && agent_candidate->location_id) {
             device->rocprofAgent = agent_candidate;
             break;
         }
@@ -731,13 +708,15 @@ static void set_counter_callback(
             &counter_config
     );
 
-    set_config(context_id, counter_config);
+    rocprofiler_status_t status = set_config(context_id, counter_config);
+    if (status != ROCPROFILER_STATUS_SUCCESS)
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocprofiler-sdk: set_config failed: %s", rocprofiler_get_status_string_ptr(status));
 
-    RPR_CALL(
-            return,
-            rocprofiler_destroy_counter_config,
-            counter_config
-    );
+    //RPR_CALL(
+    //        return,
+    //        rocprofiler_destroy_counter_config,
+    //        counter_config
+    //);
 }
 
 static void buffered_callback(
@@ -792,17 +771,14 @@ static void buffered_callback(
 }
 
 static int rpr_device_init(RocmonDevice *device) {
-    // First we have to find which rocprofiler agent belongs to which hip device ID.
-    HIP_CALL(return -EIO, hipGetDeviceProperties, &device->hipProps, device->hipDeviceIdx);
+    /* First we have to find which rocprofiler agent belongs to which RocmonDevice.
+     * We do this via the PCI location. */
 
-    // TODO, this call is wrong either like this or that:
-    // - We must call it in tool_init
-    // - We must only call it once
     RPR_CALL(
         return -EIO,
         rocprofiler_query_available_agents,
         ROCPROFILER_AGENT_INFO_VERSION_0,
-        find_agent_for_hip_device,
+        find_agent_for_rocmon_device,
         sizeof(rocprofiler_agent_t),
         device
     );
@@ -838,6 +814,7 @@ static int rpr_device_init(RocmonDevice *device) {
 
     // The set_counter_callback is not called here. It will be called later
     // during rocprofiler_start_context.
+    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Using device: %s\n", device->rocprofAgent->product_name);
     RPR_CALL(
             return -EIO,
             rocprofiler_configure_device_counting_service,
@@ -858,62 +835,29 @@ static int rpr_device_init(RocmonDevice *device) {
 }
 
 static int smi_device_init(RocmonDevice *device) {
-    /* I can't find specifications whether rocm_smi device IDs are the same as HIP device IDs.
-     * So instead we look through all of them and find the one with matching PCI IDs.
-     * Unfortunately rocm_smi doesn't expose the UUID, so we can't use that.
-     * One thing I am not certin about is if AMD has something similar as Nvidia MIG devices,
-     * which may or may not have the same PCI ID? Let's ignore this for now and hope it doesn't
-     * cause issues. */
-    uint32_t num_rsmi_devices;
-    RSMI_CALL(return -EIO, rsmi_num_monitor_devices, &num_rsmi_devices);
+    uint64_t bdfid;
+    RSMI_CALL(return -EIO, rsmi_dev_pci_id_get, device->rsmiDeviceId, &bdfid);
 
-    bool found = false;
-
-    for (uint32_t i = 0; i < num_rsmi_devices; i++) {
-        uint64_t candidate_bdfid;
-        RSMI_CALL(return -EIO, rsmi_dev_pci_id_get, i, &candidate_bdfid);
-
-        /* For details about the format of bdfid, check rocm_smi.h. As far as I can tell
-         * there are no helper macros available to do this more nicely. */
-        const uint32_t candidate_domain = (uint32_t)((candidate_bdfid >> 32) & 0xFFFFFFFF);
-        const uint32_t candidate_bus = (uint32_t)((candidate_bdfid >> 8) & 0xFF);
-        const uint32_t candidate_dev = (uint32_t)((candidate_bdfid >> 3) & 0x1F);
-
-        /* Ignore partition ID and function ID, since they are not in the hipProps,
-         * so we can't match them either way. */
-
-        if ((uint32_t)device->hipProps.pciDomainID == candidate_domain &&
-            (uint32_t)device->hipProps.pciBusID == candidate_bus &&
-            (uint32_t)device->hipProps.pciDeviceID == candidate_dev)
-        {
-            if (found) {
-                ERROR_PRINT("Internal bug: Found duplicate rocm_smi devices");
-                break;
-            }
-
-            device->rsmiDeviceId = i;
-            found = true;
-        }
-    }
-
-    if (!found)
-        return -ENODEV;
+    /* For details about the format of bdfid, check rocm_smi.h. As far as I can tell
+     * there are no helper macros available to do this more nicely. */
+    device->pciDomain = (uint32_t)(bdfid >> 32);
+    device->pciLocation = (uint32_t)(bdfid >> 0);
     return 0;
 }
 
-static int rocmon_device_init(size_t ctx_dev_idx, int hip_dev_idx) {
-    if (ctx_dev_idx >= rocmon_ctx->numDevices)
+static int rocmon_device_init(size_t ctxDeviceIdx) {
+    if (ctxDeviceIdx >= rocmon_ctx->numDevices)
         return -EINVAL;
 
-    RocmonDevice *device = &rocmon_ctx->devices[ctx_dev_idx];
+    RocmonDevice *device = &rocmon_ctx->devices[ctxDeviceIdx];
 
-    device->hipDeviceIdx = hip_dev_idx;
+    device->rsmiDeviceId = ctxDeviceIdx;
 
-    int err = rpr_device_init(device);
+    int err = smi_device_init(device);
     if (err < 0)
         return err;
 
-    err = smi_device_init(device);
+    err = rpr_device_init(device);
     if (err < 0)
         return err;
 
@@ -926,6 +870,85 @@ static int rocmon_device_init(size_t ctx_dev_idx, int hip_dev_idx) {
     err = rpr_init_events(device);
     if (err < 0)
         return err;
+
+    return 0;
+}
+
+static int parse_hex(char c) {
+    if (c >= '0' && c <= '9')
+        return (uint8_t)(c - '0');
+    if (c >= 'a' && c <= 'f')
+        return (uint8_t)(c - 'a' + 10);
+    if (c >= 'A' && c <= 'F')
+        return (uint8_t)(c - 'A' + 10);
+    return 0;
+}
+
+static bool hip_uuid_equal_rocprof_uuid(const hipUUID *hip_uuid, const rocprofiler_uuid_t *rocp_uuid) {
+    assert(sizeof(hip_uuid->bytes) == 16);
+    assert(sizeof(rocp_uuid->bytes) == 16);
+
+    // For some reason hipUUID is stored in ASCII, while rocprofiler_uuid_t is stored in binary.
+    for (size_t h_i = 0, r_i = 7; h_i < sizeof(*hip_uuid); h_i += 2, r_i--) {
+        const char h_a = (char)hip_uuid->bytes[h_i];
+        const char h_b = (char)hip_uuid->bytes[h_i+1];
+        const int h_digit = 
+            (parse_hex(h_a) << 4) |
+            parse_hex(h_b);
+        const uint8_t r_digit = rocp_uuid->bytes[r_i];
+
+        if (h_digit != r_digit)
+            return false;
+    }
+    return true;
+}
+
+static int rocmon_init_hip(size_t numGpuIds, const int *gpuIds) {
+    // This function is separated from rocmon_device_init, since we need HIP, which must
+    // not be initialized before 'tool_init' finishes. So instead we do all HIP related
+    // things here.
+    HIP_CALL(return -EIO, hipInit, 0);
+
+    // Get number of devices
+    int availDeviceCount;
+    HIP_CALL(return -EIO, hipGetDeviceCount, &availDeviceCount);
+
+    if (gpuIds == NULL && numGpuIds == 0)
+        numGpuIds = availDeviceCount;
+
+    if (numGpuIds > (size_t)availDeviceCount)
+        return -EINVAL;
+
+    rocmon_ctx->hipDeviceIdxToRocmonDeviceIdx = calloc(numGpuIds, sizeof(*rocmon_ctx->hipDeviceIdxToRocmonDeviceIdx));
+    if (!rocmon_ctx->hipDeviceIdxToRocmonDeviceIdx)
+        return -errno;
+
+    // Find matching RocmonDevice via UUID
+    for (size_t i = 0; i < numGpuIds; i++) {
+        const int gpuId = gpuIds ? gpuIds[i] : (int)i;
+
+        hipDeviceProp_t hipProps;
+        HIP_CALL(return -EIO, hipGetDeviceProperties, &hipProps, gpuId);
+
+        bool found = false;
+
+        for (size_t j = 0; j < rocmon_ctx->numDevices; j++) {
+            RocmonDevice *device = &rocmon_ctx->devices[j];
+            if (hip_uuid_equal_rocprof_uuid(&hipProps.uuid, &device->rocprofAgent->uuid)) {
+                rocmon_ctx->hipDeviceIdxToRocmonDeviceIdx[i] = j;
+                device->hipDeviceId = gpuId;
+                device->hipProps = hipProps;
+                device->enabled = true;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Unable to find ROCm SMI / rocprofiler-sdk device for HIP device: %d", gpuId);
+            return -ENODEV;
+        }
+    }
 
     return 0;
 }
@@ -977,6 +1000,7 @@ static void rocmon_ctx_free(void) {
         free(rocmon_ctx->devices);
     }
 
+    free(rocmon_ctx->hipDeviceIdxToRocmonDeviceIdx);
     destroy_smap(rocmon_ctx->implementedSmiEvents);
 
     free(rocmon_ctx);
@@ -1259,12 +1283,14 @@ int rocmon_init(size_t numGpuIds, const int *gpuIds) {
         // We cannot allow initialization with different GPU ids, as rocmon
         // can only operate with one at a time.
         if (gpuIds) {
-            if (numGpuIds != rocmon_ctx->numDevices) {
+            if (numGpuIds != rocmon_ctx->numHipDeviceIdxToRocmonDeviceIdx) {
                 err = -EINVAL;
                 goto unlock_err_already_initialized;
             }
-            for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
-                if (gpuIds[i] != rocmon_ctx->devices[i].hipDeviceIdx) {
+            for (size_t i = 0; i < rocmon_ctx->numHipDeviceIdxToRocmonDeviceIdx; i++) {
+                const size_t rocmonDeviceIdx = rocmon_ctx->hipDeviceIdxToRocmonDeviceIdx[i];
+
+                if (gpuIds[i] != rocmon_ctx->devices[rocmonDeviceIdx].hipDeviceId) {
                     err = -EINVAL;
                     goto unlock_err_already_initialized;
                 }
@@ -1295,38 +1321,27 @@ int rocmon_init(size_t numGpuIds, const int *gpuIds) {
     RSMI_CALL(err = -EIO; goto unlock_err, rsmi_init, 0);
     rsmi_initialized = true;
 
-    // I don't know exactly why, but some initialization of the HIP runtime is required
-    // before we can do anything meaningful with rocprofiler-sdk. Otherwise we get
-    // an error ROCPROFILER_STATUS_ERROR_HSA_NOT_LOADED. Frankly, hsa_init and hsa_shut_down
-    // don't appear to do the trick. So it is important that this comes before any other
-    // rocprofiler calls.
-    int availDeviceCount;
-    HIP_CALL(err = -EIO; goto unlock_err, hipGetDeviceCount, &availDeviceCount);
+    uint32_t numRsmiDevices;
+    RSMI_CALL(return -EIO, rsmi_num_monitor_devices, &numRsmiDevices);
 
-    if (gpuIds == NULL && numGpuIds == 0)
-        numGpuIds = availDeviceCount;
-
-    rocmon_ctx->devices = calloc(numGpuIds, sizeof(*rocmon_ctx->devices));
+    rocmon_ctx->devices = calloc(numRsmiDevices, sizeof(*rocmon_ctx->devices));
     if (!rocmon_ctx->devices) {
         err = -errno;
         goto unlock_err;
     }
 
-    rocmon_ctx->numDevices = numGpuIds;
-
-    if (numGpuIds > (size_t)availDeviceCount) {
-        err = -EINVAL;
-        goto unlock_err;
-    }
+    rocmon_ctx->numDevices = numRsmiDevices;
 
     err = rocmon_smi_init_implemented();
     if (err < 0)
         goto unlock_err;
 
     // Init rocprofiler context and associated data structures
-    initGpuIds = gpuIds;
     RPR_CALL(err = -EIO; goto unlock_err, rocprofiler_force_configure, rocprofiler_configure_private);
-    initGpuIds = NULL;
+
+    err = rocmon_init_hip(numGpuIds, gpuIds);
+    if (err < 0)
+        goto unlock_err;
 
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "rocmon initalization done");
 
@@ -1404,6 +1419,8 @@ int rocmon_addEventSet(const char *eventString) {
 
     for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
         RocmonDevice *device = &rocmon_ctx->devices[i];
+        if (!device->enabled)
+            continue;
 
         size_t newNumGroupResults = device->numGroupResults + 1;
         RocmonEventResultList *newGroupResults = realloc(device->groupResults, newNumGroupResults * sizeof(*newGroupResults));
@@ -1536,6 +1553,8 @@ int rocmon_setupCounters(int gid) {
 
     for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
         RocmonDevice *device = &rocmon_ctx->devices[i];
+        if (!device->enabled)
+            continue;
 
         // Setup rocprofiler counters.
         // Please keep in mind the actual counter configuration for rocprofiler
@@ -1613,6 +1632,8 @@ int rocmon_startCounters(void) {
 
     for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
         RocmonDevice *device = &rocmon_ctx->devices[i];
+        if (!device->enabled)
+            continue;
 
         err = counters_smi_start(device);
         if (err < 0)
@@ -1623,19 +1644,6 @@ int rocmon_startCounters(void) {
             return err;
     }
 
-    //rocprofiler_status_t s = rocprofiler_start_context_ptr(rocmon_ctx->rocprofCtx);
-    //if (s == ROCPROFILER_STATUS_ERROR_HSA_NOT_LOADED) {
-    //    // If we get this error, we can apparently just try to call it a second time.
-    //    // No idea why this is necessary. But hey: For the meantime it works at least.
-    //    s = rocprofiler_start_context_ptr(rocmon_ctx->rocprofCtx);
-    //}
-
-    //if (s != ROCPROFILER_STATUS_SUCCESS) {
-    //    const char *errstr = rocprofiler_get_status_string_ptr(s);
-    //    ERROR_PRINT("Error: rocprofiler_get_status_string failed: '%s' (rocprofiler_status_t=%d)", errstr, s);
-    //    return -EIO;
-    //}
-    HIP_CALL(return -EIO, hipInit, 0);
     RPR_CALL(return -EIO, rocprofiler_start_context, rocmon_ctx->rocprofCtx);
 
     return 0;
@@ -1647,9 +1655,12 @@ int rocmon_stopCounters(void) {
     if (!rocmon_ctx)
         return -EFAULT;
 
-    RPR_CALL(return -EIO, rocprofiler_stop_context, rocmon_ctx->rocprofCtx);
+    int err = readCounters_impl(true);
+    if (err < 0)
+        return err;
 
-    return readCounters_impl(true);
+    RPR_CALL(return -EIO, rocprofiler_stop_context, rocmon_ctx->rocprofCtx);
+    return 0;
 }
 
 int counters_read_smi(RocmonDevice *device) {
@@ -1719,6 +1730,8 @@ static int readCounters_impl(bool stop) {
 
     for (size_t i = 0; i < rocmon_ctx->numDevices; i++) {
         RocmonDevice *device = &rocmon_ctx->devices[i];
+        if (!device->enabled)
+            continue;
 
         assert(device->numActiveSmiEvents + device->numActiveRprEvents ==
                 device->groupResults[rocmon_ctx->activeGroupIdx].numEventResults);
@@ -1742,11 +1755,11 @@ int rocmon_readCounters(void) {
     return readCounters_impl(false);
 }
 
-static int getEventResult(int gpuIdx, int groupId, int eventId, RocmonEventResult **result) {
+static int getEventResult(int hipDeviceId, int groupId, int eventId, RocmonEventResult **result) {
     if (!rocmon_ctx)
         return -EFAULT;
 
-    RocmonDevice *device = device_get(gpuIdx);
+    RocmonDevice *device = device_get(hipDeviceId);
     if (!device)
         return -EINVAL;
 
@@ -1761,26 +1774,26 @@ static int getEventResult(int gpuIdx, int groupId, int eventId, RocmonEventResul
     return 0;
 }
 
-double rocmon_getResult(int gpuIdx, int groupId, int eventId) {
+double rocmon_getResult(int hipDeviceId, int groupId, int eventId) {
     RocmonEventResult *result;
-    int err = getEventResult(gpuIdx, groupId, eventId, &result);
+    int err = getEventResult(hipDeviceId, groupId, eventId, &result);
     if (err < 0)
         return err;
 
     return result->fullValue;
 }
 
-double rocmon_getLastResult(int gpuIdx, int groupId, int eventId) {
+double rocmon_getLastResult(int hipDeviceId, int groupId, int eventId) {
     RocmonEventResult *result;
-    int err = getEventResult(gpuIdx, groupId, eventId, &result);
+    int err = getEventResult(hipDeviceId, groupId, eventId, &result);
     if (err < 0)
         return err;
 
     return result->lastValue;
 }
 
-int rocmon_getEventsOfGpu(int gpuIdx, RocmonEventList_t *list) {
-    RocmonDevice *device = device_get(gpuIdx);
+int rocmon_getEventsOfGpu(int hipDeviceId, RocmonEventList_t *list) {
+    RocmonDevice *device = device_get(hipDeviceId);
     if (!device)
         return -EINVAL;
 
@@ -1892,17 +1905,21 @@ int rocmon_getNumberOfGPUs(void) {
     if (!rocmon_ctx)
         return -EFAULT;
 
-    return (int)rocmon_ctx->numDevices;
+    // Return the number of HIP devices.
+    // Not all RocmonDevices may have a valid HIP device, since some of them can be
+    // disabled via HIP_VISIBLE_DEVICES.
+    return (int)rocmon_ctx->numHipDeviceIdxToRocmonDeviceIdx;
 }
 
 int rocmon_getIdOfGPU(size_t idx) {
     if (!rocmon_ctx)
         return -EFAULT;
 
-    if (idx >= rocmon_ctx->numDevices)
+    if (idx >= rocmon_ctx->numHipDeviceIdxToRocmonDeviceIdx)
         return -EINVAL;
 
-    return rocmon_ctx->devices[idx].hipDeviceIdx;
+    const size_t rocmonDeviceIdx = rocmon_ctx->hipDeviceIdxToRocmonDeviceIdx[idx];
+    return rocmon_ctx->devices[rocmonDeviceIdx].hipDeviceId;
 }
 
 static int getGroupInfo(int groupId, RocmonGroupInfo **rocmonGroupInfo) {

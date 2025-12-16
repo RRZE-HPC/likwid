@@ -2914,32 +2914,32 @@ int rocmon_readCounters(void) __attribute__((visibility("default")));
 /*! \brief Get the results of the specified group, counter and GPU (rocmon)
 
 Get the result of all measurement cycles.
-@param [in] gpuIdx of the group that should be read
+@param [in] hipDeviceId of the group that should be read
 @param [in] eventId ID of the event that should be read
 @param [in] groupId ID of the event group that should be read
 @return The counter result
 */
-double rocmon_getResult(int gpuIdx, int groupId, int eventId)
+double rocmon_getResult(int hipDeviceId, int groupId, int eventId)
     __attribute__((visibility("default")));
 /*! \brief Get the last results of the specified group, counter and GPU (rocmon)
 
 Get the result of the last measurement cycle (between start/stop, start/read,
 read/read or read/top).
-@param [in] gpuIdx of the group that should be read
+@param [in] hipDeviceId of the group that should be read
 @param [in] eventId ID of the event that should be read
 @param [in] groupId ID of the event group that should be read
 @return The counter result
 */
-double rocmon_getLastResult(int gpuIdx, int groupId, int eventId)
+double rocmon_getLastResult(int hipDeviceId, int groupId, int eventId)
     __attribute__((visibility("default")));
 
 /*! \brief Get the list of supported events of a GPU (rocmon)
 
-@param [in] gpuIdx ID of GPU (from GPU topology)
+@param [in] hipDeviceId ID of GPU (from GPU topology)
 @param [out] list List of events
 @return Number of supported events or -errno
 */
-int rocmon_getEventsOfGpu(int gpuIdx, RocmonEventList_t *list)
+int rocmon_getEventsOfGpu(int hipDeviceId, RocmonEventList_t *list)
     __attribute__((visibility("default")));
 /*! \brief Free the allocated list of events of a GPU (rocmon)
 

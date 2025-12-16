@@ -82,11 +82,22 @@ typedef struct {
 } RocmonRprEvent;
 
 typedef struct {
-    int hipDeviceIdx; // HIP device id
+    // 'enabled' is true if the device is an enabled HIP device.
+    // Because we cannot init HIP before rocprofiler-sdk, we have allocate
+    // all devices. But you can later check this flag, whether to actually
+    // monitor the device or not.
+    bool enabled;
 
-    uint32_t rsmiDeviceId;
+    // HIP stuff
+    int hipDeviceId;
     hipDeviceProp_t hipProps;
 
+    // ROCm SMI stuff
+    uint32_t rsmiDeviceId;
+    uint32_t pciDomain;
+    uint32_t pciLocation;
+
+    // rocprofiler-sdk stuff
     const rocprofiler_agent_v0_t *rocprofAgent;
     rocprofiler_buffer_id_t rocprofBuf;
     rocprofiler_callback_thread_t rocprofThrd;
@@ -135,10 +146,14 @@ typedef struct {
     size_t          numGroups;       // Number of groups
     size_t          activeGroupIdx;  // Currently active group
 
-    // Devices (HSA agents)
+    // Devices
     rocprofiler_context_id_t rocprofCtx;
     RocmonDevice             *devices;
     size_t                   numDevices;
+
+    // Devices (HIP only)
+    size_t *hipDeviceIdxToRocmonDeviceIdx;
+    size_t numHipDeviceIdxToRocmonDeviceIdx;
 
     // System information
     long double hsa_timestamp_factor; // hsa_timestamp * hsa_timestamp_factor = timestamp_in_ns
