@@ -322,7 +322,6 @@ void rocmon_markerClose(void) {
 
     rocmon_stopCounters();
 
-    // TODO: Why is a result file mandatory?
     const char *resultFile = getenv("LIKWID_ROCMON_FILEPATH");
     if (!resultFile) {
         ERROR_PRINT("Is the application executed with LIKWID wrapper? "

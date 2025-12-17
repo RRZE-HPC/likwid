@@ -745,7 +745,7 @@ static void buffered_callback(
         snprintf(key, sizeof(key), "%" PRIu64, cid.handle);
 
         double *value = NULL;
-        int err = get_smap_by_key(device->callbackRprResults, key, (void **)value);
+        int err = get_smap_by_key(device->callbackRprResults, key, (void **)&value);
         if (err == -ENOENT) {
             value = malloc(sizeof(*value));
             if (!value) {
@@ -1702,7 +1702,7 @@ int counters_read_rpr(RocmonDevice *device) {
         snprintf(key, sizeof(key), "%" PRIu64, cid.handle);
 
         double *value = NULL;
-        int err = get_smap_by_key(device->callbackRprResults, key, (void **)value);
+        int err = get_smap_by_key(device->callbackRprResults, key, (void **)&value);
         if (err < 0)
             return err;
 
