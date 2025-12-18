@@ -1570,7 +1570,6 @@ if use_marker == true then
                     likwid.printOutputRocm(results[r], metrics[r], gpulist_rocm, r, print_stats)
                 end
             end
-            likwid.destroyMarkerFileRocm()
             os.remove(rocmMarkerFile)
         else
             print_stderr(
@@ -1607,7 +1606,6 @@ elseif use_timeline == false then
         if likwid.access(rocmMarkerFile, "e") >= 0 then
             results = likwid.markerInitResultsFromFileRocm(rocmMarkerFile)
             likwid.printOutputRocm(results, nan2value)
-            likwid.destroyMarkerFileRocm()
             os.remove(rocmMarkerFile)
         else
             print_stderr(
