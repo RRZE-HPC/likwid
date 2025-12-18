@@ -3520,6 +3520,7 @@ static int lua_likwid_markerGetGroupInfo_rocm(lua_State *L) {
         free(counterNames[i]);
     }
     free(eventNames);
+    free(counterNames);
 
     for (size_t i = 0; i < numMetrics; i++) {
         free(metricNames[i]);
