@@ -49,7 +49,6 @@ static void *lib_rocprofiler_sdk;
 #define RPR_CALL(handleerror, func, ...) \
     do { \
         assert(func##_ptr != NULL); \
-        printf("### %s\n", #func); \
         rocprofiler_status_t s_ = func##_ptr(__VA_ARGS__);\
         if (s_ != ROCPROFILER_STATUS_SUCCESS) {           \
             const char *errstr_ = rocprofiler_get_status_string_ptr(s_); \
@@ -73,7 +72,6 @@ static void *lib_rocprofiler_sdk;
 #define HIP_CALL(handlerror, func, ...) \
     do {\
         assert(func##_ptr != NULL); \
-        printf("### %s\n", #func); \
         hipError_t s_ = func##_ptr(__VA_ARGS__);\
         if (s_ != hipSuccess) {\
             const char *errstr_ = hipGetErrorName_ptr(s_);\
@@ -156,14 +154,11 @@ static int tool_init(rocprofiler_client_finalize_t, void *) {
         }
     }
 
-    printf("tool_init done!\n");
-
     return 0;
 }
 
 static void tool_fini(void *)
 {
-    printf("tool_fini done!\n");
 }
 
 static RocmonDevice *device_get(int hipDeviceId) {
