@@ -3210,14 +3210,15 @@ int rocmon_markerGetGroupIds(int **groupIds, size_t *numGroupIds)
 
 @param groupId [in] Group ID to get the event names for
 @param eventNames [out] Array of event names. Each entry and the array itself must be freed via free().
-@param numEventNames [out] Number of event names returned
+@param counterNames [out] Array of counter names. Each entry and the array itself must be freed via free().
+@param numEvents [out] Number of events and counters returned
 @param metricNames [out] Array of metric names. Each entry and the array itself must be freed via free().
 @param metricFormulas [out] Array of metric formulas. Each entry and the array itself must be freed via free().
 @param numMetrics [out] Number of event names returned
 */
 int rocmon_markerGetGroupInfo(int groupId, char ***eventNames,
-        size_t *numEventNames, char ***metricNames, char ***metricFormulas,
-        size_t *numMetrics)
+        char ***counterNames, size_t *numEvents, char ***metricNames,
+        char ***metricFormulas, size_t *numMetrics)
     __attribute__((visibility("default")));
 
 /*! \brief Get list of all recorded regions

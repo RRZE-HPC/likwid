@@ -69,10 +69,12 @@ static void rocmarker_group_fini(RocmarkerGroup *group) {
     if (!group)
         return;
 
-    if (group->eventNames) {
-        for (size_t i = 0; i < group->numEventNames; i++)
-            free(group->eventNames[i]);
-        free(group->eventNames);
+    if (group->events) {
+        for (size_t i = 0; i < group->numEvents; i++) {
+            free(group->events[i].eventName);
+            free(group->events[i].counterName);
+        }
+        free(group->events);
     }
 
     if (group->metrics) {
@@ -158,22 +160,37 @@ static int eventsets_init(const char *eventStr) {
     for (int i = 0; i < eventsForGroups->qty; i++) {
         RocmarkerGroup *group = &rocmarker_ctx->groups[i];
 
-        const char *eventStr = bdata(eventsForGroups->entry[i]);
-        err = rocmon_addEventSet(eventStr);
+        err = rocmon_addEventSet(bdata(eventsForGroups->entry[i]));
         if (err < 0)
             goto cleanup;
 
         group->groupId = err;
-        group->numEventNames = rocmon_getNumberOfEvents(err);
-        group->eventNames = calloc(group->numEventNames, sizeof(*group->eventNames));
-        if (!group->eventNames) {
+        group->numEvents = rocmon_getNumberOfEvents(err);
+        group->events = calloc(group->numEvents, sizeof(*group->events));
+        if (!group->events) {
             err = -errno;
             goto cleanup;
         }
 
-        for (size_t i = 0; i < group->numEventNames; i++) {
-            group->eventNames[i] = strdup(eventStr);
-            if (!group->eventNames[i]) {
+        for (size_t i = 0; i < group->numEvents; i++) {
+            const char *eventName;
+            err = rocmon_getEventName(group->groupId, (int)i, &eventName);
+            if (err < 0)
+                goto cleanup;
+
+            const char *counterName;
+            err = rocmon_getCounterName(group->groupId, (int)i, &counterName);
+            if (err < 0)
+                goto cleanup;
+
+            group->events[i].eventName = strdup(eventName);
+            if (!group->events[i].eventName) {
+                err = -errno;
+                goto cleanup;
+            }
+
+            group->events[i].counterName = strdup(counterName);
+            if (!group->events[i].counterName) {
                 err = -errno;
                 goto cleanup;
             }
@@ -641,7 +658,7 @@ int rocmon_markerGetGroupIds(int **groupIds, size_t *numGroupIds) {
     return 0;
 }
 
-int rocmon_markerGetGroupInfo(int groupId, char ***eventNames, size_t *numEventNames, char ***metricNames, char ***metricFormulas, size_t *numMetrics) {
+int rocmon_markerGetGroupInfo(int groupId, char ***eventNames, char ***counterNames, size_t *numEvents, char ***metricNames, char ***metricFormulas, size_t *numMetrics) {
     if (!rocmarker_ctx)
         return -EFAULT;
 
@@ -654,21 +671,38 @@ int rocmon_markerGetGroupInfo(int groupId, char ***eventNames, size_t *numEventN
 
     char **newMetricNames = NULL;
     char **newMetricFormulas = NULL;
-    char **newEventNames = calloc(group->numEventNames, sizeof(*newEventNames));
+    char **newCounterNames = NULL;
+    char **newEventNames = calloc(group->numEvents, sizeof(*newEventNames));
     if (!newEventNames)
         return -errno;
 
-    for (size_t i = 0; i < group->numEventNames; i++) {
-        newEventNames[i] = strdup(group->eventNames[i]);
+    for (size_t i = 0; i < group->numEvents; i++) {
+        newEventNames[i] = strdup(group->events[i].eventName);
         if (!newEventNames[i]) {
             err = -errno;
             goto cleanup;
         }
     }
 
+    newCounterNames = calloc(group->numEvents, sizeof(*newCounterNames));
+    if (!newCounterNames) {
+        err = -errno;
+        goto cleanup;
+    }
+
+    for (size_t i = 0; i < group->numEvents; i++) {
+        newCounterNames[i] = strdup(group->events[i].counterName);
+        if (!newCounterNames[i]) {
+            err = -errno;
+            goto cleanup;
+        }
+    }
+
     newMetricNames = calloc(group->numMetrics, sizeof(*newMetricNames));
-    if (!newMetricNames)
-        return -errno;
+    if (!newMetricNames) {
+        err = -errno;
+        goto cleanup;
+    }
 
     for (size_t i = 0; i < group->numMetrics; i++) {
         newMetricNames[i] = strdup(group->metrics[i].name);
@@ -695,15 +729,21 @@ int rocmon_markerGetGroupInfo(int groupId, char ***eventNames, size_t *numEventN
     *metricNames = newMetricNames;
     *metricFormulas = newMetricFormulas;
     *numMetrics = group->numMetrics;
+    *counterNames = newCounterNames;
     *eventNames = newEventNames;
-    *numEventNames = group->numEventNames;
+    *numEvents = group->numEvents;
     return 0;
 
 cleanup:
     if (newEventNames) {
-        for (size_t i = 0; i < group->numEventNames; i++)
+        for (size_t i = 0; i < group->numEvents; i++)
             free(newEventNames[i]);
         free(newEventNames);
+    }
+    if (newCounterNames) {
+        for (size_t i = 0; i < group->numEvents; i++)
+            free(newCounterNames[i]);
+        free(newCounterNames);
     }
     if (newMetricNames) {
         for (size_t i = 0; i < group->numMetrics; i++)
@@ -767,10 +807,10 @@ int rocmon_markerGetRegionCounters(const char *regionTag, int groupId, int gpuId
     // clist doesn't return proper error codes, so we just ignore it for now
     init_clist(&clist);
 
-    assert(group->numEventNames == result->numCounterValues);
+    assert(group->numEvents == result->numCounterValues);
 
     for (size_t i = 0; i < result->numCounterValues; i++)
-        add_to_clist(&clist, group->eventNames[i], result->counterValues[i].fullValue);
+        add_to_clist(&clist, group->events[i].counterName, result->counterValues[i].fullValue);
 
     add_to_clist(&clist, "time", (double)region->totalTime / 1e9);
     add_to_clist(&clist, "true", 1);
@@ -887,7 +927,7 @@ int rocmon_markerWriteFile(const char *markerfile) {
      * numGpus numRegions numGroups
      * GPU hipDeviceId
      * ... ('numGpus' number of lines)
-     * GROUP groupId numEvents eventA eventB eventC numMetrics metricNameA metricFormulaA metricNameB metricFormulaB
+     * GROUP groupId numEvents eventA counterA eventB counterB eventC counterC numMetrics metricNameA metricFormulaA metricNameB metricFormulaB
      * ... ('numGroups' number of GROUP lines)
      * REGION regionTag groupId execCount execTime ; 42.4 8.24 -1.0 ; 1337 0.0 0.12e5
      * ... ('numRegions' number of REGION lines)
@@ -909,9 +949,9 @@ int rocmon_markerWriteFile(const char *markerfile) {
     // Write groups
     for (size_t i = 0; i < rocmarker_ctx->numGroups; i++) {
         RocmarkerGroup *group = &rocmarker_ctx->groups[i];
-        chk_fprintf(fp, "GROUP %d %zu", group->groupId, group->numEventNames);
-        for (size_t j = 0; j < group->numEventNames; j++)
-            chk_fprintf(fp, " %s", group->eventNames[j]);
+        chk_fprintf(fp, "GROUP %d %zu", group->groupId, group->numEvents);
+        for (size_t j = 0; j < group->numEvents; j++)
+            chk_fprintf(fp, " %s %s", group->events[j].eventName, group->events[j].counterName);
         chk_fprintf(fp, " %zu", group->numMetrics);
         for (size_t j = 0; j < group->numMetrics; j++) {
             // Do not allow escape character "'"
@@ -1018,20 +1058,21 @@ int rocmon_markerInitResultsFromFile(const char *markerfile) {
     for (size_t i = 0; i < rocmarker_ctx->numGroups; i++) {
         RocmarkerGroup *group = &rocmarker_ctx->groups[i];
 
-        if (fscanf(fp, "GROUP %d %zu", &group->groupId, &group->numEventNames) != 2) {
+        if (fscanf(fp, "GROUP %d %zu", &group->groupId, &group->numEvents) != 2) {
             ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Invalid GROUP line");
             err = -EINVAL;
             goto unlock_err;
         }
 
-        group->eventNames = calloc(group->numEventNames, sizeof(*group->eventNames));
-        if (!group->eventNames) {
+        group->events = calloc(group->numEvents, sizeof(*group->events));
+        if (!group->events) {
             err = -errno;
             goto unlock_err;
         }
 
-        for (size_t j = 0; j < group->numEventNames; j++) {
-            if (fscanf(fp, " %ms", &group->eventNames[j]) != 1) {
+        for (size_t j = 0; j < group->numEvents; j++) {
+            if (fscanf(fp, " %ms %ms", &group->events[j].eventName, &group->events[j].counterName) != 2) {
+                ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Invalid GROUP line (event/counter name)");
                 err = -EINVAL;
                 goto unlock_err;
             }
@@ -1108,7 +1149,7 @@ int rocmon_markerInitResultsFromFile(const char *markerfile) {
             if (err < 0)
                 goto unlock_err;
 
-            result->numCounterValues = rocmarker_ctx->groups[groupIdx].numEventNames;
+            result->numCounterValues = rocmarker_ctx->groups[groupIdx].numEvents;
             result->counterValues = calloc(result->numCounterValues, sizeof(*result->counterValues));
             if (!result->counterValues) {
                 err = -errno;

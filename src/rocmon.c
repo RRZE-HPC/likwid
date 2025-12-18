@@ -1408,7 +1408,6 @@ int rocmon_addEventSet(const char *eventString) {
     if (!rocmon_ctx)
         return -EFAULT;
 
-    // TODO do we care about thread safety anywhere here?
     const size_t newNumGroups = rocmon_ctx->numGroups + 1;
     RocmonGroupInfo *newGroups = realloc(rocmon_ctx->groups, newNumGroups * sizeof(*rocmon_ctx->groups));
     if (!newGroups)

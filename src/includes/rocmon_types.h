@@ -185,8 +185,13 @@ typedef struct {
 } RocmarkerMetric;
 
 typedef struct {
-    char **eventNames;
-    size_t numEventNames;
+    char *eventName;
+    char *counterName;
+} RocmarkerEvent;
+
+typedef struct {
+    RocmarkerEvent *events;
+    size_t numEvents;
 
     RocmarkerMetric *metrics;
     size_t numMetrics;

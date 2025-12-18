@@ -3462,16 +3462,17 @@ static int lua_likwid_markerGetGroupIds_rocm(lua_State *L) {
 static int lua_likwid_markerGetGroupInfo_rocm(lua_State *L) {
     luaL_checkudata(L, 1, "markerResults_rocm");
 
-    const int groupId = luaL_checkinteger(L, 1);
+    const int groupId = luaL_checkinteger(L, 2);
 
     char **eventNames;
-    size_t numEventNames;
+    char **counterNames;
+    size_t numEvents;
 
     char **metricNames;
     char **metricFormulas;
     size_t numMetrics;
 
-    int err = rocmon_markerGetGroupInfo(groupId, &eventNames, &numEventNames, &metricNames, &metricFormulas, &numMetrics);
+    int err = rocmon_markerGetGroupInfo(groupId, &eventNames, &counterNames, &numEvents, &metricNames, &metricFormulas, &numMetrics);
     if (err < 0)
         return luaL_error(L, "rocmon_markerGetGroupEvents failed: %s", strerror(-err));
 
@@ -3479,9 +3480,18 @@ static int lua_likwid_markerGetGroupInfo_rocm(lua_State *L) {
     {
         lua_pushstring(L, "events");
         lua_newtable(L);
-        for (size_t i = 0; i < numEventNames; i++) {
+        for (size_t i = 0; i < numEvents; i++) {
             lua_pushinteger(L, (lua_Integer)(i + 1));
-            lua_pushstring(L, eventNames[i]);
+            lua_newtable(L);
+            {
+                lua_pushstring(L, "eventName");
+                lua_pushstring(L, eventNames[i]);
+                lua_settable(L, -3);
+
+                lua_pushstring(L, "counterName");
+                lua_pushstring(L, counterNames[i]);
+                lua_settable(L, -3);
+            }
             lua_settable(L, -3);
         }
         lua_settable(L, -3);
@@ -3489,19 +3499,26 @@ static int lua_likwid_markerGetGroupInfo_rocm(lua_State *L) {
         lua_pushstring(L, "metrics");
         lua_newtable(L);
         for (size_t i = 0; i < numMetrics; i++) {
-            lua_pushstring(L, "name");
-            lua_pushstring(L, metricNames[i]);
-            lua_settable(L, -3);
+            lua_pushinteger(L, (lua_Integer)(i + 1));
+            lua_newtable(L);
+            {
+                lua_pushstring(L, "name");
+                lua_pushstring(L, metricNames[i]);
+                lua_settable(L, -3);
 
-            lua_pushstring(L, "formula");
-            lua_pushstring(L, metricFormulas[i]);
+                lua_pushstring(L, "formula");
+                lua_pushstring(L, metricFormulas[i]);
+                lua_settable(L, -3);
+            }
             lua_settable(L, -3);
         }
         lua_settable(L, -3);
     }
 
-    for (size_t i = 0; i < numEventNames; i++)
+    for (size_t i = 0; i < numEvents; i++) {
         free(eventNames[i]);
+        free(counterNames[i]);
+    }
     free(eventNames);
 
     for (size_t i = 0; i < numMetrics; i++) {
@@ -3517,9 +3534,9 @@ static int lua_likwid_markerGetGroupInfo_rocm(lua_State *L) {
 static int lua_likwid_markerGetRegionCounters_rocm(lua_State *L) {
     luaL_checkudata(L, 1, "markerResults_rocm");
 
-    const char *regionTag = luaL_checkstring(L, 1);
-    const int groupId = luaL_checkinteger(L, 2);
-    const int gpuId = luaL_checkinteger(L, 3);
+    const char *regionTag = luaL_checkstring(L, 2);
+    const int groupId = luaL_checkinteger(L, 3);
+    const int gpuId = luaL_checkinteger(L, 4);
 
     double *counters;
     size_t numCounters;

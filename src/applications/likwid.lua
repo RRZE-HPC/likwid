@@ -1623,7 +1623,7 @@ local function printOutputRocm(markerResults, nan2value)
     local regionTags = markerResults:getRegionTags()
 
     for _, regionTag in pairs(regionTags) do
-        local regionTagName = regionTag.tag
+        local regionTagName = regionTag.regionTag
         local regionGroupId = regionTag.groupId
 
         local regionStats = markerResults:getRegionStats(regionTagName, regionGroupId)
@@ -1653,8 +1653,14 @@ local function printOutputRocm(markerResults, nan2value)
 
         -- 1. create event name column
         local col = {"Event"}
-        for _, eventName in pairs(groupInfo.events) do
-            table.insert(col, eventName)
+        for _, event in pairs(groupInfo.events) do
+            table.insert(col, event.eventName)
+        end
+        table.insert(eventTable, col)
+
+        col = {"Counter"}
+        for _, event in pairs(groupInfo.events) do
+            table.insert(col, event.counterName)
         end
         table.insert(eventTable, col)
 

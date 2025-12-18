@@ -376,7 +376,8 @@ static int *rocmon_gpuIds;
 static size_t rocmon_numGpuIds;
 static int rocmon_groupId = -1;
 static char **rocmon_eventNames;
-static size_t rocmon_numEventNames;
+static char **rocmon_counterNames;
+static size_t rocmon_numEvents;
 static char **rocmon_metricNames;
 static char **rocmon_metricFormulas;
 static size_t rocmon_numMetrics;
@@ -420,7 +421,8 @@ static int appdaemon_setup_rocmon(char* gpuStr, char* eventStr)
     err = rocmon_markerGetGroupInfo(
             rocmon_groupId,
             &rocmon_eventNames,
-            &rocmon_numEventNames,
+            &rocmon_counterNames,
+            &rocmon_numEvents,
             &rocmon_metricNames,
             &rocmon_metricFormulas,
             &rocmon_numMetrics
@@ -462,13 +464,14 @@ static void appdaemon_print_results_rocmon(void)
             goto cleanup_continue;
         }
 
-        assert(numCounters == rocmon_numEventNames);
+        assert(numCounters == rocmon_numEvents);
 
         for (size_t c = 0; c < numCounters; c++) {
             fprintf(output_file,
-                    "ROCMON (counter), %d %f %s %f\n",
+                    "ROCMON (counter), %d %f %s:%s %f\n",
                     rocmon_gpuIds[i],
                     execTime,
+                    rocmon_counterNames[c],
                     rocmon_eventNames[c],
                     counters[c]
                     );
@@ -509,13 +512,16 @@ static void appdaemon_close_rocmon(void)
         rocmon_gpuIds = NULL;
         rocmon_numGpuIds = 0;
 
-        for (size_t i = 0; i < rocmon_numEventNames; i++) {
+        for (size_t i = 0; i < rocmon_numEvents; i++) {
             free(rocmon_eventNames[i]);
+            free(rocmon_counterNames[i]);
         }
 
         free(rocmon_eventNames);
+        free(rocmon_counterNames);
         rocmon_eventNames = NULL;
-        rocmon_numEventNames = 0;
+        rocmon_counterNames = NULL;
+        rocmon_numEvents = 0;
 
         for (size_t i = 0; i < rocmon_numMetrics; i++) {
             free(rocmon_metricNames[i]);
