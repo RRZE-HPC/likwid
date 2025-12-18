@@ -1077,17 +1077,6 @@ if rocmSupported and #gpulist_rocm > 0 and #rocm_event_string_list > 0 then
     likwid.setenv("LIKWID_ROCMON_GPUS", table.concat(gpulist_rocm, ","))
     str = table.concat(rocm_event_string_list, "|")
     likwid.setenv("LIKWID_ROCMON_EVENTS", str)
-    local rocmhome = os.getenv("ROCM_HOME")
-    if rocmhome then
-        local metrics_xml = ""
-        if file_exists(string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)) then
-            metrics_xml = string.format("%s/lib/rocprofiler/metrics.xml", rocmhome)
-        else
-            -- fall back to old location for backwards compatibility
-            metrics_xml = string.format("%s/rocprofiler/lib/metrics.xml", rocmhome)
-        end
-        likwid.setenv("ROCP_METRICS", metrics_xml)
-    end
     if verbose > 0 then
         likwid.setenv("LIKWID_ROCMON_VERBOSITY", tostring(verbose))
     end
