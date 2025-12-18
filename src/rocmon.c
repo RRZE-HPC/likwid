@@ -923,6 +923,8 @@ static int rocmon_init_hip(size_t numGpuIds, const int *gpuIds) {
     if (!rocmon_ctx->hipDeviceIdxToRocmonDeviceIdx)
         return -errno;
 
+    rocmon_ctx->numHipDeviceIdxToRocmonDeviceIdx = numGpuIds;
+
     // Find matching RocmonDevice via UUID
     for (size_t i = 0; i < numGpuIds; i++) {
         const int gpuId = gpuIds ? gpuIds[i] : (int)i;
@@ -2020,7 +2022,7 @@ int rocmon_getMetricFormula(int groupId, int metricId, const char **formula) {
     if (metricId < 0 || metricId >= info->groupInfo.nmetrics)
         return -EINVAL;
 
-    *formula = info->groupInfo.metricnames[metricId];
+    *formula = info->groupInfo.metricformulas[metricId];
     return 0;
 }
 

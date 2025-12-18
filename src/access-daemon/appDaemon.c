@@ -426,7 +426,7 @@ static int appdaemon_setup_rocmon(char* gpuStr, char* eventStr)
             &rocmon_numMetrics
     );
     if (err < 0) {
-        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Must need exactly one performance group, got: %zu", numGroupIds);
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon_markerGetGroupInfo failed: %s", strerror(-err));
         rocmon_markerClose();
         return -EINVAL;
     }
@@ -459,7 +459,7 @@ static void appdaemon_print_results_rocmon(void)
         err = rocmon_markerGetRegionStats("main", group, &execCount, &execTime);
         if (err < 0) {
             ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon_markerGetRegionStats failed: %d", err);
-            continue;
+            goto cleanup_continue;
         }
 
         assert(numCounters == rocmon_numEventNames);
@@ -478,13 +478,17 @@ static void appdaemon_print_results_rocmon(void)
 
         for (size_t m = 0; m < numMetrics; m++) {
             fprintf(output_file,
-                    "ROCMON (counter), %d %f %s %f\n",
+                    "ROCMON (metric), %d %f %s %f\n",
                     rocmon_gpuIds[i],
                     execTime,
                     rocmon_metricNames[m],
                     metrics[m]
                     );
         }
+
+cleanup_continue:
+        free(counters);
+        free(metrics);
     }
 }
 
@@ -494,10 +498,6 @@ static void appdaemon_close_rocmon(void)
 
     if (getenv("LIKWID_ROCMON_MARKER_FORMAT") == NULL) {
         appdaemon_print_results_rocmon();
-    } else {
-        int err = rocmon_markerWriteFile(getenv("LIKWID_ROCMON_OUTPUTFILE"));
-        if (err < 0)
-            ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon_markerWriteFile failed: %d", err);
     }
 
     // Cleanup

@@ -1194,7 +1194,7 @@ if rocmSupported and #rocm_event_string_list > 0 then
     if preload == nil then
         likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
     else
-        likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so" .. ":" .. preload)
+        likwid.setenv("LD_PRELOAD", preload .. ":" .. "likwid-appDaemon.so")
     end
     local devices = os.getenv("ROCR_VISIBLE_DEVICES")
     if devices == nil then
