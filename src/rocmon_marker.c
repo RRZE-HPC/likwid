@@ -225,7 +225,7 @@ static int eventsets_init(const char *eventStr) {
                 goto cleanup;
 
             group->metrics[j].formula = strdup(metricFormula);
-            if (group->metrics[j].formula) {
+            if (!group->metrics[j].formula) {
                 err = -errno;
                 goto cleanup;
             }
