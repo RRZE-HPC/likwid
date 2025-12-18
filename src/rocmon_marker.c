@@ -319,7 +319,7 @@ void rocmon_markerClose(void) {
 
     rocmon_stopCounters();
 
-    const char *resultFile = getenv("LIKWID_ROCMON_FILEPATH");
+    const char *resultFile = getenv("LIKWID_ROCMON_OUTPUTFILE");
     if (!resultFile) {
         ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
                 "Is the application executed with LIKWID wrapper? "
