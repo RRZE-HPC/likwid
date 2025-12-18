@@ -954,17 +954,8 @@ static int rocmon_init_hip(size_t numGpuIds, const int *gpuIds) {
 }
 
 static void rocmon_device_fini(RocmonDevice *device) {
-    // TODO, doesn't the flush buffer have to occur after stopping the context?
     RPR_CALL(abort(), rocprofiler_flush_buffer, device->rocprofBuf);
     RPR_CALL(abort(), rocprofiler_destroy_buffer, device->rocprofBuf);
-
-    destroy_smap(device->availableSmiEvents);
-    device->availableSmiEvents = NULL;
-    destroy_smap(device->availableRprEvents);
-    device->availableRprEvents = NULL;
-
-    free(device->activeSmiEvents);
-    device->activeSmiEvents = NULL;
 
     if (device->callbackRprResults) {
         destroy_smap(device->callbackRprResults);
@@ -982,6 +973,22 @@ static void rocmon_device_fini(RocmonDevice *device) {
         free(device->groupResults);
         device->groupResults = NULL;
     }
+
+    free(device->activeSmiEvents);
+    device->activeSmiEvents = NULL;
+
+    free(device->activeRprEvents);
+    device->activeRprEvents = NULL;
+
+    destroy_smap(device->availableSmiEvents);
+    device->availableSmiEvents = NULL;
+
+    destroy_smap(device->availableRprEvents);
+    device->availableRprEvents = NULL;
+}
+
+static void rocmon_groupinfo_fini(RocmonGroupInfo *group) {
+    perfgroup_returnGroup(&group->groupInfo);
 }
 
 static void rocmon_ctx_free(void) {
@@ -993,6 +1000,8 @@ static void rocmon_ctx_free(void) {
     if (isActive)
         RPR_CALL(abort(), rocprofiler_stop_context, rocmon_ctx->rocprofCtx);
 
+    free(rocmon_ctx->hipDeviceIdxToRocmonDeviceIdx);
+
     if (rocmon_ctx->devices) {
         for (size_t i = 0; i < rocmon_ctx->numDevices; i++)
             rocmon_device_fini(&rocmon_ctx->devices[i]);
@@ -1000,7 +1009,13 @@ static void rocmon_ctx_free(void) {
         free(rocmon_ctx->devices);
     }
 
-    free(rocmon_ctx->hipDeviceIdxToRocmonDeviceIdx);
+    if (rocmon_ctx->groups) {
+        for (size_t i = 0; i < rocmon_ctx->numGroups; i++)
+            rocmon_groupinfo_fini(&rocmon_ctx->groups[i]);
+
+        free(rocmon_ctx->groups);
+    }
+
     destroy_smap(rocmon_ctx->implementedSmiEvents);
 
     free(rocmon_ctx);

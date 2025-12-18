@@ -65,7 +65,7 @@ static void label_fmt(char *buf, size_t size, const char *regionTag, int groupId
     snprintf(buf, size, "%s-%d", regionTag, groupId);
 }
 
-static void rocmarker_group_free(RocmarkerGroup *group) {
+static void rocmarker_group_fini(RocmarkerGroup *group) {
     if (!group)
         return;
 
@@ -82,8 +82,6 @@ static void rocmarker_group_free(RocmarkerGroup *group) {
         }
         free(group->metrics);
     }
-
-    free(group);
 }
 
 static void rocmarker_ctx_free(void) {
@@ -95,7 +93,7 @@ static void rocmarker_ctx_free(void) {
 
     if (rocmarker_ctx->groups) {
         for (size_t i = 0; i < rocmarker_ctx->numGroups; i++)
-            rocmarker_group_free(&rocmarker_ctx->groups[i]);
+            rocmarker_group_fini(&rocmarker_ctx->groups[i]);
         free(rocmarker_ctx->groups);
     }
 
@@ -149,7 +147,7 @@ static int eventsets_init(const char *eventStr) {
     }
 
     rocmarker_ctx->groups = calloc(eventsForGroups->qty, sizeof(*rocmarker_ctx->groups));
-    if (rocmarker_ctx->groups) {
+    if (!rocmarker_ctx->groups) {
         err = -errno;
         goto cleanup;
     }
@@ -232,12 +230,11 @@ static void region_free_vptr(void *region) {
 int rocmon_markerInit(void) {
     const char *eventStr = getenv("LIKWID_ROCMON_EVENTS");
     const char *gpuStr = getenv("LIKWID_ROCMON_GPUS");
-    const char *gpuFileStr = getenv("LIKWID_ROCMON_FILEPATH");
     const char *verbosityStr = getenv("LIKWID_ROCMON_VERBOSITY");
     const char *debugStr = getenv("LIKWID_DEBUG");
 
-    if (!eventStr || !gpuFileStr) {
-        fprintf(stderr, "Running without GPU Marker API. Activate GPU Marker API with -m, -G and -W on commandline.\n");
+    if (!eventStr || !gpuStr) {
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Running without GPU Marker API. Activate GPU Marker API with -m, -G and -W on commandline.");
         return -EINVAL;
     }
 
@@ -250,7 +247,7 @@ int rocmon_markerInit(void) {
         goto unlock_err;
     }
 
-    rocmarker_ctx = calloc(1, sizeof(&rocmarker_ctx));
+    rocmarker_ctx = calloc(1, sizeof(*rocmarker_ctx));
     if (!rocmarker_ctx) {
         err = -errno;
         goto unlock_err;
@@ -324,8 +321,9 @@ void rocmon_markerClose(void) {
 
     const char *resultFile = getenv("LIKWID_ROCMON_FILEPATH");
     if (!resultFile) {
-        ERROR_PRINT("Is the application executed with LIKWID wrapper? "
-                "No file path for the Rocmon Marker API output defined.\n");
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
+                "Is the application executed with LIKWID wrapper? "
+                "No file path for the Rocmon Marker API output defined.");
     } else {
         rocmon_markerWriteFile(resultFile);
     }
@@ -467,10 +465,14 @@ int rocmon_markerStartRegion(const char *regionTag) {
     label_fmt(regionLabel, sizeof(regionLabel), regionTag, activeGroup);
     
     // Check if regionTag already exists. If not create it first.
-    RocmarkerRegion *region;
+    RocmarkerRegion *region = NULL;
     int err = get_smap_by_key(rocmarker_ctx->regions, regionLabel, (void **)&region);
     if (err == -ENOENT) {
         err = rocmon_markerRegisterRegion(regionTag);
+        if (err < 0)
+            return err;
+
+        err = get_smap_by_key(rocmarker_ctx->regions, regionLabel, (void **)&region);
         if (err < 0)
             return err;
     } else if (err < 0) {
@@ -623,7 +625,7 @@ int rocmon_markerGetGroupIds(int **groupIds, size_t *numGroupIds) {
     if (!rocmarker_ctx)
         return -EFAULT;
 
-    int *newGroupIds = calloc(rocmarker_ctx->numHipDeviceIds, sizeof(*newGroupIds));
+    int *newGroupIds = calloc(rocmarker_ctx->numGroups, sizeof(*newGroupIds));
     if (!newGroupIds)
         return -errno;
 
