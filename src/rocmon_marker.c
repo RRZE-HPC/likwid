@@ -1,5 +1,6 @@
 #include <likwid.h>
 
+#include <math.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -820,7 +821,7 @@ int rocmon_markerGetRegionCounters(const char *regionTag, int groupId, int gpuId
         err = calc_metric(group->metrics[i].formula, &clist, &newMetrics[i]);
         if (err < 0) {
             ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Cannot calculate formula: %s", group->metrics[i].formula);
-            goto cleanup;
+            newMetrics[i] = NAN;
         }
     }
 
