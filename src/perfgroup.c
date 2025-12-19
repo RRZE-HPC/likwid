@@ -810,7 +810,7 @@ perfgroup_readGroup(
 {
     FILE* fp;
     int s, err = 0;
-    char buf[1024];
+    char buf[4096];
     GroupFileSections sec = GROUP_NONE;
     bstring REQUIRE = bformat("REQUIRE_NOHT");
     char* Home = getenv("HOME");
@@ -866,7 +866,7 @@ perfgroup_readGroup(
         return -EACCES;
     }
     struct bstrList * linelist;
-    while (fgets (buf, 1023*sizeof(char), fp)) {
+    while (fgets (buf, 4095*sizeof(char), fp)) {
         if ((strlen(buf) == 0) || (buf[0] == '#'))
             continue;
 
