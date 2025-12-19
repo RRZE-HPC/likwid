@@ -37,8 +37,15 @@
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+#ifndef bool
+#define bool int
+#define LOCAL_BOOL_DEF
+#endif
 #include <cupti_profiler_target.h>
 #include <cupti_target.h>
+#ifdef LOCAL_BOOL_DEF
+#undef bool
+#endif
 
 #include <nvperf_cuda_host.h>
 #include <nvperf_host.h>

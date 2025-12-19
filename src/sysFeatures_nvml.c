@@ -79,7 +79,9 @@ DECLAREFUNC_NVML(nvmlDeviceClearEccErrorCounts, nvmlDevice_t device, nvmlEccCoun
 DECLAREFUNC_NVML(nvmlDeviceGetBAR1MemoryInfo, nvmlDevice_t device, nvmlBAR1Memory_t* bar1Memory);
 DECLAREFUNC_NVML(nvmlDeviceGetClock, nvmlDevice_t device, nvmlClockType_t clockType, nvmlClockId_t clockId, unsigned int* clockMHz);
 DECLAREFUNC_NVML(nvmlDeviceGetClockInfo, nvmlDevice_t device, nvmlClockType_t type, unsigned int* clock);
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 12080
 DECLAREFUNC_NVML(nvmlDeviceGetCurrentClockFreqs, nvmlDevice_t device, nvmlDeviceCurrentClockFreqs_t *currentClockFreqs);
+#endif
 DECLAREFUNC_NVML(nvmlDeviceGetCurrPcieLinkGeneration, nvmlDevice_t device, unsigned int *currLinkGen);
 DECLAREFUNC_NVML(nvmlDeviceGetCurrPcieLinkWidth, nvmlDevice_t device, unsigned int *currLinkGen);
 DECLAREFUNC_NVML(nvmlDeviceGetCount_v2, unsigned int *deviceCount);
@@ -174,7 +176,9 @@ int likwid_sysft_init_nvml(_SysFeatureList *list)
 #endif
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetClock);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetClockInfo);
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 12080
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetCurrentClockFreqs);
+#endif
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetCurrPcieLinkGeneration);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetCurrPcieLinkWidth);
     DLSYM_AND_CHECK(dl_nvml, nvmlDeviceGetCount_v2);
@@ -529,7 +533,7 @@ static int nvidia_gpu_video_clock_boost_max_tester(void)
 {
     return nvidia_gpu_clock_info_tester(NVML_CLOCK_VIDEO, NVML_CLOCK_ID_CUSTOMER_BOOST_MAX);
 }
-
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 12080
 static int nvidia_gpu_clock_getter(const LikwidDevice_t device, char **value, const char *nvmlVal)
 {
     LWD_TO_NVMLD(device, nvmlDevice);
@@ -791,6 +795,7 @@ static int nvidia_gpu_memtransferrateeditable_tester(void)
 {
     return nvidia_gpu_clock_tester("memtransferrateeditable");
 }
+#endif
 
 static int nvidia_gpu_bar1_getter(const LikwidDevice_t device, int entry, char **value)
 {
@@ -1514,6 +1519,7 @@ static _SysFeature nvidia_gpu_features[] = {
     {"video_clock_app_target", "nvml", "Application target clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_app_target_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_video_clock_app_target_tester, "MHz"},
     {"video_clock_app_default", "nvml", "Application default clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_app_default_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_video_clock_app_default_tester, "MHz"},
     {"video_clock_boost_max", "nvml", "Application default clock speed (video encoder/decoder domain)", nvidia_gpu_video_clock_boost_max_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_video_clock_boost_max_tester, "MHz"},
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 12080
     {"perf_state", "nvml", "Performance level", nvidia_gpu_perf_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_perf_tester, NULL},
     {"nvclock", "nvml", "Current GPU clock", nvidia_gpu_nvclock_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_nvclock_tester, "MHz"},
     {"nvclockmin", "nvml", "Minimum GPU clock", nvidia_gpu_nvclockmin_getter, nvidia_gpu_nvclockmin_setter, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_nvclockmin_tester, "MHz"},
@@ -1527,6 +1533,7 @@ static _SysFeature nvidia_gpu_features[] = {
     {"memtransferratemin", "nvml", "Minimum memory transfer rate", nvidia_gpu_memtransferratemin_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_memtransferratemin_tester, "MHz"},
     {"memtransferratemax", "nvml", "Maximum memory transfer rate", nvidia_gpu_memtransferratemax_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_memtransferratemax_tester, "MHz"},
     {"memtransferrateeditable", "nvml", "Memory memory transfer rate editable", nvidia_gpu_memtransferrateeditable_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, nvidia_gpu_memtransferrateeditable_tester, NULL},
+#endif
     {"pci_bar1_free", "nvml", "Unallocated BAR1 memory", nvidia_gpu_bar1_free_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "Byte"},
     {"pci_bar1_used", "nvml", "Allocated BAR1 memory", nvidia_gpu_bar1_used_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "Byte"},
     {"pci_bar1_total", "nvml", "Total BAR1 memory", nvidia_gpu_bar1_total_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "Byte"},
