@@ -253,7 +253,7 @@ jobs:
 
     # See: https://github.com/softprops/action-gh-release
     - name: Pre-Release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
         name: likwid-${{steps.get_version.outputs.VERSION}}
