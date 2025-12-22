@@ -92,7 +92,6 @@ int perfmon_init_zen5(int cpu_id)
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &core_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]], cpu_id);
-    printf("CPU %d uses %d\n", cpu_id, sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]]);
     lock_acquire((int*) &numa_lock[affinity_thread2numa_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &die_lock[affinity_thread2die_lookup[cpu_id]], cpu_id);
     return 0;
