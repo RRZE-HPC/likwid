@@ -148,7 +148,7 @@ VERSION = 5
 RELEASE = 5
 MINOR = 1
 # Date when the release is published
-DATE    = 12.12.2025
+DATE    = 23.12.2025
 
 # In come cases it is important to set the rpaths for the LIKWID library. One
 # example is the use of sudo because it resets environment variables like
