@@ -189,7 +189,7 @@ P0 frequency while the core is in C0).</P>
 </TR>
 </TABLE>
 
-<H1>Counters available for one hardware thread per L3 segment (aka CCD)</H1>
+<H1>Counters available for one hardware thread per socket</H1>
 \anchor ZEN4C_POWER_SOCKET
 <H2>Power counters</H2>
 <P>The AMD&reg; Zen4 microarchitecture provides measurements of the current power consumption through the RAPL interface.</P>
