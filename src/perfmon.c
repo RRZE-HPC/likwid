@@ -82,6 +82,7 @@
 #include <perfmon_zen4.h>
 #include <perfmon_zen4c.h>
 #include <perfmon_zen5.h>
+#include <perfmon_zen6.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
 #include <perfmon_tigerlake.h>
