@@ -1420,6 +1420,16 @@ perfmon_init_maps(void)
                     archRegisterTypeNames = registerTypeNamesZen5;
                     post_counter_func = zen5_init_counter_map;
                     break;
+                case ZEN6_RYZEN:
+                    eventHash = zen6_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsZen6;
+                    counter_map = zen6_counter_map;
+                    box_map = zen6_box_map;
+                    perfmon_numCounters = perfmon_numCountersZen6;
+                    translate_types = zen6_translate_types;
+                    archRegisterTypeNames = registerTypeNamesZen6;
+                    //post_counter_func = zen6_init_counter_map;
+                    break;
                 default:
                     ERROR_PRINT("Unsupported AMD Zen Processor");
                     err = -EINVAL;
@@ -2174,6 +2184,15 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_readCountersThread = perfmon_readCountersThread_zen5;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_zen5;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen5;
+                    break;
+                case ZEN6_RYZEN:
+                    initThreadArch = perfmon_init_zen6;
+                    initialize_power = TRUE;
+                    perfmon_startCountersThread = perfmon_startCountersThread_zen6;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_zen6;
+                    perfmon_readCountersThread = perfmon_readCountersThread_zen6;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_zen6;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen6;
                     break;
                 default:
                     ERROR_PRINT("Unsupported AMD K1A Processor");

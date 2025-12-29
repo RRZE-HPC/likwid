@@ -985,6 +985,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
             attr->config |= (1ULL<<46);
         }
     }
+    // TODO: Required for Zen6? Fix for Zen5, above buggy.
     bdestroy(perf_folder);
     return 0;
 }
@@ -1494,6 +1495,11 @@ int perfmon_setupCountersThread_perfevent(
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating uncore type for socket %d on Nvidia Grace", affinity_thread2socket_lookup[cpu_id]);
                     type += affinity_thread2socket_lookup[cpu_id];
                 }
+/*                if ((type >= BBOX0 && type <= BBOX11) && (cpuid_info.family == ZEN5_FAMILY) && (cpuid_topology.numSockets > 1) && (cpuid_info.model == ZEN6_RYZEN))*/
+/*                {*/
+/*                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating UMC uncore type for socket %d on AMD Zen6", affinity_thread2socket_lookup[cpu_id]);*/
+/*                    type += (affinity_thread2socket_lookup[cpu_id] * AMD_K1A_UMC_MAX_UNITS);*/
+/*                }*/
                 if ((type >= BBOX0 && type <= BBOX11) && (cpuid_info.family == ZEN5_FAMILY) && (cpuid_topology.numSockets > 1) && (cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5C_EPYC))
                 {
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating UMC uncore type for socket %d on AMD Zen5", affinity_thread2socket_lookup[cpu_id]);
