@@ -522,7 +522,7 @@ int rocmon_markerStartRegion(const char *regionTag) {
         const int hipDeviceId = rocmarker_ctx->hipDeviceIds[i];
 
         for (size_t j = 0; j < resultList->numCounterValues; j++)
-            resultList->counterValues[j].lastValue = rocmon_getLastResult(hipDeviceId, activeGroup, j);
+            resultList->counterValues[j].lastValue = rocmon_getResult(hipDeviceId, activeGroup, j);
     }
 
     region->started = true;
@@ -571,7 +571,7 @@ int rocmon_markerStopRegion(const char *regionTag) {
             // TODO The legacy rocmon differentiated the accumulation between RPR and RSMI events.
             // I don't see any reason why that would make a difference, but if we run into bad results,
             // we should check if that's the cause.
-            const double stopValue = rocmon_getLastResult(hipDeviceId, activeGroup, j);
+            const double stopValue = rocmon_getResult(hipDeviceId, activeGroup, j);
             const double startValue = resultList->counterValues[j].lastValue;
             resultList->counterValues[j].fullValue += stopValue - startValue;
         }

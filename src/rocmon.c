@@ -742,7 +742,7 @@ static void buffered_callback(
         double *value = NULL;
         int err = get_smap_by_key(device->callbackRprResults, key, (void **)&value);
         if (err == -ENOENT) {
-            value = malloc(sizeof(*value));
+            value = calloc(1, sizeof(*value));
             if (!value) {
                 ERROR_PRINT("Unable to allocate memory to store rocprofiler result");
                 continue;
@@ -759,7 +759,7 @@ static void buffered_callback(
             continue;
         }
 
-        *value = record->counter_value;
+        *value += record->counter_value;
     }
 
     pthread_mutex_unlock(&device->callbackRprMutex);
@@ -1603,13 +1603,14 @@ static int counters_smi_start(RocmonDevice *device) {
         // 'device->numActiveRocEvents' instead.
         RocmonEventResult* result = &groupResult->eventResults[device->numActiveRprEvents+i];
 
+        result->lastValue = 0.0;
+        result->fullValue = 0.0;
+
         if (event->measureFunc) {
             int err = event->measureFunc(device->rsmiDeviceId, event, result);
             if (err < 0)
                 return err;
         }
-
-        result->fullValue = 0.0;
     }
 
     return 0;
@@ -1719,6 +1720,7 @@ int counters_read_rpr(RocmonDevice *device) {
 
         groupResult->eventResults[j].fullValue += *value;
         groupResult->eventResults[j].lastValue = *value;
+        *value = 0.0;
     }
 
     pthread_mutex_unlock(&device->callbackRprMutex);
