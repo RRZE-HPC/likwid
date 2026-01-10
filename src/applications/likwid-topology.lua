@@ -37,25 +37,26 @@ local likwid = require("likwid")
 print_stdout = print
 print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
 
-function version()
-    io.stdout:write(string.format("likwid-topology -- Version %d.%d.%d (commit: %s)\n",likwid.version,likwid.release,likwid.minor,likwid.commit))
+local function version()
+    print_stdout(string.format("likwid-topology -- Version %d.%d.%d (commit: %s)", likwid.version, likwid.release,
+        likwid.minor, likwid.commit))
 end
 
-function usage()
+local function usage()
     version()
-    print()
-    print("A tool to print the thread and cache topology on CPUs and GPUs.")
-    print()
-    print("Options:")
-    print("  -h, --help            Help message")
-    print("  -v, --version         Version information")
-    print("  -V, --verbose <level> Set verbosity")
-    print("  -c, --caches          List cache information")
-    print("  -C, --clock           Measure processor clock")
-    print("  -G, --gpus            List GPU information")
-    print("  -O                    CSV output")
-    print("  -o, --output <file>   Store output to file. (Optional: Apply text filter)")
-    print("  -g                    Graphical output")
+    print_stdout()
+    print_stdout("A tool to print the thread and cache topology on CPUs and GPUs.")
+    print_stdout()
+    print_stdout("Options:")
+    print_stdout("  -h, --help            Help message")
+    print_stdout("  -v, --version         Version information")
+    print_stdout("  -V, --verbose <level> Set verbosity")
+    print_stdout("  -c, --caches          List cache information")
+    print_stdout("  -C, --clock           Measure processor clock")
+    print_stdout("  -G, --gpus            List GPU information")
+    print_stdout("  -O                    CSV output")
+    print_stdout("  -o, --output <file>   Store output to file. (Optional: Apply text filter)")
+    print_stdout("  -g                    Graphical output")
 end
 
 print_caches = false
