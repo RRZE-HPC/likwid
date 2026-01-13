@@ -673,7 +673,7 @@ static rocprofiler_status_t find_agent_for_rocmon_device(
         if (agent_candidate->type != ROCPROFILER_AGENT_TYPE_GPU)
             continue;
 
-        if (agent_candidate->domain == device->pciDomain && agent_candidate->location_id) {
+        if (agent_candidate->domain == device->pciDomain && agent_candidate->location_id == device->pciLocation) {
             device->rocprofAgent = agent_candidate;
             break;
         }
