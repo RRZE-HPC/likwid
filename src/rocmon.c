@@ -809,7 +809,9 @@ static int rpr_device_init(RocmonDevice *device) {
 
     // The set_counter_callback is not called here. It will be called later
     // during rocprofiler_start_context.
-    ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Using device: %s\n", device->rocprofAgent->product_name);
+    // product_name e.g.: 'AMD Instinct MI210'
+    // name e.g.: 'gfx90a'
+    ROCMON_DEBUG_PRINT(DEBUGLEV_INFO, "Using device: '%s' (%s, RSMI-ID=%u)\n", device->rocprofAgent->product_name, device->rocprofAgent->name, device->rsmiDeviceId);
     RPR_CALL(
             return -EIO,
             rocprofiler_configure_device_counting_service,
