@@ -42,10 +42,10 @@ end
 
 local function examples()
     print_stdout("Examples:")
-    print_stdout("  Measure the power consumption for 4 seconds on socket 1")
+    print_stdout("  # Measure the power consumption for 4 seconds on socket 1")
     print_stdout("  $ likwid-powermeter -s 4 -c 1")
     print_stdout()
-    print_stdout("  Use it as wrapper for an application to measure the energy for the whole execution")
+    print_stdout("  # Use it as wrapper for an application to measure the energy for the whole execution")
     print_stdout("  $ likwid-powermeter -c 1 ./a.out")
 end
 

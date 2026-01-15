@@ -43,14 +43,14 @@ if cpuinfo["short_name"] == "knl" then
     FEATURES = KNL_FEATURES
 end
 
-function version()
+local function version()
     print_stdout(string.format("likwid-features -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
-function usage()
+local function usage()
     version()
     print_stdout()
-    print_stdout("A tool list and modify the states of CPU features.")
+    print_stdout("A tool to list and modify the states of CPU features.")
     print_stdout()
     print_stdout("Options:")
     print_stdout("  -h, --help           Help message")
