@@ -30,6 +30,7 @@
  */
 
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
@@ -39,6 +40,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <bstrlib.h>
+#include <stdbool.h>
 
 #include <likwid.h>
 #include <error.h>
@@ -52,8 +54,9 @@ static struct tagbstring daemon_name = bsStatic("likwid-appDaemon.so");
 static FILE* output_file = NULL;
 
 // Timeline mode
-static int stopIssued = 0;
-static pthread_mutex_t stopMutex = PTHREAD_MUTEX_INITIALIZER;
+static bool timelineStop = false;
+static bool timelineRunning = false;
+static pthread_t timelineTid;
 
 static int appdaemon_register_exit(appdaemon_exit_func f)
 {
@@ -64,46 +67,27 @@ static int appdaemon_register_exit(appdaemon_exit_func f)
     }
 }
 
-static void after_main()
-{
-    // Stop timeline thread (if running)
-    pthread_mutex_lock(&stopMutex);
-    stopIssued = 1;
-    pthread_mutex_unlock(&stopMutex);
-
-    for (int i = 0; i < appdaemon_num_exit_funcs; i++)
-    {
-        appdaemon_exit_funcs[i]();
-    }
-
-    if (output_file)
-    {
-        fclose(output_file);
-    }
-}
-
 static void prepare_ldpreload()
 {
-    int (*mysetenv)(const char *name, const char *value, int overwrite) = setenv;
-    char* ldpreload = getenv("LD_PRELOAD");
-    if (ldpreload)
+    char *ldpreload = getenv("LD_PRELOAD");
+    if (!ldpreload)
+        return;
+
+    bstring bldpre = bfromcstr(ldpreload);
+    bstring new_bldpre = bfromcstr("");
+    struct bstrList *liblist = bsplit(bldpre, ':');
+    for (int i = 0; i < liblist->qty; i++)
     {
-        bstring bldpre = bfromcstr(ldpreload);
-        bstring new_bldpre = bfromcstr("");
-        struct bstrList *liblist = bsplit(bldpre, ':');
-        for (int i = 0; i < liblist->qty; i++)
+        if (binstr(liblist->entry[i], 0, &daemon_name) == BSTR_ERR)
         {
-            if (binstr(liblist->entry[i], 0, &daemon_name) == BSTR_ERR)
-            {
-                bconcat(new_bldpre, liblist->entry[i]);
-                bconchar(new_bldpre, ':');
-            }
+            bconcat(new_bldpre, liblist->entry[i]);
+            bconchar(new_bldpre, ':');
         }
-        mysetenv("LD_PRELOAD", bdata(new_bldpre), 1);
-        bstrListDestroy(liblist);
-        bdestroy(new_bldpre);
-        bdestroy(bldpre);
     }
+    setenv("LD_PRELOAD", bdata(new_bldpre), 1);
+    bstrListDestroy(liblist);
+    bdestroy(new_bldpre);
+    bdestroy(bldpre);
 }
 
 static int parse_gpustr(char* gpuStr, int* numGpus, int** gpuIds)
@@ -204,7 +188,6 @@ static int* nvmon_gpulist = NULL;
 static int  nvmon_numgpus = 0;
 static int* nvmon_gids = NULL;
 static int  nvmon_numgids = 0;
-int likwid_nvmon_verbosity = 0;
 
 static int appdaemon_setup_nvmon(char* gpuStr, char* eventStr)
 {
@@ -388,184 +371,186 @@ static void appdaemon_read_nvmon(void)
 Rocmon
 */
 #ifdef LIKWID_ROCMON
-static int  rocmon_initialized = 0;
-static int* rocmon_gpulist = NULL;
-static int  rocmon_numgpus = 0;
-static int* rocmon_gids = NULL;
-static int  rocmon_numgids = 0;
+static bool rocmon_initialized = false;
+static int *rocmon_gpuIds;
+static size_t rocmon_numGpuIds;
+static int rocmon_groupId = -1;
+static char **rocmon_eventNames;
+static char **rocmon_counterNames;
+static size_t rocmon_numEvents;
+static char **rocmon_metricNames;
+static char **rocmon_metricFormulas;
+static size_t rocmon_numMetrics;
 
 static int appdaemon_setup_rocmon(char* gpuStr, char* eventStr)
 {
-    int ret = 0;
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Rocmon GPU string: %s\n", gpuStr);
     ROCMON_DEBUG_PRINT(DEBUGLEV_DEVELOP, "Rocmon Event string: %s\n", eventStr);
 
-    // Parse gpu string
-    ret = parse_gpustr(gpuStr, &rocmon_numgpus, &rocmon_gpulist);
-    if (ret < 0)
-    {
-        ERROR_PRINT("Failed to get rocmon gpulist from '%s'", gpuStr);
-        goto appdaemon_setup_rocmon_cleanup;
+    int err = rocmon_markerInit();
+    if (err < 0) {
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon_markerInit failed: %d", err);
+        return err;
     }
 
-    // Parse event string
-    bstring bev = bfromcstr(eventStr);
-    struct bstrList* rocmon_eventlist = bsplit(bev, '|'); // TODO: multiple event sets not supported
-    bdestroy(bev);
-    rocmon_gids = malloc(rocmon_eventlist->qty * sizeof(int));
-    if (!rocmon_gids)
-    {
-        ERROR_PRINT("Failed to allocate space for rocmon group IDs");
-        goto appdaemon_setup_rocmon_cleanup;
+    err = rocmon_markerGetGpuIds(&rocmon_gpuIds, &rocmon_numGpuIds);
+    if (err < 0) {
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon_markerGetGpuIds failed: %d", err);
+        rocmon_markerClose();
+        return err;
     }
 
-    // Init rocmon
-    ret = rocmon_init(rocmon_numgpus, rocmon_gpulist);
-    if (ret < 0)
-    {
-        ERROR_PRINT("Failed to initialize rocmon");
-        goto appdaemon_setup_rocmon_cleanup;
-    }
-    rocmon_initialized = 1;
-
-    // Add event sets
-    for (int i = 0; i < rocmon_eventlist->qty; i++)
-    {
-        ret = rocmon_addEventSet(bdata(rocmon_eventlist->entry[i]), &rocmon_gids[rocmon_numgids++]);
-        if (ret < 0)
-        {
-            ERROR_PRINT("Failed to add rocmon group: %s", bdata(rocmon_eventlist->entry[i]));
-        }
-    }
-    if (rocmon_numgids == 0)
-    {
-        ERROR_PRINT("Failed to add any events to rocmon");
-        goto appdaemon_setup_rocmon_cleanup;
+    int *groupIds = NULL;
+    size_t numGroupIds = 0;
+    err = rocmon_markerGetGroupIds(&groupIds, &numGroupIds);
+    if (err < 0) {
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon_markerGetGroupIds failed: %d", err);
+        rocmon_markerClose();
+        return err;
     }
 
-    // Setup counters
-    ret = rocmon_setupCounters(rocmon_gids[0]);
-    if (ret < 0)
-    {
-        ERROR_PRINT("Failed to setup rocmon");
-        goto appdaemon_setup_rocmon_cleanup;
+    if (numGroupIds != 1) {
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Must need exactly one performance group, got: %zu", numGroupIds);
+        rocmon_markerClose();
+        return -EINVAL;
     }
 
-    // Start counters
-    ret = rocmon_startCounters();
-    if (ret < 0)
-    {
-        ERROR_PRINT("Failed to start rocmon");
-        goto appdaemon_setup_rocmon_cleanup;
+    rocmon_groupId = groupIds[0];
+    free(groupIds);
+
+    err = rocmon_markerGetGroupInfo(
+            rocmon_groupId,
+            &rocmon_eventNames,
+            &rocmon_counterNames,
+            &rocmon_numEvents,
+            &rocmon_metricNames,
+            &rocmon_metricFormulas,
+            &rocmon_numMetrics
+    );
+    if (err < 0) {
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon_markerGetGroupInfo failed: %s", strerror(-err));
+        rocmon_markerClose();
+        return -EINVAL;
     }
+
+    rocmon_initialized = true;
+
+    rocmon_markerStartRegion("main");
     return 0;
-appdaemon_setup_rocmon_cleanup:
-    if (rocmon_initialized)
-    {
-        rocmon_finalize();
-        rocmon_initialized = 0;
+}
+
+static void appdaemon_print_results_rocmon(void)
+{
+    for (size_t i = 0; i < rocmon_numGpuIds; i++) {
+        // Using group = 0 here is kind of cheating, but we know it'll be always a single group 0.
+        const int group = 0;
+
+        double *counters = NULL;
+        size_t numCounters = 0;
+        double *metrics = NULL;
+        size_t numMetrics = 0;
+
+        int err = rocmon_markerGetRegionCounters("main", group, rocmon_gpuIds[i], &numCounters, &counters, &numMetrics, &metrics);
+        if (err < 0) {
+            ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon_markerGetRegionCounters failed: %d", err);
+            continue;
+        }
+
+        size_t execCount = 0;
+        double execTime = 0.0;
+        err = rocmon_markerGetRegionStats("main", group, &execCount, &execTime);
+        if (err < 0) {
+            ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon_markerGetRegionStats failed: %d", err);
+            goto cleanup_continue;
+        }
+
+        assert(numCounters == rocmon_numEvents);
+
+        for (size_t c = 0; c < numCounters; c++) {
+            fprintf(output_file,
+                    "ROCMON (counter), %d %f %s:%s %f\n",
+                    rocmon_gpuIds[i],
+                    execTime,
+                    rocmon_counterNames[c],
+                    rocmon_eventNames[c],
+                    counters[c]
+                    );
+        }
+
+        assert(numMetrics == rocmon_numMetrics);
+
+        for (size_t m = 0; m < numMetrics; m++) {
+            fprintf(output_file,
+                    "ROCMON (metric), %d %f %s %f\n",
+                    rocmon_gpuIds[i],
+                    execTime,
+                    rocmon_metricNames[m],
+                    metrics[m]
+                    );
+        }
+
+cleanup_continue:
+        free(counters);
+        free(metrics);
     }
-    if (rocmon_gids)
-    {
-        free(rocmon_gids);
-        rocmon_gids = NULL;
-        rocmon_numgids = 0;
-    }
-    if (rocmon_eventlist)
-    {
-        bstrListDestroy(rocmon_eventlist);
-        rocmon_eventlist = NULL;
-    }
-    if (rocmon_gpulist)
-    {
-        free(rocmon_gpulist);
-        rocmon_gpulist = NULL;
-        rocmon_numgpus = 0;
-    }
-    return ret;
 }
 
 static void appdaemon_close_rocmon(void)
 {
-    // Stop counters
-    int ret = rocmon_stopCounters();
-    if (ret < 0)
-    {
-        ERROR_PRINT("Failed to stop rocmon");
-    }
+    rocmon_markerStopRegion("main");
 
-    if (getenv("LIKWID_ROCMON_MARKER_FORMAT") == NULL)
-    {
-        // Print results
-        for (int g = 0; g < rocmon_numgids; g++)
-        {
-            int gid = rocmon_gids[g];
-            for (int i = 0; i < rocmon_getNumberOfEvents(gid); i++)
-            {
-                for (int j = 0; j < rocmon_numgpus; j++)
-                {
-                    fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(j, gid, i), rocmon_getLastResult(j, gid, i));
-                }
-            }
-        }
-    } else {
-        appdaemon_output_data data = {
-            .numDevices = rocmon_numgpus,
-            .devices = rocmon_gpulist,
-            .numGroups = rocmon_numgids,
-            .groups = rocmon_gids,
-            .getTime = rocmon_getTimeOfGroup,
-            .getResult = rocmon_getResult,
-            .numEvents = rocmon_getNumberOfEvents,
-        };
-        ret = appdaemon_write_output_file(getenv("LIKWID_ROCMON_OUTPUTFILE"), &data);
-        if (ret < 0) {
-            ERROR_PRINT("Failed to write appdaemon data to %s", getenv("LIKWID_ROCMON_OUTPUTFILE"));
-        }
+    if (getenv("LIKWID_ROCMON_MARKER_FORMAT") == NULL) {
+        appdaemon_print_results_rocmon();
     }
 
     // Cleanup
     if (rocmon_initialized)
     {
-        rocmon_finalize();
+        rocmon_markerClose();
+
+        free(rocmon_gpuIds);
+        rocmon_gpuIds = NULL;
+        rocmon_numGpuIds = 0;
+
+        for (size_t i = 0; i < rocmon_numEvents; i++) {
+            free(rocmon_eventNames[i]);
+            free(rocmon_counterNames[i]);
+        }
+
+        free(rocmon_eventNames);
+        free(rocmon_counterNames);
+        rocmon_eventNames = NULL;
+        rocmon_counterNames = NULL;
+        rocmon_numEvents = 0;
+
+        for (size_t i = 0; i < rocmon_numMetrics; i++) {
+            free(rocmon_metricNames[i]);
+            free(rocmon_metricFormulas[i]);
+        }
+
+        free(rocmon_metricNames);
+        free(rocmon_metricFormulas);
+        rocmon_metricNames = NULL;
+        rocmon_metricFormulas = NULL;
+        rocmon_numMetrics = 0;
+
         rocmon_initialized = 0;
-    }
-    if (rocmon_gids)
-    {
-        free(rocmon_gids);
-        rocmon_gids = NULL;
-        rocmon_numgids = 0;
-    }
-    if (rocmon_gpulist)
-    {
-        free(rocmon_gpulist);
-        rocmon_gpulist = NULL;
-        rocmon_numgpus = 0;
     }
 }
 
 static void appdaemon_read_rocmon(void)
 {
-    // Read counters
-    int ret = rocmon_readCounters();
-    if (ret < 0)
-    {
-        fprintf(stderr, "Failed to read Rocmon counters\n");
+    int err = rocmon_markerStopRegion("main");
+    if (err < 0) {
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon_markerStopRegion failed: %d", err);
         return;
     }
 
-    // Print results
-    for (int g = 0; g < rocmon_numgids; g++)
-    {
-        int gid = rocmon_gids[g];
-        for (int i = 0; i < rocmon_getNumberOfEvents(gid); i++)
-        {
-            for (int j = 0; j < rocmon_numgpus; j++)
-            {
-                fprintf(output_file, "Rocmon, %d, %f, %s, %f, %f\n", rocmon_gpulist[j], rocmon_getTimeToLastReadOfGroup(rocmon_gpulist[j]), rocmon_getEventName(gid, i), rocmon_getResult(j, gid, i), rocmon_getLastResult(j, gid, i));
-            }
-        }
-    }
+    appdaemon_print_results_rocmon();
+
+    err = rocmon_markerStartRegion("main");
+    if (err < 0)
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "rocmon_markerStartRegion failed: %d", err);
 }
 #endif
 
@@ -576,8 +561,6 @@ Timeline mode
 */
 static void* appdaemon_timeline_main(void* arg)
 {
-    int ret = 0;
-    int stop = 0;
     int target_delay_ms = *((int*)arg);
 
 #ifdef LIKWID_NVMON
@@ -587,16 +570,18 @@ static void* appdaemon_timeline_main(void* arg)
     {
         char *nvVerbosity = getenv("LIKWID_NVMON_VERBOSITY");
         if (nvVerbosity) {
-            likwid_nvmon_verbosity = atoi(nvVerbosity);
+            int likwid_nvmon_verbosity = atoi(nvVerbosity);
             nvmon_setVerbosity(likwid_nvmon_verbosity);
             GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Setting verbosity to %d", likwid_nvmon_verbosity);
         }
-        ret = appdaemon_setup_nvmon(nvGpuStr, nvEventStr);
-        if (!ret)
+        int ret = appdaemon_setup_nvmon(nvGpuStr, nvEventStr);
+        if (ret < 0)
+        {
+            fprintf(stderr, "Failed to setup NVMON: %d\n", ret);
+        }
+        else
         {
             appdaemon_register_exit(appdaemon_close_nvmon);
-        } else {
-            fprintf(stderr, "Failed to setup NVMON: %d\n", ret);
         }
     }
     printf("NVMON initialized\n");
@@ -608,24 +593,26 @@ static void* appdaemon_timeline_main(void* arg)
     char* rocmonGpuStr = getenv("LIKWID_ROCMON_GPUS");
     if (rocmonEventStr && rocmonGpuStr)
     {
-        ret = appdaemon_setup_rocmon(rocmonGpuStr, rocmonEventStr);
-        if (!ret)
+        int ret = appdaemon_setup_rocmon(rocmonGpuStr, rocmonEventStr);
+        if (ret < 0)
+        {
+            fprintf(stderr, "Failed to setup ROCMON: %d\n", ret);
+        }
+        else
         {
             appdaemon_register_exit(appdaemon_close_rocmon);
         }
     }
 #endif
 
-    while (stop == 0)
+    while (true)
     {
         printf("Thread sleeps for %d ms\n", target_delay_ms);
         usleep(target_delay_ms / 1000);
 
-        // Check stop status
-        pthread_mutex_lock(&stopMutex);
-        stop = stopIssued;
-        pthread_mutex_unlock(&stopMutex);
-        if (stop > 0) break;
+        if (__atomic_load_n(&timelineStop, __ATOMIC_ACQUIRE))
+            break;
+
         printf("Thread Reads\n");
 #ifdef LIKWID_NVMON
         appdaemon_read_nvmon();
@@ -647,32 +634,16 @@ static void* appdaemon_timeline_main(void* arg)
 /*
 Main
 */
-__attribute__((visibility("default")))
-int __libc_start_main(int (*main) (int,char **,char **),
-              int argc,char **ubp_av,
-              void (*init) (void),
-              void (*fini)(void),
-              void (*rtld_fini)(void),
-              void (*stack_end)) {
-    int ret = 0;
-    int (*original__libc_start_main)(int (*main) (int,char **,char **),
-                    int argc,char **ubp_av,
-                    void (*init) (void),
-                    void (*fini)(void),
-                    void (*rtld_fini)(void),
-                    void (*stack_end));
-
+static void main_wrapper_prolog()
+{
+    // Why do we lock and unlock the memory?
     mlockall(MCL_CURRENT);
     munlockall();
-    atexit(after_main);
-
-
-    original__libc_start_main = dlsym(RTLD_NEXT, "__libc_start_main");
 
     prepare_ldpreload();
 
     // Get timeline mode info
-    char* timelineStr = getenv("LIKWID_INTERVAL");
+    char *timelineStr = getenv("LIKWID_INTERVAL");
     int timelineInterval = -1; // in ms
     int gotTimelineInterval = 0;
     if (timelineStr != NULL)
@@ -682,42 +653,37 @@ int __libc_start_main(int (*main) (int,char **,char **),
     }
     if (gotTimelineInterval && timelineInterval <= 0)
     {
-        fprintf(stderr, "Invalid timeline interval\n");
-        return -1;
+        fprintf(stderr, "Timeline interval (LIKWID_INTERVAL) must be non-zero\n");
+        return;
     }
 
     // Open output file
-    char* outputFilename = getenv("LIKWID_OUTPUTFILE");
-    if (outputFilename == NULL)
-    {
+    char *outputFilename = getenv("LIKWID_OUTPUTFILE");
+    if (!outputFilename)
         output_file = stderr;
-    } else {
+    else
         output_file = fopen(outputFilename,"w");
-    }
 
     if (output_file == NULL)
     {
-        fprintf(stderr, "Cannot open file %s\n", outputFilename);
-        fprintf(stderr, "%s", strerror(errno));
-        return -1;
+        fprintf(stderr, "Cannot open file (LIWKID_OUTPUTFILE) %s\n", outputFilename);
+        perror("fopen");
+        return;
     }
-    if ((getenv("LIKWID_NVMON_MARKER_FORMAT") == NULL) && (getenv("LIKWID_ROCMON_MARKER_FORMAT") == NULL)) {
+    if ((getenv("LIKWID_NVMON_MARKER_FORMAT") == NULL) && (getenv("LIKWID_ROCMON_MARKER_FORMAT") == NULL))
+    {
         fprintf(output_file, "Backend, GPU, Time, Event, Full Value, Last Value\n");
     }
-
-
 
     // Start timeline thread
     if (timelineInterval > 0)
     {
         //printf("Start thread with interval %d\n", timelineInterval);
-        pthread_t tid;
-        ret = pthread_create(&tid, NULL, &appdaemon_timeline_main, &timelineInterval);
-        if (ret < 0)
-        {
-            fprintf(stderr, "Failed to create timeline thread\n");
-            return -1;
-        }
+        int ret = pthread_create(&timelineTid, NULL, &appdaemon_timeline_main, &timelineInterval);
+        if (ret != 0)
+            fprintf(stderr, "Failed to create timeline thread: %s\n", strerror(ret));
+        else
+            timelineRunning = true;
     } else {
 #ifdef LIKWID_NVMON
         char* nvEventStr = getenv("LIKWID_NVMON_EVENTS");
@@ -725,13 +691,14 @@ int __libc_start_main(int (*main) (int,char **,char **),
         if (nvEventStr && nvGpuStr)
         {
             char *nvVerbosity = getenv("LIKWID_NVMON_VERBOSITY");
-            if (nvVerbosity) {
-                likwid_nvmon_verbosity = atoi(nvVerbosity);
+            if (nvVerbosity)
+            {
+                int likwid_nvmon_verbosity = atoi(nvVerbosity);
                 nvmon_setVerbosity(likwid_nvmon_verbosity);
                 GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Setting verbosity to %d", likwid_nvmon_verbosity);
             }
-            ret = appdaemon_setup_nvmon(nvGpuStr, nvEventStr);
-            if (!ret)
+            int ret = appdaemon_setup_nvmon(nvGpuStr, nvEventStr);
+            if (ret == 0)
             {
                 appdaemon_register_exit(appdaemon_close_nvmon);
             }
@@ -744,19 +711,77 @@ int __libc_start_main(int (*main) (int,char **,char **),
         if (rocmonEventStr && rocmonGpuStr)
         {
             char *rocmomVerbosity = getenv("LIKWID_ROCMON_VERBOSITY");
-            if (rocmomVerbosity) {
+            if (rocmomVerbosity)
+            {
                 rocmon_setVerbosity(atoi(rocmomVerbosity));
             }
-            ret = appdaemon_setup_rocmon(rocmonGpuStr, rocmonEventStr);
-            if (!ret)
+            int ret = appdaemon_setup_rocmon(rocmonGpuStr, rocmonEventStr);
+            if (ret == 0)
             {
                 appdaemon_register_exit(appdaemon_close_rocmon);
             }
         }
 #endif
     }
+}
 
-    return original__libc_start_main(main,argc,ubp_av,
-                     init,fini,rtld_fini,stack_end);
+static void main_wrapper_epilog()
+{
+    // Stop timeline thread (if running)
+    if (timelineRunning)
+    {
+        __atomic_store_n(&timelineStop, true, __ATOMIC_RELEASE);
+        pthread_join(timelineTid, NULL);
+    }
+
+    for (int i = 0; i < appdaemon_num_exit_funcs; i++)
+        appdaemon_exit_funcs[i]();
+
+    if (output_file && output_file != stderr)
+        fclose(output_file);
+}
+
+static int (*main_original)(int, char **, char **);
+
+static int main_wrapper(int argc, char **argv, char **envp)
+{
+    main_wrapper_prolog();
+
+    if (!main_original)
+    {
+        fprintf(stderr, "Unable to find original main function");
+        abort();
+    }
+
+    const int main_return = main_original(argc, argv, envp);
+
+    main_wrapper_epilog();
+
+    return main_return;
+}
+
+__attribute__((visibility("default")))
+int __libc_start_main(int (*main) (int,char **,char **),
+              int argc,char **ubp_av,
+              void (*init) (void),
+              void (*fini)(void),
+              void (*rtld_fini)(void),
+              void (*stack_end))
+{
+    int (*original__libc_start_main)(int (*main) (int,char **,char **),
+                    int argc,char **ubp_av,
+                    void (*init) (void),
+                    void (*fini)(void),
+                    void (*rtld_fini)(void),
+                    void (*stack_end));
+
+    // Save program's original main function, so we can call it later.
+    main_original = main;
+
+    original__libc_start_main = dlsym(RTLD_NEXT, "__libc_start_main");
+
+    // Execute original __libc_start_main with our main_wrapper instead.
+    return original__libc_start_main(main_wrapper, argc, ubp_av,
+                     init, fini, rtld_fini, stack_end);
 }
 

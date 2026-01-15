@@ -383,12 +383,6 @@ $(BUILD_DIR)/intel_perfmon_uncore_discovery.o: intel_perfmon_uncore_discovery.c 
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) -Wno-unused-variable $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(@:.o=.d)
 
-$(BUILD_DIR)/rocmon_marker.o:  rocmon_marker.c
-	@echo "===>  COMPILE  $@"
-	@mkdir -p $(BUILD_DIR)
-	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
-	$(Q)objcopy --redefine-sym HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE=HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE2 $@
-
 $(BUILD_DIR)/%.o:  %.cc
 	@echo "===>  COMPILE  $@"
 	@mkdir -p $(BUILD_DIR)

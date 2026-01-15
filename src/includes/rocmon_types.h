@@ -35,10 +35,12 @@
 
 #include <likwid.h>
 // #include <hsa.h>
-#ifndef ROCPROFILER_VERSION_MAJOR
-#include <rocprofiler.h>
-#endif
+#include <rocprofiler-sdk/rocprofiler.h>
+#include <rocprofiler-sdk/context.h>
 #include <map.h>
+#include <bstrlib.h>
+#include <stddef.h>
+#include <stdbool.h>
 
 typedef struct {
     double lastValue;
@@ -46,14 +48,12 @@ typedef struct {
 } RocmonEventResult;
 
 typedef struct {
-    RocmonEventResult* results; // First rocprofiler results, then SMI results
-    int numResults;
+    RocmonEventResult *eventResults; // First rocprofiler results, then SMI results
+    size_t numEventResults;
 } RocmonEventResultList;
 
-
-
 struct RocmonSmiEvent_struct;
-typedef int (*RocmonSmiMeasureFunc)(int deviceId, struct RocmonSmiEvent_struct* event, RocmonEventResult* result);
+typedef int (*RocmonSmiMeasureFunc)(uint32_t rsmiDevId, struct RocmonSmiEvent_struct* event, RocmonEventResult* result);
 
 typedef enum {
     ROCMON_SMI_EVENT_TYPE_NORMAL = 0,
@@ -63,44 +63,74 @@ typedef enum {
 } RocmonSmiEventType;
 
 typedef struct RocmonSmiEvent_struct {
-    char name[40];
+    char name[64];
     uint64_t variant;
     uint64_t subvariant;
     uint64_t extra;
-    int instances;
     RocmonSmiEventType type;
     RocmonSmiMeasureFunc measureFunc;
 } RocmonSmiEvent;
 
 typedef struct {
     RocmonSmiEvent* entries;
-    int numEntries;
+    size_t numEntries;
 } RocmonSmiEventList;
 
 typedef struct {
-    int deviceId; // LIKWID device id
+    rocprofiler_counter_info_v1_t counterInfo;
+    // TODO, do we need anything else here?
+} RocmonRprEvent;
 
-    hsa_agent_t hsa_agent;  // HSA agent handle for this device
-    rocprofiler_t* context; // Rocprofiler context (has activeEvents configured)
+typedef struct {
+    // 'enabled' is true if the device is an enabled HIP device.
+    // Because we cannot init HIP before rocprofiler-sdk, we have allocate
+    // all devices. But you can later check this flag, whether to actually
+    // monitor the device or not.
+    bool enabled;
 
-    // Available rocprofiler metrics
-    rocprofiler_info_data_t* rocMetrics;
-    int numRocMetrics;
+    // HIP stuff
+    int hipDeviceId;
+    hipDeviceProp_t hipProps;
 
-    // Available ROCm SMI events
-    Map_t smiMetrics;
+    // ROCm SMI stuff
+    uint32_t rsmiDeviceId;
+    uint32_t pciDomain;
+    uint32_t pciLocation;
+
+    // rocprofiler-sdk stuff
+    const rocprofiler_agent_v0_t *rocprofAgent;
+    rocprofiler_buffer_id_t rocprofBuf;
+    rocprofiler_callback_thread_t rocprofThrd;
+
+    // Available rocprofiler events
+    // event_name (const char *) -> event (RocmonRprEvent *)
+    Map_t availableRprEvents;
+
+    // ROCm SMI events (available on hardware)
+    // event_name (const char *) -> event (RocmonSmiEvent *)
+    Map_t availableSmiEvents;
 
     // Currently configured rocprofiler events (bound to context)
-    rocprofiler_feature_t* activeRocEvents;
-    int numActiveRocEvents;
+    rocprofiler_counter_id_t *activeRprEvents;
+    size_t numActiveRprEvents;
 
-    // Currently configured ROCm SMI events
+    // ROCm SMI events (currently enabled)
     RocmonSmiEvent* activeSmiEvents;
-    int numActiveSmiEvents;
+    size_t numActiveSmiEvents;
 
     // Results for all events in all event sets
     RocmonEventResultList* groupResults;
-    int numGroupResults;
+    size_t numGroupResults;
+
+    // Temporary results, which are written by the buffer callback
+    // On read, they are transferred to the respective groupResults
+    // counter_id (const char *) -> double
+    Map_t callbackRprResults;
+    pthread_mutex_t callbackRprMutex;
+} RocmonDevice;
+
+typedef struct {
+    GroupInfo groupInfo;
 
     // Timestamps in ns
     struct {
@@ -108,37 +138,84 @@ typedef struct {
         uint64_t read;
         uint64_t stop;
     } time;
-} RocmonDevice;
+} RocmonGroupInfo;
 
 typedef struct {
     // Event Groups
-    GroupInfo   *groups;
-    int         numGroups;       // Number of allocated groups
-    int         numActiveGroups; // Number of used groups
-    int         activeGroup;     // Currently active group
+    RocmonGroupInfo *groups;
+    size_t          numGroups;       // Number of groups
+    size_t          activeGroupIdx;  // Currently active group
 
-    // Devices (HSA agents)
-    RocmonDevice    *devices;
-    int             numDevices;
+    // Devices
+    rocprofiler_context_id_t rocprofCtx;
+    RocmonDevice             *devices;
+    size_t                   numDevices;
+
+    // Devices (HIP only)
+    size_t *hipDeviceIdxToRocmonDeviceIdx;
+    size_t numHipDeviceIdxToRocmonDeviceIdx;
 
     // System information
     long double hsa_timestamp_factor; // hsa_timestamp * hsa_timestamp_factor = timestamp_in_ns
 
-    // ROCm SMI events
-    Map_t smiEvents;
+    // ROCm SMI events (implemented by LIKWID)
+    // label_name (const char *) -> event_list (RocmonSmiEventList *)
+    Map_t implementedSmiEvents;
 } RocmonContext;
 
-extern RocmonContext *rocmon_context;
-
+typedef struct {
+    RocmonEventResult   *counterValues;
+    size_t              numCounterValues;
+} RocmarkerGpuResultList;
 
 typedef struct {
-    bstring  tag;
-    int groupID;
-    int gpuCount;
-    int eventCount;
-    double*  time;
-    uint32_t*  count;
-    int* gpulist;
-    double** counters;
-} LikwidRocmResults;
+    char                *tag;
+    int                 groupId;     // event set group ID which the region uses
+    bool                started;     // Is this region currently executing?
+    size_t              execCount;  // times this region was started and stopped
+    uint64_t            lastStartTime;   // timestamp when the region started measuring last
+    uint64_t            lastStopTime;    // timestamp when the region stopped measuring last
+    uint64_t            totalTime;      // total time spent in region
+    RocmarkerGpuResultList *gpuResults; // array of n elements, where n is == numHipDeviceIds
+} RocmarkerRegion;
+
+typedef struct {
+    char *name;
+    char *formula;
+} RocmarkerMetric;
+
+typedef struct {
+    char *eventName;
+    char *counterName;
+} RocmarkerEvent;
+
+typedef struct {
+    RocmarkerEvent *events;
+    size_t numEvents;
+
+    RocmarkerMetric *metrics;
+    size_t numMetrics;
+
+    int groupId;
+} RocmarkerGroup;
+
+typedef struct {
+    // Capture the thread, which the rocmon Marker API was initialized with.
+    // Only this thread may call functions of the marker API.
+    pid_t main_tid;
+
+    // GPU device IDs
+    int    *hipDeviceIds;
+    size_t numHipDeviceIds;
+
+    // group info
+    RocmarkerGroup *groups;
+    size_t numGroups;
+    size_t activeGroupIdx;
+
+    // Region information and results
+    // event_name (const char *) -> event (RocmarkerRegion *)
+    Map_t regions;
+} RocmarkerContext;
+
 #endif /* LIKWID_ROCMON_TYPES_H */
