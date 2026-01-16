@@ -3828,6 +3828,7 @@ int main(void)
                 {
                     case ZEN5_EPYC:
                     case ZEN5C_EPYC:
+                    case ZEN6_RYZEN:
                         allowed = allowed_amd1a_zen5;
                         break;
                     default:
