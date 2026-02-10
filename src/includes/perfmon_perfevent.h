@@ -292,6 +292,10 @@ int parse_event_config(char* base, char* option, int* num_formats, struct perf_e
             bdestroy(src);
             fclose(fp);
         }
+        else
+        {
+            err = -ENOENT;
+        }
         bdestroy(path);
     }
     else
@@ -813,7 +817,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
 /*        free(formats);*/
 /*    }*/
 #ifdef _ARCH_PPC
-    if (ret == 0 && reg == INVALID)
+    if (ret == -ENOENT)
     {
         num_formats = 0;
         formats = NULL;
