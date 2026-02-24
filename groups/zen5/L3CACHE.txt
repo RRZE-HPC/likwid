@@ -1,0 +1,29 @@
+SHORT L3 cache miss rate/ratio (experimental)
+
+EVENTSET
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  CPU_CLOCKS_UNHALTED
+CPMC0 L3_LOOKUP_STATE_ALL_TYPES
+CPMC1 L3_LOOKUP_STATE_MISS
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  FIXC1/FIXC0
+L3 request rate CPMC0/PMC0
+L3 miss rate CPMC1/PMC0
+L3 miss ratio CPMC1/CPMC0
+
+LONG
+Formulas:
+L3 request rate = L3_LOOKUP_STATE_ALL_TYPES/RETIRED_INSTRUCTIONS
+L3 miss rate = L3_LOOKUP_STATE_MISS/RETIRED_INSTRUCTIONS
+L3 miss ratio = L3_LOOKUP_STATE_MISS/L3_LOOKUP_STATE_ALL_TYPES
+-
+This group measures the locality of your data accesses with regard to the
+L3 cache. L3 request rate tells you how data intensive your code is
+or how many data accesses you have on average per instruction.
+The L3 miss rate gives a measure how often it was necessary to get
+cache lines from memory. And finally L3 miss ratio tells you how many of your
+memory references required a cache line to be loaded from a higher level.
+While the data cache miss rate might be given by your algorithm you should
+try to get data cache miss ratio as low as possible by increasing your cache reuse.
