@@ -246,6 +246,7 @@ power_init(int cpuId)
             {
                 case ZEN5_EPYC:
                 case ZEN5C_EPYC:
+                case ZEN6_RYZEN:
                     cpuid_info.turbo = 0;
                     power_info.hasRAPL = 1;
                     power_info.statusRegWidth= 64;
