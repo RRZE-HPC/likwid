@@ -2416,6 +2416,50 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     return 0;
 }
 
+void 
+perfmon_releaseCounters(void) 
+{
+    for(int group=0;group < groupSet->numberOfActiveGroups; group++)
+    {
+        for (int thread=0;thread< groupSet->numberOfThreads; thread++)
+        {
+            perfmon_finalizeCountersThread(thread, &(groupSet->groups[group]));
+        }
+    }
+}
+
+void 
+perfmon_acquireCounters(int nrThreads, const int* threadsToCpu)
+{
+    int initialize_power = FALSE;
+    int initialize_thermal = FALSE;
+    perfmon_init_funcs(&initialize_power, &initialize_thermal);
+
+
+        /* Store thread information and reset counters for processor*/
+    /* If the arch supports it, initialize power and thermal measurements */
+    for(int i=0;i<nrThreads;i++)
+    {
+#ifndef LIKWID_USE_PERFEVENT
+        HPMaddThread(threadsToCpu[i]);
+        HPMcheck(MSR_DEV, threadsToCpu[i]);
+#endif
+        groupSet->threads[i].thread_id = i;
+        groupSet->threads[i].processorId = threadsToCpu[i];
+
+        if (initialize_power == TRUE)
+        {
+            power_init(threadsToCpu[i]);
+        }
+        if (initialize_thermal == TRUE)
+        {
+            thermal_init(threadsToCpu[i]);
+        }
+        initThreadArch(threadsToCpu[i]);
+    }
+}
+
+
 void
 perfmon_finalize(void)
 {
