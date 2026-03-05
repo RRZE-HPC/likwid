@@ -168,6 +168,7 @@ static int set_energy_status_reg_width(RaplDomainInfo* info) {
                 case ZEN4_RYZEN2:
                 case ZEN4_RYZEN3:
                 case ZEN4_RYZEN_PRO:
+                case ZEN4_MI300A:
                     info->regWidth = 64;
                     break;
                 default:

@@ -221,6 +221,7 @@ power_init(int cpuId)
                 case ZEN4_EPYC:
                 case ZEN4_EPYC_BERGAMO:
                 case ZEN4_RYZEN_PRO:
+                case ZEN4_MI300A:
                     cpuid_info.turbo = 0;
                     power_info.hasRAPL = 1;
                     power_info.statusRegWidth = 64;
@@ -546,7 +547,7 @@ power_init(int cpuId)
             }
         }
 
-        if (cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN3 || cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_EPYC_BERGAMO))
+        if (cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN3 || cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_EPYC_BERGAMO || cpuid_info.model == ZEN4_MI300A))
         {
             err = HPMread(cpuId, MSR_DEV, MSR_AMD19_RAPL_L3_UNIT, &flags);
             if (err == 0)

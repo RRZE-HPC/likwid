@@ -1290,6 +1290,10 @@ allowed_amd19_zen4c(uint32_t reg)
     {
         return 1;
     }
+    else if (reg >= MSR_AMD1A_UMC_PERFEVTSEL0 && reg <= MSR_AMD1A_UMC_PMC63)
+    {
+        return 1;
+    }
     return 0;
 }
 
@@ -3813,8 +3817,7 @@ int main(void)
                     case ZEN4_RYZEN3:
                     case ZEN4_EPYC:
                     case ZEN4_RYZEN_PRO:
-                        allowed = allowed_amd19_zen3;
-                        break;
+                    case ZEN4_MI300A:
                     case ZEN4_EPYC_BERGAMO:
                         allowed = allowed_amd19_zen4c;
                         break;
