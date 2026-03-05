@@ -170,7 +170,7 @@ static const char* short_skylakeX = "skylakeX";
 static const char* short_kabylake = "skylake";
 static const char* short_cascadelakeX = "CLX";
 static const char* short_cannonlake = "cannonlake";
-static const char* short_coffeelake = "skylake";
+static const char* short_coffeelake = "coffeelake";
 static const char* short_tigerlake = "TGL";
 static const char* short_sapphire_rapids = "SPR";
 static const char* short_emerald_rapids = "EMR";
@@ -1252,6 +1252,7 @@ topology_setName(void)
                 case ZEN4_RYZEN3:
                 case ZEN4_EPYC:
                 case ZEN4_RYZEN_PRO:
+                case ZEN4_MI300A:
                     cpuid_info.name = amd_zen4_str;
                     cpuid_info.short_name = short_zen4;
                     cpuid_info.supportUncore = 1;

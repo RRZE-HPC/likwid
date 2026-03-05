@@ -33,6 +33,7 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <string.h>
 
 #define DEBUGLEV_ONLY_ERROR 0
@@ -242,6 +243,7 @@ Get the accumulated data of the current thread for the given regionTag.
 @param events [out] Events array for the intermediate results
 @param time [out] Accumulated measurement time
 @param count [out] Call count of the code region
+@return 0 on success or negative error code on failure
 */
 extern void likwid_markerGetRegion(const char *regionTag, int *nr_events,
                                    double *events, double *time, int *count)

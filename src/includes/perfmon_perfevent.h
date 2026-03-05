@@ -194,7 +194,7 @@ int perfmon_init_perfevent(int cpu_id)
         active_cpus += 1;
     }
     perf_event_num_cpus = cpuid_topology.numHWThreads;
-    if (cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_RYZEN3 ))
+    if (cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_RYZEN3 || cpuid_info.model == ZEN4_EPYC_BERGAMO || cpuid_info.model == ZEN4_MI300A))
     {
         perfEventOptionNames[EVENT_OPTION_TID] = "threadmask";
         perfEventOptionNames[EVENT_OPTION_CID] = "coreid";
@@ -948,7 +948,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
         }
     }
 
-    if (type == CBOX0 && cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_RYZEN3 || cpuid_info.model == ZEN4_EPYC_BERGAMO || cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5C_EPYC))
+    if (type == CBOX0 && cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_RYZEN3 || cpuid_info.model == ZEN4_EPYC_BERGAMO || cpuid_info.model == ZEN4_MI300A || cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5C_EPYC))
     {
         int got_cid = 0;
         int got_slices = 0;
@@ -1500,7 +1500,7 @@ int perfmon_setupCountersThread_perfevent(
                     type += (affinity_thread2socket_lookup[cpu_id] * AMD_K1A_UMC_MAX_UNITS);
                 }
                 if (   (type >= BBOX0 && type <= BBOX11) && (cpuid_info.family == ZEN3_FAMILY) && (cpuid_topology.numSockets > 1)
-                    && (cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_EPYC_BERGAMO || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_RYZEN3))
+                    && (cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_EPYC_BERGAMO || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_RYZEN3 || cpuid_info.model == ZEN4_MI300A))
                 {
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating UMC uncore type for socket %d on AMD Zen4", affinity_thread2socket_lookup[cpu_id]);
                     type += (affinity_thread2socket_lookup[cpu_id] * AMD_K1A_UMC_MAX_UNITS);

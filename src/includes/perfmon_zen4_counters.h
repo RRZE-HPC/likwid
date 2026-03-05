@@ -162,7 +162,7 @@ static PerfEventUnit zen4_perf_event_units[NUM_UNITS] = {
     [CBOX0] = {"amd_l3", {
                              [EVENT_OPTION_TID] = "tid_en",
                              [EVENT_OPTION_CID] = "cid",
-                             [EVENT_OPTION_SLICE] = "slice",
+                             [EVENT_OPTION_SLICE] = "slice",	
                          }},
                          
 };

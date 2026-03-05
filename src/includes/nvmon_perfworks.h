@@ -38,14 +38,10 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #ifndef bool
-#define bool int
-#define LOCAL_BOOL_DEF
+#include <stdbool.h>
 #endif
 #include <cupti_profiler_target.h>
 #include <cupti_target.h>
-#ifdef LOCAL_BOOL_DEF
-#undef bool
-#endif
 
 #include <nvperf_cuda_host.h>
 #include <nvperf_host.h>
@@ -2012,6 +2008,11 @@ static int nvmon_perfworks_addEventSet(NvmonDevice_t device,
             .structSize = CUpti_Profiler_GetCounterAvailability_Params_STRUCT_SIZE,
             .ctx = device->context,
         };
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 13000
+        if (cuda_version >= 13000 && cuda_runtime_version >= 13000) {
+            getCounterAvailabilityParams.bAllowDeviceLevelCounters = 1;
+        }
+#endif
         CUPTI_CALL(cuptiProfilerGetCounterAvailability,
                     &getCounterAvailabilityParams);
 
