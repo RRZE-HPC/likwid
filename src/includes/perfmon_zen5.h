@@ -39,12 +39,20 @@
 static int perfmon_numCountersZen5 = NUM_COUNTERS_ZEN5;
 static int perfmon_numArchEventsZen5 = NUM_ARCH_EVENTS_ZEN5;
 
+int mypop32(int value) {
+    int c = 0;
+    for (int i = 0; i < 32; i++) {
+        if (value & (1<<i)) c++;
+    }
+    return c;
+}
+
 int zen5_init_counter_map(int num_in_counters, RegisterMap * in_counters, int* num_out_counters, RegisterMap ** out_counters) {
     unsigned eax = 0x80000022, ebx = 0x0, ecx = 0x0, edx = 0x0;
     CPUID(eax, ebx, ecx, edx);
     int umc_count = (ebx >> 16) & 0xFF;
-    int umc_units = bitMask_popcount(ecx);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Creating runtime counter map for AMD Zen5 with %d UMC units", umc_units);
+    int umc_units = mypop32(ecx);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Creating runtime counter map for AMD Zen5 with %d UMC units (mask 0x%X, from 0x%x)", umc_units, umc_count, ebx);
     if ((umc_count == 0) || (umc_units == 0)) {
         RegisterMap * out = malloc(num_in_counters * sizeof(RegisterMap));
         if (!out) {
@@ -55,6 +63,7 @@ int zen5_init_counter_map(int num_in_counters, RegisterMap * in_counters, int* n
         *out_counters = out;
     } else {
         int umc_pmcs = umc_count/umc_units;
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Each UMC unit provides %d counters", umc_pmcs);
         int outcount = 0;
         
         RegisterMap * out = malloc((num_in_counters + umc_count) * sizeof(RegisterMap));
@@ -71,8 +80,8 @@ int zen5_init_counter_map(int num_in_counters, RegisterMap * in_counters, int* n
                 out_umc->index = num_in_counters+umcoff;
                 out_umc->type = unit_type;
                 snprintf(out_umc->key, 127, "UMC%dC%d", i, j);
-                out_umc->configRegister = MSR_AMD1A_UMC_PERFEVTSEL0 + umcoff;
-                out_umc->counterRegister = MSR_AMD1A_UMC_PMC0 + umcoff;
+                out_umc->configRegister = MSR_AMD19_UMC_PERFEVTSEL0 + (umcoff * 2);
+                out_umc->counterRegister = MSR_AMD19_UMC_PMC0 + (umcoff * 2);
                 out_umc->counterRegister2 = 0x0;
                 out_umc->device = MSR_DEV;
                 out_umc->optionMask = ZEN5_VALID_OPTIONS_UMC;

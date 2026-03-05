@@ -71,8 +71,8 @@ int zen4c_init_counter_map(int num_in_counters, RegisterMap * in_counters, int* 
                 out_umc->index = num_in_counters+umcoff;
                 out_umc->type = unit_type;
                 snprintf(out_umc->key, 127, "UMC%dC%d", i, j);
-                out_umc->configRegister = MSR_AMD19_UMC_PERFEVTSEL0 + umcoff;
-                out_umc->counterRegister = MSR_AMD19_UMC_PMC0 + umcoff;
+                out_umc->configRegister = MSR_AMD19_UMC_PERFEVTSEL0 + (umcoff * 2);
+                out_umc->counterRegister = MSR_AMD19_UMC_PMC0 + (umcoff * 2);
                 out_umc->counterRegister2 = 0x0;
                 out_umc->device = MSR_DEV;
                 out_umc->optionMask = ZEN4C_VALID_OPTIONS_UMC;
