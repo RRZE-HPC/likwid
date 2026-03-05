@@ -850,12 +850,12 @@ extern int gpustr_to_gpulist_cuda(const char *gpustr, int *gpulist, int length)
 Reads the GPU selection string and fills the given list with the GPU numbers
 defined in the selection string.
 @param [in] gpustr Selection string
-@param [out] gpulist List of available ROCM GPU
-@param [in] length Length of GPU list
-@return error code (>0 on success for the returned list length, -ERRORCODE on
+@param [out] gpuIds List of available ROCM GPU
+@param [out] numGpus Length of GPU list
+@return error code (0 on success for the returned list length, -ERRORCODE on
 failure)
 */
-extern int gpustr_to_gpulist_rocm(const char *gpustr, int *gpulist, int length)
+extern int gpustr_to_gpulist_rocm(const char *gpustr, int **gpuIds, size_t *numGpus)
     __attribute__((visibility("default")));
 
 #endif /* LIKWID_WITH_ROCMON */

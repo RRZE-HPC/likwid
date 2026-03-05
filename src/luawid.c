@@ -75,9 +75,6 @@ static int config_isInitialized = 0;
 static int nvmon_initialized = 0;
 static int cudatopology_isInitialized = 0;
 #endif
-#ifdef LIKWID_WITH_ROCMON
-static int rocmon_initialized = 0;
-#endif
 
 /* #####   VARIABLES  -  EXPORTED VARIABLES   ############################# */
 
