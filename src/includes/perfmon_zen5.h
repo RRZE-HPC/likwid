@@ -51,8 +51,8 @@ int zen5_init_counter_map(int num_in_counters, RegisterMap * in_counters, int* n
     unsigned eax = 0x80000022, ebx = 0x0, ecx = 0x0, edx = 0x0;
     CPUID(eax, ebx, ecx, edx);
     int umc_count = (ebx >> 16) & 0xFF;
-    int umc_units = mypop32(ecx);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Creating runtime counter map for AMD Zen5 with %d UMC units (mask 0x%X, from 0x%x)", umc_units, umc_count, ebx);
+    int umc_units = bitMask_popcount(ecx);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Creating runtime counter map for AMD Zen5 with %d UMC units", umc_units);
     if ((umc_count == 0) || (umc_units == 0)) {
         RegisterMap * out = malloc(num_in_counters * sizeof(RegisterMap));
         if (!out) {
