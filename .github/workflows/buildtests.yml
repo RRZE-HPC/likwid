@@ -28,23 +28,64 @@ jobs:
       run: make COMPILER=GCCARM ACCESSMODE=perf_event BUILD_SYSFEATURES=true -j
 
   build-x86-cuda:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{matrix.version.os-maj}}.${{matrix.version.os-min}}
     strategy:
       fail-fast: false
       matrix:
         # You can find the available versions here:
         # https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/
-        cuda_version: [ "12-5", "12-6", "12-8", "12-9", "13-0", "13-1" ]
+        version:
+        # ubuntu 22.04
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 11-7
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 11-8
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 12-0
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 12-1
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 12-2
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 12-3
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 12-4
+        # ubuntu 24.04
+        - os-maj: "24"
+          os-min: "04"
+          cuda: 12-5
+        - os-maj: "24"
+          os-min: "04"
+          cuda: 12-6
+        - os-maj: "24"
+          os-min: "04"
+          cuda: 12-8
+        - os-maj: "24"
+          os-min: "04"
+          cuda: 12-9
+        - os-maj: "24"
+          os-min: "04"
+          cuda: 13-0
+        - os-maj: "24"
+          os-min: "04"
+          cuda: 13-1
     steps:
     - uses: actions/checkout@v2
-    - name: Install CUDA ${{matrix.cuda_version}}
+    - name: Install CUDA ${{matrix.version.cuda}}
       run: |
         sudo apt update
         sudo apt install wget
-        wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
+        wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${{matrix.version.os-maj}}${{matrix.version.os-min}}/x86_64/cuda-keyring_1.1-1_all.deb
         sudo dpkg -i cuda-keyring_1.1-1_all.deb
         sudo apt update
-        sudo apt install cuda-toolkit-${{matrix.cuda_version}} cuda-cupti-dev-${{matrix.cuda_version}}
+        sudo apt install cuda-toolkit-${{matrix.version.cuda}} cuda-cupti-dev-${{matrix.version.cuda}}
     - name: make -j$(nproc)
       run: CUDA_HOME=/usr/local/cuda make ACCESSMODE=accessdaemon NVIDIA_INTERFACE=true
 
