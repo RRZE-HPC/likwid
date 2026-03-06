@@ -72,10 +72,10 @@
 typedef struct {
     char* region;
     int group;
-} LikwidThreadKey;
+} LikwidRegionKey;
 
 typedef struct {
-    LikwidThreadKey* k;
+    LikwidRegionKey* k;
     LikwidThreadResults* v;
 } _libperfctr_result_map_Entry;
 
@@ -84,7 +84,7 @@ static inline void libperfctr_result_copy(void* dst, const void* src) {
     _libperfctr_result_map_Entry* d = (_libperfctr_result_map_Entry*)dst;
 
     // Copy key
-    d->k = lw_malloc(sizeof(LikwidThreadKey));
+    d->k = lw_malloc(sizeof(LikwidRegionKey));
     size_t len = (strlen(s->k->region) < LIKWID_MARKER_MAX_REGION_NAME-1 ? strlen(s->k->region) : LIKWID_MARKER_MAX_REGION_NAME-1);
     d->k->region = lw_malloc(len + 1);
     memcpy(d->k->region, s->k->region, len + 1);
@@ -120,7 +120,7 @@ static inline void libperfctr_result_dtor(void* val) {
 
 
 static inline size_t libperfctr_result_hash(const void* val) {
-    LikwidThreadKey * const e = *(LikwidThreadKey * const*)val;
+    LikwidRegionKey * const e = *(LikwidRegionKey * const*)val;
     size_t len = strlen(e->region);
     CWISS_FxHash_State state = 0;
     CWISS_FxHash_Write(&state, e->region, len);
@@ -129,19 +129,19 @@ static inline size_t libperfctr_result_hash(const void* val) {
 }
 
 static inline bool libperfctr_result_eq(const void* a, const void* b) {
-    const LikwidThreadKey* ap = *(const LikwidThreadKey* const*)a;
-    const LikwidThreadKey* bp = *(const LikwidThreadKey* const*)b;
+    const LikwidRegionKey* ap = *(const LikwidRegionKey* const*)a;
+    const LikwidRegionKey* bp = *(const LikwidRegionKey* const*)b;
     return strcmp(ap->region, bp->region) == 0 && ap->group == bp->group;
 }
 
 
-CWISS_DECLARE_NODE_MAP_POLICY(libperfctr_result_policy, LikwidThreadKey*, LikwidThreadResults*,
+CWISS_DECLARE_NODE_MAP_POLICY(libperfctr_result_policy, LikwidRegionKey*, LikwidThreadResults*,
                               (obj_copy, libperfctr_result_copy),
                               (obj_dtor, libperfctr_result_dtor),
                               (key_hash, libperfctr_result_hash),
                               (key_eq, libperfctr_result_eq));
 
-CWISS_DECLARE_HASHMAP_WITH(libperfctr_result_map, LikwidThreadKey*, LikwidThreadResults*, libperfctr_result_policy);
+CWISS_DECLARE_HASHMAP_WITH(libperfctr_result_map, LikwidRegionKey*, LikwidThreadResults*, libperfctr_result_policy);
 
 typedef struct {
     int id;
@@ -150,6 +150,7 @@ typedef struct {
     int thread_id;
     int active_group;
     pthread_t pthread;
+    int region_ctr;
     libperfctr_result_map regions;
 } LikwidMarkerThread;
 
@@ -172,6 +173,7 @@ static inline void libperfctr_thread_copy(void* dst, const void* src) {
     d->v->active_group = s->v->active_group;
     d->v->pthread = s->v->pthread;
     d->v->regions = libperfctr_result_map_dup(&s->v->regions);
+    d->v->region_ctr = s->v->region_ctr;
 }
 
 static inline void libperfctr_thread_dtor(void* val) {
@@ -208,9 +210,13 @@ static int *_libperfctr_thread_2_hwthread = NULL;
 static int _libperfctr_init = 0;
 static int _libperfctr_verbosity = DEBUGLEV_ONLY_ERROR;
 static int _libperfctr_num_groups = 0;
-static int *_libperfctr_groups;
+static int *_libperfctr_groups = NULL;
 static int _libperfctr_use_locks = 0;
 static pthread_mutex_t _libperfctr_lock = PTHREAD_MUTEX_INITIALIZER;
+
+
+static LikwidRegionKey* _libperfctr_region_create = NULL;
+static int _libperfctr_num_region_create = 0;
 
 
 static double
@@ -251,6 +257,28 @@ calculateMarkerResult(RegisterIndex index, uint64_t start, uint64_t stop, int ov
     return result;
 }
 
+int libperfctr_add_region_order(const char* tag, int group) {
+    pthread_mutex_lock(&_libperfctr_lock);
+    int idx = -1;
+    for (int i = 0; i < _libperfctr_num_region_create; i++) {
+        LikwidRegionKey* reg = &_libperfctr_region_create[i];
+        if (reg->group == group && strncmp(reg->region, tag, strlen(reg->region)) == 0) {
+            idx = i;
+            break;
+        }
+    }
+    if (idx < 0) {
+        LikwidRegionKey* tmp = lw_realloc(_libperfctr_region_create, (_libperfctr_num_region_create+1) * sizeof(LikwidRegionKey));
+        tmp[_libperfctr_num_region_create].region = lw_strdup(tag);
+        tmp[_libperfctr_num_region_create].group = group;
+        _libperfctr_region_create = tmp;
+        _libperfctr_num_region_create++;
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Register new region %s for group %d", tag, group);
+    }
+    pthread_mutex_unlock(&_libperfctr_lock);
+    return 0;
+}
+
 
 int libperfctr_get_thread(uint64_t id, LikwidMarkerThread** thread) {
     pthread_mutex_lock(&_libperfctr_lock);
@@ -264,6 +292,7 @@ int libperfctr_get_thread(uint64_t id, LikwidMarkerThread** thread) {
             .pthread = pthread_self(),
             .regions = libperfctr_result_map_new(10),
             .active_group = 0,
+            .region_ctr = 0,
         };
         for (int i = 0; i < _libperfctr_num_hwthreads; i++) {
             if (_libperfctr_thread_2_hwthread[i] == t.hwthread_id) {
@@ -300,20 +329,21 @@ int libperfctr_get_thread(uint64_t id, LikwidMarkerThread** thread) {
 }
 
 int libperfctr_add_region(LikwidMarkerThread* thread, const char* regionTag, LikwidThreadResults** results) {
-    LikwidThreadKey key = {
+    LikwidRegionKey key = {
         .region = (char*)regionTag,
         .group = thread->active_group,
     };
-    LikwidThreadKey* const keyptr = &key;
+    LikwidRegionKey* const keyptr = &key;
+    int gid = perfmon_getIdOfActiveGroup();
 
     DEBUG_PRINT(DEBUGLEV_DEVELOP, "ADD Query for region %s group %d in thread %d", regionTag, thread->active_group, thread->process_id);
     if (!libperfctr_result_map_contains(&thread->regions, &keyptr)) {
         LikwidThreadResults res = {
             .label = bfromcstr(regionTag),
             .count = 0,
-            .index = 0,
+            .index = thread->region_ctr++,
             .time = 0,
-            .groupID = groupSet->activeGroup,
+            .groupID = gid,
             .state = MARKER_STATE_NEW,
             .cpuID = thread->hwthread_id,
             .startTime.start.int64 = 0,
@@ -330,6 +360,7 @@ int libperfctr_add_region(LikwidMarkerThread* thread, const char* regionTag, Lik
             DEBUG_PRINT(DEBUGLEV_DEVELOP, "Inserted region %s for thread %d", regionTag, thread->process_id);
         }
         bdestroy(res.label);
+        libperfctr_add_region_order(regionTag, gid);
     }
     if (results) {
         int found = 0;
@@ -352,11 +383,11 @@ int libperfctr_add_region(LikwidMarkerThread* thread, const char* regionTag, Lik
 
 int libperfctr_get_region(LikwidMarkerThread* thread, const char* regionTag, LikwidThreadResults** results) {
     DEBUG_PRINT(DEBUGLEV_DEVELOP, "GET Searching for region %s for thread %d", regionTag, thread->process_id);
-    LikwidThreadKey key = {
+    LikwidRegionKey key = {
         .region = (char*)regionTag,
         .group = thread->active_group,
     };
-    LikwidThreadKey* const keyptr = &key;
+    LikwidRegionKey* const keyptr = &key;
     libperfctr_result_map_Iter iter = libperfctr_result_map_find(&thread->regions, &keyptr);
     int found = 0;
     for (libperfctr_result_map_Entry *re = libperfctr_result_map_Iter_get(&iter); re != NULL; re = libperfctr_result_map_Iter_next(&iter)) {
@@ -963,23 +994,25 @@ likwid_markerWriteFile(const char* markerfile)
         for (int j=0; j<numberOfThreads; j++)
         {
             int count = perfmon_getCountOfRegion(i, j);
-            double time = perfmon_getTimeOfRegion(i, j);
-            bstring l = bformat("%d %d %d %u %e %d ", newRegionID,
-                                                      groupID,
-                                                      cpulist[j],
-                                                      count,
-                                                      time,
-                                                      nevents);
+            if (count > 0) {
+                double time = perfmon_getTimeOfRegion(i, j);
+                bstring l = bformat("%d %d %d %u %e %d ", newRegionID,
+                                                          groupID,
+                                                          cpulist[j],
+                                                          count,
+                                                          time,
+                                                          nevents);
 
-            for (int k=0; k < MIN(nevents, NUM_PMC); k++)
-            {
-                bstring tmp = bformat("%e ", perfmon_getResultOfRegionThread(i, k, j));
-                bconcat(l, tmp);
-                bdestroy(tmp);
+                for (int k=0; k < MIN(nevents, NUM_PMC); k++)
+                {
+                    bstring tmp = bformat("%e ", perfmon_getResultOfRegionThread(i, k, j));
+                    bconcat(l, tmp);
+                    bdestroy(tmp);
+                }
+                fprintf(file,"%s\n", bdata(l));
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(l));
+                bdestroy(l);
             }
-            fprintf(file,"%s\n", bdata(l));
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "%s", bdata(l));
-            bdestroy(l);
         }
         newRegionID++;
     }
@@ -1000,25 +1033,19 @@ void likwid_markerClose(void) {
         return;
     }
 
-    int numberOfThreads = 0;
-    int numberOfRegions = 0;
-    libperfctr_thread_map_Iter iter = libperfctr_thread_map_iter(&_libperfctr_thread_map);
-    for (libperfctr_thread_map_Entry* p = libperfctr_thread_map_Iter_get(&iter); p != NULL; p = libperfctr_thread_map_Iter_next(&iter)) {
-        LikwidMarkerThread* thread = (LikwidMarkerThread*)p->val;
-        int regions = libperfctr_result_map_size(&thread->regions);
-        numberOfRegions = (regions > numberOfRegions ? regions : numberOfRegions);
-        numberOfThreads++;
-    }
+    int numberOfThreads = libperfctr_thread_map_size(&_libperfctr_thread_map);
+    int numberOfRegions = _libperfctr_num_region_create;
 
-    int num_res = 0;
+    //int num_res = 0;
     LikwidResults *res = lw_malloc(numberOfRegions * sizeof(LikwidResults));
     for (int i = 0; i < numberOfRegions; i++) {
+        res[i].threadCount = 0;
         res[i].time = lw_malloc(numberOfThreads * sizeof(double));
         memset(res[i].time, 0, numberOfThreads * sizeof(double));
         res[i].count = lw_malloc(numberOfThreads * sizeof(uint32_t));
         memset(res[i].count, 0, numberOfThreads * sizeof(uint32_t));
         res[i].cpulist = lw_malloc(numberOfThreads * sizeof(int));
-        memset(res[i].cpulist, 0, numberOfThreads * sizeof(int));
+        memset(res[i].cpulist, -1, numberOfThreads * sizeof(int));
         res[i].counters = lw_malloc(numberOfThreads * sizeof(double*));
         for (int j = 0; j < numberOfThreads; j++) {
             res[i].counters[j] = lw_malloc(NUM_PMC * sizeof(double));
@@ -1026,39 +1053,38 @@ void likwid_markerClose(void) {
         }
     }
 
-    libperfctr_thread_map_Iter titer = libperfctr_thread_map_iter(&_libperfctr_thread_map);
-    for (libperfctr_thread_map_Entry* te = libperfctr_thread_map_Iter_get(&titer); te != NULL; te = libperfctr_thread_map_Iter_next(&titer)) {
-        LikwidMarkerThread* thread = (LikwidMarkerThread*)te->val;
-        libperfctr_result_map_Iter riter = libperfctr_result_map_iter(&thread->regions);
-        for (libperfctr_result_map_Entry *re = libperfctr_result_map_Iter_get(&riter); re != NULL; re = libperfctr_result_map_Iter_next(&riter)) {
-            LikwidThreadResults* tdata = (LikwidThreadResults*)re->val;
-            int ridx = -1;
-            for (int k = 0; k < num_res; k++) {
-                LikwidResults * rres = &res[k];
-                bstring teststr = bformat("%s-%d", bdata(tdata->label), tdata->groupID);
-                if (bstrcmp(rres->tag, teststr) == BSTR_OK) {
-                    ridx = k;
+    for (int i = 0; i < numberOfRegions; i++) {
+        LikwidRegionKey *key = &_libperfctr_region_create[i];
+        LikwidResults * rres = &res[i];
+        rres->tag = bformat("%s-%d", key->region, key->group);
+        rres->groupID = key->group;
+        rres->eventCount = perfmon_getNumberOfEvents(key->group);
+        LikwidRegionKey* const keyptr = key;
+        bstring bregion = bfromcstr(key->region);
+
+        libperfctr_thread_map_Iter titer = libperfctr_thread_map_iter(&_libperfctr_thread_map);
+        for (libperfctr_thread_map_Entry* te = libperfctr_thread_map_Iter_get(&titer); te != NULL; te = libperfctr_thread_map_Iter_next(&titer)) {
+            LikwidMarkerThread* thread = (LikwidMarkerThread*)te->val;
+            libperfctr_result_map_Iter iter = libperfctr_result_map_find(&thread->regions, &keyptr);
+            for (libperfctr_result_map_Entry *re = libperfctr_result_map_Iter_get(&iter); re != NULL; re = libperfctr_result_map_Iter_next(&iter)) {
+                LikwidThreadResults* tdata = (LikwidThreadResults*)re->val;
+                if (key->group == tdata->groupID && bstrcmp(bregion, tdata->label) == BSTR_OK) {
+                    rres->time[thread->thread_id] = tdata->time;
+                    rres->count[thread->thread_id] = tdata->count;
+                    rres->cpulist[thread->thread_id] = tdata->cpuID;
+                    rres->threadCount++;
+                    memcpy(rres->counters[thread->thread_id], tdata->PMcounters, NUM_PMC * sizeof(double));
                 }
-                bdestroy(teststr);
-            }
-            if (ridx < 0) {
-                // new region result
-                LikwidResults * rres = &res[num_res];
-                rres->tag = bformat("%s-%d", bdata(tdata->label), tdata->groupID);
-                rres->groupID = tdata->groupID;
-                rres->eventCount = groupSet->groups[tdata->groupID].numberOfEvents;
-                ridx = num_res;
-                num_res++;
-            }
-            if (ridx >= 0 && ridx < numberOfRegions) {
-                LikwidResults * rres = &res[ridx];
-                rres->time[thread->thread_id] = tdata->time;
-                rres->count[thread->thread_id] = tdata->count;
-                rres->cpulist[thread->thread_id] = tdata->cpuID;
-                rres->threadCount++;
-                memcpy(rres->counters[thread->thread_id], tdata->PMcounters, NUM_PMC * sizeof(double));
             }
         }
+        for (int i = 0; i < numberOfThreads; i++) {
+            if (rres->cpulist[i] < 0) {
+                for (int j = i; j < numberOfThreads-1; j++) {
+                    rres->cpulist[j] = rres->cpulist[j+1];
+                }
+            }
+        }
+        bdestroy(bregion);
     }
 
     markerResults = res;
