@@ -2,7 +2,7 @@ name: LIKWID Build Tests
 
 on:
   push:
-    branches: [ master, gh-actions-cuda-rocm ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
