@@ -2008,8 +2008,8 @@ static int nvmon_perfworks_addEventSet(NvmonDevice_t device,
             .structSize = CUpti_Profiler_GetCounterAvailability_Params_STRUCT_SIZE,
             .ctx = device->context,
         };
-#if defined(CUDART_VERSION) && CUDART_VERSION >= 13000
-        if (cuda_version >= 13000 && cuda_runtime_version >= 13000) {
+#if defined(CUDART_VERSION) && CUDART_VERSION >= 13010
+        if (cuda_version >= 13010 && cuda_runtime_version >= 13010) {
             getCounterAvailabilityParams.bAllowDeviceLevelCounters = 1;
         }
 #endif
