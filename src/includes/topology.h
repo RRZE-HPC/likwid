@@ -165,6 +165,7 @@ struct topology_functions {
 #define ZEN4_MI300A     0x90
 #define ZEN5_EPYC       0x02
 #define ZEN5C_EPYC       0x11
+#define ZEN6_RYZEN       0x50 // TODO
 
 /* ARM */
 #define  ARM7L          0x3U
