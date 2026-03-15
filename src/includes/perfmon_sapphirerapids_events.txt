@@ -149,6 +149,20 @@ EVENT_L2_REQUEST                        0x24 PMC
 UMASK_L2_REQUEST_MISS                   0x3F
 UMASK_L2_REQUEST_ALL                    0xFF
 
+# Not officially supported but only way to
+# measure evicts from L1 to L2.
+# The only officially released event is L2_TRANS_L2_WB
+# Added by Thomas Gruber
+EVENT_L2_TRANS                          0x23 PMC
+UMASK_L2_TRANS_DEMAND_DATA_RD           0x01
+UMASK_L2_TRANS_RFO                      0x02
+UMASK_L2_TRANS_CODE_RD                  0x04
+UMASK_L2_TRANS_ALL_PF                   0x08
+UMASK_L2_TRANS_L1D_WB                   0x10
+UMASK_L2_TRANS_L2_FILL                  0x20
+UMASK_L2_TRANS_L2_WB                    0x40
+UMASK_L2_TRANS_ALL_REQUESTS             0x80
+
 EVENT_L2_LINES_IN                       0x25 PMC
 UMASK_L2_LINES_IN_ALL                   0x1F
 
@@ -247,6 +261,10 @@ EVENT_ICACHE_DATA                       0x80 PMC
 UMASK_ICACHE_DATA_STALLS                0x04
 
 EVENT_ICACHE_TAG                        0x83 PMC
+# HIT, MISS and ALL added by Thomas Gruber
+UMASK_ICACHE_TAG_HIT                    0x01
+UMASK_ICACHE_TAG_MISS                   0x02
+UMASK_ICACHE_TAG_ALL                    0x03
 UMASK_ICACHE_TAG_STALLS                 0x04
 
 EVENT_DECODE_LCP                        0x87 PMC
