@@ -957,8 +957,9 @@ Acquires all performance monitoring counters previously released by
 perfmon_releaseCounters(), takes the same parameters as perfmon_init(...).
 @param [in] nrThreads (Number of Threads)
 @param [in] threadsToCpu (List of CPUs)
+@return error code (0 on success, -ERRORCODE on failure)
 */
-extern void perfmon_acquireCounters(int nrThreads, const int* threadsToCpu) 
+extern int perfmon_acquireCounters(int nrThreads, const int* threadsToCpu) 
     __attribute__((visibility("default")));
 /*! \brief Start performance monitoring counters
 
