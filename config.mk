@@ -91,12 +91,12 @@ INSTALLED_FREQDAEMON = $(INSTALLED_SBINPREFIX)/likwid-setFreq#NO SPACE
 # Build the appDaemon. It's not really a daemon but an LD_PRELOAD library
 # It is required to get access to the application context.
 BUILDAPPDAEMON=true
-APPDAEMON = $(PREFIX)/lib/likwid-appDaemon.so#NO SPACE
-INSTALLED_APPDAEMON = $(INSTALLED_PREFIX)/lib/likwid-appDaemon.so#NO SPACE
+APPDAEMON = $(LIBPREFIX)/likwid-appDaemon.so#NO SPACE
+INSTALLED_APPDAEMON = $(INSTALLED_LIBPREFIX)/likwid-appDaemon.so#NO SPACE
 
 # Build the container helper.
-TMP_CONTAINER_HELPER = $(PREFIX)/sbin/likwid-bridge
-INSTALLED_CONTAINER_HELPER = $(INSTALLED_PREFIX)/sbin/likwid-bridge
+CONTAINER_HELPER = $(SBINPREFIX)/likwid-bridge
+INSTALLED_CONTAINER_HELPER = $(INSTALLED_SBINPREFIX)/likwid-bridge
 
 # chown installed tools to this user/group
 # if you change anything here, make sure that the user/group can access
