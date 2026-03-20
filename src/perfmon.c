@@ -699,7 +699,6 @@ calculateResult(int groupId, int eventId, int threadId)
     PerfmonCounter* counter;
     int cpu_id;
     double result = 0.0;
-    uint64_t maxValue = 0ULL;
     if (groupSet->groups[groupId].events[eventId].type == NOTYPE)
         return result;
 
@@ -711,11 +710,11 @@ calculateResult(int groupId, int eventId, int threadId)
     }
     else if (counter->overflows > 0)
     {
-        maxValue = perfmon_getMaxCounterValue(counter_map[event->index].type);
-        result += (double) ((maxValue - counter->startData) + counter->counterData);
+        const double overflowPivotValue = ldexp(1.0, box_map[counter_map[event->index].type].regWidth);
+        result += overflowPivotValue - (double)counter->startData + (double)counter->counterData;
         if (counter->overflows > 1)
         {
-            result += (double) ((counter->overflows-1) * maxValue);
+            result += (double)(counter->overflows - 1) * overflowPivotValue;
         }
         counter->overflows = 0;
     }
