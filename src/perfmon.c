@@ -36,6 +36,8 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
+#include <errno.h>
+#include <limits.h>
 #include <unistd.h>
 #include <sys/types.h>
 
@@ -4296,14 +4298,25 @@ perfmon_readMarkerFile(const char* filename)
             long parsed_id;
 
             buf[strcspn(buf, "\r\n")] = '\0';
+            errno = 0;
             parsed_id = strtol(buf, &colon_ptr, 10);
-            if (colon_ptr == buf || *colon_ptr != ':')
+            if (errno == ERANGE || colon_ptr == buf || *colon_ptr != ':')
             {
                 fprintf(stderr, "Line %s not a valid region description\n", buf);
                 continue;
             }
             colon_ptr++;
+            if (parsed_id < 0 || parsed_id > INT_MAX)
+            {
+                fprintf(stderr, "Line %s has out-of-range region ID\n", buf);
+                continue;
+            }
             regionid = (int)parsed_id;
+            if (regionid < 0 || regionid >= regions)
+            {
+                fprintf(stderr, "Line %s has invalid region ID %d\n", buf, regionid);
+                continue;
+            }
             snprintf(regiontag, sizeof(regiontag), "%s", colon_ptr);
             ptr = strrchr(regiontag,'-');
             if (ptr == NULL)
@@ -4328,6 +4341,11 @@ perfmon_readMarkerFile(const char* filename)
             if (ret != 7)
             {
                 fprintf(stderr, "Line %s not a valid region values line\n", buf);
+                continue;
+            }
+            if (regionid < 0 || regionid >= regions)
+            {
+                fprintf(stderr, "Line %s has invalid region ID %d\n", buf, regionid);
                 continue;
             }
             if (cpu >= 0)
