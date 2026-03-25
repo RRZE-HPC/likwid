@@ -4283,6 +4283,7 @@ perfmon_readMarkerFile(const char* filename)
             }
             break;
         }
+        markerResults[i].tag = NULL;
     }
     while (fgets(buf, sizeof(buf), fp))
     {
