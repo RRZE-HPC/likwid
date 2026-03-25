@@ -4283,6 +4283,7 @@ perfmon_readMarkerFile(const char* filename)
             }
             break;
         }
+        markerResults[i].tag = NULL;
     }
     while (fgets(buf, sizeof(buf), fp))
     {
@@ -4299,7 +4300,7 @@ perfmon_readMarkerFile(const char* filename)
             // the size of regiontag, thus to avoid hardcoding N, compose fmt from the size of regiontag, e.g.:
             //      regiontag[50]  --> %d:%49c
             //      regiontag[100] --> %d:%99c
-            snprintf(fmt, 60, "%s:%s%ic", "%d", "%", (int) (sizeof(regiontag) - 1));
+            snprintf(fmt, 60, "%s:%s%is", "%d", "%", (int) (sizeof(regiontag) - 1));
             // use fmt (%d:%Nc) in lieu of %d:%s to support spaces
             ret = sscanf(buf, fmt, &regionid, regiontag);
 
