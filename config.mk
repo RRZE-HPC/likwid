@@ -39,7 +39,7 @@ NVIDIA_INTERFACE = false#NO SPACE
 ROCM_INTERFACE = false#NO SPACE
 
 # Build experimental sysfeatures interface and Lua CLI application
-BUILD_SYSFEATURES = false#NO SPACE
+BUILD_SYSFEATURES = true#NO SPACE
 
 # Build container helper
 CONTAINER_HELPER = false#NO SPACE
