@@ -4291,30 +4291,31 @@ perfmon_readMarkerFile(const char* filename)
     {
         if (strchr(buf,':'))
         {
-            int regionid = 0, groupid = -1;
+            uint32_t regionid = 0;
+            int groupid = -1;
             char regiontag[140];
             char* ptr = NULL;
             char* colon_ptr = NULL;
-            long parsed_id;
+            unsigned long parsed_id;
 
             buf[strcspn(buf, "\r\n")] = '\0';
             errno = 0;
-            parsed_id = strtol(buf, &colon_ptr, 10);
+            parsed_id = strtoul(buf, &colon_ptr, 10);
             if (errno == ERANGE || colon_ptr == buf || *colon_ptr != ':')
             {
                 fprintf(stderr, "Line %s not a valid region description\n", buf);
                 continue;
             }
             colon_ptr++;
-            if (parsed_id < 0 || parsed_id > INT_MAX)
+            if (buf[0] == '-' || parsed_id > UINT32_MAX)
             {
                 fprintf(stderr, "Line %s has out-of-range region ID\n", buf);
                 continue;
             }
-            regionid = (int)parsed_id;
-            if (regionid < 0 || regionid >= regions)
+            regionid = (uint32_t)parsed_id;
+            if (regionid >= regions)
             {
-                fprintf(stderr, "Line %s has invalid region ID %d\n", buf, regionid);
+                fprintf(stderr, "Line %s has invalid region ID %u\n", buf, regionid);
                 continue;
             }
             snprintf(regiontag, sizeof(regiontag), "%s", colon_ptr);
@@ -4332,20 +4333,21 @@ perfmon_readMarkerFile(const char* filename)
         }
         else
         {
-            int regionid = 0, groupid = 0, cpu = 0, count = 0, nevents = 0;
+            uint32_t regionid = 0;
+            int groupid = 0, cpu = 0, count = 0, nevents = 0;
             int cpuidx = 0, eventidx = 0;
             double time = 0;
             char remain[1024];
             remain[0] = '\0';
-            ret = sscanf(buf, "%d %d %d %d %lf %d %[^\t\n]", &regionid, &groupid, &cpu, &count, &time, &nevents, remain);
+            ret = sscanf(buf, "%u %d %d %d %lf %d %[^\t\n]", &regionid, &groupid, &cpu, &count, &time, &nevents, remain);
             if (ret != 7)
             {
                 fprintf(stderr, "Line %s not a valid region values line\n", buf);
                 continue;
             }
-            if (regionid < 0 || regionid >= regions)
+            if (regionid >= regions)
             {
-                fprintf(stderr, "Line %s has invalid region ID %d\n", buf, regionid);
+                fprintf(stderr, "Line %s has invalid region ID %u\n", buf, regionid);
                 continue;
             }
             if (cpu >= 0)
