@@ -4288,21 +4288,34 @@ perfmon_readMarkerFile(const char* filename)
     {
         if (strchr(buf,':'))
         {
-            int regionid = 0, groupid = -1;
+            uint32_t regionid = 0;
+            int groupid = -1;
             char regiontag[140];
             char* ptr = NULL;
-            char* colonptr = NULL;
-            // zero out ALL of regiontag due to replacing %s with %Nc
-            memset(regiontag, 0, sizeof(regiontag) * sizeof(char));
-            char fmt[64];
-            // using %d:%s for sscanf doesn't support spaces so replace %s with %Nc where N is one minus
-            // the size of regiontag, thus to avoid hardcoding N, compose fmt from the size of regiontag, e.g.:
-            //      regiontag[50]  --> %d:%49c
-            //      regiontag[100] --> %d:%99c
-            snprintf(fmt, 60, "%s:%s%ic", "%d", "%", (int) (sizeof(regiontag) - 1));
-            // use fmt (%d:%Nc) in lieu of %d:%s to support spaces
-            ret = sscanf(buf, fmt, &regionid, regiontag);
+            char* colon_ptr = NULL;
+            unsigned long parsed_id;
 
+            buf[strcspn(buf, "\r\n")] = '\0';
+            errno = 0;
+            parsed_id = strtoul(buf, &colon_ptr, 10);
+            if (errno == ERANGE || colon_ptr == buf || *colon_ptr != ':')
+            {
+                fprintf(stderr, "Line %s not a valid region description\n", buf);
+                continue;
+            }
+            colon_ptr++;
+            if (buf[0] == '-' || parsed_id > UINT32_MAX)
+            {
+                fprintf(stderr, "Line %s has out-of-range region ID\n", buf);
+                continue;
+            }
+            regionid = (uint32_t)parsed_id;
+            if (regionid >= regions)
+            {
+                fprintf(stderr, "Line %s has invalid region ID %u\n", buf, regionid);
+                continue;
+            }
+            snprintf(regiontag, sizeof(regiontag), "%s", colon_ptr);
             ptr = strrchr(regiontag,'-');
             colonptr = strchr(buf,':');
             if (ret != 2 || ptr == NULL || colonptr == NULL)
@@ -4318,17 +4331,26 @@ perfmon_readMarkerFile(const char* filename)
         }
         else
         {
-            int regionid = 0, groupid = 0, cpu = 0, count = 0, nevents = 0;
+            uint32_t regionid = 0;
+            int groupid = 0, cpu = 0, count = 0, nevents = 0;
             int cpuidx = 0, eventidx = 0;
             double time = 0;
             char remain[1024];
             remain[0] = '\0';
-            ret = sscanf(buf, "%d %d %d %d %lf %d %[^\t\n]", &regionid, &groupid, &cpu, &count, &time, &nevents, remain);
+            ret = sscanf(buf, "%u %d %d %d %lf %d %[^\t\n]", &regionid, &groupid, &cpu, &count, &time, &nevents, remain);
             if (ret != 7)
             {
                 fprintf(stderr, "Line %s not a valid region values line\n", buf);
                 continue;
             }
+<<<<<<< HEAD
+=======
+            if (regionid >= regions)
+            {
+                fprintf(stderr, "Line %s has invalid region ID %u\n", buf, regionid);
+                continue;
+            }
+>>>>>>> 8c5b6907 (perfmon: use unsigned region IDs in marker parsing)
             if (cpu >= 0)
             {
                 cpuidx = regionCPUs[regionid];
