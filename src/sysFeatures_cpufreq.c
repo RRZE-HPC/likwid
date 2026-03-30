@@ -357,6 +357,79 @@ static const _SysFeatureList cpufreq_apple_cpufreq_feature_list = {
     .features = cpufreq_apple_cpufreq_features,
 };
 
+/* amd-pstate-epp driver */
+
+static int cpufreq_amd_pstate_epp_test(void)
+{
+    return cpufreq_driver_test("amd-pstate-epp");
+}
+
+static int cpufreq_amd_pstate_highest_perf_getter(const LikwidDevice_t device, char** value)
+{
+    return cpufreq_sysfs_getter(device, value, "amd_pstate_highest_perf");
+}
+
+static int cpufreq_amd_pstate_max_freq_getter(const LikwidDevice_t device, char** value)
+{
+    return cpufreq_sysfs_getter(device, value, "amd_pstate_max_freq");
+}
+
+static int cpufreq_amd_pstate_hw_prefcore_getter(const LikwidDevice_t device, char** value)
+{
+    return cpufreq_sysfs_getter(device, value, "amd_pstate_hw_prefcore");
+}
+
+static int cpufreq_amd_pstate_lowest_nonlinear_freq_getter(const LikwidDevice_t device, char** value)
+{
+    return cpufreq_sysfs_getter(device, value, "amd_pstate_lowest_nonlinear_freq");
+}
+
+
+static _SysFeature cpufreq_amd_pstate_epp_features[] = {
+    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"highest_perf", "cpu_freq", "Maximum CPPC performance", cpufreq_amd_pstate_highest_perf_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"max_freq", "cpu_freq", "Maximum CPPC frequency", cpufreq_amd_pstate_max_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"hw_prefcore", "cpu_freq", "Preferred core feature state", cpufreq_amd_pstate_hw_prefcore_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"lowest_nonlinear_freq", "cpu_freq", "Lowest non-linear CPPC CPU frequency", cpufreq_amd_pstate_lowest_nonlinear_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+};
+
+static const _SysFeatureList cpufreq_amd_pstate_epp_feature_list = {
+    .num_features = ARRAY_COUNT(cpufreq_amd_pstate_epp_features),
+    .tester = cpufreq_amd_pstate_epp_test,
+    .features = cpufreq_amd_pstate_epp_features,
+};
+
+
+/* amd-pstate driver */
+
+static int cpufreq_amd_pstate_test(void)
+{
+    return cpufreq_driver_test("amd-pstate");
+}
+
+static _SysFeature cpufreq_amd_pstate_features[] = {
+    {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"max_cpu_freq", "cpu_freq", "Maximal CPU frequency", cpufreq_intel_pstate_max_cpu_freq_getter, cpufreq_intel_pstate_max_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"boost", "cpu_freq", "Turbo boost", cpufreq_cppc_boost_getter, cpufreq_cppc_boost_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"highest_perf", "cpu_freq", "Maximum CPPC performance", cpufreq_amd_pstate_highest_perf_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"max_freq", "cpu_freq", "Maximum CPPC frequency", cpufreq_amd_pstate_max_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+    {"hw_prefcore", "cpu_freq", "Preferred core feature state", cpufreq_amd_pstate_hw_prefcore_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
+    {"lowest_nonlinear_freq", "cpu_freq", "Lowest non-linear CPPC CPU frequency", cpufreq_amd_pstate_lowest_nonlinear_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
+};
+
+static const _SysFeatureList cpufreq_amd_pstate_feature_list = {
+    .num_features = ARRAY_COUNT(cpufreq_amd_pstate_features),
+    .tester = cpufreq_amd_pstate_test,
+    .features = cpufreq_amd_pstate_features,
+};
+
 
 /* Energy Performance Preference */
 
@@ -458,6 +531,24 @@ int likwid_sysft_init_cpufreq(_SysFeatureList* out)
     {
         DEBUG_PRINT(DEBUGLEV_INFO, "Registering Apple cpufreq knobs for cpufreq");
         likwid_sysft_register_features(out, &cpufreq_apple_cpufreq_feature_list);
+        if (err < 0)
+        {
+            return err;
+        }
+    }
+    else if (cpufreq_amd_pstate_epp_test())
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, "Registering AMD pstate (amd-pstate=active) cpufreq knobs for cpufreq");
+        likwid_sysft_register_features(out, &cpufreq_amd_pstate_epp_feature_list);
+        if (err < 0)
+        {
+            return err;
+        }
+    }
+    else if (cpufreq_amd_pstate_test())
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, "Registering AMD pstate (amd-pstate=passive/guided) cpufreq knobs for cpufreq");
+        likwid_sysft_register_features(out, &cpufreq_amd_pstate_feature_list);
         if (err < 0)
         {
             return err;
