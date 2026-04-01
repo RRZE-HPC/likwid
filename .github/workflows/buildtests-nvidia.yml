@@ -67,6 +67,27 @@ jobs:
         - os-maj: "22"
           os-min: "04"
           cuda: 12-4
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 12-5
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 12-6
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 12-8
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 12-9
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 13-0
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 13-1
+        - os-maj: "22"
+          os-min: "04"
+          cuda: 13-2
         # ubuntu 24.04
         - os-maj: "24"
           os-min: "04"
@@ -86,6 +107,9 @@ jobs:
         - os-maj: "24"
           os-min: "04"
           cuda: 13-1
+        - os-maj: "24"
+          os-min: "04"
+          cuda: 13-2
     steps:
     - uses: actions/checkout@v6
     - name: Install CUDA ${{matrix.version.cuda}}

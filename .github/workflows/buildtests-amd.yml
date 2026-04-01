@@ -42,7 +42,7 @@ jobs:
       matrix:
         # You can find the available versions here:
         # https://repo.radeon.com/rocm/apt/
-        rocm_version: [ "7.0.3", "7.1.1", "7.2" ]
+        rocm_version: [ "7.0.3", "7.1.1", "7.2.1" ]
     steps:
     - uses: actions/checkout@v6
     - name: Install ROCm ${{matrix.rocm_version}}
