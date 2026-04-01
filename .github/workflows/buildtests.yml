@@ -10,20 +10,20 @@ jobs:
   build-x86-accessdaemon:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - name: make accessdaemon
       run: make ACCESSMODE=accessdaemon BUILD_SYSFEATURES=true -j
 
   build-x86-perfevent:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - name: make perf_event
       run: make ACCESSMODE=perf_event BUILD_SYSFEATURES=true -j
   build-aarch64-perfevent:
     runs-on: ubuntu-24.04-arm
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - name: make perf_event
       run: make COMPILER=GCCARM ACCESSMODE=perf_event BUILD_SYSFEATURES=true -j
 
@@ -77,7 +77,7 @@ jobs:
           os-min: "04"
           cuda: 13-1
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - name: Install CUDA ${{matrix.version.cuda}}
       run: |
         sudo apt update
@@ -98,7 +98,7 @@ jobs:
         # https://repo.radeon.com/rocm/apt/
         rocm_version: [ "7.0.3", "7.1.1", "7.2" ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - name: Install ROCm ${{matrix.rocm_version}}
       run: |
         sudo apt update
