@@ -1,0 +1,33 @@
+name: Weekly Release
+
+on:
+  schedule:
+    - cron: '0 18 * * 0' # every Sunday 20:00 CET (UTC + 2)
+
+jobs:
+  weekly-task:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for recent changes
+        id: changes
+        run: |
+          if git log --since="7 days ago" --oneline | grep .; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trigger weekly release
+        if: steps.changes.outputs.run == 'true'
+        run: |
+          VERSION=$(grep -E "^VERSION" config.mk | sed -e 's+VERSION\s*=\s*'+''+)
+          RELEASE=$(grep -E "^RELEASE" config.mk | sed -e 's+RELEASE\s*=\s*'+''+)
+          MINOR=$(grep -E "^MINOR" config.mk | sed -e 's+MINOR\s*=\s*'+''+)
+          TAGNAME="v${VERSION}.${RELEASE}.${MINOR}-weekly-$(date '+%s')"
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git tag "$TAGNAME"
+          git push origin "$TAGNAME"
