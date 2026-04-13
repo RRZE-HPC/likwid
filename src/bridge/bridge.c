@@ -49,10 +49,8 @@
 
 NORETURN_ATTR void access_daemon_main() {
     char *argv[1] = {NULL};
-    int ret = execvp("likwid-accessD", argv);
-    if (ret < 0) {
-        printf("Failed to start likwid-accessD daemon\n", ret);
-    }
+    execvp("likwid-accessD", argv);
+    perror("Failed to start likwid-accessD daemon\n", ret);
     exit(ret);
 }
 
