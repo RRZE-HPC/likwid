@@ -49,6 +49,7 @@
 
 #include <likwid.h>
 #include <tree.h>
+#include <error.h>
 
 #include <access.h>
 #include <bstrlib.h>
@@ -1805,7 +1806,7 @@ static void catch_sigchild(int signo) {
 }
 
 static int lua_likwid_startProgram(lua_State *L) {
-  pid_t pid, ppid;
+  pid_t pid;
   int status;
   char *exec;
   char *argv[MAX_NUM_CLIARGS];
@@ -1859,7 +1860,6 @@ static int lua_likwid_startProgram(lua_State *L) {
     free(cpus);
     return 0;
   }
-  ppid = getpid();
   pid = fork();
   if (pid < 0) {
     free(cpus);
@@ -1868,12 +1868,11 @@ static int lua_likwid_startProgram(lua_State *L) {
     if (nrThreads > 0) {
       affinity_pinProcesses(nrThreads, cpus);
     }
+    // Why is there a sleep here?
     timer_sleep(10);
-    status = execvp(*argv, argv);
-    if (status < 0) {
-      kill(ppid, SIGCHLD);
-    }
-    return 0;
+    execvp(*argv, argv);
+    ERROR_PRINT("Failed to run program '%s'", *argv);
+    exit(EXIT_FAILURE);
   } else {
     signal(SIGCHLD, catch_sigchild);
     free(cpus);
