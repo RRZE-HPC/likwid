@@ -1805,7 +1805,7 @@ static void catch_sigchild(int signo) {
 }
 
 static int lua_likwid_startProgram(lua_State *L) {
-  pid_t pid, ppid;
+  pid_t pid;
   int status;
   char *exec;
   char *argv[MAX_NUM_CLIARGS];
@@ -1859,7 +1859,6 @@ static int lua_likwid_startProgram(lua_State *L) {
     free(cpus);
     return 0;
   }
-  ppid = getpid();
   pid = fork();
   if (pid < 0) {
     free(cpus);
@@ -1869,11 +1868,9 @@ static int lua_likwid_startProgram(lua_State *L) {
       affinity_pinProcesses(nrThreads, cpus);
     }
     timer_sleep(10);
-    status = execvp(*argv, argv);
-    if (status < 0) {
-      kill(ppid, SIGCHLD);
-    }
-    return 0;
+    execvp(*argv, argv);
+    perror("execvp");
+    exit(EXIT_FAILURE);
   } else {
     signal(SIGCHLD, catch_sigchild);
     free(cpus);

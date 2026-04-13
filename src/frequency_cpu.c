@@ -308,7 +308,6 @@ freq_client_startDaemon()
     char *exeprog = TOSTRING(FREQDAEMON);
     struct sockaddr_un address;
     size_t address_length;
-    int  ret;
     pid_t pid;
     int timeout = 1000;
     int socket_fd = -1;
@@ -332,14 +331,9 @@ freq_client_startDaemon()
 /*            CPU_SET(cpu_id, &cpuset);*/
 /*            sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);*/
 /*        }*/
-        ret = execve (exeprog, newargv, newenv);
-
-        if (ret < 0)
-        {
-            //ERRNO_PRINT;
-            fprintf(stderr, "Failed to execute the daemon '%s'\n", exeprog);
-            return -1;
-        }
+        execve (exeprog, newargv, newenv);
+        ERROR_PRINT("Failed to execute the daemon '%s'\n", exeprog);
+        exit(EXIT_FAILURE);
     }
     else if (pid < 0)
     {
