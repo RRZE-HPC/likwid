@@ -167,7 +167,7 @@ access_client_startDaemon_direct(uint32_t cpu_id, struct sockaddr_un *address)
 /*            sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);*/
 /*        }*/
         execve (exeprog, newargv, newenv);
-        ERROR_PRINT("Failed to execute the daemon '%s'\n", exeprog);
+        ERROR_PRINT("Failed to execute the daemon '%s'", exeprog);
         exit(EXIT_FAILURE);
     }
     else if (pid < 0)
