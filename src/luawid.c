@@ -49,6 +49,7 @@
 
 #include <likwid.h>
 #include <tree.h>
+#include <error.h>
 
 #include <access.h>
 #include <bstrlib.h>
@@ -1867,9 +1868,10 @@ static int lua_likwid_startProgram(lua_State *L) {
     if (nrThreads > 0) {
       affinity_pinProcesses(nrThreads, cpus);
     }
+    // Why is there a sleep here?
     timer_sleep(10);
     execvp(*argv, argv);
-    perror("execvp");
+    ERROR_PRINT("Failed to run program '%s'", *argv);
     exit(EXIT_FAILURE);
   } else {
     signal(SIGCHLD, catch_sigchild);
