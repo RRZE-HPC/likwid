@@ -3777,6 +3777,15 @@ lua_likwid_getSysFeatureList(lua_State *L)
         lua_pushstring(L, "TypeID");
         lua_pushinteger(L, list.features[i].type);
         lua_settable(L,-3);
+        if (list.features[i].unit) {
+            lua_pushstring(L, "Unit");
+            lua_pushstring(L, list.features[i].unit);
+            lua_settable(L,-3);
+        } else {
+            lua_pushstring(L, "Unit");
+            lua_pushnil(L);
+            lua_settable(L,-3);
+        }
         lua_settable(L,-3);
     }
     likwid_sysft_list_return(&list);
@@ -3864,6 +3873,17 @@ static int lua_likwid_getDevices(lua_State *L, bool all)
     }
 
     free(id_list);
+    return 1;
+}
+
+static int lua_likwid_getAvailableDeviceTypes(lua_State *L)
+{
+    lua_newtable(L);
+    for (int i = MIN_DEVICE_TYPE; i < MAX_DEVICE_TYPE; i++) {
+        lua_pushstring(L, likwid_device_type_name(i));
+        lua_pushinteger(L, (int)(i));
+        lua_settable(L, -3);
+    }
     return 1;
 }
 
@@ -4028,9 +4048,31 @@ lua_likwid_sysFeaturesSupported(lua_State *L)
     return 1;
 }
 
+static int
+lua_likwid_getMajorVersion(lua_State *L) {
+    lua_pushnumber(L, likwid_getMajorVersion());
+    return 1;
+}
+
+static int
+lua_likwid_getMinorVersion(lua_State *L) {
+    lua_pushnumber(L, likwid_getMinorVersion());
+    return 1;
+}
+
+static int
+lua_likwid_getBugfixVersion(lua_State *L) {
+    lua_pushnumber(L, likwid_getBugfixVersion());
+    return 1;
+}
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
+  // Configuration functions
+  lua_register(L, "likwid_getMajorVersion", lua_likwid_getMajorVersion);
+  lua_register(L, "likwid_getMinorVersion", lua_likwid_getMinorVersion);
+  lua_register(L, "likwid_getBugfixVersion", lua_likwid_getBugfixVersion);
   // Configuration functions
   lua_register(L, "likwid_getConfiguration", lua_likwid_getConfiguration);
   lua_register(L, "likwid_setGroupPath", lua_likwid_setGroupPath);
@@ -4260,6 +4302,7 @@ int __attribute__((visibility("default"))) luaopen_liblikwid(lua_State *L) {
     lua_register(L, "likwid_createDevice",lua_likwid_createDevice);
     lua_register(L, "likwid_getAvailableDevices",lua_likwid_getAvailableDevices);
     lua_register(L, "likwid_getAllDevices",lua_likwid_getAllDevices);
+    lua_register(L, "likwid_getAvailableDeviceTypes", lua_likwid_getAvailableDeviceTypes);
 #endif /* LIKWID_WITH_SYSFEATURES */
 #ifdef __MIC__
   setuid(0);
