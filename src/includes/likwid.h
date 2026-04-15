@@ -3470,6 +3470,7 @@ typedef struct {
     LikwidDeviceType type; /*!< \brief Usable for these Likwid device type */
     unsigned int readonly; /*!< \brief Feature is read-only */
     unsigned int writeonly; /*!< \brief Feature is write-only */
+    char* unit; /*!< \brief Unit of feature values */
 } LikwidSysFeature;
 
 /*! \brief Structure holding a list of system feature specifications
