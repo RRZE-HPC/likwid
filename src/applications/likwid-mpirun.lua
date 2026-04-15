@@ -111,6 +111,7 @@ local perfexprs = {}
 local hostfile = nil
 local hosts = {}
 local perf = {}
+local group_switch_time = nil
 local mpitype = nil
 local slurm_involved = false
 local slurm_no_tasks_per_node = false
@@ -1612,6 +1613,9 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
                 table.insert(cmd,"-m")
             end
             cpuexpr_opt = "-C"
+            if group_switch_time ~= nil then
+                table.insert(cmd, string.format("-T %s", group_switch_time))
+            end
         else
             table.insert(cmd, LIKWID_PIN)
             table.insert(cmd,"-q")
@@ -2161,6 +2165,7 @@ local cmd_options = {"h","help", -- default options for help message
                      "ld",         -- option to activate debugging in likwid-perfctr
                      "dist:",      -- option to specifiy distance between two MPI processes
                      "o:","output:", -- option to specifiy an output file
+                     "T:", -- option to specify the time between group switches
                      "mpiopts:", -- option to specifiy MPI options forwarded to the underlying MPI
                      "nperdomain:","pin:","hostfile:","O","f", "stats"} -- other options
 
@@ -2299,6 +2304,8 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         table.insert(perf, arg)
     elseif opt == "mpi" then
         mpitype = arg
+    elseif opt == "T" then
+        group_switch_time = arg
     elseif opt == "omp" then
         omptype = arg
     elseif opt == "ld" then
