@@ -38,6 +38,7 @@
 #include <sysFeatures_amd_hsmp.h>
 #include <sysFeatures_amd_rapl.h>
 #include <sysFeatures_amd_thermal.h>
+#include <sysFeatures_amdsmi.h>
 #include <sysFeatures_x86_tsc.h>
 #include <sysFeatures_common.h>
 #include <topology.h>
@@ -51,7 +52,7 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     int err = likwid_sysft_init_generic(amd_arch_features, out);
     if (err < 0)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init general x86 HWFeatures");
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init general x86 sysFeatures");
     }
     else
     {
@@ -60,7 +61,7 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     err = likwid_sysft_init_amd_rapl(out);
     if (err < 0)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init AMD RAPL HWFeatures");
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init AMD RAPL sysFeatures");
     }
     else
     {
@@ -69,7 +70,16 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     err = likwid_sysft_init_amd_hsmp(out);
     if (err < 0)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init AMD HSMP HWFeatures");
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init AMD HSMP sysFeatures");
+    }
+    else
+    {
+        c++;
+    }
+    err = likwid_sysft_init_amdsmi(out);
+    if (err < 0)
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init AMD SMI sysFeatures");
     }
     else
     {
