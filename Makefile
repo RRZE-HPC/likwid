@@ -156,6 +156,7 @@ ifneq ($(ROCM_INTERFACE), true)
 OBJ := $(filter-out $(BUILD_DIR)/rocmon.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/rocmon_marker.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/topology_rocm.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/sysFeatures_amdsmi.o,$(OBJ))
 endif
 ifeq ($(COMPILER),GCCPOWER)
 OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))

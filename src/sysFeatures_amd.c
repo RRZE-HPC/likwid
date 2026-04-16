@@ -38,7 +38,9 @@
 #include <sysFeatures_amd_hsmp.h>
 #include <sysFeatures_amd_rapl.h>
 #include <sysFeatures_amd_thermal.h>
+#ifdef LIKWID_WITH_ROCMON
 #include <sysFeatures_amdsmi.h>
+#endif
 #include <sysFeatures_x86_tsc.h>
 #include <sysFeatures_common.h>
 #include <topology.h>
@@ -76,6 +78,7 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     {
         c++;
     }
+#ifdef LIKWID_WITH_ROCMON
     err = likwid_sysft_init_amdsmi(out);
     if (err < 0)
     {
@@ -85,6 +88,7 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     {
         c++;
     }
+#endif
     return (c > 0 ? 0 : -ENOTSUP);
 }
 
