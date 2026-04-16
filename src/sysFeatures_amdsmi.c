@@ -66,7 +66,7 @@
 DECLAREFUNC_ASMI(amdsmi_init, uint64_t flags);
 DECLAREFUNC_ASMI(amdsmi_shut_down, void);
 DECLAREFUNC_ASMI(amdsmi_get_esmi_err_msg, amdsmi_status_t status, const char **status_string);
-DECLAREFUNC_ASMI(amdsmi_get_node_handle, amdsmi_processor_handle processor_handle, amdsmi_node_handle *node_handle);
+
 DECLAREFUNC_ASMI(amdsmi_get_socket_handles, uint32_t *socket_count, amdsmi_socket_handle *socket_handles);
 DECLAREFUNC_ASMI(amdsmi_get_processor_handles, amdsmi_socket_handle socket_handle, uint32_t *processor_count, amdsmi_processor_handle *processor_handles);
 DECLAREFUNC_ASMI(amdsmi_get_processor_handle_from_bdf, amdsmi_bdf_t bdf, amdsmi_processor_handle *processor_handle);
@@ -75,7 +75,7 @@ DECLAREFUNC_ASMI(amdsmi_get_processor_type, amdsmi_processor_handle processor_ha
 DECLAREFUNC_ASMI(amdsmi_get_gpu_board_info, amdsmi_processor_handle processor_handle, amdsmi_board_info_t *info);
 DECLAREFUNC_ASMI(amdsmi_get_power_cap_info, amdsmi_processor_handle processor_handle, uint32_t sensor_ind, amdsmi_power_cap_info_t *info);
 DECLAREFUNC_ASMI(amdsmi_get_pcie_info, amdsmi_processor_handle processor_handle, amdsmi_pcie_info_t *info);
-DECLAREFUNC_ASMI(amdsmi_get_npm_info, amdsmi_node_handle node_handle, amdsmi_npm_info_t *info);
+
 DECLAREFUNC_ASMI(amdsmi_get_gpu_vram_info, amdsmi_processor_handle processor_handle, amdsmi_vram_info_t *info);
 DECLAREFUNC_ASMI(amdsmi_get_gpu_kfd_info, amdsmi_processor_handle processor_handle, amdsmi_kfd_info_t *info);
 DECLAREFUNC_ASMI(amdsmi_get_gpu_asic_info, amdsmi_processor_handle processor_handle, amdsmi_asic_info_t *info);
@@ -90,7 +90,10 @@ DECLAREFUNC_ASMI(amdsmi_get_cpu_socket_power, amdsmi_processor_handle processor_
 DECLAREFUNC_ASMI(amdsmi_get_cpu_socket_power_cap, amdsmi_processor_handle processor_handle, uint32_t *ppower);
 DECLAREFUNC_ASMI(amdsmi_set_cpu_socket_power_cap, amdsmi_processor_handle processor_handle, uint32_t pcap);
 DECLAREFUNC_ASMI(amdsmi_get_cpu_socket_power_cap_max, amdsmi_processor_handle processor_handle, uint32_t *pmax);
-
+#if (AMDSMI_LIB_VERSION_MAJOR >= 26 && AMDSMI_LIB_VERSION_MINOR >= 2 && AMDSMI_LIB_VERSION_RELEASE >= 1)
+DECLAREFUNC_ASMI(amdsmi_get_node_handle, amdsmi_processor_handle processor_handle, amdsmi_node_handle *node_handle);
+DECLAREFUNC_ASMI(amdsmi_get_npm_info, amdsmi_node_handle node_handle, amdsmi_npm_info_t *info);
+#endif
 
 
 static void *lib_amd_smi = NULL;
@@ -129,7 +132,6 @@ int likwid_sysft_init_amdsmi(_SysFeatureList *list)
     DLSYM_CHK(lib_amd_smi, amdsmi_init);
     DLSYM_CHK(lib_amd_smi, amdsmi_shut_down);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_esmi_err_msg);
-    DLSYM_CHK(lib_amd_smi, amdsmi_get_node_handle);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_socket_handles);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_processor_handles);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_processor_handle_from_bdf);
@@ -138,7 +140,6 @@ int likwid_sysft_init_amdsmi(_SysFeatureList *list)
     DLSYM_CHK(lib_amd_smi, amdsmi_get_gpu_board_info);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_power_cap_info);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_pcie_info);
-    DLSYM_CHK(lib_amd_smi, amdsmi_get_npm_info);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_gpu_vram_info);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_gpu_kfd_info);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_gpu_asic_info);
@@ -152,6 +153,10 @@ int likwid_sysft_init_amdsmi(_SysFeatureList *list)
     DLSYM_CHK(lib_amd_smi, amdsmi_get_cpu_socket_power_cap);
     DLSYM_CHK(lib_amd_smi, amdsmi_set_cpu_socket_power_cap);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_cpu_socket_power_cap_max);
+#if (AMDSMI_LIB_VERSION_MAJOR >= 26 && AMDSMI_LIB_VERSION_MINOR >= 2 && AMDSMI_LIB_VERSION_RELEASE >= 1)
+    DLSYM_CHK(lib_amd_smi, amdsmi_get_node_handle);
+    DLSYM_CHK(lib_amd_smi, amdsmi_get_npm_info);
+#endif
 
     amdsmi_status_t status = amdsmi_init_ptr(AMDSMI_INIT_AMD_GPUS | AMDSMI_INIT_AMD_CPUS);
     if (status != AMDSMI_STATUS_SUCCESS) {
@@ -168,6 +173,7 @@ int likwid_sysft_init_amdsmi(_SysFeatureList *list)
 
     return likwid_sysft_register_features(list, &amd_smi_feature_list);
 }
+#undef DLSYM_CHK
 
 static int lw_device_to_amdsmi_handle(const LikwidDevice_t lwDevice, amdsmi_processor_handle **amdsmiHandle) {
     if (lwDevice->type != DEVICE_TYPE_AMD_GPU)
@@ -464,7 +470,7 @@ static int amd_smi_socket_power_cap_getter(const LikwidDevice_t device, char **v
     return likwid_sysft_uint64_to_string(power, value);
 }
 
-static int amd_smi_socket_power_cap_setter(const LikwidDevice_t device, char *value) {
+static int amd_smi_socket_power_cap_setter(const LikwidDevice_t device, const char *value) {
     if (device->type != DEVICE_TYPE_AMD_GPU) {
         return -EINVAL;
     }
@@ -482,8 +488,7 @@ static int amd_smi_socket_power_cap_setter(const LikwidDevice_t device, char *va
     if (err) {
         return err;
     }
-    
-    uint32_t power = 0;
+
     ASMI_CALL(amdsmi_set_cpu_socket_power_cap, handle, pcap);
     return 0;
 }
@@ -498,6 +503,7 @@ static int amd_smi_socket_power_cap_max_getter(const LikwidDevice_t device, char
     if (err) {
         return err;
     }
+
     uint32_t power = 0;
     ASMI_CALL(amdsmi_get_cpu_socket_power_cap_max, handle, &power);
     return likwid_sysft_uint64_to_string(power, value);
