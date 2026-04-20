@@ -50,88 +50,6 @@
 
 static _SysFeatureList _feature_list = {0, NULL, NULL};
 
-
-static int get_device_access(LikwidDevice_t device)
-{
-    /* This function is somewhat redundant to the initialization,
-     * which is implicitly called in every getter/settter. */
-    int hwt = -1;
-    int err = topology_init();
-    if (err < 0)
-    {
-        return err;
-    }
-    CpuTopology_t topo = get_cpuTopology();
-
-    if (device->type == DEVICE_TYPE_INVALID)
-    {
-        return -EINVAL;
-    }
-
-    switch (device->type) {
-        case DEVICE_TYPE_HWTHREAD:
-            if (device->id.simple.id >= 0 && device->id.simple.id < (int)topo->numHWThreads)
-            {
-                hwt = device->id.simple.id;
-            }
-            break;
-        case DEVICE_TYPE_CORE:
-            for (unsigned i = 0; i < topo->numHWThreads; i++)
-            {
-                HWThread* t = &topo->threadPool[i];
-                if (t->inCpuSet == 1 && device->id.simple.id == (int)t->coreId)
-                {
-                    hwt = t->apicId;
-                    break;
-                }
-            }
-            break;
-        case DEVICE_TYPE_NODE:
-            for (unsigned i = 0; i < topo->numHWThreads; i++)
-            {
-                HWThread* t = &topo->threadPool[i];
-                if (t->inCpuSet == 1)
-                {
-                    hwt = t->apicId;
-                    break;
-                }
-            }
-            break;
-        case DEVICE_TYPE_SOCKET:
-            for (unsigned i = 0; i < topo->numHWThreads; i++)
-            {
-                HWThread* t = &topo->threadPool[i];
-                if (t->inCpuSet == 1 && device->id.simple.id == (int)t->packageId)
-                {
-                    hwt = t->apicId;
-                    break;
-                }
-            }
-            break;
-#ifdef LIKWID_WITH_NVMON
-        case DEVICE_TYPE_NVIDIA_GPU:
-            return 0;
-#endif
-#ifdef LIKWID_WITH_ROCMON
-        case DEVICE_TYPE_AMD_GPU:
-            return 0;
-#endif
-        default:
-            ERROR_PRINT("get_device_access: Unimplemented device type: %d\n", device->type);
-            return -EPERM;
-    }
-#if defined(__x86_64) || defined(__i386__)
-    if (hwt >= 0)
-    {
-        return HPMaddThread(hwt);
-    }
-    return -EINVAL;
-#else
-    return (hwt >= 0 ? 0 : -EINVAL);
-#endif
-}
-
-
 int likwid_sysft_init(void)
 {
     int err = 0;
@@ -277,12 +195,6 @@ int likwid_sysft_getByName(const char* name, const LikwidDevice_t device, char**
         DEBUG_PRINT(DEBUGLEV_DEVELOP, "Feature %s has a different type than device", name);
         return -EINVAL;
     }
-    err = get_device_access(device);
-    if (err < 0)
-    {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Failed to get access to device");
-        return err;
-    }
     err = f->getter(device, value);
     return err;
 }
@@ -297,7 +209,6 @@ int likwid_sysft_get(const LikwidSysFeature* feature, const LikwidDevice_t devic
 
 int likwid_sysft_modifyByName(const char* name, const LikwidDevice_t device, const char* value)
 {
-    int err = 0;
     _SysFeature *f = NULL;
     if ((!name) || (!device) || (!value))
     {
@@ -320,11 +231,6 @@ int likwid_sysft_modifyByName(const char* name, const LikwidDevice_t device, con
     if (f->type != device->type)
     {
         return -ENODEV;
-    }
-    err = get_device_access(device);
-    if (err < 0)
-    {
-        return err;
     }
     return f->setter(device, value);
 }
