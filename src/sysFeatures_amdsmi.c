@@ -82,7 +82,7 @@ DECLAREFUNC_ASMI(amdsmi_get_processor_type, amdsmi_processor_handle processor_ha
 DECLAREFUNC_ASMI(amdsmi_get_gpu_board_info, amdsmi_processor_handle processor_handle, amdsmi_board_info_t *info);
 DECLAREFUNC_ASMI(amdsmi_get_power_cap_info, amdsmi_processor_handle processor_handle, uint32_t sensor_ind, amdsmi_power_cap_info_t *info);
 DECLAREFUNC_ASMI(amdsmi_set_power_cap, amdsmi_processor_handle processor_handle, uint32_t sensor_ind, uint64_t cap);
-DECLAREFUNC_ASMI(amdsmi_get_supported_power_cap, amdsmi_processor_handle processor_handle, uint32_t *sensor_count, uint32_t *sensor_inds, amdsmi_power_cap_type_t *sensor_types);
+
 DECLAREFUNC_ASMI(amdsmi_get_pcie_info, amdsmi_processor_handle processor_handle, amdsmi_pcie_info_t *info);
 
 DECLAREFUNC_ASMI(amdsmi_get_socket_info, amdsmi_socket_handle socket_handle, size_t len, char *name);
@@ -119,6 +119,7 @@ DECLAREFUNC_ASMI(amdsmi_get_gpu_od_volt_info, amdsmi_processor_handle processor_
 DECLAREFUNC_ASMI(amdsmi_set_gpu_od_volt_info, amdsmi_processor_handle processor_handle, uint32_t vpoint, uint64_t clkvalue, uint64_t voltvalue);
 
 #if (AMDSMI_LIB_VERSION_MAJOR >= 26 && AMDSMI_LIB_VERSION_MINOR >= 2 && AMDSMI_LIB_VERSION_RELEASE >= 1)
+DECLAREFUNC_ASMI(amdsmi_get_supported_power_cap, amdsmi_processor_handle processor_handle, uint32_t *sensor_count, uint32_t *sensor_inds, amdsmi_power_cap_type_t *sensor_types);
 DECLAREFUNC_ASMI(amdsmi_get_node_handle, amdsmi_processor_handle processor_handle, amdsmi_node_handle *node_handle);
 DECLAREFUNC_ASMI(amdsmi_get_npm_info, amdsmi_node_handle node_handle, amdsmi_npm_info_t *info);
 #endif
@@ -189,7 +190,6 @@ int likwid_sysft_init_amdsmi(_SysFeatureList *list)
     DLSYM_CHK(lib_amd_smi, amdsmi_init);
     DLSYM_CHK(lib_amd_smi, amdsmi_shut_down);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_esmi_err_msg);
-    DLSYM_CHK(lib_amd_smi, amdsmi_get_node_handle);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_socket_handles);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_cpucore_handles);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_processor_handles);
@@ -199,7 +199,7 @@ int likwid_sysft_init_amdsmi(_SysFeatureList *list)
     DLSYM_CHK(lib_amd_smi, amdsmi_get_gpu_board_info);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_power_cap_info);
     DLSYM_CHK(lib_amd_smi, amdsmi_set_power_cap);
-    DLSYM_CHK(lib_amd_smi, amdsmi_get_supported_power_cap);
+
     DLSYM_CHK(lib_amd_smi, amdsmi_get_pcie_info);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_socket_info);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_processor_info);
@@ -230,6 +230,7 @@ int likwid_sysft_init_amdsmi(_SysFeatureList *list)
     DLSYM_CHK(lib_amd_smi, amdsmi_clean_gpu_local_data);
 
 #if (AMDSMI_LIB_VERSION_MAJOR >= 26 && AMDSMI_LIB_VERSION_MINOR >= 2 && AMDSMI_LIB_VERSION_RELEASE >= 1)
+    DLSYM_CHK(lib_amd_smi, amdsmi_get_supported_power_cap);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_node_handle);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_npm_info);
 #endif
@@ -1259,6 +1260,8 @@ static int amd_smi_gpu_clean_local_data_setter(const LikwidDevice_t device, cons
     }
     return 0;
 }
+
+
 
 static _SysFeature amd_smi_features[] = {
     {"device_count", "amdsmi", "Number of GPUs on node. Not all GPUs may be accessible.", amd_smi_device_count_getter, NULL, DEVICE_TYPE_NODE, NULL, NULL},
