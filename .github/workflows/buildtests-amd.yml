@@ -37,22 +37,14 @@ on:
 jobs:
   build-x86-rocm:
     runs-on: ubuntu-24.04
+    container: rocm/dev-ubuntu-24.04:${{matrix.rocm_version}}
     strategy:
       fail-fast: false
       matrix:
         # You can find the available versions here:
-        # https://repo.radeon.com/rocm/apt/
-        rocm_version: [ "7.0.3", "7.1.1", "7.2.1" ]
+        # https://hub.docker.com/r/rocm/dev-ubuntu-24.04/tags
+        rocm_version: [ "7.0.2", "7.1.1", "7.2.1" ]
     steps:
     - uses: actions/checkout@v6
-    - name: Install ROCm ${{matrix.rocm_version}}
-      run: |
-        sudo apt update
-        sudo apt install curl gpg
-        curl https://repo.radeon.com/rocm/rocm.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/rocm.gpg
-        echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/${{matrix.rocm_version}} noble main" | sudo tee /etc/apt/sources.list.d/rocm.list
-        echo -e 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
-        sudo apt update
-        sudo apt install rocm
     - name: make -j$(nproc)
-      run: ROCM_HOME=/opt/rocm make ACCESSMODE=accessdaemon ROCM_INTERFACE=true
+      run: ROCM_HOME=/opt/rocm make ACCESSMODE=accessdaemon ROCM_INTERFACE=true -j$(nproc)
