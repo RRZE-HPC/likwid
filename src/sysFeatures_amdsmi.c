@@ -72,7 +72,6 @@ DECLAREFUNC_ASMI(amdsmi_init, uint64_t flags);
 DECLAREFUNC_ASMI(amdsmi_shut_down, void);
 DECLAREFUNC_ASMI(amdsmi_get_esmi_err_msg, amdsmi_status_t status, const char **status_string);
 
-DECLAREFUNC_ASMI(amdsmi_get_node_handle, amdsmi_processor_handle processor_handle, amdsmi_node_handle *node_handle);
 DECLAREFUNC_ASMI(amdsmi_get_socket_handles, uint32_t *socket_count, amdsmi_socket_handle *socket_handles);
 DECLAREFUNC_ASMI(amdsmi_get_cpucore_handles, uint32_t *cores_count, amdsmi_processor_handle *processor_handles);
 DECLAREFUNC_ASMI(amdsmi_get_processor_handles, amdsmi_socket_handle socket_handle, uint32_t *processor_count, amdsmi_processor_handle *processor_handles);
