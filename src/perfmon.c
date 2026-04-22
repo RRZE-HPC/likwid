@@ -2352,8 +2352,37 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         return ret;
     }
 
+    /* Initialize access to the performance counters */
+    ret = perfmon_acquireCounters(nrThreads, threadsToCpu);
+    if (ret < 0) {
+        return ret;
+    }
+
+    perfmon_initialized = 1;
+    return 0;
+}
+
+void 
+perfmon_releaseCounters(void) 
+{
+    for(int group=0;group < groupSet->numberOfActiveGroups; group++)
+    {
+        for (int thread=0;thread< groupSet->numberOfThreads; thread++)
+        {
+            perfmon_finalizeCountersThread(thread, &(groupSet->groups[group]));
+        }
+    }
+}
+
+int 
+perfmon_acquireCounters(int nrThreads, const int* threadsToCpu)
+{
+    int initialize_power = FALSE;
+    int initialize_thermal = FALSE;
+
     /* Initialize function pointer to current architecture functions */
-    ret = perfmon_init_funcs(&initialize_power, &initialize_thermal);
+    int ret = perfmon_init_funcs(&initialize_power, &initialize_thermal);
+
     if (ret < 0)
     {
         errno = -ret;
@@ -2419,9 +2448,10 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         }
         initThreadArch(threadsToCpu[i]);
     }
-    perfmon_initialized = 1;
-    return 0;
+
+    return ret;
 }
+
 
 void
 perfmon_finalize(void)
@@ -2436,12 +2466,9 @@ perfmon_finalize(void)
     {
         return;
     }
+    perfmon_releaseCounters();
     for(int group=0;group < groupSet->numberOfActiveGroups; group++)
     {
-        for (thread=0;thread< groupSet->numberOfThreads; thread++)
-        {
-            perfmon_finalizeCountersThread(thread, &(groupSet->groups[group]));
-        }
         for (event=0;event < groupSet->groups[group].numberOfEvents; event++)
         {
             if (groupSet->groups[group].events[event].threadCounter)
