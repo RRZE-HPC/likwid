@@ -31,6 +31,8 @@
 #ifndef REGISTERS_H
 #define REGISTERS_H
 
+#include <assert.h>
+
 /*
  * INTEL
  */
@@ -3568,6 +3570,22 @@
 #define MSR_AMD_PMC1                  0xC0010005
 #define MSR_AMD_PMC2                  0xC0010006
 #define MSR_AMD_PMC3                  0xC0010007
+
+#define MSR_AMD_PSTATE_CUR_LIMIT        0xC0010061
+#define MSR_AMD_PSTATE_CTL              0xC0010062
+#define MSR_AMD_PSTATE_STAT             0xC0010063
+#define MSR_AMD_PSTATE_DEF0             0xC0010064
+#define MSR_AMD_PSTATE_DEF1             0xC0010065
+#define MSR_AMD_PSTATE_DEF2             0xC0010066
+#define MSR_AMD_PSTATE_DEF3             0xC0010067
+#define MSR_AMD_PSTATE_DEF4             0xC0010068
+#define MSR_AMD_PSTATE_DEF5             0xC0010069
+#define MSR_AMD_PSTATE_DEF6             0xC001006A
+#define MSR_AMD_PSTATE_DEF7             0xC001006B
+
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#pragma GCC diagnostic ignored "-Wunused-value"
+#define MSR_AMD_PSTATE_DEFx(x)          (assert((long long)x >= 0 && (long long)x <= 7), (uint32_t)(MSR_AMD_PSTATE_DEF0 + x))
 
 /* 0x15 Interlagos */
 
