@@ -36,6 +36,7 @@
 #include <access.h>
 #include <bitUtil.h>
 #include <sysFeatures_amd_hsmp.h>
+#include <sysFeatures_amd_pstate.h>
 #include <sysFeatures_amd_rapl.h>
 #include <sysFeatures_amd_thermal.h>
 #include <sysFeatures_x86_tsc.h>
@@ -70,6 +71,15 @@ int likwid_sysft_init_x86_amd(_SysFeatureList* out)
     if (err < 0)
     {
         DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init AMD HSMP HWFeatures");
+    }
+    else
+    {
+        c++;
+    }
+    err = likwid_sysft_init_amd_pstate(out);
+    if (err < 0)
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init AMD P-state HWFeatures");
     }
     else
     {
