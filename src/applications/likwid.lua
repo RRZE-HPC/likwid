@@ -46,7 +46,9 @@ likwid.dline = string.rep("=",80)
 likwid.hline =  string.rep("-",80)
 likwid.sline = string.rep("*",80)
 
-
+likwid.getMajorVersion = likwid_getMajorVersion
+likwid.getMinorVersion = likwid_getMinorVersion
+likwid.getBugfixVersion = likwid_getBugfixVersion
 
 likwid.getConfiguration = likwid_getConfiguration
 likwid.setGroupPath = likwid_setGroupPath
@@ -182,6 +184,7 @@ likwid.seteuid = likwid_seteuid
 likwid.setresuid = likwid_setresuid
 likwid.setresuser = likwid_setresuser
 
+likwid.sysFeaturesSupported = likwid_sysFeaturesSupported
 likwid.initSysFeatures = likwid_initSysFeatures
 likwid.sysFeatures_list = likwid_sysFeatures_list
 likwid.sysFeatures_get = likwid_sysFeatures_get
@@ -192,6 +195,7 @@ likwid.createDevice = likwid_createDevice
 likwid.createDevicesFromString = likwid_createDevicesFromString
 likwid.getAvailableDevices = likwid_getAvailableDevices
 likwid.getAllDevices = likwid_getAllDevices
+likwid.getAvailableDeviceTypes = likwid_getAvailableDeviceTypes
 
 likwid.getCudaTopology = likwid_getCudaTopology
 likwid.putCudaTopology = likwid_putCudaTopology

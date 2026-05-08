@@ -72,6 +72,18 @@ int likwid_sysft_add_to_feature_list(LikwidSysFeatureList *list, const LikwidSys
         free(iof->category);
         return -ENOMEM;
     }
+    if (feature->unit) {
+        iof->unit = strndup(feature->unit, HWFEATURES_MAX_STR_LENGTH - 1);
+        if (!iof->unit)
+        {
+            free(iof->name);
+            free(iof->category);
+            free(iof->description);
+            return -ENOMEM;
+        }
+    } else {
+        iof->unit = NULL;
+    }
 
     iof->readonly = feature->readonly;
     iof->type = feature->type;
@@ -118,6 +130,7 @@ void likwid_sysft_free_feature_list(LikwidSysFeatureList *list)
             if (f->name) free(f->name);
             if (f->category) free(f->category);
             if (f->description) free(f->description);
+            if (f->unit) free(f->unit);
         }
         free(list->features);
         list->features = NULL;
@@ -181,6 +194,7 @@ int _merge_feature_lists(_SysFeatureList *inout, const _SysFeatureList *in)
         iof->category = ifeat->category;
         iof->description = ifeat->description;
         iof->type = ifeat->type;
+        iof->unit = ifeat->unit;
         iof->getter = ifeat->getter;
         iof->setter = ifeat->setter;
         iof->tester = ifeat->tester;
@@ -231,6 +245,7 @@ int likwid_sysft_internal_to_external_feature_list(const _SysFeatureList *inlist
                 free(c->name);
                 free(c->category);
                 free(c->description);
+                if (c->unit) free(c->unit);
             }
             free(outlist->features);
             outlist->features = NULL;
@@ -246,6 +261,7 @@ int likwid_sysft_internal_to_external_feature_list(const _SysFeatureList *inlist
                 free(c->name);
                 free(c->category);
                 free(c->description);
+                if (c->unit) free(c->unit);
             }
             free(outlist->features);
             outlist->features = NULL;
@@ -262,10 +278,33 @@ int likwid_sysft_internal_to_external_feature_list(const _SysFeatureList *inlist
                 free(c->name);
                 free(c->category);
                 free(c->description);
+                if (c->unit) free(c->unit);
             }
             free(outlist->features);
             outlist->features = NULL;
             return -ENOMEM;
+        }
+        if (in->unit) {
+            out->unit = strndup(in->unit, HWFEATURES_MAX_STR_LENGTH - 1);
+            if (!out->unit)
+            {
+                free(out->name);
+                free(out->category);
+                free(out->description);
+                for (int j = 0; j < i; j++)
+                {
+                    LikwidSysFeature* c = &outlist->features[j];
+                    free(c->name);
+                    free(c->category);
+                    free(c->description);
+                    if (c->unit) free(c->unit);
+                }
+                free(outlist->features);
+                outlist->features = NULL;
+                return -ENOMEM;
+            }
+        } else {
+            out->unit = NULL;
         }
         out->type = in->type;
         out->readonly = 0;
