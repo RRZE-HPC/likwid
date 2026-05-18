@@ -1281,6 +1281,11 @@ topology_setName(void)
                     cpuid_info.short_name = short_zen5;
                     cpuid_info.supportUncore = 1;
                     break;
+                case ZEN5_RYZEN:
+                    cpuid_info.name = amd_zen5_str;
+                    cpuid_info.short_name = short_zen5;
+                    cpuid_info.supportUncore = 1;
+                    break;
                 default:
                     err = -EFAULT;
                     break;
