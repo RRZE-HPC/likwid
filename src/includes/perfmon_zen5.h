@@ -44,44 +44,62 @@ int zen5_init_counter_map(int num_in_counters, RegisterMap * in_counters, int* n
     CPUID(eax, ebx, ecx, edx);
     int umc_count = (ebx >> 16) & 0xFF;
     int umc_units = bitMask_popcount(ecx);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Creating runtime counter map for AMD Zen5 with %d UMC units", umc_units);
-    if ((umc_count == 0) || (umc_units == 0)) {
-        RegisterMap * out = malloc(num_in_counters * sizeof(RegisterMap));
-        if (!out) {
-            return -ENOMEM;
-        }
-        memcpy(out, in_counters, num_in_counters * sizeof(RegisterMap));
-        *num_out_counters = num_in_counters;
-        *out_counters = out;
-    } else {
-        int umc_pmcs = umc_count/umc_units;
-        int outcount = 0;
-        
-        RegisterMap * out = malloc((num_in_counters + umc_count) * sizeof(RegisterMap));
-        if (!out) {
-            return -ENOMEM;
-        }
-        memcpy(out, in_counters, num_in_counters * sizeof(RegisterMap));
+    int df_count = 16;
+    if (((ebx >> 10) & 0x3F) > 0) {
+        df_count = (ebx >> 10) & 0x3F;
+    }
 
-        int umcoff = 0;
+    // Copy static counter list
+    int out_count = 0;
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Creating new counter map for AMD Zen5 with %d counters", num_in_counters + df_count + umc_count);
+    RegisterMap * out = malloc((num_in_counters + df_count + umc_count) * sizeof(RegisterMap));
+    if (!out) {
+        return -ENOMEM;
+    }
+    memcpy(out, in_counters, num_in_counters * sizeof(RegisterMap));
+    out_count = num_in_counters;
+
+    // Zero the remaining list
+    if (df_count + umc_count > 0) {
+        memset(&out[num_in_counters], 0, (df_count + umc_count) * sizeof(RegisterMap));
+    }
+
+    for (int i = 0; i < df_count; i++) {
+        RegisterMap* out_df = &out[out_count];
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding DFC%d", i);
+        out_df->index = out_count;
+        out_df->type = MBOX0;
+        snprintf(out_df->key, 127, "DFC%d", i);
+        out_df->configRegister = MSR_AMD19_DF_PERFEVTSEL0 + (i * 2);
+        out_df->counterRegister = MSR_AMD19_DF_PMC0 + (i * 2);
+        out_df->counterRegister2 = 0x0;
+        out_df->device = MSR_DEV;
+        out_df->optionMask = EVENT_OPTION_NONE_MASK;
+        out_count++;
+    }
+
+    if ((umc_count > 0) && (umc_units > 0)) {
+        int umc_pmcs = umc_count/umc_units;
         for (int i = 0; i < umc_units; i++) {
             RegisterType unit_type = BBOX0+i;
             for (int j = 0; j < umc_pmcs; j++) {
-                RegisterMap* out_umc = &out[num_in_counters+umcoff];
-                out_umc->index = num_in_counters+umcoff;
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, "Adding UMC%dC%d", i, j);
+                RegisterMap* out_umc = &out[out_count];
+                int offset_umc = (i * umc_pmcs) + j;
+                out_umc->index = out_count;
                 out_umc->type = unit_type;
                 snprintf(out_umc->key, 127, "UMC%dC%d", i, j);
-                out_umc->configRegister = MSR_AMD1A_UMC_PERFEVTSEL0 + (umcoff * 2);
-                out_umc->counterRegister = MSR_AMD1A_UMC_PMC0 + (umcoff * 2);
+                out_umc->configRegister = MSR_AMD1A_UMC_PERFEVTSEL0 + (offset_umc * 2);
+                out_umc->counterRegister = MSR_AMD1A_UMC_PMC0 + (offset_umc * 2);
                 out_umc->counterRegister2 = 0x0;
                 out_umc->device = MSR_DEV;
-                out_umc->optionMask = ZEN5_VALID_OPTIONS_UMC;
-                umcoff++;
+                out_umc->optionMask = ZEN4_VALID_OPTIONS_UMC;
+                out_count++;
             }
         }
-        *num_out_counters = num_in_counters + umcoff;
-        *out_counters = out;
     }
+    *num_out_counters = out_count;
+    *out_counters = out;
 
     return 0;
 }
