@@ -489,9 +489,9 @@ access_client_read(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t *
         record.cpu = affinity_thread2socket_lookup[cpu_id];
         record.device = dev;
     }
+#if defined(__x86_64__) || defined(__i386__)
     else
     {
-#if defined(__x86_64__) || defined(__i386__)
         rdpmc_err = access_x86_rdpmc_read(cpu_id, reg, data);
     }
     if (!rdpmc_err) {
