@@ -279,7 +279,7 @@ access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
         case MSR_PMC5:
         case MSR_PMC6:
         case MSR_PMC7:
-            if (rdpmc_works_pmc == 1)
+            if (rdpmc_works_pmc == 1 && cpuid_info.isIntel)
             {
                 rdpmc_reg_offset = reg - MSR_PMC0;
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read PMC counter with RDPMC instruction with index 0x%X", rdpmc_reg_offset);
@@ -295,8 +295,8 @@ access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
         case MSR_AMD17_PMC1:
         case MSR_AMD17_PMC2:
         case MSR_AMD17_PMC3:
-        case MSR_AMD17_2_PERFEVTSEL4:
-        case MSR_AMD17_2_PERFEVTSEL5:
+        case MSR_AMD17_2_PMC4:
+        case MSR_AMD17_2_PMC5:
             if (rdpmc_works_pmc == 1 && !cpuid_info.isIntel)
             {
                 rdpmc_reg_offset = (reg - MSR_AMD17_PMC0)/2;
@@ -400,10 +400,10 @@ access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
                 }
             }
             break;
-        case MSR_AMD17_2_DF_PMC0:
-        case MSR_AMD17_2_DF_PMC1:
-        case MSR_AMD17_2_DF_PMC2:
-        case MSR_AMD17_2_DF_PMC3:
+        case MSR_AMD17_2_DF_PMC0: /* MSR_AMD19_DF_PMC0 */
+        case MSR_AMD17_2_DF_PMC1: /* MSR_AMD19_DF_PMC1 */
+        case MSR_AMD17_2_DF_PMC2: /* MSR_AMD19_DF_PMC2 */
+        case MSR_AMD17_2_DF_PMC3: /* MSR_AMD19_DF_PMC3 */
             if (rdpmc_works_mem == 1)
             {
                 rdpmc_reg_offset = (reg - MSR_AMD17_2_DF_PMC0)/2;
@@ -417,31 +417,31 @@ access_x86_rdpmc_read(uint32_t cpu_id, uint32_t reg, uint64_t *data)
                 }
             }
             break;
-        case MSR_AMD19_DF_PERFEVTSEL0:
-        case MSR_AMD19_DF_PERFEVTSEL1:
-        case MSR_AMD19_DF_PERFEVTSEL2:
-        case MSR_AMD19_DF_PERFEVTSEL3:
-            rdpmc_start_offset = 0x6;
-            rdpmc_reg_offset = (reg - MSR_AMD19_DF_PERFEVTSEL0)/2;
-            // fall through
-        case MSR_AMD19_DF_PERFEVTSEL4:
-        case MSR_AMD19_DF_PERFEVTSEL5:
-        case MSR_AMD19_DF_PERFEVTSEL6:
-        case MSR_AMD19_DF_PERFEVTSEL7:
-        case MSR_AMD19_DF_PERFEVTSEL8:
-        case MSR_AMD19_DF_PERFEVTSEL9:
-        case MSR_AMD19_DF_PERFEVTSEL10:
-        case MSR_AMD19_DF_PERFEVTSEL11:
-        case MSR_AMD19_DF_PERFEVTSEL12:
-        case MSR_AMD19_DF_PERFEVTSEL13:
-        case MSR_AMD19_DF_PERFEVTSEL14:
-        case MSR_AMD19_DF_PERFEVTSEL15:
+        case MSR_AMD19_DF_PMC4:
+        case MSR_AMD19_DF_PMC5:
+        case MSR_AMD19_DF_PMC6:
+        case MSR_AMD19_DF_PMC7:
+        case MSR_AMD19_DF_PMC8:
+        case MSR_AMD19_DF_PMC9:
+        case MSR_AMD19_DF_PMC10:
+        case MSR_AMD19_DF_PMC11:
+        case MSR_AMD19_DF_PMC12:
+        case MSR_AMD19_DF_PMC13:
+        case MSR_AMD19_DF_PMC14:
+        case MSR_AMD19_DF_PMC15:
             if (rdpmc_works_mem == 1)
             {
-                if (reg >= MSR_AMD19_DF_PERFEVTSEL4)
+                if (reg >= MSR_AMD19_DF_PERFEVTSEL4 && ((cpuid_info.family == ZEN3_FAMILY  && (cpuid_info.model == ZEN4_RYZEN
+                                                                                           || cpuid_info.model == ZEN4_RYZEN_PRO
+                                                                                           || cpuid_info.model == ZEN4_RYZEN2
+                                                                                           || cpuid_info.model == ZEN4_RYZEN3
+                                                                                           || cpuid_info.model == ZEN4_EPYC))
+                                                     || (cpuid_info.family == ZEN5_FAMILY)))
                 {
                     rdpmc_reg_offset = (reg - MSR_AMD19_DF_PERFEVTSEL4)/2;
                     rdpmc_start_offset = 0x10;
+                } else {
+                    ret = -EAGAIN;
                 }
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, "Read AMD DF counter with RDPMC instruction with index 0x%X", rdpmc_start_offset + rdpmc_reg_offset);
                 ret = __rdpmc(cpu_id, rdpmc_start_offset + rdpmc_reg_offset, data);
