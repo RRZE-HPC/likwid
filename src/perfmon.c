@@ -1417,6 +1417,7 @@ perfmon_init_maps(void)
             {
                 case ZEN5_EPYC:
                 case ZEN5C_EPYC:
+                case ZEN5_RYZEN:
                     eventHash = zen5_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen5;
                     counter_map = zen5_counter_map;
@@ -2174,6 +2175,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             {
                 case ZEN5_EPYC:
                 case ZEN5C_EPYC:
+                case ZEN5_RYZEN:
                     initThreadArch = perfmon_init_zen5;
                     initialize_power = TRUE;
                     perfmon_startCountersThread = perfmon_startCountersThread_zen5;
