@@ -481,17 +481,23 @@ access_client_read(PciDeviceIndex dev, uint32_t cpu_id, uint32_t reg, uint64_t *
         lockptr = &cpuLocks[cpu_id];
     }
 
+#if defined(__x86_64__) || defined(__i386__)
+    int rdpmc_err = -1;
+#endif
     if (dev != MSR_DEV)
     {
         record.cpu = affinity_thread2socket_lookup[cpu_id];
         record.device = dev;
     }
+#if defined(__x86_64__) || defined(__i386__)
     else
     {
-#if defined(__x86_64__) || defined(__i386__)
-        access_x86_rdpmc_read(cpu_id, reg, data);
-#endif
+        rdpmc_err = access_x86_rdpmc_read(cpu_id, reg, data);
     }
+    if (!rdpmc_err) {
+        return 0;
+    }
+#endif
     if (socket != -1)
     {
         record.reg = reg;
