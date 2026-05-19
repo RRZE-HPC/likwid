@@ -149,7 +149,7 @@ cuda-gen:
   tags:
     - testcluster
   variables:
-    SLURM_NODELIST: medusa
+    SLURM_NODELIST: genoa2
   script: 
    - test/gitlab-ci/generate_cuda_jobs.sh > cuda-pipeline.yml
   artifacts:

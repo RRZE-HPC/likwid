@@ -11,7 +11,7 @@ build-$PVER:
     variables:
       LIKWID_COMPILER: "GCC"
       LIKWID_ACCESSMODE: "perf_event"
-      SLURM_NODELIST: medusa
+      SLURM_NODELIST: genoa2
       SLURM_CONSTRAINT: hwperf
       CUDA_MODULE: $VER
     script:
