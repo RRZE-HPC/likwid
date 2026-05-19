@@ -146,7 +146,7 @@ TOPO_FILE_PATH = /etc/likwid_topo.cfg
 # The libraries are named liblikwid.<VERSION>.<RELEASE>
 VERSION = 5
 RELEASE = 5
-MINOR = 1
+MINOR = 2
 # Date when the release is published
 DATE    = 23.12.2025
 
