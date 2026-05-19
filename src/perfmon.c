@@ -4317,14 +4317,13 @@ perfmon_readMarkerFile(const char* filename)
             }
             snprintf(regiontag, sizeof(regiontag), "%s", colon_ptr);
             ptr = strrchr(regiontag,'-');
-            colonptr = strchr(buf,':');
-            if (ret != 2 || ptr == NULL || colonptr == NULL)
+            if (ptr == NULL)
             {
                 fprintf(stderr, "Line %s not a valid region description: %s\n", buf, regiontag);
                 continue;
             }
             groupid = atoi(ptr+1);
-            snprintf(regiontag, strlen(regiontag)-strlen(ptr)+1, "%s", &(buf[colonptr-buf+1]));
+            *ptr = '\0';
             markerResults[regionid].groupID = groupid;
             markerResults[regionid].tag = bfromcstr(regiontag);
             nr_regions++;
@@ -4343,14 +4342,11 @@ perfmon_readMarkerFile(const char* filename)
                 fprintf(stderr, "Line %s not a valid region values line\n", buf);
                 continue;
             }
-<<<<<<< HEAD
-=======
             if (regionid >= regions)
             {
                 fprintf(stderr, "Line %s has invalid region ID %u\n", buf, regionid);
                 continue;
             }
->>>>>>> 8c5b6907 (perfmon: use unsigned region IDs in marker parsing)
             if (cpu >= 0)
             {
                 cpuidx = regionCPUs[regionid];
