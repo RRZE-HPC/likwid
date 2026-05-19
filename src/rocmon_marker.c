@@ -125,8 +125,12 @@ static int gpulist_from_str(const char *gpustring, size_t *numGpus, int **gpus) 
     *numGpus = gpustrings->qty;
     *gpus = newGpus;
 
-    for (int i = 0; i < gpustrings->qty; i++)
-        newGpus[i] = atoi(bdata(gpustrings->entry[i]));
+    for (int i = 0; i < gpustrings->qty; i++) {
+        char* s = NULL;
+        if (bdata(gpustrings->entry[i]))
+            s = bdata(gpustrings->entry[i]);
+        newGpus[i] = atoi(s);
+    }
 
 cleanup:
     if (err < 0)
@@ -280,7 +284,7 @@ int rocmon_markerInit(void) {
         perfmon_setVerbosity(atoi(debugStr));
 
     int *gpuIds = NULL;
-    size_t numGpuIds;
+    size_t numGpuIds = 0;
     err = gpulist_from_str(gpuStr, &numGpuIds, &gpuIds);
     if (err < 0)
         goto unlock_err;
@@ -998,7 +1002,7 @@ int rocmon_markerInitResultsFromFile(const char *markerfile) {
     int err = 0;
     if (rocmarker_ctx) {
         err = -EEXIST;
-        goto unlock_err;
+        goto unlock_err_early;
     }
 
     // What we do here is provide a very terrible API.
@@ -1010,7 +1014,7 @@ int rocmon_markerInitResultsFromFile(const char *markerfile) {
     rocmarker_ctx = calloc(1, sizeof(*rocmarker_ctx));
     if (!rocmarker_ctx) {
         err = -errno;
-        goto unlock_err;
+        goto unlock_err_early;
     }
 
     rocmarker_ctx->main_tid = DUMMY_TID;
@@ -1018,7 +1022,7 @@ int rocmon_markerInitResultsFromFile(const char *markerfile) {
     FILE *fp = fopen(markerfile, "r");
     if (!fp) {
         err = -errno;
-        goto unlock_err;
+        goto unlock_err_early;
     }
 
     size_t numRegions;
@@ -1100,7 +1104,8 @@ int rocmon_markerInitResultsFromFile(const char *markerfile) {
             }
         }
 
-        fscanf(fp, "\n");
+        int c = fscanf(fp, "\n");
+        (void) c;
     }
 
     // Read regions: 'regionIdx groupId regionTag'
@@ -1173,6 +1178,7 @@ int rocmon_markerInitResultsFromFile(const char *markerfile) {
 unlock_err:
     if (fp)
         fclose(fp);
+unlock_err_early:
     rocmarker_ctx_free();
     pthread_mutex_unlock(&rocmarker_init_mutex);
     return err;
