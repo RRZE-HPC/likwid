@@ -49,21 +49,7 @@
 #include <types.h>
 #include <lw_alloc.h>
 
-#define ASMI_CALL(func, ...) \
-    do {\
-        assert(func##_ptr != NULL); \
-        amdsmi_status_t s_ = func##_ptr(__VA_ARGS__);\
-        if (s_ != AMDSMI_STATUS_SUCCESS) {\
-            const char *errstr_ = NULL;\
-            amdsmi_status_t es = amdsmi_get_esmi_err_msg_ptr(s_, &errstr_);\
-            if (es != AMDSMI_STATUS_SUCCESS) { \
-                ERROR_PRINT("Error: function %s failed but cannot resolve error string (amdsmi_status_t=%d)", #func, s_);\
-            } else { \
-                ERROR_PRINT("Error: function %s failed: '%s' (amdsmi_status_t=%d)", #func, errstr_, s_);\
-            } \
-            return -EPERM; \
-        }\
-    } while (0)
+
 
 
 #define DECLAREFUNC_ASMI(funcname, ...) static amdsmi_status_t (*funcname##_ptr)(__VA_ARGS__)
@@ -125,6 +111,32 @@ DECLAREFUNC_ASMI(amdsmi_get_npm_info, amdsmi_node_handle node_handle, amdsmi_npm
 
 DECLAREFUNC_ASMI(amdsmi_get_cpu_handles, uint32_t *cpu_count, amdsmi_processor_handle *processor_handles);
 DECLAREFUNC_ASMI(amdsmi_clean_gpu_local_data, amdsmi_processor_handle processor_handle);
+
+DECLAREFUNC_ASMI(amdsmi_set_gpu_fan_speed, amdsmi_processor_handle processor_handle, uint32_t sensor_ind, uint64_t speed);
+DECLAREFUNC_ASMI(amdsmi_get_gpu_fan_rpms, amdsmi_processor_handle processor_handle, uint32_t sensor_ind, int64_t *speed);
+DECLAREFUNC_ASMI(amdsmi_get_gpu_volt_metric, amdsmi_processor_handle processor_handle, amdsmi_voltage_type_t sensor_type, amdsmi_voltage_metric_t metric, int64_t *voltage);
+DECLAREFUNC_ASMI(amdsmi_get_gpu_metrics_info, amdsmi_processor_handle processor_handle, amdsmi_gpu_metrics_t * pgpu_metrics);
+DECLAREFUNC_ASMI(amdsmi_get_gpu_fan_speed_max, amdsmi_processor_handle processor_handle, uint32_t sensor_ind, uint64_t *max_speed);
+
+DECLAREFUNC_ASMI(amdsmi_get_gpu_activity, amdsmi_processor_handle processor_handle, amdsmi_engine_usage_t *info);
+DECLAREFUNC_ASMI(amdsmi_get_temp_metric, amdsmi_processor_handle processor_handle, amdsmi_temperature_type_t sensor_type, amdsmi_temperature_metric_t metric, int64_t *temperature);
+DECLAREFUNC_ASMI(amdsmi_is_gpu_power_management_enabled, amdsmi_processor_handle processor_handle, bool *enabled);
+
+#define ASMI_CALL(func, ...) \
+    do {\
+        assert(func##_ptr != NULL); \
+        amdsmi_status_t s_ = func##_ptr(__VA_ARGS__);\
+        if (s_ != AMDSMI_STATUS_SUCCESS) {\
+            const char *errstr_ = NULL;\
+            amdsmi_status_t es_ = amdsmi_get_esmi_err_msg_ptr(s_, &errstr_);\
+            if (es_ != AMDSMI_STATUS_SUCCESS) { \
+                ERROR_PRINT("Error: function %s failed but cannot resolve error string (amdsmi_status_t=%d, err_msg_status_t=%d)", #func, s_, es_);\
+            } else { \
+                ERROR_PRINT("Error: function %s failed: '%s' (amdsmi_status_t=%d)", #func, errstr_, s_);\
+            } \
+            return -EPERM; \
+        }\
+    } while (0)
 
 static void *lib_amd_smi = NULL;
 static bool amdsmi_initialized = false;
@@ -227,6 +239,14 @@ int likwid_sysft_init_amdsmi(_SysFeatureList *list)
     DLSYM_CHK(lib_amd_smi, amdsmi_set_gpu_od_volt_info);
     DLSYM_CHK(lib_amd_smi, amdsmi_get_cpu_handles);
     DLSYM_CHK(lib_amd_smi, amdsmi_clean_gpu_local_data);
+    DLSYM_CHK(lib_amd_smi, amdsmi_set_gpu_fan_speed);
+    DLSYM_CHK(lib_amd_smi, amdsmi_get_gpu_fan_rpms);
+    DLSYM_CHK(lib_amd_smi, amdsmi_get_gpu_volt_metric);
+    DLSYM_CHK(lib_amd_smi, amdsmi_get_gpu_metrics_info);
+    DLSYM_CHK(lib_amd_smi, amdsmi_get_gpu_fan_speed_max);
+    DLSYM_CHK(lib_amd_smi, amdsmi_get_gpu_activity);
+    DLSYM_CHK(lib_amd_smi, amdsmi_get_temp_metric);
+    DLSYM_CHK(lib_amd_smi, amdsmi_is_gpu_power_management_enabled);
 
 #if (AMDSMI_LIB_VERSION_MAJOR >= 26 && AMDSMI_LIB_VERSION_MINOR >= 2 && AMDSMI_LIB_VERSION_RELEASE >= 1)
     DLSYM_CHK(lib_amd_smi, amdsmi_get_supported_power_cap);
@@ -253,155 +273,6 @@ int likwid_sysft_init_amdsmi(_SysFeatureList *list)
     // amdsmi_get_supported_power_cap likely fails, so check against sysfs as well.
     // name power1_cap -> sensor 0
 
-/*    size_t info_len = 1024;*/
-/*    char info[1024];*/
-/*    memset(info, '\0', info_len * sizeof(char));*/
-/*    uint32_t socketCount = 0;*/
-/*    ASMI_CALL(amdsmi_get_socket_handles, &socketCount, NULL);*/
-/*    amdsmi_socket_handle* socketHandles = lw_malloc(socketCount * sizeof(amdsmi_socket_handle));*/
-/*    ASMI_CALL(amdsmi_get_socket_handles, &socketCount, socketHandles);*/
-/*    for (uint32_t i = 0; i < socketCount; i++) {*/
-/*        uint32_t deviceCount = 0;*/
-/*        ASMI_CALL(amdsmi_get_processor_handles, socketHandles[i], &deviceCount, NULL);*/
-/*        amdsmi_processor_handle* deviceHandles = lw_malloc(deviceCount * sizeof(amdsmi_processor_handle));*/
-/*        ASMI_CALL(amdsmi_get_processor_handles, socketHandles[i], &deviceCount, deviceHandles);*/
-/*        */
-/*        ASMI_CALL(amdsmi_get_socket_info, socketHandles[i], info_len, info);*/
-/*        printf("Socket %d Info: %s\n", i, info);*/
-/*        memset(info, '\0', info_len * sizeof(char));*/
-/*        for (uint32_t j = 0; j < deviceCount; j++) {*/
-/*            amdsmi_processor_handle handle = deviceHandles[j];*/
-/*            uint32_t sensorCount = 0;*/
-/*            uint32_t* sensorIds = lw_malloc(10 * sizeof(uint32_t));*/
-/*            memset(sensorIds, 0xFFFFFFFF, 10 * sizeof(uint32_t));*/
-/*            amdsmi_power_cap_type_t* sensorCaps = lw_malloc(10 * sizeof(amdsmi_power_cap_type_t));*/
-/*            ASMI_CALL(amdsmi_get_supported_power_cap, handle, &sensorCount, sensorIds, sensorCaps);*/
-/*            for (uint32_t k = 0; k < sensorCount && k < 10; k++) {*/
-/*                printf("Socket %d Device %d Sensor %d Type %s\n", i, j, sensorIds[k], (sensorCaps[k] == AMDSMI_POWER_CAP_TYPE_PPT0 ? "ppt0" : "ppt1"));*/
-/*            }*/
-/*            status = (*amdsmi_get_processor_info_ptr)(handle, info_len, info);*/
-/*            if (status == AMDSMI_STATUS_SUCCESS) {*/
-/*                processor_type_t type;*/
-/*                (*amdsmi_get_processor_type_ptr)(handle, &type);*/
-/*                printf("Proc %d/%d Info: %s Type %s\n", i, j, info, typeString(type));*/
-/*                memset(info, '\0', info_len * sizeof(char));*/
-/*                amdsmi_power_info_t pdata;*/
-/*                ASMI_CALL(amdsmi_get_power_info, handle, &pdata);*/
-/*                printf("soc_voltage %lu\n", pdata.soc_voltage);*/
-/*            } else {*/
-/*                const char* errstr = NULL;*/
-/*                amdsmi_get_esmi_err_msg_ptr(status, &errstr);*/
-/*                printf("Error %s\n", errstr);*/
-/*            }*/
-/*            amdsmi_processor_handle node;*/
-/*            status = (*amdsmi_get_node_handle_ptr)(handle, &node);*/
-/*            if (status == AMDSMI_STATUS_SUCCESS) {*/
-/*                processor_type_t type;*/
-/*                (*amdsmi_get_processor_type_ptr)(node, &type);*/
-/*                status = (*amdsmi_get_processor_info_ptr)(node, info_len, info);*/
-/*                printf("Node %d Info: %s Type %s\n", i, info, typeString(type));*/
-/*                memset(info, '\0', info_len * sizeof(char));*/
-/*                amdsmi_power_info_t pdata;*/
-/*                status = (*amdsmi_get_power_info_ptr)(node, &pdata);*/
-/*                printf("Node %d soc_voltage %lu\n", i, pdata.soc_voltage);*/
-/*            } else {*/
-/*                printf("Failed to get node handle for %d/%d\n", i, j);*/
-/*            }*/
-/*        }*/
-/*        free(deviceHandles);*/
-/*        amdsmi_processor_handle node;*/
-/*        status = (*amdsmi_get_node_handle_ptr)(socketHandles[i], &node);*/
-/*        if (status == AMDSMI_STATUS_SUCCESS) {*/
-/*            processor_type_t type;*/
-/*            (*amdsmi_get_processor_type_ptr)(node, &type);*/
-/*            status = (*amdsmi_get_processor_info_ptr)(node, info_len, info);*/
-/*            printf("Node %d Info: %s Type %s\n", i, info, typeString(type));*/
-/*            memset(info, '\0', info_len * sizeof(char));*/
-/*            amdsmi_power_info_t pdata;*/
-/*            status = (*amdsmi_get_power_info_ptr)(node, &pdata);*/
-/*            printf("Node %d soc_voltage %lu\n", i, pdata.soc_voltage);*/
-/*        } else {*/
-/*            printf("Failed to get node handle for socket %d\n", i);*/
-/*        }*/
-/*    }*/
-/*    free(socketHandles);*/
-
-
-/*    uint32_t deviceCount = 0;*/
-/*    ASMI_CALL(amdsmi_get_cpu_handles, &deviceCount, NULL);*/
-/*    amdsmi_processor_handle* deviceHandles = lw_malloc(deviceCount * sizeof(amdsmi_processor_handle));*/
-/*    ASMI_CALL(amdsmi_get_cpu_handles, &deviceCount, deviceHandles);*/
-/*    for (uint32_t i = 0; i < deviceCount; i++) {*/
-/*        amdsmi_processor_handle handle = deviceHandles[i];*/
-/*        status = (*amdsmi_get_processor_info_ptr)(handle, info_len, info);*/
-/*        if (status == AMDSMI_STATUS_SUCCESS) {*/
-/*            processor_type_t type;*/
-/*            (*amdsmi_get_processor_type_ptr)(handle, &type);*/
-/*            printf("CPU %d Info: %s  Type %s\n", i, info, typeString(type));*/
-/*            memset(info, '\0', info_len * sizeof(char));*/
-/*            amdsmi_power_info_t pdata;*/
-/*            status = (*amdsmi_get_power_info_ptr)(handle, &pdata);*/
-/*            printf("soc_voltage %lu\n", pdata.soc_voltage);*/
-/*        } else {*/
-/*            const char* errstr = NULL;*/
-/*            amdsmi_get_esmi_err_msg_ptr(status, &errstr);*/
-/*            printf("Error %s\n", errstr);*/
-/*        }*/
-/*        amdsmi_processor_handle node;*/
-/*        status = (*amdsmi_get_node_handle_ptr)(handle, &node);*/
-/*        if (status == AMDSMI_STATUS_SUCCESS) {*/
-/*            processor_type_t type;*/
-/*            (*amdsmi_get_processor_type_ptr)(handle, &type);*/
-/*            status = (*amdsmi_get_processor_info_ptr)(node, info_len, info);*/
-/*            printf("Node %d Info: %s  Type %s\n", i, info, typeString(type));*/
-/*            memset(info, '\0', info_len * sizeof(char));*/
-/*            amdsmi_power_info_t pdata;*/
-/*            status = (*amdsmi_get_power_info_ptr)(node, &pdata);*/
-/*            printf("Node %d soc_voltage %lu\n", i, pdata.soc_voltage);*/
-/*        } else {*/
-/*            printf("Failed to get node handle for %d\n", i);*/
-/*        }*/
-/*    }*/
-/*    free(deviceHandles);*/
-
-/*    deviceCount = 0;*/
-/*    ASMI_CALL(amdsmi_get_cpucore_handles, &deviceCount, NULL);*/
-/*    deviceHandles = lw_malloc(deviceCount * sizeof(amdsmi_processor_handle));*/
-/*    ASMI_CALL(amdsmi_get_cpucore_handles, &deviceCount, deviceHandles);*/
-/*    for (uint32_t i = 0; i < deviceCount; i++) {*/
-/*        amdsmi_processor_handle handle = deviceHandles[i];*/
-/*        status = (*amdsmi_get_processor_info_ptr)(handle, info_len, info);*/
-/*        if (status == AMDSMI_STATUS_SUCCESS) {*/
-/*            processor_type_t type;*/
-/*            (*amdsmi_get_processor_type_ptr)(handle, &type);*/
-/*            printf("CPU core %d Info: %s  Type %s\n", i, info, typeString(type));*/
-/*            memset(info, '\0', info_len * sizeof(char));*/
-/*            amdsmi_power_info_t pdata;*/
-/*            status = (*amdsmi_get_power_info_ptr)(handle, &pdata);*/
-/*            printf("soc_voltage %lu\n", pdata.soc_voltage);*/
-/*        } else {*/
-/*            const char* errstr = NULL;*/
-/*            amdsmi_get_esmi_err_msg_ptr(status, &errstr);*/
-/*            printf("Error %s\n", errstr);*/
-/*        }*/
-/*        amdsmi_processor_handle node;*/
-/*        status = (*amdsmi_get_node_handle_ptr)(handle, &node);*/
-/*        if (status == AMDSMI_STATUS_SUCCESS) {*/
-/*            processor_type_t type;*/
-/*            (*amdsmi_get_processor_type_ptr)(handle, &type);*/
-/*            status = (*amdsmi_get_processor_info_ptr)(node, info_len, info);*/
-/*            printf("Node %d Info: %s  Type %s\n", i, info, typeString(type));*/
-/*            memset(info, '\0', info_len * sizeof(char));*/
-/*            amdsmi_power_info_t pdata;*/
-/*            status = (*amdsmi_get_power_info_ptr)(node, &pdata);*/
-/*            printf("soc_voltage %lu\n", pdata.soc_voltage);*/
-/*        } else {*/
-/*            printf("Failed to get node handle for %d\n", i);*/
-/*        }*/
-/*    }*/
-/*    free(deviceHandles);*/
-
-    
 
     return likwid_sysft_register_features(list, &amd_smi_feature_list);
 }
@@ -1045,15 +916,31 @@ static int amd_smi_socket_power_cap_max_getter(const LikwidDevice_t device, char
     return likwid_sysft_uint64_to_string(power, value);
 }
 
-typedef enum {
-    AMDSMI_GPU_VOLT_GETTER_FIELD_CUR_SCLK,
-    AMDSMI_GPU_VOLT_GETTER_FIELD_CUR_MCLK,
-    AMDSMI_GPU_VOLT_GETTER_FIELD_AVAIL_SCLK,
-    AMDSMI_GPU_VOLT_GETTER_FIELD_AVAIL_MCLK,
-    AMDSMI_GPU_VOLT_GETTER_FIELD_VOLT_CURVE,
-} amd_smi_gpu_voltage_get_field;
 
-static int amd_smi_generic_gpu_voltage_getter(const LikwidDevice_t device, char **value, amd_smi_gpu_voltage_get_field field) {
+#define LW_SYSFT_FAN_SPEED_GET_GEN_RANGE(limit) \
+static int amd_smi_gpu_voltage_##limit##_getter(const LikwidDevice_t device, char **value) { \
+    if (device->type != DEVICE_TYPE_AMD_GPU) { \
+        return -EINVAL; \
+    } \
+    amdsmi_processor_handle handle; \
+    int err = lw_device_to_amdsmi_gpu_handle(device, &handle); \
+    if (err) { \
+        return err; \
+    } \
+    amdsmi_od_volt_freq_data_t data; \
+    ASMI_CALL(amdsmi_get_gpu_od_volt_info, handle, &data); \
+    bstring tmpstr = bformat("%ld - %ld", data.limit.lower_bound, data.limit.upper_bound); \
+    err = likwid_sysft_copystr(bdata(tmpstr), value); \
+    bdestroy(tmpstr); \
+    return err; \
+}
+
+LW_SYSFT_FAN_SPEED_GET_GEN_RANGE(curr_sclk_range);
+LW_SYSFT_FAN_SPEED_GET_GEN_RANGE(curr_mclk_range);
+LW_SYSFT_FAN_SPEED_GET_GEN_RANGE(sclk_freq_limits);
+LW_SYSFT_FAN_SPEED_GET_GEN_RANGE(mclk_freq_limits);
+
+static int amd_smi_gpu_voltage_volt_curve_getter(const LikwidDevice_t device, char **value) {
     if (device->type != DEVICE_TYPE_AMD_GPU) {
         return -EINVAL;
     }
@@ -1070,174 +957,52 @@ static int amd_smi_generic_gpu_voltage_getter(const LikwidDevice_t device, char 
     bstring tmpstr;
     struct bstrList *tmpList;
     struct tagbstring bcomma = bsStatic(",");
-    amdsmi_od_volt_curve_t *curve = NULL;
 
-    switch (field) {
-        case AMDSMI_GPU_VOLT_GETTER_FIELD_CUR_SCLK:
-            tmpstr = bformat("%ld - %ld", data.curr_sclk_range.lower_bound, data.curr_sclk_range.upper_bound);
-            ret = likwid_sysft_copystr(bdata(tmpstr), value);
-            bdestroy(tmpstr);
-            return ret;
-            break;
-        case AMDSMI_GPU_VOLT_GETTER_FIELD_CUR_MCLK:
-            tmpstr = bformat("%ld - %ld", data.curr_mclk_range.lower_bound, data.curr_mclk_range.upper_bound);
-            ret = likwid_sysft_copystr(bdata(tmpstr), value);
-            bdestroy(tmpstr);
-            return ret;
-            break;
-        case AMDSMI_GPU_VOLT_GETTER_FIELD_AVAIL_SCLK:
-            tmpstr = bformat("%ld - %ld", data.sclk_freq_limits.lower_bound, data.sclk_freq_limits.upper_bound);
-            ret = likwid_sysft_copystr(bdata(tmpstr), value);
-            bdestroy(tmpstr);
-            return ret;
-            break;
-        case AMDSMI_GPU_VOLT_GETTER_FIELD_AVAIL_MCLK:
-            tmpstr = bformat("%ld - %ld", data.mclk_freq_limits.lower_bound, data.mclk_freq_limits.upper_bound);
-            ret = likwid_sysft_copystr(bdata(tmpstr), value);
-            bdestroy(tmpstr);
-            return ret;
-            break;
-        case AMDSMI_GPU_VOLT_GETTER_FIELD_VOLT_CURVE:
-            
-            curve = &data.curve;
-            if (curve == NULL) return -EINVAL;
-            tmpList = bstrListCreate();
-            for (uint32_t i = 0; i < MIN(data.num_regions, AMDSMI_NUM_VOLTAGE_CURVE_POINTS); i++) {
-                amdsmi_od_vddc_point_t c = curve->vc_points[i];
-                tmpstr = bformat("%lu Hz: %lu mV", c.frequency, c.voltage);
-                bstrListAdd(tmpList, tmpstr);
-                bdestroy(tmpstr);
-            }
-            tmpstr = bjoin(tmpList, &bcomma);
-            ret = likwid_sysft_copystr(bdata(tmpstr), value);
-            bdestroy(tmpstr);
-            bstrListDestroy(tmpList);
-            return ret;
-            break;
+    amdsmi_od_volt_curve_t* curve = &data.curve;
+    if (curve == NULL) return -EINVAL;
+    tmpList = bstrListCreate();
+    for (uint32_t i = 0; i < MIN(data.num_regions, AMDSMI_NUM_VOLTAGE_CURVE_POINTS); i++) {
+        amdsmi_od_vddc_point_t c = curve->vc_points[i];
+        tmpstr = bformat("%lu Hz: %lu mV", c.frequency, c.voltage);
+        bstrListAdd(tmpList, tmpstr);
+        bdestroy(tmpstr);
     }
-    return -EINVAL;
-}
-
-static int amd_smi_gpu_voltage_cur_sclk_getter(const LikwidDevice_t device, char **value) {
-    return amd_smi_generic_gpu_voltage_getter(device, value, AMDSMI_GPU_VOLT_GETTER_FIELD_CUR_SCLK);
-}
-
-static int amd_smi_gpu_voltage_cur_mclk_getter(const LikwidDevice_t device, char **value) {
-    return amd_smi_generic_gpu_voltage_getter(device, value, AMDSMI_GPU_VOLT_GETTER_FIELD_CUR_MCLK);
-}
-
-static int amd_smi_gpu_voltage_avail_sclk_getter(const LikwidDevice_t device, char **value) {
-    return amd_smi_generic_gpu_voltage_getter(device, value, AMDSMI_GPU_VOLT_GETTER_FIELD_AVAIL_SCLK);
-}
-
-static int amd_smi_gpu_voltage_avail_mclk_getter(const LikwidDevice_t device, char **value) {
-    return amd_smi_generic_gpu_voltage_getter(device, value, AMDSMI_GPU_VOLT_GETTER_FIELD_AVAIL_MCLK);
-}
-
-static int amd_smi_gpu_voltage_volt_curve_getter(const LikwidDevice_t device, char **value) {
-    return amd_smi_generic_gpu_voltage_getter(device, value, AMDSMI_GPU_VOLT_GETTER_FIELD_VOLT_CURVE);
+    tmpstr = bjoin(tmpList, &bcomma);
+    ret = likwid_sysft_copystr(bdata(tmpstr), value);
+    bdestroy(tmpstr);
+    bstrListDestroy(tmpList);
+    return ret;
 }
 
 
-typedef enum {
-    AMDSMI_PWR_INFO_GETTER_FIELD_SOCKET_PWR,
-    AMDSMI_PWR_INFO_GETTER_FIELD_CUR_SOCKET_PWR,
-    AMDSMI_PWR_INFO_GETTER_FIELD_AVG_SOCKET_PWR,
-    AMDSMI_PWR_INFO_GETTER_FIELD_GFX_VOLT,
-    AMDSMI_PWR_INFO_GETTER_FIELD_SOC_VOLT,
-    AMDSMI_PWR_INFO_GETTER_FIELD_MEM_VOLT,
-    AMDSMI_PWR_INFO_GETTER_FIELD_PWR_LIMIT,
-} amd_smi_power_info_get_field;
-
-static int amd_smi_generic_power_info_getter(const LikwidDevice_t device, char **value, amd_smi_power_info_get_field field) {
-    if (device->type != DEVICE_TYPE_AMD_GPU) {
-        return -EINVAL;
-    }
-
-    amdsmi_processor_handle handle;
-    int err = lw_device_to_amdsmi_gpu_handle(device, &handle);
-    if (err) {
-        return err;
-    }
-    amdsmi_power_info_t data;
-    ASMI_CALL(amdsmi_get_power_info, handle, &data);
-
-    uint32_t not_supported_val = UINT32_MAX;
-
-    switch(field) {
-        case AMDSMI_PWR_INFO_GETTER_FIELD_SOCKET_PWR:
-            if (data.socket_power == not_supported_val) {
-                return likwid_sysft_copystr("not supported", value);
-            }
-            return likwid_sysft_uint64_to_string(data.socket_power, value);
-            break;
-        case AMDSMI_PWR_INFO_GETTER_FIELD_CUR_SOCKET_PWR:
-            if (data.current_socket_power == not_supported_val) {
-                return likwid_sysft_copystr("not supported", value);
-            }
-            return likwid_sysft_uint64_to_string(data.current_socket_power, value);
-            break;
-        case AMDSMI_PWR_INFO_GETTER_FIELD_AVG_SOCKET_PWR:
-            if (data.average_socket_power == not_supported_val) {
-                return likwid_sysft_copystr("not supported", value);
-            }
-            return likwid_sysft_uint64_to_string(data.average_socket_power, value);
-            break;
-        case AMDSMI_PWR_INFO_GETTER_FIELD_SOC_VOLT:
-            if (data.soc_voltage == not_supported_val) {
-                return likwid_sysft_copystr("not supported", value);
-            }
-            return likwid_sysft_uint64_to_string(data.soc_voltage, value);
-            break;
-        case AMDSMI_PWR_INFO_GETTER_FIELD_GFX_VOLT:
-            if (data.gfx_voltage == not_supported_val) {
-                return likwid_sysft_copystr("not supported", value);
-            }
-            return likwid_sysft_uint64_to_string(data.gfx_voltage, value);
-            break;
-        case AMDSMI_PWR_INFO_GETTER_FIELD_MEM_VOLT:
-            if (data.mem_voltage == not_supported_val) {
-                return likwid_sysft_copystr("not supported", value);
-            }
-            return likwid_sysft_uint64_to_string(data.mem_voltage, value);
-            break;
-        case AMDSMI_PWR_INFO_GETTER_FIELD_PWR_LIMIT:
-            if (data.power_limit == not_supported_val) {
-                return likwid_sysft_copystr("not supported", value);
-            }
-            return likwid_sysft_uint64_to_string(data.power_limit, value);
-            break;
-    }
-    return -EINVAL;
+#define LW_SYSFT_POWER_INFO_GEN(field) \
+static int amd_smi_power_info_##field##_getter(const LikwidDevice_t device, char **value) { \
+    if (device->type != DEVICE_TYPE_AMD_GPU) { \
+        return -EINVAL; \
+    } \
+    amdsmi_processor_handle handle; \
+    int err = lw_device_to_amdsmi_gpu_handle(device, &handle); \
+    if (err) { \
+        return err; \
+    } \
+    amdsmi_power_info_t data; \
+    ASMI_CALL(amdsmi_get_power_info, handle, &data); \
+    uint32_t not_supported_val = UINT16_MAX; \
+    if (data.field == not_supported_val) { \
+        return -ENOTSUP; \
+    } \
+    return likwid_sysft_uint64_to_string(data.field, value); \
 }
 
-static int amd_smi_gpu_power_info_socket_power_getter(const LikwidDevice_t device, char **value) {
-    return amd_smi_generic_power_info_getter(device, value, AMDSMI_PWR_INFO_GETTER_FIELD_SOCKET_PWR);
-}
+LW_SYSFT_POWER_INFO_GEN(socket_power);
+LW_SYSFT_POWER_INFO_GEN(current_socket_power);
+LW_SYSFT_POWER_INFO_GEN(average_socket_power);
+LW_SYSFT_POWER_INFO_GEN(soc_voltage);
+LW_SYSFT_POWER_INFO_GEN(gfx_voltage);
+LW_SYSFT_POWER_INFO_GEN(mem_voltage);
+LW_SYSFT_POWER_INFO_GEN(power_limit);
 
-static int amd_smi_gpu_power_info_cur_socket_power_getter(const LikwidDevice_t device, char **value) {
-    return amd_smi_generic_power_info_getter(device, value, AMDSMI_PWR_INFO_GETTER_FIELD_CUR_SOCKET_PWR);
-}
 
-static int amd_smi_gpu_power_info_avg_socket_power_getter(const LikwidDevice_t device, char **value) {
-    return amd_smi_generic_power_info_getter(device, value, AMDSMI_PWR_INFO_GETTER_FIELD_AVG_SOCKET_PWR);
-}
-
-static int amd_smi_gpu_power_info_soc_volt_getter(const LikwidDevice_t device, char **value) {
-    return amd_smi_generic_power_info_getter(device, value, AMDSMI_PWR_INFO_GETTER_FIELD_SOC_VOLT);
-}
-
-static int amd_smi_gpu_power_info_gfx_volt_getter(const LikwidDevice_t device, char **value) {
-    return amd_smi_generic_power_info_getter(device, value, AMDSMI_PWR_INFO_GETTER_FIELD_GFX_VOLT);
-}
-
-static int amd_smi_gpu_power_info_mem_volt_getter(const LikwidDevice_t device, char **value) {
-    return amd_smi_generic_power_info_getter(device, value, AMDSMI_PWR_INFO_GETTER_FIELD_MEM_VOLT);
-}
-
-static int amd_smi_gpu_power_info_socket_power_limit_getter(const LikwidDevice_t device, char **value) {
-    return amd_smi_generic_power_info_getter(device, value, AMDSMI_PWR_INFO_GETTER_FIELD_PWR_LIMIT);
-}
 
 static int amd_smi_gpu_clean_local_data_setter(const LikwidDevice_t device, const char *value) {
     if (device->type != DEVICE_TYPE_AMD_GPU) {
@@ -1260,6 +1025,243 @@ static int amd_smi_gpu_clean_local_data_setter(const LikwidDevice_t device, cons
     return 0;
 }
 
+
+#define LW_SYSFT_FAN_SPEED_GET_GEN_SENSOR(id) \
+static int amd_smi_fan_speed_##id##_getter(const LikwidDevice_t device, char **value) { \
+    if (device->type != DEVICE_TYPE_AMD_GPU) { \
+        return -EINVAL; \
+    } \
+    amdsmi_processor_handle handle; \
+    int err = lw_device_to_amdsmi_gpu_handle(device, &handle); \
+    if (err) { \
+        return err; \
+    } \
+    int64_t speed = 0; \
+    ASMI_CALL(amdsmi_get_gpu_fan_rpms, handle, (id), &speed); \
+    return likwid_sysft_uint64_to_string(speed, value); \
+}
+
+
+LW_SYSFT_FAN_SPEED_GET_GEN_SENSOR(0);
+
+#define LW_SYSFT_FAN_SPEED_MAX_GET_GEN_SENSOR(id) \
+static int amd_smi_fan_speed_max_##id##_getter(const LikwidDevice_t device, char **value) { \
+    if (device->type != DEVICE_TYPE_AMD_GPU) { \
+        return -EINVAL; \
+    } \
+    amdsmi_processor_handle handle; \
+    int err = lw_device_to_amdsmi_gpu_handle(device, &handle); \
+    if (err) { \
+        return err; \
+    } \
+    uint64_t speed = 0; \
+    ASMI_CALL(amdsmi_get_gpu_fan_speed_max, handle, (id), &speed); \
+    return likwid_sysft_uint64_to_string(speed, value); \
+}
+
+
+LW_SYSFT_FAN_SPEED_MAX_GET_GEN_SENSOR(0);
+
+
+
+#define LW_SYSFT_FAN_SPEED_SET_GEN_SENSOR(id) \
+static int amd_smi_fan_speed_##id##_setter(const LikwidDevice_t device, const char *value) { \
+    if (device->type != DEVICE_TYPE_AMD_GPU) { \
+        return -EINVAL; \
+    } \
+    amdsmi_processor_handle handle; \
+    int err = lw_device_to_amdsmi_gpu_handle(device, &handle); \
+    if (err) { \
+        return err; \
+    } \
+    int64_t speed = 0; \
+    err = likwid_sysft_string_to_uint64(value, (uint64_t*)&speed); \
+    if (err < 0) { \
+        return err; \
+    } \
+    ASMI_CALL(amdsmi_set_gpu_fan_speed, handle, (id), speed); \
+    return 0; \
+}
+
+LW_SYSFT_FAN_SPEED_SET_GEN_SENSOR(0);
+
+
+#define LW_SYSFT_GPU_VOLT_METRIC_GEN(sensor, metric) \
+static int amd_smi_generic_gpu_volt_metric_##sensor##_##metric##_getter(const LikwidDevice_t device, char **value) { \
+    if (device->type != DEVICE_TYPE_AMD_GPU) { \
+        return -EINVAL; \
+    } \
+    amdsmi_processor_handle handle; \
+    int err = lw_device_to_amdsmi_gpu_handle(device, &handle); \
+    if (err) { \
+        return err; \
+    } \
+    int64_t voltage = 0; \
+    ASMI_CALL(amdsmi_get_gpu_volt_metric, handle, sensor, metric, &voltage); \
+    return likwid_sysft_uint64_to_string(voltage, value); \
+}
+
+#define LW_SYSFT_GPU_VOLT_METRIC_SENSOR_GEN(sensor)\
+    LW_SYSFT_GPU_VOLT_METRIC_GEN(sensor, AMDSMI_VOLT_CURRENT); \
+    LW_SYSFT_GPU_VOLT_METRIC_GEN(sensor, AMDSMI_VOLT_MAX); \
+    LW_SYSFT_GPU_VOLT_METRIC_GEN(sensor, AMDSMI_VOLT_MAX_CRIT); \
+    LW_SYSFT_GPU_VOLT_METRIC_GEN(sensor, AMDSMI_VOLT_MIN); \
+    LW_SYSFT_GPU_VOLT_METRIC_GEN(sensor, AMDSMI_VOLT_MIN_CRIT); \
+    LW_SYSFT_GPU_VOLT_METRIC_GEN(sensor, AMDSMI_VOLT_AVERAGE); \
+    LW_SYSFT_GPU_VOLT_METRIC_GEN(sensor, AMDSMI_VOLT_LOWEST); \
+    LW_SYSFT_GPU_VOLT_METRIC_GEN(sensor, AMDSMI_VOLT_HIGHEST);
+
+LW_SYSFT_GPU_VOLT_METRIC_SENSOR_GEN(AMDSMI_VOLT_TYPE_VDDGFX);
+LW_SYSFT_GPU_VOLT_METRIC_SENSOR_GEN(AMDSMI_VOLT_TYPE_VDDBOARD);
+
+
+#define LW_SYSFT_GPU_ACTIVITY_GEN(field) \
+static int amd_smi_gpu_##field##_getter(const LikwidDevice_t device, char **value) { \
+    if (device->type != DEVICE_TYPE_AMD_GPU) { \
+        return -EINVAL; \
+    } \
+    amdsmi_processor_handle handle; \
+    int err = lw_device_to_amdsmi_gpu_handle(device, &handle); \
+    if (err) { \
+        return err; \
+    } \
+    amdsmi_engine_usage_t data; \
+    ASMI_CALL(amdsmi_get_gpu_activity, handle, &data); \
+    return likwid_sysft_uint64_to_string(data.field, value); \
+}
+
+LW_SYSFT_GPU_ACTIVITY_GEN(gfx_activity);
+LW_SYSFT_GPU_ACTIVITY_GEN(umc_activity);
+LW_SYSFT_GPU_ACTIVITY_GEN(mm_activity);
+
+#define LW_SYSFT_TEMP_METRIC_GEN(sensor, field) \
+static int amd_smi_temp_metric_##sensor##_##field##_getter(const LikwidDevice_t device, char **value) { \
+    amdsmi_processor_handle handle; \
+    int err = lw_device_to_amdsmi_gpu_handle(device, &handle); \
+    if (err) { \
+        printf("Failed to get likwid device\n"); \
+        return err; \
+    } \
+    amdsmi_status_t status = amdsmi_get_temp_metric_ptr(handle, sensor, field, NULL); \
+    if (status == AMDSMI_STATUS_NOT_SUPPORTED) { \
+        return -ENOTSUP; \
+    } \
+    int64_t data = 0; \
+    ASMI_CALL(amdsmi_get_temp_metric, handle, sensor, field, &data); \
+    return likwid_sysft_uint64_to_string(data, value); \
+}
+
+
+
+#define LW_SYSFT_TEMP_METRIC_GEN_TYPE(sensor) \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_CURRENT); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_MAX); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_MIN); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_MAX_HYST); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_MIN_HYST); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_CRITICAL); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_CRITICAL_HYST); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_EMERGENCY); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_EMERGENCY_HYST); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_CRIT_MIN); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_CRIT_MIN_HYST); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_OFFSET); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_LOWEST); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_HIGHEST); \
+    LW_SYSFT_TEMP_METRIC_GEN(sensor, AMDSMI_TEMP_SHUTDOWN);
+
+
+LW_SYSFT_TEMP_METRIC_GEN_TYPE(AMDSMI_TEMPERATURE_TYPE_EDGE);
+LW_SYSFT_TEMP_METRIC_GEN_TYPE(AMDSMI_TEMPERATURE_TYPE_HOTSPOT);
+LW_SYSFT_TEMP_METRIC_GEN_TYPE(AMDSMI_TEMPERATURE_TYPE_VRAM);
+LW_SYSFT_TEMP_METRIC_GEN_TYPE(AMDSMI_TEMPERATURE_TYPE_HBM_0);
+LW_SYSFT_TEMP_METRIC_GEN_TYPE(AMDSMI_TEMPERATURE_TYPE_HBM_1);
+LW_SYSFT_TEMP_METRIC_GEN_TYPE(AMDSMI_TEMPERATURE_TYPE_HBM_2);
+LW_SYSFT_TEMP_METRIC_GEN_TYPE(AMDSMI_TEMPERATURE_TYPE_HBM_3);
+LW_SYSFT_TEMP_METRIC_GEN_TYPE(AMDSMI_TEMPERATURE_TYPE_PLX);
+
+static int amd_smi_gpu_pwr_manage_getter(const LikwidDevice_t device, char **value) {
+    amdsmi_processor_handle handle;
+    int err = lw_device_to_amdsmi_gpu_handle(device, &handle);
+    if (err) {
+        printf("Failed to get likwid device\n");
+        return err;
+    }
+    bool data = false;
+    ASMI_CALL(amdsmi_is_gpu_power_management_enabled, handle, &data);
+    return likwid_sysft_copystr((data == true ? "true" : "false"), value);
+}
+
+/*#define LW_SYSFT_GPU_METRICS_GEN(field) \*/
+/*static int amd_smi_gpu_metrics_##field##_getter(const LikwidDevice_t device, char **value) { \*/
+/*    if (device->type != DEVICE_TYPE_AMD_GPU) { \*/
+/*        return -EINVAL; \*/
+/*    } \*/
+/*    amdsmi_processor_handle handle; \*/
+/*    int err = lw_device_to_amdsmi_gpu_handle(device, &handle); \*/
+/*    if (err) { \*/
+/*        return err; \*/
+/*    } \*/
+/*    amdsmi_gpu_metrics_t metrics; \*/
+/*    ASMI_CALL(amdsmi_get_gpu_metrics_info, handle, &metrics); \*/
+/*    return likwid_sysft_uint64_to_string(metrics.field, value); \*/
+/*}*/
+
+/*LW_SYSFT_GPU_METRICS_GEN(temperature_edge);*/
+/*LW_SYSFT_GPU_METRICS_GEN(temperature_hotspot);*/
+/*LW_SYSFT_GPU_METRICS_GEN(temperature_mem);*/
+/*LW_SYSFT_GPU_METRICS_GEN(temperature_vrgfx);*/
+/*LW_SYSFT_GPU_METRICS_GEN(temperature_vrsoc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(temperature_vrmem);*/
+/*LW_SYSFT_GPU_METRICS_GEN(average_gfx_activity);*/
+/*LW_SYSFT_GPU_METRICS_GEN(average_umc_activity);*/
+/*LW_SYSFT_GPU_METRICS_GEN(average_mm_activity);*/
+/*LW_SYSFT_GPU_METRICS_GEN(average_socket_power);*/
+/*LW_SYSFT_GPU_METRICS_GEN(energy_accumulator);*/
+/*LW_SYSFT_GPU_METRICS_GEN(average_gfxclk_frequency);*/
+/*LW_SYSFT_GPU_METRICS_GEN(average_socclk_frequency);*/
+/*LW_SYSFT_GPU_METRICS_GEN(average_uclk_frequency);*/
+/*LW_SYSFT_GPU_METRICS_GEN(average_vclk0_frequency);*/
+/*LW_SYSFT_GPU_METRICS_GEN(average_vclk1_frequency);*/
+/*LW_SYSFT_GPU_METRICS_GEN(average_dclk0_frequency);*/
+/*LW_SYSFT_GPU_METRICS_GEN(average_dclk1_frequency);*/
+/*LW_SYSFT_GPU_METRICS_GEN(current_gfxclk);*/
+/*LW_SYSFT_GPU_METRICS_GEN(current_socclk);*/
+/*LW_SYSFT_GPU_METRICS_GEN(current_uclk);*/
+/*LW_SYSFT_GPU_METRICS_GEN(current_vclk0);*/
+/*LW_SYSFT_GPU_METRICS_GEN(current_vclk1);*/
+/*LW_SYSFT_GPU_METRICS_GEN(current_dclk0);*/
+/*LW_SYSFT_GPU_METRICS_GEN(current_dclk1);*/
+/*LW_SYSFT_GPU_METRICS_GEN(throttle_status);*/
+/*LW_SYSFT_GPU_METRICS_GEN(current_fan_speed);*/
+/*LW_SYSFT_GPU_METRICS_GEN(pcie_link_width);*/
+/*LW_SYSFT_GPU_METRICS_GEN(pcie_link_speed);*/
+/*LW_SYSFT_GPU_METRICS_GEN(gfx_activity_acc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(mem_activity_acc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(voltage_soc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(voltage_gfx);*/
+/*LW_SYSFT_GPU_METRICS_GEN(voltage_mem);*/
+/*LW_SYSFT_GPU_METRICS_GEN(indep_throttle_status);*/
+/*LW_SYSFT_GPU_METRICS_GEN(current_socket_power);*/
+/*LW_SYSFT_GPU_METRICS_GEN(gfxclk_lock_status);*/
+/*LW_SYSFT_GPU_METRICS_GEN(xgmi_link_width);*/
+/*LW_SYSFT_GPU_METRICS_GEN(xgmi_link_speed);*/
+/*LW_SYSFT_GPU_METRICS_GEN(pcie_bandwidth_acc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(pcie_bandwidth_inst);*/
+/*LW_SYSFT_GPU_METRICS_GEN(pcie_l0_to_recov_count_acc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(pcie_replay_count_acc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(pcie_replay_rover_count_acc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(pcie_nak_sent_count_acc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(pcie_nak_rcvd_count_acc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(pcie_lc_perf_other_end_recovery);*/
+/*LW_SYSFT_GPU_METRICS_GEN(accumulation_counter);*/
+/*LW_SYSFT_GPU_METRICS_GEN(prochot_residency_acc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(ppt_residency_acc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(socket_thm_residency_acc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(vr_thm_residency_acc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(hbm_thm_residency_acc);*/
+/*LW_SYSFT_GPU_METRICS_GEN(num_partition);*/
+/*LW_SYSFT_GPU_METRICS_GEN(vram_max_bandwidth);*/
 
 
 static _SysFeature amd_smi_features[] = {
@@ -1328,24 +1330,166 @@ static _SysFeature amd_smi_features[] = {
     {"perf_level", "amdsmi", "PowerPlay performance level", amd_smi_perf_level_getter, amd_smi_perf_level_setter, DEVICE_TYPE_AMD_GPU, NULL, NULL},
     {"gpu_override", "amdsmi", "Overdrive rate (WARNING)", amd_smi_gpu_override_level_getter, amd_smi_gpu_override_level_setter, DEVICE_TYPE_AMD_GPU, NULL, NULL},
     {"gpu_mem_override", "amdsmi", "Memory overdrive rate", amd_smi_gpu_mem_override_level_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, NULL},
-    {"cur_sclk_range", "amdsmi", "Current SCLK frequency range", amd_smi_gpu_voltage_cur_sclk_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "MHz"},
-    {"avail_sclk_range", "amdsmi", "Available SCLK frequency range", amd_smi_gpu_voltage_avail_sclk_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "MHz"},
-    {"cur_mclk_range", "amdsmi", "Current MCLK frequency range", amd_smi_gpu_voltage_cur_mclk_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "MHz"},
-    {"avail_mclk_range", "amdsmi", "Available MCLK frequency range", amd_smi_gpu_voltage_avail_mclk_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "MHz"},
+    {"cur_sclk_range", "amdsmi", "Current SCLK frequency range", amd_smi_gpu_voltage_curr_sclk_range_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "MHz"},
+    {"avail_sclk_range", "amdsmi", "Available SCLK frequency range", amd_smi_gpu_voltage_sclk_freq_limits_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "MHz"},
+    {"cur_mclk_range", "amdsmi", "Current MCLK frequency range", amd_smi_gpu_voltage_curr_mclk_range_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "MHz"},
+    {"avail_mclk_range", "amdsmi", "Available MCLK frequency range", amd_smi_gpu_voltage_mclk_freq_limits_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "MHz"},
     {"voltage_curve", "amdsmi", "Voltage curve", amd_smi_gpu_voltage_volt_curve_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, NULL},
-    {"socket_power2", "amdsmi", "Socket power", amd_smi_gpu_power_info_socket_power_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
-    {"cur_socket_power2", "amdsmi", "Current socket power", amd_smi_gpu_power_info_cur_socket_power_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
-    {"avg_socket_power2", "amdsmi", "Average socket power", amd_smi_gpu_power_info_avg_socket_power_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
-    {"soc_voltage", "amdsmi", "SoC voltage", amd_smi_gpu_power_info_soc_volt_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "mV"},
-    {"gfx_voltage", "amdsmi", "GFX voltage", amd_smi_gpu_power_info_gfx_volt_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "mV"},
-    {"mem_voltage", "amdsmi", "Memory voltage", amd_smi_gpu_power_info_mem_volt_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "mV"},
-    {"power_limit2", "amdsmi", "Power limit", amd_smi_gpu_power_info_socket_power_limit_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
-    {"power_cap_0", "amdsmi", "Current power cap", amd_smi_power_cap_sensor_0_current_getter, amd_smi_power_cap_sensor_0_setter, DEVICE_TYPE_AMD_GPU, NULL, "W"},
-    {"power_cap_0_min", "amdsmi", "Minimal power cap", amd_smi_power_cap_sensor_0_min_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
-    {"power_cap_0_max", "amdsmi", "Maximal power cap", amd_smi_power_cap_sensor_0_max_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
-    {"power_cap_0_default", "amdsmi", "Default power cap", amd_smi_power_cap_sensor_0_default_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
-    {"power_cap_0_dpm", "amdsmi", "DPM power cap", amd_smi_power_cap_sensor_0_dpm_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
+    {"socket_power2", "amdsmi", "Socket power", amd_smi_power_info_socket_power_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
+    {"cur_socket_power2", "amdsmi", "Current socket power", amd_smi_power_info_current_socket_power_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
+    {"avg_socket_power2", "amdsmi", "Average socket power", amd_smi_power_info_average_socket_power_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
+    {"soc_voltage", "amdsmi", "SoC voltage", amd_smi_power_info_soc_voltage_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "mV"},
+    {"gfx_voltage", "amdsmi", "GFX voltage", amd_smi_power_info_gfx_voltage_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "mV"},
+    {"mem_voltage", "amdsmi", "Memory voltage", amd_smi_power_info_mem_voltage_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "mV"},
+    {"power_limit2", "amdsmi", "Power limit", amd_smi_power_info_power_limit_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
+    {"power_cap_0", "amdsmi", "Current power cap of sensor 0", amd_smi_power_cap_sensor_0_current_getter, amd_smi_power_cap_sensor_0_setter, DEVICE_TYPE_AMD_GPU, NULL, "W"},
+    {"power_cap_0_min", "amdsmi", "Minimal power cap of sensor 0", amd_smi_power_cap_sensor_0_min_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
+    {"power_cap_0_max", "amdsmi", "Maximal power cap of sensor 0", amd_smi_power_cap_sensor_0_max_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
+    {"power_cap_0_default", "amdsmi", "Default power cap of sensor 0", amd_smi_power_cap_sensor_0_default_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
+    {"power_cap_0_dpm", "amdsmi", "DPM power cap of sensor 0", amd_smi_power_cap_sensor_0_dpm_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "W"},
     {"clean_local_data", "amdsmi", "Run the cleaner shader to clean up data in LDS/GPRs", NULL, amd_smi_gpu_clean_local_data_setter, DEVICE_TYPE_AMD_GPU, NULL, NULL},
+    {"fan_speed_0", "amdsmi", "Current fan speed of fan 0", amd_smi_fan_speed_0_getter, amd_smi_fan_speed_0_setter, DEVICE_TYPE_AMD_GPU, NULL, "RPM"},
+    {"fan_speed_max_0", "amdsmi", "Maximal fan speed of fan 0", amd_smi_fan_speed_max_0_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "RPM"},
+    {"voltage_vddgfx_cur", "amdsmi", "Current voltage of VDDGFX sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDGFX_AMDSMI_VOLT_CURRENT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddgfx_min", "amdsmi", "Minimal voltage of VDDGFX sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDGFX_AMDSMI_VOLT_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddgfx_min_crit", "amdsmi", "Minimal critical voltage of VDDGFX sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDGFX_AMDSMI_VOLT_MIN_CRIT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddgfx_max", "amdsmi", "Maximal voltage of VDDGFX sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDGFX_AMDSMI_VOLT_MAX_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddgfx_max_crit", "amdsmi", "Maximal critical voltage of VDDGFX sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDGFX_AMDSMI_VOLT_MAX_CRIT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddgfx_lowest", "amdsmi", "Historical minimum voltage of VDDGFX sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDGFX_AMDSMI_VOLT_LOWEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddgfx_highest", "amdsmi", "Historical maximum voltage of VDDGFX sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDGFX_AMDSMI_VOLT_HIGHEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddgfx_avg", "amdsmi", "Average voltage of VDDGFX sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDGFX_AMDSMI_VOLT_AVERAGE_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddboard_cur", "amdsmi", "Current voltage of VDDBOARD sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDBOARD_AMDSMI_VOLT_CURRENT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddboard_min", "amdsmi", "Minimal voltage of VDDBOARD sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDBOARD_AMDSMI_VOLT_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddboard_min_crit", "amdsmi", "Minimal critical voltage of VDDBOARD sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDBOARD_AMDSMI_VOLT_MIN_CRIT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddboard_max", "amdsmi", "Maximal voltage of VDDBOARD sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDBOARD_AMDSMI_VOLT_MAX_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddboard_max_crit", "amdsmi", "Maximal critical voltage of VDDBOARD sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDBOARD_AMDSMI_VOLT_MAX_CRIT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddboard_lowest", "amdsmi", "Historical minimum voltage of VDDBOARD sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDBOARD_AMDSMI_VOLT_LOWEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddboard_highest", "amdsmi", "Historical maximum voltage of VDDBOARD sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDBOARD_AMDSMI_VOLT_HIGHEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"voltage_vddboard_avg", "amdsmi", "Average voltage of VDDBOARD sensor", amd_smi_generic_gpu_volt_metric_AMDSMI_VOLT_TYPE_VDDBOARD_AMDSMI_VOLT_AVERAGE_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "V"},
+    {"temp_edge_current", "amdsmi", "Current edge temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_CURRENT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_min", "amdsmi", "Minimal edge temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_max", "amdsmi", "Maximal edge temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_MAX_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_min_hyst", "amdsmi", "Minimal limit hysteresis edge temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_max_hyst", "amdsmi", "Maximal limit hysteresis edge temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_MAX_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_critical_max", "amdsmi", "Critical maximal edge temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_CRITICAL_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_critical_hyst", "amdsmi", "Critical maximal limit hysteresis edge temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_CRITICAL_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_critical_min", "amdsmi", "Critical minimal edge temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_CRIT_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_critical_min_hyst", "amdsmi", "Critical minimal limit hysteresis edge temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_CRIT_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_emergency", "amdsmi", "Emergency maximal edge temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_EMERGENCY_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_emergency_hyst", "amdsmi", "Emergency limit hysteresis edge temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_EMERGENCY_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_lowest", "amdsmi", "Historical minimal edge temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_LOWEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_highest", "amdsmi", "Historical maximal edge temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_HIGHEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_shutdown", "amdsmi", "Shutdown edge temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_SHUTDOWN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_edge_offset", "amdsmi", "Temperature offset for edge which is added to the temperature reading by the chip ", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_EDGE_AMDSMI_TEMP_OFFSET_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_current", "amdsmi", "Current hotspot temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_CURRENT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_min", "amdsmi", "Minimal hotspot temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_max", "amdsmi", "Maximal hotspot temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_MAX_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_min_hyst", "amdsmi", "Minimal limit hysteresis hotspot temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_max_hyst", "amdsmi", "Maximal limit hysteresis hotspot temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_MAX_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_critical_max", "amdsmi", "Critical maximal hotspot temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_CRITICAL_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_critical_hyst", "amdsmi", "Critical maximal limit hysteresis hotspot temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_CRITICAL_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_critical_min", "amdsmi", "Critical minimal hotspot temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_CRIT_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_critical_min_hyst", "amdsmi", "Critical minimal limit hysteresis hotspot temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_CRIT_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_emergency", "amdsmi", "Emergency maximal hotspot temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_EMERGENCY_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_emergency_hyst", "amdsmi", "Emergency limit hysteresis hotspot temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_EMERGENCY_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_lowest", "amdsmi", "Historical minimal hotspot temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_LOWEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_highest", "amdsmi", "Historical maximal hotspot temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_HIGHEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_shutdown", "amdsmi", "Shutdown hotspot temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_SHUTDOWN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hotspot_offset", "amdsmi", "Temperature offset for hotspot which is added to the temperature reading by the chip ", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HOTSPOT_AMDSMI_TEMP_OFFSET_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_current", "amdsmi", "Current vram temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_CURRENT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_min", "amdsmi", "Minimal vram temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_max", "amdsmi", "Maximal vram temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_MAX_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_min_hyst", "amdsmi", "Minimal limit hysteresis vram temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_max_hyst", "amdsmi", "Maximal limit hysteresis vram temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_MAX_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_critical_max", "amdsmi", "Critical maximal vram temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_CRITICAL_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_critical_hyst", "amdsmi", "Critical maximal limit hysteresis vram temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_CRITICAL_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_critical_min", "amdsmi", "Critical minimal vram temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_CRIT_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_critical_min_hyst", "amdsmi", "Critical minimal limit hysteresis vram temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_CRIT_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_emergency", "amdsmi", "Emergency maximal vram temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_EMERGENCY_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_emergency_hyst", "amdsmi", "Emergency limit hysteresis vram temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_EMERGENCY_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_lowest", "amdsmi", "Historical minimal vram temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_LOWEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_highest", "amdsmi", "Historical maximal vram temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_HIGHEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_shutdown", "amdsmi", "Shutdown vram temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_SHUTDOWN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_vram_offset", "amdsmi", "Temperature offset for vram which is added to the temperature reading by the chip ", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_VRAM_AMDSMI_TEMP_OFFSET_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_current", "amdsmi", "Current hbm0 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_CURRENT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_min", "amdsmi", "Minimal hbm0 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_max", "amdsmi", "Maximal hbm0 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_MAX_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_min_hyst", "amdsmi", "Minimal limit hysteresis hbm0 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_max_hyst", "amdsmi", "Maximal limit hysteresis hbm0 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_MAX_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_critical_max", "amdsmi", "Critical maximal hbm0 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_CRITICAL_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_critical_hyst", "amdsmi", "Critical maximal limit hysteresis hbm0 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_CRITICAL_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_critical_min", "amdsmi", "Critical minimal hbm0 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_CRIT_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_critical_min_hyst", "amdsmi", "Critical minimal limit hysteresis hbm0 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_CRIT_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_emergency", "amdsmi", "Emergency maximal hbm0 temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_EMERGENCY_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_emergency_hyst", "amdsmi", "Emergency limit hysteresis hbm0 temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_EMERGENCY_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_lowest", "amdsmi", "Historical minimal hbm0 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_LOWEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_highest", "amdsmi", "Historical maximal hbm0 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_HIGHEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_shutdown", "amdsmi", "Shutdown hbm0 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_SHUTDOWN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm0_offset", "amdsmi", "Temperature offset for hbm0 which is added to the temperature reading by the chip ", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_0_AMDSMI_TEMP_OFFSET_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_current", "amdsmi", "Current hbm1 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_CURRENT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_min", "amdsmi", "Minimal hbm1 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_max", "amdsmi", "Maximal hbm1 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_MAX_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_min_hyst", "amdsmi", "Minimal limit hysteresis hbm1 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_max_hyst", "amdsmi", "Maximal limit hysteresis hbm1 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_MAX_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_critical_max", "amdsmi", "Critical maximal hbm1 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_CRITICAL_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_critical_hyst", "amdsmi", "Critical maximal limit hysteresis hbm1 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_CRITICAL_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_critical_min", "amdsmi", "Critical minimal hbm1 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_CRIT_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_critical_min_hyst", "amdsmi", "Critical minimal limit hysteresis hbm1 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_CRIT_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_emergency", "amdsmi", "Emergency maximal hbm1 temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_EMERGENCY_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_emergency_hyst", "amdsmi", "Emergency limit hysteresis hbm1 temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_EMERGENCY_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_lowest", "amdsmi", "Historical minimal hbm1 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_LOWEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_highest", "amdsmi", "Historical maximal hbm1 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_HIGHEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_shutdown", "amdsmi", "Shutdown hbm1 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_SHUTDOWN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm1_offset", "amdsmi", "Temperature offset for hbm1 which is added to the temperature reading by the chip ", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_1_AMDSMI_TEMP_OFFSET_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_current", "amdsmi", "Current hbm2 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_CURRENT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_min", "amdsmi", "Minimal hbm2 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_max", "amdsmi", "Maximal hbm2 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_MAX_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_min_hyst", "amdsmi", "Minimal limit hysteresis hbm2 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_max_hyst", "amdsmi", "Maximal limit hysteresis hbm2 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_MAX_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_critical_max", "amdsmi", "Critical maximal hbm2 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_CRITICAL_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_critical_hyst", "amdsmi", "Critical maximal limit hysteresis hbm2 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_CRITICAL_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_critical_min", "amdsmi", "Critical minimal hbm2 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_CRIT_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_critical_min_hyst", "amdsmi", "Critical minimal limit hysteresis hbm2 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_CRIT_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_emergency", "amdsmi", "Emergency maximal hbm2 temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_EMERGENCY_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_emergency_hyst", "amdsmi", "Emergency limit hysteresis hbm2 temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_EMERGENCY_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_lowest", "amdsmi", "Historical minimal hbm2 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_LOWEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_highest", "amdsmi", "Historical maximal hbm2 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_HIGHEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_shutdown", "amdsmi", "Shutdown hbm2 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_SHUTDOWN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm2_offset", "amdsmi", "Temperature offset for hbm2 which is added to the temperature reading by the chip ", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_2_AMDSMI_TEMP_OFFSET_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_current", "amdsmi", "Current hbm3 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_CURRENT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_min", "amdsmi", "Minimal hbm3 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_max", "amdsmi", "Maximal hbm3 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_MAX_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_min_hyst", "amdsmi", "Minimal limit hysteresis hbm3 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_max_hyst", "amdsmi", "Maximal limit hysteresis hbm3 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_MAX_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_critical_max", "amdsmi", "Critical maximal hbm3 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_CRITICAL_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_critical_hyst", "amdsmi", "Critical maximal limit hysteresis hbm3 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_CRITICAL_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_critical_min", "amdsmi", "Critical minimal hbm3 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_CRIT_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_critical_min_hyst", "amdsmi", "Critical minimal limit hysteresis hbm3 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_CRIT_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_emergency", "amdsmi", "Emergency maximal hbm3 temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_EMERGENCY_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_emergency_hyst", "amdsmi", "Emergency limit hysteresis hbm3 temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_EMERGENCY_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_lowest", "amdsmi", "Historical minimal hbm3 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_LOWEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_highest", "amdsmi", "Historical maximal hbm3 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_HIGHEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_shutdown", "amdsmi", "Shutdown hbm3 temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_SHUTDOWN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_hbm3_offset", "amdsmi", "Temperature offset for hbm3 which is added to the temperature reading by the chip ", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_HBM_3_AMDSMI_TEMP_OFFSET_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_current", "amdsmi", "Current plx temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_CURRENT_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_min", "amdsmi", "Minimal plx temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_max", "amdsmi", "Maximal plx temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_MAX_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_min_hyst", "amdsmi", "Minimal limit hysteresis plx temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_max_hyst", "amdsmi", "Maximal limit hysteresis plx temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_MAX_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_critical_max", "amdsmi", "Critical maximal plx temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_CRITICAL_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_critical_hyst", "amdsmi", "Critical maximal limit hysteresis plx temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_CRITICAL_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_critical_min", "amdsmi", "Critical minimal plx temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_CRIT_MIN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_critical_min_hyst", "amdsmi", "Critical minimal limit hysteresis plx temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_CRIT_MIN_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_emergency", "amdsmi", "Emergency maximal plx temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_EMERGENCY_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_emergency_hyst", "amdsmi", "Emergency limit hysteresis plx temperature, for chips supporting more than two upper temperature limits", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_EMERGENCY_HYST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_lowest", "amdsmi", "Historical minimal plx temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_LOWEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_highest", "amdsmi", "Historical maximal plx temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_HIGHEST_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_shutdown", "amdsmi", "Shutdown plx temperature", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_SHUTDOWN_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"temp_plx_offset", "amdsmi", "Temperature offset for plx which is added to the temperature reading by the chip ", amd_smi_temp_metric_AMDSMI_TEMPERATURE_TYPE_PLX_AMDSMI_TEMP_OFFSET_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "°C"},
+    {"gfx_active_avg", "amdsmi", "Average GFX activity", amd_smi_gpu_gfx_activity_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "%"},
+    {"umc_active_avg", "amdsmi", "Average UMC activity", amd_smi_gpu_umc_activity_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "%"},
+    {"mm_active_avg", "amdsmi", "Average MM activity", amd_smi_gpu_mm_activity_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, "%"},
+    {"pwr_managed", "amdsmi", "Power management activity", amd_smi_gpu_pwr_manage_getter, NULL, DEVICE_TYPE_AMD_GPU, NULL, NULL},
 };
 
 
