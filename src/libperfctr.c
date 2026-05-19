@@ -213,7 +213,7 @@ static int _libperfctr_num_groups = 0;
 static int *_libperfctr_groups = NULL;
 static int _libperfctr_use_locks = 0;
 static pthread_mutex_t _libperfctr_lock = PTHREAD_MUTEX_INITIALIZER;
-static LikwidThreadKey* _libperfctr_regions = NULL;
+static LikwidRegionKey* _libperfctr_regions = NULL;
 static int _libperfctr_num_regions = 0;
 static pthread_mutex_t _libperfctr_regions_lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -345,17 +345,17 @@ int libperfctr_add_region(LikwidMarkerThread* thread, const char* regionTag, Lik
         int index = -1;
         pthread_mutex_lock(&_libperfctr_regions_lock);
         for (int i = 0; i < _libperfctr_num_regions; i++) {
-            LikwidThreadKey *tmp = &_libperfctr_regions[i];
+            LikwidRegionKey *tmp = &_libperfctr_regions[i];
             if ((tmp->group == key.group) && (strncmp(tmp->region, key.region, strlen(tmp->region)) == 0)) {
                 index = i;
                 break;
             }
         }
         if (index == -1) {
-            LikwidThreadKey* a = lw_realloc(_libperfctr_regions, (_libperfctr_num_regions+1) * sizeof(LikwidThreadKey));
+            LikwidRegionKey* a = lw_realloc(_libperfctr_regions, (_libperfctr_num_regions+1) * sizeof(LikwidRegionKey));
             _libperfctr_regions = a;
             index = _libperfctr_num_regions++;
-            LikwidThreadKey *tmp = &_libperfctr_regions[index];
+            LikwidRegionKey *tmp = &_libperfctr_regions[index];
             tmp->region = lw_asprintf("%s", key.region);
             tmp->group = key.group;
         }
