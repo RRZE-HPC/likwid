@@ -106,7 +106,16 @@ _rocmon_parse_gpustr(char* gpuStr, int* numGpus, int** gpuIds)
     // Parse ids to int
     for (int i = 0; i < tmpNumGpus; i++)
     {
-        tmpGpuIds[i] = atoi(bdata(gpuTokens->entry[i]));
+        char* tmp = NULL;
+        if (bdata(gpuTokens->entry[i]) != NULL) {
+            tmp = bdata(gpuTokens->entry[i]);
+        } else {
+            free(tmpGpuIds);
+            bstrListDestroy(gpuTokens);
+            bdestroy(bGpuStr);
+            return -EXIT_FAILURE;
+        }
+        tmpGpuIds[i] = atoi(tmp);
     }
 
     // Copy data

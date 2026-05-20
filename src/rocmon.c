@@ -135,7 +135,7 @@ DECLAREFUNC_SMI(rsmi_dev_volt_metric_get, uint32_t dv_ind, rsmi_voltage_type_t s
 DECLAREFUNC_SMI(rsmi_dev_overdrive_level_get, uint32_t dv_ind, uint32_t* od);
 DECLAREFUNC_SMI(rsmi_dev_ecc_count_get, uint32_t dv_ind, rsmi_gpu_block_t block, rsmi_error_count_t* ec);
 DECLAREFUNC_SMI(rsmi_compute_process_info_get, rsmi_process_info_t* procs, uint32_t* num_items);
-DECLAREFUNC_SMI(rsmi_status_string_ptr, rsmi_status_t status, const char **status_string);
+DECLAREFUNC_SMI(rsmi_status_string, rsmi_status_t status, const char **status_string);
 
 
 // ----------------------------------------------------
