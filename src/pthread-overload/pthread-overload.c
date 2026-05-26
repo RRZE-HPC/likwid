@@ -219,13 +219,17 @@ pthread_create(pthread_t* thread,
         fpipe = fopen(file, "r");
         if (!fpipe)
         {
-            fprintf(stderr, "Problems reading symbols for shepherd thread detection: %s\n", strerror(errno));
+            if (ncalled == 0) {
+                fprintf(stderr, "Problems reading symbols for shepherd thread detection: %s\n", strerror(errno));
+            }
         }
         else
         {
             if (fgets(buff, sizeof(buff), fpipe) == NULL) {
                 // TODO, how should we handle this error correctly?
-                fprintf(stderr, "Problems reading symbols for shepherd thread detection: %s\n", strerror(errno));
+                if (ncalled == 0) {
+                    fprintf(stderr, "Problems reading symbols for shepherd thread detection: %s\n", strerror(errno));
+                }
                 fclose(fpipe);
             } else {
                 char* tmp = strstr(buff, "monitor");
