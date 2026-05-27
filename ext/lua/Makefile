@@ -26,6 +26,9 @@ ifeq ($(strip $(COMPILER)),MIC)
 CFLAGS += -mmic
 LFLAGS += -mmic
 endif
+ifeq ($(strip $(COMPILER)),GCCX86)
+CFLAGS += -m32
+endif
 
 
 #CONFIGURE BUILD SYSTEM
