@@ -129,6 +129,7 @@ typedef struct {
   uint64_t lo, hi;
 } CWISS_U128;
 
+#ifdef __X86_64__
 /// Computes a double-width multiplication operation.
 static inline CWISS_U128 CWISS_Mul128(uint64_t a, uint64_t b) {
   // TODO: de-intrinsics-ize this.
@@ -136,6 +137,37 @@ static inline CWISS_U128 CWISS_Mul128(uint64_t a, uint64_t b) {
   p *= b;
   return (CWISS_U128){(uint64_t)p, (uint64_t)(p >> 64)};
 }
+#else
+static inline void mult64to128(uint64_t op1, uint64_t op2, uint64_t *hi, uint64_t *lo)
+{
+    uint64_t u1 = (op1 & 0xffffffff);
+    uint64_t v1 = (op2 & 0xffffffff);
+    uint64_t t = (u1 * v1);
+    uint64_t w3 = (t & 0xffffffff);
+    uint64_t k = (t >> 32);
+
+    op1 >>= 32;
+    t = (op1 * v1) + k;
+    k = (t & 0xffffffff);
+    uint64_t w1 = (t >> 32);
+
+    op2 >>= 32;
+    t = (u1 * op2) + k;
+    k = (t >> 32);
+
+    *hi = (op1 * op2) + w1 + k;
+    *lo = (t << 32) + w3;
+}
+
+/// Computes a double-width multiplication operation.
+static inline CWISS_U128 CWISS_Mul128(uint64_t a, uint64_t b) {
+  // TODO: de-intrinsics-ize this.
+  uint64_t hi = 0;
+  uint64_t lo = 0;
+  mult64to128(a, b, &hi, &lo);
+  return (CWISS_U128){(uint64_t)hi, (uint64_t)lo};
+}
+#endif
 
 /// Loads an unaligned u32.
 static inline uint32_t CWISS_Load32(const void* p) {
