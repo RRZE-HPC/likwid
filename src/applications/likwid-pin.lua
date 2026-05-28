@@ -286,11 +286,10 @@ if skip_mask then
 end
 
 if num_threads > 1 then
-    local pinString = tostring(math.tointeger(cpu_list[2]))
-    for i=3,likwid.tablelength(cpu_list) do
+    local pinString = tostring(math.tointeger(cpu_list[1]))
+    for i=2,likwid.tablelength(cpu_list) do
         pinString = pinString .. "," .. tostring(math.tointeger(cpu_list[i]))
     end
-    pinString = pinString .. "," .. tostring(math.tointeger(cpu_list[1]))
     likwid.setenv("LIKWID_PIN", pinString)
 
     local preload = os.getenv("LD_PRELOAD")
