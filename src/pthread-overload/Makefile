@@ -46,7 +46,9 @@ INCLUDES += -I../includes
 LIBS     += -ldl
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: ../../$(TARGET)
+.PHONY: all
+
+all: $(TARGET)
 
 $(TARGET): pthread-overload.c
 	$(Q)$(CC) -Wl,-soname,$(notdir $(TARGET)).$(VERSION).$(RELEASE),--no-undefined $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(INCLUDES) $(SHARED_CFLAGS) $(SHARED_LFLAGS) -o $@ pthread-overload.c $(LIBS)
