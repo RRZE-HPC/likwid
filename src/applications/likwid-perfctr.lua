@@ -1050,6 +1050,12 @@ if pin_cpus then
         end
         likwid.setenv("LIKWID_PIN", pinString)
 
+        local placesString = string.format("{%d}", cpulist[1])
+        for i=2,likwid.tablelength(cpulist) do
+            placesString = placesString .. "," .. string.format("{%d}", cpulist[i])
+        end
+        likwid.setenv("OMP_PLACES", placesString)
+
         local preload = os.getenv("LD_PRELOAD")
         if preload == nil then
             likwid.setenv("LD_PRELOAD", likwid.pinlibpath)
@@ -1057,6 +1063,7 @@ if pin_cpus then
             likwid.setenv("LD_PRELOAD", likwid.pinlibpath .. ":" .. preload)
         end
     elseif num_cpus == 1 then
+        likwid.setenv("OMP_PLACES", string.format("{%d}", cpulist[1]))
         likwid.setenv("LIKWID_PIN", tostring(math.tointeger(cpulist[1])))
         if verbose > 0 then
             likwid.pinProcess(cpulist[1], 0)

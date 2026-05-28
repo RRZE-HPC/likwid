@@ -281,29 +281,7 @@ static void find_pthread(void)
         fprintf(stderr, "Cannot find pthread_create (Does the program use pthreads?): %s\n", err);
 }
 
-static void init_omp_places(void)
-{
-    char *omp_places_str = NULL;
-    for (size_t i = 0; i < pin_ids_count; i++) {
-        char *omp_places_str_new;
-        int ret;
-        if (omp_places_str)
-            ret = asprintf(&omp_places_str_new, "%s,{%u}", omp_places_str, pin_ids[i]);
-        else
-            ret = asprintf(&omp_places_str_new, "{%u}", pin_ids[i]);
-
-        if (ret < 0)
-            pdie("asprintf");
-
-        free(omp_places_str);
-        omp_places_str = omp_places_str_new;
-    }
-
-    if (setenv("OMP_PLACES", omp_places_str, true) < 0)
-        pdie("setenv");
-}
-
-void __attribute__((constructor (103))) init_pthread_overload(void)
+void __attribute__((constructor)) init_pthread_overload(void)
 {
     pin_ids = NULL;
     pin_ids_count = 0;
@@ -326,10 +304,14 @@ void __attribute__((constructor (103))) init_pthread_overload(void)
 
     find_openmp();
     find_pthread();
-    init_omp_places();
+
+    /* If OMP_PLACES is not set, raise a warning. This should only happen, if there is
+     * a bug in likwid-perfctr or likwid-pin. */
+    if (!getenv("OMP_PLACES"))
+        color_print("OMP_PLACES is not set in the environment. OpenMP pinning will not work\n");
 }
 
-void __attribute__((destructor (103))) close_pthread_overload(void)
+void __attribute__((destructor)) close_pthread_overload(void)
 {
     free(pin_ids);
 }

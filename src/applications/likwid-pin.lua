@@ -292,6 +292,12 @@ if num_threads > 1 then
     end
     likwid.setenv("LIKWID_PIN", pinString)
 
+    local placesString = string.format("{%d}", cpu_list[1])
+    for i=2,likwid.tablelength(cpu_list) do
+        placesString = placesString .. "," .. string.format("{%d}", cpu_list[i])
+    end
+    likwid.setenv("OMP_PLACES", placesString)
+
     local preload = os.getenv("LD_PRELOAD")
     if preload == nil then
         likwid.setenv("LD_PRELOAD",likwid.pinlibpath)
@@ -307,6 +313,7 @@ if num_threads > 1 then
     end
 else
     likwid.setenv("LIKWID_PIN", tostring(math.tointeger(cpu_list[1])))
+    likwid.setenv("OMP_PLACES", string.format("{%d}", cpu_list[1]))
     likwid.pinProcess(cpu_list[1], quiet)
 end
 
