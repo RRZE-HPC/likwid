@@ -1173,14 +1173,16 @@ if nvSupported and #cuda_event_string_list > 0 then
     if likwid.nvInit(num_cuda_gpus, gpulist_cuda) < 0 then
         perfctr_exit(1)
     end
-    local preload = os.getenv("LD_PRELOAD")
-    if preload == nil then
-        likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
-    else
-        likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so" .. ":" .. preload)
-    end
-    if verbose > 0 then
-        print_stdout("LD_PRELOAD=" .. os.getenv("LD_PRELOAD"))
+    if use_marker == false then
+        local preload = os.getenv("LD_PRELOAD")
+        if preload == nil then
+            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
+        else
+            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so" .. ":" .. preload)
+        end
+        if verbose > 0 then
+            print_stdout("LD_PRELOAD=" .. os.getenv("LD_PRELOAD"))
+        end
     end
     local devices = os.getenv("CUDA_VISIBLE_DEVICES")
     if devices == nil then
@@ -1193,11 +1195,16 @@ end
 if rocmSupported and #rocm_event_string_list > 0 then
     --likwid.init_rocm(gpulist_rocm)
     --rocmInitialized = true
-    local preload = os.getenv("LD_PRELOAD")
-    if preload == nil then
-        likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
-    else
-        likwid.setenv("LD_PRELOAD", preload .. ":" .. "likwid-appDaemon.so")
+    if use_marker == false then
+        local preload = os.getenv("LD_PRELOAD")
+        if preload == nil then
+            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
+        else
+            likwid.setenv("LD_PRELOAD", preload .. ":" .. "likwid-appDaemon.so")
+        end
+        if verbose > 0 then
+            print_stdout("LD_PRELOAD=" .. os.getenv("LD_PRELOAD"))
+        end
     end
     local devices = os.getenv("ROCR_VISIBLE_DEVICES")
     if devices == nil then
