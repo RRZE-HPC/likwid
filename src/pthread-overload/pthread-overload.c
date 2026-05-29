@@ -9,7 +9,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Author:  Michael Panzlaff (mp), michale.panzlaff@fau.de
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -372,7 +372,6 @@ pthread_create(pthread_t *thread,
         void *arg)
 {
     bool do_pin = true;
-
 
     if (openmp_found) {
         const uintptr_t uip_start_routine = (uintptr_t)start_routine;
