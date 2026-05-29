@@ -9,7 +9,6 @@ INSTR_CONST 32
 INSTR_LOOP 20
 UOPS 19
 movaps FPR1, [rip+SCALAR]
-movaps FPR2, [rip+SCALAR]
 movaps FPR3, [rip+SCALAR]
 movaps FPR4, [rip+SCALAR]
 movaps FPR5, [rip+SCALAR]
@@ -27,19 +26,19 @@ movaps FPR16, [rip+SCALAR]
 .align 32
 LOOP 1
 movsd    FPR2, [STR0 + GPR1 * 8 ]
-addsd     FPR1, FPR2
-addsd     FPR3, FPR4
-mulsd     FPR5, FPR6
-mulsd     FPR7, FPR8
-mulsd     FPR9, FPR10
-addsd     FPR11, FPR12
-addsd     FPR13, FPR14
-mulsd     FPR15, FPR16
-addsd     FPR1, FPR2
-addsd     FPR3, FPR4
-mulsd     FPR5, FPR6
-mulsd     FPR7, FPR8
-mulsd     FPR9, FPR10
-addsd     FPR11, FPR12
-addsd     FPR13, FPR14
-mulsd     FPR15, FPR16
+mulsd     FPR1, FPR2
+addsd     FPR3, FPR2
+mulsd     FPR4, FPR2
+addsd     FPR5, FPR2
+mulsd     FPR6, FPR2
+addsd     FPR7, FPR2
+mulsd     FPR8, FPR2
+addsd     FPR9, FPR2
+mulsd     FPR10, FPR2
+addsd     FPR11, FPR2
+mulsd     FPR12, FPR2
+addsd     FPR13, FPR2
+mulsd     FPR14, FPR2
+addsd     FPR15, FPR2
+mulsd     FPR16, FPR2
+addsd     FPR9, FPR2
