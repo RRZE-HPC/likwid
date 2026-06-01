@@ -39,6 +39,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <lw_alloc.h>
+#include <util.h>
 
 #include <configuration.h>
 
@@ -54,19 +55,13 @@ static int groupPath_len = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static int
-default_configuration(void)
+static int default_configuration(void)
 {
-    int ret = 0;
-    char filename[1024] = { [0 ... 1023] = '\0' };
-    char *fptr = NULL;
-    size_t len = 0;
-    filename[0] = '\0';
+    int err;
 
     groupPath_len = strlen(TOSTRING(GROUPPATH))+10;
     config.groupPath = lw_malloc(groupPath_len+1);
-    ret = snprintf(config.groupPath, groupPath_len, "%s", TOSTRING(GROUPPATH));
-    config.groupPath[ret] = '\0';
+    snprintf(config.groupPath, groupPath_len, "%s", TOSTRING(GROUPPATH));
 #ifndef LIKWID_USE_PERFEVENT
     if (ACCESSMODE == 0)
     {
@@ -76,29 +71,19 @@ default_configuration(void)
     }
     config.daemonMode = ACCESSMODE_DAEMON;
 
-    FILE* fp = popen("bash --noprofile -c \"which likwid-accessD 2>/dev/null | tr -d '\n'\"","r");
-    if (fp == NULL)
-    {
+    char *accessDaemonPath = NULL;
+    err = search_path_env("likwid-accessD", &accessDaemonPath);
+    if (err < 0)
         goto use_hardcoded;
-    }
-    ret = getline(&fptr, &len, fp);
-    pclose(fp);
-    if (ret < 0)
+
+    if (!access(accessDaemonPath, X_OK))
     {
-        if (fptr)
-            free(fptr);
-        goto use_hardcoded;
-    }
-    if (!access(fptr, X_OK))
-    {
-        config.daemonPath = lw_strdup(fptr);
-        free(fptr);
+        config.daemonPath = accessDaemonPath;
     }
     else
     {
-        fprintf(stderr, "Found access daemon at %s but it is not executable, using compiled in daemon path.\n", fptr);
-        if (fptr)
-            free(fptr);
+        fprintf(stderr, "Found access daemon at %s but it is not executable, using compiled in daemon path.\n", accessDaemonPath);
+        free(accessDaemonPath);
         goto use_hardcoded;
     }
 #else
@@ -106,24 +91,25 @@ default_configuration(void)
 #endif
     init_config = 1;
     return 0;
+
 #ifndef LIKWID_USE_PERFEVENT
 use_hardcoded:
 #endif
-    ret = sprintf(filename,"%s", TOSTRING(ACCESSDAEMON));
-    filename[ret] = '\0';
-    if (!access(filename, X_OK))
+
+    const char *hardcodedAccessDaemonPath = TOSTRING(ACCESSDAEMON);
+    if (access(hardcodedAccessDaemonPath, X_OK) == 0)
     {
-        config.daemonPath = lw_strdup(filename);
-        init_config = 1;
+        config.daemonPath = lw_strdup(hardcodedAccessDaemonPath);
     }
     else
     {
-        if (getenv("LIKWID_NO_ACCESS") == NULL)
+        if (!getenv("LIKWID_NO_ACCESS"))
         {
             ERROR_PRINT("Unable to get path to access daemon. Maybe your PATH environment variable does not contain the folder where you installed it or the file was moved away / not copied to that location?");
             return -1;
         }
     }
+    init_config = 1;
     return 0;
 }
 
