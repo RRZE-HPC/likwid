@@ -285,6 +285,7 @@ if skip_mask then
     likwid.setenv("LIKWID_SKIP", skip_mask)
 end
 
+preloaded_libraries = {}
 if num_threads > 1 then
     local pinString = tostring(math.tointeger(cpu_list[1]))
     for i=2,likwid.tablelength(cpu_list) do
@@ -298,12 +299,7 @@ if num_threads > 1 then
     end
     likwid.setenv("OMP_PLACES", placesString)
 
-    local preload = os.getenv("LD_PRELOAD")
-    if preload == nil then
-        likwid.setenv("LD_PRELOAD",likwid.pinlibpath)
-    else
-        likwid.setenv("LD_PRELOAD",likwid.pinlibpath .. ":" .. preload)
-    end
+    table.insert(preloaded_libraries, likwid.pinlibpath)
     local ldpath = os.getenv("LD_LIBRARY_PATH")
     local libpath = likwid.pinlibpath:match("([^%s]+)/[^%s]+.so")
     if ldpath == nil then
@@ -331,7 +327,7 @@ if verbose > 0 and quiet == 0 then
     end
     print_stdout(string.format("Using %d thread(s) (cpuset: 0x%x)", num_threads, mask))
 end
-local pid = likwid.startProgram(table.concat(execList," "), num_threads, cpu_list)
+local pid = likwid.startProgram(table.concat(execList," "), cpu_list, preloaded_libraries)
 if (pid == nil) then
     print_stderr("Failed to execute command: ".. exec)
     close_and_exit(1)

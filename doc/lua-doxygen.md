@@ -2641,12 +2641,12 @@ or<BR>
       <TD>String containing the executable and its arguments. Executable and arguments are separated by ' '</TD>
     </TR>
     <TR>
-      <TD>\a numThreads</TD>
-      <TD>Number of HW thread IDs in the cpulist (third parameter)</TD>
-    </TR>
-    <TR>
       <TD>\a cpulist</TD>
       <TD>List of HW thread IDs. The application's cpuset is limited to these hw threads</TD>
+    </TR>
+    <TR>
+      <TD>\a preloaded_libraries</TD>
+      <TD>List of library paths, which to add to the target process' LD_PRELOAD environment</TD>
     </TR>
   </TABLE></TD>
 </TR>
