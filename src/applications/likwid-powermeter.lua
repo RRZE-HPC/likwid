@@ -259,35 +259,40 @@ if (stethoscope) and (time_interval < power["timeUnit"]) then
     os.exit(1)
 end
 
-local execString = ""
 affinity = likwid.getAffinityInfo()
 local pinList = {}
 for i,socket in pairs(sockets) do
     table.insert(pinList, string.format("S%u:0-%u",socket,(cputopo["numCoresPerSocket"]*cputopo["numThreadsPerCore"])-1))
 end
-if use_perfctr then
-    execString = string.format("<INSTALLED_PREFIX>/bin/likwid-perfctr -C %s -f -g CLOCK ",table.concat(pinList, "@"))
-elseif not stethoscope then
-    execString = string.format("<INSTALLED_PREFIX>/bin/likwid-pin -c %s -q ",table.concat(pinList, "@"))
-end
 
 local execList = {}
+if use_perfctr then
+    execList = {
+        "<INSTALLED_PREFIX>/bin/likwid-perfctr",
+        "-C", table.concat(pinList, "@"),
+        "-f",
+        "-g", "CLOCK",
+    }
+elseif not stethoscope then
+    execList = {
+        "<INSTALLED_PREFIX>/bin/likwid-pin",
+        "-c", table.concat(pinList, "@"),
+        "-q",
+    }
+end
+
 if #arg == 0 then
     if use_perfctr then
-        execString = execString .. string.format(" -S %s ", time_orig)
+        table.insert(execList, "-S")
+        table.insert(execList, time_orig)
         stethoscope = false
     else
         stethoscope = true
     end
 else
     for i=1, likwid.tablelength(arg)-2 do
-        if string.find(arg[i], " ") then
-            table.insert(execList, "\""..arg[i].."\"")
-        else
-            table.insert(execList, arg[i])
-        end
+        table.insert(execList, arg[i])
     end
-    execString = execString .. table.concat(execList," ")
 end
 
 local exitvalue = 0
@@ -344,9 +349,9 @@ if not print_info and not print_temp then
                 likwid.sleep(time_interval)
             end
         else
-            local pid = likwid.startProgram(execString, {}, {})
+            local pid = likwid.startProgram(execList, {}, {})
             if not pid then
-                print_stderr(string.format("Failed to execute %s!",execString))
+                print_stderr(string.format("Failed to execute %s!", table.concat(execList, " ")))
                 likwid.finalize()
                 os.exit(1)
             end
@@ -412,9 +417,10 @@ if not print_info and not print_temp then
         end
         print_stdout(likwid.hline)
     else
-        err = os.execute(execString)
-        if err == false then
-            print_stderr(string.format("Failed to execute %s!", execString))
+        local pid = likwid.startProgram(execList, {}, {})
+        local err = likwid.waitpid(pid)
+        if err ~= 0 then
+            print_stderr(string.format("Failed to execute %s!", table.concat(execList, " ")))
             likwid.putPowerInfo()
             likwid.finalize()
             os.exit(1)

@@ -184,7 +184,6 @@ overflow_interval = 2.E06
 output = ""
 use_csv = false
 print_stats = false
-execString = nil
 outfile = nil
 outfile_orig = nil
 outprefix = ""
@@ -475,11 +474,7 @@ for opt, arg in likwid.getopt(arg, cliopts) do
 end
 local execList = {}
 for i = 1, likwid.tablelength(arg) - 2 do
-    if string.find(arg[i], " ") then
-        table.insert(execList, "\"" .. arg[i] .. "\"")
-    else
-        table.insert(execList, arg[i])
-    end
+    table.insert(execList, arg[i])
 end
 
 if perfpid and (not execpid) and (not cpulist) then
@@ -1244,14 +1239,13 @@ end
 
 local pid = nil
 if #execList > 0 then
-    local execString = table.concat(execList, " ")
     if execpid then
         likwid.setenv("LIKWID_PERF_EXECPID", "1")
     end
     if pin_cpus then
-        pid = likwid.startProgram(execString, cpulist, preloaded_libraries)
+        pid = likwid.startProgram(execList, cpulist, preloaded_libraries)
     else
-        pid = likwid.startProgram(execString, {}, preloaded_libraries)
+        pid = likwid.startProgram(execList, {}, preloaded_libraries)
     end
     if execpid then
         perfpid = pid
@@ -1261,7 +1255,7 @@ if not pid and #execList > 0 then
     print_stderr(string.format("Failed to execute command: %s", table.concat(execList, " ")))
     perfctr_exit(1)
 elseif #execList > 0 then
-    likwid.sendSignal(pid, 19)
+    likwid.sendSignal(pid, 19) -- SIGSTOP
 end
 
 

@@ -122,7 +122,6 @@ num_threads = 0
 cpustr = nil
 verbose = 0
 
-
 if (#arg == 0) then
     usage()
     os.exit(0)
@@ -173,13 +172,10 @@ for opt,arg in likwid.getopt(arg, {"c:", "C:", "d:", "h", "i", "m", "p", "q", "s
         close_and_exit(1)
     end
 end
+
 local execList = {}
 for i=1, likwid.tablelength(arg)-2 do
-    if string.find(arg[i], " ") then
-        table.insert(execList, "\""..arg[i].."\"")
-    else
-        table.insert(execList, arg[i])
-    end
+    table.insert(execList, arg[i])
 end
 
 likwid.setenv("LIKWID_NO_ACCESS", "1")
@@ -327,7 +323,7 @@ if verbose > 0 and quiet == 0 then
     end
     print_stdout(string.format("Using %d thread(s) (cpuset: 0x%x)", num_threads, mask))
 end
-local pid = likwid.startProgram(table.concat(execList," "), cpu_list, preloaded_libraries)
+local pid = likwid.startProgram(execList, cpu_list, preloaded_libraries)
 if (pid == nil) then
     print_stderr("Failed to execute command: ".. exec)
     close_and_exit(1)
