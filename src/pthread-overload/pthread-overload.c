@@ -60,6 +60,7 @@ struct pthread_create_wrapper_arg {
 };
 
 static bool silent = false;
+static bool pin_ids_printed = false;
 
 static uint32_t *pin_ids;
 static size_t pin_ids_count;
@@ -70,6 +71,23 @@ static uintptr_t openmp_text_end;
 static bool openmp_found = false;
 
 static pthread_create_ptr pthread_create_orig;
+
+#ifdef COLOR
+#define COLOR_PRINT_FORCE_PREFIX(prefix, msg, ...) \
+    fprintf(stderr, "\e[1;%dm" prefix msg "\e[0m", COLOR + 30, ##__VA_ARGS__)
+#else
+#define COLOR_PRINT_FORCE_PREFIX(prefix, msg, ...) \
+    fprintf(stderr, prefix msg, ##__VA_ARGS__)
+#endif
+
+#define COLOR_PRINT_FORCE(msg, ...) \
+    COLOR_PRINT_FORCE_PREFIX("[pin-%d] ", msg, getpid(), ##__VA_ARGS__)
+
+#define COLOR_PRINT(msg, ...) \
+    do { \
+        if (!silent) \
+            COLOR_PRINT_FORCE(msg, ##__VA_ARGS__); \
+    } while (0)
 
 static void pdie(const char *msg)
 {
@@ -88,55 +106,24 @@ static void die(const char *fmt, ...)
     va_end(args);
 }
 
-static void color_print_begin(void)
+static char *get_cmdline(void)
 {
-    if (silent)
-        return;
+    FILE *f = fopen("/proc/self/cmdline", "r");
+    if (!f)
+        return NULL;
+    char cmdline[256];
+    size_t bytes_read = fread(cmdline, 1, sizeof(cmdline), f);
+    if (bytes_read == 0) {
+        fclose(f);
+        return NULL;
+    }
 
-#ifdef COLOR
-    fprintf(stderr, "\e[1;%dm", COLOR + 30);
-#endif
-    fprintf(stderr, "[pthread wrapper] ");
-}
+    for (size_t i = 0; i < bytes_read; i++) {
+        if (cmdline[i] == '\0' && i + 1 < bytes_read)
+            cmdline[i] = ' ';
+    }
 
-static void color_vprint_main(const char *fmt, va_list args)
-{
-    if (silent)
-        return;
-
-    vfprintf(stderr, fmt, args);
-}
-
-static void __attribute__((format(printf, 1, 2))) color_print_main(const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-
-    color_vprint_main(fmt, args);
-
-    va_end(args);
-}
-
-static void color_print_end(void)
-{
-    if (silent)
-        return;
-
-#ifdef COLOR
-    fprintf(stderr, "\e[0m");
-#endif
-}
-
-static void __attribute__((format(printf, 1, 2))) color_print(const char *fmt, ...) 
-{
-    va_list args;
-    va_start(args, fmt);
-
-    color_print_begin();
-    color_vprint_main(fmt, args);
-    color_print_end();
-
-    va_end(args);
+    return strdup(cmdline);
 }
 
 static void init_pin_ids(const char *pin_str_orig)
@@ -170,25 +157,30 @@ static void init_pin_ids(const char *pin_str_orig)
 
     free(pin_str);
 
-    color_print_begin();
-    color_print_main("PIN MAP (PID=%d):\n", getpid());
+    char *cmdline = get_cmdline();
+    if (pin_ids_printed) {
+        COLOR_PRINT("Pinning enabled (%s)\n", cmdline ? cmdline : "(unknown)");
+    } else {
+        COLOR_PRINT_FORCE("Pinning enabled (%s), mapping:\n", cmdline ? cmdline : "(unknown)");
+        const size_t COLUMN_COUNT = 8;
+        size_t column = 0;
+        for (size_t i = 0; i < pin_ids_count; i++) {
+            if (column == 0)
+                COLOR_PRINT_FORCE("  %4zu -> %4u", i, pin_ids[i]);
+            else
+                COLOR_PRINT_FORCE_PREFIX("", " | %4zu -> %4u", i, pin_ids[i]);
 
-    const size_t COLUMN_COUNT = 8;
-    size_t column = 0;
-    for (size_t i = 0; i < pin_ids_count; i++) {
-        if (column == 0)
-            color_print_main("  %4zu -> %4u", i, pin_ids[i]);
-        else
-            color_print_main(" | %4zu -> %4u", i, pin_ids[i]);
-        if (column + 1 >= COLUMN_COUNT) {
-            color_print_main("\n");
-            column = 0;
-        } else {
-            column += 1;
+            if (column + 1 >= COLUMN_COUNT) {
+                COLOR_PRINT_FORCE_PREFIX("", "\n");
+                column = 0;
+            } else {
+                column += 1;
+            }
         }
     }
+    free(cmdline);
 
-    color_print_end();
+    (void)setenv("LIKWID_PIN_PRINTED", "1", 1);
 }
 
 static int find_openmp_callback(struct dl_phdr_info *dl_info, size_t size, void *data)
@@ -230,7 +222,7 @@ static int find_openmp_callback(struct dl_phdr_info *dl_info, size_t size, void 
 
     openmp_found = true;
 
-    color_print("Found OpenMP runtime: %s\n", dl_info->dlpi_name);
+    COLOR_PRINT("Found OpenMP runtime: %s\n", dl_info->dlpi_name);
 
     /* Okay, we found the OpenMP library. Now let's find the .text section.
      * While we cannot read the section name, we can see if a section is executable.
@@ -286,21 +278,24 @@ void __attribute__((constructor)) init_pthread_overload(void)
     pin_ids = NULL;
     pin_ids_count = 0;
 
+    if (getenv("LIKWID_SILENT"))
+        silent = true;
+
+    if (getenv("LIKWID_PIN_PRINTED"))
+        pin_ids_printed = true;
+
     const char *pin_str_orig = getenv("LIKWID_PIN");
     if (pin_str_orig)
         init_pin_ids(pin_str_orig);
     else
-        color_print("LIKWID_PIN environment variable not set. Disabling pinning.\n");
+        COLOR_PRINT("LIKWID_PIN environment variable not set. Disabling pinning.\n");
 
     const char *skip_str = getenv("LIKWID_SKIP");
     if (skip_str)
         pin_skip_mask = strtoull(skip_str, NULL, 16);
 
     if (pin_skip_mask != 0)
-        color_print("PIN SKIP MASK: %#" PRIx64 "\n", pin_skip_mask);
-
-    if (getenv("LIKWID_SILENT"))
-        silent = true;
+        COLOR_PRINT("PIN SKIP MASK: %#" PRIx64 "\n", pin_skip_mask);
 
     find_openmp();
     find_pthread();
@@ -308,7 +303,7 @@ void __attribute__((constructor)) init_pthread_overload(void)
     /* If OMP_PLACES is not set, raise a warning. This should only happen, if there is
      * a bug in likwid-perfctr or likwid-pin. */
     if (!getenv("OMP_PLACES"))
-        color_print("OMP_PLACES is not set in the environment. OpenMP pinning will not work\n");
+        COLOR_PRINT("OMP_PLACES is not set in the environment. OpenMP pinning will not work\n");
 }
 
 void __attribute__((destructor)) close_pthread_overload(void)
@@ -360,7 +355,7 @@ static void *start_routine_wrapper(void *arg)
     CPU_SET((int)pin_ids[thread_pin_id % pin_ids_count], &cpu_set);
 
     if (sched_setaffinity(0, sizeof(cpu_set), &cpu_set) < 0)
-        color_print("PIN ERROR: sched_setaffinity failed: %s\n", strerror(errno));
+        COLOR_PRINT_FORCE("PIN ERROR: sched_setaffinity failed: %s\n", strerror(errno));
 
     return pcw_arg.start_routine_orig(pcw_arg.arg_orig);
 }
@@ -380,7 +375,7 @@ pthread_create(pthread_t *thread,
     }
 
     if (!pthread_create_orig) {
-        color_print("Cannot call pthread_create. The pthread library either isn't "
+        COLOR_PRINT_FORCE("Cannot call pthread_create. The pthread library either isn't "
                 "loaded or pthread_create wasn't found for another reason.\n");
         return ELIBACC;
     }
