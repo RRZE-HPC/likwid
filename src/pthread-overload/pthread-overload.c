@@ -177,6 +177,8 @@ static void init_pin_ids(const char *pin_str_orig)
                 column += 1;
             }
         }
+        if (column > 0)
+            COLOR_PRINT_FORCE_PREFIX("", "\n");
     }
     free(cmdline);
 
