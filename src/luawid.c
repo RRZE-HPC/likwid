@@ -1806,79 +1806,95 @@ static void catch_sigchild(int signo) {
 }
 
 static int lua_likwid_startProgram(lua_State *L) {
-  pid_t pid;
-  int status;
-  char *exec;
-  char *argv[MAX_NUM_CLIARGS];
-  exec = (char *)luaL_checkstring(L, 1);
-  int nrThreads = luaL_checknumber(L, 2);
-  CpuTopology_t cputopo = get_cpuTopology();
+    const char *exec = luaL_checkstring(L, 1);
+    char *execCopy = strdup(exec);
+    if (!execCopy)
+        return luaL_error(L, "strdup failed: %s\n", strerror(errno));
 
-  luaL_argcheck(L, nrThreads >= 0, nrThreads, "Number of threads must be >= 0");
+    luaL_checktype(L, 2, LUA_TTABLE);
+    size_t nrThreads = lua_rawlen(L, 2);
 
-  if ((uint32_t)nrThreads > cputopo->numHWThreads) {
-    lua_pushstring(L, "Number of threads greater than available HW threads");
-    lua_error(L);
-    return 0;
-  }
-  int *cpus = malloc(cputopo->numHWThreads * sizeof(int));
-  if (!cpus)
-    return 0;
-  if (nrThreads > 0) {
-    if (!lua_istable(L, -1)) {
-      lua_pushstring(L, "No table given as second argument");
-      lua_error(L);
-      free(cpus);
-    }
-    for (status = 1; status <= nrThreads; status++) {
-      lua_rawgeti(L, -1, status);
+    luaL_checktype(L, 3, LUA_TTABLE);
+    size_t nrLibs = lua_rawlen(L, 3);
+
+    CpuTopology_t cputopo = get_cpuTopology();
+    if (nrThreads > cputopo->numHWThreads)
+        return luaL_error(L, "Number of threads greater than available HW threads");
+
+    int *cpus = calloc(cputopo->numHWThreads, sizeof(*cpus));
+    if (!cpus)
+        return luaL_error(L, "calloc failed: %s", strerror(errno));
+
+    for (size_t i = 1; i <= nrThreads; i++) {
+        lua_rawgeti(L, 2, i);
 #if LUA_VERSION_NUM == 501
-      cpus[status - 1] = ((lua_Integer)lua_tointeger(L, -1));
+        cpus[i - 1] = (lua_Integer)lua_tointeger(L, -1);
 #else
-      cpus[status - 1] = ((lua_Unsigned)lua_tointegerx(L, -1, NULL));
+        cpus[i - 1] = (lua_Unsigned)lua_tointegerx(L, -1, NULL);
 #endif
-      lua_pop(L, 1);
+        lua_pop(L, 1);
     }
-  }
-  /*else
-  {
-      int count = 0;
-      for (nrThreads = 0; nrThreads < cpuid_topology.numHWThreads; nrThreads++)
-      {
-          if (cpuid_topology.threadPool[nrThreads].inCpuSet == 1)
-          {
-              cpus[count] = cpuid_topology.threadPool[nrThreads].apicId;
-              count++;
-          }
-      }
-      nrThreads = count;
-  }*/
-  int args = parse(exec, argv, MAX_NUM_CLIARGS);
-  if (args < 0) {
-    lua_pushstring(L, "Number of CLI args greater than configured");
-    lua_error(L);
-    free(cpus);
-    return 0;
-  }
-  pid = fork();
-  if (pid < 0) {
-    free(cpus);
-    return 0;
-  } else if (pid == 0) {
-    if (nrThreads > 0) {
-      affinity_pinProcesses(nrThreads, cpus);
+
+    // TODO The parse function should really be eliminated. It doesn't make sense that
+    // likwid-perfctr first converts the list of arguments to a string, and it is then
+    // converted back to a list here. Because of mistakes in escaping, this won't work
+    // with arguments that contain quotes.
+    char *argv[MAX_NUM_CLIARGS];
+    int args = parse(execCopy, argv, ARRAY_COUNT(argv));
+    if (args < 0) {
+        free(execCopy);
+        free(cpus);
+        return luaL_error(L, "Number of CLI args greater than configured");
     }
-    // Why is there a sleep here?
-    timer_sleep(10);
-    execvp(*argv, argv);
-    ERROR_PRINT("Failed to run program '%s'", *argv);
-    exit(EXIT_FAILURE);
-  } else {
+
     signal(SIGCHLD, catch_sigchild);
-    free(cpus);
-    lua_pushnumber(L, pid);
-  }
-  return 1;
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        free(execCopy);
+        free(cpus);
+        return luaL_error(L, "Unable to spawn child: %s\n", strerror(errno));
+    } else if (pid == 0) {
+        // Pin threads
+        if (nrThreads > 0)
+            affinity_pinProcesses(nrThreads, cpus);
+
+        // Set LD_PRELOAD for child process
+        if (nrLibs > 0) {
+            char *currentLdPreload = getenv("LD_PRELOAD");
+            if (currentLdPreload) {
+                currentLdPreload = strdup(currentLdPreload);
+                if (!currentLdPreload)
+                    return luaL_error(L, "strdup failed: %s", strerror(errno));
+            }
+            for (size_t i = 1; i <= nrLibs; i++) {
+                lua_rawgeti(L, 3, i);
+                const char *lib = luaL_checkstring(L, -1);
+                char *newLdPreload; int err;
+                if (currentLdPreload)
+                    err = asprintf(&newLdPreload, "%s:%s", currentLdPreload, lib);
+                else
+                    err = asprintf(&newLdPreload, "%s", lib);
+                if (err < 0)
+                    return luaL_error(L, "asprintf failed: %s", strerror(errno));
+                free(currentLdPreload);
+                currentLdPreload = newLdPreload;
+                lua_pop(L, 1);
+            }
+            if (setenv("LD_PRELOAD", currentLdPreload, 1))
+                return luaL_error(L, "setenv failed: %s\n", strerror(errno));
+            free(currentLdPreload);
+        }
+
+        execvp(*argv, argv);
+        ERROR_PRINT("Failed to run program '%s'", *argv);
+        exit(EXIT_FAILURE);
+    } else {
+        free(execCopy);
+        free(cpus);
+        lua_pushnumber(L, pid);
+        return 1;
+    }
 }
 
 static int lua_likwid_checkProgram(lua_State *L) {

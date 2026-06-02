@@ -344,7 +344,7 @@ if not print_info and not print_temp then
                 likwid.sleep(time_interval)
             end
         else
-            local pid = likwid.startProgram(execString, 0, {})
+            local pid = likwid.startProgram(execString, {}, {})
             if not pid then
                 print_stderr(string.format("Failed to execute %s!",execString))
                 likwid.finalize()

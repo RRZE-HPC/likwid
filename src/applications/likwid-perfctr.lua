@@ -1018,6 +1018,7 @@ if verbose == 0 then
     likwid.setenv("LIKWID_SILENT", "true")
 end
 
+preloaded_libraries = {}
 if pin_cpus then
     local omp_threads = os.getenv("OMP_NUM_THREADS")
     if omp_threads == nil then
@@ -1056,12 +1057,7 @@ if pin_cpus then
         end
         likwid.setenv("OMP_PLACES", placesString)
 
-        local preload = os.getenv("LD_PRELOAD")
-        if preload == nil then
-            likwid.setenv("LD_PRELOAD", likwid.pinlibpath)
-        else
-            likwid.setenv("LD_PRELOAD", likwid.pinlibpath .. ":" .. preload)
-        end
+        table.insert(preloaded_libraries, likwid.pinlibpath)
     elseif num_cpus == 1 then
         likwid.setenv("OMP_PLACES", string.format("{%d}", cpulist[1]))
         likwid.setenv("LIKWID_PIN", tostring(math.tointeger(cpulist[1])))
@@ -1180,15 +1176,7 @@ if nvSupported and #cuda_event_string_list > 0 then
         perfctr_exit(1)
     end
     if use_marker == false then
-        local preload = os.getenv("LD_PRELOAD")
-        if preload == nil then
-            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
-        else
-            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so" .. ":" .. preload)
-        end
-        if verbose > 0 then
-            print_stdout("LD_PRELOAD=" .. os.getenv("LD_PRELOAD"))
-        end
+        table.insert(preloaded_libraries, "likwid-appDaemon.so")
     end
     local devices = os.getenv("CUDA_VISIBLE_DEVICES")
     if devices == nil then
@@ -1202,15 +1190,7 @@ if rocmSupported and #rocm_event_string_list > 0 then
     --likwid.init_rocm(gpulist_rocm)
     --rocmInitialized = true
     if use_marker == false then
-        local preload = os.getenv("LD_PRELOAD")
-        if preload == nil then
-            likwid.setenv("LD_PRELOAD", "likwid-appDaemon.so")
-        else
-            likwid.setenv("LD_PRELOAD", preload .. ":" .. "likwid-appDaemon.so")
-        end
-        if verbose > 0 then
-            print_stdout("LD_PRELOAD=" .. os.getenv("LD_PRELOAD"))
-        end
+        table.insert(preloaded_libraries, "likwid-appDaemon.so")
     end
     local devices = os.getenv("ROCR_VISIBLE_DEVICES")
     if devices == nil then
@@ -1269,9 +1249,9 @@ if #execList > 0 then
         likwid.setenv("LIKWID_PERF_EXECPID", "1")
     end
     if pin_cpus then
-        pid = likwid.startProgram(execString, #cpulist, cpulist)
+        pid = likwid.startProgram(execString, cpulist, preloaded_libraries)
     else
-        pid = likwid.startProgram(execString, 0, cpulist)
+        pid = likwid.startProgram(execString, {}, preloaded_libraries)
     end
     if execpid then
         perfpid = pid
