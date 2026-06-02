@@ -220,16 +220,9 @@ Group 1: L2
 <summary><code>likwid-pin</code></summary>
 <pre>
 $ likwid-pin -c 0,1,2 ./a.out
-[pthread wrapper] 
-[pthread wrapper] MAIN -> 0
-[pthread wrapper] PIN_MASK: 0->1  1->2  
-[pthread wrapper] SKIP MASK: 0x0
-	threadid 140566548539136 -> hwthread 1 - OK
-	threadid 140566540146432 -> hwthread 2 - OK
-Number of Threads requested = 3
-Thread 0 running on processor 0 ....
-Thread 1 running on processor 1 ....
-Thread 2 running on processor 2 ....
+[pin-264468] Pinning enabled (./a.out), mapping:
+[pin-264468]      0 ->    0 |    1 ->    1 |    2 ->    2
+[pin-264468] Found OpenMP runtime: /lib/x86_64-linux-gnu/libgomp.so.1
 [...]
 </pre>
 </details>
