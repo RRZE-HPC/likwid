@@ -1779,6 +1779,15 @@ static void catch_sigchild(int signo) {
   (void)signo;
 }
 
+// useful helper function for Lua debugging. Delete this
+// if you don't think it's helpful. Keep it in incase you still need it.
+//static void print_stack(const char *msg, lua_State *L) {
+//    printf("%s\n", msg);
+//    for (int i = lua_gettop(L); i >= 1; i--) {
+//        printf("- %s\n", lua_typename(L, lua_type(L, i)));
+//    }
+//}
+
 static int lua_likwid_startProgram(lua_State *L) {
     int retval = 0;
 
@@ -1808,26 +1817,60 @@ static int lua_likwid_startProgram(lua_State *L) {
     if (cpusCount > cputopo->numHWThreads)
         return luaL_error(L, "Number of threads greater than available HW threads");
 
-    // arg3: ld_preload list
+    // arg3: environment list
+    //
+    // The environment list is a simple key value list, where the key
+    // is a string, and the value is a string or another list.
+    // The latter case is then converted to a PATH like list, separated by ":".
+    // This is just a convenience feature for the Lua API.
+    // When a list is provided, the environment is being appended to. When it
+    // is a string, it is replaced.
     luaL_checktype(L, 3, LUA_TTABLE);
-    size_t libsCount = lua_rawlen(L, 3);
-    char *libsString = getenv("LD_PRELOAD");
-    if (libsString)
-        libsString = lw_strdup(libsString);
+    size_t envCount = 0;
+    char **envKeys = NULL;
+    char **envValues = NULL;
 
-    for (size_t i = 0; i < libsCount; i++) {
-        lua_rawgeti(L, 3, i + 1);
-        const char *lib = luaL_checkstring(L, -1);
-        char *libsStringNew;
-        if (libsString)
-            libsStringNew = lw_asprintf("%s:%s", libsString, lib);
-        else
-            libsStringNew = lw_asprintf("%s", lib);
-        free(libsString);
-        libsString = libsStringNew;
+    lua_pushnil(L);
+    while (lua_next(L, 3)) {
+        if (lua_type(L, -2) != LUA_TSTRING)
+            return luaL_error(L, "environment key must be string");
+        char *envKey = lw_strdup(luaL_checkstring(L, -2));
+        char *envValue = getenv(envKey);
+        if (envValue)
+            envValue = lw_strdup(envValue);
+
+        if (lua_type(L, -1) == LUA_TTABLE) {
+            // Convert Lua list to environment list
+            lua_pushnil(L);
+            while (lua_next(L, -2)) {
+                if (lua_type(L, -1) != LUA_TSTRING)
+                    return luaL_error(L, "path list value must be of type string");
+                char *envValueNew;
+                if (envValue)
+                    envValueNew = lw_asprintf("%s:%s", luaL_checkstring(L, -1), envValue);
+                else
+                    envValueNew = lw_asprintf("%s", luaL_checkstring(L, -1));
+                free(envValue);
+                envValue = envValueNew;
+                lua_pop(L, 1);
+            }
+        } else if (lua_type(L, -1) == LUA_TSTRING) {
+            // Simply return the string
+            free(envValue);
+            envValue = lw_strdup(luaL_checkstring(L, -1));
+        } else {
+            return luaL_error(L, "Invalid type provided in environment list: %d", lua_type(L, -1));
+        }
+
+        envKeys = lw_realloc(envKeys, (envCount + 1) * sizeof(*envKeys));
+        envKeys[envCount] = envKey;
+        envValues = lw_realloc(envValues, (envCount + 1) * sizeof(*envValues));
+        envValues[envCount] = envValue;
+        envCount += 1;
         lua_pop(L, 1);
     }
 
+    // Actually start the child
     signal(SIGCHLD, catch_sigchild);
 
     pid_t pid = fork();
@@ -1838,9 +1881,14 @@ static int lua_likwid_startProgram(lua_State *L) {
         if (cpusCount > 0)
             affinity_pinProcesses(cpusCount, cpus);
 
-        // Set LD_PRELOAD for child process
-        if (libsCount > 0) {
-            if (setenv("LD_PRELOAD", libsString, 1)) {
+        // Set environment for child process
+        for (size_t i = 0; i < envCount; i++) {
+            // If the environment was previously unset and shall remain unset,
+            // do not set it.
+            if (!envValues[i])
+                continue;
+
+            if (setenv(envKeys[i], envValues[i], 1)) {
                 ERROR_PRINT("setenv failed");
                 exit(EXIT_FAILURE);
             }
@@ -1854,15 +1902,19 @@ static int lua_likwid_startProgram(lua_State *L) {
         retval = 1;
     }
 
-    free(libsString);
-    free(cpus);
-    if (argv) {
-        for (size_t i = 0; i < argvCount; i++)
-            free(argv[i]);
+    // cleanup
+    for (size_t i = 0; i < envCount; i++) {
+        free(envKeys[i]);
+        free(envValues[i]);
     }
+    free(envKeys);
+    free(envValues);
+    free(cpus);
+    for (size_t i = 0; i < argvCount; i++)
+        free(argv[i]);
     free(argv);
     if (retval == 0)
-        lua_error(L);
+        return lua_error(L);
     return retval;
 }
 

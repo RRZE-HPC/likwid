@@ -2637,16 +2637,16 @@ or<BR>
   <TD>Input Parameter</TD>
   <TD><TABLE>
     <TR>
-      <TD>\a Exec</TD>
-      <TD>String containing the executable and its arguments. Executable and arguments are separated by ' '</TD>
+      <TD>\a argv</TD>
+      <TD>List of strings containing the executable and its arguments.</TD>
     </TR>
     <TR>
       <TD>\a cpulist</TD>
       <TD>List of HW thread IDs. The application's cpuset is limited to these hw threads</TD>
     </TR>
     <TR>
-      <TD>\a preloaded_libraries</TD>
-      <TD>List of library paths, which to add to the target process' LD_PRELOAD environment</TD>
+      <TD>\a environment</TD>
+      <TD>Table of environment variables to be set in (and only in) the new process. Maps an environment variable to a value. A value may either be a string or a list. A list can be used to prepend e.g. libraries to the environment variable. It's allowed to leave this list empty. When using a list, already existing libraries in the variable are not cleared, but are being prepended to.</TD>
     </TR>
   </TABLE></TD>
 </TR>

@@ -596,6 +596,11 @@ if rocmSupported and rocmtopo and #gpulist_rocm > 0 then
 end
 ---------------------------
 
+programAddEnv = {
+    LD_PRELOAD = {},
+    LD_LIBRARY_PATH = {},
+}
+
 if print_events == true then
     local tab = likwid.getEventsAndCounters()
     print_stdout(string.format("This architecture has %d counters.", #tab["Counters"]))
@@ -624,9 +629,7 @@ if print_events == true then
     if nvSupported and cudatopo then
         local cudahome = os.getenv("CUDA_HOME")
         if cudahome and cudahome:len() > 0 then
-            ldpath = os.getenv("LD_LIBRARY_PATH")
-            local cuptilib = string.format("%s/extras/CUPTI/lib64", cudahome)
-            likwid.setenv("LD_LIBRARY_PATH", cuptilib .. ":" .. ldpath)
+            table.insert(programAddEnv["LD_LIBRARY_PATH"], string.format("%s/extras/CUPTI/lib64", cudahome))
         end
         -- we need the gpulist to initialize nvmon
         newgpulist = {}
@@ -657,18 +660,17 @@ if print_events == true then
     if rocmSupported and rocmtopo then
         local rocmhome = os.getenv("ROCM_HOME")
         if rocmhome and rocmhome:len() > 0 then
-            ldpath = os.getenv("LD_LIBRARY_PATH")
             local libpathlist = {}
             table.insert(libpathlist, string.format("%s/hip/lib", rocmhome))
             table.insert(libpathlist, string.format("%s/hsa/lib", rocmhome))
             table.insert(libpathlist, string.format("%s/lib/rocprofiler", rocmhome))
             table.insert(libpathlist, string.format("%s/rocprofiler/lib", rocmhome))
             table.insert(libpathlist, string.format("%s/lib", rocmhome))
-            table.insert(libpathlist, ldpath)
-            likwid.setenv("LD_LIBRARY_PATH", table.concat(libpathlist, ":"))
-            print_stdout(os.getenv("LD_LIBRARY_PATH"))
-            --likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so")
-            likwid.setenv("HSA_TOOLS_LIB", "librocprof-tool.so")
+            for _, v in pairs(libpathlist) do
+                table.insert(programAddEnv["LD_LIBRARY_PATH"], v)
+            end
+            programAddEnv["HSA_TOOLS_LIB"] = "librocprof-tool.so"
+            --programAddEnv["HSA_TOOLS_LIB"] = "librocprofiler64.so"
         end
         likwid.init_rocm({})
         rocmInitialized = true
@@ -719,9 +721,8 @@ if print_event ~= nil then
     if nvSupported and cudatopo then
         local cudahome = os.getenv("CUDA_HOME")
         if cudahome and cudahome:len() > 0 then
-            ldpath = os.getenv("LD_LIBRARY_PATH")
             local cuptilib = string.format("%s/extras/CUPTI/lib64", cudahome)
-            likwid.setenv("LD_LIBRARY_PATH", cuptilib .. ":" .. ldpath)
+            table.insert(programAddEnv["LD_LIBRARY_PATH"], cuptilib)
         end
         if cudahome then
             tab = likwid.getGpuEventsAndCounters()
@@ -749,11 +750,14 @@ if print_event ~= nil then
         local rocmhome = os.getenv("ROCM_HOME")
         if rocmhome and rocmhome:len() > 0 then
             ldpath = os.getenv("LD_LIBRARY_PATH")
-            local hiplib = string.format("%s/hip/lib", rocmhome)
-            local hsalib = string.format("%s/hsa/lib", rocmhome)
-            local rocproflib = string.format("%s/lib/rocprofiler", rocmhome)
-            likwid.setenv("LD_LIBRARY_PATH", hiplib .. ":" .. hsalib .. ":" .. rocproflib .. ":" .. ldpath)
-            likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so")
+            local libpathlist = {}
+            table.insert(string.format("%s/hip/lib", rocmhome))
+            table.insert(string.format("%s/hsa/lib", rocmhome))
+            table.insert(string.format("%s/lib/rocprofiler", rocmhome))
+            for _, v in pairs(libpathlist) do
+                table.insert(programAddEnv["LD_LIBRARY_PATH"], v)
+            end
+            programAddEnv["HSA_TOOLS_LIB"] = "librocprofiler64.so"
         end
         if rocmhome then
             tab = likwid.getGpuEventsAndCounters_rocm()
@@ -1013,7 +1017,6 @@ if verbose == 0 then
     likwid.setenv("LIKWID_SILENT", "true")
 end
 
-preloaded_libraries = {}
 if pin_cpus then
     local omp_threads = os.getenv("OMP_NUM_THREADS")
     if omp_threads == nil then
@@ -1052,7 +1055,7 @@ if pin_cpus then
         end
         likwid.setenv("OMP_PLACES", placesString)
 
-        table.insert(preloaded_libraries, likwid.pinlibpath)
+        table.insert(programAddEnv["LD_PRELOAD"], likwid.pinlibpath)
     elseif num_cpus == 1 then
         likwid.setenv("OMP_PLACES", string.format("{%d}", cpulist[1]))
         likwid.setenv("LIKWID_PIN", tostring(math.tointeger(cpulist[1])))
@@ -1171,7 +1174,7 @@ if nvSupported and #cuda_event_string_list > 0 then
         perfctr_exit(1)
     end
     if use_marker == false then
-        table.insert(preloaded_libraries, "likwid-appDaemon.so")
+        table.insert(programAddEnv["LD_PRELOAD"], "likwid-appDaemon.so")
     end
     local devices = os.getenv("CUDA_VISIBLE_DEVICES")
     if devices == nil then
@@ -1185,7 +1188,7 @@ if rocmSupported and #rocm_event_string_list > 0 then
     --likwid.init_rocm(gpulist_rocm)
     --rocmInitialized = true
     if use_marker == false then
-        table.insert(preloaded_libraries, "likwid-appDaemon.so")
+        table.insert(programAddEnv["LD_PRELOAD"], "likwid-appDaemon.so")
     end
     local devices = os.getenv("ROCR_VISIBLE_DEVICES")
     if devices == nil then
@@ -1199,25 +1202,16 @@ end
 if verbose > 0 then
     print_stdout(string.format("Executing: %s", table.concat(execList, " ")))
 end
-local ldpath = os.getenv("LD_LIBRARY_PATH")
+
 local libpath = string.match(likwid.pinlibpath, "([/%a%d]+)/[%a%s%d]*")
-if ldpath == nil then
-    likwid.setenv("LD_LIBRARY_PATH", libpath)
-elseif not ldpath:match(libpath) then
-    likwid.setenv("LD_LIBRARY_PATH", libpath .. ":" .. ldpath)
-end
+table.insert(programAddEnv["LD_LIBRARY_PATH"], libpath)
 ---------------------------
 if nvSupported then
     local cudahome = os.getenv("CUDA_HOME")
     if cudahome then
         ldpath = os.getenv("LD_LIBRARY_PATH")
-        local cuptilib = string.format("%s/extras/CUPTI/lib64", cudahome)
-        local likwidlib = "<INSTALLED_LIBPREFIX>"
-        if not ldpath:match(cuptilib) then
-            likwid.setenv("LD_LIBRARY_PATH", cuptilib .. ":" .. likwidlib .. ":" .. ldpath)
-        else
-            likwid.setenv("LD_LIBRARY_PATH", likwidlib .. ":" .. ldpath)
-        end
+        table.insert(programAddEnv["LD_LIBRARY_PATH"], string.format("%s/extras/CUPTI/lib64", cudahome))
+        table.insert(programAddEnv["LD_LIBRARY_PATH"], "<INSTALLED_LIBPREFIX>")
     end
 end
 ---------------------------
@@ -1225,13 +1219,11 @@ if rocmSupported then
     local rocmhome = os.getenv("ROCM_HOME")
     if rocmhome and rocmhome:len() > 0 then
         ldpath = os.getenv("LD_LIBRARY_PATH")
-        local hiplib = string.format("%s/hip/lib", rocmhome)
-        local hsalib = string.format("%s/hsa/lib", rocmhome)
-        local rocproflib = string.format("%s/lib/rocprofiler", rocmhome)
-        local likwidlib = "<INSTALLED_LIBPREFIX>"
-        likwid.setenv("LD_LIBRARY_PATH", hiplib .. ":" .. hsalib .. ":" .. rocproflib .. ":" .. likwidlib .. ":" ..
-        ldpath)
-        likwid.setenv("HSA_TOOLS_LIB", "librocprofiler64.so")
+        table.insert(programAddEnv["LD_LIBRARY_PATH"], string.format("%s/hip/lib", rocmhome))
+        table.insert(programAddEnv["LD_LIBRARY_PATH"], string.format("%s/hsa/lib", rocmhome))
+        table.insert(programAddEnv["LD_LIBRARY_PATH"], string.format("%s/lib/rocprofiler", rocmhome))
+        table.insert(programAddEnv["LD_LIBRARY_PATH"], "<INSTALLED_LIBPREFIX>")
+        programAddEnv["HSA_TOOLS_LIB"] = "librocprofiler64.so"
     end
 end
 ---------------------------
@@ -1243,9 +1235,9 @@ if #execList > 0 then
         likwid.setenv("LIKWID_PERF_EXECPID", "1")
     end
     if pin_cpus then
-        pid = likwid.startProgram(execList, cpulist, preloaded_libraries)
+        pid = likwid.startProgram(execList, cpulist, programAddEnv)
     else
-        pid = likwid.startProgram(execList, {}, preloaded_libraries)
+        pid = likwid.startProgram(execList, {}, programAddEnv)
     end
     if execpid then
         perfpid = pid
