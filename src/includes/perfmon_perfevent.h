@@ -199,7 +199,7 @@ int perfmon_init_perfevent(int cpu_id)
         perfEventOptionNames[EVENT_OPTION_TID] = "threadmask";
         perfEventOptionNames[EVENT_OPTION_CID] = "coreid";
         perfEventOptionNames[EVENT_OPTION_SLICE] = "sliceid";
-    } else if (cpuid_info.family == ZEN5_FAMILY && (cpuid_info.model == ZEN5_EPYC)) {
+    } else if (cpuid_info.family == ZEN5_FAMILY && (cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5_RYZEN)) {
         perfEventOptionNames[EVENT_OPTION_TID] = "threadmask";
         perfEventOptionNames[EVENT_OPTION_CID] = "coreid";
         perfEventOptionNames[EVENT_OPTION_SLICE] = "sliceid";
@@ -729,7 +729,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
         free(formats);
     }
 #endif
-    if (cpuid_info.family == ZEN5_FAMILY && cpuid_info.model == ZEN5_EPYC && event->eventId == 0xFFF) {
+    if (cpuid_info.family == ZEN5_FAMILY && (cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5_RYZEN) && event->eventId == 0xFFF) {
         memset(attr, 0, sizeof(struct perf_event_attr));
     }
     return 0;
@@ -952,7 +952,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
         }
     }
 
-    if (type == CBOX0 && cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_RYZEN3 || cpuid_info.model == ZEN4_EPYC_BERGAMO || cpuid_info.model == ZEN4_MI300A || cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5C_EPYC))
+    if (type == CBOX0 && cpuid_info.family == ZEN3_FAMILY && (cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_RYZEN3 || cpuid_info.model == ZEN4_EPYC_BERGAMO || cpuid_info.model == ZEN4_MI300A || cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5C_EPYC || cpuid_info.model == ZEN5_RYZEN))
     {
         int got_cid = 0;
         int got_slices = 0;
