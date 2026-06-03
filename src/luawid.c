@@ -1794,7 +1794,7 @@ static int lua_likwid_startProgram(lua_State *L) {
     // arg 1: argv list
     luaL_checktype(L, 1, LUA_TTABLE);
     size_t argvCount = lua_rawlen(L, 1);
-    char **argv = lw_calloc(argvCount, sizeof(*argv));
+    char **argv = lw_calloc(argvCount + 1, sizeof(*argv));
 
     for (size_t i = 0; i < argvCount; i++) {
         lua_rawgeti(L, 1, i + 1);
