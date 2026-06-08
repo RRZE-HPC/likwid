@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <unistd.h>
 
 #include <sysFeatures_types.h>
 #include <likwid.h>
@@ -133,10 +134,60 @@ static int intel_uncore_max_freq_setter(const LikwidDevice_t device, const char*
     return likwid_sysft_writemsr_field(device, MSR_UNCORE_FREQ, 0, 8, freq / 100);
 }
 
+static int intel_uncore_sysfs_getter(const LikwidDevice_t device, char** value, const char* sysfs_filename)
+{
+    int err = 0;
+    if ((!device) || (!value) || (!sysfs_filename) || (device->type != DEVICE_TYPE_SOCKET))
+    {
+        return -EINVAL;
+    }
+    bstring filename = bformat("/sys/devices/system/cpu/intel_uncore_frequency/package_%.02d_die_00/%s", device->id.simple.id, sysfs_filename);
+    // bdata() conditionally returns NULL and gcc access doesn't like that with access()
+#pragma GCC diagnostic ignored "-Wnonnull"
+    if (!access(bdata(filename), R_OK))
+    {
+        bstring content = read_file(bdata(filename));
+        if (blength(content) > 0)
+        {
+            btrimws(content);
+            char* v = realloc(*value, (blength(content)+1) * sizeof(char));
+            if (v)
+            {
+                strncpy(v, bdata(content), blength(content));
+                v[blength(content)] = '\0';
+                *value = v;
+            }
+            else
+            {
+                err = -ENOMEM;
+            }
+            bdestroy(content);
+        }
+    }
+    else
+    {
+        err = errno;
+    }
+    bdestroy(filename);
+    return err;
+}
+
+static int intel_uncore_sysfs_min_uncore_freq_limit_getter(const LikwidDevice_t device, char** value)
+{
+    return intel_uncore_sysfs_getter(device, value, "initial_min_freq_khz");
+}
+
+static int intel_uncore_sysfs_max_uncore_freq_limit_getter(const LikwidDevice_t device, char** value)
+{
+    return intel_uncore_sysfs_getter(device, value, "initial_max_freq_khz");
+}
+
 static _SysFeature intel_uncorefreq_features[] = {
     {"cur_uncore_freq", "uncore_freq", "Current Uncore frequency", intel_uncore_cur_freq_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "MHz"},
     {"min_uncore_freq", "uncore_freq", "Minimum Uncore frequency", intel_uncore_min_freq_getter, intel_uncore_min_freq_setter, DEVICE_TYPE_SOCKET, NULL, "MHz"},
     {"max_uncore_freq", "uncore_freq", "Maximal Uncore frequency", intel_uncore_max_freq_getter, intel_uncore_max_freq_setter, DEVICE_TYPE_SOCKET, NULL, "MHz"},
+    {"min_uncore_freq_limit", "uncore_freq", "Minimal Uncore frequency limit", intel_uncore_sysfs_min_uncore_freq_limit_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "kHz"},
+    {"max_uncore_freq_limit", "uncore_freq", "Maximal Uncore frequency limit", intel_uncore_sysfs_max_uncore_freq_limit_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "kHz"},
 };
 
 const _SysFeatureList likwid_sysft_intel_uncorefreq_feature_list = {
