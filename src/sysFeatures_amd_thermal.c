@@ -407,10 +407,12 @@ static int amd_thermal_tester(void)
     return info.count > 0;
 }
 
+// clang-format off
 static _SysFeature amd_thermal_features[] = {
     {"ccd_temp", "thermal", "Current CPU CCD temperature (Tccd)", amd_thermal_temperature_ccd_getter, NULL, DEVICE_TYPE_DIE, NULL, "degrees C"},
     {"pkg_temp", "thermal", "Current CPU socket temperature (Tctl)", amd_thermal_temperature_ctl_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "degrees C"},
 };
+// clang-format on
 
 const _SysFeatureList likwid_sysft_amd_k10_cpu_thermal_feature_list = {
     .num_features = ARRAY_COUNT(amd_thermal_features),
