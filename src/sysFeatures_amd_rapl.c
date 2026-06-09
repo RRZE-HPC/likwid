@@ -29,37 +29,36 @@
  * =======================================================================================
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
 #include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include <bitUtil.h>
-#include <sysFeatures_types.h>
-#include <likwid.h>
-#include <error.h>
-#include <sysFeatures_amd.h>
-#include <sysFeatures_common.h>
-#include <sysFeatures_amd_rapl.h>
 #include <access.h>
+#include <bitUtil.h>
+#include <error.h>
+#include <likwid.h>
 #include <registers.h>
-#include <topology.h>
+#include <sysFeatures_amd.h>
+#include <sysFeatures_amd_rapl.h>
+#include <sysFeatures_common.h>
 #include <sysFeatures_common_rapl.h>
+#include <sysFeatures_types.h>
+#include <topology.h>
 
-static RaplDomainInfo amd_rapl_pkg_info = {0, 0, 0, 32};
-static RaplDomainInfo amd_rapl_core_info = {0, 0, 0, 32};
+static RaplDomainInfo amd_rapl_pkg_info  = { 0, 0, 0, 32 };
+static RaplDomainInfo amd_rapl_core_info = { 0, 0, 0, 32 };
 
-static int amd_rapl_energy_status_getter(const LikwidDevice_t device, char** value, uint32_t reg, const RaplDomainInfo* info, LikwidDeviceType type)
+static int amd_rapl_energy_status_getter(const LikwidDevice_t device, char **value, uint32_t reg,
+    const RaplDomainInfo *info, LikwidDeviceType type)
 {
     int err = getset_info_check(device, value, info, type);
-    if (err < 0)
-    {
+    if (err < 0) {
         return err;
     }
     uint64_t msrData = 0;
-    err = HPMread(device->id.simple.id, MSR_DEV, reg, &msrData);
-    if (err < 0)
-    {
+    err              = HPMread(device->id.simple.id, MSR_DEV, reg, &msrData);
+    if (err < 0) {
         return err;
     }
     const uint64_t energy = field64(msrData, 0, info->regWidth);
@@ -70,21 +69,22 @@ static int amd_rapl_energy_status_getter(const LikwidDevice_t device, char** val
 /*                          AMD RAPL (PKG domain)                                                                  */
 /*********************************************************************************************************************/
 
-static int pkg_test_testFunc(uint64_t msrData, void * value)
+static int pkg_test_testFunc(uint64_t msrData, void *value)
 {
     (void)value;
-    if (amd_rapl_pkg_info.powerUnit == 0 && amd_rapl_pkg_info.energyUnit == 0 && amd_rapl_pkg_info.timeUnit == 0)
-    {
-        amd_rapl_pkg_info.powerUnit = 1.0 / (1U << field64(msrData, 0, 4));
+    if (amd_rapl_pkg_info.powerUnit == 0 && amd_rapl_pkg_info.energyUnit == 0 &&
+        amd_rapl_pkg_info.timeUnit == 0) {
+        amd_rapl_pkg_info.powerUnit  = 1.0 / (1U << field64(msrData, 0, 4));
         amd_rapl_pkg_info.energyUnit = 1.0 / (1U << field64(msrData, 8, 5));
-        amd_rapl_pkg_info.timeUnit = 1.0 / (1U << field64(msrData, 16, 4));
+        amd_rapl_pkg_info.timeUnit   = 1.0 / (1U << field64(msrData, 16, 4));
     }
     return 1;
 }
 
 static int amd_rapl_pkg_test(void)
 {
-    return likwid_sysft_foreach_socket_testmsr_cb(MSR_AMD17_RAPL_POWER_UNIT, pkg_test_testFunc, NULL);
+    return likwid_sysft_foreach_socket_testmsr_cb(
+        MSR_AMD17_RAPL_POWER_UNIT, pkg_test_testFunc, NULL);
 }
 
 static int amd_pkg_energy_status_test(void)
@@ -92,41 +92,47 @@ static int amd_pkg_energy_status_test(void)
     return likwid_sysft_foreach_socket_testmsr(MSR_AMD17_RAPL_PKG_STATUS);
 }
 
-static int amd_pkg_energy_status_getter(const LikwidDevice_t device, char** value)
+static int amd_pkg_energy_status_getter(const LikwidDevice_t device, char **value)
 {
-    return amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_PKG_STATUS, &amd_rapl_pkg_info, DEVICE_TYPE_SOCKET);
+    return amd_rapl_energy_status_getter(
+        device, value, MSR_AMD17_RAPL_PKG_STATUS, &amd_rapl_pkg_info, DEVICE_TYPE_SOCKET);
 }
 
 static _SysFeature amd_rapl_pkg_features[] = {
-    {"pkg_energy", "rapl", "Current energy consumtion (PKG domain)", amd_pkg_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, amd_pkg_energy_status_test, "J"},
+    { "pkg_energy",
+     "rapl", "Current energy consumtion (PKG domain)",
+     amd_pkg_energy_status_getter, NULL,
+     DEVICE_TYPE_SOCKET, amd_pkg_energy_status_test,
+     "J" },
 };
 
 static const _SysFeatureList amd_rapl_pkg_feature_list = {
     .num_features = ARRAY_COUNT(amd_rapl_pkg_features),
-    .tester = amd_rapl_pkg_test,
-    .features = amd_rapl_pkg_features,
+    .tester       = amd_rapl_pkg_test,
+    .features     = amd_rapl_pkg_features,
 };
 
 /*********************************************************************************************************************/
 /*                          AMD RAPL (CORE domain)                                                                 */
 /*********************************************************************************************************************/
 
-static int core_test_testFunc(uint64_t msrData, void * value)
+static int core_test_testFunc(uint64_t msrData, void *value)
 {
     (void)value;
-    if (amd_rapl_core_info.powerUnit == 0 && amd_rapl_core_info.energyUnit == 0 && amd_rapl_core_info.timeUnit == 0)
-    {
-        amd_rapl_core_info.powerUnit = 1.0 / (1 << field64(msrData, 0, 4));
+    if (amd_rapl_core_info.powerUnit == 0 && amd_rapl_core_info.energyUnit == 0 &&
+        amd_rapl_core_info.timeUnit == 0) {
+        amd_rapl_core_info.powerUnit  = 1.0 / (1 << field64(msrData, 0, 4));
         amd_rapl_core_info.energyUnit = 1.0 / (1 << field64(msrData, 8, 5));
-        amd_rapl_core_info.timeUnit = 1.0 / (1 << field64(msrData, 16, 4));
+        amd_rapl_core_info.timeUnit   = 1.0 / (1 << field64(msrData, 16, 4));
     }
-    
+
     return 1;
 }
 
 static int amd_rapl_core_test(void)
 {
-    return likwid_sysft_foreach_core_testmsr_cb(MSR_AMD17_RAPL_POWER_UNIT, core_test_testFunc, NULL);
+    return likwid_sysft_foreach_core_testmsr_cb(
+        MSR_AMD17_RAPL_POWER_UNIT, core_test_testFunc, NULL);
 }
 
 static int amd_core_energy_status_test(void)
@@ -134,23 +140,28 @@ static int amd_core_energy_status_test(void)
     return likwid_sysft_foreach_core_testmsr(MSR_AMD17_RAPL_CORE_STATUS);
 }
 
-static int amd_core_energy_status_getter(const LikwidDevice_t device, char** value)
+static int amd_core_energy_status_getter(const LikwidDevice_t device, char **value)
 {
-    return amd_rapl_energy_status_getter(device, value, MSR_AMD17_RAPL_CORE_STATUS, &amd_rapl_core_info, DEVICE_TYPE_CORE);
+    return amd_rapl_energy_status_getter(
+        device, value, MSR_AMD17_RAPL_CORE_STATUS, &amd_rapl_core_info, DEVICE_TYPE_CORE);
 }
 
 static _SysFeature amd_rapl_core_features[] = {
-    {"core_energy", "rapl", "Current energy consumtion (Core domain)", amd_core_energy_status_getter, NULL, DEVICE_TYPE_CORE, amd_core_energy_status_test, "J"},
+    { "core_energy",
+     "rapl", "Current energy consumtion (Core domain)",
+     amd_core_energy_status_getter, NULL,
+     DEVICE_TYPE_CORE, amd_core_energy_status_test,
+     "J" },
 };
 
 static const _SysFeatureList amd_rapl_core_feature_list = {
     .num_features = ARRAY_COUNT(amd_rapl_core_features),
-    .tester = amd_rapl_core_test,
-    .features = amd_rapl_core_features,
+    .tester       = amd_rapl_core_test,
+    .features     = amd_rapl_core_features,
 };
 
-
-static int set_energy_status_reg_width(RaplDomainInfo* info) {
+static int set_energy_status_reg_width(RaplDomainInfo *info)
+{
     int err = topology_init();
     if (err < 0) {
         errno = -err;
@@ -158,28 +169,28 @@ static int set_energy_status_reg_width(RaplDomainInfo* info) {
         return err;
     }
     CpuInfo_t cpuinfo = get_cpuInfo();
-    info->regWidth = 32;
+    info->regWidth    = 32;
     switch (cpuinfo->family) {
-        case ZEN3_FAMILY:
-            switch (cpuinfo->model) {
-                case ZEN4_EPYC:
-                case ZEN4_EPYC_BERGAMO:
-                case ZEN4_RYZEN:
-                case ZEN4_RYZEN2:
-                case ZEN4_RYZEN3:
-                case ZEN4_RYZEN_PRO:
-                case ZEN4_MI300A:
-                    info->regWidth = 64;
-                    break;
-                default:
-                    break;
-            }
-            break;
-        case ZEN5_FAMILY:
+    case ZEN3_FAMILY:
+        switch (cpuinfo->model) {
+        case ZEN4_EPYC:
+        case ZEN4_EPYC_BERGAMO:
+        case ZEN4_RYZEN:
+        case ZEN4_RYZEN2:
+        case ZEN4_RYZEN3:
+        case ZEN4_RYZEN_PRO:
+        case ZEN4_MI300A:
             info->regWidth = 64;
             break;
         default:
             break;
+        }
+        break;
+    case ZEN5_FAMILY:
+        info->regWidth = 64;
+        break;
+    default:
+        break;
     }
     DEBUG_PRINT(DEBUGLEV_INFO, "AMD RAPL energy status register width %d", info->regWidth);
     return 0;
@@ -187,57 +198,47 @@ static int set_energy_status_reg_width(RaplDomainInfo* info) {
 
 /* Init function */
 
-int likwid_sysft_init_amd_rapl(_SysFeatureList* out)
+int likwid_sysft_init_amd_rapl(_SysFeatureList *out)
 {
-    int err = 0;
+    int err                = 0;
     Configuration_t config = NULL;
-    err = init_configuration();
-    if (err < 0)
-    {
+    err                    = init_configuration();
+    if (err < 0) {
         errno = -err;
         ERROR_PRINT("Failed to initialize configuration");
         return err;
     }
     config = get_configuration();
-    if (config->daemonMode == ACCESSMODE_PERF)
-    {
+    if (config->daemonMode == ACCESSMODE_PERF) {
         DEBUG_PRINT(DEBUGLEV_INFO, "No AMD RAPL support with accessmode=perf_event");
         return 0;
     }
-    if (amd_rapl_pkg_test())
-    {
+    if (amd_rapl_pkg_test()) {
         err = set_energy_status_reg_width(&amd_rapl_pkg_info);
         if (err < 0) {
             DEBUG_PRINT(DEBUGLEV_INFO, "AMD RAPL domain PKG register width error");
         } else {
             DEBUG_PRINT(DEBUGLEV_INFO, "Register AMD RAPL PKG domain");
             err = likwid_sysft_register_features(out, &amd_rapl_pkg_feature_list);
-            if (err < 0)
-            {
+            if (err < 0) {
                 DEBUG_PRINT(DEBUGLEV_INFO, "AMD RAPL domain PKG not supported");
             }
         }
-    }
-    else
-    {
+    } else {
         DEBUG_PRINT(DEBUGLEV_INFO, "AMD RAPL domain PKG not supported");
     }
-    if (amd_rapl_core_test())
-    {
+    if (amd_rapl_core_test()) {
         err = set_energy_status_reg_width(&amd_rapl_core_info);
         if (err < 0) {
             DEBUG_PRINT(DEBUGLEV_INFO, "AMD RAPL domain PKG register width error");
         } else {
             DEBUG_PRINT(DEBUGLEV_INFO, "Register AMD RAPL CORE domain");
             err = likwid_sysft_register_features(out, &amd_rapl_core_feature_list);
-            if (err < 0)
-            {
+            if (err < 0) {
                 DEBUG_PRINT(DEBUGLEV_INFO, "AMD RAPL domain CORE not supported");
             }
         }
-    }
-    else
-    {
+    } else {
         DEBUG_PRINT(DEBUGLEV_INFO, "AMD RAPL domain CORE not supported");
     }
     return 0;
