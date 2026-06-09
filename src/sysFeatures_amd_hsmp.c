@@ -31,18 +31,18 @@
 
 #include <assert.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <sched.h>
 #include <stdint.h>
-#include <sys/ioctl.h>
 #include <stdio.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 #include <amd_hsmp.h>
 #include <cpuid.h>
 #include <sysFeatures_common.h>
 #include <sysFeatures_common_rapl.h>
-#include <types.h>
 #include <topology.h>
+#include <types.h>
 
 /* Useful links:
  * https://www.kernel.org/doc/html//latest/arch/x86/amd_hsmp.html
@@ -62,7 +62,8 @@ int likwid_sysft_init_amd_hsmp(_SysFeatureList *out)
     return err;
 }
 
-static int hsmp_raw(uint32_t socket, uint32_t msg_id, const uint32_t *args, uint16_t argCount, uint32_t *result, uint16_t resultCount)
+static int hsmp_raw(uint32_t socket, uint32_t msg_id, const uint32_t *args, uint16_t argCount,
+    uint32_t *result, uint16_t resultCount)
 {
     /* Requires RW permissions! */
     const int fd = open("/dev/hsmp", O_RDWR);
@@ -74,18 +75,17 @@ static int hsmp_raw(uint32_t socket, uint32_t msg_id, const uint32_t *args, uint
 
     /* HSMP_TEST should increment the argument by one. */
     struct hsmp_message msg = {
-        .msg_id = msg_id,
-        .num_args = argCount,
+        .msg_id      = msg_id,
+        .num_args    = argCount,
         .response_sz = resultCount,
-        .sock_ind = socket,
+        .sock_ind    = socket,
     };
 
     for (uint32_t i = 0; i < argCount; i++)
         msg.args[i] = args[i];
 
     int err = ioctl(fd, HSMP_IOCTL_CMD, &msg);
-    if (err < 0)
-    {
+    if (err < 0) {
         close(fd);
         return -errno;
     }
@@ -126,7 +126,8 @@ static int hsmp_arg0_res1_as_double(LikwidDevice_t dev, uint32_t msg_id, double 
     return likwid_sysft_double_to_string(result * scale, value);
 }
 
-static int hsmp_arg1_res0_from_double(LikwidDevice_t dev, uint32_t msg_id, double scale, const char *value)
+static int hsmp_arg1_res0_from_double(
+    LikwidDevice_t dev, uint32_t msg_id, double scale, const char *value)
 {
     double arg;
     int err = likwid_sysft_string_to_double(value, &arg);
@@ -160,12 +161,27 @@ static int amd_hsmp_test_ver(uint32_t test_ver)
     return 0;
 }
 
-static int amd_hsmp_test_ver1(void) { return amd_hsmp_test_ver(1); }
-static int amd_hsmp_test_ver2(void) { return amd_hsmp_test_ver(2); }
-static int amd_hsmp_test_ver3(void) { return amd_hsmp_test_ver(3); }
+static int amd_hsmp_test_ver1(void)
+{
+    return amd_hsmp_test_ver(1);
+}
+static int amd_hsmp_test_ver2(void)
+{
+    return amd_hsmp_test_ver(2);
+}
+static int amd_hsmp_test_ver3(void)
+{
+    return amd_hsmp_test_ver(3);
+}
 //static int amd_hsmp_test_ver4(void) { return amd_hsmp_test_ver(4); } // there is only one command in ver4, and it is reserved or undocumented
-static int amd_hsmp_test_ver5(void) { return amd_hsmp_test_ver(5); }
-static int amd_hsmp_test_fail(void) { return 0; } // HSMP commandss > 2Fh are not yet documented and do not seem to work by tody (Bergamo + Genoa)
+static int amd_hsmp_test_ver5(void)
+{
+    return amd_hsmp_test_ver(5);
+}
+static int amd_hsmp_test_fail(void)
+{
+    return 0;
+} // HSMP commandss > 2Fh are not yet documented and do not seem to work by tody (Bergamo + Genoa)
 
 static int amd_hsmp_smu_fw_getter(LikwidDevice_t dev, char **value)
 {
@@ -212,7 +228,8 @@ static int get_real_apic_id(const HWThread *hwt)
     /* Make sure we are running on the right core. */
     cpu_set_t new_mask;
     CPU_ZERO(&new_mask);
-    CPU_SET(hwt->apicId, &new_mask);   // <-- we assume this "apicId" to be a Linux processor number to be scheduled onto.
+    CPU_SET(hwt->apicId,
+        &new_mask); // <-- we assume this "apicId" to be a Linux processor number to be scheduled onto.
     err = sched_setaffinity(0, sizeof(new_mask), &new_mask);
     if (err != 0)
         return -errno;
@@ -250,8 +267,7 @@ static HWThread *get_hwt_by_core(LikwidDevice_t dev)
 {
     assert(dev->type == DEVICE_TYPE_CORE);
     CpuTopology_t topo = get_cpuTopology();
-    for (uint32_t hwt = 0; hwt < topo->numHWThreads; hwt++)
-    {
+    for (uint32_t hwt = 0; hwt < topo->numHWThreads; hwt++) {
         HWThread *t = &topo->threadPool[hwt];
         if (t->coreId == (uint32_t)dev->id.simple.id)
             return t;
@@ -310,7 +326,8 @@ static int amd_hsmp_sock_proc_hot_getter(LikwidDevice_t dev, char **value)
 static int amd_hsmp_sock_fclk_mclk_getter(LikwidDevice_t dev, bool fclk, char **value)
 {
     uint32_t results[2];
-    int err = hsmp_raw(dev->id.simple.id, HSMP_GET_FCLK_MCLK, NULL, 0, results, ARRAY_COUNT(results));
+    int err =
+        hsmp_raw(dev->id.simple.id, HSMP_GET_FCLK_MCLK, NULL, 0, results, ARRAY_COUNT(results));
     if (err < 0)
         return -err;
 
@@ -405,14 +422,15 @@ static int amd_hsmp_temp_getter(LikwidDevice_t dev, char **value)
 static uint32_t make_dimm_addr(uint32_t channel, bool dimm_0_1, bool sensor_0_1)
 {
     uint32_t dimm_addr = 0;
-    field32set(&dimm_addr, 7, 1, 1);   // mode = 1
+    field32set(&dimm_addr, 7, 1, 1); // mode = 1
     field32set(&dimm_addr, 6, 1, sensor_0_1 ? 1 : 0);
     field32set(&dimm_addr, 4, 1, dimm_0_1 ? 1 : 0);
     field32set(&dimm_addr, 0, 4, channel);
     return dimm_addr;
 }
 
-static int amd_hsmp_dimm_temp_getter(LikwidDevice_t dev, uint32_t channel, bool dimm_0_1, bool sensor_0_1, bool rate, bool test, char **value)
+static int amd_hsmp_dimm_temp_getter(LikwidDevice_t dev, uint32_t channel, bool dimm_0_1,
+    bool sensor_0_1, bool rate, bool test, char **value)
 {
     /* For reference, see AMD PPR 19h Model 11h B2 Vol 3 aka 55901_B2_pub_3.pdf Table 141  */
     assert(channel < 16); // HSMP protocol currently does not support more than 4 bit DDRPHY IDs
@@ -426,9 +444,9 @@ static int amd_hsmp_dimm_temp_getter(LikwidDevice_t dev, uint32_t channel, bool 
 
     /* See same document as above, Table 154 function Id 16h */
     const double refresh_pre_scale = field32(range_raw, 3, 1) ? 2.0 : 1.0;
-    if (field32(range_raw, 0, 3) != 0x1 && field32(range_raw, 0, 3) != 0x5)
-    {
-        ERROR_PRINT("AMD HSMP: received invalid or unknown temperature range: %x", field32(range_raw, 0, 3));
+    if (field32(range_raw, 0, 3) != 0x1 && field32(range_raw, 0, 3) != 0x5) {
+        ERROR_PRINT("AMD HSMP: received invalid or unknown temperature range: %x",
+            field32(range_raw, 0, 3));
         return -EBADE;
     }
     const double temp_pre_scale = (field32(range_raw, 0, 3) == 0x1) ? 1.0 : 2.0;
@@ -441,20 +459,18 @@ static int amd_hsmp_dimm_temp_getter(LikwidDevice_t dev, uint32_t channel, bool 
     if (test)
         return 0;
 
-    if (rate)
-    {
+    if (rate) {
         const double last_update = refresh_pre_scale * field32(temp_raw, 8, 9) / 1000.0;
         return likwid_sysft_double_to_string(last_update, value);
-    }
-    else
-    {
+    } else {
         /* Do not use field32(temp_raw, 21, 11) in order to get sign extension from the >> for free. */
         const double temp = temp_pre_scale * (temp_raw >> 21) * 0.25;
         return likwid_sysft_double_to_string(temp, value);
     }
 }
 
-static int amd_hsmp_dimm_power_getter(LikwidDevice_t dev, uint32_t channel, bool dimm_0_1, bool sensor_0_1, bool test, char **value)
+static int amd_hsmp_dimm_power_getter(
+    LikwidDevice_t dev, uint32_t channel, bool dimm_0_1, bool sensor_0_1, bool test, char **value)
 {
     /* See notes from hsmp_amd_dimm_temp_getter */
     assert(channel < 16);
@@ -473,9 +489,8 @@ static int amd_hsmp_dimm_tester(uint32_t channel, bool dimm_0_1, bool sensor_0_1
     if (!amd_hsmp_test_ver5())
         return 0;
     CpuTopology_t topo = get_cpuTopology();
-    bool dimm_found = false;
-    for (uint32_t i = 0; i < topo->numSockets; i++)
-    {
+    bool dimm_found    = false;
+    for (uint32_t i = 0; i < topo->numSockets; i++) {
         LikwidDevice_t dev;
         int err = likwid_device_create(DEVICE_TYPE_SOCKET, (int)i, &dev);
         if (err < 0)
@@ -485,8 +500,7 @@ static int amd_hsmp_dimm_tester(uint32_t channel, bool dimm_0_1, bool sensor_0_1
         else
             err = amd_hsmp_dimm_power_getter(dev, channel, dimm_0_1, sensor_0_1, true, NULL);
         likwid_device_destroy(dev);
-        if (err == 0)
-        {
+        if (err == 0) {
             dimm_found = true;
             break;
         }
@@ -518,10 +532,10 @@ static int amd_hsmp_dimm_tester(uint32_t channel, bool dimm_0_1, bool sensor_0_1
     }
 // clang-format on
 
-#define MAKE_DIMM_FUNC_SET(channel) \
-    MAKE_DIMM_FUNC(channel, 0, 0)   \
-    MAKE_DIMM_FUNC(channel, 0, 1)   \
-    MAKE_DIMM_FUNC(channel, 1, 0)   \
+#define MAKE_DIMM_FUNC_SET(channel)                                                                \
+    MAKE_DIMM_FUNC(channel, 0, 0)                                                                  \
+    MAKE_DIMM_FUNC(channel, 0, 1)                                                                  \
+    MAKE_DIMM_FUNC(channel, 1, 0)                                                                  \
     MAKE_DIMM_FUNC(channel, 1, 1)
 MAKE_DIMM_FUNC_SET(0x0);
 MAKE_DIMM_FUNC_SET(0x1);
@@ -568,14 +582,13 @@ MAKE_DIMM_FUNC_SET(0xF);
     },
 // clang-format on
 
-#define MAKE_DIMM_FEATURES(channel)     \
-    MAKE_DIMM_FEATURE(channel, 0, 0)    \
-    MAKE_DIMM_FEATURE(channel, 0, 1)    \
-    MAKE_DIMM_FEATURE(channel, 1, 0)    \
+#define MAKE_DIMM_FEATURES(channel)                                                                \
+    MAKE_DIMM_FEATURE(channel, 0, 0)                                                               \
+    MAKE_DIMM_FEATURE(channel, 0, 1)                                                               \
+    MAKE_DIMM_FEATURE(channel, 1, 0)                                                               \
     MAKE_DIMM_FEATURE(channel, 1, 1)
 
-struct flag_freq_reason_mapping
-{
+struct flag_freq_reason_mapping {
     uint32_t flag;
     const char *reason;
 };
@@ -591,24 +604,23 @@ static int amd_hsmp_sock_freq_limit_getter(LikwidDevice_t dev, bool show_reason,
         return likwid_sysft_uint64_to_string(field32(freq, 16, 16), value);
 
     static const struct flag_freq_reason_mapping map[] = {
-        { 0x01, "cHTC-Active" },    // ???
-        { 0x02, "PROCHOT" },        // ???
-        { 0x04, "TDC" },            // Thermal Designed Current Limit
-        { 0x08, "PPT" },            // Package Power Tracking Limit
-        { 0x10, "OPN-Max" },        // ???
+        { 0x01, "cHTC-Active"       }, // ???
+        { 0x02, "PROCHOT"           }, // ???
+        { 0x04, "TDC"               }, // Thermal Designed Current Limit
+        { 0x08, "PPT"               }, // Package Power Tracking Limit
+        { 0x10, "OPN-Max"           }, // ???
         { 0x20, "Reliability-Limit" }, // (Fused Max or Reliability Monitor Fmax@Vmax)
-        { 0x40, "APML-Agent" },     // ???
-        { 0x80, "HSMP-Agent" },     // ???
+        { 0x40, "APML-Agent"        }, // ???
+        { 0x80, "HSMP-Agent"        }, // ???
     };
 
     bstring reasons = bfromcstr("");
     if (!reasons)
         return -ENOMEM;
 
-    bool first = true;
+    bool first      = true;
     uint32_t reason = field32(freq, 0, 16);
-    for (size_t i = 0; i < ARRAY_COUNT(map); i++)
-    {
+    for (size_t i = 0; i < ARRAY_COUNT(map); i++) {
         if (!(reason & map[i].flag))
             continue;
         reason &= ~map[i].flag;
@@ -681,8 +693,8 @@ static int amd_hsmp_sock_fmin_getter(LikwidDevice_t dev, char **value)
 }
 
 typedef enum {
-    BW_aggr = 0x1,
-    BW_read = 0x2,
+    BW_aggr  = 0x1,
+    BW_read  = 0x2,
     BW_write = 0x4,
 } XGMIBw;
 
@@ -711,14 +723,14 @@ static int amd_hsmp_sock_xgmi_bw_getter(LikwidDevice_t dev, XGMILinkId id, XGMIB
     return likwid_sysft_uint64_to_string(bw_result, value);
 }
 
-#define MAKE_XGMI_FUNC(id, bw) \
-    static int amd_hsmp_sock_xgmi_bw_##id##_##bw##_getter(LikwidDevice_t dev, char **value)\
-    {                                                                       \
-        return amd_hsmp_sock_xgmi_bw_getter(dev, XGMI_##id, BW_##bw, value);\
+#define MAKE_XGMI_FUNC(id, bw)                                                                     \
+    static int amd_hsmp_sock_xgmi_bw_##id##_##bw##_getter(LikwidDevice_t dev, char **value)        \
+    {                                                                                              \
+        return amd_hsmp_sock_xgmi_bw_getter(dev, XGMI_##id, BW_##bw, value);                       \
     }
-#define MAKE_XGMI_FUNCS(bw)     \
-    MAKE_XGMI_FUNC(bw, aggr)    \
-    MAKE_XGMI_FUNC(bw, read)    \
+#define MAKE_XGMI_FUNCS(bw)                                                                        \
+    MAKE_XGMI_FUNC(bw, aggr)                                                                       \
+    MAKE_XGMI_FUNC(bw, read)                                                                       \
     MAKE_XGMI_FUNC(bw, write)
 MAKE_XGMI_FUNCS(p0);
 MAKE_XGMI_FUNCS(p1);
@@ -767,8 +779,7 @@ static int amd_hsmp_pci_gen_limit_setter(LikwidDevice_t dev, const char *value)
     return hsmp_arg1_res0_from_u32(dev, HSMP_SET_PCI_RATE, value);
 }
 
-struct power_mode_mapping
-{
+struct power_mode_mapping {
     uint32_t val;
     const char *name;
 };
@@ -776,8 +787,8 @@ struct power_mode_mapping
 static const struct power_mode_mapping power_mode_map[] = {
     { 0, "high-perf" },
     { 1, "efficency" },
-    { 2, "io-perf" },
-    { 3, "balanced" },
+    { 2, "io-perf"   },
+    { 3, "balanced"  },
 };
 
 static int amd_hsmp_power_mode_getter(LikwidDevice_t dev, char **value)
@@ -787,8 +798,7 @@ static int amd_hsmp_power_mode_getter(LikwidDevice_t dev, char **value)
     int err = hsmp_raw(dev->id.simple.id, HSMP_SET_POWER_MODE, &arg0, 1, &result, 1);
     if (err < 0)
         return err;
-    for (size_t i = 0; i < ARRAY_COUNT(power_mode_map); i++)
-    {
+    for (size_t i = 0; i < ARRAY_COUNT(power_mode_map); i++) {
         if (field32(result, 0, 3) == power_mode_map[i].val)
             return likwid_sysft_copystr(power_mode_map[i].name, value);
     }
@@ -801,12 +811,10 @@ static int amd_hsmp_power_mode_setter(LikwidDevice_t dev, const char *value)
 {
     bool found = false;
     size_t mapped_val;
-    for (size_t i = 0; i < ARRAY_COUNT(power_mode_map); i++)
-    {
-        if (power_mode_map[i].name == value)
-        {
+    for (size_t i = 0; i < ARRAY_COUNT(power_mode_map); i++) {
+        if (power_mode_map[i].name == value) {
             mapped_val = i;
-            found = true;
+            found      = true;
         }
     }
     if (!found)
@@ -829,7 +837,8 @@ static int amd_hsmp_metric_table_ver_getter(LikwidDevice_t dev, char **value)
 static int amd_hsmp_metric_table_addr_getter(LikwidDevice_t dev, char **value)
 {
     uint32_t addr[2];
-    int err = hsmp_raw(dev->id.simple.id, HSMP_GET_METRIC_TABLE_DRAM_ADDR, NULL, 0, addr, ARRAY_COUNT(addr));
+    int err = hsmp_raw(
+        dev->id.simple.id, HSMP_GET_METRIC_TABLE_DRAM_ADDR, NULL, 0, addr, ARRAY_COUNT(addr));
     if (err < 0)
         return err;
     return likwid_sysft_uint64_to_string(addr[0] | ((uint64_t)addr[1] << 32), value);
@@ -883,7 +892,7 @@ static int amd_hsmp_rapl_init(LikwidDevice_t dev)
     if (err < 0)
         return err;
     rapl_domain_info.energyUnit = 1.0 / (1 << field32(units, 8, 5));
-    rapl_domain_info.timeUnit = 1.0 / (1 << field32(units, 16, 4));
+    rapl_domain_info.timeUnit   = 1.0 / (1 << field32(units, 16, 4));
     return 0;
 }
 
@@ -992,6 +1001,6 @@ static _SysFeature amd_hsmp_features[] = {
 
 static const _SysFeatureList amd_hsmp_featuer_list = {
     .num_features = ARRAY_COUNT(amd_hsmp_features),
-    .features = amd_hsmp_features,
-    .tester = amd_hsmp_tester,
+    .features     = amd_hsmp_features,
+    .tester       = amd_hsmp_tester,
 };
