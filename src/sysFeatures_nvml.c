@@ -1500,6 +1500,7 @@ static int nvidia_gpu_policy_time_total_base_getter(const LikwidDevice_t device,
     return nvidia_gpu_policy_time_getter(device, NVML_PERF_POLICY_TOTAL_BASE_CLOCKS, value);
 }
 
+// clang-format off
 static _SysFeature nvidia_gpu_features[] = {
     {"device_count", "nvml", "Number of GPUs on node. Not all GPUs may be accessible.", nvidia_gpu_device_count_getter, NULL, DEVICE_TYPE_NODE, NULL, NULL},
     {"devices_available", "nvml", "Available GPUs (PCI addresses)", nvidia_gpu_devices_available_getter, NULL, DEVICE_TYPE_NODE, NULL, NULL},
@@ -1615,6 +1616,7 @@ static _SysFeature nvidia_gpu_features[] = {
     {"gpu_perf_pol_totalapp", "nvml", "Total time:duration below app clock", nvidia_gpu_policy_time_total_app_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "us:ns"},
     {"gpu_perf_pol_totalbase", "nvml", "Total time:duration below base clock", nvidia_gpu_policy_time_total_base_getter, NULL, DEVICE_TYPE_NVIDIA_GPU, NULL, "us:ns"},
 };
+// clang-format on
 
 static const _SysFeatureList nvidia_gpu_feature_list = {
     .num_features = ARRAY_COUNT(nvidia_gpu_features),
