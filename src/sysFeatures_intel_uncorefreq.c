@@ -133,11 +133,13 @@ static int intel_uncore_max_freq_setter(const LikwidDevice_t device, const char*
     return likwid_sysft_writemsr_field(device, MSR_UNCORE_FREQ, 0, 8, freq / 100);
 }
 
+// clang-format off
 static _SysFeature intel_uncorefreq_features[] = {
     {"cur_uncore_freq", "uncore_freq", "Current Uncore frequency", intel_uncore_cur_freq_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "MHz"},
     {"min_uncore_freq", "uncore_freq", "Minimum Uncore frequency", intel_uncore_min_freq_getter, intel_uncore_min_freq_setter, DEVICE_TYPE_SOCKET, NULL, "MHz"},
     {"max_uncore_freq", "uncore_freq", "Maximal Uncore frequency", intel_uncore_max_freq_getter, intel_uncore_max_freq_setter, DEVICE_TYPE_SOCKET, NULL, "MHz"},
 };
+// clang-format on
 
 const _SysFeatureList likwid_sysft_intel_uncorefreq_feature_list = {
     .num_features = ARRAY_COUNT(intel_uncorefreq_features),
