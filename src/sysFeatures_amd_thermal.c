@@ -79,11 +79,11 @@ static int read_sysfs_file(const char *path, char *buf, size_t size)
 
 static int ccd_sort(const void *a, const void *b)
 {
-    const struct sysfs_ccd *ca    = a;
-    const struct sysfs_ccd *cb    = b;
+    const struct sysfs_ccd *ca = a;
+    const struct sysfs_ccd *cb = b;
 
-    const char *sa                = bdata(ca->label);
-    const char *sb                = bdata(cb->label);
+    const char *sa = bdata(ca->label);
+    const char *sb = bdata(cb->label);
 
     static const size_t digit_pos = strlen("Tccd");
     assert(strncmp(sa, "Tccd", digit_pos) == 0);
@@ -359,7 +359,7 @@ static int amd_thermal_temperature_ccd_getter(LikwidDevice_t device, char **valu
         return err;
 
     /* determine CCD to read from */
-    CpuTopology_t topo          = get_cpuTopology();
+    CpuTopology_t topo = get_cpuTopology();
 
     const uint32_t local_die_id = device->id.simple.id % (topo->numDies / topo->numSockets);
     const uint32_t socket_id    = device->id.simple.id / (topo->numDies / topo->numSockets);

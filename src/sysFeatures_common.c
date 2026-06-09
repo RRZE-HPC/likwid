@@ -86,7 +86,7 @@ int likwid_sysft_init_generic(const _HWArchFeatures *infeatures, _SysFeatureList
         ERROR_PRINT("Failed to initialize topology module");
         return err;
     }
-    CpuInfo_t cpuinfo                    = get_cpuInfo();
+    CpuInfo_t cpuinfo = get_cpuInfo();
 
     const _SysFeatureList **feature_list = NULL;
     for (unsigned c = 0; infeatures[c].family >= 0 && infeatures[c].model >= 0; c++) {

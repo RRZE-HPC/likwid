@@ -58,7 +58,7 @@ static int intel_thermal_temperature_getter(const LikwidDevice_t device, bool co
     const int temp_target = (int)field64(temp_target_raw, 16, 8);
     const int temp_offset = (int)field64(temp_target_raw, 24, 6);
 
-    const int final_temp  = temp_target - temp_offset - readout;
+    const int final_temp = temp_target - temp_offset - readout;
 
     return likwid_sysft_uint64_to_string(final_temp, value);
 }

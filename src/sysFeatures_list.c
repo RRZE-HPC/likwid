@@ -50,7 +50,7 @@ int likwid_sysft_add_to_feature_list(LikwidSysFeatureList *list, const LikwidSys
         ERROR_PRINT("Cannot allocate space for extended feature list");
         return -ENOMEM;
     }
-    list->features        = flist;
+    list->features = flist;
 
     LikwidSysFeature *iof = &list->features[list->num_features];
     iof->name             = strndup(feature->name, HWFEATURES_MAX_STR_LENGTH - 1);
@@ -130,7 +130,7 @@ int _add_to_feature_list(_SysFeatureList *list, const _SysFeature *feature)
         ERROR_PRINT("Cannot allocate space for extended feature list");
         return -ENOMEM;
     }
-    list->features   = flist;
+    list->features = flist;
 
     _SysFeature *iof = &list->features[list->num_features];
     iof->name        = feature->name;
@@ -166,13 +166,13 @@ int _merge_feature_lists(_SysFeatureList *inout, const _SysFeatureList *in)
         _SysFeature *ifeat = &in->features[i];
         _SysFeature *iof   = &inout->features[inout->num_features + i];
 
-        iof->name          = ifeat->name;
-        iof->category      = ifeat->category;
-        iof->description   = ifeat->description;
-        iof->type          = ifeat->type;
-        iof->getter        = ifeat->getter;
-        iof->setter        = ifeat->setter;
-        iof->tester        = ifeat->tester;
+        iof->name        = ifeat->name;
+        iof->category    = ifeat->category;
+        iof->description = ifeat->description;
+        iof->type        = ifeat->type;
+        iof->getter      = ifeat->getter;
+        iof->setter      = ifeat->setter;
+        iof->tester      = ifeat->tester;
     }
     inout->num_features += in->num_features;
 
@@ -199,7 +199,7 @@ int likwid_sysft_internal_to_external_feature_list(
     outlist->num_features = 0;
     outlist->features     = NULL;
 
-    outlist->features     = malloc(inlist->num_features * sizeof(LikwidSysFeature));
+    outlist->features = malloc(inlist->num_features * sizeof(LikwidSysFeature));
     if (!outlist->features) {
         return -ENOMEM;
     }
@@ -208,7 +208,7 @@ int likwid_sysft_internal_to_external_feature_list(
         LikwidSysFeature *out = &outlist->features[i];
         const _SysFeature *in = &inlist->features[i];
 
-        out->name             = strndup(in->name, HWFEATURES_MAX_STR_LENGTH - 1);
+        out->name = strndup(in->name, HWFEATURES_MAX_STR_LENGTH - 1);
         if (!out->name) {
             for (int j = 0; j < i; j++) {
                 LikwidSysFeature *c = &outlist->features[j];
