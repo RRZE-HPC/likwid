@@ -196,6 +196,7 @@ static int cpufreq_acpi_test(void)
     return cpufreq_driver_test("acpi-cpufreq");
 }
 
+// clang-format off
 static _SysFeature cpufreq_acpi_features[] = {
     {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_acpi_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
     {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_acpi_min_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
@@ -204,6 +205,7 @@ static _SysFeature cpufreq_acpi_features[] = {
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_acpi_governor_getter, /*cpufreq_acpi_governor_setter*/ NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_acpi_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
 };
+// clang-format on
 
 static const _SysFeatureList cpufreq_acpi_feature_list = {
     .num_features = ARRAY_COUNT(cpufreq_acpi_features),
@@ -265,6 +267,7 @@ static int cpufreq_intel_pstate_test(void)
     return cpufreq_driver_test("intel_pstate");
 }
 
+// clang-format off
 static _SysFeature cpufreq_pstate_features[] = {
     {"base_freq", "cpu_freq", "Base CPU frequency", cpufreq_intel_pstate_base_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
     {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
@@ -273,6 +276,7 @@ static _SysFeature cpufreq_pstate_features[] = {
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
 };
+// clang-format on
 
 static const _SysFeatureList cpufreq_pstate_feature_list = {
     .num_features = ARRAY_COUNT(cpufreq_pstate_features), 
@@ -289,6 +293,7 @@ static int cpufreq_intel_cpufreq_test(void)
 
 /* INFO: Most sysfs entries are the same as for the intel_pstate driver,
  * so they share the same getters. */
+// clang-format off
 static _SysFeature cpufreq_intel_cpufreq_features[] = {
     {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
     {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
@@ -296,6 +301,7 @@ static _SysFeature cpufreq_intel_cpufreq_features[] = {
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
 };
+// clang-format on
 
 static const _SysFeatureList cpufreq_intel_cpufreq_feature_list = {
     .num_features = ARRAY_COUNT(cpufreq_intel_cpufreq_features),
@@ -320,6 +326,7 @@ static int cpufreq_cppc_test(void)
     return cpufreq_driver_test("cppc_cpufreq");
 }
 
+// clang-format off
 static _SysFeature cpufreq_cppc_features[] = {
     {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
     {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
@@ -328,6 +335,7 @@ static _SysFeature cpufreq_cppc_features[] = {
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
 };
+// clang-format on
 
 static const _SysFeatureList cpufreq_cppc_feature_list = {
     .num_features = ARRAY_COUNT(cpufreq_cppc_features),
@@ -342,6 +350,7 @@ static int cpufreq_apple_cpufreq_test(void)
     return cpufreq_driver_test("apple-cpufreq");
 }
 
+// clang-format off
 static _SysFeature cpufreq_apple_cpufreq_features[] = {
     {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
     {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
@@ -350,6 +359,7 @@ static _SysFeature cpufreq_apple_cpufreq_features[] = {
     {"governor", "cpu_freq", "CPU frequency governor", cpufreq_intel_pstate_governor_getter, cpufreq_intel_pstate_governor_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"avail_governors", "cpu_freq", "Available CPU frequency governors", cpufreq_intel_pstate_avail_governors_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
 };
+// clang-format on
 
 static const _SysFeatureList cpufreq_apple_cpufreq_feature_list = {
     .num_features = ARRAY_COUNT(cpufreq_apple_cpufreq_features),
@@ -384,7 +394,7 @@ static int cpufreq_amd_pstate_lowest_nonlinear_freq_getter(const LikwidDevice_t 
     return cpufreq_sysfs_getter(device, value, "amd_pstate_lowest_nonlinear_freq");
 }
 
-
+// clang-format off
 static _SysFeature cpufreq_amd_pstate_epp_features[] = {
     {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
     {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
@@ -396,6 +406,7 @@ static _SysFeature cpufreq_amd_pstate_epp_features[] = {
     {"hw_prefcore", "cpu_freq", "Preferred core feature state", cpufreq_amd_pstate_hw_prefcore_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"lowest_nonlinear_freq", "cpu_freq", "Lowest non-linear CPPC CPU frequency", cpufreq_amd_pstate_lowest_nonlinear_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
 };
+// clang-format on
 
 static const _SysFeatureList cpufreq_amd_pstate_epp_feature_list = {
     .num_features = ARRAY_COUNT(cpufreq_amd_pstate_epp_features),
@@ -411,6 +422,7 @@ static int cpufreq_amd_pstate_test(void)
     return cpufreq_driver_test("amd-pstate");
 }
 
+// clang-format off
 static _SysFeature cpufreq_amd_pstate_features[] = {
     {"cur_cpu_freq", "cpu_freq", "Current CPU frequency", cpufreq_intel_pstate_cur_cpu_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
     {"min_cpu_freq", "cpu_freq", "Minimal CPU frequency", cpufreq_intel_pstate_min_cpu_freq_getter, cpufreq_intel_pstate_min_cpu_freq_setter, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
@@ -423,6 +435,7 @@ static _SysFeature cpufreq_amd_pstate_features[] = {
     {"hw_prefcore", "cpu_freq", "Preferred core feature state", cpufreq_amd_pstate_hw_prefcore_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"lowest_nonlinear_freq", "cpu_freq", "Lowest non-linear CPPC CPU frequency", cpufreq_amd_pstate_lowest_nonlinear_freq_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, "kHz"},
 };
+// clang-format on
 
 static const _SysFeatureList cpufreq_amd_pstate_feature_list = {
     .num_features = ARRAY_COUNT(cpufreq_amd_pstate_features),
@@ -453,10 +466,12 @@ static int cpufreq_intel_pstate_avail_epps_getter(const LikwidDevice_t device, c
     return cpufreq_sysfs_getter(device, value, "energy_performance_available_preferences");
 }
 
+// clang-format off
 static _SysFeature cpufreq_epp_features[] = {
     {"epp", "cpu_freq", "Current energy performance preference", cpufreq_intel_pstate_epp_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"avail_epps", "cpu_freq", "Available energy performance preferences", cpufreq_intel_pstate_avail_epps_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
 };
+// clang-format on
 
 static const _SysFeatureList cpufreq_epp_feature_list = {
     .num_features = ARRAY_COUNT(cpufreq_epp_features),
@@ -476,9 +491,11 @@ static int cpufreq_scaling_driver_test(void)
     return access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver", R_OK) == 0;
 }
 
+// clang-format off
 static _SysFeature cpufreq_scaling_driver_features[] = {
     {"scaling_driver", "cpu_freq", "Kernel Scaling Driver", cpufreq_scaling_driver_getter, NULL, DEVICE_TYPE_HWTHREAD, NULL, NULL},
 };
+// clang-format on
 
 static const _SysFeatureList cpufreq_scaling_driver_feature_list = {
     .num_features = ARRAY_COUNT(cpufreq_scaling_driver_features),
