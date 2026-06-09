@@ -12,5 +12,4 @@ InsertTrailingCommas: Wrapped
 BinPackArguments: false
 AlignConsecutiveAssignments:
   Enabled: true
-  AcrossEmptyLines: true
 AllowShortFunctionsOnASingleLine: Inline
