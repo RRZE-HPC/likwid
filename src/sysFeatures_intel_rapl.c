@@ -493,6 +493,7 @@ static int intel_pkg_info_max_time(const LikwidDevice_t device, char** value)
     return intel_rapl_info_max_time(device, value, MSR_PKG_POWER_INFO);
 }
 
+// clang-format off
 static _SysFeature intel_rapl_pkg_features[] = {
     {"pkg_energy", "rapl", "Current energy consumtion (PKG domain)", intel_pkg_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, intel_pkg_energy_status_test, "J"},
     {"pkg_tdp", "rapl", "Thermal Spec Power", intel_pkg_info_tdp, NULL, DEVICE_TYPE_SOCKET, intel_pkg_info_test, "W"},
@@ -508,6 +509,7 @@ static _SysFeature intel_rapl_pkg_features[] = {
     {"pkg_limit_2_enable", "rapl", "Status of short-term energy limit (PKG domain)", intel_pkg_energy_limit_2_enable_getter, intel_pkg_energy_limit_2_enable_setter, DEVICE_TYPE_SOCKET, intel_pkg_energy_limit_test, "bool"},
     {"pkg_limit_2_clamp", "rapl", "Clamping status of short-term energy limit (PKG domain)", intel_pkg_energy_limit_2_clamp_getter, intel_pkg_energy_limit_2_clamp_setter, DEVICE_TYPE_SOCKET, intel_pkg_energy_limit_test, "bool"},
 };
+// clang-format on
 
 static const _SysFeatureList intel_rapl_pkg_feature_list = {
     .num_features = ARRAY_COUNT(intel_rapl_pkg_features),
@@ -644,6 +646,7 @@ static int intel_dram_info_max_time(const LikwidDevice_t device, char** value)
     return intel_rapl_info_max_time(device, value, MSR_DRAM_POWER_INFO);
 }
 
+// clang-format off
 static _SysFeature intel_rapl_dram_features[] = {
     {"dram_energy", "rapl", "Current energy consumtion (DRAM domain)", intel_dram_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, intel_dram_energy_status_test, "J"},
     {"dram_tdp", "rapl", "Thermal Spec Power", intel_dram_info_tdp, NULL, DEVICE_TYPE_SOCKET, intel_dram_info_test, "W"},
@@ -655,6 +658,7 @@ static _SysFeature intel_rapl_dram_features[] = {
     {"dram_limit_enable", "rapl", "Status of long-term energy limit (DRAM domain)", intel_dram_energy_limit_1_enable_getter, intel_dram_energy_limit_1_enable_setter, DEVICE_TYPE_SOCKET, intel_dram_energy_limit_test, "bool"},
     {"dram_limit_clamp", "rapl", "Clamping status of long-term energy limit (DRAM domain)", intel_dram_energy_limit_1_clamp_getter, intel_dram_energy_limit_1_clamp_setter, DEVICE_TYPE_SOCKET, intel_dram_energy_limit_test, "bool"},
 };
+// clang-format on
 
 static const _SysFeatureList intel_rapl_dram_feature_list = {
     .num_features = ARRAY_COUNT(intel_rapl_dram_features),
@@ -794,6 +798,7 @@ static int intel_psys_energy_limit_2_clamp_setter(const LikwidDevice_t device, c
     return intel_rapl_energy_limit_2_clamp_setter(device, value, MSR_PLATFORM_POWER_LIMIT, &intel_rapl_psys_info);
 }
 
+// clang-format off
 static _SysFeature intel_rapl_psys_features[] = {
     {"psys_energy", "rapl", "Current energy consumtion (PSYS domain)", intel_psys_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, intel_psys_energy_status_test, "J"},
     {"psys_limit_1", "rapl", "Long-term energy limit (PSYS domain)", intel_psys_energy_limit_1_getter, intel_psys_energy_limit_1_setter, DEVICE_TYPE_SOCKET, intel_psys_energy_limit_test, "W"},
@@ -805,6 +810,7 @@ static _SysFeature intel_rapl_psys_features[] = {
     {"psys_limit_2_enable", "rapl", "Status of short-term energy limit (PSYS domain)", intel_psys_energy_limit_2_enable_getter, intel_psys_energy_limit_2_enable_setter, DEVICE_TYPE_SOCKET, intel_psys_energy_limit_test, "bool"},
     {"psys_limit_2_clamp", "rapl", "Clamping status of short-term energy limit (PSYS domain)", intel_psys_energy_limit_2_clamp_getter, intel_psys_energy_limit_2_clamp_setter, DEVICE_TYPE_SOCKET, intel_psys_energy_limit_test, "bool"},
 };
+// clang-format on
 
 static const _SysFeatureList intel_rapl_psys_feature_list = {
     .num_features = ARRAY_COUNT(intel_rapl_psys_features),
@@ -914,6 +920,7 @@ static int intel_pp0_policy_setter(const LikwidDevice_t device, const char* valu
     return intel_rapl_policy_setter(device, value, MSR_PP0_ENERGY_POLICY);
 }
 
+// clang-format off
 static _SysFeature intel_rapl_pp0_features[] = {
     {"pp0_energy", "rapl", "Current energy consumtion (PP0 domain)", intel_pp0_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, intel_pp0_energy_status_test, "J"},
     {"pp0_limit", "rapl", "Long-term energy limit (PP0 domain)", intel_pp0_energy_limit_1_getter, intel_pp0_energy_limit_1_setter, DEVICE_TYPE_SOCKET, intel_pp0_energy_limit_test, "W"},
@@ -922,6 +929,7 @@ static _SysFeature intel_rapl_pp0_features[] = {
     {"pp0_limit_clamp", "rapl", "Clamping status of long-term energy limit (PP0 domain)", intel_pp0_energy_limit_1_clamp_getter, intel_pp0_energy_limit_1_clamp_setter, DEVICE_TYPE_SOCKET, intel_pp0_energy_limit_test, "bool"},
     {"pp0_policy", "rapl", "Balance Power Policy (PP0 domain)", intel_pp0_policy_getter, intel_pp0_policy_setter, DEVICE_TYPE_SOCKET, intel_pp0_policy_test, NULL},
 };
+// clang-format on
 
 static const _SysFeatureList intel_rapl_pp0_feature_list = {
     .num_features = ARRAY_COUNT(intel_rapl_pp0_features),
@@ -1031,6 +1039,7 @@ static int intel_pp1_policy_setter(const LikwidDevice_t device, const char* valu
     return intel_rapl_policy_setter(device, value, MSR_PP1_ENERGY_POLICY);
 }
 
+// clang-format off
 static _SysFeature intel_rapl_pp1_features[] = {
     {"pp1_energy", "rapl", "Current energy consumtion (PP1 domain)", intel_pp1_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, intel_pp1_energy_status_test, "uJ"},
     {"pp1_limit", "rapl", "Long-term energy limit (PP1 domain)", intel_pp1_energy_limit_1_getter, intel_pp1_energy_limit_1_setter, DEVICE_TYPE_SOCKET, intel_pp1_energy_limit_test, "mW"},
@@ -1039,6 +1048,7 @@ static _SysFeature intel_rapl_pp1_features[] = {
     {"pp1_limit_clamp", "rapl", "Clamping status of long-term energy limit (PP1 domain)", intel_pp1_energy_limit_1_clamp_getter, intel_pp1_energy_limit_1_clamp_setter, DEVICE_TYPE_SOCKET, intel_pp1_energy_limit_test, "bool"},
     {"pp1_policy", "rapl", "Balance Power Policy (PP1 domain)", intel_pp1_policy_getter, intel_pp1_policy_setter, DEVICE_TYPE_SOCKET, intel_pp1_policy_test, "bool[4..0]"},
 };
+// clang-format on
 
 static const _SysFeatureList intel_rapl_pp1_feature_list = {
     .num_features = ARRAY_COUNT(intel_rapl_pp1_features),
