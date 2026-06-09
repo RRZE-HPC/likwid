@@ -79,10 +79,12 @@ static int intel_thermal_tester(void)
     return cpuid_hasFeature(TM2);
 }
 
+// clang-format off
 static _SysFeature intel_thermal_features[] = {
     {"core_temp", "thermal", "Current CPU temperature (core)", intel_thermal_temperature_core_getter, NULL, DEVICE_TYPE_CORE, NULL, "degrees C"},
     {"pkg_temp", "thermal", "Current CPU temperature (package)", intel_thermal_temperature_socket_getter, NULL, DEVICE_TYPE_SOCKET, NULL, "degrees C"},
 };
+// clang-format on
 
 const _SysFeatureList likwid_sysft_intel_cpu_thermal_feature_list = {
     .num_features = ARRAY_COUNT(intel_thermal_features),
