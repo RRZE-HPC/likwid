@@ -40,7 +40,8 @@ static int amd_pstate_px_en_getter(LikwidDevice_t dev, uint8_t pstateId, char **
 
 static int amd_pstate_px_en_setter(LikwidDevice_t dev, uint8_t pstateId, const char *value)
 {
-    return likwid_sysft_writemsr_field_from_string(dev, MSR_AMD_PSTATE_DEFx(pstateId), 63, 1, value);
+    return likwid_sysft_writemsr_field_from_string(
+        dev, MSR_AMD_PSTATE_DEFx(pstateId), 63, 1, value);
 }
 
 static int amd_pstate_cpu_vid_getter(LikwidDevice_t dev, uint8_t pstateId, char **value)
@@ -69,7 +70,6 @@ static int amd_pstate_cpu_vid_setter(LikwidDevice_t dev, uint8_t pstateId, const
     return likwid_sysft_writemsr_field(dev, MSR_AMD_PSTATE_DEFx(pstateId), 0, 64, msrData);
 }
 
-
 static int amd_pstate_idd_div_getter(LikwidDevice_t dev, uint8_t pstateId, char **value)
 {
     return likwid_sysft_readmsr_field_to_string(dev, MSR_AMD_PSTATE_DEFx(pstateId), 30, 2, value);
@@ -77,7 +77,8 @@ static int amd_pstate_idd_div_getter(LikwidDevice_t dev, uint8_t pstateId, char 
 
 static int amd_pstate_idd_div_setter(LikwidDevice_t dev, uint8_t pstateId, const char *value)
 {
-    return likwid_sysft_writemsr_field_from_string(dev, MSR_AMD_PSTATE_DEFx(pstateId), 30, 2, value);
+    return likwid_sysft_writemsr_field_from_string(
+        dev, MSR_AMD_PSTATE_DEFx(pstateId), 30, 2, value);
 }
 
 static int amd_pstate_idd_val_getter(LikwidDevice_t dev, uint8_t pstateId, char **value)
@@ -87,7 +88,8 @@ static int amd_pstate_idd_val_getter(LikwidDevice_t dev, uint8_t pstateId, char 
 
 static int amd_pstate_idd_val_setter(LikwidDevice_t dev, uint8_t pstateId, const char *value)
 {
-    return likwid_sysft_writemsr_field_from_string(dev, MSR_AMD_PSTATE_DEFx(pstateId), 22, 8, value);
+    return likwid_sysft_writemsr_field_from_string(
+        dev, MSR_AMD_PSTATE_DEFx(pstateId), 22, 8, value);
 }
 
 static int amd_pstate_idd_getter(LikwidDevice_t dev, uint8_t pstateId, char **value)
@@ -97,7 +99,7 @@ static int amd_pstate_idd_getter(LikwidDevice_t dev, uint8_t pstateId, char **va
     if (err < 0)
         return err;
 
-    const uint64_t num = field64(msrData, 22, 8);
+    const uint64_t num   = field64(msrData, 22, 8);
     const uint64_t denom = field64(msrData, 30, 2);
 
     if (denom == 0)
@@ -117,7 +119,8 @@ static int amd_pstate_cpu_dfs_id_setter_raw(LikwidDevice_t dev, uint8_t pstateId
     return likwid_sysft_writemsr_field_from_string(dev, MSR_AMD_PSTATE_DEFx(pstateId), 8, 6, value);
 }
 
-static int dfs_get(uint8_t id, double *dfs) {
+static int dfs_get(uint8_t id, double *dfs)
+{
     if (id == 0x0)
         *dfs = 0.0;
     else if (id >= 0x1 && id <= 0x7)
@@ -230,75 +233,74 @@ static int amd_pstate_test(void)
     if (!has_leaf_80000007())
         return 0;
 
-
     return leaf_80000007_has_pstate();
 }
 
-#define MAKE_PSTATE_FUNCS(id) \
-    static int amd_pstate##id##_px_en_getter(LikwidDevice_t dev, char **value) \
-    { \
-        return amd_pstate_px_en_getter(dev, id, value); \
-    } \
-    static int amd_pstate##id##_px_en_setter(LikwidDevice_t dev, const char *value) \
-    { \
-        return amd_pstate_px_en_setter(dev, id, value); \
-    } \
-    static int amd_pstate##id##_cpu_vid_getter(LikwidDevice_t dev, char **value) \
-    { \
-        return amd_pstate_cpu_vid_getter(dev, id, value); \
-    } \
-    static int amd_pstate##id##_cpu_vid_setter(LikwidDevice_t dev, const char *value) \
-    { \
-        return amd_pstate_cpu_vid_setter(dev, id, value); \
-    } \
-    static int amd_pstate##id##_idd_div_getter(LikwidDevice_t dev, char **value) \
-    { \
-        return amd_pstate_idd_div_getter(dev, id, value); \
-    } \
-    static int amd_pstate##id##_idd_div_setter(LikwidDevice_t dev, const char *value) \
-    { \
-        return amd_pstate_idd_div_setter(dev, id, value); \
-    } \
-    static int amd_pstate##id##_idd_val_getter(LikwidDevice_t dev, char **value) \
-    { \
-        return amd_pstate_idd_val_getter(dev, id, value); \
-    } \
-    static int amd_pstate##id##_idd_val_setter(LikwidDevice_t dev, const char *value) \
-    { \
-        return amd_pstate_idd_val_setter(dev, id, value); \
-    } \
-    static int amd_pstate##id##_idd_getter(LikwidDevice_t dev, char **value) \
-    { \
-        return amd_pstate_idd_getter(dev, id, value); \
-    } \
-    static int amd_pstate##id##_cpu_dfs_id_getter_raw(LikwidDevice_t dev, char **value) \
-    { \
-        return amd_pstate_cpu_dfs_id_getter_raw(dev, id, value); \
-    } \
-    static int amd_pstate##id##_cpu_dfs_id_setter_raw(LikwidDevice_t dev, const char *value) \
-    { \
-        return amd_pstate_cpu_dfs_id_setter_raw(dev, id, value); \
-    } \
-    static int amd_pstate##id##_cpu_dfs_id_getter(LikwidDevice_t dev, char **value) \
-    { \
-        return amd_pstate_cpu_dfs_id_getter(dev, id, value); \
-    } \
-    static int amd_pstate##id##_cpu_fid_getter_raw(LikwidDevice_t dev, char **value) \
-    { \
-        return amd_pstate_cpu_fid_getter_raw(dev, id, value); \
-    } \
-    static int amd_pstate##id##_cpu_fid_setter_raw(LikwidDevice_t dev, const char *value) \
-    { \
-        return amd_pstate_cpu_fid_setter_raw(dev, id, value); \
-    } \
-    static int amd_pstate##id##_cpu_fid_getter(LikwidDevice_t dev, char **value) \
-    { \
-        return amd_pstate_cpu_fid_getter(dev, id, value); \
-    } \
-    static int amd_pstate##id##_cpu_clk_getter(LikwidDevice_t dev, char **value) \
-    { \
-        return amd_pstate_cpu_clk_getter(dev, id, value); \
-    } \
+#define MAKE_PSTATE_FUNCS(id)                                                                      \
+    static int amd_pstate##id##_px_en_getter(LikwidDevice_t dev, char **value)                     \
+    {                                                                                              \
+        return amd_pstate_px_en_getter(dev, id, value);                                            \
+    }                                                                                              \
+    static int amd_pstate##id##_px_en_setter(LikwidDevice_t dev, const char *value)                \
+    {                                                                                              \
+        return amd_pstate_px_en_setter(dev, id, value);                                            \
+    }                                                                                              \
+    static int amd_pstate##id##_cpu_vid_getter(LikwidDevice_t dev, char **value)                   \
+    {                                                                                              \
+        return amd_pstate_cpu_vid_getter(dev, id, value);                                          \
+    }                                                                                              \
+    static int amd_pstate##id##_cpu_vid_setter(LikwidDevice_t dev, const char *value)              \
+    {                                                                                              \
+        return amd_pstate_cpu_vid_setter(dev, id, value);                                          \
+    }                                                                                              \
+    static int amd_pstate##id##_idd_div_getter(LikwidDevice_t dev, char **value)                   \
+    {                                                                                              \
+        return amd_pstate_idd_div_getter(dev, id, value);                                          \
+    }                                                                                              \
+    static int amd_pstate##id##_idd_div_setter(LikwidDevice_t dev, const char *value)              \
+    {                                                                                              \
+        return amd_pstate_idd_div_setter(dev, id, value);                                          \
+    }                                                                                              \
+    static int amd_pstate##id##_idd_val_getter(LikwidDevice_t dev, char **value)                   \
+    {                                                                                              \
+        return amd_pstate_idd_val_getter(dev, id, value);                                          \
+    }                                                                                              \
+    static int amd_pstate##id##_idd_val_setter(LikwidDevice_t dev, const char *value)              \
+    {                                                                                              \
+        return amd_pstate_idd_val_setter(dev, id, value);                                          \
+    }                                                                                              \
+    static int amd_pstate##id##_idd_getter(LikwidDevice_t dev, char **value)                       \
+    {                                                                                              \
+        return amd_pstate_idd_getter(dev, id, value);                                              \
+    }                                                                                              \
+    static int amd_pstate##id##_cpu_dfs_id_getter_raw(LikwidDevice_t dev, char **value)            \
+    {                                                                                              \
+        return amd_pstate_cpu_dfs_id_getter_raw(dev, id, value);                                   \
+    }                                                                                              \
+    static int amd_pstate##id##_cpu_dfs_id_setter_raw(LikwidDevice_t dev, const char *value)       \
+    {                                                                                              \
+        return amd_pstate_cpu_dfs_id_setter_raw(dev, id, value);                                   \
+    }                                                                                              \
+    static int amd_pstate##id##_cpu_dfs_id_getter(LikwidDevice_t dev, char **value)                \
+    {                                                                                              \
+        return amd_pstate_cpu_dfs_id_getter(dev, id, value);                                       \
+    }                                                                                              \
+    static int amd_pstate##id##_cpu_fid_getter_raw(LikwidDevice_t dev, char **value)               \
+    {                                                                                              \
+        return amd_pstate_cpu_fid_getter_raw(dev, id, value);                                      \
+    }                                                                                              \
+    static int amd_pstate##id##_cpu_fid_setter_raw(LikwidDevice_t dev, const char *value)          \
+    {                                                                                              \
+        return amd_pstate_cpu_fid_setter_raw(dev, id, value);                                      \
+    }                                                                                              \
+    static int amd_pstate##id##_cpu_fid_getter(LikwidDevice_t dev, char **value)                   \
+    {                                                                                              \
+        return amd_pstate_cpu_fid_getter(dev, id, value);                                          \
+    }                                                                                              \
+    static int amd_pstate##id##_cpu_clk_getter(LikwidDevice_t dev, char **value)                   \
+    {                                                                                              \
+        return amd_pstate_cpu_clk_getter(dev, id, value);                                          \
+    }
 
 MAKE_PSTATE_FUNCS(0)
 MAKE_PSTATE_FUNCS(1)
@@ -340,23 +342,21 @@ static _SysFeature amd_pstate_features[] = {
 
 static const _SysFeatureList amd_pstate_feature_list = {
     .num_features = ARRAY_COUNT(amd_pstate_features),
-    .tester = amd_pstate_test,
-    .features = amd_pstate_features,
+    .tester       = amd_pstate_test,
+    .features     = amd_pstate_features,
 };
 
-int likwid_sysft_init_amd_pstate(_SysFeatureList* out)
+int likwid_sysft_init_amd_pstate(_SysFeatureList *out)
 {
     int err = init_configuration();
-    if (err < 0)
-    {
+    if (err < 0) {
         errno = -err;
         ERROR_PRINT("Failed to initialize configuration");
         return err;
     }
 
     Configuration_t config = get_configuration();
-    if (config->daemonMode == ACCESSMODE_PERF)
-    {
+    if (config->daemonMode == ACCESSMODE_PERF) {
         DEBUG_PRINT(DEBUGLEV_INFO, "No AMD P-state support with accessmode=perf_event");
         return 0;
     }
