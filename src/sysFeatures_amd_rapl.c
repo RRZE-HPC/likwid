@@ -98,13 +98,11 @@ static int amd_pkg_energy_status_getter(const LikwidDevice_t device, char **valu
         device, value, MSR_AMD17_RAPL_PKG_STATUS, &amd_rapl_pkg_info, DEVICE_TYPE_SOCKET);
 }
 
+// clang-format off
 static _SysFeature amd_rapl_pkg_features[] = {
-    { "pkg_energy",
-     "rapl", "Current energy consumtion (PKG domain)",
-     amd_pkg_energy_status_getter, NULL,
-     DEVICE_TYPE_SOCKET, amd_pkg_energy_status_test,
-     "J" },
+    { "pkg_energy", "rapl", "Current energy consumtion (PKG domain)", amd_pkg_energy_status_getter, NULL, DEVICE_TYPE_SOCKET, amd_pkg_energy_status_test, "J" },
 };
+// clang-format on
 
 static const _SysFeatureList amd_rapl_pkg_feature_list = {
     .num_features = ARRAY_COUNT(amd_rapl_pkg_features),
@@ -146,13 +144,11 @@ static int amd_core_energy_status_getter(const LikwidDevice_t device, char **val
         device, value, MSR_AMD17_RAPL_CORE_STATUS, &amd_rapl_core_info, DEVICE_TYPE_CORE);
 }
 
+// clang-format off
 static _SysFeature amd_rapl_core_features[] = {
-    { "core_energy",
-     "rapl", "Current energy consumtion (Core domain)",
-     amd_core_energy_status_getter, NULL,
-     DEVICE_TYPE_CORE, amd_core_energy_status_test,
-     "J" },
+    { "core_energy", "rapl", "Current energy consumtion (Core domain)", amd_core_energy_status_getter, NULL, DEVICE_TYPE_CORE, amd_core_energy_status_test, "J" },
 };
+// clang-format on
 
 static const _SysFeatureList amd_rapl_core_feature_list = {
     .num_features = ARRAY_COUNT(amd_rapl_core_features),
