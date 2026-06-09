@@ -309,6 +309,7 @@ MAKE_PSTATE_FUNCS(5)
 MAKE_PSTATE_FUNCS(6)
 MAKE_PSTATE_FUNCS(7)
 
+// clang-format off
 #define MAKE_PSTATE_FEATURE(id) \
     {"p" #id "_en", "amd_pstate", "P" #id " enabled", amd_pstate##id##_px_en_getter, amd_pstate##id##_px_en_setter, DEVICE_TYPE_CORE, NULL, NULL},          \
     {"p" #id "_cpu_vid", "amd_pstate", "P" #id " Voltage ID of P-state (?)", amd_pstate##id##_cpu_vid_getter, amd_pstate##id##_cpu_vid_setter, DEVICE_TYPE_CORE, NULL, NULL},     \
@@ -335,6 +336,7 @@ static _SysFeature amd_pstate_features[] = {
     MAKE_PSTATE_FEATURE(6)
     MAKE_PSTATE_FEATURE(7)
 };
+// clang-format on
 
 static const _SysFeatureList amd_pstate_feature_list = {
     .num_features = ARRAY_COUNT(amd_pstate_features),
