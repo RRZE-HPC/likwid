@@ -143,6 +143,7 @@ static int intel_cpu_spec_ctrl(void)
     return valid > 0;
 }
 
+// clang-format off
 static _SysFeature intel_cpu_spec_ctrl_features[] = {
     {"ibrs", "spec_ctrl", "Indirect Branch Restricted Speculation", intel_cpu_spec_ibrs_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_ibrs_tester, NULL},
     {"stibp", "spec_ctrl", "Single Thread Indirect Branch Predictors", intel_cpu_spec_stibp_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_stibp_tester, NULL},
@@ -152,6 +153,7 @@ static _SysFeature intel_cpu_spec_ctrl_features[] = {
     {"psfd", "spec_ctrl", "Fast Store Forwarding Predictor", intel_cpu_spec_psfd_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_psfd_tester, NULL},
     {"ddpd", "spec_ctrl", "Data Dependent Prefetcher", intel_cpu_spec_ddpd_getter, NULL, DEVICE_TYPE_HWTHREAD, intel_cpu_spec_ddpd_tester, NULL},
 };
+// clang-format on
 
 const _SysFeatureList likwid_sysft_intel_cpu_spec_ctrl_feature_list = {
     .num_features = ARRAY_COUNT(intel_cpu_spec_ctrl_features),
