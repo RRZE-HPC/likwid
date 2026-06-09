@@ -47,6 +47,7 @@
 #include <sysFeatures_cpufreq.h>
 #include <sysFeatures_linux_numa_balancing.h>
 #include <sysFeatures_nvml.h>
+#include <sysFeatures_x86_tsc.h>
 
 static _SysFeatureList _feature_list = {0, NULL, NULL};
 
@@ -89,6 +90,13 @@ int likwid_sysft_init(void)
             ERROR_PRINT("Failed to initialize SysFeatures for AMD architecture");
             return err;
         }
+    }
+
+    err = likwid_sysft_register_features(&_feature_list, &likwid_sysft_x86_tsc_feature_list);
+    if (err < 0)
+    {
+        ERROR_PRINT("Failed to init SysFeatures x86 tsc module");
+        return err;
     }
 #endif
     err = likwid_sysft_init_cpufreq(&_feature_list);

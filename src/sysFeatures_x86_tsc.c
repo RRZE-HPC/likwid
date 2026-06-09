@@ -119,7 +119,7 @@ static _SysFeature freq_features[] = {
     {"invariant", "tsc", "Time Stamp Counter operates at a fixed frequency", invariant_getter, NULL, DEVICE_TYPE_SOCKET, invariant_tester, NULL},
 };
 
-const _SysFeatureList likwid_sysft_x86_cpu_freq_feature_list = {
+const _SysFeatureList likwid_sysft_x86_tsc_feature_list = {
     .num_features = ARRAY_COUNT(freq_features),
     .features = freq_features,
 };
