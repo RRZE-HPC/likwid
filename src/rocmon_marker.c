@@ -7,11 +7,11 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#include <bstrlib.h>
 #include <error.h>
+#include <perfgroup.h>
 #include <rocmon_types.h>
 #include <util.h>
-#include <bstrlib.h>
-#include <perfgroup.h>
 
 // TODO replace hip names with rocm names (if applicable)
 // TODO insert missing checks for gettid == main_tid
@@ -24,13 +24,13 @@
 
 // The ENOSPC we determine from fprintf is just a guess.
 // I'm not sure if there is a way to do this correctly.
-#define chk_fprintf(filePtr, formatStr, ...) \
-    do { \
-        fprintf(filePtr, formatStr, ##__VA_ARGS__); \
-        if (ferror(filePtr)) { \
-            err = -ENOSPC; \
-            goto cleanup; \
-        } \
+#define chk_fprintf(filePtr, formatStr, ...)                                                       \
+    do {                                                                                           \
+        fprintf(filePtr, formatStr, ##__VA_ARGS__);                                                \
+        if (ferror(filePtr)) {                                                                     \
+            err = -ENOSPC;                                                                         \
+            goto cleanup;                                                                          \
+        }                                                                                          \
     } while (0)
 
 // TODO remove this once we use cwisstables and no longer need to create
@@ -40,7 +40,8 @@
 static pthread_mutex_t rocmarker_init_mutex = PTHREAD_MUTEX_INITIALIZER;
 static RocmarkerContext *rocmarker_ctx;
 
-static int get_gpu_idx(int hipDeviceId, size_t *idx) {
+static int get_gpu_idx(int hipDeviceId, size_t *idx)
+{
     for (size_t i = 0; i < rocmarker_ctx->numHipDeviceIds; i++) {
         if (rocmarker_ctx->hipDeviceIds[i] == hipDeviceId) {
             *idx = i;
@@ -51,7 +52,8 @@ static int get_gpu_idx(int hipDeviceId, size_t *idx) {
     return -EINVAL;
 }
 
-static int get_group_idx(int groupId, size_t *idx) {
+static int get_group_idx(int groupId, size_t *idx)
+{
     for (size_t i = 0; i < rocmarker_ctx->numGroups; i++) {
         if (rocmarker_ctx->groups[i].groupId == groupId) {
             *idx = i;
@@ -62,11 +64,13 @@ static int get_group_idx(int groupId, size_t *idx) {
     return -EINVAL;
 }
 
-static void label_fmt(char *buf, size_t size, const char *regionTag, int groupId) {
+static void label_fmt(char *buf, size_t size, const char *regionTag, int groupId)
+{
     snprintf(buf, size, "%s-%d", regionTag, groupId);
 }
 
-static void rocmarker_group_fini(RocmarkerGroup *group) {
+static void rocmarker_group_fini(RocmarkerGroup *group)
+{
     if (!group)
         return;
 
@@ -87,7 +91,8 @@ static void rocmarker_group_fini(RocmarkerGroup *group) {
     }
 }
 
-static void rocmarker_ctx_free(void) {
+static void rocmarker_ctx_free(void)
+{
     if (!rocmarker_ctx)
         return;
 
@@ -104,12 +109,13 @@ static void rocmarker_ctx_free(void) {
     rocmarker_ctx = NULL;
 }
 
-static int gpulist_from_str(const char *gpustring, size_t *numGpus, int **gpus) {
+static int gpulist_from_str(const char *gpustring, size_t *numGpus, int **gpus)
+{
     bstring bgpustring = bfromcstr(gpustring);
     if (!bgpustring)
         return -ENOMEM;
 
-    int err = 0;
+    int err                     = 0;
     struct bstrList *gpustrings = bsplit(bgpustring, ',');
     if (!gpustrings) {
         err = -ENOMEM;
@@ -123,7 +129,7 @@ static int gpulist_from_str(const char *gpustring, size_t *numGpus, int **gpus) 
     }
 
     *numGpus = gpustrings->qty;
-    *gpus = newGpus;
+    *gpus    = newGpus;
 
     for (int i = 0; i < gpustrings->qty; i++)
         newGpus[i] = atoi(bdata(gpustrings->entry[i]));
@@ -137,12 +143,13 @@ cleanup:
     return err;
 }
 
-static int eventsets_init(const char *eventStr) {
+static int eventsets_init(const char *eventStr)
+{
     bstring eventStrCopy = bfromcstr(eventStr);
     if (!eventStrCopy)
         return -ENOMEM;
 
-    int err = 0;
+    int err                          = 0;
     struct bstrList *eventsForGroups = bsplit(eventStrCopy, '|');
     if (!eventsForGroups) {
         err = -ENOMEM;
@@ -155,7 +162,7 @@ static int eventsets_init(const char *eventStr) {
         goto cleanup;
     }
 
-    rocmarker_ctx->numGroups = eventsForGroups->qty;
+    rocmarker_ctx->numGroups      = eventsForGroups->qty;
     rocmarker_ctx->activeGroupIdx = 0;
 
     for (int i = 0; i < eventsForGroups->qty; i++) {
@@ -165,9 +172,9 @@ static int eventsets_init(const char *eventStr) {
         if (err < 0)
             goto cleanup;
 
-        group->groupId = err;
+        group->groupId   = err;
         group->numEvents = rocmon_getNumberOfEvents(err);
-        group->events = calloc(group->numEvents, sizeof(*group->events));
+        group->events    = calloc(group->numEvents, sizeof(*group->events));
         if (!group->events) {
             err = -errno;
             goto cleanup;
@@ -202,7 +209,7 @@ static int eventsets_init(const char *eventStr) {
             goto cleanup;
 
         group->numMetrics = (size_t)err;
-        group->metrics = calloc(group->numMetrics, sizeof(*group->metrics));
+        group->metrics    = calloc(group->numMetrics, sizeof(*group->metrics));
         if (!group->metrics) {
             err = -errno;
             goto cleanup;
@@ -241,18 +248,22 @@ cleanup:
 
 static void region_free(RocmarkerRegion *region);
 
-static void region_free_vptr(void *region) {
+static void region_free_vptr(void *region)
+{
     region_free(region);
 }
 
-int rocmon_markerInit(void) {
-    const char *eventStr = getenv("LIKWID_ROCMON_EVENTS");
-    const char *gpuStr = getenv("LIKWID_ROCMON_GPUS");
+int rocmon_markerInit(void)
+{
+    const char *eventStr     = getenv("LIKWID_ROCMON_EVENTS");
+    const char *gpuStr       = getenv("LIKWID_ROCMON_GPUS");
     const char *verbosityStr = getenv("LIKWID_ROCMON_VERBOSITY");
-    const char *debugStr = getenv("LIKWID_DEBUG");
+    const char *debugStr     = getenv("LIKWID_DEBUG");
 
     if (!eventStr || !gpuStr) {
-        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Running without GPU Marker API. Activate GPU Marker API with -m, -G and -W on commandline.");
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
+            "Running without GPU Marker API. Activate GPU Marker API with -m, -G and -W on "
+            "commandline.");
         return -EINVAL;
     }
 
@@ -293,7 +304,8 @@ int rocmon_markerInit(void) {
     // If the user inputs 0, NULL for the GPU list, explicitly query
     // the number of GPUs that were autodetected.
     rocmarker_ctx->numHipDeviceIds = (size_t)rocmon_getNumberOfGPUs();
-    rocmarker_ctx->hipDeviceIds = calloc(rocmarker_ctx->numHipDeviceIds, sizeof(*rocmarker_ctx->hipDeviceIds));
+    rocmarker_ctx->hipDeviceIds =
+        calloc(rocmarker_ctx->numHipDeviceIds, sizeof(*rocmarker_ctx->hipDeviceIds));
     if (!rocmarker_ctx->hipDeviceIds) {
         err = -errno;
         goto unlock_err;
@@ -328,7 +340,8 @@ unlock_err:
     return err;
 }
 
-void rocmon_markerClose(void) {
+void rocmon_markerClose(void)
+{
     pthread_mutex_lock(&rocmarker_init_mutex);
 
     // init must occur before finalize
@@ -340,13 +353,13 @@ void rocmon_markerClose(void) {
     const char *resultFile = getenv("LIKWID_ROCMON_OUTPUTFILE");
     if (!resultFile) {
         ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
-                "Is the application executed with LIKWID wrapper? "
-                "No file path for the Rocmon Marker API output defined.");
+            "Is the application executed with LIKWID wrapper? "
+            "No file path for the Rocmon Marker API output defined.");
     } else {
         int err = rocmon_markerWriteFile(resultFile);
         if (err < 0)
-            ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
-                    "rocmon_markerWriteFile failed: %s", strerror(-err));
+            ROCMON_DEBUG_PRINT(
+                DEBUGLEV_ONLY_ERROR, "rocmon_markerWriteFile failed: %s", strerror(-err));
     }
 
     rocmarker_ctx_free();
@@ -355,7 +368,8 @@ void rocmon_markerClose(void) {
     pthread_mutex_unlock(&rocmarker_init_mutex);
 }
 
-static int gpu_results_init(RocmarkerGpuResultList *resultList, int groupId) {
+static int gpu_results_init(RocmarkerGpuResultList *resultList, int groupId)
+{
     const int numCounters = rocmon_getNumberOfEvents(groupId);
     assert(numCounters >= 0);
 
@@ -367,7 +381,8 @@ static int gpu_results_init(RocmarkerGpuResultList *resultList, int groupId) {
     return 0;
 }
 
-static void gpu_results_fini(RocmarkerGpuResultList *resultList) {
+static void gpu_results_fini(RocmarkerGpuResultList *resultList)
+{
     if (!resultList)
         return;
 
@@ -375,17 +390,18 @@ static void gpu_results_fini(RocmarkerGpuResultList *resultList) {
     memset(resultList, 0, sizeof(*resultList));
 }
 
-static int region_init(RocmarkerRegion *region, const char *regionTag, int groupId) {
+static int region_init(RocmarkerRegion *region, const char *regionTag, int groupId)
+{
     region->tag = strdup(regionTag);
     if (!region->tag)
         return -errno;
 
-    region->groupId = groupId;
-    region->started = false;
-    region->execCount = 0;
+    region->groupId       = groupId;
+    region->started       = false;
+    region->execCount     = 0;
     region->lastStartTime = 0;
-    region->lastStopTime = 0;
-    region->totalTime = 0;
+    region->lastStopTime  = 0;
+    region->totalTime     = 0;
 
     region->gpuResults = calloc(rocmarker_ctx->numHipDeviceIds, sizeof(*region->gpuResults));
     if (!region->gpuResults)
@@ -400,7 +416,8 @@ static int region_init(RocmarkerRegion *region, const char *regionTag, int group
     return 0;
 }
 
-static void region_fini(RocmarkerRegion *region) {
+static void region_fini(RocmarkerRegion *region)
+{
     if (!region)
         return;
 
@@ -412,12 +429,14 @@ static void region_fini(RocmarkerRegion *region) {
     memset(region, 0, sizeof(*region));
 }
 
-static void region_free(RocmarkerRegion *region) {
+static void region_free(RocmarkerRegion *region)
+{
     region_fini(region);
     free(region);
 }
 
-static bool valid_region_tag(const char *regionTag) {
+static bool valid_region_tag(const char *regionTag)
+{
     while (*regionTag) {
         if (!isalnum(*regionTag) && *regionTag != '_')
             return false;
@@ -426,7 +445,8 @@ static bool valid_region_tag(const char *regionTag) {
     return true;
 }
 
-int rocmon_markerRegisterRegion(const char *regionTag) {
+int rocmon_markerRegisterRegion(const char *regionTag)
+{
     if (!rocmarker_ctx)
         return -EFAULT;
 
@@ -475,7 +495,8 @@ cleanup:
     return err;
 }
 
-int rocmon_markerStartRegion(const char *regionTag) {
+int rocmon_markerStartRegion(const char *regionTag)
+{
     if (!rocmarker_ctx)
         return -EFAULT;
 
@@ -485,7 +506,7 @@ int rocmon_markerStartRegion(const char *regionTag) {
 
     char regionLabel[LABEL_MAX_SIZE];
     label_fmt(regionLabel, sizeof(regionLabel), regionTag, activeGroup);
-    
+
     // Check if regionTag already exists. If not create it first.
     RocmarkerRegion *region = NULL;
     int err = get_smap_by_key(rocmarker_ctx->regions, regionLabel, (void **)&region);
@@ -502,7 +523,8 @@ int rocmon_markerStartRegion(const char *regionTag) {
     }
 
     if (region->started) {
-        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Cannot start region '%s', which is already started.", regionTag);
+        ROCMON_DEBUG_PRINT(
+            DEBUGLEV_ONLY_ERROR, "Cannot start region '%s', which is already started.", regionTag);
         return -EBUSY;
     }
 
@@ -519,7 +541,7 @@ int rocmon_markerStartRegion(const char *regionTag) {
 
     for (size_t i = 0; i < rocmarker_ctx->numHipDeviceIds; i++) {
         RocmarkerGpuResultList *resultList = &region->gpuResults[i];
-        const int hipDeviceId = rocmarker_ctx->hipDeviceIds[i];
+        const int hipDeviceId              = rocmarker_ctx->hipDeviceIds[i];
 
         for (size_t j = 0; j < resultList->numCounterValues; j++)
             resultList->counterValues[j].lastValue = rocmon_getResult(hipDeviceId, activeGroup, j);
@@ -529,7 +551,8 @@ int rocmon_markerStartRegion(const char *regionTag) {
     return 0;
 }
 
-int rocmon_markerStopRegion(const char *regionTag) {
+int rocmon_markerStopRegion(const char *regionTag)
+{
     if (!rocmarker_ctx)
         return -EFAULT;
 
@@ -546,7 +569,8 @@ int rocmon_markerStopRegion(const char *regionTag) {
         return err;
 
     if (!region->started) {
-        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Cannot stop region '%s', which is not started.", regionTag);
+        ROCMON_DEBUG_PRINT(
+            DEBUGLEV_ONLY_ERROR, "Cannot stop region '%s', which is not started.", regionTag);
         return -EBUSY;
     }
 
@@ -555,7 +579,7 @@ int rocmon_markerStopRegion(const char *regionTag) {
         return err;
 
     // No need to store stopTime in the RocmarkerRegion struct, since it is defacto
-    // only a temporary to accumulate the total 
+    // only a temporary to accumulate the total
     err = rocmon_getTimestampOfLastReadOfGroup(activeGroup, &region->lastStopTime);
     if (err < 0)
         return err;
@@ -565,13 +589,13 @@ int rocmon_markerStopRegion(const char *regionTag) {
 
     for (size_t i = 0; i < rocmarker_ctx->numHipDeviceIds; i++) {
         RocmarkerGpuResultList *resultList = &region->gpuResults[i];
-        const int hipDeviceId = rocmarker_ctx->hipDeviceIds[i];
+        const int hipDeviceId              = rocmarker_ctx->hipDeviceIds[i];
 
         for (size_t j = 0; j < resultList->numCounterValues; j++) {
             // TODO The legacy rocmon differentiated the accumulation between RPR and RSMI events.
             // I don't see any reason why that would make a difference, but if we run into bad results,
             // we should check if that's the cause.
-            const double stopValue = rocmon_getResult(hipDeviceId, activeGroup, j);
+            const double stopValue  = rocmon_getResult(hipDeviceId, activeGroup, j);
             const double startValue = resultList->counterValues[j].lastValue;
             resultList->counterValues[j].fullValue += stopValue - startValue;
         }
@@ -581,7 +605,8 @@ int rocmon_markerStopRegion(const char *regionTag) {
     return 0;
 }
 
-int rocmon_markerResetRegion(const char *regionTag) {
+int rocmon_markerResetRegion(const char *regionTag)
+{
     if (!rocmarker_ctx)
         return -EFAULT;
 
@@ -612,22 +637,21 @@ int rocmon_markerResetRegion(const char *regionTag) {
     return 0;
 }
 
-void rocmon_markerNextGroup(void) {
+void rocmon_markerNextGroup(void)
+{
     if (!rocmarker_ctx || rocmarker_ctx->main_tid != gettid())
         return;
 
     if (rocmarker_ctx->numGroups == 0 || rocmarker_ctx->numGroups == 1)
         return;
 
-    rocmarker_ctx->activeGroupIdx = (rocmarker_ctx->activeGroupIdx + 1) %
-        rocmarker_ctx->numGroups;
+    rocmarker_ctx->activeGroupIdx = (rocmarker_ctx->activeGroupIdx + 1) % rocmarker_ctx->numGroups;
 
-    rocmon_switchActiveGroup(
-            rocmarker_ctx->groups[rocmarker_ctx->activeGroupIdx].groupId
-            );
+    rocmon_switchActiveGroup(rocmarker_ctx->groups[rocmarker_ctx->activeGroupIdx].groupId);
 }
 
-int rocmon_markerGetGpuIds(int **gpuIds, size_t *numGpuIds) {
+int rocmon_markerGetGpuIds(int **gpuIds, size_t *numGpuIds)
+{
     if (!rocmarker_ctx)
         return -EFAULT;
 
@@ -638,12 +662,13 @@ int rocmon_markerGetGpuIds(int **gpuIds, size_t *numGpuIds) {
     for (size_t i = 0; i < rocmarker_ctx->numHipDeviceIds; i++)
         newGpuIds[i] = rocmarker_ctx->hipDeviceIds[i];
 
-    *gpuIds = newGpuIds;
+    *gpuIds    = newGpuIds;
     *numGpuIds = rocmarker_ctx->numHipDeviceIds;
     return 0;
 }
 
-int rocmon_markerGetGroupIds(int **groupIds, size_t *numGroupIds) {
+int rocmon_markerGetGroupIds(int **groupIds, size_t *numGroupIds)
+{
     if (!rocmarker_ctx)
         return -EFAULT;
 
@@ -654,12 +679,14 @@ int rocmon_markerGetGroupIds(int **groupIds, size_t *numGroupIds) {
     for (size_t i = 0; i < rocmarker_ctx->numGroups; i++)
         newGroupIds[i] = rocmarker_ctx->groups[i].groupId;
 
-    *groupIds = newGroupIds;
+    *groupIds    = newGroupIds;
     *numGroupIds = rocmarker_ctx->numGroups;
     return 0;
 }
 
-int rocmon_markerGetGroupInfo(int groupId, char ***eventNames, char ***counterNames, size_t *numEvents, char ***metricNames, char ***metricFormulas, size_t *numMetrics) {
+int rocmon_markerGetGroupInfo(int groupId, char ***eventNames, char ***counterNames,
+    size_t *numEvents, char ***metricNames, char ***metricFormulas, size_t *numMetrics)
+{
     if (!rocmarker_ctx)
         return -EFAULT;
 
@@ -670,10 +697,10 @@ int rocmon_markerGetGroupInfo(int groupId, char ***eventNames, char ***counterNa
 
     const RocmarkerGroup *group = &rocmarker_ctx->groups[groupIdx];
 
-    char **newMetricNames = NULL;
+    char **newMetricNames    = NULL;
     char **newMetricFormulas = NULL;
-    char **newCounterNames = NULL;
-    char **newEventNames = calloc(group->numEvents, sizeof(*newEventNames));
+    char **newCounterNames   = NULL;
+    char **newEventNames     = calloc(group->numEvents, sizeof(*newEventNames));
     if (!newEventNames)
         return -errno;
 
@@ -727,12 +754,12 @@ int rocmon_markerGetGroupInfo(int groupId, char ***eventNames, char ***counterNa
         }
     }
 
-    *metricNames = newMetricNames;
+    *metricNames    = newMetricNames;
     *metricFormulas = newMetricFormulas;
-    *numMetrics = group->numMetrics;
-    *counterNames = newCounterNames;
-    *eventNames = newEventNames;
-    *numEvents = group->numEvents;
+    *numMetrics     = group->numMetrics;
+    *counterNames   = newCounterNames;
+    *eventNames     = newEventNames;
+    *numEvents      = group->numEvents;
     return 0;
 
 cleanup:
@@ -759,7 +786,9 @@ cleanup:
     return err;
 }
 
-int rocmon_markerGetRegionCounters(const char *regionTag, int groupId, int gpuId, size_t *numCounters, double **counters, size_t *numMetrics, double **metrics) {
+int rocmon_markerGetRegionCounters(const char *regionTag, int groupId, int gpuId,
+    size_t *numCounters, double **counters, size_t *numMetrics, double **metrics)
+{
     if (!rocmarker_ctx)
         return -EFAULT;
 
@@ -820,17 +849,18 @@ int rocmon_markerGetRegionCounters(const char *regionTag, int groupId, int gpuId
     for (size_t i = 0; i < group->numMetrics; i++) {
         err = calc_metric(group->metrics[i].formula, &clist, &newMetrics[i]);
         if (err < 0) {
-            ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Cannot calculate formula: %s", group->metrics[i].formula);
+            ROCMON_DEBUG_PRINT(
+                DEBUGLEV_ONLY_ERROR, "Cannot calculate formula: %s", group->metrics[i].formula);
             newMetrics[i] = NAN;
         }
     }
 
     destroy_clist(&clist);
 
-    *counters = newCounters;
+    *counters    = newCounters;
     *numCounters = result->numCounterValues;
-    *metrics = newMetrics;
-    *numMetrics = group->numMetrics;
+    *metrics     = newMetrics;
+    *numMetrics  = group->numMetrics;
     return 0;
 
 cleanup:
@@ -840,8 +870,9 @@ cleanup:
     return err;
 }
 
-int rocmon_markerGetRegionStats(const char *regionTag, int groupId,
-        size_t *execCount, double *execTime) {
+int rocmon_markerGetRegionStats(
+    const char *regionTag, int groupId, size_t *execCount, double *execTime)
+{
     if (!rocmarker_ctx)
         return -EFAULT;
 
@@ -855,12 +886,13 @@ int rocmon_markerGetRegionStats(const char *regionTag, int groupId,
         return err;
 
     // Return results
-    *execTime = (double)region->totalTime / 1e9;
+    *execTime  = (double)region->totalTime / 1e9;
     *execCount = region->execCount;
     return 0;
 }
 
-int rocmon_markerGetRegionTags(char ***regionTags, int **regionGroupIds, size_t *numRegions) {
+int rocmon_markerGetRegionTags(char ***regionTags, int **regionGroupIds, size_t *numRegions)
+{
     if (!rocmarker_ctx)
         return -EFAULT;
 
@@ -872,7 +904,7 @@ int rocmon_markerGetRegionTags(char ***regionTags, int **regionGroupIds, size_t 
     if (!newRegionTags)
         return -errno;
 
-    int err = 0;
+    int err                = 0;
     int *newRegionGroupIds = calloc((size_t)newNumRegions, sizeof(*newRegionGroupIds));
     if (!newRegionGroupIds) {
         err = -errno;
@@ -894,9 +926,9 @@ int rocmon_markerGetRegionTags(char ***regionTags, int **regionGroupIds, size_t 
         newRegionGroupIds[i] = region->groupId;
     }
 
-    *regionTags = newRegionTags;
+    *regionTags     = newRegionTags;
     *regionGroupIds = newRegionGroupIds;
-    *numRegions = (size_t)newNumRegions;
+    *numRegions     = (size_t)newNumRegions;
 
     return 0;
 
@@ -910,7 +942,8 @@ cleanup:
     return err;
 }
 
-int rocmon_markerWriteFile(const char *markerfile) {
+int rocmon_markerWriteFile(const char *markerfile)
+{
     if (!rocmarker_ctx)
         return -EFAULT;
 
@@ -939,9 +972,11 @@ int rocmon_markerWriteFile(const char *markerfile) {
      * non-truncated number of characters to be written. However, I'm lazy and I don't
      * want to allocate something, format it, to then check if it's all written. */
 
-    chk_fprintf(fp, "ROCMON_MARKER_FILE %zu %zu %zu\n", rocmarker_ctx->numHipDeviceIds,
-            numRegions,
-            rocmarker_ctx->numGroups);
+    chk_fprintf(fp,
+        "ROCMON_MARKER_FILE %zu %zu %zu\n",
+        rocmarker_ctx->numHipDeviceIds,
+        numRegions,
+        rocmarker_ctx->numGroups);
 
     // Write hip device IDs
     for (size_t i = 0; i < rocmarker_ctx->numHipDeviceIds; i++)
@@ -973,7 +1008,12 @@ int rocmon_markerWriteFile(const char *markerfile) {
         if (err < 0)
             goto cleanup;
 
-        chk_fprintf(fp, "REGION %s %d %zu %f", region->tag, region->groupId, region->execCount, (double)region->totalTime / 1e9);
+        chk_fprintf(fp,
+            "REGION %s %d %zu %f",
+            region->tag,
+            region->groupId,
+            region->execCount,
+            (double)region->totalTime / 1e9);
 
         for (size_t ig = 0; ig < rocmarker_ctx->numHipDeviceIds; ig++) {
             RocmarkerGpuResultList *result = &region->gpuResults[ig];
@@ -992,7 +1032,8 @@ cleanup:
     return err;
 }
 
-int rocmon_markerInitResultsFromFile(const char *markerfile) {
+int rocmon_markerInitResultsFromFile(const char *markerfile)
+{
     pthread_mutex_lock(&rocmarker_init_mutex);
 
     int err = 0;
@@ -1006,7 +1047,7 @@ int rocmon_markerInitResultsFromFile(const char *markerfile) {
     // API, but the marker API will not be usable, because the rocmon is not initialized.
     // We try to prevent that by using a 'main_tid', which is always invalid to prevent
     // the user calling the normal functions.
-    
+
     rocmarker_ctx = calloc(1, sizeof(*rocmarker_ctx));
     if (!rocmarker_ctx) {
         err = -errno;
@@ -1024,13 +1065,18 @@ int rocmon_markerInitResultsFromFile(const char *markerfile) {
     size_t numRegions;
 
     // read line: 'numGpus numRegions numGroups'
-    if (fscanf(fp, "ROCMON_MARKER_FILE %zu %zu %zu\n", &rocmarker_ctx->numHipDeviceIds, &numRegions, &rocmarker_ctx->numGroups) != 3) {
+    if (fscanf(fp,
+            "ROCMON_MARKER_FILE %zu %zu %zu\n",
+            &rocmarker_ctx->numHipDeviceIds,
+            &numRegions,
+            &rocmarker_ctx->numGroups) != 3) {
         ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Cannot parse marker header");
         err = -EINVAL;
         goto unlock_err;
     }
 
-    rocmarker_ctx->hipDeviceIds = calloc(rocmarker_ctx->numHipDeviceIds, sizeof(*rocmarker_ctx->hipDeviceIds));
+    rocmarker_ctx->hipDeviceIds =
+        calloc(rocmarker_ctx->numHipDeviceIds, sizeof(*rocmarker_ctx->hipDeviceIds));
     if (!rocmarker_ctx->hipDeviceIds) {
         err = -errno;
         goto unlock_err;
@@ -1072,7 +1118,9 @@ int rocmon_markerInitResultsFromFile(const char *markerfile) {
         }
 
         for (size_t j = 0; j < group->numEvents; j++) {
-            if (fscanf(fp, " %ms %ms", &group->events[j].eventName, &group->events[j].counterName) != 2) {
+            if (fscanf(
+                    fp, " %ms %ms", &group->events[j].eventName, &group->events[j].counterName) !=
+                2) {
                 ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Invalid GROUP line (event/counter name)");
                 err = -EINVAL;
                 goto unlock_err;
@@ -1112,8 +1160,12 @@ int rocmon_markerInitResultsFromFile(const char *markerfile) {
         }
 
         double execTime;
-        if (fscanf(fp, "REGION %ms %d %zu %lf",
-                    &region->tag, &region->groupId, &region->execCount, &execTime) != 4) {
+        if (fscanf(fp,
+                "REGION %ms %d %zu %lf",
+                &region->tag,
+                &region->groupId,
+                &region->execCount,
+                &execTime) != 4) {
             ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Invalid REGION line");
             free(region);
             err = -EINVAL;
@@ -1151,7 +1203,8 @@ int rocmon_markerInitResultsFromFile(const char *markerfile) {
                 goto unlock_err;
 
             result->numCounterValues = rocmarker_ctx->groups[groupIdx].numEvents;
-            result->counterValues = calloc(result->numCounterValues, sizeof(*result->counterValues));
+            result->counterValues =
+                calloc(result->numCounterValues, sizeof(*result->counterValues));
             if (!result->counterValues) {
                 err = -errno;
                 goto unlock_err;
@@ -1178,7 +1231,8 @@ unlock_err:
     return err;
 }
 
-void rocmon_markerDestroyResults(void) {
+void rocmon_markerDestroyResults(void)
+{
     pthread_mutex_lock(&rocmarker_init_mutex);
 
     assert(rocmarker_ctx);
