@@ -224,6 +224,7 @@ static int amd_cpu_aggr_profile_tester(void)
 }
 
 
+// clang-format off
 static _SysFeature amd_k1a_cpu_prefetch_features[] = {
     {"l1_stream", "prefetch", "Stream prefetcher that uses history of memory access patterns to fetch additional sequential lines into L1 cache", amd_cpu_l1_stream_getter, amd_cpu_l1_stream_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"l1_stride", "prefetch", "Stride prefetcher that uses memory access history of individual instructions to fetch additional lines into L1 cache when each access is a constant distance from the previous", amd_cpu_l1_stride_getter, amd_cpu_l1_stride_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
@@ -233,6 +234,7 @@ static _SysFeature amd_k1a_cpu_prefetch_features[] = {
     {"master", "prefetch", "Enable prefetch aggressiveness profiles", amd_cpu_master_getter, amd_cpu_master_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"prefetch_aggressiveness_profile.", "prefetch", "Prefetch aggressiveness profile", amd_cpu_aggr_profile_getter, amd_cpu_aggr_profile_setter, DEVICE_TYPE_HWTHREAD, amd_cpu_aggr_profile_tester, NULL},
 };
+// clang-format on
 
 static const _SysFeatureList amd_k1a_cpu_prefetch_feature_list = {
     .num_features = ARRAY_COUNT(amd_k1a_cpu_prefetch_features),
@@ -280,6 +282,7 @@ static int amd_cpu_spec_pfsd_setter(const LikwidDevice_t device, const char* val
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD19_SPEC_CTRL, 7, true, value);
 }
 
+// clang-format off
 static _SysFeature amd_k19_cpu_speculation_features[] = {
     {"ibrs", "spec_ctrl", "Indirect branch restriction speculation", amd_cpu_spec_ibrs_getter, amd_cpu_spec_ibrs_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"stibp", "spec_ctrl", "Single thread indirect branch predictor", amd_cpu_spec_stibp_getter, amd_cpu_spec_stibp_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
@@ -292,6 +295,7 @@ static _SysFeature amd_k17_cpu_speculation_features[] = {
     {"stibp", "spec_ctrl", "Single thread indirect branch predictor", amd_cpu_spec_stibp_getter, amd_cpu_spec_stibp_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
     {"ssbd", "spec_ctrl", "Speculative Store Bypass", amd_cpu_spec_ssbd_getter, amd_cpu_spec_ssbd_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
 };
+// clang-format on
 
 static const _SysFeatureList amd_k19_cpu_speculation_feature_list = {
     .num_features = ARRAY_COUNT(amd_k19_cpu_speculation_features),
