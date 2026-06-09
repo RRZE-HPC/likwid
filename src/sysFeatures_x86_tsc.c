@@ -77,10 +77,10 @@ static int freq_getter(LikwidDevice_t device, char **value)
     uint32_t eax = 0x15, ebx, ecx = 0, edx;
     CPUID(eax, ebx, ecx, edx);
 
-    const double den = eax;
-    const double num = ebx;
+    const double den           = eax;
+    const double num           = ebx;
     const double crystal_clock = ecx;
-    const double freq = crystal_clock * num / den;
+    const double freq          = crystal_clock * num / den;
     return likwid_sysft_double_to_string(freq, value);
 }
 
@@ -123,5 +123,5 @@ static _SysFeature freq_features[] = {
 
 const _SysFeatureList likwid_sysft_x86_tsc_feature_list = {
     .num_features = ARRAY_COUNT(freq_features),
-    .features = freq_features,
+    .features     = freq_features,
 };
