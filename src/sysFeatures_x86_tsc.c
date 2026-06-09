@@ -111,6 +111,7 @@ static int invariant_getter(LikwidDevice_t device, char **value)
     return likwid_sysft_uint64_to_string(field32(edx, 8, 1), value);
 }
 
+// clang-format off
 static _SysFeature freq_features[] = {
     {"denominator", "tsc", "Denominator of Time Stamp Counter ratio", denominator_getter, NULL, DEVICE_TYPE_SOCKET, ratio_tester, NULL},
     {"numerator", "tsc", "Numerator of Time Stamp Counter ratio", numerator_getter, NULL, DEVICE_TYPE_SOCKET, ratio_tester, NULL},
@@ -118,6 +119,7 @@ static _SysFeature freq_features[] = {
     {"freq", "tsc", "Effective frequency of Time Stamp Counter", freq_getter, NULL, DEVICE_TYPE_SOCKET, freq_tester, "Hz"},
     {"invariant", "tsc", "Time Stamp Counter operates at a fixed frequency", invariant_getter, NULL, DEVICE_TYPE_SOCKET, invariant_tester, NULL},
 };
+// clang-format on
 
 const _SysFeatureList likwid_sysft_x86_tsc_feature_list = {
     .num_features = ARRAY_COUNT(freq_features),
