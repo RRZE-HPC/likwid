@@ -325,9 +325,11 @@ static int amd_cpu_flush_l1(const LikwidDevice_t device, const char* value)
     return HPMwrite(device->id.simple.id, MSR_DEV, MSR_AMD19_L1D_FLUSH_REGISTER, flush & 0x1);
 }
 
+// clang-format off
 static _SysFeature amd_k19_cpu_l1dflush_features[] = {
     {"l1dflush", "cache", "Performs a write-back and invalidate of the L1 data cache", NULL, amd_cpu_flush_l1, DEVICE_TYPE_HWTHREAD, NULL, NULL},
 };
+// clang-format on
 
 static const _SysFeatureList amd_k19_cpu_l1dflush_feature_list = {
     .num_features = ARRAY_COUNT(amd_k19_cpu_l1dflush_features),
@@ -345,9 +347,11 @@ static int amd_cpu_hwconfig_cpddis_setter(const LikwidDevice_t device, const cha
     return likwid_sysft_writemsr_bit_from_string(device, MSR_AMD17_HW_CONFIG, 25, true, value);
 }
 
+// clang-format off
 static _SysFeature amd_k17_cpu_hwconfig_features[] = {
     {"turbo_mode", "cpu_freq", "Specifies whether core performance boost is requested to be enabled or disabled", amd_cpu_hwconfig_cpddis_getter, amd_cpu_hwconfig_cpddis_setter, DEVICE_TYPE_HWTHREAD, NULL, NULL},
 };
+// clang-format on
 
 static const _SysFeatureList amd_k17_cpu_hwconfig_feature_list = {
     .num_features = ARRAY_COUNT(amd_k17_cpu_hwconfig_features),
