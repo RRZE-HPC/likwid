@@ -1,0 +1,47 @@
+---
+Checks:
+  bugprone-*,
+  -bugprone-multi-level-implicit-pointer-conversion,
+  -bugprone-casting-through-void,
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  readability-*,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity,
+  -readability-isolate-declaration,
+  llvm-*,
+  misc-*,
+  -misc-misplaced-const,
+  performance-*,
+
+# Why do we not use XYZ:
+# - 'bugprone-multi-level-implicit-pointer-conversion'
+#   Cannot call free on multidimensional array without cast
+# - 'bugprone-casting-through-void'
+#   This is kind of C++ specific. While it may partially apply to C
+#   it breaks with bstrlib. bstrlib kind of breaks with many things,
+#   but for the meantime we have to keep it.
+# - 'readability-identifier-length'
+#   Cannot use single character arguments (e.g. lua_State *L)
+# - 'misc-misplaced-const'
+#   We should enabled this, but is non-trivial to fix,
+#   because it needs changes to e.g. LikwidDevice_t.
+# - 'readability-magic-numbers'
+#   We kinda want this, but it complains about temporary strings with
+#   arbitraryily chosen length.
+# - 'readability-function-cognitive-complexity'
+#   We kinda want this, but it's not that easy to fix.
+# - 'readability-isolate-declaration'
+#   This disallows specifying multiple variables in a single line.
+
+CheckOptions:
+    # Single line statements (after a line break) are still okay,
+    # which means two lines are still okay. So three lines it is.
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: 3
+    # Missing includes caues to many problems. While the idea is
+    # generally good, sometimes we don't want to include a specific
+    # header directly. So disable it for now.
+  - key: misc-include-cleaner.MissingIncludes
+    value: false
