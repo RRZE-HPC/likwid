@@ -16,7 +16,7 @@ static int tsc_available(void)
     /* get cpu feature flags */
     eax = 1;
     CPUID(eax, ebx, ecx, edx);
-    return field32(edx, 4, 1);
+    return (int)field32(edx, 4, 1);
 }
 
 static int test_leaf_0x15(void)
