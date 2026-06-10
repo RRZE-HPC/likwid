@@ -36,11 +36,9 @@
 
 #include <access.h>
 #include <bitUtil.h>
-#include <cpuid.h>
 #include <error.h>
 #include <likwid.h>
 #include <pci_types.h>
-#include <registers.h>
 #include <sysFeatures_common.h>
 #include <sysFeatures_types.h>
 
@@ -120,7 +118,7 @@ int likwid_sysft_uint64_to_string(uint64_t value, char **str)
     char s[HWFEATURES_MAX_STR_LENGTH];
     const int len = snprintf(s, sizeof(s), "%lu", value);
     if (len < 0) {
-        ERROR_PRINT("Conversion of uint64_t %lu failed: %s", value, strerror(errno));
+        ERROR_PRINT("Conversion of uint64_t %lu failed", value);
         return -errno;
     }
     char *newstr = realloc(*str, len + 1);
@@ -128,20 +126,23 @@ int likwid_sysft_uint64_to_string(uint64_t value, char **str)
         return -ENOMEM;
     }
     *str = newstr;
-    strcpy(*str, s);
+    memcpy(*str, s, len + 1);
     return 0;
 }
 
 int likwid_sysft_string_to_uint64(const char *str, uint64_t *value)
 {
     char *ptr = NULL;
-    if ((strncmp(str, "true", 4) == 0) || (strncmp(str, "TRUE", 4) == 0)) {
+    if (strncmp(str, "true", 4) == 0 || strncmp(str, "TRUE", 4) == 0) {
         *value = 0x1ULL;
         return 0;
-    } else if ((strncmp(str, "false", 5) == 0) || (strncmp(str, "FALSE", 5) == 0)) {
+    }
+
+    if (strncmp(str, "false", 5) == 0 || strncmp(str, "FALSE", 5) == 0) {
         *value = 0x0ULL;
         return 0;
     }
+
     errno      = 0;
     uint64_t v = strtoull(str, &ptr, 0);
     if (v == 0 && errno != 0) {
@@ -160,7 +161,7 @@ int likwid_sysft_double_to_string(double value, char **str)
     char s[HWFEATURES_MAX_STR_LENGTH];
     const int len = snprintf(s, sizeof(s), "%f", value);
     if (len < 0) {
-        ERROR_PRINT("Conversion of double %f failed: %s", value, strerror(errno));
+        ERROR_PRINT("Conversion of double %f failed", value);
         return -errno;
     }
     char *newstr = realloc(*str, len + 1);
@@ -168,7 +169,7 @@ int likwid_sysft_double_to_string(double value, char **str)
         return -ENOMEM;
     }
     *str = newstr;
-    strcpy(*str, s);
+    memcpy(*str, s, len + 1);
     return 0;
 }
 
@@ -564,8 +565,8 @@ int likwid_sysft_writemsr_field(
 int likwid_sysft_writemsr_bit_from_string(
     const LikwidDevice_t device, uint64_t reg, int bitoffset, bool invert, const char *value)
 {
-    uint64_t field;
-    int err = likwid_sysft_string_to_uint64(value, &field);
+    uint64_t field = 0;
+    int err        = likwid_sysft_string_to_uint64(value, &field);
     if (err < 0)
         return err;
     if (invert)
@@ -576,8 +577,8 @@ int likwid_sysft_writemsr_bit_from_string(
 int likwid_sysft_writemsr_field_from_string(
     const LikwidDevice_t device, uint64_t reg, int bitoffset, int width, const char *value)
 {
-    uint64_t field;
-    int err = likwid_sysft_string_to_uint64(value, &field);
+    uint64_t field = 0;
+    int err        = likwid_sysft_string_to_uint64(value, &field);
     if (err < 0)
         return err;
     return likwid_sysft_writemsr_field(device, reg, bitoffset, width, field);
