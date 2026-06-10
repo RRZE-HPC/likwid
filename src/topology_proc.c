@@ -31,7 +31,10 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
+#include <bitUtil.h>
+#include <error.h>
 #include <topology_proc.h>
+#include <topology.h>
 #include <affinity.h>
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
 #include <cpuid.h>

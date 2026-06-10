@@ -6,6 +6,7 @@
 #include <registers.h>
 #include <sysFeatures_common.h>
 #include <topology.h>
+#include <bitUtil.h>
 
 static int intel_thermal_temperature_getter(const LikwidDevice_t device, bool core, char **value)
 {

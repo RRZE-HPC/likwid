@@ -46,6 +46,7 @@
 #include <registers.h>
 #include <lock.h>
 #include <configuration.h>
+#include <bitUtil.h>
 
 #include <frequency.h>
 #include <frequency_client.h>

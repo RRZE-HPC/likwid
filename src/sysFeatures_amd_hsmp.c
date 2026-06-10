@@ -39,6 +39,7 @@
 
 #include <amd_hsmp.h>
 #include <cpuid.h>
+#include <error.h>
 #include <sysFeatures_common.h>
 #include <sysFeatures_common_rapl.h>
 #include <topology.h>
