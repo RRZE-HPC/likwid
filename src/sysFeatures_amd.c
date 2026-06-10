@@ -34,14 +34,13 @@
 #include <stdbool.h>
 
 #include <access.h>
-#include <bitUtil.h>
+#include <error.h>
 #include <registers.h>
 #include <sysFeatures_amd_hsmp.h>
 #include <sysFeatures_amd_pstate.h>
 #include <sysFeatures_amd_rapl.h>
 #include <sysFeatures_amd_thermal.h>
 #include <sysFeatures_common.h>
-#include <sysFeatures_x86_tsc.h>
 #include <topology.h>
 
 static const _HWArchFeatures amd_arch_features[];

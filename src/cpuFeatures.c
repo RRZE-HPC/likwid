@@ -46,6 +46,7 @@
 #include <likwid.h>
 #include <lock.h>
 #include <lw_alloc.h>
+#include <error.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
