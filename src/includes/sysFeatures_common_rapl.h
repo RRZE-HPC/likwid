@@ -57,7 +57,7 @@ static inline uint64_t seconds_to_timeWindow(const RaplDomainInfo *info, double 
     const uint64_t timeInHwTime = (uint64_t)(seconds / info->timeUnit);
     uint64_t y = (uint64_t)(log2(timeInHwTime));
     if (y > 0x1F)
-        y = 0x7F;
+        y = 0x1F;
     const uint64_t o = (1 << y);
     const uint64_t z = (4 * (timeInHwTime - o)) / o;
     return (y & 0x1F) | ((z & 0x3) << 5);

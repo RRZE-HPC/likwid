@@ -32,15 +32,11 @@
 #include <assert.h>
 #include <math.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-#include <access.h>
 #include <error.h>
 #include <likwid.h>
 #include <registers.h>
 #include <sysFeatures_common.h>
-#include <sysFeatures_intel.h>
 #include <sysFeatures_intel_rapl.h>
 #include <sysFeatures_types.h>
 #include <topology.h>
@@ -382,7 +378,7 @@ static int intel_rapl_pkg_test(void)
 static int pkg_limit_test_lock_testFunc(uint64_t msrData, void *value)
 {
     (void)value;
-    return field64(msrData, 63, 1);
+    return (int)field64(msrData, 63, 1);
 }
 
 static int intel_rapl_pkg_limit_test_lock(void)
@@ -602,7 +598,7 @@ static int intel_dram_energy_limit_test(void)
 static int dram_limit_test_lock_testFunc(uint64_t msrData, void *value)
 {
     (void)value;
-    return field64(msrData, 31, 1);
+    return (int)field64(msrData, 31, 1);
 }
 static int intel_rapl_dram_limit_test_lock(void)
 {
@@ -747,7 +743,7 @@ static int intel_psys_energy_limit_test(void)
 static int psys_limit_test_lock_testFunc(uint64_t msrData, void *value)
 {
     (void)value;
-    return field64(msrData, 63, 1);
+    return (int)field64(msrData, 63, 1);
 }
 
 static int intel_rapl_psys_limit_test_lock(void)
@@ -912,7 +908,7 @@ static int intel_pp0_energy_limit_test(void)
 static int pp0_limit_test_lock_testFunc(uint64_t msrData, void *value)
 {
     (void)value;
-    return field64(msrData, 31, 1);
+    return (int)field64(msrData, 31, 1);
 }
 
 static int intel_rapl_pp0_limit_test_lock(void)
@@ -1041,7 +1037,7 @@ static int intel_pp1_energy_limit_test(void)
 static int pp1_limit_test_lock(uint64_t msrData, void *value)
 {
     (void)value;
-    return field64(msrData, 31, 1);
+    return (int)field64(msrData, 31, 1);
 }
 
 static int intel_rapl_pp1_limit_test_lock(void)
