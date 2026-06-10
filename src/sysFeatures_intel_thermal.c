@@ -3,10 +3,10 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <bitUtil.h>
 #include <registers.h>
 #include <sysFeatures_common.h>
 #include <topology.h>
-#include <bitUtil.h>
 
 static int intel_thermal_temperature_getter(const LikwidDevice_t device, bool core, char **value)
 {
@@ -31,8 +31,8 @@ static int intel_thermal_temperature_getter(const LikwidDevice_t device, bool co
 
             memset(&socketDev, 0, sizeof(socketDev));
             socketDev.type         = DEVICE_TYPE_SOCKET;
-            socketDev.id.simple.id = t->packageId;
-            socketDev.internal_id  = t->packageId;
+            socketDev.id.simple.id = (int)t->packageId;
+            socketDev.internal_id  = (int)t->packageId;
             found                  = true;
             break;
         }
