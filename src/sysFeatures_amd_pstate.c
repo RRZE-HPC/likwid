@@ -170,7 +170,7 @@ static int amd_pstate_cpu_fid_getter(LikwidDevice_t dev, uint8_t pstateId, char 
     if (err < 0)
         return err;
 
-    const double fid = field64(msrData, 0, 8);
+    const double fid = (double)field64(msrData, 0, 8);
 
     return likwid_sysft_double_to_string((double)fid * 25.0, value);
 }
@@ -182,7 +182,7 @@ static int amd_pstate_cpu_clk_getter(LikwidDevice_t dev, uint8_t pstateId, char 
     if (err < 0)
         return err;
 
-    const double fid = field64(msrData, 0, 8);
+    const double fid = (double)field64(msrData, 0, 8);
 
     double dfs;
     err = dfs_get(field64(msrData, 8, 6), &dfs);
