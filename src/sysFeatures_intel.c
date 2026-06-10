@@ -30,14 +30,9 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-#include <access.h>
 #include <error.h>
 #include <likwid.h>
-#include <pci_types.h>
-#include <registers.h>
 #include <sysFeatures_common.h>
 #include <sysFeatures_intel.h>
 #include <sysFeatures_intel_prefetcher.h>
@@ -47,21 +42,20 @@
 #include <sysFeatures_intel_turbo.h>
 #include <sysFeatures_intel_uncorefreq.h>
 #include <sysFeatures_types.h>
-#include <sysFeatures_x86_tsc.h>
 #include <topology.h>
 
 static const _HWArchFeatures intel_arch_features[];
 
-int likwid_sysft_init_x86_intel(_SysFeatureList *out)
+int likwid_sysft_init_x86_intel(_SysFeatureList *list)
 {
     int c   = 0;
-    int err = likwid_sysft_init_generic(intel_arch_features, out);
+    int err = likwid_sysft_init_generic(intel_arch_features, list);
     if (err < 0) {
         DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init general Intel HWFetures");
     } else {
         c++;
     }
-    err = likwid_sysft_init_intel_rapl(out);
+    err = likwid_sysft_init_intel_rapl(list);
     if (err < 0) {
         DEBUG_PRINT(DEBUGLEV_INFO, "Failed to init Intel RAPL HWFetures");
     } else {
