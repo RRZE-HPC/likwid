@@ -32,16 +32,16 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <error.h>
-#include <likwid.h>
-#include <sysFeatures_types.h>
-#include <topology.h>
+#include <unistd.h>
 
 #include <bstrlib.h>
 #include <bstrlib_helper.h>
+#include <error.h>
+#include <likwid.h>
 #include <sysFeatures_common.h>
 #include <sysFeatures_cpufreq.h>
+#include <sysFeatures_types.h>
+#include <types.h>
 
 static int cpufreq_sysfs_getter(
     const LikwidDevice_t device, char **value, const char *sysfs_filename)
@@ -91,14 +91,12 @@ static int cpufreq_sysfs_setter(
         fp       = fopen(bdata(filename), "w");
         if (fp == NULL) {
             err = -errno;
-            ERROR_PRINT(
-                "Failed to open file '%s' for writing: %s", bdata(filename), strerror(errno));
+            ERROR_PRINT("Failed to open file '%s' for writing", bdata(filename));
         } else {
             const size_t vallen = strlen(value);
             const size_t ret    = fwrite(value, sizeof(char), vallen, fp);
             if (ret != (sizeof(char) * vallen)) {
-                ERROR_PRINT(
-                    "Failed to open file '%s' for writing: %s", bdata(filename), strerror(errno));
+                ERROR_PRINT("Failed to open file '%s' for writing", bdata(filename));
             }
             fclose(fp);
         }
