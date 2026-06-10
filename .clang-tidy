@@ -3,6 +3,7 @@ Checks:
   bugprone-*,
   -bugprone-multi-level-implicit-pointer-conversion,
   -bugprone-casting-through-void,
+  -bugprone-easily-swappable-parameters,
   clang-diagnostic-*,
   clang-analyzer-*,
   readability-*,
@@ -34,6 +35,8 @@ Checks:
 #   We kinda want this, but it's not that easy to fix.
 # - 'readability-isolate-declaration'
 #   This disallows specifying multiple variables in a single line.
+# - 'bugprone-easily-swappable-parameters'
+#   Well, what are we supposed to do about that?
 
 CheckOptions:
     # Single line statements (after a line break) are still okay,
