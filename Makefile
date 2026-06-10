@@ -367,6 +367,9 @@ $(BUILD_DIR)/%.o: %.c
 	@echo "===>  COMPILE  $@"
 	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
+ifeq ($(TIDY), true)
+	$(Q)clang-tidy $< -- $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS)
+endif
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 # At the moment the perfmon code is too complex to fix all unused variable warnings, so supress those for now

@@ -127,6 +127,9 @@ DEBUG = false#NO SPACE
 # Build LIKWID with address sanitizer flags
 SANITIZE = false#NO SPACE
 
+# Build LIKWID with clang-tidy enabled
+TIDY ?= false
+
 # Basic configuration for some internal arrays.
 # Maximal number of hardware threads
 MAX_NUM_THREADS = 1024
