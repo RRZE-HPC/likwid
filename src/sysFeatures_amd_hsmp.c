@@ -42,7 +42,6 @@
 #include <error.h>
 #include <sysFeatures_common.h>
 #include <sysFeatures_common_rapl.h>
-#include <topology.h>
 #include <types.h>
 
 /* Useful links:
@@ -463,11 +462,11 @@ static int amd_hsmp_dimm_temp_getter(LikwidDevice_t dev, uint32_t channel, bool 
     if (rate) {
         const double last_update = refresh_pre_scale * field32(temp_raw, 8, 9) / 1000.0;
         return likwid_sysft_double_to_string(last_update, value);
-    } else {
-        /* Do not use field32(temp_raw, 21, 11) in order to get sign extension from the >> for free. */
-        const double temp = temp_pre_scale * (temp_raw >> 21) * 0.25;
-        return likwid_sysft_double_to_string(temp, value);
     }
+
+    /* Do not use field32(temp_raw, 21, 11) in order to get sign extension from the >> for free. */
+    const double temp = temp_pre_scale * (temp_raw >> 21) * 0.25;
+    return likwid_sysft_double_to_string(temp, value);
 }
 
 static int amd_hsmp_dimm_power_getter(
@@ -888,8 +887,8 @@ static int amd_hsmp_rapl_init(LikwidDevice_t dev)
 {
     if (rapl_domain_info.energyUnit > 0.0 || rapl_domain_info.timeUnit > 0.0)
         return 0;
-    uint32_t units;
-    int err = hsmp_raw(dev->id.simple.id, HSMP_GET_RAPL_UNITS, NULL, 0, &units, 1);
+    uint32_t units = 0;
+    int err        = hsmp_raw(dev->id.simple.id, HSMP_GET_RAPL_UNITS, NULL, 0, &units, 1);
     if (err < 0)
         return err;
     rapl_domain_info.energyUnit = 1.0 / (1 << field32(units, 8, 5));
@@ -910,12 +909,12 @@ static int amd_hsmp_core_energy_getter(LikwidDevice_t dev, char **value)
         return err;
 
     const uint32_t real_apic_id = (uint32_t)err;
-    uint32_t energy_raw[2];
+    uint32_t energy_raw[2]      = { 0, 0 };
     err = hsmp_raw(hwt->packageId, HSMP_GET_RAPL_CORE_COUNTER, &real_apic_id, 1, energy_raw, 2);
     if (err < 0)
         return err;
     const uint64_t energy_real = energy_raw[0] | ((uint64_t)energy_raw[1] << 32);
-    return likwid_sysft_uint64_to_string((double)energy_real * rapl_domain_info.energyUnit, value);
+    return likwid_sysft_double_to_string((double)energy_real * rapl_domain_info.energyUnit, value);
 }
 
 static int amd_hsmp_sock_energy_getter(LikwidDevice_t dev, char **value)
@@ -923,12 +922,12 @@ static int amd_hsmp_sock_energy_getter(LikwidDevice_t dev, char **value)
     int err = amd_hsmp_rapl_init(dev);
     if (err < 0)
         return err;
-    uint32_t energy_raw[2];
+    uint32_t energy_raw[2] = { 0, 0 };
     err = hsmp_raw(dev->id.simple.id, HSMP_GET_RAPL_PACKAGE_COUNTER, NULL, 0, energy_raw, 2);
     if (err < 0)
         return err;
     const uint64_t energy_real = energy_raw[0] | ((uint64_t)energy_raw[1] << 32);
-    return likwid_sysft_uint64_to_string((double)energy_real * rapl_domain_info.energyUnit, value);
+    return likwid_sysft_double_to_string((double)energy_real * rapl_domain_info.energyUnit, value);
 }
 
 // clang-format off
