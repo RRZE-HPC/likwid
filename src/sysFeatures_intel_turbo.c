@@ -31,8 +31,6 @@
 
 #include <sysFeatures_intel_turbo.h>
 
-#include <sysFeatures_intel.h>
-
 #include <bitUtil.h>
 #include <cpuid.h>
 #include <error.h>
