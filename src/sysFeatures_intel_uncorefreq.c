@@ -30,16 +30,11 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-#include <access.h>
 #include <bitUtil.h>
-#include <error.h>
 #include <likwid.h>
 #include <registers.h>
 #include <sysFeatures_common.h>
-#include <sysFeatures_intel.h>
 #include <sysFeatures_intel_uncorefreq.h>
 #include <sysFeatures_types.h>
 
