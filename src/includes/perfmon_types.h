@@ -34,8 +34,8 @@
 #ifndef PERFMON_TYPES_H
 #define PERFMON_TYPES_H
 
+#include <likwid.h>
 #include <bstrlib.h>
-#include <timer.h>
 #include <inttypes.h>
 #include <perfgroup.h>
 

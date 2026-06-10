@@ -7,6 +7,7 @@ Checks:
   -bugprone-branch-clone,
   clang-diagnostic-*,
   clang-analyzer-*,
+  -clang-analyzer-core.NonNullParamChecker,
   readability-*,
   -readability-identifier-length,
   -readability-magic-numbers,
@@ -41,6 +42,9 @@ Checks:
 # - 'bugprone-branch-clone'
 #   Complains about something in sysFeatures_amd_pstate. Not sure if
 #   there is a good solution to this.
+# - 'clang-analyzer-core.NonNullParamChecker'
+#   This currently flags many thing from the bstrlib. When we don't use
+#   it anymore, we may reenable this check.
 
 CheckOptions:
     # Single line statements (after a line break) are still okay,
