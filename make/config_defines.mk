@@ -330,9 +330,9 @@ DEFINES += -DLIKWID_WITH_ROCMON -D__HIP_PLATFORM_AMD__
 BUILDAPPDAEMON = true
 endif
 
-ifeq ($(CONTAINER_HELPER),true)
-	C_APPS += likwid-bridge
-	CONTAINER_HELPER_TARGET = likwid-bridge
+ifeq ($(strip $(BUILD_CONTAINER_HELPER)),true)
+    C_APPS += likwid-bridge
+    CONTAINER_HELPER_TARGET = likwid-bridge
 endif
 ifeq ($(strip $(BUILDDAEMON)),true)
 ifneq ($(strip $(COMPILER)),MIC)
