@@ -42,7 +42,7 @@ ROCM_INTERFACE = false#NO SPACE
 BUILD_SYSFEATURES = true#NO SPACE
 
 # Build container helper
-CONTAINER_HELPER = false#NO SPACE
+BUILD_CONTAINER_HELPER = true#NO SPACE
 
 #################################################################
 #################################################################
