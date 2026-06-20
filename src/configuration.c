@@ -94,6 +94,7 @@ static int default_configuration(void)
 
 #ifndef LIKWID_USE_PERFEVENT
 use_hardcoded:
+    ;
 #endif
 
     const char *hardcodedAccessDaemonPath = TOSTRING(ACCESSDAEMON);
