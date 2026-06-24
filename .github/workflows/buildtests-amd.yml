@@ -44,7 +44,7 @@ jobs:
         # https://repo.radeon.com/rocm/apt/
         rocm_version: [ "7.0.3", "7.1.1", "7.2.1" ]
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Install ROCm ${{matrix.rocm_version}}
       run: |
         sudo apt update
