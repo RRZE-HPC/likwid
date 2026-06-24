@@ -111,7 +111,7 @@ jobs:
           os-min: "04"
           cuda: 13-2
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Install CUDA ${{matrix.version.cuda}}
       run: |
         sudo apt update
