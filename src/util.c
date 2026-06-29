@@ -1,12 +1,13 @@
 #include <lw_util.h>
 
 #include <errno.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
-char *xvasprintf(const char *__restrict__ fmt, va_list ap) {
+char *xvasprintf(const char *__restrict__ fmt, va_list ap)
+{
     va_list ap2;
     va_copy(ap2, ap);
 
@@ -26,7 +27,8 @@ char *xvasprintf(const char *__restrict__ fmt, va_list ap) {
     return retval;
 }
 
-char *xasprintf(const char *__restrict__ fmt, ...) {
+char *xasprintf(const char *__restrict__ fmt, ...)
+{
     va_list ap;
     va_start(ap, fmt);
     char *retval = xvasprintf(fmt, ap);
