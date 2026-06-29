@@ -38,6 +38,7 @@
 #include <bstrlib.h>
 #include <inttypes.h>
 #include <perfgroup.h>
+#include <registers_types.h>
 
 #define MAX_EVENT_OPTIONS NUM_EVENT_OPTIONS
 

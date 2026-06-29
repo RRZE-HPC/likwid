@@ -37,6 +37,7 @@
 #include <inttypes.h>
 #include <perfgroup.h>
 #include <ghash.h>
+#include <stdint.h>
 
 #include <cupti.h>
 

@@ -45,6 +45,7 @@
 #include <error.h>
 #include <nvmon_types.h>
 #include <libnvctr_types.h>
+#include <types.h>
 
 typedef enum {
     FEATURE_CLOCK_INFO          = 1,
