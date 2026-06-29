@@ -1,5 +1,5 @@
-#ifndef INCLUDE_UTIL_H
-#define INCLUDE_UTIL_H
+#ifndef INCLUDE_LW_UTIL_H
+#define INCLUDE_LW_UTIL_H
 
 #include <stdarg.h>
 
@@ -8,4 +8,4 @@ char *xasprintf(const char *__restrict__ fmt, ...);
 
 int search_path_env(const char *binary, char **pathFinal);
 
-#endif // INCLUDE_UTIL_H
+#endif // INCLUDE_LW_UTIL_H

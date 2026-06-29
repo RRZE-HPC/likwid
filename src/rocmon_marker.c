@@ -11,7 +11,7 @@
 #include <error.h>
 #include <perfgroup.h>
 #include <rocmon_types.h>
-#include <util.h>
+#include <lw_util.h>
 
 // TODO replace hip names with rocm names (if applicable)
 // TODO insert missing checks for gettid == main_tid

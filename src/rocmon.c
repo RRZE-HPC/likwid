@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <types.h>
-#include <util.h>
+#include <lw_util.h>
 
 #include <hip/hip_runtime_api.h>
 #include <rocm_smi/rocm_smi.h>

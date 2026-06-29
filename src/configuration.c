@@ -39,7 +39,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <lw_alloc.h>
-#include <util.h>
+#include <lw_util.h>
 
 #include <configuration.h>
 
