@@ -49,11 +49,7 @@
 #define CYAN      6
 #define WHITE     7
 
-static void color_on(int attr, int fg);
-static void color_reset(void);
-
-static void
-color_on(int attr, int fg)
+static inline void color_on(int attr, int fg)
 {
     // https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
     if (attr < 0)
@@ -69,8 +65,7 @@ color_on(int attr, int fg)
     printf("\e[%d;%dm", attr, fg + 30);
 }
 
-static void
-color_reset()
+static inline void color_reset()
 {
     printf("\e[0m");
 }
