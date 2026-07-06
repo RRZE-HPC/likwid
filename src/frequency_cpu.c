@@ -927,7 +927,7 @@ static int getBaseFreq(const int cpu_id)
     }
     else
     {
-        tmp = extractBitField(tmp,8,8);
+        tmp = field32(tmp,8,8);
         return 100000 * tmp;
     }
 
