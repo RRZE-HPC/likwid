@@ -276,26 +276,26 @@ int hasep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 case EVENT_OPTION_OPCODE:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, filter1, &filter_flags));
                     filter_flags |= (0x3<<27);
-                    filter_flags |= (extractBitField(event->options[j].value,5,0) << 20);
+                    filter_flags |= (field32(event->options[j].value,0,5) << 20);
                     VERBOSEPRINTREG(cpu_id, filter1, filter_flags, "SETUP_CBOX_FILTER_OPCODE");
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter1, filter_flags));
                     break;
                 case EVENT_OPTION_NID:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, filter1, &filter_flags));
-                    filter_flags |= (extractBitField(event->options[j].value,16,0));
+                    filter_flags |= (field32(event->options[j].value,0,16));
                     VERBOSEPRINTREG(cpu_id, filter1, filter_flags, "SETUP_CBOX_FILTER_NID");
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter1, filter_flags));
                     break;
                 case EVENT_OPTION_STATE:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, filter0, &filter_flags));
-                    filter_flags |= (extractBitField(event->options[j].value,6,0) << 17);
+                    filter_flags |= (field32(event->options[j].value,0,6) << 17);
                     VERBOSEPRINTREG(cpu_id, filter0, filter_flags, "SETUP_CBOX_FILTER_STATE");
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter0, filter_flags));
                     set_state_all = 0;
                     break;
                 case EVENT_OPTION_TID:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, filter0, &filter_flags));
-                    filter_flags |= (extractBitField(event->options[j].value,6,0));
+                    filter_flags |= (field32(event->options[j].value,0,6));
                     VERBOSEPRINTREG(cpu_id, filter0, filter_flags, "SETUP_CBOX_FILTER_TID");
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter0, filter_flags));
                     flags |= (1ULL<<19);
@@ -1613,7 +1613,7 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     if (eventSet->events[i].event.eventId == 0x00)
                     {
                         HPMread(cpu_id, dev, counter1, &counter_result);
-                        switch(extractBitField(counter_result, 3, 0))
+                        switch(field32(counter_result, 0, 3))
                         {
                             case 0x2:
                                 counter_result = 5.6E9;
@@ -1855,7 +1855,7 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     if (eventSet->events[i].event.eventId == 0x00)
                     {
                         HPMread(cpu_id, dev, counter1, &counter_result);
-                        switch(extractBitField(counter_result, 3, 0))
+                        switch(field32(counter_result, 0, 3))
                         {
                             case 0x2:
                                 counter_result = 5.6E9;
