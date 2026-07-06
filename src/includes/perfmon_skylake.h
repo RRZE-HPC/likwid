@@ -416,24 +416,24 @@ int skx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (event->options[j].value & 0xFFULL) << 24;
                     break;
                 case EVENT_OPTION_OPCODE:
-                    filter_flags1 |= (extractBitField(event->options[j].value,20,0) << 9);
+                    filter_flags1 |= (field32(event->options[j].value,0,20) << 9);
                     filter_flags1 |= (0x3<<27);
                     filter_flags1 |= (0x3<<17);
                     opc_match = 1;
                     break;
                 case EVENT_OPTION_STATE:
-                    filter_flags0 |= (extractBitField(event->options[j].value,10,0) << 17);
+                    filter_flags0 |= (field32(event->options[j].value,0,10) << 17);
                     set_state_all = 0;
                     break;
                 case EVENT_OPTION_TID:
-                    filter_flags0 |= (extractBitField(event->options[j].value,9,0));
+                    filter_flags0 |= (field32(event->options[j].value,0,9));
                     flags |= (1ULL<<19);
                     break;
                 case EVENT_OPTION_MATCH0:
-                    filter_flags1 |= ((extractBitField(event->options[j].value,2,0) & 0x3ULL) << 30);
+                    filter_flags1 |= ((field32(event->options[j].value,0,2) & 0x3ULL) << 30);
                     break;
                 case EVENT_OPTION_MATCH1:
-                    filter_flags1 |= (extractBitField(event->options[j].value,6,0) & 0x33);
+                    filter_flags1 |= (field32(event->options[j].value,0,6) & 0x33);
                     match1 = 1;
                     break;
                 default:
