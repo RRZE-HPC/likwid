@@ -1185,7 +1185,7 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                     {
                         CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, "READ_SBOX_FIXED");
-                        switch (extractBitField(counter_result,3,0))
+                        switch (field32(counter_result,0,3))
                         {
                             case 0x2:
                                 counter_result = 5600000000ULL;
@@ -1421,7 +1421,7 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, "READ_SBOX_FIXED");
                         if (eventSet->events[i].event.eventId == 0x00)
                         {
-                            switch (extractBitField(counter_result,3,0))
+                            switch (field32(counter_result,0,3))
                             {
                                 case 0x2:
                                     counter_result = 5600000000ULL;
@@ -1448,7 +1448,7 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                         }
                         else if (eventSet->events[i].event.eventId == 0x01)
                         {
-                            counter_result = extractBitField(counter_result,1,4);
+                            counter_result = field32(counter_result,4,1);
                         }
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, "READ_SBOX_FIXED_REAL");
                         eventSet->events[i].threadCounter[thread_id].startData = 0;
