@@ -641,7 +641,7 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
                      * */
                     hwThreadPool[id].threadId =
                         field32(hwThreadPool[id].apicId,
-                                0,getBitFieldWidth(maxNumLogicalProcsPerCore));
+                                0,fieldWidthForCount(maxNumLogicalProcsPerCore));
 
                     /* CoreId is extracted from th apicId using the bitWidth
                      * of the number of logical processors as offset and the
@@ -649,13 +649,13 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
                      * */
                     hwThreadPool[id].coreId =
                         field32(hwThreadPool[id].apicId,
-                                getBitFieldWidth(maxNumLogicalProcsPerCore),
-                                getBitFieldWidth(maxNumCores));
+                                fieldWidthForCount(maxNumLogicalProcsPerCore),
+                                fieldWidthForCount(maxNumCores));
 
                     hwThreadPool[id].packageId =
                         field32(hwThreadPool[id].apicId,
-                                getBitFieldWidth(maxNumLogicalProcs),
-                                8-getBitFieldWidth(maxNumLogicalProcs));
+                                fieldWidthForCount(maxNumLogicalProcs),
+                                8-fieldWidthForCount(maxNumLogicalProcs));
 
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d]", i, id,
                                     hwThreadPool[id].apicId, hwThreadPool[id].threadId,
@@ -693,7 +693,7 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
                      * */
                     hwThreadPool[id].threadId =
                         field32(hwThreadPool[i].apicId,
-                                0,getBitFieldWidth(maxNumLogicalProcsPerCore));
+                                0,fieldWidthForCount(maxNumLogicalProcsPerCore));
 
                     /* CoreId is extracted from th apicId using the bitWidth
                      * of the number of logical processors as offset and the
@@ -702,12 +702,12 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
                     hwThreadPool[id].coreId =
                         field32(hwThreadPool[i].apicId,
                                 0,
-                                getBitFieldWidth(maxNumCores));
+                                fieldWidthForCount(maxNumCores));
 
                     hwThreadPool[id].packageId =
                         field32(hwThreadPool[i].apicId,
-                                getBitFieldWidth(maxNumCores),
-                                8-getBitFieldWidth(maxNumCores));
+                                fieldWidthForCount(maxNumCores),
+                                8-fieldWidthForCount(maxNumCores));
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d]", i, id,
                                     hwThreadPool[id].apicId, hwThreadPool[id].threadId,
                                     hwThreadPool[id].coreId, hwThreadPool[id].packageId);
