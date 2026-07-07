@@ -300,8 +300,8 @@ power_init(int cpuId)
         err = HPMread(cpuId, MSR_DEV, MSR_PLATFORM_INFO, &flags);
         if (err == 0)
         {
-            power_info.baseFrequency = busSpeed * (double) extractBitField(flags,8,8);
-            power_info.minFrequency  = busSpeed * (double) extractBitField((flags>>(32)),8,8);
+            power_info.baseFrequency = busSpeed * (double) field64(flags,8,8);
+            power_info.minFrequency  = busSpeed * (double) field64(flags,40,8);
 
             power_info.turbo.numSteps = cpuid_topology.numCoresPerSocket;
             if (cpuid_info.model == WESTMERE_EX)
@@ -482,14 +482,14 @@ power_init(int cpuId)
                     if (err == 0)
                     {
                         power_info.domains[i].supportFlags |= POWER_DOMAIN_SUPPORT_INFO;
-                        power_info.domains[i].tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
+                        power_info.domains[i].tdp = (double) field64(flags,0,15) * power_info.powerUnit;
                         if (cpuid_info.model != ATOM_SILVERMONT_C)
                         {
-                            power_info.domains[i].minPower = (double) extractBitField(flags,15,16) * power_info.powerUnit;
-                            power_info.domains[i].maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;
+                            power_info.domains[i].minPower = (double) field64(flags,16,15) * power_info.powerUnit;
+                            power_info.domains[i].maxPower = (double) field64(flags,32,15) * power_info.powerUnit;
                             if (power_info.domains[i].minPower > power_info.domains[i].maxPower)
                                 power_info.domains[i].minPower = 0;
-                            power_info.domains[i].maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
+                            power_info.domains[i].maxTimeWindow = (double) field64(flags,48,7) * power_info.timeUnit;
                         }
                     }
                     else
@@ -639,9 +639,9 @@ power_limitGet(int cpuId, PowerType domain, double* power, double* time)
             ERROR_PRINT("Failed to set power limit for domain %s on CPU %d", power_names[domain], cpuId);
             return -EFAULT;
         }
-        *power = ((double)extractBitField(flags, 15, 0)) * power_info.domains[domain].energyUnit;
-        Y = extractBitField(flags, 5, 17);
-        Z = extractBitField(flags, 2, 22);
+        *power = ((double)field64(flags, 0, 15)) * power_info.domains[domain].energyUnit;
+        Y = field64(flags, 17, 5);
+        Z = field64(flags, 22, 2);
         *time = pow(2,((double)Y)) * (1.0 + (((double)Z)/4.0)) * power_info.timeUnit;
     }
     return 0;
@@ -735,7 +735,7 @@ power_policySet(int cpuId, PowerType domain, uint32_t priority)
     {
         return -EINVAL;
     }
-    priority = extractBitField(priority, 5, 0);
+    priority = field32(priority, 0, 5);
     if (power_info.domains[domain].supportFlags & POWER_DOMAIN_SUPPORT_POLICY)
     {
         err = HPMwrite(cpuId, MSR_DEV, policy_regs[domain], priority);

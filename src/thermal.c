@@ -74,15 +74,15 @@ thermal_init(int cpuId)
             thermal_info.highT = 0;
         }
 
-        thermal_info.resolution =  extractBitField(flags,4,27);
+        thermal_info.resolution =  field32(flags,27,4);
 
         flags = 0ULL;
         if (HPMread(cpuId, MSR_DEV, MSR_TEMPERATURE_TARGET, &flags))
         {
             return;
         }
-        thermal_info.activationT =  extractBitField(flags,8,16);
-        thermal_info.offset = extractBitField(flags,6,24);
+        thermal_info.activationT =  field32(flags,16,8);
+        thermal_info.offset = field32(flags,24,6);
     }
 }
 

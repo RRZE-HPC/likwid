@@ -336,21 +336,21 @@ int bdwep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     break;
                 case EVENT_OPTION_OPCODE:
                     filter_flags1 |= (0x3<<27);
-                    filter_flags1 |= (extractBitField(event->options[j].value,5,0) << 20);
+                    filter_flags1 |= (field32(event->options[j].value,0,5) << 20);
                     break;
                 case EVENT_OPTION_NID:
-                    filter_flags1 |= (extractBitField(event->options[j].value,16,0));
+                    filter_flags1 |= (field32(event->options[j].value,0,16));
                     break;
                 case EVENT_OPTION_STATE:
-                    filter_flags0 |= (extractBitField(event->options[j].value,7,0) << 17);
+                    filter_flags0 |= (field32(event->options[j].value,0,7) << 17);
                     set_state_all = 0;
                     break;
                 case EVENT_OPTION_TID:
-                    filter_flags0 |= (extractBitField(event->options[j].value,6,0));
+                    filter_flags0 |= (field32(event->options[j].value,0,6));
                     flags |= (1ULL<<19);
                     break;
                 case EVENT_OPTION_MATCH0:
-                    filter_flags1 |= (extractBitField(event->options[j].value,2,0) << 30);
+                    filter_flags1 |= (field32(event->options[j].value,0,2) << 30);
                     break;
                 default:
                     break;
@@ -1623,7 +1623,7 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                         eventSet->events[i].threadCounter[thread_id].startData = 0;
                         if (eventSet->events[i].event.eventId == 0x00)
                         {
-                            switch(extractBitField(counter_result, 3, 0))
+                            switch(field32(counter_result, 0, 3))
                             {
                                 case 0x2:
                                     counter_result = 5.6E9;
@@ -1847,7 +1847,7 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                         if (eventSet->events[i].event.eventId == 0x00)
                         {
                             HPMread(cpu_id, dev, counter1, &counter_result);
-                            switch(extractBitField(counter_result, 3, 0))
+                            switch(field32(counter_result, 0, 3))
                             {
                                 case 0x2:
                                     counter_result = 5.6E9;

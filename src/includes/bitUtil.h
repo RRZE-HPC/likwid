@@ -37,8 +37,7 @@ uint64_t field64(uint64_t bitfield, int start, int length);
 uint32_t field32(uint32_t bitfield, int start, int length);
 void field64set(uint64_t* bitfield, int start, int length, uint64_t value);
 void field32set(uint32_t* bitfield, int start, int length, uint32_t value);
-uint32_t extractBitField(uint32_t inField, uint32_t width, uint32_t offset);
-uint32_t getBitFieldWidth(uint32_t number);
+uint32_t fieldWidthForCount(uint64_t count);
 
 #define setBit(reg,bit)  (reg) |= (1ULL<<(bit))
 #define clearBit(reg,bit) (reg) &= ~(1ULL<<(bit))

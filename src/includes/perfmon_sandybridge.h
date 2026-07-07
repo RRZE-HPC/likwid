@@ -1423,7 +1423,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                         HPMread(cpu_id, dev, counter1, &counter_result);
                         if (eventSet->events[i].event.eventId == 0x00)
                         {
-                            switch(extractBitField(counter_result, 3, 0))
+                            switch(field32(counter_result, 0, 3))
                             {
                                 case 0x2:
                                     counter_result = 5.6E9;
@@ -1450,7 +1450,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                         }
                         else if (eventSet->events[i].event.eventId == 0x01)
                         {
-                            counter_result = extractBitField(counter_result, 1, 4);
+                            counter_result = field32(counter_result, 4, 1);
                         }
                         eventSet->events[i].threadCounter[thread_id].startData = 0;
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, "STOP_SBOXFIX");
@@ -1781,7 +1781,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     HPMread(cpu_id, dev, counter1, &counter_result);
                     if (eventSet->events[i].event.eventId == 0x00)
                     {
-                        switch(extractBitField(counter_result, 3, 0))
+                        switch(field32(counter_result, 0, 3))
                         {
                             case 0x2:
                                 counter_result = 5.6E9;
@@ -1808,7 +1808,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     }
                     else if (eventSet->events[i].event.eventId == 0x01)
                     {
-                        counter_result = extractBitField(counter_result, 1, 4);
+                        counter_result = field32(counter_result, 4, 1);
                     }
                     eventSet->events[i].threadCounter[thread_id].startData = 0x0ULL;
                     VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, "READ_SBOXFIX");

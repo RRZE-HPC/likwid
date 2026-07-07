@@ -40,12 +40,16 @@
 uint64_t
 field64(uint64_t bitfield, int start, int length)
 {
+    assert(start >= 0 && start < 64);
+    assert(length >= 0 && length <= 64);
     return (bitfield >> start) & (~0ULL >> (64 - length));
 }
 
 uint32_t
 field32(uint32_t bitfield, int start, int length)
 {
+    assert(start >= 0 && start < 32);
+    assert(length >= 0 && length <= 32);
     return (bitfield >> start) & (~0U >> (32 - length));
 }
 
@@ -67,42 +71,19 @@ field32set(uint32_t* bitfield, int start, int length, uint32_t value)
     *bitfield = (*bitfield & ~mask) | ((value << start) & mask);
 }
 
-uint32_t
-extractBitField(uint32_t inField, uint32_t width, uint32_t offset)
+// Get the number of bits required for 'count' - 1.
+// Why -1? Because it calculates the number of bits required for the number
+// of combinations, not the number itself.
+uint32_t fieldWidthForCount(uint64_t count)
 {
-    uint32_t bitMask;
-    uint32_t outField;
-
-    if ((offset+width) == 32)
-    {
-        bitMask = (0xFFFFFFFF<<offset);
-    }
-    else
-    {
-        bitMask = (0xFFFFFFFF<<offset) ^ (0xFFFFFFFF<<(offset+width));
-
-    }
-
-    outField = (inField & bitMask) >> offset;
-    return outField;
-}
-
-uint32_t
-getBitFieldWidth(uint32_t number)
-{
-    uint32_t fieldWidth=0;
-
-    number--;
-    if (number == 0)
-    {
+    if (count == 0 || count == 1)
         return 0;
-    }
-#ifdef __x86_64
-    __asm__ volatile ( "bsr %%eax, %%ecx\n\t"
-            : "=c" (fieldWidth)
-            : "a"(number));
-#endif
 
-    return fieldWidth+1;  /* bsr returns the position, we want the width */
+    // max representable number for N combinations
+    count -= 1;
+
+    const unsigned long long countLL = count;
+    const uint64_t countLLWidth = 8 * sizeof(countLL);
+
+    return (uint32_t)(countLLWidth - __builtin_clzll(countLL));
 }
-
