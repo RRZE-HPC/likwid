@@ -4,8 +4,8 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* WARNING: This XML library doesn't work 100% correct in some cases.
@@ -17,9 +17,10 @@
 
 static int xml_parse(struct xml_elem_t *elem, const char *buf, size_t *buf_pos);
 
-static int attr_create(struct xml_attr_t **attr, const char *key, const char *value) {
-    char *key_copy = NULL;
-    char *value_copy = NULL;
+static int attr_create(struct xml_attr_t **attr, const char *key, const char *value)
+{
+    char *key_copy              = NULL;
+    char *value_copy            = NULL;
     struct xml_attr_t *new_attr = malloc(sizeof(*new_attr));
     if (!new_attr)
         goto error;
@@ -32,9 +33,9 @@ static int attr_create(struct xml_attr_t **attr, const char *key, const char *va
     if (!value_copy)
         goto error;
 
-    new_attr->key = key_copy;
+    new_attr->key   = key_copy;
     new_attr->value = value_copy;
-    *attr = new_attr;
+    *attr           = new_attr;
     return 0;
 
 error:
@@ -44,7 +45,8 @@ error:
     return -errno;
 }
 
-static void attr_destroy(struct xml_attr_t *attr) {
+static void attr_destroy(struct xml_attr_t *attr)
+{
     if (!attr)
         return;
     free(attr->key);
@@ -52,7 +54,8 @@ static void attr_destroy(struct xml_attr_t *attr) {
     free(attr);
 }
 
-int xml_attr_set(struct xml_elem_t *elem, const char *key, const char *value) {
+int xml_attr_set(struct xml_elem_t *elem, const char *key, const char *value)
+{
     // Search if the key already exists and replace it if so.
     for (size_t i = 0; i < elem->attr_count; i++) {
         if (strcmp(elem->attr_arr[i]->key, key) == 0) {
@@ -66,32 +69,34 @@ int xml_attr_set(struct xml_elem_t *elem, const char *key, const char *value) {
     }
 
     struct xml_attr_t *new_attr = NULL;
-    int err = attr_create(&new_attr, key, value);
+    int err                     = attr_create(&new_attr, key, value);
     if (err < 0)
         return err;
 
     size_t new_attr_count = elem->attr_count + 1;
-    struct xml_attr_t **new_attr_arr = realloc(elem->attr_arr, sizeof(*new_attr_arr) * new_attr_count);
+    struct xml_attr_t **new_attr_arr =
+        realloc(elem->attr_arr, sizeof(*new_attr_arr) * new_attr_count);
     if (!new_attr_arr) {
         err = -errno;
         attr_destroy(new_attr);
         return err;
     }
 
-    elem->attr_arr = new_attr_arr;
+    elem->attr_arr                   = new_attr_arr;
     elem->attr_arr[elem->attr_count] = new_attr;
-    elem->attr_count = new_attr_count;
+    elem->attr_count                 = new_attr_count;
     return 0;
 }
 
-int xml_attr_clear(struct xml_elem_t *elem, const char *key) {
+int xml_attr_clear(struct xml_elem_t *elem, const char *key)
+{
     size_t index_to_delete;
     bool found = false;
 
     for (size_t i = 0; i < elem->attr_count; i++) {
         if (strcmp(elem->attr_arr[i]->key, key) == 0) {
             index_to_delete = i;
-            found = true;
+            found           = true;
             break;
         }
     }
@@ -99,7 +104,7 @@ int xml_attr_clear(struct xml_elem_t *elem, const char *key) {
     if (!found)
         return -EINVAL;
 
-    const size_t new_attr_count = elem->attr_count - 1;
+    const size_t new_attr_count      = elem->attr_count - 1;
     struct xml_attr_t **new_attr_arr = calloc(new_attr_count, sizeof(*new_attr_arr));
     if (!new_attr_arr)
         return -errno;
@@ -107,15 +112,16 @@ int xml_attr_clear(struct xml_elem_t *elem, const char *key) {
     attr_destroy(elem->attr_arr[index_to_delete]);
 
     for (size_t i = index_to_delete; i < new_attr_count; i++)
-        new_attr_arr[i] = elem->attr_arr[i+1];
+        new_attr_arr[i] = elem->attr_arr[i + 1];
 
     free(elem->attr_arr);
-    elem->attr_arr = new_attr_arr;
+    elem->attr_arr   = new_attr_arr;
     elem->attr_count = new_attr_count;
     return 0;
 }
 
-static int attr_copy(const struct xml_attr_t *src, struct xml_attr_t **dst) {
+static int attr_copy(const struct xml_attr_t *src, struct xml_attr_t **dst)
+{
     if (!src || !dst)
         return -EINVAL;
 
@@ -144,27 +150,30 @@ error:
     return err;
 }
 
-int xml_elem_create(struct xml_elem_t **elem, xml_elem_type_t type) {
+int xml_elem_create(struct xml_elem_t **elem, xml_elem_type_t type)
+{
     struct xml_elem_t *new_elem = malloc(sizeof(*new_elem));
     if (!new_elem)
         return -errno;
 
-    new_elem->type = type;
-    new_elem->name = NULL;
-    new_elem->child_elem_arr = NULL;
+    new_elem->type             = type;
+    new_elem->name             = NULL;
+    new_elem->child_elem_arr   = NULL;
     new_elem->child_elem_count = 0;
-    new_elem->attr_arr = NULL;
-    new_elem->attr_count = 0;
-    new_elem->text = NULL;
+    new_elem->attr_arr         = NULL;
+    new_elem->attr_count       = 0;
+    new_elem->text             = NULL;
 
     *elem = new_elem;
     return 0;
 }
 
-int xml_elem_attach(struct xml_elem_t *parent, struct xml_elem_t *elem) {
+int xml_elem_attach(struct xml_elem_t *parent, struct xml_elem_t *elem)
+{
     // alloc new parent's child array
     const size_t new_child_elem_count = parent->child_elem_count + 1;
-    struct xml_elem_t **new_child_elem_arr = calloc(new_child_elem_count, sizeof(*new_child_elem_arr));
+    struct xml_elem_t **new_child_elem_arr =
+        calloc(new_child_elem_count, sizeof(*new_child_elem_arr));
     if (!new_child_elem_arr)
         return -errno;
 
@@ -173,15 +182,17 @@ int xml_elem_attach(struct xml_elem_t *parent, struct xml_elem_t *elem) {
         new_child_elem_arr[i] = parent->child_elem_arr[i];
     new_child_elem_arr[parent->child_elem_count] = elem;
     free(parent->child_elem_arr);
-    parent->child_elem_arr = new_child_elem_arr;
+    parent->child_elem_arr   = new_child_elem_arr;
     parent->child_elem_count = new_child_elem_count;
     return 0;
 }
 
-int xml_elem_create_and_attach(struct xml_elem_t *parent, struct xml_elem_t **elem, xml_elem_type_t type) {
+int xml_elem_create_and_attach(
+    struct xml_elem_t *parent, struct xml_elem_t **elem, xml_elem_type_t type)
+{
     // alloc new element
     struct xml_elem_t *new_elem = NULL;
-    int err = xml_elem_create(&new_elem, type);
+    int err                     = xml_elem_create(&new_elem, type);
     if (err < 0)
         return err;
 
@@ -196,14 +207,15 @@ int xml_elem_create_and_attach(struct xml_elem_t *parent, struct xml_elem_t **el
     return 0;
 }
 
-int xml_elem_detach(struct xml_elem_t *parent, struct xml_elem_t *elem) {
+int xml_elem_detach(struct xml_elem_t *parent, struct xml_elem_t *elem)
+{
     // find existing element
-    bool found = false;
+    bool found             = false;
     size_t index_to_delete = 0;
 
     for (size_t i = 0; i < parent->child_elem_count; i++) {
         if (parent->child_elem_arr[i] == elem) {
-            found = true;
+            found           = true;
             index_to_delete = i;
             break;
         }
@@ -214,21 +226,23 @@ int xml_elem_detach(struct xml_elem_t *parent, struct xml_elem_t *elem) {
 
     // alloc new parent's child array
     const size_t new_child_elem_count = parent->child_elem_count - 1;
-    struct xml_elem_t **new_child_elem_arr = calloc(new_child_elem_count, sizeof(*new_child_elem_arr));
+    struct xml_elem_t **new_child_elem_arr =
+        calloc(new_child_elem_count, sizeof(*new_child_elem_arr));
     if (!new_child_elem_arr)
         return -errno;
 
     // copy from old array without the element to delete
     for (size_t i = index_to_delete; i < new_child_elem_count; i++)
-        new_child_elem_arr[i] = parent->child_elem_arr[i+1];
+        new_child_elem_arr[i] = parent->child_elem_arr[i + 1];
 
     free(parent->child_elem_arr);
-    parent->child_elem_arr = new_child_elem_arr;
+    parent->child_elem_arr   = new_child_elem_arr;
     parent->child_elem_count = new_child_elem_count;
     return 0;
 }
 
-int xml_elem_destroy_and_detach(struct xml_elem_t *parent, struct xml_elem_t *elem) {
+int xml_elem_destroy_and_detach(struct xml_elem_t *parent, struct xml_elem_t *elem)
+{
     int err = xml_elem_detach(parent, elem);
     if (err < 0)
         return err;
@@ -237,12 +251,13 @@ int xml_elem_destroy_and_detach(struct xml_elem_t *parent, struct xml_elem_t *el
     return 0;
 }
 
-int xml_elem_copy(const struct xml_elem_t *src, struct xml_elem_t **dst) {
+int xml_elem_copy(const struct xml_elem_t *src, struct xml_elem_t **dst)
+{
     if (!src || !dst)
         return -EINVAL;
 
     struct xml_elem_t *new_elem = NULL;
-    int err = xml_elem_create(&new_elem, src->type);
+    int err                     = xml_elem_create(&new_elem, src->type);
     if (err < 0)
         return err;
 
@@ -302,7 +317,8 @@ error:
     return err;
 }
 
-void xml_elem_destroy(struct xml_elem_t *elem) {
+void xml_elem_destroy(struct xml_elem_t *elem)
+{
     if (!elem)
         return;
 
@@ -320,11 +336,13 @@ void xml_elem_destroy(struct xml_elem_t *elem) {
     free(elem);
 }
 
-int xml_create(struct xml_elem_t **doc) {
+int xml_create(struct xml_elem_t **doc)
+{
     return xml_elem_create(doc, XML_ELEM_ROOT);
 }
 
-int xml_create_from_file(struct xml_elem_t **doc, const char *filepath) {
+int xml_create_from_file(struct xml_elem_t **doc, const char *filepath)
+{
     FILE *file = fopen(filepath, "r");
     if (!file)
         return -errno;
@@ -341,12 +359,12 @@ int xml_create_from_file(struct xml_elem_t **doc, const char *filepath) {
         goto error;
 
     const size_t buf_size = (size_t)tmp;
-    buf = malloc(buf_size + 1);
+    buf                   = malloc(buf_size + 1);
     if (!buf)
         goto error;
 
     const size_t buf_read_size = fread(buf, 1, buf_size, file);
-    buf[buf_read_size] = '\0';
+    buf[buf_read_size]         = '\0';
 
     fclose(file);
 
@@ -361,14 +379,15 @@ error:
     return -errno;
 }
 
-int xml_create_from_string(struct xml_elem_t **doc, const char *buf) {
+int xml_create_from_string(struct xml_elem_t **doc, const char *buf)
+{
     struct xml_elem_t *root_elem = NULL;
-    int err = xml_create(&root_elem);
+    int err                      = xml_create(&root_elem);
     if (err < 0)
         goto error;
 
     size_t buf_pos = 0;
-    err = xml_parse(root_elem, buf, &buf_pos);
+    err            = xml_parse(root_elem, buf, &buf_pos);
     if (err < 0)
         goto error;
 
@@ -380,11 +399,13 @@ error:
     return err;
 }
 
-void xml_destroy(struct xml_elem_t *doc) {
+void xml_destroy(struct xml_elem_t *doc)
+{
     xml_elem_destroy(doc);
 }
 
-int xml_to_file(struct xml_elem_t *doc, const char *filepath) {
+int xml_to_file(struct xml_elem_t *doc, const char *filepath)
+{
     char *xmlstr;
     int err = xml_to_string(doc, &xmlstr);
     if (err < 0)
@@ -397,7 +418,7 @@ int xml_to_file(struct xml_elem_t *doc, const char *filepath) {
     }
 
     const size_t bytes_to_write = strlen(xmlstr);
-    const size_t bytes_written = fwrite(xmlstr, 1, bytes_to_write, file);
+    const size_t bytes_written  = fwrite(xmlstr, 1, bytes_to_write, file);
     if (bytes_to_write != bytes_written) {
         err = -EPERM;
         goto error;
@@ -424,7 +445,8 @@ struct strbuf_t {
     size_t cap;
 };
 
-static int strbuf_fmt_append(struct strbuf_t *strbuf, const char *fmt, ...) {
+static int strbuf_fmt_append(struct strbuf_t *strbuf, const char *fmt, ...)
+{
     size_t bytes_avail;
     size_t bytes_req;
 
@@ -445,7 +467,7 @@ static int strbuf_fmt_append(struct strbuf_t *strbuf, const char *fmt, ...) {
 
         assert(strbuf->cap != 0);
         const size_t newcap = strbuf->cap * 2;
-        char *newbuf = realloc(strbuf->buf, newcap);
+        char *newbuf        = realloc(strbuf->buf, newcap);
         if (!newbuf)
             return -errno;
 
@@ -461,19 +483,21 @@ static int strbuf_fmt_append(struct strbuf_t *strbuf, const char *fmt, ...) {
 
 static int xml_elem_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem);
 
-static int xml_attrlist_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem) {
+static int xml_attrlist_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem)
+{
     for (size_t i = 0; i < elem->attr_count; i++) {
         /* WARNING: This is wrong. We should properly escape the strings,
          * which we currently don't do. */
         struct xml_attr_t *a = elem->attr_arr[i];
-        int err = strbuf_fmt_append(strbuf, " %s=\"%s\"", a->key, a->value);
+        int err              = strbuf_fmt_append(strbuf, " %s=\"%s\"", a->key, a->value);
         if (err < 0)
             return err;
     }
     return 0;
 }
 
-static int xml_tag_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem) {
+static int xml_tag_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem)
+{
     // output tag begin
     if (elem->type != XML_ELEM_ROOT) {
         assert(elem->name);
@@ -488,7 +512,7 @@ static int xml_tag_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem) {
         // quit early for empty tags, since they don't have children and no closing tag
         if (elem->type == XML_ELEM_EMPTYTAG)
             return strbuf_fmt_append(strbuf, "/>");
-        
+
         err = strbuf_fmt_append(strbuf, ">");
         if (err < 0)
             return err;
@@ -500,7 +524,7 @@ static int xml_tag_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem) {
         if (err < 0)
             return err;
     }
-    
+
     // output tag end
     if (elem->type != XML_ELEM_ROOT) {
         int err = strbuf_fmt_append(strbuf, "</%s>", elem->name);
@@ -511,7 +535,8 @@ static int xml_tag_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem) {
     return 0;
 }
 
-static int xml_xmldecl_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem) {
+static int xml_xmldecl_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem)
+{
     assert(elem->type == XML_ELEM_XMLDECL);
     int err = strbuf_fmt_append(strbuf, "<?%s", elem->name);
     if (err < 0)
@@ -524,22 +549,26 @@ static int xml_xmldecl_to_string(struct strbuf_t *strbuf, struct xml_elem_t *ele
     return strbuf_fmt_append(strbuf, "?>");
 }
 
-static int xml_decl_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem) {
+static int xml_decl_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem)
+{
     assert(elem->type == XML_ELEM_DECL);
     return strbuf_fmt_append(strbuf, "<!%s>", elem->text);
 }
 
-static int xml_comment_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem) {
+static int xml_comment_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem)
+{
     assert(elem->type == XML_ELEM_COMMENT);
     return strbuf_fmt_append(strbuf, "<!--%s-->", elem->text);
 }
 
-static int xml_text_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem) {
+static int xml_text_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem)
+{
     assert(elem->type == XML_ELEM_TEXT);
     return strbuf_fmt_append(strbuf, "%s", elem->text);
 }
 
-static int xml_elem_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem) {
+static int xml_elem_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem)
+{
     switch (elem->type) {
     case XML_ELEM_ROOT:
     case XML_ELEM_TAG:
@@ -558,9 +587,10 @@ static int xml_elem_to_string(struct strbuf_t *strbuf, struct xml_elem_t *elem) 
     }
 }
 
-int xml_to_string(struct xml_elem_t *doc, char **xmlstr) {
+int xml_to_string(struct xml_elem_t *doc, char **xmlstr)
+{
     struct strbuf_t strbuf = {
-        .cap = 4096,
+        .cap        = 4096,
         .bytes_used = 1,
         .chars_used = 0,
     };
@@ -583,7 +613,8 @@ int xml_to_string(struct xml_elem_t *doc, char **xmlstr) {
     return 0;
 }
 
-static bool is_word_char(char c) {
+static bool is_word_char(char c)
+{
     if (c >= '0' && c <= '9')
         return true;
     if (c >= 'a' && c <= 'z')
@@ -595,15 +626,18 @@ static bool is_word_char(char c) {
     return false;
 }
 
-static bool is_singlequote(char c) {
+static bool is_singlequote(char c)
+{
     return c == '\'';
 }
 
-static bool is_doublequote(char c) {
+static bool is_doublequote(char c)
+{
     return c == '\"';
 }
 
-static bool is_whitespace_char(char c) {
+static bool is_whitespace_char(char c)
+{
     switch (c) {
     case '\t':
     case '\n':
@@ -617,7 +651,8 @@ static bool is_whitespace_char(char c) {
     }
 }
 
-static bool is_whitespace_str(const char *beg, const char *end) {
+static bool is_whitespace_str(const char *beg, const char *end)
+{
     for (const char *c = beg; c != end; c++) {
         if (!is_whitespace_char(*c))
             return false;
@@ -625,14 +660,16 @@ static bool is_whitespace_str(const char *beg, const char *end) {
     return true;
 }
 
-static int skip_none_past_string(const char *buf, size_t *buf_pos, const char *match) {
+static int skip_none_past_string(const char *buf, size_t *buf_pos, const char *match)
+{
     if (strncmp(&buf[*buf_pos], match, strlen(match)) != 0)
         return -EINVAL;
     *buf_pos += strlen(match);
     return 0;
 }
 
-static int skip_ws_past_string(const char *buf, size_t *buf_pos, const char *match) {
+static int skip_ws_past_string(const char *buf, size_t *buf_pos, const char *match)
+{
     const char *beg = &buf[*buf_pos];
     const char *end = strstr(beg, match);
     if (!end)
@@ -645,7 +682,8 @@ static int skip_ws_past_string(const char *buf, size_t *buf_pos, const char *mat
     return 0;
 }
 
-static int skip_any_past_string(const char *buf, size_t *buf_pos, const char *match) {
+static int skip_any_past_string(const char *buf, size_t *buf_pos, const char *match)
+{
     const char *beg = &buf[*buf_pos];
     const char *end = strstr(beg, match);
     if (!end)
@@ -655,7 +693,8 @@ static int skip_any_past_string(const char *buf, size_t *buf_pos, const char *ma
     return 0;
 }
 
-static int xml_parse_word(const char *buf, size_t *buf_pos, char **word) {
+static int xml_parse_word(const char *buf, size_t *buf_pos, char **word)
+{
     size_t new_buf_pos = *buf_pos;
 
     // skip initial whitespace
@@ -686,12 +725,13 @@ static int xml_parse_word(const char *buf, size_t *buf_pos, char **word) {
     if (!new_word)
         return -errno;
 
-    *word = new_word;
+    *word    = new_word;
     *buf_pos = new_buf_pos;
     return 0;
 }
 
-static int xml_parse_string(const char *buf, size_t *buf_pos, char **string) {
+static int xml_parse_string(const char *buf, size_t *buf_pos, char **string)
+{
     // mystring
     // "my string"
     // 'my string'
@@ -742,12 +782,13 @@ static int xml_parse_string(const char *buf, size_t *buf_pos, char **string) {
     if (!new_string)
         return -errno;
 
-    *string = new_string;
+    *string  = new_string;
     *buf_pos = new_buf_pos;
     return 0;
 }
 
-static int xml_parse_attrlist(struct xml_elem_t *elem, const char *buf, size_t *buf_pos) {
+static int xml_parse_attrlist(struct xml_elem_t *elem, const char *buf, size_t *buf_pos)
+{
     // myattr="hello" myattr2=there myattr3 = "foobar"
     while (true) {
         char *key;
@@ -762,7 +803,7 @@ static int xml_parse_attrlist(struct xml_elem_t *elem, const char *buf, size_t *
         }
 
         char *value = NULL;
-        err = xml_parse_string(buf, buf_pos, &value);
+        err         = xml_parse_string(buf, buf_pos, &value);
         if (err < 0) {
             free(key);
             return -EINVAL;
@@ -777,7 +818,8 @@ static int xml_parse_attrlist(struct xml_elem_t *elem, const char *buf, size_t *
     return 0;
 }
 
-static int xml_parse_xmldecl(struct xml_elem_t *parent, const char *buf, size_t *buf_pos) {
+static int xml_parse_xmldecl(struct xml_elem_t *parent, const char *buf, size_t *buf_pos)
+{
     // <?xml version="1.0" encoding="UTF-8"?>
     int err = skip_none_past_string(buf, buf_pos, "<?");
     assert(err == 0);
@@ -798,14 +840,15 @@ static int xml_parse_xmldecl(struct xml_elem_t *parent, const char *buf, size_t 
     return skip_ws_past_string(buf, buf_pos, "?>");
 }
 
-static int xml_parse_comment(struct xml_elem_t *parent, const char *buf, size_t *buf_pos) {
+static int xml_parse_comment(struct xml_elem_t *parent, const char *buf, size_t *buf_pos)
+{
     // <!-- ....... -->
     int err = skip_none_past_string(buf, buf_pos, "<!--");
     assert(err == 0);
 
-    const char *start = &buf[*buf_pos];
+    const char *start   = &buf[*buf_pos];
     const char *end_str = "-->";
-    const char *end = strstr(start, end_str);
+    const char *end     = strstr(start, end_str);
     if (!end)
         return -EINVAL;
 
@@ -822,7 +865,8 @@ static int xml_parse_comment(struct xml_elem_t *parent, const char *buf, size_t 
     return skip_any_past_string(buf, buf_pos, end_str);
 }
 
-static int xml_parse_decl(struct xml_elem_t *parent, const char *buf, size_t *buf_pos) {
+static int xml_parse_decl(struct xml_elem_t *parent, const char *buf, size_t *buf_pos)
+{
     // <!DOCTYPE topology SYSTEM "hwloc2.dtd">
     int err = skip_none_past_string(buf, buf_pos, "<!");
     assert(err == 0);
@@ -830,9 +874,9 @@ static int xml_parse_decl(struct xml_elem_t *parent, const char *buf, size_t *bu
     /* WARNING: Skipping past the next '>' is "wrong", since it ignores the syntax
      * of XML declarations. However, because the syntax can be complex, we will
      * ignore this error for now. */
-    const char *start = &buf[*buf_pos];
+    const char *start   = &buf[*buf_pos];
     const char *end_str = ">";
-    const char *end = strstr(start, end_str);
+    const char *end     = strstr(start, end_str);
     if (!end)
         return -EINVAL;
 
@@ -849,7 +893,8 @@ static int xml_parse_decl(struct xml_elem_t *parent, const char *buf, size_t *bu
     return skip_any_past_string(buf, buf_pos, end_str);
 }
 
-static int xml_parse_tag(struct xml_elem_t *parent, const char *buf, size_t *buf_pos) {
+static int xml_parse_tag(struct xml_elem_t *parent, const char *buf, size_t *buf_pos)
+{
     // <mytag myattr1="hello" myattr2="you there"> ... </mytag>
     // OR
     // <mytag myattr1="hello" myattr2="you there"/>
@@ -896,7 +941,8 @@ static int xml_parse_tag(struct xml_elem_t *parent, const char *buf, size_t *buf
     return skip_ws_past_string(buf, buf_pos, ">");
 }
 
-static int xml_parse_text(struct xml_elem_t *parent, const char *buf, size_t *buf_pos) {
+static int xml_parse_text(struct xml_elem_t *parent, const char *buf, size_t *buf_pos)
+{
     // Parse anything which may occur between elements, which is usually just blank
     // whitespace stuff or actual text.
     const char *beg = &buf[*buf_pos];
@@ -922,14 +968,15 @@ static int xml_parse_text(struct xml_elem_t *parent, const char *buf, size_t *bu
         return err;
 
     const size_t num_characters = (size_t)(end - beg);
-    elem->text = strndup(beg, num_characters);
+    elem->text                  = strndup(beg, num_characters);
     if (elem->text == NULL)
         return -errno;
 
     return 0;
 }
 
-static int xml_parse(struct xml_elem_t *elem, const char *buf, size_t *buf_pos) {
+static int xml_parse(struct xml_elem_t *elem, const char *buf, size_t *buf_pos)
+{
     int err = 0;
 
     while (buf[*buf_pos] && err == 0) {
