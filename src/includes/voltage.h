@@ -31,11 +31,11 @@
 #ifndef VOLTAGE_H
 #define VOLTAGE_H
 
-#include <types.h>
-#include <registers.h>
+#include <access.h>
 #include <bitUtil.h>
 #include <error.h>
-#include <access.h>
+#include <registers.h>
+#include <types.h>
 
 int voltage_read(int cpuId, uint64_t *data);
 int voltage_tread(int socket_fd, int cpuId, uint64_t *data);
