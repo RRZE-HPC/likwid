@@ -41,7 +41,8 @@ int xml_to_string(struct xml_elem_t *doc, char **xmlstr);
 
 int xml_elem_create(struct xml_elem_t **elem, xml_elem_type_t type);
 int xml_elem_attach(struct xml_elem_t *parent, struct xml_elem_t *elem);
-int xml_elem_create_and_attach(struct xml_elem_t *parent, struct xml_elem_t **elem, xml_elem_type_t type);
+int xml_elem_create_and_attach(
+    struct xml_elem_t *parent, struct xml_elem_t **elem, xml_elem_type_t type);
 void xml_elem_destroy(struct xml_elem_t *elem);
 int xml_elem_detach(struct xml_elem_t *parent, struct xml_elem_t *elem);
 int xml_elem_destroy_and_detach(struct xml_elem_t *parent, struct xml_elem_t *elem);

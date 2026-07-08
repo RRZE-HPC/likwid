@@ -31,44 +31,38 @@
 #ifndef THERMAL_H
 #define THERMAL_H
 
-#include <types.h>
-#include <registers.h>
+#include <access.h>
 #include <bitUtil.h>
 #include <error.h>
-#include <access.h>
+#include <registers.h>
+#include <types.h>
 
-int
-thermal_read(int cpuId, uint32_t *data)
+int thermal_read(int cpuId, uint32_t *data)
 {
-    uint64_t result = 0;
+    uint64_t result  = 0;
     uint32_t readout = 0;
-    if (HPMread(cpuId, MSR_DEV, IA32_THERM_STATUS, &result))
-    {
+    if (HPMread(cpuId, MSR_DEV, IA32_THERM_STATUS, &result)) {
         *data = 0;
         return -EIO;
     }
-    readout = field32(result,16,7);
-    *data = (readout == 0 ?
-                thermal_info.activationT - thermal_info.offset :
-                (thermal_info.activationT - thermal_info.offset) - readout );
+    readout = field32(result, 16, 7);
+    *data   = (readout == 0 ? thermal_info.activationT - thermal_info.offset
+                            : (thermal_info.activationT - thermal_info.offset) - readout);
     return 0;
 }
 
-int
-thermal_tread(int socket_fd, int cpuId, uint32_t *data)
+int thermal_tread(int socket_fd, int cpuId, uint32_t *data)
 {
     (void)socket_fd;
-    uint64_t result = 0;
+    uint64_t result  = 0;
     uint32_t readout = 0;
-    if (HPMread(cpuId, MSR_DEV, IA32_THERM_STATUS, &result))
-    {
+    if (HPMread(cpuId, MSR_DEV, IA32_THERM_STATUS, &result)) {
         *data = 0;
         return -EIO;
     }
-    readout = field32(result,16,7);
-    *data = (readout == 0 ?
-                thermal_info.activationT - thermal_info.offset :
-                (thermal_info.activationT - thermal_info.offset) - readout );
+    readout = field32(result, 16, 7);
+    *data   = (readout == 0 ? thermal_info.activationT - thermal_info.offset
+                            : (thermal_info.activationT - thermal_info.offset) - readout);
     return 0;
 }
 
