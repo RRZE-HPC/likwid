@@ -31,8 +31,8 @@
 #ifndef AFFINITY_H
 #define AFFINITY_H
 
-#include <types.h>
 #include <likwid.h>
+#include <types.h>
 
 extern int *socket_lock;
 extern int *core_lock;
@@ -51,6 +51,6 @@ extern int *affinity_thread2die_lookup;
 extern int *affinity_thread2sharedl3_lookup;
 extern int affinity_processGetProcessorId();
 extern int affinity_threadGetProcessorId();
-extern const AffinityDomain* affinity_getDomain(char* domain);
+extern const AffinityDomain *affinity_getDomain(char *domain);
 
 #endif /*AFFINITY_H*/
