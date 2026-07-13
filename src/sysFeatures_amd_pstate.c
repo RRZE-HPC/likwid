@@ -316,7 +316,7 @@ MAKE_PSTATE_FUNCS(7)
     {"p" #id "_en", "amd_pstate", "P" #id " enabled", amd_pstate##id##_px_en_getter, amd_pstate##id##_px_en_setter, DEVICE_TYPE_CORE, NULL, NULL},          \
     {"p" #id "_cpu_vid", "amd_pstate", "P" #id " Voltage ID of P-state (?)", amd_pstate##id##_cpu_vid_getter, amd_pstate##id##_cpu_vid_setter, DEVICE_TYPE_CORE, NULL, NULL},     \
     {"p" #id "_idd_div_raw", "amd_pstate", "P" #id " Maximum current draw (denom)", amd_pstate##id##_idd_div_getter, amd_pstate##id##_idd_div_setter, DEVICE_TYPE_CORE, NULL, NULL},     \
-    {"p" #id "_idd_val_raw", "amd_pstate", "P" #id " Maximum current draw (num)", amd_pstate##id##_idd_val_getter, amd_pstate##id##_idd_val_setter, DEVICE_TYPE_CORE, NULL, "A"},     \
+    {"p" #id "_idd_val_raw", "amd_pstate", "P" #id " Maximum current draw (num)", amd_pstate##id##_idd_val_getter, amd_pstate##id##_idd_val_setter, DEVICE_TYPE_CORE, NULL, NULL},     \
     {"p" #id "_idd", "amd_pstate", "P" #id " Maximum current draw (effective)", amd_pstate##id##_idd_getter, NULL, DEVICE_TYPE_CORE, NULL, "A"},     \
     {"p" #id "_cpu_dfs_id_raw", "amd_pstate", "P" #id " clock divisor ID (raw)", amd_pstate##id##_cpu_dfs_id_getter_raw, amd_pstate##id##_cpu_dfs_id_setter_raw, DEVICE_TYPE_CORE, NULL, NULL},  \
     {"p" #id "_cpu_dfs_id", "amd_pstate", "P" #id " clock divisor (effective)", amd_pstate##id##_cpu_dfs_id_getter, NULL, DEVICE_TYPE_CORE, NULL, NULL},  \
