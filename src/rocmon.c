@@ -218,12 +218,8 @@ static rocprofiler_tool_configure_result_t *rocprofiler_configure_private(
     id->name = "LIKWID rocmon";
 
     const uint32_t major = version / 10000;
-    const uint32_t minor = (version % 10000) / 100;
-    const uint32_t patch = version % 100;
 
     assert(major == 1);
-    assert(minor == 0);
-    assert(patch == 0);
 
     static rocprofiler_tool_configure_result_t cfg = {
         sizeof(cfg),
@@ -454,7 +450,7 @@ static int smi_event_add_impl(const char *name, RocmonSmiEventType type, const c
     list->numEntries = newNumEntries;
     list->entries    = newEntries;
 
-    snprintf(newEvent->name, sizeof(newEvent->name), "%s", name);
+    snprintf(newEvent->name, sizeof(newEvent->name)-1, "%s", name);
     newEvent->type       = type;
     newEvent->variant    = variant;
     newEvent->subvariant = subvariant;
@@ -491,8 +487,14 @@ static int smi_events_add_avail(RocmonDevice *device, RocmonSmiEventType type, c
 
         if (type == ROCMON_SMI_EVENT_TYPE_INSTANCES) {
             // For instanced events (like sensor lists), create a list of events
-            snprintf(
-                availEvent->name, sizeof(availEvent->name), "%s[%zu]", implEvent->name, subvariant);
+            int len = snprintf(availEvent->name,
+                               sizeof(availEvent->name),
+                               "%s[%zu]",
+                               implEvent->name, subvariant);
+            if (len < 0) {
+                ERROR_PRINT("Failed to add subvariant %zu to event %s\n", subvariant, implEvent->name);
+                continue;
+            };
             availEvent->subvariant = subvariant;
         } else {
             assert(subvariant == implEvent->subvariant);
