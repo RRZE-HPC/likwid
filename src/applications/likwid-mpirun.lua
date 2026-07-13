@@ -365,7 +365,6 @@ end
 local function getEnvironmentIntelMPI()
     local env = {}
     env['I_MPI_PIN']='off'
-    env['KMP_AFFINITY']='disabled'
     return env
 end
 

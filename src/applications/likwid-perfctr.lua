@@ -1040,7 +1040,6 @@ if pin_cpus then
     if skip_mask then
         likwid.setenv("LIKWID_SKIP", skip_mask)
     end
-    likwid.setenv("KMP_AFFINITY", "disabled")
 
     if num_cpus > 1 then
         local pinString = tostring(math.tointeger(cpulist[1]))
