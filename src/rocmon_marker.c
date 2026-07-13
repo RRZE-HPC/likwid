@@ -131,8 +131,13 @@ static int gpulist_from_str(const char *gpustring, size_t *numGpus, int **gpus)
     *numGpus = gpustrings->qty;
     *gpus    = newGpus;
 
-    for (int i = 0; i < gpustrings->qty; i++)
-        newGpus[i] = atoi(bdata(gpustrings->entry[i]));
+    for (int i = 0; i < gpustrings->qty; i++) {
+        char* s = NULL;
+        if (bdata(gpustrings->entry[i]) != NULL) {
+            s = bdata(gpustrings->entry[i]);
+        }
+        newGpus[i] = atoi(s);
+    }
 
 cleanup:
     if (err < 0)
@@ -291,7 +296,7 @@ int rocmon_markerInit(void)
         perfmon_setVerbosity(atoi(debugStr));
 
     int *gpuIds = NULL;
-    size_t numGpuIds;
+    size_t numGpuIds = 0;
     err = gpulist_from_str(gpuStr, &numGpuIds, &gpuIds);
     if (err < 0)
         goto unlock_err;
@@ -1034,6 +1039,7 @@ cleanup:
 
 int rocmon_markerInitResultsFromFile(const char *markerfile)
 {
+    FILE *fp = NULL;
     pthread_mutex_lock(&rocmarker_init_mutex);
 
     int err = 0;
@@ -1056,7 +1062,7 @@ int rocmon_markerInitResultsFromFile(const char *markerfile)
 
     rocmarker_ctx->main_tid = DUMMY_TID;
 
-    FILE *fp = fopen(markerfile, "r");
+    fp = fopen(markerfile, "r");
     if (!fp) {
         err = -errno;
         goto unlock_err;
@@ -1148,7 +1154,8 @@ int rocmon_markerInitResultsFromFile(const char *markerfile)
             }
         }
 
-        fscanf(fp, "\n");
+        int d = fscanf(fp, "\n");
+        d++;
     }
 
     // Read regions: 'regionIdx groupId regionTag'

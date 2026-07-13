@@ -84,7 +84,11 @@ static void prepare_ldpreload()
             bconchar(new_bldpre, ':');
         }
     }
-    setenv("LD_PRELOAD", bdata(new_bldpre), 1);
+    char* new_bldpre_c = NULL;
+    if (bdata(new_bldpre) != NULL) {
+        new_bldpre_c = bdata(new_bldpre);
+    }
+    setenv("LD_PRELOAD", new_bldpre_c, 1);
     bstrListDestroy(liblist);
     bdestroy(new_bldpre);
     bdestroy(bldpre);
