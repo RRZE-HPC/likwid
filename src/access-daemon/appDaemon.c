@@ -104,6 +104,15 @@ static void prepare_ldpreload()
         bdestroy(new_bldpre);
         bdestroy(bldpre);
     }
+
+    char* new_bldpre_c = NULL;
+    if (bdata(new_bldpre) != NULL) {
+        new_bldpre_c = bdata(new_bldpre);
+    }
+    setenv("LD_PRELOAD", new_bldpre_c, 1);
+    bstrListDestroy(liblist);
+    bdestroy(new_bldpre);
+    bdestroy(bldpre);
 }
 
 static int parse_gpustr(char* gpuStr, int* numGpus, int** gpuIds)

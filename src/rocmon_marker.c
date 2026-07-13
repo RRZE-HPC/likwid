@@ -126,6 +126,283 @@ _rocmon_parse_gpustr(char* gpuStr, int* numGpus, int** gpuIds)
     bdestroy(bGpuStr);
     bstrListDestroy(gpuTokens);
 
+    return -EINVAL;
+}
+
+static void label_fmt(char *buf, size_t size, const char *regionTag, int groupId)
+{
+    snprintf(buf, size, "%s-%d", regionTag, groupId);
+}
+
+static void rocmarker_group_fini(RocmarkerGroup *group)
+{
+    if (!group)
+        return;
+
+    if (group->events) {
+        for (size_t i = 0; i < group->numEvents; i++) {
+            free(group->events[i].eventName);
+            free(group->events[i].counterName);
+        }
+        free(group->events);
+    }
+
+    if (group->metrics) {
+        for (size_t i = 0; i < group->numMetrics; i++) {
+            free(group->metrics[i].name);
+            free(group->metrics[i].formula);
+        }
+        free(group->metrics);
+    }
+}
+
+static void rocmarker_ctx_free(void)
+{
+    if (!rocmarker_ctx)
+        return;
+
+    free(rocmarker_ctx->hipDeviceIds);
+    destroy_smap(rocmarker_ctx->regions);
+
+    if (rocmarker_ctx->groups) {
+        for (size_t i = 0; i < rocmarker_ctx->numGroups; i++)
+            rocmarker_group_fini(&rocmarker_ctx->groups[i]);
+        free(rocmarker_ctx->groups);
+    }
+
+    free(rocmarker_ctx);
+    rocmarker_ctx = NULL;
+}
+
+static int gpulist_from_str(const char *gpustring, size_t *numGpus, int **gpus)
+{
+    bstring bgpustring = bfromcstr(gpustring);
+    if (!bgpustring)
+        return -ENOMEM;
+
+    int err                     = 0;
+    struct bstrList *gpustrings = bsplit(bgpustring, ',');
+    if (!gpustrings) {
+        err = -ENOMEM;
+        goto cleanup;
+    }
+
+    int *newGpus = calloc(gpustrings->qty, sizeof(*newGpus));
+    if (!newGpus) {
+        err = -errno;
+        goto cleanup;
+    }
+
+    *numGpus = gpustrings->qty;
+    *gpus    = newGpus;
+
+    for (int i = 0; i < gpustrings->qty; i++) {
+        char* s = NULL;
+        if (bdata(gpustrings->entry[i]) != NULL) {
+            s = bdata(gpustrings->entry[i]);
+        }
+        newGpus[i] = atoi(s);
+    }
+
+cleanup:
+    if (err < 0)
+        free(newGpus);
+
+    bstrListDestroy(gpustrings);
+    bdestroy(bgpustring);
+    return err;
+}
+
+static int eventsets_init(const char *eventStr)
+{
+    bstring eventStrCopy = bfromcstr(eventStr);
+    if (!eventStrCopy)
+        return -ENOMEM;
+
+    int err                          = 0;
+    struct bstrList *eventsForGroups = bsplit(eventStrCopy, '|');
+    if (!eventsForGroups) {
+        err = -ENOMEM;
+        goto cleanup;
+    }
+
+    rocmarker_ctx->groups = calloc(eventsForGroups->qty, sizeof(*rocmarker_ctx->groups));
+    if (!rocmarker_ctx->groups) {
+        err = -errno;
+        goto cleanup;
+    }
+
+    rocmarker_ctx->numGroups      = eventsForGroups->qty;
+    rocmarker_ctx->activeGroupIdx = 0;
+
+    for (int i = 0; i < eventsForGroups->qty; i++) {
+        RocmarkerGroup *group = &rocmarker_ctx->groups[i];
+
+        err = rocmon_addEventSet(bdata(eventsForGroups->entry[i]));
+        if (err < 0)
+            goto cleanup;
+
+        group->groupId   = err;
+        group->numEvents = rocmon_getNumberOfEvents(err);
+        group->events    = calloc(group->numEvents, sizeof(*group->events));
+        if (!group->events) {
+            err = -errno;
+            goto cleanup;
+        }
+
+        for (size_t i = 0; i < group->numEvents; i++) {
+            const char *eventName;
+            err = rocmon_getEventName(group->groupId, (int)i, &eventName);
+            if (err < 0)
+                goto cleanup;
+
+            const char *counterName;
+            err = rocmon_getCounterName(group->groupId, (int)i, &counterName);
+            if (err < 0)
+                goto cleanup;
+
+            group->events[i].eventName = strdup(eventName);
+            if (!group->events[i].eventName) {
+                err = -errno;
+                goto cleanup;
+            }
+
+            group->events[i].counterName = strdup(counterName);
+            if (!group->events[i].counterName) {
+                err = -errno;
+                goto cleanup;
+            }
+        }
+
+        err = rocmon_getNumberOfMetrics(group->groupId);
+        if (err < 0)
+            goto cleanup;
+
+        group->numMetrics = (size_t)err;
+        group->metrics    = calloc(group->numMetrics, sizeof(*group->metrics));
+        if (!group->metrics) {
+            err = -errno;
+            goto cleanup;
+        }
+
+        for (size_t j = 0; j < group->numMetrics; j++) {
+            const char *metricName;
+            err = rocmon_getMetricName(group->groupId, (int)j, &metricName);
+            if (err < 0)
+                goto cleanup;
+
+            group->metrics[j].name = strdup(metricName);
+            if (!group->metrics[j].name) {
+                err = -errno;
+                goto cleanup;
+            }
+
+            const char *metricFormula;
+            err = rocmon_getMetricFormula(group->groupId, (int)j, &metricFormula);
+            if (err < 0)
+                goto cleanup;
+
+            group->metrics[j].formula = strdup(metricFormula);
+            if (!group->metrics[j].formula) {
+                err = -errno;
+                goto cleanup;
+            }
+        }
+    }
+
+cleanup:
+    bstrListDestroy(eventsForGroups);
+    bdestroy(eventStrCopy);
+    return err;
+}
+
+static void region_free(RocmarkerRegion *region);
+
+static void region_free_vptr(void *region)
+{
+    region_free(region);
+}
+
+int rocmon_markerInit(void)
+{
+    const char *eventStr     = getenv("LIKWID_ROCMON_EVENTS");
+    const char *gpuStr       = getenv("LIKWID_ROCMON_GPUS");
+    const char *verbosityStr = getenv("LIKWID_ROCMON_VERBOSITY");
+    const char *debugStr     = getenv("LIKWID_DEBUG");
+
+    if (!eventStr || !gpuStr) {
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
+            "Running without GPU Marker API. Activate GPU Marker API with -m, -G and -W on "
+            "commandline.");
+        return -EINVAL;
+    }
+
+    pthread_mutex_lock(&rocmarker_init_mutex);
+
+    int err = 0;
+
+    if (rocmarker_ctx) {
+        err = -EEXIST;
+        goto unlock_err;
+    }
+
+    rocmarker_ctx = calloc(1, sizeof(*rocmarker_ctx));
+    if (!rocmarker_ctx) {
+        err = -errno;
+        goto unlock_err;
+    }
+
+    rocmarker_ctx->main_tid = gettid();
+
+    if (verbosityStr)
+        rocmon_setVerbosity(atoi(verbosityStr));
+
+    if (debugStr)
+        perfmon_setVerbosity(atoi(debugStr));
+
+    int *gpuIds = NULL;
+    size_t numGpuIds = 0;
+    err = gpulist_from_str(gpuStr, &numGpuIds, &gpuIds);
+    if (err < 0)
+        goto unlock_err;
+
+    err = rocmon_init(numGpuIds, gpuIds);
+    free(gpuIds);
+    if (err < 0)
+        goto unlock_err;
+
+    // If the user inputs 0, NULL for the GPU list, explicitly query
+    // the number of GPUs that were autodetected.
+    rocmarker_ctx->numHipDeviceIds = (size_t)rocmon_getNumberOfGPUs();
+    rocmarker_ctx->hipDeviceIds =
+        calloc(rocmarker_ctx->numHipDeviceIds, sizeof(*rocmarker_ctx->hipDeviceIds));
+    if (!rocmarker_ctx->hipDeviceIds) {
+        err = -errno;
+        goto unlock_err;
+    }
+
+    for (size_t i = 0; i < rocmarker_ctx->numHipDeviceIds; i++)
+        rocmarker_ctx->hipDeviceIds[i] = rocmon_getIdOfGPU((int)i);
+
+    err = eventsets_init(eventStr);
+    if (err < 0)
+        goto unlock_err;
+
+    // Setup initial event set (usually 0)
+    err = rocmon_setupCounters(rocmarker_ctx->groups[rocmarker_ctx->activeGroupIdx].groupId);
+    if (err < 0)
+        goto unlock_err;
+
+    err = rocmon_startCounters();
+    if (err < 0)
+        goto unlock_err;
+
+    err = init_map(&rocmarker_ctx->regions, MAP_KEY_TYPE_STR, 0, region_free_vptr);
+    if (err < 0)
+        goto unlock_err;
+
+    pthread_mutex_unlock(&rocmarker_init_mutex);
+
     return 0;
 }
 
@@ -1105,4 +1382,377 @@ rocmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
     return result;
 }
 
-#endif /* LIKWID_WITH_ROCMON */
+int rocmon_markerGetRegionStats(
+    const char *regionTag, int groupId, size_t *execCount, double *execTime)
+{
+    if (!rocmarker_ctx)
+        return -EFAULT;
+
+    // Make label and lookup the region
+    char regionLabel[LABEL_MAX_SIZE];
+    label_fmt(regionLabel, sizeof(regionLabel), regionTag, groupId);
+
+    RocmarkerRegion *region;
+    int err = get_smap_by_key(rocmarker_ctx->regions, regionLabel, (void **)&region);
+    if (err < 0)
+        return err;
+
+    // Return results
+    *execTime  = (double)region->totalTime / 1e9;
+    *execCount = region->execCount;
+    return 0;
+}
+
+int rocmon_markerGetRegionTags(char ***regionTags, int **regionGroupIds, size_t *numRegions)
+{
+    if (!rocmarker_ctx)
+        return -EFAULT;
+
+    int newNumRegions = get_map_size(rocmarker_ctx->regions);
+    if (newNumRegions < 0)
+        return newNumRegions;
+
+    char **newRegionTags = calloc((size_t)newNumRegions, sizeof(*newRegionTags));
+    if (!newRegionTags)
+        return -errno;
+
+    int err                = 0;
+    int *newRegionGroupIds = calloc((size_t)newNumRegions, sizeof(*newRegionGroupIds));
+    if (!newRegionGroupIds) {
+        err = -errno;
+        goto cleanup;
+    }
+
+    for (int i = 0; i < newNumRegions; i++) {
+        RocmarkerRegion *region;
+        err = get_smap_by_idx(rocmarker_ctx->regions, i, (void **)&region);
+        if (err < 0)
+            return err;
+
+        newRegionTags[i] = strdup(region->tag);
+        if (!newRegionTags[i]) {
+            err = -errno;
+            goto cleanup;
+        }
+
+        newRegionGroupIds[i] = region->groupId;
+    }
+
+    *regionTags     = newRegionTags;
+    *regionGroupIds = newRegionGroupIds;
+    *numRegions     = (size_t)newNumRegions;
+
+    return 0;
+
+cleanup:
+    if (newRegionTags) {
+        for (size_t i = 0; i < (size_t)newNumRegions; i++)
+            free(newRegionTags[i]);
+        free(newRegionTags);
+    }
+    free(newRegionGroupIds);
+    return err;
+}
+
+int rocmon_markerWriteFile(const char *markerfile)
+{
+    if (!rocmarker_ctx)
+        return -EFAULT;
+
+    FILE *fp = fopen(markerfile, "w");
+    if (!fp)
+        return -errno;
+
+    int err = get_map_size(rocmarker_ctx->regions);
+    if (err < 0)
+        goto cleanup;
+
+    const size_t numRegions = (size_t)err;
+
+    /* File format:
+     * numGpus numRegions numGroups
+     * GPU hipDeviceId
+     * ... ('numGpus' number of lines)
+     * GROUP groupId numEvents eventA counterA eventB counterB eventC counterC numMetrics metricNameA metricFormulaA metricNameB metricFormulaB
+     * ... ('numGroups' number of GROUP lines)
+     * REGION regionTag groupId execCount execTime ; 42.4 8.24 -1.0 ; 1337 0.0 0.12e5
+     * ... ('numRegions' number of REGION lines)
+     *     ('numGpus' groups of results, separated by ';')
+     */
+
+    /* Checking for errors with fprintf really doens't work, if we don't know the
+     * non-truncated number of characters to be written. However, I'm lazy and I don't
+     * want to allocate something, format it, to then check if it's all written. */
+
+    chk_fprintf(fp,
+        "ROCMON_MARKER_FILE %zu %zu %zu\n",
+        rocmarker_ctx->numHipDeviceIds,
+        numRegions,
+        rocmarker_ctx->numGroups);
+
+    // Write hip device IDs
+    for (size_t i = 0; i < rocmarker_ctx->numHipDeviceIds; i++)
+        chk_fprintf(fp, "GPU %d\n", rocmarker_ctx->hipDeviceIds[i]);
+
+    // Write groups
+    for (size_t i = 0; i < rocmarker_ctx->numGroups; i++) {
+        RocmarkerGroup *group = &rocmarker_ctx->groups[i];
+        chk_fprintf(fp, "GROUP %d %zu", group->groupId, group->numEvents);
+        for (size_t j = 0; j < group->numEvents; j++)
+            chk_fprintf(fp, " %s %s", group->events[j].eventName, group->events[j].counterName);
+        chk_fprintf(fp, " %zu", group->numMetrics);
+        for (size_t j = 0; j < group->numMetrics; j++) {
+            // Do not allow escape character "'"
+            if (strchr(group->metrics[j].name, '\'') || strchr(group->metrics[j].formula, '\'')) {
+                err = -EINVAL;
+                goto cleanup;
+            }
+
+            chk_fprintf(fp, " '%s' '%s'", group->metrics[j].name, group->metrics[j].formula);
+        }
+        chk_fprintf(fp, "\n");
+    }
+
+    // Write region info
+    for (size_t ir = 0; ir < numRegions; ir++) {
+        RocmarkerRegion *region;
+        err = get_smap_by_idx(rocmarker_ctx->regions, ir, (void **)&region);
+        if (err < 0)
+            goto cleanup;
+
+        chk_fprintf(fp,
+            "REGION %s %d %zu %f",
+            region->tag,
+            region->groupId,
+            region->execCount,
+            (double)region->totalTime / 1e9);
+
+        for (size_t ig = 0; ig < rocmarker_ctx->numHipDeviceIds; ig++) {
+            RocmarkerGpuResultList *result = &region->gpuResults[ig];
+
+            chk_fprintf(fp, " ;");
+
+            for (size_t iv = 0; iv < result->numCounterValues; iv++)
+                chk_fprintf(fp, " %f", result->counterValues[iv].fullValue);
+        }
+
+        chk_fprintf(fp, "\n");
+    }
+
+cleanup:
+    fclose(fp);
+    return err;
+}
+
+int rocmon_markerInitResultsFromFile(const char *markerfile)
+{
+    FILE *fp = NULL;
+    pthread_mutex_lock(&rocmarker_init_mutex);
+
+    int err = 0;
+    if (rocmarker_ctx) {
+        err = -EEXIST;
+        goto unlock_err;
+    }
+
+    // What we do here is provide a very terrible API.
+    // Load the marker results will modify the internal state of the marker
+    // API, but the marker API will not be usable, because the rocmon is not initialized.
+    // We try to prevent that by using a 'main_tid', which is always invalid to prevent
+    // the user calling the normal functions.
+
+    rocmarker_ctx = calloc(1, sizeof(*rocmarker_ctx));
+    if (!rocmarker_ctx) {
+        err = -errno;
+        goto unlock_err;
+    }
+
+    rocmarker_ctx->main_tid = DUMMY_TID;
+
+    fp = fopen(markerfile, "r");
+    if (!fp) {
+        err = -errno;
+        goto unlock_err;
+    }
+
+    size_t numRegions;
+
+    // read line: 'numGpus numRegions numGroups'
+    if (fscanf(fp,
+            "ROCMON_MARKER_FILE %zu %zu %zu\n",
+            &rocmarker_ctx->numHipDeviceIds,
+            &numRegions,
+            &rocmarker_ctx->numGroups) != 3) {
+        ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Cannot parse marker header");
+        err = -EINVAL;
+        goto unlock_err;
+    }
+
+    rocmarker_ctx->hipDeviceIds =
+        calloc(rocmarker_ctx->numHipDeviceIds, sizeof(*rocmarker_ctx->hipDeviceIds));
+    if (!rocmarker_ctx->hipDeviceIds) {
+        err = -errno;
+        goto unlock_err;
+    }
+
+    // read multiple lines: 'gpuIdx hipDeviceId'
+    for (size_t i = 0; i < rocmarker_ctx->numHipDeviceIds; i++) {
+        if (fscanf(fp, "GPU %d\n", &rocmarker_ctx->hipDeviceIds[i]) != 1) {
+            ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Invalid GPU line");
+            err = -EINVAL;
+            goto unlock_err;
+        }
+    }
+
+    err = init_map(&rocmarker_ctx->regions, MAP_KEY_TYPE_STR, 0, region_free_vptr);
+    if (err < 0)
+        goto unlock_err;
+
+    rocmarker_ctx->groups = calloc(rocmarker_ctx->numGroups, sizeof(*rocmarker_ctx->groups));
+    if (!rocmarker_ctx->groups) {
+        err = -errno;
+        goto unlock_err;
+    }
+
+    // Read multiple lines: 'GROUP groupId eventA eventB eventC'
+    for (size_t i = 0; i < rocmarker_ctx->numGroups; i++) {
+        RocmarkerGroup *group = &rocmarker_ctx->groups[i];
+
+        if (fscanf(fp, "GROUP %d %zu", &group->groupId, &group->numEvents) != 2) {
+            ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Invalid GROUP line");
+            err = -EINVAL;
+            goto unlock_err;
+        }
+
+        group->events = calloc(group->numEvents, sizeof(*group->events));
+        if (!group->events) {
+            err = -errno;
+            goto unlock_err;
+        }
+
+        for (size_t j = 0; j < group->numEvents; j++) {
+            if (fscanf(
+                    fp, " %ms %ms", &group->events[j].eventName, &group->events[j].counterName) !=
+                2) {
+                ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Invalid GROUP line (event/counter name)");
+                err = -EINVAL;
+                goto unlock_err;
+            }
+        }
+
+        if (fscanf(fp, " %zu", &group->numMetrics) != 1) {
+            ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Invalid GROUP line (nmetrics)");
+            err = -EINVAL;
+            goto unlock_err;
+        }
+
+        group->metrics = calloc(group->numMetrics, sizeof(*group->metrics));
+        if (!group->metrics) {
+            err = -errno;
+            goto unlock_err;
+        }
+
+        for (size_t j = 0; j < group->numMetrics; j++) {
+            RocmarkerMetric *metric = &group->metrics[j];
+            if (fscanf(fp, " '%m[^']' '%m[^']'", &metric->name, &metric->formula) != 2) {
+                ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Invalid GROUP line (metrics)");
+                err = -EINVAL;
+                goto unlock_err;
+            }
+        }
+
+        int d = fscanf(fp, "\n");
+        d++;
+    }
+
+    // Read regions: 'regionIdx groupId regionTag'
+    for (size_t ir = 0; ir < numRegions; ir++) {
+        RocmarkerRegion *region = calloc(1, sizeof(*region));
+        if (!region) {
+            err = -errno;
+            goto unlock_err;
+        }
+
+        double execTime;
+        if (fscanf(fp,
+                "REGION %ms %d %zu %lf",
+                &region->tag,
+                &region->groupId,
+                &region->execCount,
+                &execTime) != 4) {
+            ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Invalid REGION line");
+            free(region);
+            err = -EINVAL;
+            goto unlock_err;
+        }
+        region->totalTime = (double)(execTime * 1e9);
+
+        char label[LABEL_MAX_SIZE];
+        label_fmt(label, sizeof(label), region->tag, region->groupId);
+
+        err = add_smap(rocmarker_ctx->regions, label, region);
+        if (err < 0) {
+            region_free(region);
+            goto unlock_err;
+        }
+
+        region->gpuResults = calloc(rocmarker_ctx->numHipDeviceIds, sizeof(*region->gpuResults));
+        if (!region->gpuResults) {
+            err = -errno;
+            goto unlock_err;
+        }
+
+        for (size_t ig = 0; ig < rocmarker_ctx->numHipDeviceIds; ig++) {
+            RocmarkerGpuResultList *result = &region->gpuResults[ig];
+
+            if (fscanf(fp, " ;") != 0) {
+                ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Invalid REGION line (sep)");
+                err = -EINVAL;
+                goto unlock_err;
+            }
+
+            size_t groupIdx;
+            err = get_group_idx(region->groupId, &groupIdx);
+            if (err < 0)
+                goto unlock_err;
+
+            result->numCounterValues = rocmarker_ctx->groups[groupIdx].numEvents;
+            result->counterValues =
+                calloc(result->numCounterValues, sizeof(*result->counterValues));
+            if (!result->counterValues) {
+                err = -errno;
+                goto unlock_err;
+            }
+
+            for (size_t iv = 0; iv < result->numCounterValues; iv++) {
+                if (fscanf(fp, "%lf", &result->counterValues[iv].fullValue) != 1) {
+                    ROCMON_DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, "Invalid REGION line (val)");
+                    err = -EINVAL;
+                    goto unlock_err;
+                }
+            }
+        }
+    }
+
+    pthread_mutex_unlock(&rocmarker_init_mutex);
+    return 0;
+
+unlock_err:
+    if (fp)
+        fclose(fp);
+    rocmarker_ctx_free();
+    pthread_mutex_unlock(&rocmarker_init_mutex);
+    return err;
+}
+
+void rocmon_markerDestroyResults(void)
+{
+    pthread_mutex_lock(&rocmarker_init_mutex);
+
+    assert(rocmarker_ctx);
+    assert(rocmarker_ctx->main_tid == DUMMY_TID);
+
+    rocmarker_ctx_free();
+
+    pthread_mutex_unlock(&rocmarker_init_mutex);
+}
