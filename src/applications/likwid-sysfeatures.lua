@@ -256,6 +256,7 @@ if allFeatures then
     local names = {}
     local types = {}
     local access = {}
+    local units = {}
     local descs = {}
     local cats = {}
     -- create a table of categories for sorting
@@ -277,13 +278,13 @@ if allFeatures then
     table.insert(names, "Feature")
     table.insert(types, "Scope")
     table.insert(access, "Access")
+    table.insert(units, "Unit")
     table.insert(descs, "Description")
     for _,c in pairs(cats) do
         for _,f in pairs(ft_list) do
             if f.Category == c then
                 table.insert(names, string.format("%s.%s", f.Category, f.Name))
                 table.insert(types, f.Type)
-                table.insert(descs, f.Description)
                 if f.ReadOnly then
                     table.insert(access, "rdonly")
                 elseif f.WriteOnly then
@@ -291,6 +292,12 @@ if allFeatures then
                 else
                     table.insert(access, "rw")
                 end
+                if f.Unit ~= nil then
+                    table.insert(units, f.Unit)
+                else
+                    table.insert(units, "-")
+                end
+                table.insert(descs, f.Description)
             end
         end
     end
@@ -299,6 +306,7 @@ if allFeatures then
     table.insert(all, names)
     table.insert(all, types)
     table.insert(all, access)
+    table.insert(all, units)
     setmetatable(descs, {align = "left"})
     table.insert(all, descs)
 

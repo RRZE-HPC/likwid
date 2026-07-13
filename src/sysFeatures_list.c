@@ -29,6 +29,7 @@
  * =======================================================================================
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -102,20 +103,21 @@ int likwid_sysft_merge_feature_lists(LikwidSysFeatureList *inout, const LikwidSy
 
 void likwid_sysft_free_feature_list(LikwidSysFeatureList *list)
 {
-    if (list) {
-        for (int i = 0; i < list->num_features; i++) {
-            LikwidSysFeature *f = &list->features[i];
-            if (f->name)
-                free(f->name);
-            if (f->category)
-                free(f->category);
-            if (f->description)
-                free(f->description);
-        }
-        free(list->features);
-        list->features     = NULL;
-        list->num_features = 0;
+    if (!list)
+        return;
+
+    assert(list->num_features >= 0);
+    for (size_t i = 0; i < (size_t)list->num_features; i++) {
+        LikwidSysFeature *f = &list->features[i];
+        free(f->name);
+        free(f->category);
+        free(f->description);
+        free(f->unit);
     }
+
+    free(list->features);
+    list->features     = NULL;
+    list->num_features = 0;
 }
 
 int _add_to_feature_list(_SysFeatureList *list, const _SysFeature *feature)
@@ -196,68 +198,62 @@ int likwid_sysft_internal_to_external_feature_list(
         ERROR_PRINT("Invalid arguments for internal_to_external_feature_list");
         return -EINVAL;
     }
+
     outlist->num_features = 0;
     outlist->features     = NULL;
 
-    outlist->features = malloc(inlist->num_features * sizeof(LikwidSysFeature));
-    if (!outlist->features) {
-        return -ENOMEM;
-    }
+    int err = 0;
+    outlist->features = calloc(inlist->num_features, sizeof(*outlist->features));
+    if (!outlist->features)
+        return -errno;
 
-    for (int i = 0; i < inlist->num_features; i++) {
+    assert(inlist->num_features >= 0);
+    for (size_t i = 0; i < (size_t)inlist->num_features; i++) {
         LikwidSysFeature *out = &outlist->features[i];
         const _SysFeature *in = &inlist->features[i];
 
-        out->name = strndup(in->name, HWFEATURES_MAX_STR_LENGTH - 1);
+        out->name = strdup(in->name);
         if (!out->name) {
-            for (int j = 0; j < i; j++) {
-                LikwidSysFeature *c = &outlist->features[j];
-                free(c->name);
-                free(c->category);
-                free(c->description);
-            }
-            free(outlist->features);
-            outlist->features = NULL;
-            return -ENOMEM;
+            err = -errno;
+            goto cleanup;
         }
-        out->category = strndup(in->category, HWFEATURES_MAX_STR_LENGTH - 1);
+
+        out->category = strdup(in->category);
         if (!out->category) {
-            free(out->name);
-            for (int j = 0; j < i; j++) {
-                LikwidSysFeature *c = &outlist->features[j];
-                free(c->name);
-                free(c->category);
-                free(c->description);
-            }
-            free(outlist->features);
-            outlist->features = NULL;
-            return -ENOMEM;
+            err = -errno;
+            goto cleanup;
         }
-        out->description = strndup(in->description, HWFEATURES_MAX_STR_LENGTH - 1);
+
+        out->description = strdup(in->description);
         if (!out->description) {
-            free(out->name);
-            free(out->category);
-            for (int j = 0; j < i; j++) {
-                LikwidSysFeature *c = &outlist->features[j];
-                free(c->name);
-                free(c->category);
-                free(c->description);
-            }
-            free(outlist->features);
-            outlist->features = NULL;
-            return -ENOMEM;
+            err = -errno;
+            goto cleanup;
         }
+
+        if (in->unit) {
+            out->unit = strdup(in->unit);
+            if (!out->unit) {
+                err = -errno;
+                goto cleanup;
+            }
+        }
+
         out->type      = in->type;
         out->readonly  = 0;
         out->writeonly = 0;
-        if (in->getter != NULL && in->setter == NULL) {
+
+        if (in->getter != NULL && in->setter == NULL)
             out->readonly = 1;
-        } else if (in->getter == NULL && in->setter != NULL) {
+        else if (in->getter == NULL && in->setter != NULL)
             out->writeonly = 1;
-        }
+
         outlist->num_features++;
     }
     return 0;
+
+cleanup:
+    likwid_sysft_free_feature_list(outlist);
+    return err;
 }
 
 void likwid_sysft_printlistint(const _SysFeatureList *list)
