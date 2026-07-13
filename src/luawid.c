@@ -3759,28 +3759,43 @@ lua_likwid_getSysFeatureList(lua_State *L)
     {
         lua_pushinteger(L, (lua_Integer)( i+1));
         lua_newtable(L);
-        lua_pushstring(L, "Name");
-        lua_pushstring(L, list.features[i].name);
-        lua_settable(L,-3);
-        lua_pushstring(L, "Category");
-        lua_pushstring(L, list.features[i].category);
-        lua_settable(L,-3);
-        lua_pushstring(L, "Description");
-        lua_pushstring(L, list.features[i].description);
-        lua_settable(L,-3);
-        lua_pushstring(L, "ReadOnly");
-        lua_pushboolean(L, list.features[i].readonly);
-        lua_settable(L,-3);
-        lua_pushstring(L, "WriteOnly");
-        lua_pushboolean(L, list.features[i].writeonly);
-        lua_settable(L,-3);
-        lua_pushstring(L, "Type");
-        lua_pushstring(L, likwid_device_type_name(list.features[i].type));
-        lua_settable(L,-3);
-        lua_pushstring(L, "TypeID");
-        lua_pushinteger(L, list.features[i].type);
-        lua_settable(L,-3);
-        lua_settable(L,-3);
+        {
+            lua_pushstring(L, "Name");
+            lua_pushstring(L, list.features[i].name);
+            lua_settable(L, -3);
+
+            lua_pushstring(L, "Category");
+            lua_pushstring(L, list.features[i].category);
+            lua_settable(L, -3);
+
+            lua_pushstring(L, "Description");
+            lua_pushstring(L, list.features[i].description);
+            lua_settable(L, -3);
+
+            lua_pushstring(L, "ReadOnly");
+            lua_pushboolean(L, (bool)list.features[i].readonly);
+            lua_settable(L, -3);
+
+            lua_pushstring(L, "WriteOnly");
+            lua_pushboolean(L, (bool)list.features[i].writeonly);
+            lua_settable(L, -3);
+
+            lua_pushstring(L, "Unit");
+            if (list.features[i].unit)
+                lua_pushstring(L, list.features[i].unit);
+            else
+                lua_pushnil(L);
+            lua_settable(L, -3);
+
+            lua_pushstring(L, "Type");
+            lua_pushstring(L, likwid_device_type_name(list.features[i].type));
+            lua_settable(L, -3);
+
+            lua_pushstring(L, "TypeID");
+            lua_pushinteger(L, list.features[i].type);
+            lua_settable(L, -3);
+        }
+        lua_settable(L, -3);
     }
     likwid_sysft_list_return(&list);
     return 1;
