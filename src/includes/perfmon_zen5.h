@@ -52,32 +52,11 @@ int zen5_init_counter_map(int num_in_counters, RegisterMap * in_counters, int* n
     CPUID(eax, ebx, ecx, edx);
     int umc_count = (ebx >> 16) & 0xFF;
     int umc_units = bitMask_popcount(ecx);
-<<<<<<< HEAD
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Creating runtime counter map for AMD Zen5 with %d UMC units", umc_units);
-    if ((umc_count == 0) || (umc_units == 0)) {
-        RegisterMap * out = malloc(num_in_counters * sizeof(RegisterMap));
-        if (!out) {
-            return -ENOMEM;
-        }
-        memcpy(out, in_counters, num_in_counters * sizeof(RegisterMap));
-        *num_out_counters = num_in_counters;
-        *out_counters = out;
-    } else {
-        int umc_pmcs = umc_count/umc_units;
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Each UMC unit provides %d counters", umc_pmcs);
-        int outcount = 0;
-        
-        RegisterMap * out = malloc((num_in_counters + umc_count) * sizeof(RegisterMap));
-        if (!out) {
-            return -ENOMEM;
-        }
-        memcpy(out, in_counters, num_in_counters * sizeof(RegisterMap));
-=======
     int df_count = 16;
     if (((ebx >> 10) & 0x3F) > 0) {
         df_count = (ebx >> 10) & 0x3F;
     }
->>>>>>> fc8caedf (Generate AMD DataFabric and UMC counters based on CPUID. Fixes #744)
+
 
     // Copy static counter list
     int out_count = 0;
@@ -119,8 +98,8 @@ int zen5_init_counter_map(int num_in_counters, RegisterMap * in_counters, int* n
                 out_umc->index = out_count;
                 out_umc->type = unit_type;
                 snprintf(out_umc->key, 127, "UMC%dC%d", i, j);
-                out_umc->configRegister = MSR_AMD1A_UMC_PERFEVTSEL0 + (offset_umc * 2);
-                out_umc->counterRegister = MSR_AMD1A_UMC_PMC0 + (offset_umc * 2);
+                out_umc->configRegister = MSR_AMD19_UMC_PERFEVTSEL0 + (offset_umc * 2);
+                out_umc->counterRegister = MSR_AMD19_UMC_PMC0 + (offset_umc * 2);
                 out_umc->counterRegister2 = 0x0;
                 out_umc->device = MSR_DEV;
                 out_umc->optionMask = ZEN4_VALID_OPTIONS_UMC;
