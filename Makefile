@@ -43,6 +43,8 @@ Q         ?= @
 # *.ptt -> *.pas -> *.s -> *.o -> executables
 # *.txt -> *.h (generated)
 
+CONFIG ?= config_range.mk
+include $(CONFIG)
 include ./config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 include $(MAKE_DIR)/config_git.mk
@@ -51,6 +53,19 @@ include $(MAKE_DIR)/config_defines.mk
 
 INCLUDES  += -I./src/includes -I$(LUA_INCLUDE_DIR) -I$(HWLOC_INCLUDE_DIR) -I$(BUILD_DIR)
 LIBS      += -ldl
+
+CUDA_HOME ?= /usr/local/cuda
+CUDA_LIBDIR  ?= $(CUDA_HOME)/lib64
+CUPTI_INC    ?= $(CUDA_HOME)/extras/CUPTI/include
+CUPTI_SAMPLES_COMMON ?= $(CUDA_HOME)/extras/CUPTI/samples/common
+CUPTI_SAMPLES_RANGE  ?= $(CUDA_HOME)/extras/CUPTI/samples/range_profiling
+CUPTI_LIBDIR ?= $(CUDA_HOME)/extras/CUPTI/lib64
+
+CFLAGS   += -I$(CUPTI_INC) -I$(CUPTI_SAMPLES_COMMON) -I$(CUPTI_SAMPLES_RANGE)
+CXXFLAGS += -fPIC -O2 -std=c++17 -I$(CUPTI_INC) -I$(CUPTI_SAMPLES_COMMON) -I$(CUPTI_SAMPLES_RANGE)
+
+LIBS     += -L$(CUDA_LIBDIR) -lcuda -lcudart
+LIBS     += -L$(CUPTI_LIBDIR) -lcupti
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
@@ -128,19 +143,6 @@ OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_clientmem.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_rdpmc.o,$(OBJ))
-OBJ := $(filter-out $(BUILD_DIR)/access_x86_translate.o,$(OBJ))
-else
-OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
-endif
-ifeq ($(COMPILER), CLANGARMv8)
-OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
-OBJ := $(filter-out $(BUILD_DIR)/loadData.o,$(OBJ))
-OBJ := $(filter-out $(BUILD_DIR)/access_x86.o,$(OBJ))
-OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
-OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
-OBJ := $(filter-out $(BUILD_DIR)/access_x86_rdpmc.o,$(OBJ))
-OBJ := $(filter-out $(BUILD_DIR)/access_x86_mmio.o,$(OBJ))
-OBJ := $(filter-out $(BUILD_DIR)/access_x86_clientmem.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_translate.o,$(OBJ))
 else
 OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
@@ -288,7 +290,8 @@ $(STATIC_TARGET_LIB): $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 
 $(DYNAMIC_TARGET_LIB): $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE SHARED LIB  $(TARGET_LIB)"
-	$(Q)$(CC) $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION).$(RELEASE),--no-undefined $(SHARED_CFLAGS) -o $@ $^ $(LIBS) $(RPATHS)
+# 	$(Q)$(CC) $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION).$(RELEASE),--no-undefined $(SHARED_CFLAGS) -o $@ $^ $(LIBS) $(RPATHS)
+	$(Q)$(CXX) $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION).$(RELEASE),--no-undefined $(SHARED_CFLAGS) -o $@ $^ $(LIBS) $(RPATHS)
 	@ln -sf $(TARGET_LIB) $(TARGET_LIB).$(VERSION).$(RELEASE)
 	@sed -e s#'@PREFIX@'#$(INSTALLED_PREFIX)#g \
 		-e s#'@NVIDIA_INTERFACE@'#$(NVIDIA_INTERFACE)#g \
@@ -363,7 +366,7 @@ $(BENCH_TARGET): $(TARGET_LIB)
 	$(Q)$(MAKE) --no-print-directory -C $(BENCH_FOLDER)
 
 #PATTERN RULES
-$(BUILD_DIR)/%.o: %.c
+$(BUILD_DIR)/%.o: %.c $(PERFMONHEADERS)
 	@echo "===>  COMPILE  $@"
 	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
@@ -372,19 +375,11 @@ ifeq ($(TIDY), true)
 endif
 	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
-# At the moment the perfmon code is too complex to fix all unused variable warnings, so supress those for now
-$(BUILD_DIR)/perfmon.o: perfmon.c $(PERFMONHEADERS)
+$(BUILD_DIR)/rocmon_marker.o:  rocmon_marker.c
 	@echo "===>  COMPILE  $@"
 	@mkdir -p $(BUILD_DIR)
-	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) -Wno-unused-variable $(CPPFLAGS) $< -o $@
-	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(@:.o=.d)
-
-# same here
-$(BUILD_DIR)/intel_perfmon_uncore_discovery.o: intel_perfmon_uncore_discovery.c $(PERFMONHEADERS)
-	@echo "===>  COMPILE  $@"
-	@mkdir -p $(BUILD_DIR)
-	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) -Wno-unused-variable $(CPPFLAGS) $< -o $@
-	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(@:.o=.d)
+	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
+	$(Q)objcopy --redefine-sym HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE=HSA_VEN_AMD_AQLPROFILE_LEGACY_PM4_PACKET_SIZE2 $@
 
 $(BUILD_DIR)/%.o:  %.cc
 	@echo "===>  COMPILE  $@"
@@ -636,9 +631,6 @@ install: install_daemon install_freq install_appdaemon install_container_helper
 	@sed -e "s#<VERSION>#$(VERSION)#g" -e "s#<DATE>#$(DATE)#g" -e "s#<GITCOMMIT>#$(GITCOMMIT)#g" -e "s#<MINOR>#$(MINOR)#g" < $(DOC_DIR)/likwid-bench.1 > $(MANPREFIX)/man1/likwid-bench.1
 	@sed -e "s#<VERSION>#$(VERSION)#g" -e "s#<DATE>#$(DATE)#g" -e "s#<GITCOMMIT>#$(GITCOMMIT)#g" -e "s#<MINOR>#$(MINOR)#g" < $(DOC_DIR)/likwid-setFrequencies.1 > $(MANPREFIX)/man1/likwid-setFrequencies.1
 	@sed -e "s#.TH LUA#.TH LIKWID-LUA#g" -e "s#lua - Lua interpreter#likwid-lua - Lua interpreter included in LIKWID#g" -e "s#.B lua#.B likwid-lua#g" -e "s#.BR luac (1)##g" $(DOC_DIR)/likwid-lua.1 > $(MANPREFIX)/man1/likwid-lua.1
-	@if [ "$(BUILD_SYSFEATURES)" = "true" ]; then \
-		sed -e "s#<VERSION>#$(VERSION)#g" -e "s#<DATE>#$(DATE)#g" -e "s#<GITCOMMIT>#$(GITCOMMIT)#g" -e "s#<MINOR>#$(MINOR)#g" < $(DOC_DIR)/likwid-sysfeatures.1 > $(MANPREFIX)/man1/likwid-sysfeatures.1; \
-	fi
 	@chmod 644 $(MANPREFIX)/man1/likwid-*
 	@echo "===> INSTALL headers to $(PREFIX)/include"
 	@mkdir -p $(PREFIX)/include
@@ -872,12 +864,6 @@ help:
 	@echo "The common configuration is INSTALLED_PREFIX = PREFIX, so changing PREFIX is enough."
 	@echo "If PREFIX and INSTALLED_PREFIX differ, you have to move anything after 'make install' to"
 	@echo "the INSTALLED_PREFIX. You can also use 'make move' which does the job for you."
-
-.PHONY: format
-format:
-	find bench/ -type f -iname \*.c -exec clang-format -i '{}' '+'
-	find src/ -type f \( -iname \*.c -or \( -iname \*.h -and -not -iname \*perfmon_\*counters.h \) \) -exec clang-format -i '{}' '+'
-	find src/ -type f -iname \*perfmon_\*counters.h -exec clang-format --style='{BasedOnStyle: InheritParentConfig, ColumnLimit: 180}' -i '{}' '+'
 
 .PHONY: rpm RPM
 rpm: RPM

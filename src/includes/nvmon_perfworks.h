@@ -38,10 +38,15 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #ifndef bool
-#include <stdbool.h>
+#define bool int
+#define LOCAL_BOOL_DEF
 #endif
 #include <cupti_profiler_target.h>
 #include <cupti_target.h>
+#include "nvmon_range.h"
+#ifdef LOCAL_BOOL_DEF
+#undef bool
+#endif
 
 #include <nvperf_cuda_host.h>
 #include <nvperf_host.h>
@@ -1017,6 +1022,14 @@ static void dev_freeEventList(NvmonDevice *dev) {
 
 static void nvmon_perfworks_freeDevice(NvmonDevice_t dev) {
     if (dev) {
+        /* If the Range Profiling backend was selected, release its resources.
+         * (Safe to call even when the range backend wasn't initialized.)
+         */
+        if (getenv("LIKWID_NVMON_BACKEND") &&
+            strcmp(getenv("LIKWID_NVMON_BACKEND"), "range") == 0) {
+            (void)nvmon_range_finalize_device(dev->deviceId);
+        }
+
         free(dev->chip);
         dev->chip = NULL;
 
@@ -1068,6 +1081,17 @@ static void nvmon_perfworks_freeDevice(NvmonDevice_t dev) {
             dev_freeEventList(dev);
         }
     }
+}
+
+/* Range backend selection helper.
+ *
+ * We intentionally key off the same environment variable used by the existing
+ * nvmon_range prototype backend so users can switch behavior at runtime.
+ */
+static inline int nvmon_perfworks_use_range_backend(void)
+{
+    const char* bk = getenv("LIKWID_NVMON_BACKEND");
+    return (bk && (strcmp(bk, "range") == 0));
 }
 
 static void prepare_metric_name(bstring metric) {
@@ -2008,11 +2032,6 @@ static int nvmon_perfworks_addEventSet(NvmonDevice_t device,
             .structSize = CUpti_Profiler_GetCounterAvailability_Params_STRUCT_SIZE,
             .ctx = device->context,
         };
-#if defined(CUDART_VERSION) && CUDART_VERSION >= 13010
-        if (cuda_version >= 13010 && cuda_runtime_version >= 13010) {
-            getCounterAvailabilityParams.bAllowDeviceLevelCounters = 1;
-        }
-#endif
         CUPTI_CALL(cuptiProfilerGetCounterAvailability,
                     &getCounterAvailabilityParams);
 
@@ -2374,9 +2393,54 @@ static int nvmon_perfworks_setupCounters(NvmonDevice_t device,
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Setup Counters on device %d",
             device->deviceId);
 
-    // cuptiProfiler_init();
+    /* Select implementation based on LIKWID_NVMON_BACKEND.
+     *
+     *  - default: CUPTI Profiling API (cuptiProfiler*)
+     *  - range  : CUPTI Range Profiling API (via nvmon_range.cc)
+     */
+    int ret = 0;
+    const char* backend = getenv("LIKWID_NVMON_BACKEND");
+    const int use_range = (backend && (strcmp(backend, "range") == 0));
 
-    int ret = nvmon_perfworks_setupCounterImageData(eventSet);
+    if (use_range)
+    {
+        /* Build list of real NVPerf metric names from the already-parsed
+         * LIKWID group definition.
+         */
+        const int nMetrics = eventSet->events ? eventSet->events->qty : 0;
+        const char** metricNames = NULL;
+        if (nMetrics > 0)
+        {
+            metricNames = (const char**)calloc((size_t)nMetrics, sizeof(char*));
+            if (!metricNames)
+            {
+                ret = -ENOMEM;
+            }
+            else
+            {
+                for (int i = 0; i < nMetrics; i++)
+                    metricNames[i] = bdata(eventSet->events->entry[i]);
+
+                /* Initialize the Range Profiling target for these metrics.
+                 * This keeps LIKWID's public interface unchanged (-W groups),
+                 * while switching the underlying collection API.
+                 */
+                if (nvmon_range_init_device(device->deviceId, metricNames, nMetrics) != 0)
+                    ret = -EFAULT;
+            }
+        }
+        else
+        {
+            /* No metrics -> nothing to set up */
+            ret = 0;
+        }
+        free((void*)metricNames);
+    }
+    else
+    {
+        ret = nvmon_perfworks_setupCounterImageData(eventSet);
+    }
+
     device->activeEventSet = eventSet->id;
     nvGroupSet->activeGroup = eventSet->id;
     if (popContext > 0) {
@@ -2406,6 +2470,34 @@ static int nvmon_perfworks_startCounters(NvmonDevice_t device) {
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Start Counters on device %d (Eventset %d)",
             device->deviceId, device->activeEventSet);
     NvmonEventSet *eventSet = &device->nvEventSets[device->activeEventSet];
+
+    const char* backend = getenv("LIKWID_NVMON_BACKEND");
+    const int use_range = (backend && (strcmp(backend, "range") == 0));
+    if (use_range)
+    {
+        /* In Range mode, we collect the metrics configured in setupCounters()
+         * using CUPTI Range Profiling API (implemented in nvmon_range.cc).
+         * We push a single user range per start/stop window.
+         */
+        const char* tag = "likwid_nvmon";
+        (void)eventSet;
+        if (nvGroupSet && nvGroupSet->groups && device->activeEventSet >= 0)
+        {
+            const char* gname = nvGroupSet->groups[device->activeEventSet].groupname;
+            if (gname && gname[0] != '\0')
+                tag = gname;
+        }
+        if (nvmon_range_region_start(device->deviceId, tag) != 0)
+            return -EFAULT;
+
+        if (popContext > 0) {
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %p for device %d", device->context, device->deviceId);
+            CU_CALL(cuCtxPopCurrent,&device->context);
+        }
+        if (curDeviceId != device->deviceId)
+            CUDA_CALL(cudaSetDevice,curDeviceId);
+        return 0;
+    }
 
     CUpti_Profiler_BeginSession_Params beginSessionParams = {
         .structSize = CUpti_Profiler_BeginSession_Params_STRUCT_SIZE,
@@ -2489,6 +2581,81 @@ static int nvmon_perfworks_stopCounters(NvmonDevice_t device) {
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Stop Counters on device %d (Eventset %d)",
             device->deviceId, device->activeEventSet);
     NvmonEventSet *eventSet = &device->nvEventSets[device->activeEventSet];
+
+    const char* backend = getenv("LIKWID_NVMON_BACKEND");
+    const int use_range = (backend && (strcmp(backend, "range") == 0));
+    if (use_range)
+    {
+        /* Stop the range and decode counter data. */
+        if (nvmon_range_region_stop(device->deviceId, NULL) != 0)
+            return -EFAULT;
+        if (nvmon_range_decode_counter_data(device->deviceId) != 0)
+            return -EFAULT;
+
+        /* Copy counter data image into the event set buffer so we can reuse
+         * nvmon_perfworks_getMetricValue() without duplicating the evaluator.
+         */
+        const uint8_t* pData = NULL;
+        size_t dataSize = 0;
+        if (nvmon_range_get_counter_data(device->deviceId, &pData, &dataSize) != 0 || !pData || dataSize == 0)
+            return -EFAULT;
+
+        if (eventSet->counterDataImage == NULL || eventSet->counterDataImageSize != dataSize)
+        {
+            free(eventSet->counterDataImage);
+            eventSet->counterDataImage = (uint8_t*)malloc(dataSize);
+            if (!eventSet->counterDataImage)
+                return -ENOMEM;
+            eventSet->counterDataImageSize = dataSize;
+        }
+        memcpy(eventSet->counterDataImage, pData, dataSize);
+
+        double *values = NULL;
+        int err = nvmon_perfworks_getMetricValue(device->chip, eventSet, &values);
+        if (err < 0)
+            return err;
+
+        for (int j = 0; j < eventSet->numberOfEvents; j++) {
+            double res = values[j];
+            NvmonEvent_t nve = eventSet->nvEvents[j];
+            eventSet->results[j].lastValue = res;
+            switch (nve->rtype) {
+            case ENTITY_TYPE_SUM:
+                eventSet->results[j].fullValue += res;
+                break;
+            case ENTITY_TYPE_MIN:
+                eventSet->results[j].fullValue = (res < eventSet->results[j].fullValue
+                        ? res
+                        : eventSet->results[j].fullValue);
+                break;
+            case ENTITY_TYPE_MAX:
+                eventSet->results[j].fullValue = (res > eventSet->results[j].fullValue
+                        ? res
+                        : eventSet->results[j].fullValue);
+                break;
+            case ENTITY_TYPE_INSTANT:
+                eventSet->results[j].fullValue = res;
+                break;
+            }
+            eventSet->results[j].stopValue = eventSet->results[j].fullValue;
+            eventSet->results[j].overflows = 0;
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "%s Last %f Full %f",
+                    bdata(eventSet->events->entry[j]),
+                    eventSet->results[j].lastValue,
+                    eventSet->results[j].fullValue);
+        }
+
+        free(values);
+
+        if (popContext > 0) {
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, "Pop Context %p for device %d", device->context, device->deviceId);
+            CU_CALL(cuCtxPopCurrent,&device->context);
+        }
+        if (curDeviceId != device->deviceId)
+            CUDA_CALL(cudaSetDevice,curDeviceId);
+
+        return 0;
+    }
 
     size_t CUpti_Profiler_EndPass_Params_size = 0;
     size_t CUpti_Profiler_FlushCounterData_Params_size = 0;

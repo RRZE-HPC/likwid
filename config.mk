@@ -9,7 +9,8 @@
 # Supported: GCC, CLANG, ICC, MIC (ICC), GCCX86 (for 32bit systems)
 # GCCARMv8, GCCARMv7, GCCPOWER and CLANGARMv8
 # Since 5.3, there is a generic GCCARM target
-COMPILER = GCC#NO SPACE
+# COMPILER = GCC#NO SPACE
+COMPILER = GCCARMv8#NO SPACE
 
 # Absolute path where to install likwid. If you need just an intermediate
 # install location, e.g. for packaging, use PREFIX for the intermediate
@@ -20,7 +21,8 @@ PREFIX ?= /usr/local#NO SPACE
 # Set the default mode for MSR access.
 # This can usually be overriden on the commandline.
 # Valid values are: direct, accessdaemon and perf_event
-ACCESSMODE = accessdaemon#NO SPACE
+# ACCESSMODE = accessdaemon#NO SPACE
+ACCESSMODE = perf_event
 
 # Build Fortran90 module interface for Marker API. Adopt Fortran compiler
 # in ./make/include_<COMPILER>.mk if necessary. Default: ifort (even for
@@ -32,7 +34,8 @@ INSTRUMENT_BENCH = true#NO SPACE
 
 # Build LIKWID with NVIDIA interface (CUDA, CUPTI)
 # For configuring include paths, go to CUDA section
-NVIDIA_INTERFACE = false#NO SPACE
+# NVIDIA_INTERFACE = false#NO SPACE
+NVIDIA_INTERFACE = true#NO SPACE
 
 # Build LIKWID with AMD GPU interface (ROCm)
 # For configuring include paths, go to ROCm section
