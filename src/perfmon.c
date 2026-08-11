@@ -2814,6 +2814,32 @@ past_checks:
         bstrListDestroy(subtokens);
     }
     bstrListDestroy(eventtokens);
+
+    if (!cpuid_info.isIntel && numa_info.numberOfNodes > cpuid_topology.numSockets)
+    {
+        int has_uncore_mem_counter = 0;
+        for (j = 0; j < eventSet->numberOfEvents; j++)
+        {
+            RegisterType t = eventSet->events[j].type;
+            if (t == MBOX0 || (t >= BBOX0 && t <= BBOX69))
+            {
+                has_uncore_mem_counter = 1;
+                break;
+            }
+        }
+        if (has_uncore_mem_counter)
+        {
+            fprintf(stderr,
+                "WARN: This event set uses AMD Data Fabric/UMC uncore counters (DFCx/UMCxCy) while "
+                "the system reports %u NUMA domains for %u socket(s), i.e. NPS>1 (NPS2/NPS4/...). "
+                "Memory-bandwidth accounting through these counters is known to be unreliable in "
+                "NPS>1 configurations on several AMD Zen generations, e.g. exact doubling has been "
+                "observed on Zen5c in NPS4 (see https://github.com/RRZE-HPC/likwid/issues/717). "
+                "Use NPS1 if you need accurate absolute memory bandwidth/traffic numbers.\n",
+                numa_info.numberOfNodes, cpuid_topology.numSockets);
+        }
+    }
+
     int fixed_counters = 0;
     char fix[] = "FIXC";
     char* ptr;

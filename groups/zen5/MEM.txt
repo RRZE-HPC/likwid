@@ -54,3 +54,11 @@ Memory data volume [GBytes] = 1.0E-09*(SUM(CAS_CMD_RD)+SUM(CAS_CMD_WR))*64.0
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
 Since this group is based on Uncore events it is only possible to measure on a
 per socket base.
+This group is only known-accurate with NPS=1 (one NUMA domain per socket). With
+NPS>1 (NPS2, NPS4, ...) the reported traffic/bandwidth has been observed to be
+exactly double the correct value in reported cases on Zen5c (both NPS2 and
+NPS4), see https://github.com/RRZE-HPC/likwid/issues/717. The root cause is not
+yet identified, and it is not confirmed whether a flat 2x applies in every
+NPS>1 configuration, so no general correction factor is applied here. If you
+see suspiciously large bandwidth numbers, check your NPS BIOS setting; NPS1 is
+the only configuration currently verified to be accurate.
