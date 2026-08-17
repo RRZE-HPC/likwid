@@ -2705,7 +2705,6 @@ perfmon_addEventSet(const char* eventCString)
             if (event->type == NOTYPE)
             {
                 DEBUG_PRINT(DEBUGLEV_INFO, "Cannot access counter register %s", bdata(subtokens->entry[1]));
-                event->type = NOTYPE;
                 goto past_checks;
             }
 #else
@@ -2737,7 +2736,11 @@ perfmon_addEventSet(const char* eventCString)
             bstrListDestroy(folders);
             if (perf_folder == NULL)
             {
-                DEBUG_PRINT(DEBUGLEV_INFO, "Cannot access counter register %s", bdata(subtokens->entry[1]));
+                if (perfmon_verbosity == DEBUGLEV_INFO) {
+                    DEBUG_PRINT(DEBUGLEV_INFO, "Cannot access counter register %s", bdata(subtokens->entry[1]));
+                } else if (perfmon_verbosity > DEBUGLEV_INFO) {
+                    DEBUG_PRINT(DEBUGLEV_DETAIL, "Cannot access counter register %s perf unit(s) %s", bdata(subtokens->entry[1]), translate_types[type]);
+                }
                 event->type = NOTYPE;
                 goto past_checks;
             }
