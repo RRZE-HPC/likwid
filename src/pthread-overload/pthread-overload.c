@@ -156,6 +156,8 @@ static int resolve_binpath(const char* exec, int len, char* abspath) {
                     return 0;
                 }
             }
+        } else {
+            break;
         }
     }
 
@@ -236,6 +238,7 @@ pthread_create(pthread_t* thread,
         char buff[512];
         char file[64];
         char abspath[1024] = { '\0' };
+        char wrapper[1024] = { '\0' };
         unsigned int ptr = ((void*)start_routine) - info.dli_fbase;
         int got_skipmask = 0;
 
@@ -243,47 +246,22 @@ pthread_create(pthread_t* thread,
         if (err == 0) {
             buff[0] = '\0';
             snprintf(file, sizeof(file), "/tmp/likwidpin.%ld", gettid());
-            snprintf(cmd, sizeof(cmd), "rm -f %s; nm %s 2>/dev/null | grep %x > %s",
-                         file, abspath, ptr, file);
-            ret = system(cmd);
-            fpipe = fopen(file, "r");
-            if (!fpipe)
-            {
-                //fprintf(stderr, "Problems reading symbols for shepherd thread detection with nm: %s\n", strerror(errno));
-            }
-            else
-            {
-                if (fgets(buff, sizeof(buff), fpipe) == NULL) {
-                    // TODO, how should we handle this error correctly?
-                    //fprintf(stderr, "Problems reading symbols for shepherd thread detection with nm\n");
-                    fclose(fpipe);
-                } else {
-                    char* tmp = strstr(buff, "monitor");
-                    if (tmp != NULL)
-                    {
-                        shepherd = 1;
-                        skipMask |= 1ULL<<(ncalled);
-                    }
-                    fclose(fpipe);
-                    snprintf(cmd, 511, "rm -f %s 2>/dev/null", file);
-                    ret = system(cmd);
-                    got_skipmask = 1;
-                }
-            }
-            if (!got_skipmask) {
-                snprintf(cmd, sizeof(cmd), "rm -f %s; addr2line -e %s -f %x 2>/dev/null | head -n 1 > %s",
-                         file, abspath, ptr, file);
+            err = resolve_binpath("nm", 1024, (char*) wrapper);
+            if (err == 0)  {
+                snprintf(cmd, sizeof(cmd), "%s %s 2>/dev/null | grep %x > %s; fi",
+                             wrapper, abspath, ptr, file);
+                printf("%s\n", cmd);
                 ret = system(cmd);
                 fpipe = fopen(file, "r");
                 if (!fpipe)
                 {
-                    //fprintf(stderr, "Problems reading symbols for shepherd thread detection with addr2line: %s\n", strerror(errno));
+                    //fprintf(stderr, "Problems reading symbols for shepherd thread detection with nm: %s\n", strerror(errno));
                 }
                 else
                 {
                     if (fgets(buff, sizeof(buff), fpipe) == NULL) {
                         // TODO, how should we handle this error correctly?
-                        //fprintf(stderr, "Problems reading symbols for shepherd thread detection with addr2line\n");
+                        //fprintf(stderr, "Problems reading symbols for shepherd thread detection with nm\n");
                         fclose(fpipe);
                     } else {
                         char* tmp = strstr(buff, "monitor");
@@ -300,10 +278,43 @@ pthread_create(pthread_t* thread,
                 }
             }
             if (!got_skipmask) {
+                err = resolve_binpath("addr2line", 1024, (char*) wrapper);
+                if (err == 0) {
+                    snprintf(cmd, sizeof(cmd), "%s -e %s -f %x 2>/dev/null > %s",
+                             wrapper, abspath, ptr, file);
+                    ret = system(cmd);
+                    fpipe = fopen(file, "r");
+                    if (!fpipe)
+                    {
+                        //fprintf(stderr, "Problems reading symbols for shepherd thread detection with addr2line: %s\n", strerror(errno));
+                    }
+                    else
+                    {
+                        if (fgets(buff, sizeof(buff), fpipe) == NULL) {
+                            // TODO, how should we handle this error correctly?
+                            //fprintf(stderr, "Problems reading symbols for shepherd thread detection with addr2line\n");
+                            fclose(fpipe);
+                        } else {
+                            char* tmp = strstr(buff, "monitor");
+                            if (tmp != NULL)
+                            {
+                                shepherd = 1;
+                                skipMask |= 1ULL<<(ncalled);
+                            }
+                            fclose(fpipe);
+                            snprintf(cmd, 511, "rm -f %s 2>/dev/null", file);
+                            ret = system(cmd);
+                            got_skipmask = 1;
+                        }
+                    }
+                }
+            }
+            if ((!got_skipmask) && (!silent)) {
                 fprintf(stderr, "Problems reading symbols for shepherd thread detection\n");
             }
         } else {
-            fprintf(stderr, "Failed to determine absolute path of %s\n", info.dli_fname);
+            if (!silent)
+                fprintf(stderr, "Failed to determine absolute path of %s\n", info.dli_fname);
         }
     }
 
