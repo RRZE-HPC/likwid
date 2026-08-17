@@ -1132,6 +1132,12 @@ int perfmon_setupCountersThread_perfevent(
                     }
                 }
 #endif
+#ifdef __x86_64
+                if ((!cpuid_info.isIntel) && (event->eventId == 0xFFF)) {
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Skipping MERGE event for AMD Zen systems");
+                    break;
+                }
+#endif
                 if (pmc_lock)
                 {
                     ret = perf_pmc_setup(&attr, index, type, event);
