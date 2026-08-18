@@ -84,29 +84,26 @@ static void after_main()
 
 static void prepare_ldpreload()
 {
-    char *ldpreload = getenv("LD_PRELOAD");
-    if (!ldpreload)
-        return;
-
-    bstring bldpre = bfromcstr(ldpreload);
-    bstring new_bldpre = bfromcstr("");
-    struct bstrList *liblist = bsplit(bldpre, ':');
-    for (int i = 0; i < liblist->qty; i++)
+    int (*mysetenv)(const char *name, const char *value, int overwrite) = setenv;
+    char* ldpreload = getenv("LD_PRELOAD");
+    if (ldpreload)
     {
-        if (binstr(liblist->entry[i], 0, &daemon_name) == BSTR_ERR)
+        bstring bldpre = bfromcstr(ldpreload);
+        bstring new_bldpre = bfromcstr("");
+        struct bstrList *liblist = bsplit(bldpre, ':');
+        for (int i = 0; i < liblist->qty; i++)
         {
-            bconcat(new_bldpre, liblist->entry[i]);
-            bconchar(new_bldpre, ':');
+            if (binstr(liblist->entry[i], 0, &daemon_name) == BSTR_ERR)
+            {
+                bconcat(new_bldpre, liblist->entry[i]);
+                bconchar(new_bldpre, ':');
+            }
         }
+        mysetenv("LD_PRELOAD", bdata(new_bldpre), 1);
+        bstrListDestroy(liblist);
+        bdestroy(new_bldpre);
+        bdestroy(bldpre);
     }
-    char *new_bldpre_c = NULL;
-    if (bdata(new_bldpre) != NULL) {
-        new_bldpre_c = bdata(new_bldpre);
-    }
-    setenv("LD_PRELOAD", new_bldpre_c, 1);
-    bstrListDestroy(liblist);
-    bdestroy(new_bldpre);
-    bdestroy(bldpre);
 }
 
 static int parse_gpustr(char* gpuStr, int* numGpus, int** gpuIds)
