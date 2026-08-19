@@ -6,8 +6,8 @@
  *
  *      Description:  A application to set the CPU frequency of CPU cores and domains.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid

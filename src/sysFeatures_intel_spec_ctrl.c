@@ -6,8 +6,8 @@
  *      Description:  Interface to control CPU speculative execution behavior for the
  *                    sysFeatures component
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Authors:  Thomas Gruber (tg), thomas.roehl@googlemail.com
  *                Michael Panzlaff, michael.panzlaff@fau.de

@@ -5,8 +5,8 @@
  *
  *      Description:  Header file for the interface to x86 MSR functions for the access module.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

@@ -7,8 +7,8 @@
  *      Description:  An application to get information about power
  *      consumption on architectures implementing the RAPL interface.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid

@@ -5,8 +5,8 @@
  *
  *      Description:  Code to resolve a LIKWID device string to a list of devices
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Author:   Michael Panzlaff, michael.panzlaff@fau.de
  *      Project:  likwid

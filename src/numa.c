@@ -6,8 +6,8 @@
  *      Description:  Implementation of Linux NUMA interface. Selects between hwloc and
  *                    procfs/sysfs backends.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com

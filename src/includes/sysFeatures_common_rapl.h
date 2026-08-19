@@ -5,8 +5,8 @@
  *
  *      Description:  Common functions used by the sysFeatures RAPL component
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Authors:  Michael Panzlaff, michael.panzlaff@fau.de
  *      Project:  likwid

@@ -6,8 +6,8 @@
  *      Description:  Header File Thermal Module.
  *                    Implements Intel TM/TM2 Interface.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid

@@ -5,8 +5,8 @@
  *
  *      Description:  Topology module for AMD GPUs
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Author:   Thomas Gruber (tg), thomas.roehl@googlemail.com
  *                Various people at HPE

@@ -6,8 +6,8 @@
  *      Description:  Header File NUMA module for internal use. External functions are
  *                    defined in likwid.h
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

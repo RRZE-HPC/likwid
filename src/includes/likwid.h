@@ -5,8 +5,8 @@
  *
  *      Description:  Header File of likwid API
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Authors:  Thomas Gruber (tr), thomas.roehl@googlemail.com
  *

@@ -5,13 +5,13 @@
  *
  *      Description:  Header File of nvmon module (CUPTI backend).
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Author:   Thomas Gruber (tg), thomas.gruber@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

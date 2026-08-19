@@ -5,8 +5,8 @@
  *
  *      Description:  Marker API interface of module perfmon
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Authors:  Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com

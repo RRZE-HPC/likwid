@@ -5,8 +5,8 @@
  *
  *      Description:  Header File of nvmon module (PerfWorks backend).
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Author:   Thomas Gruber (tg), thomas.gruber@googlemail.com
  *                Michael Panzlaff, michael.panzlaff@fau.de

@@ -7,8 +7,8 @@
  *                    Configures and reads out performance counters
  *                    on AMD GPUs. Supports multi GPUs.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Author:   Thomas Gruber (tg), thomas.gruber@googlemail.com
  *                Various people at HPE

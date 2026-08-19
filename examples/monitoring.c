@@ -5,8 +5,8 @@
  *
  *      Description:  Example how to use the LIKWID API in C/C++ applications for monitoring
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.5.2
+ *      Released:  19.08.2026
  *
  *      Author:  Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
