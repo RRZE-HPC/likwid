@@ -87,6 +87,7 @@ local function usage()
     print_stdout("  -f                      Force execution (and measurements). You can also use environment variable LIKWID_FORCE")
     print_stdout("  -e, --env <key>=<value> Set environment variables for MPI processes")
     print_stdout("  --mpiopts <str>         Hand over options to underlying MPI. Please use proper quoting.")
+    print_stdout("  --nompibind             Don't bind mpi processes to cpusets. (SLURM only)")
     print_stdout()
     print_stdout("Notes:")
     print_stdout("  Processes are pinned to physical hardware threads first. For syntax questions see likwid-pin")
@@ -94,6 +95,10 @@ local function usage()
     print_stdout("  For CPU selection and which MPI rank measures Uncore counters the system topology")
     print_stdout("  of the current system is used. There is currently no possibility to overcome this")
     print_stdout("  limitation by providing a topology file or similar.")
+    print_stdout()
+    print_stdout("  If your system is using SLURM (srun) and it fails with a CPU binding error")
+    print_stdout("  try the actual MPI starter (-mpi {intelmpi, openmpi, mvapich2}).")
+    print_stdout("  For 'close' pinning you may try --mpiopts = \"-m cyclic:block:block\"")
     print_stdout()
     examples()
 end
@@ -130,8 +135,8 @@ if os.getenv("LIKWID_FORCE") ~= nil then
     force = true
 end
 
-local LIKWID_PIN="likwid-pin"
-local LIKWID_PERFCTR="<INSTALLED_PREFIX>/bin/likwid-perfctr"
+local LIKWID_PIN = "likwid-pin"
+local LIKWID_PERFCTR = "<INSTALLED_PREFIX>/bin/likwid-perfctr"
 
 local readHostfile = nil
 local writeHostfile = nil
@@ -147,15 +152,53 @@ local outfilename = string.format("%s/.output_%s_%%r_%%h.csv", pwd, pid)
 local filelist = {}
 
 local function mpirun_exit(exitcode)
-    if likwid.access(scriptfilename, "e") == 0 then os.remove(scriptfilename) end
-    if likwid.access(hostfilename, "e") == 0 then os.remove(hostfilename) end
+    if likwid.access(scriptfilename, "e") == 0 then
+        if debug then
+            print_stdout(string.format("DEBUG: Deleting script %s", scriptfilename))
+        end
+        os.remove(scriptfilename)
+    end
+
+    if likwid.access(hostfilename, "e") == 0 then
+        if debug then
+            print_stdout(string.format("DEBUG: Deleting hostfile %s", hostfilename))
+        end
+        os.remove(hostfilename)
+    end
     for _, file in pairs(filelist) do
-        if likwid.access(hostfilename, "e") == 0 then
+        if likwid.access(file, "e") == 0 then
+            if debug then
+                print_stdout(string.format("DEBUG: Deleting file %s", file))
+            end
             os.remove(file)
         end
     end
     os.execute(string.format("rm --force %s/.output_%s*", pwd, pid))
     os.exit(exitvalue)
+end
+
+local function get_likwid_module()
+    cmd = "bash -c 'tclsh /apps/modules/modulecmd.tcl sh list -t' 2>&1"
+    local f = io.popen(cmd, 'r')
+    if f == nil then
+        cmd = os.getenv("SHELL").." -c 'module -t list' 2>&1"
+        f = io.popen(cmd, 'r')
+    end
+    if f ~= nil then
+        local s = assert(f:read('*a'))
+        f:close()
+        s = string.gsub(s, '^%s+', '')
+        s = string.gsub(s, '%s+$', '')
+        for _, line in pairs(likwid.stringsplit(s, "\n")) do
+            if line:match("[lL][iI][kK][wW][iI][dD].*") then
+                if debug then
+                    print_stdout(string.format("Using LIKWID module %s", line))
+                end
+                return line
+            end
+        end
+    end
+    return "likwid"
 end
 
 local function abspath(cmd)
@@ -224,11 +267,11 @@ local function readHostfileOpenMPI(filename)
         end
     end
     if debug then
-        print_stdout("Available hosts for scheduling:")
-        s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
+        print_stdout("DEBUG: Available hosts for scheduling:")
+        s = string.format("DEBUG: %-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
         print_stdout(s)
         for i, host in pairs(hostlist) do
-            s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
+            s = string.format("DEBUG: %-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
             print_stdout (s)
         end
     end
@@ -329,11 +372,11 @@ local function readHostfileIntelMPI(filename)
         end
     end
     if debug then
-        print_stdout("Available hosts for scheduling:")
-        s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
+        print_stdout("DEBUG: Available hosts for scheduling:")
+        s = string.format("DEBUG: %-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
         print_stdout(s)
         for i, host in pairs(hostlist) do
-            s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
+            s = string.format("DEBUG: %-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
             print_stdout (s)
         end
     end
@@ -466,11 +509,11 @@ local function readHostfileMvapich2(filename)
     end
     if debug then
         if debug then
-            print_stdout("Available hosts for scheduling:")
-            s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
+            print_stdout("DEBUG: Available hosts for scheduling:")
+            s = string.format("DEBUG: %-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
             print_stdout(s)
             for i, host in pairs(hostlist) do
-                s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
+                s = string.format("DEBUG: %-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
                 print_stdout (s)
             end
         end
@@ -565,11 +608,11 @@ local function readHostfilePBS(filename)
         end
     end
     if debug then
-        print_stdout("Available hosts for scheduling:")
-        s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
+        print_stdout("DEBUG: Available hosts for scheduling:")
+        s = string.format("DEBUG: %-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
         print_stdout(s)
         for i, host in pairs(hostlist) do
-            s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
+            s = string.format("DEBUG: %-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
             print_stdout (s)
         end
     end
@@ -662,6 +705,28 @@ local function _srun_get_mpi_types()
     return t
 end
 
+local function _srun_get_default_mpi_type()
+    local defmpi = nil
+    local f = io.popen("scontrol show config 2>&1", 'r')
+    if f ~= nil then
+        local s = assert(f:read('*a'))
+        f:close()
+        for _, line in pairs(likwid.stringsplit(s, "\n")) do
+            if line:match("^MpiDefault%s*=%s*([%w_]+)") then
+                defmpi = line:match("^MpiDefault%s*=%s*([%w_]+)")
+            end
+        end
+    end
+    if debug then
+        if defmpi then
+            print_stdout(string.format("DEBUG: SLURM is configured to use %s as default MPI", defmpi))
+        else
+            print_stdout("DEBUG: No default MPI configured in SLURM")
+        end
+    end
+    return defmpi
+end
+
 local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
     local opts = {}
     local srunopts = ""
@@ -699,11 +764,36 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
         end
         table.insert(cpumasks, string.format("0x%s", s))
     end
-    opts["cpu-bind"] = "mask_cpu:"..table.concat(cpumasks, ",")
-    --opts["cpus-per-task"] = string.format("%d", tpp)
-    supported_types = _srun_get_mpi_types()
-    if supported_types["pmi2"] then
-        opts["mpi"] = "pmi2"
+    if not skip_mpibind then
+        opts["cpu-bind"] = "mask_cpu:"..table.concat(cpumasks, ",")
+    end
+    local slurm_mpi = _srun_get_default_mpi_type()
+    local slurm_mpi_env = os.getenv("SLURM_MPI_TYPE")
+    if slurm_mpi == nil then
+        if slurm_mpi_env == nil then
+            if debug then
+                print_stdout("DEBUG: SLURM_MPI_TYPE environment variable not set, trying 'srun --mpi=list'")
+            end
+            supported_types = _srun_get_mpi_types()
+            if supported_types["cray_shasta"] and likwid.access("/opt/cray/pe", "e") == 0 then
+                slurm_mpi = "cray_shasta"
+            elseif supported_types["pmix"] then
+                slurm_mpi = "pmix"
+            elseif supported_types["pmi2"] then
+                slurm_mpi = "pmi2"
+            end
+        else
+            slurm_mpi = slurm_mpi_env
+        end
+    elseif slurm_mpi ~= slurm_mpi_env then
+        if debug then
+            local s = string.format("DEBUG: Default SLURM MPI (%s) and SLURM_MPI_TYPE (%s) differ, using SLURM_MPI_TYPE")
+            print_stdout(s)
+        end
+        slurm_mpi = slurm_mpi_env
+    end
+    if debug then
+        print_stdout(string.format("DEBUG: Detected SLURM MPI %s", slurm_mpi))
     end
 
     for k,v in pairs(opts) do
@@ -768,6 +858,13 @@ local function getMpiType()
             end
         end
     end
+    local mpitype_lookup = {
+        { search = "Intel", mpitype = "intelmpi" },
+        { search = "OpenRTE", mpitype = "openmpi" },
+        { search = "MPICH", mpitype = "mvapich2" },
+        { search = "MVAPICH2", mpitype = "mvapich2" },
+        { search = "srun", mpitype = "slurm" },
+    }
     for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun", "srun"}) do
         f = io.popen(string.format("which %s 2>/dev/null", exec), 'r')
         if f ~= nil then
@@ -777,32 +874,15 @@ local function getMpiType()
                 f = io.popen(string.format("%s --help 2>/dev/null", s), 'r')
                 if f ~= nil then
                     out = f:read("*a")
-                    b,e = out:find("Intel")
-                    if (b ~= nil) then
-                        mpitype = "intelmpi"
-                        break
-                    end
-                    b,e = out:find("OpenRTE")
-                    if (b ~= nil) then
-                        mpitype = "openmpi"
-                        break
-                    end
-                    b,e = out:find("MPICH")
-                    if (b ~= nil) then
-                        mpitype = "mvapich2"
-                        break
-                    else
-                        b,e = out:find("MVAPICH2")
-                        if (b ~= nil) then
-                            mpitype = "mvapich2"
+                    for _, chk in pairs(mpitype_lookup) do
+                        b,e = out:find(chk.search)
+                        if b ~= nil then
+                            mpitype = chk.mpitype
+                            if mpitype == "slurm" then
+                                slurm_involved = true
+                            end
                             break
                         end
-                    end
-                    b,e = out:find("srun")
-                    if (b ~= nil) then
-                        mpitype = "slurm"
-                        slurm_involved = true
-                        break
                     end
                 end
             end
@@ -824,11 +904,13 @@ function getMpiVersion(exec)
     local cmdlist = {"mpiexec.hydra", "mpiexec", "mpirun", "srun"}
     maj = nil
     min = nil
-    intel_match = "Version (%d+) Update (%d+)"
-    intel_build_match = "Version (%d+) Build (%d+)"
-    intel_match_old = "Version (%d+).(%d+).%d+"
-    openmpi_match = "(%d+)%.(%d+)%.%d+"
-    slurm_match = "slurm (%d+).(%d+).%d+"
+    local version_matches = {
+        "Version ([%d%.]+) Update (%d+)",
+        "Version ([%d%.]+) Build (%d+)",
+        "Version ([%d%.]+).(%d+).%d+",
+        "slurm (%d+).(%d+).%d+",
+        "(%d+)%.(%d+)%.%d+",
+    }
     if exec then
         t = {exec}
         for _,c in pairs(cmdlist) do
@@ -850,26 +932,13 @@ function getMpiVersion(exec)
                     local t = f:read("*all")
                     f:close()
                     for l in t:gmatch("[^\r\n]+") do
-                        if l:match(intel_match) then
-                            maj, min = l:match(intel_match)
-                            maj = tonumber(maj)
-                            min = tonumber(min)
-                        elseif l:match(intel_build_match) then
-                            maj, min = l:match(intel_build_match)
-                            maj = tonumber(maj)
-                            min = tonumber(min)
-                        elseif l:match(intel_match_old) then
-                            maj, min = l:match(intel_match_old)
-                            maj = tonumber(maj)
-                            min = tonumber(min)
-                        elseif l:match(openmpi_match) then
-                            maj, min = l:match(openmpi_match)
-                            maj = tonumber(maj)
-                            min = tonumber(min)
-                        elseif l:match(slurm_match) then
-                            maj, min = l:match(slurm_match)
-                            maj = tonumber(maj)
-                            min = tonumber(min)
+                        for _, mat in pairs(version_matches) do
+                            if l:match(mat) then
+                                maj, min = l:match(mat)
+                                maj = tonumber(maj)
+                                min = tonumber(min)
+                                break
+                            end
                         end
                     end
                 end
@@ -1261,6 +1330,8 @@ local function splitUncoreEvents(groupdata)
                         else
                             table.insert(socket, event)
                         end
+                    elseif e["Counter"]:match("UMC%d") then
+                        table.insert(socket, event)
                     end
                 end
             elseif cpuinfo["architecture"] == "armv8" then
@@ -1518,6 +1589,9 @@ local function checkLikwid()
     if string.sub(LIKWID_PIN, 1,1) ~= "/" then
         local before = LIKWID_PIN
         LIKWID_PIN = abspath(LIKWID_PIN)
+        if not LIKWID_PIN then
+            LIKWID_PIN = before
+        end
         if debug then
             print_stdout(string.format("DEBUG: Resolved %s to %s", before, LIKWID_PIN))
         end
@@ -1525,6 +1599,9 @@ local function checkLikwid()
     if string.sub(LIKWID_PERFCTR, 1,1) ~= "/" then
         local before = LIKWID_PERFCTR
         LIKWID_PERFCTR = abspath(LIKWID_PERFCTR)
+        if not LIKWID_PERFCTR then
+            LIKWID_PERFCTR = before
+        end
         if debug then
             print_stdout(string.format("DEBUG: Resolved %s to %s", before, LIKWID_PERFCTR))
         end
@@ -1686,6 +1763,10 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     f:write("\tmodule load likwid 1>/dev/null 2>&1\n")
     f:write("fi\n\n")
 
+    if use_perfctr == true and likwiddebug == false then
+        f:write("export LIKWID_SILENT=1\n")
+    end
+
     f:write("if [ \"$LOCALRANK\" -eq 0 ]; then\n")
     if debug then
         print_stdout(string.format("EXEC (Rank 0): %s",commands[1]))
@@ -1703,6 +1784,17 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     f:write("\techo \"Unknown local rank $LOCALRANK\"\n")
     f:write("fi\n")
     f:close()
+    if debug then
+        local f = io.open(scriptname, "r")
+        if f ~= nil then
+            line = f:read("l*")
+            while line do
+                print_stdout(string.format("DEBUG: > %s", line))
+                line = f:read("l*")
+            end
+            f:close()
+        end
+    end
     os.execute("chmod +x "..scriptname)
     return only_pinned_processes
 end
@@ -2162,6 +2254,7 @@ local cmd_options = {"h","help", -- default options for help message
                      "dist:",      -- option to specifiy distance between two MPI processes
                      "o:","output:", -- option to specifiy an output file
                      "mpiopts:", -- option to specifiy MPI options forwarded to the underlying MPI
+                     "nompibind", -- option to skip mpi pinning in SLURM
                      "nperdomain:","pin:","hostfile:","O","f", "stats"} -- other options
 
 for opt,arg in likwid.getopt(arg,  cmd_options) do
@@ -2303,6 +2396,8 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         omptype = arg
     elseif opt == "ld" then
         likwiddebug = true
+    elseif opt == "nompibind" then
+        skip_mpibind = true
     elseif opt == "o" or opt == "output" then
         outfile = arg
         print_stderr("WARN: The output file option is currently ignored. Will be available in upcoming releases")

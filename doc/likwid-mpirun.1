@@ -20,6 +20,7 @@ likwid-mpirun \- A tool to start and monitor MPI applications with LIKWID
 .IR eventset ]
 .RB [\-\-mpiopts
 .IR opts ]
+.RB [\-\-nompibind]
 .SH DESCRIPTION
 .B likwid-mpirun
 is a command line application that wraps the vendor-specific mpirun tool and adds calls to
@@ -75,6 +76,9 @@ prints output in CSV not ASCII tables
 .TP
 .B \-\-\^mpiopts <opts>
 adds options for the underlying MPI implementation. Please use proper quoting.
+.TP
+.B \-\-\^nompibind
+disables MPI process binding through SLURM. Does not affect the other MPIs. Threads within the binding are still bound to individual HW threads.
 .TP
 .B \-\-
 stops parsing arguments for likwid-mpirun.
