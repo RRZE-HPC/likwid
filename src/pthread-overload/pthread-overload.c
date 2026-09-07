@@ -88,6 +88,11 @@ static pthread_create_ptr pthread_create_orig;
         if (!silent) \
             COLOR_PRINT_FORCE(msg, ##__VA_ARGS__); \
     } while (0)
+#define COLOR_PRINT_PREFIX(prefix, msg, ...) \
+    do { \
+        if (!silent) \
+            COLOR_PRINT_FORCE_PREFIX(prefix, msg, ##__VA_ARGS__); \
+    } while (0)
 
 static void pdie(const char *msg)
 {
@@ -161,24 +166,24 @@ static void init_pin_ids(const char *pin_str_orig)
     if (pin_ids_printed) {
         COLOR_PRINT("Pinning enabled (%s)\n", cmdline ? cmdline : "(unknown)");
     } else {
-        COLOR_PRINT_FORCE("Pinning enabled (%s), mapping:\n", cmdline ? cmdline : "(unknown)");
+        COLOR_PRINT("Pinning enabled (%s), mapping:\n", cmdline ? cmdline : "(unknown)");
         const size_t COLUMN_COUNT = 8;
         size_t column = 0;
         for (size_t i = 0; i < pin_ids_count; i++) {
             if (column == 0)
-                COLOR_PRINT_FORCE("  %4zu -> %4u", i, pin_ids[i]);
+                COLOR_PRINT("  %4zu -> %4u", i, pin_ids[i]);
             else
-                COLOR_PRINT_FORCE_PREFIX("", " | %4zu -> %4u", i, pin_ids[i]);
+                COLOR_PRINT_PREFIX("", " | %4zu -> %4u", i, pin_ids[i]);
 
             if (column + 1 >= COLUMN_COUNT) {
-                COLOR_PRINT_FORCE_PREFIX("", "\n");
+                COLOR_PRINT_PREFIX("", "\n");
                 column = 0;
             } else {
                 column += 1;
             }
         }
         if (column > 0)
-            COLOR_PRINT_FORCE_PREFIX("", "\n");
+            COLOR_PRINT_PREFIX("", "\n");
     }
     free(cmdline);
 
