@@ -248,7 +248,7 @@ pthread_create(pthread_t* thread,
             snprintf(file, sizeof(file), "/tmp/likwidpin.%ld", gettid());
             err = resolve_binpath("nm", 1024, (char*) wrapper);
             if (err == 0)  {
-                snprintf(cmd, sizeof(cmd), "%s %s 2>/dev/null | grep %x > %s; fi",
+                snprintf(cmd, sizeof(cmd), "%s %s 2>/dev/null | grep %x > %s",
                              wrapper, abspath, ptr, file);
                 printf("%s\n", cmd);
                 ret = system(cmd);
