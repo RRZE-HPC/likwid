@@ -239,6 +239,7 @@ pthread_create(pthread_t* thread,
         char file[64];
         char abspath[1024] = { '\0' };
         char wrapper[1024] = { '\0' };
+        char grepper[1024] = { '\0' };
         unsigned int ptr = ((void*)start_routine) - info.dli_fbase;
         int got_skipmask = 0;
 
@@ -248,9 +249,9 @@ pthread_create(pthread_t* thread,
             snprintf(file, sizeof(file), "/tmp/likwidpin.%ld", gettid());
             err = resolve_binpath("nm", 1024, (char*) wrapper);
             if (err == 0)  {
-                snprintf(cmd, sizeof(cmd), "%s %s 2>/dev/null | grep %x > %s",
-                             wrapper, abspath, ptr, file);
-                printf("%s\n", cmd);
+				resolve_binpath("grep", 1024, (char*) grepper);
+                snprintf(cmd, sizeof(cmd), "%s %s 2>/dev/null | %s %x > %s",
+                             wrapper, abspath, grepper, ptr, file);
                 ret = system(cmd);
                 fpipe = fopen(file, "r");
                 if (!fpipe)
