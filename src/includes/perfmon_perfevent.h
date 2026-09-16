@@ -238,6 +238,7 @@ int parse_event_config(char* base, char* option, int* num_formats, struct perf_e
     if (strlen(base) > 0 && strlen(option) > 0)
     {
         bstring path = bformat("%s/format/%s", base, option);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Getting configuration from %s", bdata(path));
         FILE *fp = fopen(bdata(path), "r");
         if (fp)
         {
@@ -848,7 +849,8 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     {
         num_formats = 0;
         formats = NULL;
-        ret = parse_event_config(bdata(perf_folder), perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK], &num_formats, &formats);
+        char* option = perfEventOptionNames[EVENT_OPTION_GENERIC_UMASK];
+        ret = parse_event_config(bdata(perf_folder), option, &num_formats, &formats);
         if (ret == 0)
         {
             uint64_t umask = event->umask;
@@ -914,7 +916,11 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                 case EVENT_OPTION_SLICE:
                     num_formats = 0;
                     formats = NULL;
-                    ret = parse_event_config(bdata(perf_folder), perfEventOptionNames[event->options[j].type], &num_formats, &formats);
+                    char *optName = perfEventOptionNames[event->options[j].type];
+                    if ((type >= BBOX0 && type <= BBOX11) && (cpuid_info.family == ZEN5_FAMILY) && (cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5C_EPYC)) {
+                         optName = "rdwrmask";
+                    }
+                    ret = parse_event_config(bdata(perf_folder), optName, &num_formats, &formats);
                     if (ret == 0)
                     {
                         uint64_t optval = event->options[j].value;
