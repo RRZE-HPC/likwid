@@ -61,6 +61,7 @@ struct pthread_create_wrapper_arg {
 
 static bool silent = false;
 static bool pin_ids_printed = false;
+static bool omp_places_set = false;
 
 static uint32_t *pin_ids;
 static size_t pin_ids_count;
@@ -291,11 +292,8 @@ void __attribute__((constructor)) init_pthread_overload(void)
     if (getenv("LIKWID_PIN_PRINTED"))
         pin_ids_printed = true;
 
-    const char *pin_str_orig = getenv("LIKWID_PIN");
-    if (pin_str_orig)
-        init_pin_ids(pin_str_orig);
-    else
-        COLOR_PRINT("LIKWID_PIN environment variable not set. Disabling pinning.\n");
+    if (getenv("OMP_PLACES"))
+        omp_places_set = true;
 
     const char *skip_str = getenv("LIKWID_SKIP");
     if (skip_str)
@@ -304,12 +302,18 @@ void __attribute__((constructor)) init_pthread_overload(void)
     if (pin_skip_mask != 0)
         COLOR_PRINT("PIN SKIP MASK: %#" PRIx64 "\n", pin_skip_mask);
 
+    const char *pin_str_orig = getenv("LIKWID_PIN");
+    if (pin_str_orig)
+        init_pin_ids(pin_str_orig);
+    else
+        COLOR_PRINT("LIKWID_PIN environment variable not set. Disabling pinning.\n");
+
     find_openmp();
     find_pthread();
 
     /* If OMP_PLACES is not set, raise a warning. This should only happen, if there is
      * a bug in likwid-perfctr or likwid-pin. */
-    if (!getenv("OMP_PLACES"))
+    if (!omp_places_set)
         COLOR_PRINT("OMP_PLACES is not set in the environment. OpenMP pinning will not work\n");
 }
 
