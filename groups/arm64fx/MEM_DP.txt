@@ -10,7 +10,7 @@ PMC5  L2D_CACHE_MIBMCH_PRF
 
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 DP (FP) [MFLOP/s] 1E-06*(PMC0)/time
 DP (FP+SVE128) [MFLOP/s] 1E-06*(((PMC1*128.0)/128.0)+PMC0)/time
 DP (FP+SVE256) [MFLOP/s] 1E-06*(((PMC1*256.0)/128.0)+PMC0)/time

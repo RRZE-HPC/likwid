@@ -9,7 +9,7 @@ PMC4  L1I_TLB_REFILL
 PMC5  L2D_TLB_REFILL
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 L1 DTLB accesses PMC0
 L1 ITLB accesses PMC1
 L2 DTLB accesses PMC2

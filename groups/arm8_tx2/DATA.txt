@@ -7,7 +7,7 @@ PMC2  LD_RETIRED
 PMC3  ST_RETIRED
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 Clock [MHz] 1.E-06*PMC1/time
 CPI  PMC1/PMC0
 Load to store ratio PMC2/PMC3

@@ -10,7 +10,7 @@ PMC5 ASE_SPEC
 
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 Operations spec. executed PMC0
 Load ops spec. executed PMC1
 Store ops spec. executed PMC2

@@ -8,7 +8,7 @@ PMC3  L1I_CACHE_REFILL
 
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 CPI  PMC1/PMC0
 L1I request rate PMC2/PMC0
 L1I miss rate PMC3/PMC0

@@ -5,7 +5,7 @@ PMC0  INST_RETIRED
 PMC1  CPU_CYCLES
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 CPI  PMC1/PMC0
 
 LONG

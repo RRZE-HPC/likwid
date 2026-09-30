@@ -7,7 +7,7 @@ PMC2  MEM_ACCESS_RD
 PMC3  MEM_ACCESS_WR
 
 METRICS
-Runtime (RDTSC) [s] time
+Runtime (gettimeofday) [s] time
 CPI  PMC1/PMC0
 Memory read bandwidth [MBytes/s] 1.0E-06*(PMC2)*64.0/time
 Memory read data volume [GBytes] 1.0E-09*(PMC2)*64.0
