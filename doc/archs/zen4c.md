@@ -26,7 +26,7 @@ P0 frequency while the core is in C0).</P>
 </TR>
 <TR>
   <TD>FIXC0</TD>
-  <TD>INST_RETIRED_ANY (removed due to bad counts)</TD>
+  <TD>INST_RETIRED_ANY (unused due to additional kernel space counting)</TD>
 </TR>
 <TR>
   <TD>FIXC1</TD>
