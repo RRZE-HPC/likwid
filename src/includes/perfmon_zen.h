@@ -55,7 +55,7 @@ int k17_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     uint64_t flags = 0x0ULL;
     switch (event->eventId)
     {
-        case 0x1:
+        case 0x6:
             flags |= (1ULL << AMD_K17_INST_RETIRE_ENABLE_BIT);
             VERBOSEPRINTREG(cpu_id, 0x00, LLU_CAST flags, "SETUP_FIXC0");
             break;

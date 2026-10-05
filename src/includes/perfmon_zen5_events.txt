@@ -27,10 +27,10 @@
 # =======================================================================================
 
 # Fixed Events
-# Not working well. With accessdaemon the counts are off. With perf_event, the
-# event always returns zero
-#EVENT_INST_RETIRED_ANY                      0x06 FIXC0
-#UMASK_INST_RETIRED_ANY                      0x00
+# this fixed counter also counts in kernel space and cannot be reconfigured
+# as the results can be misleading, it is better to use the programmable counter instead
+EVENT_INST_RETIRED_ANY                      0x06 FIXC0
+UMASK_INST_RETIRED_ANY                      0x00
 
 EVENT_ACTUAL_CPU_CLOCK                       0x01 FIXC1
 UMASK_ACTUAL_CPU_CLOCK                       0x00
