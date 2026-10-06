@@ -30,6 +30,7 @@
 # this fixed counter also counts in kernel space and cannot be reconfigured
 # as the results can be misleading, it is better to use the programmable counter instead
 EVENT_INST_RETIRED_ANY                      0x06 FIXC0
+DEFAULT_OPTIONS_INST_RETIRED_ANY EVENT_OPTION_COUNT_KERNEL=0x1
 UMASK_INST_RETIRED_ANY                      0x00
 
 EVENT_ACTUAL_CPU_CLOCK                      0x01 FIXC1
