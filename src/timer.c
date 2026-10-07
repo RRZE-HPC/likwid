@@ -256,58 +256,6 @@ _timer_print( const TimerData* time )
 static void
 getCpuSpeed(void)
 {
-#if defined(__x86_64) || defined(__i386__)
-    int i;
-    TimerData data;
-    unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
-    uint64_t result = 0xFFFFFFFFFFFFFFFFULL;
-    struct timeval tv1;
-    struct timeval tv2;
-    struct timezone tzp;
-    struct timespec delay = { 0, 500000000 }; /* calibration time: 500 ms */
-
-    for (i=0; i< 10; i++)
-    {
-        _timer_start(&data);
-        _timer_stop(&data);
-        result = MIN(result,_timer_printCycles(&data));
-    }
-    baseline = result;
-
-    // Determine the maximal available CPUID Leaf
-    eax = 0, ebx = 0, ecx = 0, edx = 0;
-    CPUID(eax, ebx, ecx, edx);
-    if (eax >= 0x16)
-    {
-        // Processor Frequency Information Leaf (0x16) is available
-        eax = 0x16, ebx = 0, ecx = 0, edx = 0;
-        CPUID(eax, ebx, ecx, edx);
-        cpuClock = (eax & 0xFFFF) * 1000000;
-    }
-    else
-    {
-        // Frequency not provided by the system, measure it.
-        result = 0xFFFFFFFFFFFFFFFFULL;
-        data.stop.int64 = 0;
-        data.start.int64 = 0;
-
-        for (i=0; i< 2; i++)
-        {
-            _timer_start(&data);
-            gettimeofday( &tv1, &tzp);
-            nanosleep( &delay, NULL);
-            _timer_stop(&data);
-            gettimeofday( &tv2, &tzp);
-
-            result = MIN(result,(data.stop.int64 - data.start.int64));
-        }
-
-        cpuClock = (result) * 1000000 /
-            (((uint64_t)tv2.tv_sec * 1000000 + tv2.tv_usec) -
-             ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
-    }
-    cyclesClock = cpuClock;
-#endif
 #ifdef _ARCH_PPC
     FILE *fpipe;
     char *command="grep timebase /proc/cpuinfo | awk '{ print $3 }'";
@@ -335,46 +283,61 @@ getCpuSpeed(void)
     cpuClock = (uint64_t)   atoi(buff);
     cpuClock *= 1E6;
     pclose(fpipe);
-#endif
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
-    uint64_t result = 0xFFFFFFFFFFFFFFFFULL;
+#else
+    int i;
     TimerData data;
-    int i = 0;
+#if defined(__x86_64) || defined(__i386__)
+    unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
+#endif
+    uint64_t result = 0xFFFFFFFFFFFFFFFFULL;
     struct timeval tv1;
     struct timeval tv2;
     struct timezone tzp;
-    struct timespec delay = { 1, 0 }; /* calibration time: 500 ms */
-    for (i=0;i<10;i++)
+    struct timespec delay = { 0, 500000000 }; /* calibration time: 500 ms */
+
+    for (i=0; i< 10; i++)
     {
         _timer_start(&data);
         _timer_stop(&data);
         result = MIN(result,_timer_printCycles(&data));
     }
     baseline = result;
+
+#if defined(__x86_64) || defined(__i386__)
+    // Determine the maximal available CPUID Leaf
+    eax = 0, ebx = 0, ecx = 0, edx = 0;
+    CPUID(eax, ebx, ecx, edx);
+    if (eax >= 0x16)
+    {
+        // Processor Frequency Information Leaf (0x16) is available
+        eax = 0x16, ebx = 0, ecx = 0, edx = 0;
+        CPUID(eax, ebx, ecx, edx);
+        cpuClock = (eax & 0xFFFF) * 1000000;
+        cyclesClock = cpuClock;
+        return;
+    }
+#endif
+    // Frequency not provided by the system, measure it.
     result = 0xFFFFFFFFFFFFFFFFULL;
+    data.stop.int64 = 0;
+    data.start.int64 = 0;
+
     for (i=0; i< 2; i++)
     {
         _timer_start(&data);
         gettimeofday( &tv1, &tzp);
-        gettimeofday( &tv2, &tzp);
-        double t = 0;
-        while (tv2.tv_sec == tv1.tv_sec)
-        {
-            for (int j = 0; j < 10 ; j++)
-                t += 1.0;
-            gettimeofday( &tv2, &tzp);
-        }
-        if (t == 0)
-            continue;
+        nanosleep( &delay, NULL);
         _timer_stop(&data);
+        gettimeofday( &tv2, &tzp);
 
         result = MIN(result,(data.stop.int64 - data.start.int64));
     }
+
     cpuClock = (result) * 1000000 /
         (((uint64_t)tv2.tv_sec * 1000000 + tv2.tv_usec) -
          ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
+    cyclesClock = cpuClock;
 #endif
-
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
