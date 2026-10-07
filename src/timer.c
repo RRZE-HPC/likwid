@@ -176,16 +176,6 @@ static void os_timer(TscCounter* time)
         exit(1);
     }
 }
-
-static void os_timer_start(TscCounter* time)
-{
-    os_timer(time);
-}
-
-static void os_timer_stop(TscCounter* time)
-{
-    os_timer(time);
-}
 #endif
 
 static void
@@ -371,8 +361,8 @@ _timer_init( void )
 #endif
 #endif
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
-        TSTART = os_timer_start;
-        TSTOP = os_timer_stop;
+        TSTART = os_timer;
+        TSTOP = os_timer;
 #endif
 #ifdef _ARCH_PPC
         TSTART = TIMER;
