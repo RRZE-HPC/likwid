@@ -49,9 +49,6 @@ static uint64_t baseline = 0ULL;
 static uint64_t cpuClock = 0ULL;
 static uint64_t cyclesClock = 0ULL;
 static uint64_t sleepbase = 0ULL;
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
-static uint8_t fixedFreq = 0;
-#endif
 static int timer_initialized = 0;
 
 void (*TSTART)(TscCounter*) = NULL;
@@ -240,12 +237,6 @@ _timer_printCycles( const TimerData* time )
     {
         cycles = (time->stop.int64 - time->start.int64 - baseline);
     }
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
-    if (fixedFreq == 1)
-    {
-        cycles *= 1E-6 * cpuClock;
-    }
-#endif
     return cycles;
 }
 
@@ -353,33 +344,6 @@ getCpuSpeed(void)
     struct timeval tv2;
     struct timezone tzp;
     struct timespec delay = { 1, 0 }; /* calibration time: 500 ms */
-/*    FILE *fpipe;*/
-/*    char *command="cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq";*/
-/*    char *command2="cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";*/
-/*    char buff[256];*/
-/*    buff[0] = '\0';*/
-/*    char* buffptr = NULL;*/
-/*    if ( !(fpipe = (FILE*)popen(command2, "r")))*/
-/*    {*/
-/*        perror("Problems with pipe, cannot read /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");*/
-/*        exit(1);*/
-/*    }*/
-/*    buffptr = fgets(buff, 256, fpipe);*/
-/*    fclose(fpipe);*/
-/*    if ((strncmp(buff, "userspace", 9) == 0) || (strncmp(buff, "performance", 11) == 0))*/
-/*    {*/
-/*        fixedFreq = 1;*/
-/*    }*/
-/*    buff[0] = '\0';*/
-/*    buffptr = NULL;*/
-
-/*    if ( !(fpipe = (FILE*)popen(command, "r")))*/
-/*    {*/
-/*        perror("Problems with pipe, cannot read /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq");*/
-/*        exit(1);*/
-/*    }*/
-/*    buffptr = fgets(buff, 256, fpipe);*/
-/*    fclose(fpipe);*/
     for (i=0;i<10;i++)
     {
         _timer_start(&data);
