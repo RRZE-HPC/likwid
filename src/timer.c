@@ -48,6 +48,9 @@
 static uint64_t baseline = 0ULL;
 static uint64_t cpuClock = 0ULL;
 static uint64_t cyclesClock = 0ULL;
+#if defined(__ARM_ARCH_8A)
+static uint64_t tscClock = 0ULL;
+#endif
 static uint64_t sleepbase = 0ULL;
 static int timer_initialized = 0;
 
@@ -159,7 +162,7 @@ TIMER(TscCounter* cpu_c)
 }
 #endif
 
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+#if defined(__ARM_ARCH_7A__)
 static void os_timer(TscCounter* time)
 {
     int ret;
@@ -175,6 +178,30 @@ static void os_timer(TscCounter* time)
         perror("gettimeofday");
         exit(1);
     }
+}
+#endif
+
+#if defined(__ARM_ARCH_8A)
+static void
+armv8_rdtscclock(void)
+{
+    __asm__ volatile(
+    "isb\n\t"                \
+    "mrs %0, cntfrq_el0\n\t" \
+    "isb\n\t"                \
+    : "=r" (tscClock)        \
+    : : "memory");
+}
+
+static void
+armv8_rdtsc(TscCounter* cpu_c)
+{
+    __asm__ volatile(
+    "isb\n\t"                \
+    "mrs %0, cntvct_el0\n\t" \
+    "isb\n\t"                \
+    : "=r" ((cpu_c)->int64)  \
+    : : "memory");
 }
 #endif
 
@@ -240,8 +267,10 @@ _timer_print( const TimerData* time )
 {
     uint64_t cycles = 0x0ULL;
     cycles = _timer_printCycles(time);
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+#if defined(__ARM_ARCH_7A__)
     return ((double) cycles) * 1E-6;
+#elif defined(__ARM_ARCH_8A)
+    return ((double) cycles) / ((double) tscClock);
 #else
     return  ((double) cycles / (double) cyclesClock);
 #endif
@@ -360,9 +389,14 @@ _timer_init( void )
         TSTOP = fRDTSC_CR;
 #endif
 #endif
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+#if defined(__ARM_ARCH_7A__)
         TSTART = os_timer;
         TSTOP = os_timer;
+#endif
+#if defined(__ARM_ARCH_8A)
+        TSTART = armv8_rdtsc;
+        TSTOP = armv8_rdtsc;
+        armv8_rdtscclock();
 #endif
 #ifdef _ARCH_PPC
         TSTART = TIMER;
