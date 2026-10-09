@@ -160,7 +160,7 @@ TIMER(TscCounter* cpu_c)
 #endif
 
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
-static int os_timer(TscCounter* time)
+static void os_timer(TscCounter* time)
 {
     int ret;
     struct timeval cur;
@@ -170,7 +170,11 @@ static int os_timer(TscCounter* time)
         time->int64 = ((uint64_t)cur.tv_sec) * 1E6;
         time->int64 += cur.tv_usec;
     }
-    return ret;
+    else
+    {
+        perror("gettimeofday");
+        exit(1);
+    }
 }
 
 static void os_timer_start(TscCounter* time)
