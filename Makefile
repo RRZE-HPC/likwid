@@ -43,7 +43,20 @@ Q         ?= @
 # *.ptt -> *.pas -> *.s -> *.o -> executables
 # *.txt -> *.h (generated)
 
+COMPILER_FILES := $(wildcard $(MAKE_DIR)/include_*.mk)
+COMPILERS_LIST := $(patsubst $(MAKE_DIR)/include_%.mk,%,$(COMPILER_FILES))
+
 include ./config.mk
+
+ifeq ($(COMPILER),)
+$(info Compilers available: $(COMPILERS_LIST))
+$(error Compiler has not been specified)
+endif
+ifeq ($(filter $(COMPILERS_LIST),$(COMPILER)),)
+$(info Compilers available: $(COMPILERS_LIST))
+$(error Compiler $(COMPILER) is not yet supported, provide support in $(MAKE_DIR)/include_$(COMPILER).mk)
+endif
+
 include $(MAKE_DIR)/include_$(COMPILER).mk
 include $(MAKE_DIR)/config_git.mk
 include $(MAKE_DIR)/config_checks.mk
