@@ -445,6 +445,7 @@ clean:
 .PHONY: distclean
 distclean: clean
 	@echo "===>  DIST CLEAN"
+	@rm -rf $(COMPILERS_LIST)
 	@rm -rf $(BUILD_DIR)
 	@if [ "$(LUA_INTERNAL)" = "true" ]; then rm -f $(TARGET_LUA_LIB).* $(shell basename $(TARGET_LUA_LIB)).*; fi
 	@if [ "$(USE_INTERNAL_HWLOC)" = "true" ]; then rm -f $(TARGET_HWLOC_LIB).* $(shell basename $(TARGET_HWLOC_LIB)).*; fi
