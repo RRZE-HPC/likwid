@@ -1595,7 +1595,7 @@ if use_marker == true then
             os.remove(markerFile)
         else
             print_stderr(
-            "MMarker API result file does not exist. This may happen if the application was not compiled with LIKWID_PERFMON macro or the application has not called LIKWID_MARKER_CLOSE.")
+            "Marker API result file does not exist. This may happen if the application was not compiled with LIKWID_PERFMON macro or the application has not called LIKWID_MARKER_CLOSE.")
         end
     end
     ---------------------------
