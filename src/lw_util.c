@@ -64,11 +64,13 @@ int search_path_env(const char *binary, char **pathFinal)
             continue;
         }
 
-        if ((s.st_mode & S_IFMT) == S_IFREG) {
+        if ((s.st_mode & S_IFMT) != S_IFREG) {
             err = -ENOENT;
             free(pathCandidate);
             continue;
         }
+
+        // Strictly speaking this doesn't find files behind symbolic links...
 
         *pathFinal = pathCandidate;
         goto ret;
