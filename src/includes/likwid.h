@@ -942,6 +942,25 @@ CPU cannot be set up)
 */
 extern int perfmon_setupCounters(int groupId)
     __attribute__((visibility("default")));
+/*! \brief Release all performance monitoring counters
+
+Release the counters previously acquired by initialization so that another
+application can use them in the meantime. This does not release any other
+resources.
+*/
+extern void perfmon_releaseCounters(void) 
+    __attribute__((visibility("default")));
+
+/*! \brief Acquire all performance monitoring counters
+
+Acquires all performance monitoring counters previously released by
+perfmon_releaseCounters(), takes the same parameters as perfmon_init(...).
+@param [in] nrThreads (Number of Threads)
+@param [in] threadsToCpu (List of CPUs)
+@return error code (0 on success, -ERRORCODE on failure)
+*/
+extern int perfmon_acquireCounters(int nrThreads, const int* threadsToCpu) 
+    __attribute__((visibility("default")));
 /*! \brief Start performance monitoring counters
 
 Start the counters that have been previously set up by perfmon_setupCounters().
