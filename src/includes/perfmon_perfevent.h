@@ -199,7 +199,8 @@ int perfmon_init_perfevent(int cpu_id)
         perfEventOptionNames[EVENT_OPTION_TID] = "threadmask";
         perfEventOptionNames[EVENT_OPTION_CID] = "coreid";
         perfEventOptionNames[EVENT_OPTION_SLICE] = "sliceid";
-    } else if (cpuid_info.family == ZEN5_FAMILY && (cpuid_info.model == ZEN5_EPYC)) {
+        perfEventOptionNames[EVENT_OPTION_MASK0] = "rdwrmask";
+    } else if (cpuid_info.family == ZEN5_FAMILY && (cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5C_EPYC)) {
         perfEventOptionNames[EVENT_OPTION_TID] = "threadmask";
         perfEventOptionNames[EVENT_OPTION_CID] = "coreid";
         perfEventOptionNames[EVENT_OPTION_SLICE] = "sliceid";
@@ -916,13 +917,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                 case EVENT_OPTION_SLICE:
                     num_formats = 0;
                     formats = NULL;
-                    char *optName = perfEventOptionNames[event->options[j].type];
-                    if (event->options[j].type == EVENT_OPTION_MASK0 &&
-                        strstr(bdata(perf_folder), "/amd_umc_") != NULL)
-                    {
-                        optName = "rdwrmask";
-                    }
-                    ret = parse_event_config(bdata(perf_folder), optName, &num_formats, &formats);
+                    ret = parse_event_config(bdata(perf_folder), perfEventOptionNames[event->options[j].type], &num_formats, &formats);
                     if (ret == 0)
                     {
                         uint64_t optval = event->options[j].value;
