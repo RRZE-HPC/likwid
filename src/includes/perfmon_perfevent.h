@@ -917,8 +917,10 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                     num_formats = 0;
                     formats = NULL;
                     char *optName = perfEventOptionNames[event->options[j].type];
-                    if ((type >= BBOX0 && type <= BBOX11) && (cpuid_info.family == ZEN5_FAMILY) && (cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5C_EPYC)) {
-                         optName = "rdwrmask";
+                    if (event->options[j].type == EVENT_OPTION_MASK0 &&
+                        strstr(bdata(perf_folder), "/amd_umc_") != NULL)
+                    {
+                        optName = "rdwrmask";
                     }
                     ret = parse_event_config(bdata(perf_folder), optName, &num_formats, &formats);
                     if (ret == 0)
@@ -1507,13 +1509,19 @@ int perfmon_setupCountersThread_perfevent(
                 if ((type >= BBOX0 && type <= BBOX11) && (cpuid_info.family == ZEN5_FAMILY) && (cpuid_topology.numSockets > 1) && (cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5C_EPYC))
                 {
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating UMC uncore type for socket %d on AMD Zen5", affinity_thread2socket_lookup[cpu_id]);
-                    type += (affinity_thread2socket_lookup[cpu_id] * AMD_K1A_UMC_MAX_UNITS);
+                    /* Linux numbers only active UMCs, consecutively across sockets. */
+                    unsigned eax = 0x80000022, ebx = 0, ecx = 0, edx = 0;
+                    CPUID(eax, ebx, ecx, edx);
+                    type += affinity_thread2socket_lookup[cpu_id] * bitMask_popcount(ecx);
                 }
                 if (   (type >= BBOX0 && type <= BBOX11) && (cpuid_info.family == ZEN3_FAMILY) && (cpuid_topology.numSockets > 1)
                     && (cpuid_info.model == ZEN4_EPYC || cpuid_info.model == ZEN4_EPYC_BERGAMO || cpuid_info.model == ZEN4_RYZEN2 || cpuid_info.model == ZEN4_RYZEN || cpuid_info.model == ZEN4_RYZEN_PRO || cpuid_info.model == ZEN4_RYZEN3 || cpuid_info.model == ZEN4_MI300A))
                 {
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating UMC uncore type for socket %d on AMD Zen4", affinity_thread2socket_lookup[cpu_id]);
-                    type += (affinity_thread2socket_lookup[cpu_id] * AMD_K1A_UMC_MAX_UNITS);
+                    /* Linux numbers only active UMCs, consecutively across sockets. */
+                    unsigned eax = 0x80000022, ebx = 0, ecx = 0, edx = 0;
+                    CPUID(eax, ebx, ecx, edx);
+                    type += affinity_thread2socket_lookup[cpu_id] * bitMask_popcount(ecx);
                 }
                 if (has_lock)
                 {
