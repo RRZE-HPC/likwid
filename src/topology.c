@@ -136,6 +136,7 @@ static const char *arm_neoverse_n1         = "ARM Neoverse N1";
 static const char *arm_neoverse_v1         = "ARM Neoverse V1";
 static const char *arm_huawei_tsv110       = "Huawei TSV110 (ARMv8)";
 static const char *arm_nvidia_grace        = "Nvidia Grace";
+static const char *arm_nvidia_vera         = "Nvidia Vera";
 static const char *fujitsu_a64fx           = "Fujitsu A64FX";
 static const char *apple_m1_studio         = "Apple M1";
 static const char *power7_str              = "POWER7 architecture";
@@ -203,6 +204,7 @@ static const char *short_arm8_neo_v1  = "arm8_v1";
 static const char *short_a64fx        = "arm64fx";
 static const char *short_apple_m1     = "apple_m1";
 static const char *short_nvidia_grace = "nvidia_grace";
+static const char *short_nvidia_vera = "nvidia_vera";
 
 static const char *short_power7 = "power7";
 static const char *short_power8 = "power8";
@@ -1396,6 +1398,17 @@ int topology_setName(void)
             case HUAWEI_TSV110:
                 cpuid_info.name       = arm_huawei_tsv110;
                 cpuid_info.short_name = short_arm8;
+                break;
+            default:
+                err = -EFAULT;
+                break;
+            }
+            break;
+        case NVIDIA_ARM:
+            switch (cpuid_info.part) {
+            case NVIDIA_VERA:
+                cpuid_info.name       = arm_nvidia_vera;
+                cpuid_info.short_name = short_nvidia_vera;
                 break;
             default:
                 err = -EFAULT;

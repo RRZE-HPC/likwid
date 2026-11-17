@@ -614,12 +614,15 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
     {
         hwThreadPool[i].apicId = i;
-        cpudir = bformat("/sys/devices/system/cpu/cpu%d/topology",i);
         hwThreadPool[i].threadId = -1;
         hwThreadPool[i].coreId = -1;
         hwThreadPool[i].packageId = -1;
         hwThreadPool[i].dieId = -1;
         hwThreadPool[i].inCpuSet = 0;
+    }
+    for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
+    {
+        cpudir = bformat("/sys/devices/system/cpu/cpu%d/topology",i);
         if (CPU_ISSET(i, &cpuSet) && likwid_cpu_online(i))
         {
             hwThreadPool[i].inCpuSet = 1;
@@ -641,17 +644,19 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
             }
             fclose(fp);
         }
-        bdestroy(file);
-        file = bformat("%s/core_id", bdata(cpudir));
-        if (NULL != (fp = fopen (bdata(file), "r")))
-        {
-            // TODO why are we reading this file if we don't use it?
-            bstring src = bread ((bNread) fread, fp);
-            bdestroy(src);
-            hwThreadPool[i].coreId = (++last_coreid);
-            fclose(fp);
+        if (file) { bdestroy(file); file = NULL; }
+        if (hwThreadPool[i].coreId == (unsigned)-1) {
+            file = bformat("%s/core_id", bdata(cpudir));
+            if (NULL != (fp = fopen (bdata(file), "r")))
+            {
+                // TODO why are we reading this file if we don't use it?
+                bstring src = bread ((bNread) fread, fp);
+                bdestroy(src);
+                hwThreadPool[i].coreId = (++last_coreid);
+                fclose(fp);
+            }
         }
-        bdestroy(file);
+        if (file) { bdestroy(file); file = NULL; }
         file = bformat("%s/die_id", bdata(cpudir));
         if (NULL != (fp = fopen (bdata(file), "r")))
         {
@@ -659,22 +664,48 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
             hwThreadPool[i].dieId = ownatoi(bdata(src));
             bdestroy(src);
             fclose(fp);
+        } else {
+            if (file) { bdestroy(file); file = NULL; }
+            file = bformat("%s/cluster_id", bdata(cpudir));
+            if (NULL != (fp = fopen (bdata(file), "r")))
+            {
+                bstring src = bread ((bNread) fread, fp);
+                hwThreadPool[i].dieId = ownatoi(bdata(src));
+                bdestroy(src);
+                fclose(fp);
+            }
         }
-        bdestroy(file);
+        if (file) { bdestroy(file); file = NULL; }
         file = bformat("%s/thread_siblings_list", bdata(cpudir));
         if (NULL != (fp = fopen (bdata(file), "r")))
         {
             bstring src = bread ((bNread) fread, fp);
             hwThreadPool[i].threadId = get_listPosition(i, src);
-            bdestroy(src);
             if (hwThreadPool[i].packageId == 0 &&
                 hwThreadPool[i].coreId == 0)
             {
                 num_threads_per_core++;
             }
+            if (hwThreadPool[i].threadId == 0) {
+                struct bstrList* tmplist = bsplit(src, ',');
+                for (int j = 0; j < tmplist->qty; j++) {
+                    char* entry = NULL;
+                    if (bdata(tmplist->entry[j]))
+                        entry = bdata(tmplist->entry[j]);
+                    int tmpid = atoi(entry);
+                    for (int k = 0; k < (int)cpuid_topology.numHWThreads; k++) {
+                        if ((uint32_t)k == i) continue;
+                        if (k == tmpid && hwThreadPool[k].coreId == (uint32_t)-1) {
+                            hwThreadPool[k].coreId = hwThreadPool[i].coreId;
+                        }
+                    }
+                }
+                bstrListDestroy(tmplist);
+            }
             fclose(fp);
+            bdestroy(src);
         }
-        bdestroy(file);
+        if (file) { bdestroy(file); file = NULL; }
 #ifdef __ARM_ARCH_8A
         if (hwThreadPool[i].packageId == -1)
         {

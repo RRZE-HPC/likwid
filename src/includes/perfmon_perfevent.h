@@ -84,6 +84,13 @@ static char* perfEventOptionNames[] = {
     [EVENT_OPTION_PMC] = "pmc",
     [EVENT_OPTION_PMCXSEL] = "pmcxsel",
 #endif
+    [EVENT_OPTION_DESTINATION_CMEM] = "dst_loc_cmem",
+    [EVENT_OPTION_DESTINATION_GMEM] = "dst_loc_gmem",
+    [EVENT_OPTION_DESTINATION_OTHER] = "dst_loc_other",
+    [EVENT_OPTION_DESTINATION_REMOTE] = "dst_rem",
+    [EVENT_OPTION_SOURCE_CPU] = "src_loc_cpu",
+    [EVENT_OPTION_SOURCE_NONCPU] = "src_loc_noncpu",
+    [EVENT_OPTION_SOURCE_REMOTE] = "src_rem",
 };
 
 static long
@@ -176,7 +183,9 @@ int perfmon_init_perfevent(int cpu_id)
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &numa_lock[affinity_thread2numa_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]], cpu_id);
-    lock_acquire((int*) &die_lock[affinity_thread2die_lookup[cpu_id]], cpu_id);
+    if (cpuid_topology.numDies > 0) {
+        lock_acquire((int*) &die_lock[affinity_thread2die_lookup[cpu_id]], cpu_id);
+    }
     lock_acquire((int*) &core_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     
     if (cpu_event_fds == NULL)
@@ -204,7 +213,6 @@ int perfmon_init_perfevent(int cpu_id)
         perfEventOptionNames[EVENT_OPTION_CID] = "coreid";
         perfEventOptionNames[EVENT_OPTION_SLICE] = "sliceid";
         perfEventOptionNames[EVENT_OPTION_MASK0] = "rdwrmask";
-
     }
     perf_event_initialized = 1;
     return 0;
@@ -409,7 +417,8 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
         }
         if (strncmp(event->name, "CPU_CLK_UNHALTED_CORE", 22) == 0 ||
             strncmp(event->name, "ACTUAL_CPU_CLOCK", 17) == 0 ||
-            strncmp(event->name, "APERF", 5) == 0)
+            strncmp(event->name, "APERF", 5) == 0 ||
+            strncmp(event->name, "CPU_CYCLES", 10) == 0)
         {
             attr->config = PERF_COUNT_HW_CPU_CYCLES;
             err = 0;
@@ -625,6 +634,10 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, RegisterTy
                 case EVENT_OPTION_INVERT:
                 case EVENT_OPTION_IN_TRANS:
                 case EVENT_OPTION_IN_TRANS_ABORT:
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+                case EVENT_OPTION_THRESHOLD_COMPARE:
+                case EVENT_OPTION_THRESHOLD_COUNT:
+#endif
                     ret = 0;
                     num_formats = 0;
                     formats = NULL;
@@ -914,6 +927,26 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
                 case EVENT_OPTION_TID:
                 case EVENT_OPTION_CID:
                 case EVENT_OPTION_SLICE:
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+                case EVENT_OPTION_DESTINATION_CMEM:
+                case EVENT_OPTION_DESTINATION_GMEM:
+                case EVENT_OPTION_DESTINATION_OTHER:
+                case EVENT_OPTION_DESTINATION_REMOTE:
+                case EVENT_OPTION_DESTINATION_ADDR_BASE:
+                case EVENT_OPTION_DESTINATION_ADDR_EN:
+                case EVENT_OPTION_DESTINATION_ADDR_MASK:
+                case EVENT_OPTION_DESTINATION_PCIE_CXL:
+                case EVENT_OPTION_DESTINATION_PCIE_P2P:
+                case EVENT_OPTION_DESTINATION_RP_MASK:
+                case EVENT_OPTION_SOURCE_CPU:
+                case EVENT_OPTION_SOURCE_NONCPU:
+                case EVENT_OPTION_SOURCE_REMOTE:
+                case EVENT_OPTION_SOURCE_BDF:
+                case EVENT_OPTION_SOURCE_BDF_EN:
+                case EVENT_OPTION_SOURCE_RP_MASK:
+                case EVENT_OPTION_REMOTE_SOCKET:
+                case EVENT_OPTION_PORT:
+#endif
                     num_formats = 0;
                     formats = NULL;
                     char *optName = perfEventOptionNames[event->options[j].type];
@@ -1499,9 +1532,9 @@ int perfmon_setupCountersThread_perfevent(
                         has_lock = 1;
                     }
                 }
-                if ((cpuid_info.family == ARMV8_FAMILY) && (cpuid_info.part == NVIDIA_GRACE) && cpuid_topology.numSockets > 1)
+                if ((cpuid_info.family == ARMV8_FAMILY) && (cpuid_info.part == NVIDIA_GRACE || cpuid_info.part == NVIDIA_VERA) && cpuid_topology.numSockets > 1)
                 {
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating uncore type for socket %d on Nvidia Grace", affinity_thread2socket_lookup[cpu_id]);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Updating uncore type for socket %d on Nvidia Grace/Vera", affinity_thread2socket_lookup[cpu_id]);
                     type += affinity_thread2socket_lookup[cpu_id];
                 }
                 if ((type >= BBOX0 && type <= BBOX11) && (cpuid_info.family == ZEN5_FAMILY) && (cpuid_topology.numSockets > 1) && (cpuid_info.model == ZEN5_EPYC || cpuid_info.model == ZEN5C_EPYC))

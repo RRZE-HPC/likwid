@@ -446,6 +446,7 @@ int likwid_pinProcess(int processorId) {
 
     CPU_ZERO(&cpuset);
     CPU_SET(processorId, &cpuset);
+    printf("Pinning process %d to %d\n", getpid(), processorId);
     ret = sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
 
     if (ret < 0)
@@ -468,6 +469,7 @@ likwid_pinThread(int processorId)
     thread = pthread_self();
     CPU_ZERO(&cpuset);
     CPU_SET(processorId, &cpuset);
+    printf("Pinning thread %ld to %d\n", gettid(), processorId);
     ret = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
 
     if (ret != 0)
@@ -545,9 +547,12 @@ void likwid_markerInit(void) {
             if (count == 1 && count != _libperfctr_num_hwthreads) {
                 cpu_set_t newcpuset;
                 CPU_ZERO(&newcpuset);
+                printf("Setting new cpuset: ");
                 for (int i = 0; i < _libperfctr_num_hwthreads; i++) {
                     CPU_SET(_libperfctr_thread_2_hwthread[i], &newcpuset);
+                    printf("%d ", _libperfctr_thread_2_hwthread[i]);
                 }
+                printf("\n");
                 ret = sched_setaffinity(0, sizeof(cpu_set_t), &newcpuset);
                 if (ret < 0) {
                     ERROR_PRINT("Failed to set cpuset for master thread.\n");
@@ -569,7 +574,7 @@ void likwid_markerInit(void) {
 #endif
 
     if (pinStr != NULL) {
-        likwid_pinThread(_libperfctr_thread_2_hwthread[0]);
+        //likwid_pinThread(_libperfctr_thread_2_hwthread[0]);
         if (get_omp_threads() > _libperfctr_num_hwthreads) {
             _libperfctr_use_locks = 1;
         }

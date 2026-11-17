@@ -192,6 +192,9 @@ int perfgroup_getGroups(const char *grouppath, const char *architecture, char **
             closedir(dp);
         }
     }
+    if (totalgroups == 0) {
+        return 0;
+    }
     *groupnames = malloc(totalgroups * sizeof(char **));
     if (*groupnames == NULL) {
         free(fullpath);

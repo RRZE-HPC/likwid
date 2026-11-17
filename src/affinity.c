@@ -622,8 +622,23 @@ static int _affinity_addMemoryDomain(int nodeId, AffinityDomain *domain, int *he
     if ((nodeId < 0) || (!domain)) {
         return -EINVAL;
     }
+    
     if (cputopo && numatopo) {
         if (nodeId >= 0 && (uint32_t)nodeId < numatopo->numberOfNodes) {
+
+            int offset = 0;
+            for (uint32_t i = 0; i < MAX(cputopo->numSockets, 1); i++) {
+            int tmp = treeFillNextEntries(cputopo->topologyTree,
+                    help,
+                    offset,
+                    i,
+                    0,
+                    cputopo->numCoresPerSocket,
+                    cputopo->numCoresPerSocket * cputopo->numThreadsPerCore);
+                offset += tmp;
+            }
+            int num_hwthreads_in_help = offset;
+
             domain->processorList =
                 malloc(numatopo->nodes[nodeId].numberOfProcessors * sizeof(int));
             if (!domain->processorList) {
@@ -634,15 +649,16 @@ static int _affinity_addMemoryDomain(int nodeId, AffinityDomain *domain, int *he
                 free(domain->processorList);
                 return -ENOMEM;
             }
-            for (unsigned i = 0; i < numatopo->nodes[nodeId].numberOfProcessors; i++) {
-                for (unsigned j = 0; j < cputopo->numHWThreads; j++) {
-                    if (cputopo->threadPool[j].apicId == numatopo->nodes[nodeId].processors[i] &&
-                        cputopo->threadPool[j].inCpuSet == 1) {
+
+            for (unsigned j = 0; j < (unsigned)num_hwthreads_in_help; j++) {
+                for (unsigned i = 0; i < numatopo->nodes[nodeId].numberOfProcessors; i++) {
+                    if (help[j] == (int)numatopo->nodes[nodeId].processors[i]) {
                         domain->processorList[num_hwthreads++] =
-                            (int)numatopo->nodes[nodeId].processors[i];
+                                (int)numatopo->nodes[nodeId].processors[i];
                     }
                 }
             }
+            memset(help, 0, cputopo->numHWThreads * sizeof(int));
             domain->numberOfProcessors = num_hwthreads;
             domain->numberOfCores =
                 affinity_countSocketCores(domain->numberOfProcessors, domain->processorList, help);
