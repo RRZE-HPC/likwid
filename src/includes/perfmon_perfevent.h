@@ -84,6 +84,7 @@ static char* perfEventOptionNames[] = {
     [EVENT_OPTION_PMC] = "pmc",
     [EVENT_OPTION_PMCXSEL] = "pmcxsel",
 #endif
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
     [EVENT_OPTION_DESTINATION_CMEM] = "dst_loc_cmem",
     [EVENT_OPTION_DESTINATION_GMEM] = "dst_loc_gmem",
     [EVENT_OPTION_DESTINATION_OTHER] = "dst_loc_other",
@@ -91,6 +92,7 @@ static char* perfEventOptionNames[] = {
     [EVENT_OPTION_SOURCE_CPU] = "src_loc_cpu",
     [EVENT_OPTION_SOURCE_NONCPU] = "src_loc_noncpu",
     [EVENT_OPTION_SOURCE_REMOTE] = "src_rem",
+#endif
 };
 
 static long
