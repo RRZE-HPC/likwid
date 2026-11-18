@@ -98,6 +98,9 @@
 #include <perfmon_nvidiagrace.h>
 #include <perfmon_graniterapids.h>
 #include <perfmon_sierraforrest.h>
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+#include <perfmon_nvidiavera.h>
+#endif
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -174,11 +177,34 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     [EVENT_OPTION_IN_TRANS_ABORT] = "IN_TRANSACTION_ABORTED",
     [EVENT_OPTION_GENERIC_CONFIG] = "CONFIG",
     [EVENT_OPTION_GENERIC_UMASK] = "UMASK",
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    [EVENT_OPTION_THRESHOLD_COUNT] = "THRESHOLD_COUNT",
+    [EVENT_OPTION_THRESHOLD_COMPARE] = "THRESHOLD_COMPARE",
+    [EVENT_OPTION_DESTINATION_CMEM] = "DST_LOC_CMEM",
+    [EVENT_OPTION_DESTINATION_GMEM] = "DST_LOC_GMEM",
+    [EVENT_OPTION_DESTINATION_OTHER] = "DST_LOC_OTHER",
+    [EVENT_OPTION_DESTINATION_REMOTE] = "DST_REM",
+    [EVENT_OPTION_DESTINATION_PCIE_CXL] = "DST_LOC_PCIE_CXL",
+    [EVENT_OPTION_DESTINATION_PCIE_P2P] = "DST_LOC_PCIE_P2P",
+    [EVENT_OPTION_DESTINATION_ADDR_BASE] = "DST_ADDR_BASE",
+    [EVENT_OPTION_DESTINATION_ADDR_MASK] = "DST_ADDR_MASK",
+    [EVENT_OPTION_DESTINATION_ADDR_EN] = "DST_ADDR_EN",
+    [EVENT_OPTION_DESTINATION_RP_MASK] = "DST_RP_MASK",
+    [EVENT_OPTION_SOURCE_CPU] = "SRC_LOC_CPU",
+    [EVENT_OPTION_SOURCE_NONCPU] = "SRC_LOC_NONCPU",
+    [EVENT_OPTION_SOURCE_REMOTE] = "SRC_REM",
+    [EVENT_OPTION_SOURCE_BDF] = "SRC_BDF",
+    [EVENT_OPTION_SOURCE_BDF_EN] = "SRC_BDF_EN",
+    [EVENT_OPTION_REMOTE_SOCKET] = "REMOTE_SOCKET",
+    [EVENT_OPTION_PORT] = "PORT",
+    [EVENT_OPTION_GPU_INDEX] = "GPU_INDEX",
+#endif
 #ifdef LIKWID_USE_PERFEVENT
     [EVENT_OPTION_PERF_PID] = "PERF_PID",
     [EVENT_OPTION_PERF_FLAGS] = "PERF_FLAGS",
 #endif
 };
+
 
 char* default_translate_types[NUM_UNITS] = {
     [FIXED] = "/sys/bus/event_source/devices/cpu",
@@ -452,7 +478,11 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
         btolower(subtokens->entry[0]);
         if (subtokens->qty == 1)
         {
-            if (biseqcstr(subtokens->entry[0], "edgedetect") == 1)
+            if ((biseqcstr(subtokens->entry[0], "edgedetect") == 1)
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+             || (biseqcstr(subtokens->entry[0], "threshold_count") == 1)
+#endif
+             )
             {
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
                                     event->numberOfOptions, EVENT_OPTION_EDGE, 1);
@@ -492,6 +522,69 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
                                     event->numberOfOptions, EVENT_OPTION_IN_TRANS_ABORT, 1);
             }
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+            else if (biseqcstr(subtokens->entry[0], "threshold_count") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_THRESHOLD_COUNT, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "dst_loc_cmem") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_DESTINATION_CMEM, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "dst_loc_gmem") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_DESTINATION_GMEM, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "dst_loc_other") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_DESTINATION_OTHER, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "dst_rem") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_DESTINATION_REMOTE, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "dst_loc_pcie_cxl") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_DESTINATION_PCIE_CXL, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "dst_loc_pcie_p2p") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_DESTINATION_PCIE_P2P, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "dst_addr_en") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_DESTINATION_ADDR_EN, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "src_loc_cpu") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_SOURCE_CPU, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "src_loc_noncpu") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_SOURCE_NONCPU, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "src_rem") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_SOURCE_REMOTE, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "src_bdf_en") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_SOURCE_BDF_EN, 1);
+            }
+            
+#endif
             else
             {
                 fprintf(stderr, "WARN: Option '%s' unknown, skipping option\n", bdata(subtokens->entry[0]));
@@ -606,6 +699,53 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
             {
                 event->umask = bstr2u64(subtokens->entry[1], 16);
             }
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+            else if (biseqcstr(subtokens->entry[0], "threshold_compare") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_THRESHOLD_COMPARE, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "dst_addr_base") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_DESTINATION_ADDR_BASE, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "dst_addr_mask") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_DESTINATION_ADDR_MASK, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "dst_rp_mask") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_DESTINATION_RP_MASK, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "src_bdf") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_SOURCE_BDF, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "src_rp_mask") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_SOURCE_RP_MASK, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "remote_socket") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_REMOTE_SOCKET, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "port") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_PORT, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "gpu_index") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_GPU_INDEX, 0);
+            }
+#endif
             else
             {
                 fprintf(stderr, "WARN: Option '%s' unknown, skipping option\n", bdata(subtokens->entry[0]));
@@ -1650,6 +1790,26 @@ perfmon_init_maps(void)
                              ERROR_PRINT("Unsupported Apple Processor");
                              err = -EINVAL;
                              break;
+                    }
+                    break;
+                case NVIDIA_ARM:
+                    switch (cpuid_info.part)
+                    {
+                        case NVIDIA_VERA:
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+                            eventHash = nvidiavera_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsNvidiaVera;
+                            counter_map = nvidiavera_counter_map;
+                            box_map = nvidiavera_box_map;
+                            perfmon_numCounters = perfmon_numCountersNvidiaVera;
+                            translate_types = nvidiavera_translate_types;
+                            archRegisterTypeNames = registerTypeNamesNvidiaVera;
+#endif
+                            break;
+                        default:
+                            ERROR_PRINT("Unsupported Nvidia ARM Processor");
+                            err = -EINVAL;
+                            break;
                     }
                     break;
                 default:

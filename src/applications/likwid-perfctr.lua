@@ -808,7 +808,7 @@ end
 
 avail_groups = likwid.getGroups()
 if print_groups == true then
-    if avail_groups then
+    if avail_groups and #avail_groups > 0 then
         local max_len = 0
         for i, g in pairs(avail_groups) do
             if g["Name"]:len() > max_len then max_len = g["Name"]:len() end
