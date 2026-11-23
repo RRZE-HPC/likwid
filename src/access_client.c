@@ -132,7 +132,6 @@ static int
 access_client_startDaemon_direct(uint32_t cpu_id, struct sockaddr_un *address)
 {
     /* Check the function of the daemon here */
-    char *newargv[] = { NULL };
     char *newenv[] = { NULL };
     const char *safeexeprog = TOSTRING(ACCESSDAEMON);
     char exeprog[1024];
@@ -166,6 +165,7 @@ access_client_startDaemon_direct(uint32_t cpu_id, struct sockaddr_un *address)
 /*            CPU_SET(cpu_id, &cpuset);*/
 /*            sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);*/
 /*        }*/
+        char *newargv[] = { exeprog, NULL };
         execve (exeprog, newargv, newenv);
         ERROR_PRINT("Failed to execute the daemon '%s'", exeprog);
         exit(EXIT_FAILURE);
