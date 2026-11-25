@@ -3,6 +3,9 @@ MAKE_DIR   = ../../make
 
 #DO NOT EDIT BELOW
 
+COMPILER_FILES := $(wildcard $(MAKE_DIR)/include_*.mk)
+COMPILERS_LIST := $(patsubst $(MAKE_DIR)/include_%.mk,%,$(COMPILER_FILES))
+
 include ../../config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 include $(MAKE_DIR)/config_checks.mk
@@ -94,6 +97,6 @@ clean:
 distclean: clean
 	@echo "===>  DIST CLEAN HWLOC"
 	@rm -rf $(BUILD_DIR)
-
+	@rm -rf $(COMPILERS_LIST)
 
 

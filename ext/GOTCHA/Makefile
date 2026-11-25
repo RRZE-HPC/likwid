@@ -31,6 +31,9 @@ MAKE_DIR   = ../../make
 
 #DO NOT EDIT BELOW
 
+COMPILER_FILES := $(wildcard $(MAKE_DIR)/include_*.mk)
+COMPILERS_LIST := $(patsubst $(MAKE_DIR)/include_%.mk,%,$(COMPILER_FILES))
+
 include ../../config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 include $(MAKE_DIR)/config_checks.mk
@@ -101,3 +104,4 @@ distclean: clean
 	@echo "===>  DIST CLEAN GOTCHA"
 	@rm -f $(TARGET) $(SHARED_LIBGOTCHA) $(STATIC_LIBGOTCHA) $(LIBGOTCHA).$(VERSION).$(RELEASE) $(LIBGOTCHA).$(VERSION)
 	@rm -rf $(BUILD_DIR)
+	@rm -rf $(COMPILERS_LIST)

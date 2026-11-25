@@ -36,6 +36,9 @@ MAKE_DIR    = ../make
 # *.ptt -> *.pas -> *.s -> *.o -> executables
 # *.txt -> *.h (generated)
 
+COMPILER_FILES := $(wildcard $(MAKE_DIR)/include_*.mk)
+COMPILERS_LIST := $(patsubst $(MAKE_DIR)/include_%.mk,%,$(COMPILER_FILES))
+
 include ../config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 include $(MAKE_DIR)/config_checks.mk
@@ -164,6 +167,7 @@ clean:
 distclean: clean
 	@echo "===>  DIST CLEAN BENCH"
 	@rm -rf $(BUILD_DIR)
+	@rm -rf $(COMPILERS_LIST)
 
 install:
 	@echo "===> INSTALL applications to $(BINPREFIX)"

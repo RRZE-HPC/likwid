@@ -43,7 +43,20 @@ Q         ?= @
 # *.ptt -> *.pas -> *.s -> *.o -> executables
 # *.txt -> *.h (generated)
 
+COMPILER_FILES := $(wildcard $(MAKE_DIR)/include_*.mk)
+COMPILERS_LIST := $(patsubst $(MAKE_DIR)/include_%.mk,%,$(COMPILER_FILES))
+
 include ./config.mk
+
+ifeq ($(COMPILER),)
+$(info Compilers available: $(COMPILERS_LIST))
+$(error Compiler has not been specified)
+endif
+ifeq ($(filter $(COMPILERS_LIST),$(COMPILER)),)
+$(info Compilers available: $(COMPILERS_LIST))
+$(error Compiler $(COMPILER) is not yet supported, provide support in $(MAKE_DIR)/include_$(COMPILER).mk)
+endif
+
 include $(MAKE_DIR)/include_$(COMPILER).mk
 include $(MAKE_DIR)/config_git.mk
 include $(MAKE_DIR)/config_checks.mk
@@ -432,6 +445,7 @@ clean:
 .PHONY: distclean
 distclean: clean
 	@echo "===>  DIST CLEAN"
+	@rm -rf $(COMPILERS_LIST)
 	@rm -rf $(BUILD_DIR)
 	@if [ "$(LUA_INTERNAL)" = "true" ]; then rm -f $(TARGET_LUA_LIB).* $(shell basename $(TARGET_LUA_LIB)).*; fi
 	@if [ "$(USE_INTERNAL_HWLOC)" = "true" ]; then rm -f $(TARGET_HWLOC_LIB).* $(shell basename $(TARGET_HWLOC_LIB)).*; fi
