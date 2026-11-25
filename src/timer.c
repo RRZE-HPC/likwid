@@ -48,10 +48,10 @@
 static uint64_t baseline = 0ULL;
 static uint64_t cpuClock = 0ULL;
 static uint64_t cyclesClock = 0ULL;
-static uint64_t sleepbase = 0ULL;
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
-static uint8_t fixedFreq = 0;
+#if defined(__ARM_ARCH_8A)
+static uint64_t tscClock = 0ULL;
 #endif
+static uint64_t sleepbase = 0ULL;
 static int timer_initialized = 0;
 
 void (*TSTART)(TscCounter*) = NULL;
@@ -162,8 +162,8 @@ TIMER(TscCounter* cpu_c)
 }
 #endif
 
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
-static int os_timer(TscCounter* time)
+#if defined(__ARM_ARCH_7A__)
+static void os_timer(TscCounter* time)
 {
     int ret;
     struct timeval cur;
@@ -173,17 +173,35 @@ static int os_timer(TscCounter* time)
         time->int64 = ((uint64_t)cur.tv_sec) * 1E6;
         time->int64 += cur.tv_usec;
     }
-    return ret;
+    else
+    {
+        perror("gettimeofday");
+        exit(1);
+    }
+}
+#endif
+
+#if defined(__ARM_ARCH_8A)
+static void
+armv8_rdtscclock(void)
+{
+    __asm__ volatile(
+    "isb\n\t"                \
+    "mrs %0, cntfrq_el0\n\t" \
+    "isb\n\t"                \
+    : "=r" (tscClock)        \
+    : : "memory");
 }
 
-static void os_timer_start(TscCounter* time)
+static void
+armv8_rdtsc(TscCounter* cpu_c)
 {
-    os_timer(time);
-}
-
-static void os_timer_stop(TscCounter* time)
-{
-    os_timer(time);
+    __asm__ volatile(
+    "isb\n\t"                \
+    "mrs %0, cntvct_el0\n\t" \
+    "isb\n\t"                \
+    : "=r" ((cpu_c)->int64)  \
+    : : "memory");
 }
 #endif
 
@@ -240,12 +258,6 @@ _timer_printCycles( const TimerData* time )
     {
         cycles = (time->stop.int64 - time->start.int64 - baseline);
     }
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
-    if (fixedFreq == 1)
-    {
-        cycles *= 1E-6 * cpuClock;
-    }
-#endif
     return cycles;
 }
 
@@ -255,8 +267,10 @@ _timer_print( const TimerData* time )
 {
     uint64_t cycles = 0x0ULL;
     cycles = _timer_printCycles(time);
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+#if defined(__ARM_ARCH_7A__)
     return ((double) cycles) * 1E-6;
+#elif defined(__ARM_ARCH_8A)
+    return ((double) cycles) / ((double) tscClock);
 #else
     return  ((double) cycles / (double) cyclesClock);
 #endif
@@ -265,58 +279,6 @@ _timer_print( const TimerData* time )
 static void
 getCpuSpeed(void)
 {
-#if defined(__x86_64) || defined(__i386__)
-    int i;
-    TimerData data;
-    unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
-    uint64_t result = 0xFFFFFFFFFFFFFFFFULL;
-    struct timeval tv1;
-    struct timeval tv2;
-    struct timezone tzp;
-    struct timespec delay = { 0, 500000000 }; /* calibration time: 500 ms */
-
-    for (i=0; i< 10; i++)
-    {
-        _timer_start(&data);
-        _timer_stop(&data);
-        result = MIN(result,_timer_printCycles(&data));
-    }
-    baseline = result;
-
-    // Determine the maximal available CPUID Leaf
-    eax = 0, ebx = 0, ecx = 0, edx = 0;
-    CPUID(eax, ebx, ecx, edx);
-    if (eax >= 0x16)
-    {
-        // Processor Frequency Information Leaf (0x16) is available
-        eax = 0x16, ebx = 0, ecx = 0, edx = 0;
-        CPUID(eax, ebx, ecx, edx);
-        cpuClock = (eax & 0xFFFF) * 1000000;
-    }
-    else
-    {
-        // Frequency not provided by the system, measure it.
-        result = 0xFFFFFFFFFFFFFFFFULL;
-        data.stop.int64 = 0;
-        data.start.int64 = 0;
-
-        for (i=0; i< 2; i++)
-        {
-            _timer_start(&data);
-            gettimeofday( &tv1, &tzp);
-            nanosleep( &delay, NULL);
-            _timer_stop(&data);
-            gettimeofday( &tv2, &tzp);
-
-            result = MIN(result,(data.stop.int64 - data.start.int64));
-        }
-
-        cpuClock = (result) * 1000000 /
-            (((uint64_t)tv2.tv_sec * 1000000 + tv2.tv_usec) -
-             ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
-    }
-    cyclesClock = cpuClock;
-#endif
 #ifdef _ARCH_PPC
     FILE *fpipe;
     char *command="grep timebase /proc/cpuinfo | awk '{ print $3 }'";
@@ -344,73 +306,61 @@ getCpuSpeed(void)
     cpuClock = (uint64_t)   atoi(buff);
     cpuClock *= 1E6;
     pclose(fpipe);
-#endif
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
-    uint64_t result = 0xFFFFFFFFFFFFFFFFULL;
+#else
+    int i;
     TimerData data;
-    int i = 0;
+#if defined(__x86_64) || defined(__i386__)
+    unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
+#endif
+    uint64_t result = 0xFFFFFFFFFFFFFFFFULL;
     struct timeval tv1;
     struct timeval tv2;
     struct timezone tzp;
-    struct timespec delay = { 1, 0 }; /* calibration time: 500 ms */
-/*    FILE *fpipe;*/
-/*    char *command="cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq";*/
-/*    char *command2="cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";*/
-/*    char buff[256];*/
-/*    buff[0] = '\0';*/
-/*    char* buffptr = NULL;*/
-/*    if ( !(fpipe = (FILE*)popen(command2, "r")))*/
-/*    {*/
-/*        perror("Problems with pipe, cannot read /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");*/
-/*        exit(1);*/
-/*    }*/
-/*    buffptr = fgets(buff, 256, fpipe);*/
-/*    fclose(fpipe);*/
-/*    if ((strncmp(buff, "userspace", 9) == 0) || (strncmp(buff, "performance", 11) == 0))*/
-/*    {*/
-/*        fixedFreq = 1;*/
-/*    }*/
-/*    buff[0] = '\0';*/
-/*    buffptr = NULL;*/
+    struct timespec delay = { 0, 500000000 }; /* calibration time: 500 ms */
 
-/*    if ( !(fpipe = (FILE*)popen(command, "r")))*/
-/*    {*/
-/*        perror("Problems with pipe, cannot read /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq");*/
-/*        exit(1);*/
-/*    }*/
-/*    buffptr = fgets(buff, 256, fpipe);*/
-/*    fclose(fpipe);*/
-    for (i=0;i<10;i++)
+    for (i=0; i< 10; i++)
     {
         _timer_start(&data);
         _timer_stop(&data);
         result = MIN(result,_timer_printCycles(&data));
     }
     baseline = result;
+
+#if defined(__x86_64) || defined(__i386__)
+    // Determine the maximal available CPUID Leaf
+    eax = 0, ebx = 0, ecx = 0, edx = 0;
+    CPUID(eax, ebx, ecx, edx);
+    if (eax >= 0x16)
+    {
+        // Processor Frequency Information Leaf (0x16) is available
+        eax = 0x16, ebx = 0, ecx = 0, edx = 0;
+        CPUID(eax, ebx, ecx, edx);
+        cpuClock = (eax & 0xFFFF) * 1000000;
+        cyclesClock = cpuClock;
+        return;
+    }
+#endif
+    // Frequency not provided by the system, measure it.
     result = 0xFFFFFFFFFFFFFFFFULL;
+    data.stop.int64 = 0;
+    data.start.int64 = 0;
+
     for (i=0; i< 2; i++)
     {
         _timer_start(&data);
         gettimeofday( &tv1, &tzp);
-        gettimeofday( &tv2, &tzp);
-        double t = 0;
-        while (tv2.tv_sec == tv1.tv_sec)
-        {
-            for (int j = 0; j < 10 ; j++)
-                t += 1.0;
-            gettimeofday( &tv2, &tzp);
-        }
-        if (t == 0)
-            continue;
+        nanosleep( &delay, NULL);
         _timer_stop(&data);
+        gettimeofday( &tv2, &tzp);
 
         result = MIN(result,(data.stop.int64 - data.start.int64));
     }
+
     cpuClock = (result) * 1000000 /
         (((uint64_t)tv2.tv_sec * 1000000 + tv2.tv_usec) -
          ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
+    cyclesClock = cpuClock;
 #endif
-
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -439,9 +389,14 @@ _timer_init( void )
         TSTOP = fRDTSC_CR;
 #endif
 #endif
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
-        TSTART = os_timer_start;
-        TSTOP = os_timer_stop;
+#if defined(__ARM_ARCH_7A__)
+        TSTART = os_timer;
+        TSTOP = os_timer;
+#endif
+#if defined(__ARM_ARCH_8A)
+        TSTART = armv8_rdtsc;
+        TSTOP = armv8_rdtsc;
+        armv8_rdtscclock();
 #endif
 #ifdef _ARCH_PPC
         TSTART = TIMER;
