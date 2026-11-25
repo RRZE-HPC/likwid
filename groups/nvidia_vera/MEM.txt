@@ -1,0 +1,46 @@
+SHORT Main memory bandwidth in MBytes/s
+
+EVENTSET
+PMC0  INST_RETIRED
+PMC1  CPU_CYCLES
+UCF0  MEM_BYTES_RD_CPU_FROM_CMEM
+UCF1  MEM_BYTES_WR_CPU_TO_CMEM
+UCF2  MEM_BYTES_RD_CPU_FROM_GMEM
+UCF3  MEM_BYTES_WR_CPU_TO_GMEM
+UCF4  MEM_BYTES_RD_CPU_FROM_ANY
+UCF5  MEM_BYTES_WR_CPU_TO_ANY
+
+METRICS
+Runtime (RDTSC) [s] time
+Clock [MHz] 1.E-06*PMC1/time
+CPI  PMC1/PMC0
+CPU Memory read bandwidth [MBytes/s] 1.0E-06*(UCF0)/time
+CPU Memory read data volume [GBytes] 1.0E-09*(UCF0)
+CPU Memory write bandwidth [MBytes/s] 1.0E-06*(UCF1)/time
+CPU Memory write data volume [GBytes] 1.0E-09*(UCF1)
+CPU Memory bandwidth [MBytes/s] 1.0E-06*((UCF0)+UCF1)/time
+CPU Memory data volume [GBytes] 1.0E-09*((UCF0)+UCF1)
+GPU Memory read bandwidth [MBytes/s] 1.0E-06*(UCF2)/time
+GPU Memory read data volume [GBytes] 1.0E-09*(UCF2)
+GPU Memory write bandwidth [MBytes/s] 1.0E-06*(UCF3)/time
+GPU Memory write data volume [GBytes] 1.0E-09*(UCF3)
+GPU Memory bandwidth [MBytes/s] 1.0E-06*((UCF2)+UCF3)/time
+GPU Memory data volume [GBytes] 1.0E-09*((UCF2)+UCF3)
+Any Memory read bandwidth [MBytes/s] 1.0E-06*(UCF4)/time
+Any Memory read data volume [GBytes] 1.0E-09*(UCF4)
+Any Memory write bandwidth [MBytes/s] 1.0E-06*(UCF5)/time
+Any Memory write data volume [GBytes] 1.0E-09*(UCF5)
+Any Memory bandwidth [MBytes/s] 1.0E-06*((UCF4)+(UCF5))/time
+Any Memory data volume [GBytes] 1.0E-09*((UCF4)+(UCF5))
+
+LONG
+Formulas:
+Memory read bandwidth [MBytes/s] = 1.0E-06*MEM_BYTES_RD_CPU_FROM_CMEM/runtime
+Memory read data volume [GBytes] = 1.0E-09*MEM_BYTES_RD_CPU_FROM_CMEM
+Memory write bandwidth [MBytes/s] = 1.0E-06*MEM_BYTES_WR_CPU_TO_CMEM/runtime
+Memory write data volume [GBytes] = 1.0E-09*MEM_BYTES_WR_CPU_TO_CMEM
+Memory bandwidth [MBytes/s] = 1.0E-06*(MEM_BYTES_RD_CPU_FROM_CMEM+MEM_BYTES_WR)/runtime
+Memory data volume [GBytes] = 1.0E-09*(MEM_BYTES_RD_CPU_FROM_CMEM+MEM_BYTES_WR)
+-
+Profiling group to measure memory bandwidth to different memory destinations. The
+'Other Memory' contains remote memory.

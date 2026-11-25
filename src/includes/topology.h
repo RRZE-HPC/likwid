@@ -190,6 +190,7 @@ struct topology_functions {
 #define HUAWEI_TSV110 0xD01U
 #define AWS_GRAVITON3 0xD40U
 #define NVIDIA_GRACE 0xD4FU
+#define NVIDIA_VERA 0x010
 
 /* ARM vendors */
 #define DEFAULT_ARM 0x41U
