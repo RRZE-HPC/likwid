@@ -522,11 +522,6 @@ elseif num_cpus == 0 and
     perfctr_exit(1)
 end
 
-if use_timeline and outfile then
-    print_stderr("Redirecting output in timeline mode not supported")
-    perfctr_exit(1)
-end
-
 ---------------------------
 if nvSupported and
     num_cuda_gpus == 0 and
